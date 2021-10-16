@@ -1,0 +1,29 @@
+{
+    "configurations": [
+        {
+            "name": "ubuntu-20.04_x86_64",
+            "includePath": [
+                "${workspaceFolder}/_install/ubuntu-20.04_x86_64/boost/include",
+                "${workspaceFolder}/_install/ubuntu-20.04_x86_64/rotor/include",
+                "${workspaceFolder}/_install/ubuntu-20.04_x86_64/webrtc/include",
+                "${workspaceFolder}/_install/ubuntu-20.04_x86_64/webrtc/include/third_party/abseil-cpp",
+                "${workspaceFolder}/_install/ubuntu-20.04_x86_64/webrtc/include/third_party/boringssl/src/include",
+                "${workspaceFolder}/_install/ubuntu-20.04_x86_64/webrtc/include/third_party/libyuv/include",
+                "${workspaceFolder}/_install/ubuntu-20.04_x86_64/webrtc/include/third_party/zlib",
+                "${workspaceFolder}/_install/ubuntu-20.04_x86_64/llvm/libcxx/include"
+            ],
+            "defines": [
+                "WEBRTC_POSIX",
+                "_LIBCPP_ABI_UNSTABLE",
+                "_LIBCPP_DISABLE_AVAILABILITY",
+                "OPENSSL_IS_BORINGSSL"
+            ],
+            "compilerPath": "/home/melpon/dev/sora-cpp-sdk/_install/ubuntu-20.04_x86_64/llvm/clang/bin/clang++",
+            "compilerArgs": ["-nostdinc++"],
+            "cStandard": "gnu17",
+            "cppStandard": "gnu++17",
+            "intelliSenseMode": "linux-gcc-x64"
+        }
+    ],
+    "version": 4
+}
