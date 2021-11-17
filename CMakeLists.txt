@@ -32,6 +32,8 @@ set_target_properties(sora PROPERTIES CXX_STANDARD 17 C_STANDARD 17)
 target_sources(sora
   PRIVATE
     src/sora.cpp
+    src/ssl_verifier.cpp
+    src/url_parts.cpp
 )
 
 target_link_libraries(sora
@@ -40,6 +42,7 @@ target_link_libraries(sora
     rotor::rotor
     WebRTC::WebRTC
     Boost::filesystem
+    Boost::system
 )
 
 if (USE_LIBCXX)
@@ -56,12 +59,11 @@ if (WIN32)
   set_target_properties(sora
     PROPERTIES
       # CRTライブラリを静的リンクさせる
-      # CMake 3.15 以上なら MSVC_RUNTIME_LIBRARY が使える
-      MSVC_RUNTIME_LIBRARY "MultiThreaded"
+      MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
   )
 
-  #target_link_libraries(sora
-  #  PRIVATE
+  target_link_libraries(sora
+    PRIVATE
   #    dbghelp.lib
   #    delayimp.lib
   #    dnsapi.lib
@@ -73,7 +75,7 @@ if (WIN32)
   #    usp10.lib
   #    version.lib
   #    wininet.lib
-  #    winmm.lib
+      winmm.lib
   #    ws2_32.lib
   #    amstrmid.lib
   #    Strmiids.lib
@@ -83,7 +85,7 @@ if (WIN32)
   #    msdmo.lib
   #    Secur32.lib
   #    wmcodecdspuuid.lib
-  #)
+  )
 
   target_compile_definitions(sora
     PUBLIC
@@ -94,6 +96,7 @@ if (WIN32)
       WIN32_LEAN_AND_MEAN
       UNICODE
       _UNICODE
+      _HAS_ITERATOR_DEBUGGING=0
   )
 elseif (APPLE)
 
@@ -162,9 +165,11 @@ endif()
 enable_testing()
 add_executable(test_hello test/hello.cpp)
 set_target_properties(test_hello PROPERTIES CXX_STANDARD 17 C_STANDARD 17)
+set_target_properties(test_hello PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 target_link_libraries(test_hello PRIVATE sora)
 SET(CTEST_OUTPUT_ON_FAILURE ON)
 add_test(
   NAME test_hello
   COMMAND $<TARGET_FILE:test_hello>
 )
+set_tests_properties(test_hello PROPERTIES TIMEOUT 3) 

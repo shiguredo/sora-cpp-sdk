@@ -1,3 +1,4 @@
+#include <boost/throw_exception.hpp>
 
 extern "C" {
 

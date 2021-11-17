@@ -8,7 +8,7 @@ import shutil
 import platform
 import argparse
 import multiprocessing
-from typing import Callable, Optional, List, Union, Dict
+from typing import Callable, NamedTuple, Optional, List, Union, Dict
 if platform.system() == 'Windows':
     import winreg
 
@@ -153,6 +153,11 @@ def enum_all_files(dir, dir2):
 
 def versioned(func):
     def wrapper(version, version_file, *args, **kwargs):
+        if 'ignore_version' in kwargs:
+            if kwargs.get('ignore_version'):
+                rm_rf(version_file)
+            del kwargs['ignore_version']
+
         if os.path.exists(version_file):
             ver = open(version_file).read()
             if ver.strip() == version.strip():
@@ -264,6 +269,22 @@ def extract(file: str, output_dir: str, output_dirname: str):
         raise Exception('file should end with .tar.gz or .zip')
 
 
+def clone_and_checkout(url, version, dir, fetch, fetch_force):
+    if fetch_force:
+        rm_rf(dir)
+
+    if not os.path.exists(os.path.join(dir, '.git')):
+        cmd(['git', 'clone', url, dir])
+        fetch = True
+
+    if fetch:
+        with cd(dir):
+            cmd(['git', 'fetch'])
+            cmd(['git', 'reset', '--hard'])
+            cmd(['git', 'clean', '-df'])
+            cmd(['git', 'checkout', '-f', version])
+
+
 @versioned
 def install_webrtc(version, source_dir, install_dir, platform):
     win = platform == "windows"
@@ -274,14 +295,71 @@ def install_webrtc(version, source_dir, install_dir, platform):
     extract(archive, output_dir=install_dir, output_dirname='webrtc')
 
 
-def build_install_webrtc(version, source_dir, build_dir, install_dir, platform):
-    source_dir = os.path.join(source_dir, 'webrtc')
-    build_dir = os.path.join(build_dir, 'webrtc')
-    install_dir = os.path.join(install_dir, 'webrtc')
-    mkdir_p(source_dir)
-    with cd(source_dir):
-        cmd(['git', 'clone', 'https://github.com/shiguredo-webrtc-build/webrtc-build.git'])
-        # version_file = read_version_file(os.path.join('webrtc-build', 'VERSIONS'))
+class WebrtcConfig(NamedTuple):
+    webrtcbuild_fetch: bool
+    webrtcbuild_fetch_force: bool
+    webrtc_fetch: bool
+    webrtc_fetch_force: bool
+    webrtc_gen: bool
+    webrtc_gen_force: bool
+    webrtc_extra_gn_args: str
+    webrtc_nobuild: bool
+
+
+def build_install_webrtc(version, source_dir, build_dir, install_dir, platform, debug, config):
+    webrtcbuild_source_dir = os.path.join(source_dir, 'webrtc-build')
+
+    clone_and_checkout(url='https://github.com/shiguredo-webrtc-build/webrtc-build.git',
+                       version=version,
+                       dir=webrtcbuild_source_dir,
+                       fetch=config.webrtcbuild_fetch,
+                       fetch_force=config.webrtcbuild_fetch_force)
+
+    with cd(webrtcbuild_source_dir):
+        args = ['--source-dir', source_dir,
+                '--build-dir', build_dir,
+                '--webrtc-nobuild-ios-framework',
+                '--webrtc-nobuild-android-aar']
+        if debug:
+            args += ['--debug']
+        if config.webrtc_fetch:
+            args += ['--webrtc-fetch']
+        if config.webrtc_fetch_force:
+            args += ['--webrtc-fetch-force']
+        if config.webrtc_gen:
+            args += ['--webrtc-gen']
+        if config.webrtc_gen_force:
+            args += ['--webrtc-gen-force']
+        if len(config.webrtc_extra_gn_args) != 0:
+            args += ['--webrtc-extra-gn-args', config.webrtc_extra_gn_args]
+        if config.webrtc_nobuild:
+            args += ['--webrtc-nobuild']
+
+        cmd(['python3', 'run.py', 'build', platform, *args])
+
+
+class WebrtcInfo(NamedTuple):
+    version_file: str
+    webrtc_include_dir: str
+    webrtc_library_dir: str
+
+
+def get_webrtc_info(webrtcbuild: bool, source_dir: str, build_dir: str, install_dir: str) -> WebrtcInfo:
+    webrtc_source_dir = os.path.join(source_dir, 'webrtc')
+    webrtc_build_dir = os.path.join(build_dir, 'webrtc')
+    webrtc_install_dir = os.path.join(install_dir, 'webrtc')
+
+    if webrtcbuild:
+        return WebrtcInfo(version_file=os.path.join(source_dir, 'webrtc-build', 'VERSION'),
+                          webrtc_include_dir=os.path.join(webrtc_source_dir, 'src'),
+                          webrtc_library_dir=os.path.join(webrtc_build_dir, 'obj')
+                          if platform.system() == 'Windows' else webrtc_build_dir,)
+    else:
+        return WebrtcInfo(
+            version_file=os.path.join(webrtc_install_dir, 'VERSIONS'),
+            webrtc_include_dir=os.path.join(webrtc_install_dir, 'include'),
+            webrtc_library_dir=os.path.join(install_dir, 'webrtc', 'lib'),
+        )
 
 
 @versioned
@@ -317,7 +395,7 @@ def install_llvm(version, install_dir,
 @versioned
 def install_boost(
         version: str, source_dir, build_dir, install_dir,
-        cxx: str, cxxflags: List[str], toolset, visibility, target_os):
+        debug: bool, cxx: str, cxxflags: List[str], toolset, visibility, target_os):
     version_underscore = version.replace('.', '_')
     archive = download(
         f'https://boostorg.jfrog.io/artifactory/main/release/{version}/source/boost_{version_underscore}.tar.gz',
@@ -325,14 +403,13 @@ def install_boost(
     extract(archive, output_dir=build_dir, output_dirname='boost')
     with cd(os.path.join(build_dir, 'boost')):
         bootstrap = '.\\bootstrap.bat' if target_os == 'windows' else './bootstrap.sh'
-        b2 = '.\\b2' if target_os == 'windows' else './b2'
 
         cmd([bootstrap])
         if len(cxx) != 0:
             with open('project-config.jam', 'w') as f:
                 f.write(f'using {toolset} : : {cxx} : ;')
         cmd([
-            b2,
+            'b2',
             'install',
             f'--prefix={os.path.join(install_dir, "boost")}',
             '--with-filesystem',
@@ -342,7 +419,7 @@ def install_boost(
             '--with-system',
             '--layout=system',
             '--ignore-site-config',
-            'variant=release',
+            f'variant={"debug" if debug else "release"}',
             f'cxxflags={" ".join(cxxflags)}',
             f'toolset={toolset}',
             f'visibility={visibility}',
@@ -382,28 +459,45 @@ def cmake_path(path: str) -> str:
     return path.replace('\\', '/')
 
 
+class RotorConfig(NamedTuple):
+    rotor_fetch: bool
+    rotor_fetch_force: bool
+    rotor_gen: bool
+    rotor_gen_force: bool
+
+
 @versioned
-def install_rotor(version, source_dir, build_dir, install_dir, boost_root, cmake_args: List[str]):
-    source_dir = os.path.join(source_dir, 'rotor')
-    build_dir = os.path.join(build_dir, 'rotor')
-    install_dir = os.path.join(install_dir, 'rotor')
-    rm_rf(source_dir)
-    rm_rf(build_dir)
-    rm_rf(install_dir)
-    # cmd(['git', 'clone', 'https://github.com/basiliscos/cpp-rotor.git', source_dir])
-    cmd(['git', 'clone', 'https://github.com/melpon/cpp-rotor.git', source_dir])
-    with cd(source_dir):
-        cmd(['git', 'checkout', version])
-    mkdir_p(build_dir)
-    with cd(build_dir):
-        cmd(['cmake', source_dir,
-             '-DBUILD_BOOST_ASIO=ON',
-             '-DBoost_USE_STATIC_RUNTIME=ON',
-             f'-DCMAKE_INSTALL_PREFIX={cmake_path(install_dir)}',
-             '-DCMAKE_BUILD_TYPE=Release',
-             f'-DBOOST_ROOT={cmake_path(boost_root)}'] + cmake_args)
-        cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', 'Release'])
-        cmd(['cmake', '--install', '.'])
+def install_rotor(version, source_dir, build_dir, install_dir, boost_root,
+                  debug: bool, cmake_args: List[str], config: RotorConfig):
+    rotor_source_dir = os.path.join(source_dir, 'rotor')
+    rotor_build_dir = os.path.join(build_dir, 'rotor')
+    rotor_install_dir = os.path.join(install_dir, 'rotor')
+
+    clone_and_checkout(url='https://github.com/basiliscos/cpp-rotor.git',
+                       version=version,
+                       dir=rotor_source_dir,
+                       fetch=config.rotor_fetch,
+                       fetch_force=config.rotor_fetch_force)
+
+    if config.rotor_gen_force:
+        rm_rf(rotor_build_dir)
+
+    mkdir_p(rotor_build_dir)
+
+    configuration = "Debug" if debug else "Release"
+
+    if not os.path.exists(os.path.join(rotor_build_dir, 'CMakeCache.txt')) or config.rotor_gen:
+        with cd(rotor_build_dir):
+            cmd(['cmake', rotor_source_dir,
+                '-DBUILD_BOOST_ASIO=ON',
+                 '-DBoost_USE_STATIC_RUNTIME=ON',
+                 f'-DCMAKE_INSTALL_PREFIX={cmake_path(rotor_install_dir)}',
+                 f'-DCMAKE_BUILD_TYPE={configuration}',
+                 f'-DBOOST_ROOT={cmake_path(boost_root)}'] + cmake_args)
+
+    with cd(rotor_build_dir):
+        cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])
+        cmd(['cmake', '--install', '.', '--config', configuration])
 
 
 @versioned
@@ -422,7 +516,7 @@ class PlatformTarget(object):
     @property
     def package_name(self):
         if self.os == 'windows':
-            return f'windows-{self.osver}'
+            return 'windows'
         if self.os == 'macos':
             return f'macos-{self.osver}'
         if self.os == 'ubuntu':
@@ -544,36 +638,42 @@ class Platform(object):
         self.target = target
 
 
-def read_webrtc_version_file(webrtc_dir: str) -> Dict[str, str]:
-    # プラットフォームによって VERSIONS ファイルの位置が違うので複数の場所を探す
-    path = os.path.join(webrtc_dir, 'VERSIONS')
-    if os.path.exists(path):
-        return read_version_file(path)
-    path = os.path.join(webrtc_dir, 'release', 'VERSIONS')
-    if os.path.exists(path):
-        return read_version_file(path)
-    raise FileNotFoundError()
-
-
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
-def install_deps(platform, source_dir, build_dir, install_dir, webrtc_source_build: bool):
+def install_deps(platform, source_dir, build_dir, install_dir, debug,
+                 webrtcbuild: bool, webrtc_config: WebrtcConfig, rotor_config: RotorConfig):
     with cd(BASE_DIR):
         version = read_version_file('VERSION')
 
-        if webrtc_source_build:
+        # WebRTC
+        if platform.target.os == 'windows':
+            webrtc_platform = 'windows'
+        elif platform.target.os == 'macos':
+            webrtc_platform = f'macos_{platform.target.arch}'
+        elif platform.target.os == 'ios':
+            webrtc_platform = 'ios'
+        elif platform.target.os == 'android':
+            webrtc_platform = 'android'
+        elif platform.target.os == 'ubuntu':
+            webrtc_platform = f'ubuntu-{platform.target.osver}_{platform.target.arch}'
+        elif platform.target.os == 'raspberry-pi-os':
+            webrtc_platform = f'raspberry-pi-os_{platform.target.arch}'
+        elif platform.target.os == 'jetson':
+            webrtc_platform = 'ubuntu-18.04_armv8'
+        else:
+            raise Exception(f'Unknown platform {platform.target.os}')
+
+        if webrtcbuild:
             install_webrtc_args = {
                 'version': version['WEBRTC_BUILD_VERSION'],
                 'source_dir': source_dir,
                 'build_dir': build_dir,
                 'install_dir': install_dir,
-                'platform': '',
+                'platform': webrtc_platform,
+                'debug': debug,
+                'config': webrtc_config,
             }
-            if platform.target.os == 'windows':
-                install_webrtc_args['platform'] = 'windows'
-            if platform.target.os == 'ubuntu':
-                install_webrtc_args['platform'] = f'ubuntu-{platform.target.osver}_{platform.target.arch}'
 
             build_install_webrtc(**install_webrtc_args)
         else:
@@ -582,29 +682,17 @@ def install_deps(platform, source_dir, build_dir, install_dir, webrtc_source_bui
                 'version_file': os.path.join(install_dir, 'webrtc.version'),
                 'source_dir': source_dir,
                 'install_dir': install_dir,
-                'platform': '',
+                'platform': webrtc_platform,
             }
-            if platform.target.os == 'windows':
-                install_webrtc_args['platform'] = 'windows'
-            if platform.target.os == 'macos':
-                install_webrtc_args['platform'] = f'macos_{platform.target.arch}'
-            if platform.target.os == 'ios':
-                install_webrtc_args['platform'] = 'ios'
-            if platform.target.os == 'android':
-                install_webrtc_args['platform'] = 'android'
-            if platform.target.os == 'ubuntu':
-                install_webrtc_args['platform'] = f'ubuntu-{platform.target.osver}_{platform.target.arch}'
-            if platform.target.os == 'raspberry-pi-os':
-                install_webrtc_args['platform'] = f'raspberry-pi-os_{platform.target.arch}'
-            if platform.target.os == 'jetson':
-                install_webrtc_args['platform'] = 'ubuntu-18.04_armv8'
 
             install_webrtc(**install_webrtc_args)
 
-        webrtc_version = read_webrtc_version_file(os.path.join(install_dir, 'webrtc'))
+        webrtc_info = get_webrtc_info(webrtcbuild, source_dir, build_dir, install_dir)
+        webrtc_version = read_version_file(webrtc_info.version_file)
 
         # Windows は MSVC を使うので LLVM は不要
         if platform.target.os != 'windows':
+            # LLVM
             tools_url = webrtc_version['WEBRTC_SRC_TOOLS_URL']
             tools_commit = webrtc_version['WEBRTC_SRC_TOOLS_COMMIT']
             libcxx_url = webrtc_version['WEBRTC_SRC_BUILDTOOLS_THIRD_PARTY_LIBCXX_TRUNK_URL']
@@ -627,6 +715,7 @@ def install_deps(platform, source_dir, build_dir, install_dir, webrtc_source_bui
             }
             install_llvm(**install_llvm_args)
 
+        # Boost
         install_boost_args = {
             'version': version['BOOST_VERSION'],
             'version_file': os.path.join(install_dir, 'boost.version'),
@@ -638,8 +727,13 @@ def install_deps(platform, source_dir, build_dir, install_dir, webrtc_source_bui
             'toolset': 'msvc',
             'visibility': 'global',
             'target_os': 'windows',
+            'debug': debug,
         }
-        if platform.target.os != 'windows':
+        if platform.target.os == 'windows':
+            install_boost_args['cxxflags'] = [
+                '-D_HAS_ITERATOR_DEBUGGING=0'
+            ]
+        else:
             install_boost_args['cxx'] = os.path.join(install_dir, 'llvm', 'clang', 'bin', 'clang++')
             install_boost_args['cxxflags'] = [
                 '-D_LIBCPP_ABI_UNSTABLE',
@@ -657,6 +751,7 @@ def install_deps(platform, source_dir, build_dir, install_dir, webrtc_source_bui
                 install_boost_args['target_os'] = 'linux'
         install_boost(**install_boost_args)
 
+        # CMake
         install_cmake_args = {
             'version': version['CMAKE_VERSION'],
             'version_file': os.path.join(install_dir, 'cmake.version'),
@@ -680,6 +775,7 @@ def install_deps(platform, source_dir, build_dir, install_dir, webrtc_source_bui
 
         add_path(os.path.join(install_dir, 'cmake', 'bin'))
 
+        # cpp-rotor
         libcxx_include_dir = cmake_path(os.path.join(install_dir, 'llvm', 'libcxx', 'include'))
         cmake_c_compiler = cmake_path(os.path.join(install_dir, 'llvm', 'clang', 'bin', 'clang'))
         cmake_cxx_compiler = cmake_path(os.path.join(install_dir, 'llvm', 'clang', 'bin', 'clang++'))
@@ -687,12 +783,25 @@ def install_deps(platform, source_dir, build_dir, install_dir, webrtc_source_bui
         install_rotor_args = {
             'version': version['ROTOR_VERSION'],
             'version_file': os.path.join(install_dir, 'rotor.version'),
+            'ignore_version': (rotor_config.rotor_fetch or
+                               rotor_config.rotor_fetch_force or
+                               rotor_config.rotor_gen or
+                               rotor_config.rotor_gen_force),
             'source_dir': source_dir,
             'build_dir': build_dir,
             'install_dir': install_dir,
             'boost_root': os.path.join(install_dir, 'boost'),
-            'cmake_args': []
+            'cmake_args': [],
+            'debug': debug,
+            'config': rotor_config,
         }
+        if platform.build.os == 'windows':
+            install_rotor_args['cmake_args'] = [
+                # MSVC runtime library flags are selected by an abstraction.
+                '-DCMAKE_POLICY_DEFAULT_CMP0091=NEW',
+                f'-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded{"Debug" if debug else ""}',
+                '-DCMAKE_CXX_FLAGS=/EHsc -D_HAS_ITERATOR_DEBUGGING=0',
+            ]
         if platform.build.os != 'windows':
             install_rotor_args['cmake_args'] = [
                 f'-DCMAKE_C_COMPILER={cmake_c_compiler}',
@@ -706,7 +815,21 @@ def install_deps(platform, source_dir, build_dir, install_dir, webrtc_source_bui
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("target", choices=['windows', 'macos_x86_64', 'macos_arm64', 'ubuntu-20.04_x86_64'])
-    parser.add_argument("--webrtc-source-build", action='store_true')
+    parser.add_argument("--debug", action='store_true')
+    parser.add_argument("--webrtcbuild", action='store_true')
+    parser.add_argument("--webrtcbuild-fetch", action='store_true')
+    parser.add_argument("--webrtcbuild-fetch-force", action='store_true')
+    parser.add_argument("--webrtc-fetch", action='store_true')
+    parser.add_argument("--webrtc-fetch-force", action='store_true')
+    parser.add_argument("--webrtc-gen", action='store_true')
+    parser.add_argument("--webrtc-gen-force", action='store_true')
+    parser.add_argument("--webrtc-extra-gn-args", default='')
+    parser.add_argument("--webrtc-nobuild", action='store_true')
+    parser.add_argument("--rotor-fetch", action='store_true')
+    parser.add_argument("--rotor-fetch-force", action='store_true')
+    parser.add_argument("--rotor-gen", action='store_true')
+    parser.add_argument("--rotor-gen-force", action='store_true')
+
     args = parser.parse_args()
     if args.target == 'windows':
         platform = Platform('windows', get_windows_osver(), 'x86_64')
@@ -722,17 +845,19 @@ def main():
     logging.info(f'Build platform: {platform.build.package_name}')
     logging.info(f'Target platform: {platform.target.package_name}')
 
+    configuration = 'debug' if args.debug else 'release'
     dir = platform.target.package_name
-    if args.webrtc_source_build:
-        dir += ".webrtc_source_build"
-    source_dir = os.path.join(BASE_DIR, '_source', dir)
-    build_dir = os.path.join(BASE_DIR, '_build', dir)
-    install_dir = os.path.join(BASE_DIR, '_install', dir)
+    source_dir = os.path.join(BASE_DIR, '_source', dir, configuration)
+    build_dir = os.path.join(BASE_DIR, '_build', dir, configuration)
+    install_dir = os.path.join(BASE_DIR, '_install', dir, configuration)
     mkdir_p(source_dir)
     mkdir_p(build_dir)
     mkdir_p(install_dir)
 
-    install_deps(platform, source_dir, build_dir, install_dir, args.webrtc_source_build)
+    install_deps(platform, source_dir, build_dir, install_dir, args.debug,
+                 webrtcbuild=args.webrtcbuild, webrtc_config=args, rotor_config=args)
+
+    configuration = 'Debug' if args.debug else 'Release'
 
     sora_build_dir = os.path.join(build_dir, 'sora')
     mkdir_p(sora_build_dir)
@@ -741,11 +866,10 @@ def main():
         cmake_args.append('-DCMAKE_BUILD_TYPE=Release')
         cmake_args.append(f"-DBOOST_ROOT={cmake_path(os.path.join(install_dir, 'boost'))}")
         cmake_args.append(f"-DROTOR_ROOT_DIR={cmake_path(os.path.join(install_dir, 'rotor'))}")
-        cmake_args.append(f"-DWEBRTC_INCLUDE_DIR={cmake_path(os.path.join(install_dir, 'webrtc', 'include'))}")
-        if platform.build.os == 'windows':
-            cmake_args.append(f"-DWEBRTC_LIBRARY_DIR={cmake_path(os.path.join(install_dir, 'webrtc', 'release'))}")
+        webrtc_info = get_webrtc_info(args.webrtcbuild, source_dir, build_dir, install_dir)
+        cmake_args.append(f"-DWEBRTC_INCLUDE_DIR={cmake_path(webrtc_info.webrtc_include_dir)}")
+        cmake_args.append(f"-DWEBRTC_LIBRARY_DIR={cmake_path(webrtc_info.webrtc_library_dir)}")
         if platform.build.os == 'ubuntu':
-            cmake_args.append(f"-DWEBRTC_LIBRARY_DIR={cmake_path(os.path.join(install_dir, 'webrtc', 'lib'))}")
             cmake_args.append(
                 f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(install_dir, 'llvm', 'clang', 'bin', 'clang'))}")
             cmake_args.append(
@@ -755,8 +879,8 @@ def main():
                 f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(install_dir, 'llvm', 'libcxx', 'include'))}")
 
         cmd(['cmake', BASE_DIR] + cmake_args)
-        cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', 'Debug'])
-        cmd(['ctest', '--verbose'])
+        cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])
+        cmd(['ctest', '--verbose', '--build-config', configuration])
 
 
 if __name__ == '__main__':

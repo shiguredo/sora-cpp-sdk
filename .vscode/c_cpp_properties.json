@@ -23,6 +23,42 @@
             "cStandard": "gnu17",
             "cppStandard": "gnu++17",
             "intelliSenseMode": "linux-gcc-x64"
+        },
+        {
+            "name": "Windows Release",
+            "includePath": [
+                "${workspaceFolder}/_install/windows/release/boost/include",
+                "${workspaceFolder}/_install/windows/release/rotor/include",
+                "${workspaceFolder}/_install/windows/release/webrtc/include",
+                "${workspaceFolder}/_install/windows/release/webrtc/include/third_party/abseil-cpp",
+                "${workspaceFolder}/_install/windows/release/webrtc/include/third_party/boringssl/src/include",
+                "${workspaceFolder}/_install/windows/release/webrtc/include/third_party/libyuv/include",
+                "${workspaceFolder}/_install/windows/release/webrtc/include/third_party/zlib"
+            ],
+            "defines": [
+                "WEBRTC_WIN"
+            ],
+            "cStandard": "gnu17",
+            "cppStandard": "gnu++17",
+            "intelliSenseMode": "msvc-x64"
+        },
+        {
+            "name": "Windows Debug",
+            "includePath": [
+                "${workspaceFolder}/_install/windows/debug/boost/include",
+                "${workspaceFolder}/_install/windows/debug/rotor/include",
+                "${workspaceFolder}/_source/windows/debug/webrtc/src",
+                "${workspaceFolder}/_source/windows/debug/webrtc/src/third_party/abseil-cpp",
+                "${workspaceFolder}/_source/windows/debug/webrtc/src/third_party/boringssl/src/include",
+                "${workspaceFolder}/_source/windows/debug/webrtc/src/third_party/libyuv/include",
+                "${workspaceFolder}/_source/windows/debug/webrtc/src/third_party/zlib"
+            ],
+            "defines": [
+                "WEBRTC_WIN"
+            ],
+            "cStandard": "gnu17",
+            "cppStandard": "gnu++17",
+            "intelliSenseMode": "msvc-x64"
         }
     ],
     "version": 4

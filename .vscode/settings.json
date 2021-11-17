@@ -7,9 +7,19 @@
         "editor.formatOnSave": true,
         "editor.formatOnSaveMode": "file"
     },
+    "[cpp]": {
+        "editor.formatOnSave": true
+    },
     "files.associations": {
         "*.cs": "csharp",
         "iostream": "cpp",
-        "*.ipp": "cpp"
+        "*.ipp": "cpp",
+        "exception": "cpp",
+        "coroutine": "cpp",
+        "*.idl": "cpp",
+        "memory": "cpp",
+        "functional": "cpp",
+        "xtr1common": "cpp",
+        "chrono": "cpp"
     }
 }
