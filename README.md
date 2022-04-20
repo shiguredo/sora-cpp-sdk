@@ -17,19 +17,21 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
 
 ## 特徴
 
-
 ## 動作環境
 
 ## 対応 Sora
 
-- WebRTC SFU Sora 2022.1 以降
+- WebRTC SFU Sora 2021.2 以降
+
+## サンプル集
+
+https://github.com/shiguredo/sora-cpp-sdk-samples
 
 ## 優先実装
 
 ## 対応予定
 
 ## 廃止予定
-
 
 ## ライセンス
 
