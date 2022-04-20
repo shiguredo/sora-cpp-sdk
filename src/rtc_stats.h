@@ -16,18 +16,12 @@ class RTCStatsCallback : public webrtc::RTCStatsCollectorCallback {
       ResultCallback;
 
   static rtc::scoped_refptr<RTCStatsCallback> Create(
-      ResultCallback result_callback) {
-    return rtc::make_ref_counted<RTCStatsCallback>(std::move(result_callback));
-  }
-
+      ResultCallback result_callback);
   void OnStatsDelivered(
-      const rtc::scoped_refptr<const webrtc::RTCStatsReport>& report) override {
-    std::move(result_callback_)(report);
-  }
+      const rtc::scoped_refptr<const webrtc::RTCStatsReport>& report) override;
 
  protected:
-  RTCStatsCallback(ResultCallback result_callback)
-      : result_callback_(std::move(result_callback)) {}
+  RTCStatsCallback(ResultCallback result_callback);
   ~RTCStatsCallback() override = default;
 
  private:

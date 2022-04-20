@@ -34,12 +34,18 @@ target_include_directories(sora PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 target_sources(sora
   PRIVATE
+    src/data_channel.cpp
     src/device_video_capturer.cpp
     src/rtc_ssl_verifier.cpp
+    src/rtc_stats.cpp
     src/scalable_track_source.cpp
+    src/session_description.cpp
+    src/sora_signaling.cpp
     src/ssl_verifier.cpp
+    src/url_parts.cpp
     src/version.cpp
     src/websocket.cpp
+    src/zlib_helper.cpp
 )
 
 target_link_libraries(sora

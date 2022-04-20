@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef DEVICE_VIDEO_CAPTURER_H_
-#define DEVICE_VIDEO_CAPTURER_H_
+#ifndef SORA_DEVICE_VIDEO_CAPTURER_H_
+#define SORA_DEVICE_VIDEO_CAPTURER_H_
 
 #include <memory>
 #include <vector>
@@ -60,4 +60,4 @@ class DeviceVideoCapturer : public ScalableVideoTrackSource,
 
 }  // namespace sora
 
-#endif  // DEVICE_VIDEO_CAPTURER_H_
+#endif

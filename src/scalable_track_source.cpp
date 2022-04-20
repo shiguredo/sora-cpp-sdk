@@ -19,6 +19,8 @@
 #include <api/video/video_rotation.h>
 #include <rtc_base/logging.h>
 
+namespace sora {
+
 ScalableVideoTrackSource::ScalableVideoTrackSource()
     : AdaptedVideoTrackSource(4) {}
 ScalableVideoTrackSource::~ScalableVideoTrackSource() {}
@@ -82,3 +84,5 @@ void ScalableVideoTrackSource::OnCapturedFrame(
               .set_timestamp_us(translated_timestamp_us)
               .build());
 }
+
+}  // namespace sora
