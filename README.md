@@ -22,7 +22,7 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
 
 ## 対応 Sora
 
-- WebRTC SFU Sora 2021.1 以降
+- WebRTC SFU Sora 202２.1 以降
 
 ## 優先実装
 
