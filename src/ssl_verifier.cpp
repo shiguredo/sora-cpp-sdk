@@ -13,6 +13,8 @@
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
 
+namespace sora {
+
 const char isrg_root[] = R"(
 # Issuer: CN=ISRG Root X1 O=Internet Security Research Group
 # Subject: CN=ISRG Root X1 O=Internet Security Research Group
@@ -217,3 +219,5 @@ bool SSLVerifier::VerifyX509(X509* x509, STACK_OF(X509) * chain) {
   }
   return true;
 }
+
+}  // namespace sora

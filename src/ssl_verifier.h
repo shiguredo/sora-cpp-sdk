@@ -1,10 +1,12 @@
-#ifndef SSL_VERIFIER_H_
-#define SSL_VERIFIER_H_
+#ifndef SORA_SSL_VERIFIER_H_
+#define SORA_SSL_VERIFIER_H_
 
 #include <string>
 
 // openssl
 #include <openssl/ssl.h>
+
+namespace sora {
 
 // 自前で SSL の証明書検証を行うためのクラス
 class SSLVerifier {
@@ -18,4 +20,6 @@ class SSLVerifier {
   static bool LoadBuiltinSSLRootCertificates(X509_STORE* store);
 };
 
-#endif  // SSL_VERIFIER_H_
+}
+
+#endif

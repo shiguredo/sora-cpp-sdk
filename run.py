@@ -286,8 +286,8 @@ def clone_and_checkout(url, version, dir, fetch, fetch_force):
 
 
 @versioned
-def install_webrtc(version, source_dir, install_dir, platform):
-    win = platform == "windows"
+def install_webrtc(version, source_dir, install_dir, platform: str):
+    win = platform.startswith("windows_")
     filename = f'webrtc.{platform}.{"zip" if win else "tar.gz"}'
     archive = download(
         f'https://github.com/shiguredo-webrtc-build/webrtc-build/releases/download/{version}/{filename}',
@@ -467,40 +467,6 @@ class RotorConfig(NamedTuple):
 
 
 @versioned
-def install_rotor(version, source_dir, build_dir, install_dir, boost_root,
-                  debug: bool, cmake_args: List[str], config: RotorConfig):
-    rotor_source_dir = os.path.join(source_dir, 'rotor')
-    rotor_build_dir = os.path.join(build_dir, 'rotor')
-    rotor_install_dir = os.path.join(install_dir, 'rotor')
-
-    clone_and_checkout(url='https://github.com/basiliscos/cpp-rotor.git',
-                       version=version,
-                       dir=rotor_source_dir,
-                       fetch=config.rotor_fetch,
-                       fetch_force=config.rotor_fetch_force)
-
-    if config.rotor_gen_force:
-        rm_rf(rotor_build_dir)
-
-    mkdir_p(rotor_build_dir)
-
-    configuration = "Debug" if debug else "Release"
-
-    if not os.path.exists(os.path.join(rotor_build_dir, 'CMakeCache.txt')) or config.rotor_gen:
-        with cd(rotor_build_dir):
-            cmd(['cmake', rotor_source_dir,
-                '-DBUILD_BOOST_ASIO=ON',
-                 '-DBoost_USE_STATIC_RUNTIME=ON',
-                 f'-DCMAKE_INSTALL_PREFIX={cmake_path(rotor_install_dir)}',
-                 f'-DCMAKE_BUILD_TYPE={configuration}',
-                 f'-DBOOST_ROOT={cmake_path(boost_root)}'] + cmake_args)
-
-    with cd(rotor_build_dir):
-        cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])
-        cmd(['cmake', '--install', '.', '--config', configuration])
-
-
-@versioned
 def install_cmake(version, source_dir, install_dir, platform: str, ext):
     url = f'https://github.com/Kitware/CMake/releases/download/v{version}/cmake-{version}-{platform}.{ext}'
     path = download(url, source_dir)
@@ -516,9 +482,9 @@ class PlatformTarget(object):
     @property
     def package_name(self):
         if self.os == 'windows':
-            return 'windows'
+            return f'windows_{self.arch}'
         if self.os == 'macos':
-            return f'macos-{self.osver}'
+            return f'macos_{self.osver}'
         if self.os == 'ubuntu':
             return f'ubuntu-{self.osver}_{self.arch}'
         if self.os == 'ios':
@@ -648,7 +614,7 @@ def install_deps(platform, source_dir, build_dir, install_dir, debug,
 
         # WebRTC
         if platform.target.os == 'windows':
-            webrtc_platform = 'windows'
+            webrtc_platform = f'windows_{platform.target.arch}'
         elif platform.target.os == 'macos':
             webrtc_platform = f'macos_{platform.target.arch}'
         elif platform.target.os == 'ios':
@@ -775,46 +741,10 @@ def install_deps(platform, source_dir, build_dir, install_dir, debug,
 
         add_path(os.path.join(install_dir, 'cmake', 'bin'))
 
-        # cpp-rotor
-        libcxx_include_dir = cmake_path(os.path.join(install_dir, 'llvm', 'libcxx', 'include'))
-        cmake_c_compiler = cmake_path(os.path.join(install_dir, 'llvm', 'clang', 'bin', 'clang'))
-        cmake_cxx_compiler = cmake_path(os.path.join(install_dir, 'llvm', 'clang', 'bin', 'clang++'))
-
-        install_rotor_args = {
-            'version': version['ROTOR_VERSION'],
-            'version_file': os.path.join(install_dir, 'rotor.version'),
-            'ignore_version': (rotor_config.rotor_fetch or
-                               rotor_config.rotor_fetch_force or
-                               rotor_config.rotor_gen or
-                               rotor_config.rotor_gen_force),
-            'source_dir': source_dir,
-            'build_dir': build_dir,
-            'install_dir': install_dir,
-            'boost_root': os.path.join(install_dir, 'boost'),
-            'cmake_args': [],
-            'debug': debug,
-            'config': rotor_config,
-        }
-        if platform.build.os == 'windows':
-            install_rotor_args['cmake_args'] = [
-                # MSVC runtime library flags are selected by an abstraction.
-                '-DCMAKE_POLICY_DEFAULT_CMP0091=NEW',
-                f'-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded{"Debug" if debug else ""}',
-                '-DCMAKE_CXX_FLAGS=/EHsc -D_HAS_ITERATOR_DEBUGGING=0',
-            ]
-        if platform.build.os != 'windows':
-            install_rotor_args['cmake_args'] = [
-                f'-DCMAKE_C_COMPILER={cmake_c_compiler}',
-                f'-DCMAKE_CXX_COMPILER={cmake_cxx_compiler}',
-                f"-DCMAKE_CXX_FLAGS=-D_LIBCPP_ABI_UNSTABLE -D_LIBCPP_DISABLE_AVAILABILITY \
-                    -nostdinc++ -isystem{libcxx_include_dir}",
-            ]
-        install_rotor(**install_rotor_args)
-
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("target", choices=['windows', 'macos_x86_64', 'macos_arm64', 'ubuntu-20.04_x86_64'])
+    parser.add_argument("target", choices=['windows_x86_64', 'macos_x86_64', 'macos_arm64', 'ubuntu-20.04_x86_64'])
     parser.add_argument("--debug", action='store_true')
     parser.add_argument("--webrtcbuild", action='store_true')
     parser.add_argument("--webrtcbuild-fetch", action='store_true')
@@ -825,13 +755,9 @@ def main():
     parser.add_argument("--webrtc-gen-force", action='store_true')
     parser.add_argument("--webrtc-extra-gn-args", default='')
     parser.add_argument("--webrtc-nobuild", action='store_true')
-    parser.add_argument("--rotor-fetch", action='store_true')
-    parser.add_argument("--rotor-fetch-force", action='store_true')
-    parser.add_argument("--rotor-gen", action='store_true')
-    parser.add_argument("--rotor-gen-force", action='store_true')
 
     args = parser.parse_args()
-    if args.target == 'windows':
+    if args.target == 'windows_x86_64':
         platform = Platform('windows', get_windows_osver(), 'x86_64')
     elif args.target == 'macos_x86_64':
         platform = Platform('macos', get_macos_osver(), 'x86_64')
@@ -865,10 +791,19 @@ def main():
         cmake_args = []
         cmake_args.append('-DCMAKE_BUILD_TYPE=Release')
         cmake_args.append(f"-DBOOST_ROOT={cmake_path(os.path.join(install_dir, 'boost'))}")
-        cmake_args.append(f"-DROTOR_ROOT_DIR={cmake_path(os.path.join(install_dir, 'rotor'))}")
         webrtc_info = get_webrtc_info(args.webrtcbuild, source_dir, build_dir, install_dir)
+        webrtc_version = read_version_file(webrtc_info.version_file)
+        with cd(BASE_DIR):
+            version = read_version_file('VERSION')
+            sora_cpp_sdk_version = version['SORA_CPP_SDK_VERSION']
+            sora_cpp_sdk_commit = cmdcap(['git', 'rev-parse', 'HEAD'])
         cmake_args.append(f"-DWEBRTC_INCLUDE_DIR={cmake_path(webrtc_info.webrtc_include_dir)}")
         cmake_args.append(f"-DWEBRTC_LIBRARY_DIR={cmake_path(webrtc_info.webrtc_library_dir)}")
+        cmake_args.append(f"-DSORA_CPP_SDK_VERSION={sora_cpp_sdk_version}")
+        cmake_args.append(f"-DSORA_CPP_SDK_COMMIT={sora_cpp_sdk_commit}")
+        cmake_args.append(f"-DWEBRTC_BUILD_VERSION={webrtc_version['WEBRTC_BUILD_VERSION']}")
+        cmake_args.append(f"-DWEBRTC_READABLE_VERSION={webrtc_version['WEBRTC_READABLE_VERSION']}")
+        cmake_args.append(f"-DWEBRTC_COMMIT={webrtc_version['WEBRTC_COMMIT']}")
         if platform.build.os == 'ubuntu':
             cmake_args.append(
                 f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(install_dir, 'llvm', 'clang', 'bin', 'clang'))}")

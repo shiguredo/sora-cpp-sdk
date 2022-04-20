@@ -4,7 +4,6 @@
             "name": "ubuntu-20.04_x86_64",
             "includePath": [
                 "${workspaceFolder}/_install/ubuntu-20.04_x86_64/boost/include",
-                "${workspaceFolder}/_install/ubuntu-20.04_x86_64/rotor/include",
                 "${workspaceFolder}/_install/ubuntu-20.04_x86_64/webrtc/include",
                 "${workspaceFolder}/_install/ubuntu-20.04_x86_64/webrtc/include/third_party/abseil-cpp",
                 "${workspaceFolder}/_install/ubuntu-20.04_x86_64/webrtc/include/third_party/boringssl/src/include",
@@ -27,13 +26,14 @@
         {
             "name": "Windows Release",
             "includePath": [
-                "${workspaceFolder}/_install/windows/release/boost/include",
-                "${workspaceFolder}/_install/windows/release/rotor/include",
-                "${workspaceFolder}/_install/windows/release/webrtc/include",
-                "${workspaceFolder}/_install/windows/release/webrtc/include/third_party/abseil-cpp",
-                "${workspaceFolder}/_install/windows/release/webrtc/include/third_party/boringssl/src/include",
-                "${workspaceFolder}/_install/windows/release/webrtc/include/third_party/libyuv/include",
-                "${workspaceFolder}/_install/windows/release/webrtc/include/third_party/zlib"
+                "${workspaceFolder}/_install/windows_x86_64/release/boost/include",
+                "${workspaceFolder}/_install/windows_x86_64/release/webrtc/include",
+                "${workspaceFolder}/_install/windows_x86_64/release/webrtc/include/third_party/abseil-cpp",
+                "${workspaceFolder}/_install/windows_x86_64/release/webrtc/include/third_party/boringssl/src/include",
+                "${workspaceFolder}/_install/windows_x86_64/release/webrtc/include/third_party/libyuv/include",
+                "${workspaceFolder}/_install/windows_x86_64/release/webrtc/include/third_party/zlib",
+                "${workspaceFolder}/_build/windows_x86_64/release/sora",
+                "${workspaceFolder}/src"
             ],
             "defines": [
                 "WEBRTC_WIN"
@@ -43,15 +43,16 @@
             "intelliSenseMode": "msvc-x64"
         },
         {
-            "name": "Windows Debug",
+            "name": "Windows Debug with WebRTC Source",
             "includePath": [
-                "${workspaceFolder}/_install/windows/debug/boost/include",
-                "${workspaceFolder}/_install/windows/debug/rotor/include",
-                "${workspaceFolder}/_source/windows/debug/webrtc/src",
-                "${workspaceFolder}/_source/windows/debug/webrtc/src/third_party/abseil-cpp",
-                "${workspaceFolder}/_source/windows/debug/webrtc/src/third_party/boringssl/src/include",
-                "${workspaceFolder}/_source/windows/debug/webrtc/src/third_party/libyuv/include",
-                "${workspaceFolder}/_source/windows/debug/webrtc/src/third_party/zlib"
+                "${workspaceFolder}/_install/windows_x86_64/debug/boost/include",
+                "${workspaceFolder}/_source/windows_x86_64/debug/webrtc/src",
+                "${workspaceFolder}/_source/windows_x86_64/debug/webrtc/src/third_party/abseil-cpp",
+                "${workspaceFolder}/_source/windows_x86_64/debug/webrtc/src/third_party/boringssl/src/include",
+                "${workspaceFolder}/_source/windows_x86_64/debug/webrtc/src/third_party/libyuv/include",
+                "${workspaceFolder}/_source/windows_x86_64/debug/webrtc/src/third_party/zlib",
+                "${workspaceFolder}/_build/windows_x86_64/debug/sora",
+                "${workspaceFolder}/src"
             ],
             "defines": [
                 "WEBRTC_WIN"
