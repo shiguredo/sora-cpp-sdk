@@ -11,6 +11,8 @@
         "editor.formatOnSave": true
     },
     "files.associations": {
+        "CMakeLists.txt": "cmake",
+        "VERSION": "shell",
         "*.cs": "csharp",
         "iostream": "cpp",
         "*.ipp": "cpp",

@@ -232,10 +232,10 @@ def is_single_dir_zip(zip: zipfile.ZipFile) -> Optional[str]:
 # - out/libsora/libsora-1.23/file2
 # - out/libsora/LICENSE
 # が出力される。
-def extract(file: str, output_dir: str, output_dirname: str):
+def extract(file: str, output_dir: str, output_dirname: str, filetype: Optional[str] = None):
     path = os.path.join(output_dir, output_dirname)
     logging.info(f"Extract {file} to {path}")
-    if file.endswith('.tar.gz'):
+    if filetype == 'gzip' or file.endswith('.tar.gz'):
         rm_rf(path)
         with tarfile.open(file) as t:
             dir = is_single_dir_tar(t)
@@ -250,7 +250,7 @@ def extract(file: str, output_dir: str, output_dirname: str):
                 if path != path2:
                     logging.debug(f"mv {path2} {path}")
                     os.replace(path2, path)
-    elif file.endswith('.zip'):
+    elif filetype == 'zip' or file.endswith('.zip'):
         rm_rf(path)
         with zipfile.ZipFile(file) as z:
             dir = is_single_dir_zip(z)
@@ -471,6 +471,23 @@ def install_cmake(version, source_dir, install_dir, platform: str, ext):
     url = f'https://github.com/Kitware/CMake/releases/download/v{version}/cmake-{version}-{platform}.{ext}'
     path = download(url, source_dir)
     extract(path, install_dir, 'cmake')
+
+
+@versioned
+def install_cuda_windows(version, source_dir, build_dir, install_dir):
+    rm_rf(os.path.join(build_dir, 'cuda'))
+    rm_rf(os.path.join(install_dir, 'cuda'))
+    if version == '10.2':
+        url = 'http://developer.download.nvidia.com/compute/cuda/10.2/Prod/local_installers/cuda_10.2.89_441.22_win10.exe'  # noqa: E501
+    else:
+        raise f'Unknown CUDA version {version}'
+    file = download(url, source_dir)
+
+    mkdir_p(os.path.join(build_dir, 'cuda'))
+    mkdir_p(os.path.join(install_dir, 'cuda'))
+    with cd(os.path.join(build_dir, 'cuda')):
+        cmd(['7z', 'x', file])
+    os.rename(os.path.join(build_dir, 'cuda', 'nvcc'), os.path.join(install_dir, 'cuda', 'nvcc'))
 
 
 class PlatformTarget(object):
@@ -741,6 +758,16 @@ def install_deps(platform, source_dir, build_dir, install_dir, debug,
 
         add_path(os.path.join(install_dir, 'cmake', 'bin'))
 
+        if platform.target.os == 'windows':
+            install_cuda_args = {
+                'version': version['CUDA_VERSION'],
+                'version_file': os.path.join(install_dir, 'cuda.version'),
+                'source_dir': source_dir,
+                'build_dir': build_dir,
+                'install_dir': install_dir,
+            }
+            install_cuda_windows(**install_cuda_args)
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -812,6 +839,10 @@ def main():
             cmake_args.append("-DUSE_LIBCXX=ON'")
             cmake_args.append(
                 f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(install_dir, 'llvm', 'libcxx', 'include'))}")
+        # NvCodec
+        if platform.target.os in ('windows', 'ubuntu'):
+            cmake_args.append('-DUSE_NVCODEC_ENCODER=ON')
+            cmake_args.append(f"-DCUDA_TOOLKIT_ROOT_DIR={cmake_path(os.path.join(install_dir, 'cuda', 'nvcc'))}")
 
         cmd(['cmake', BASE_DIR] + cmake_args)
         cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])

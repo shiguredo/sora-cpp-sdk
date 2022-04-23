@@ -1,4 +1,4 @@
-#include "version.h"
+#include "sora/version.h"
 
 #include <fstream>
 #include <sstream>

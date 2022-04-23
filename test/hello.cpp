@@ -24,8 +24,8 @@
 #include <rtc_base/win/scoped_com_initializer.h>
 #endif
 
-#include "device_video_capturer.h"
-#include "sora_signaling.h"
+#include "sora/device_video_capturer.h"
+#include "sora/sora_signaling.h"
 
 struct HelloSoraConfig {
   std::vector<std::string> signaling_urls;

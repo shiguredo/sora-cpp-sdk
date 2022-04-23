@@ -1,4 +1,4 @@
-#include "websocket.h"
+#include "sora/websocket.h"
 
 #include <utility>
 
@@ -12,7 +12,7 @@
 #include <boost/beast/core/buffers_to_string.hpp>
 #include <boost/beast/websocket/stream.hpp>
 
-#include "ssl_verifier.h"
+#include "sora/ssl_verifier.h"
 
 namespace sora {
 

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "device_video_capturer.h"
+#include "sora/device_video_capturer.h"
 
 #include <stdint.h>
 
