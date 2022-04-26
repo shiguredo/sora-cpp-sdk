@@ -132,6 +132,7 @@ class HelloSora : public std::enable_shared_from_this<HelloSora>,
     config.observer = shared_from_this();
     config.signaling_urls = config_.signaling_urls;
     config.channel_id = config_.channel_id;
+    config.sora_client = "Hello Sora";
     config.role = config_.role;
     config.video_codec_type = "H264";
     conn_ = sora::SoraSignaling::Create(config);
@@ -209,7 +210,7 @@ int main(int argc, char* argv[]) {
     config.signaling_urls.push_back(x.as_string().c_str());
   }
   config.channel_id = v.as_object().at("channel_id").as_string().c_str();
-  config.role = v.as_object().at("role").as_string().c_str();
+  config.role = "sendonly";
 
   std::shared_ptr<HelloSora> hello(new HelloSora(config));
   hello->Init();

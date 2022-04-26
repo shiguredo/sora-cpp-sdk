@@ -195,6 +195,10 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     m["redirect"] = true;
   }
 
+  if (!config_.sora_client.empty()) {
+    m["sora_client"] = config_.sora_client;
+  }
+
   if (config_.multistream) {
     m["multistream"] = true;
   }

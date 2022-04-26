@@ -49,6 +49,8 @@ struct SoraSignalingConfig {
   std::vector<std::string> signaling_urls;
   std::string channel_id;
 
+  std::string sora_client;
+
   bool insecure = false;
   bool video = true;
   bool audio = true;

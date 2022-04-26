@@ -782,6 +782,7 @@ def main():
     parser.add_argument("--webrtc-gen-force", action='store_true')
     parser.add_argument("--webrtc-extra-gn-args", default='')
     parser.add_argument("--webrtc-nobuild", action='store_true')
+    parser.add_argument("--test", action='store_true')
 
     args = parser.parse_args()
     if args.target == 'windows_x86_64':
@@ -846,7 +847,8 @@ def main():
 
         cmd(['cmake', BASE_DIR] + cmake_args)
         cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])
-        cmd(['ctest', '--verbose', '--build-config', configuration])
+        if args.test:
+            cmd(['ctest', '--verbose', '--build-config', configuration])
 
 
 if __name__ == '__main__':
