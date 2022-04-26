@@ -26,6 +26,8 @@
 
 #include "sora/device_video_capturer.h"
 #include "sora/sora_signaling.h"
+#include "sora/sora_video_decoder_factory.h"
+#include "sora/sora_video_encoder_factory.h"
 
 struct HelloSoraConfig {
   std::vector<std::string> signaling_urls;
@@ -82,10 +84,18 @@ class HelloSora : public std::enable_shared_from_this<HelloSora>,
     media_dependencies.audio_decoder_factory =
         webrtc::CreateBuiltinAudioDecoderFactory();
 
-    media_dependencies.video_encoder_factory =
-        webrtc::CreateBuiltinVideoEncoderFactory();
-    media_dependencies.video_decoder_factory =
-        webrtc::CreateBuiltinVideoDecoderFactory();
+    auto cuda_context = sora::CudaContext::Create();
+    {
+      auto config = sora::GetDefaultVideoEncoderFactoryConfig(cuda_context);
+      config.use_simulcast_adapter = true;
+      media_dependencies.video_encoder_factory =
+          absl::make_unique<sora::SoraVideoEncoderFactory>(std::move(config));
+    }
+    {
+      auto config = sora::GetDefaultVideoDecoderFactoryConfig(cuda_context);
+      media_dependencies.video_decoder_factory =
+          absl::make_unique<sora::SoraVideoDecoderFactory>(std::move(config));
+    }
 
     media_dependencies.audio_mixer = nullptr;
     media_dependencies.audio_processing =
@@ -123,6 +133,7 @@ class HelloSora : public std::enable_shared_from_this<HelloSora>,
     config.signaling_urls = config_.signaling_urls;
     config.channel_id = config_.channel_id;
     config.role = config_.role;
+    config.video_codec_type = "H264";
     conn_ = sora::SoraSignaling::Create(config);
     if (conn_ == nullptr) {
       RTC_LOG(LS_ERROR) << "Failed to sora::SoraSignaling::Create";

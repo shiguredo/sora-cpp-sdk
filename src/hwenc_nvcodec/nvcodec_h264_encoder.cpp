@@ -11,6 +11,8 @@
 #include "sora/dyn/nvcuvid.h"
 #endif
 
+namespace sora {
+
 const int kLowH264QpThreshold = 34;
 const int kHighH264QpThreshold = 40;
 
@@ -457,3 +459,5 @@ int32_t NvCodecH264Encoder::ReleaseNvEnc() {
   }
   return WEBRTC_VIDEO_CODEC_OK;
 }
+
+}  // namespace sora

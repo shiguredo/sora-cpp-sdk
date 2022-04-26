@@ -1,5 +1,5 @@
-#ifndef NVCODEC_H264_ENCODER_CUDA_H_
-#define NVCODEC_H264_ENCODER_CUDA_H_
+#ifndef SORA_HWENC_NVCODEC_NVCODEC_H264_ENCODER_CUDA_H_
+#define SORA_HWENC_NVCODEC_NVCODEC_H264_ENCODER_CUDA_H_
 
 // CUDA と WebRTC のヘッダを混ぜてコンパイルすると酷いことになったので、
 // CUDA の処理だけさせる単純な CUDA ファイルを用意する
@@ -9,7 +9,9 @@
 
 #include <NvEncoder/NvEncoder.h>
 
-#include "sora/cuda/cuda_context.h"
+#include "sora/cuda_context.h"
+
+namespace sora {
 
 class NvCodecH264EncoderCudaImpl;
 
@@ -26,4 +28,6 @@ class NvCodecH264EncoderCuda {
   NvCodecH264EncoderCudaImpl* impl_;
 };
 
-#endif  // NVCODEC_H264_ENCODER_CUDA_H_
+}  // namespace sora
+
+#endif

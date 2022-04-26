@@ -43,7 +43,8 @@
                 "${workspaceFolder}/include"
             ],
             "defines": [
-                "WEBRTC_WIN"
+                "WEBRTC_WIN",
+                "USE_NVCODEC_ENCODER=1"
             ],
             "cStandard": "gnu17",
             "cppStandard": "gnu++17",
@@ -65,7 +66,8 @@
                 "${workspaceFolder}/include"
             ],
             "defines": [
-                "WEBRTC_WIN"
+                "WEBRTC_WIN",
+                "USE_NVCODEC_ENCODER=1"
             ],
             "cStandard": "gnu17",
             "cppStandard": "gnu++17",

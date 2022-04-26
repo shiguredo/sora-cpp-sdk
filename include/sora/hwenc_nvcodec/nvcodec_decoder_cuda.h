@@ -1,10 +1,12 @@
-#ifndef NVCODEC_DECODER_CUDA_H_
-#define NVCODEC_DECODER_CUDA_H_
+#ifndef SORA_HWENC_NVCODEC_NVCODEC_DECODER_CUDA_H_
+#define SORA_HWENC_NVCODEC_NVCODEC_DECODER_CUDA_H_
 
 #include <memory>
 #include <string>
 
-#include "sora/cuda/cuda_context.h"
+#include "sora/cuda_context.h"
+
+namespace sora {
 
 class NvCodecDecoderCuda {
  public:
@@ -24,5 +26,7 @@ class NvCodecDecoderCuda {
  private:
   std::shared_ptr<void> impl_;
 };
+
+}  // namespace sora
 
 #endif

@@ -1,3 +1,21 @@
+#include "sora/cuda_context.h"
+
+#if !USE_NVCODEC_ENCODER
+
+namespace sora {
+
+std::shared_ptr<CudaContext> CudaContext::Create() {
+  return nullptr;
+}
+
+void* CudaContext::Context() const {
+  return nullptr;
+}
+
+}  // namespace sora
+
+#else
+
 #include "cuda_context_cuda.h"
 
 #include <NvDecoder/NvDecoder.h>
@@ -7,6 +25,8 @@
 // どこかにグローバルな logger の定義が必要
 simplelogger::Logger* logger =
     simplelogger::LoggerFactory::CreateConsoleLogger();
+
+namespace sora {
 
 CUcontext GetCudaContext(std::shared_ptr<CudaContext> ctx) {
   return static_cast<CUcontext>(ctx->Context());
@@ -50,3 +70,7 @@ std::shared_ptr<CudaContext> CudaContext::Create() {
 void* CudaContext::Context() const {
   return std::static_pointer_cast<CudaContextImpl>(impl_)->context;
 }
+
+}  // namespace sora
+
+#endif

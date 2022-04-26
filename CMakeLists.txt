@@ -38,18 +38,26 @@ target_include_directories(sora PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_sources(sora
   PRIVATE
     src/data_channel.cpp
+    src/default_video_formats.cpp
     src/device_video_capturer.cpp
     src/rtc_ssl_verifier.cpp
     src/rtc_stats.cpp
     src/scalable_track_source.cpp
     src/session_description.cpp
     src/sora_signaling.cpp
+    src/sora_video_decoder_factory.cpp
+    src/sora_video_encoder_factory.cpp
     src/ssl_verifier.cpp
     src/url_parts.cpp
     src/version.cpp
     src/websocket.cpp
     src/zlib_helper.cpp
 )
+
+# NvCodec が無効な場合もダミーの実装をコンパイルする
+if (NOT USE_NVCODEC_ENCODER)
+  target_sources(sora PRIVATE src/cuda_context_cuda.cpp)
+endif()
 
 target_link_libraries(sora
   PUBLIC
@@ -146,14 +154,14 @@ if (WIN32)
     find_package(CUDA REQUIRED)
 
     set_source_files_properties(
-        src/cuda/cuda_context_cuda.cpp
+        src/cuda_context_cuda.cpp
         NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
         src/hwenc_nvcodec/nvcodec_decoder_cuda.cpp
       PROPERTIES
         CUDA_SOURCE_PROPERTY_FORMAT OBJ
     )
     cuda_compile(CUDA_FILES
-        src/cuda/cuda_context_cuda.cpp
+        src/cuda_context_cuda.cpp
         NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
         src/hwenc_nvcodec/nvcodec_decoder_cuda.cpp
       OPTIONS
@@ -161,6 +169,9 @@ if (WIN32)
         -Xcompiler /I${CMAKE_CURRENT_SOURCE_DIR}/NvCodec/include
         -Xcompiler /I${CMAKE_CURRENT_SOURCE_DIR}/NvCodec/NvCodec
         -Xcompiler /I${CMAKE_CURRENT_SOURCE_DIR}/include
+        -Xcompiler "/MT$<$<CONFIG:Debug>:d>"
+        -Xcompiler /D_HAS_ITERATOR_DEBUGGING=0
+        -Xcompiler /DUSE_NVCODEC_ENCODER=1
     )
     target_sources(sora PRIVATE ${CUDA_FILES})
     target_include_directories(sora PRIVATE ${CUDA_INCLUDE_DIRS})
@@ -171,6 +182,12 @@ if (WIN32)
     )
   endif()
 elseif (APPLE)
+  target_sources(sora
+    PRIVATE
+      src/macos/mac_capturer.mm
+      src/macos/macos_version.mm
+      src/macos/macos_video_factory.mm
+  )
 
   target_compile_options(sora PRIVATE -fconstant-string-class=NSConstantString -mmacosx-version-min=11.0)
   target_link_options(sora PRIVATE -ObjC)
@@ -232,7 +249,7 @@ elseif (UNIX)
   if (USE_NVCODEC_ENCODER)
     target_sources(sora
       PRIVATE
-        src/cuda/cuda_context_cuda.cpp
+        src/cuda_context_cuda.cpp
         src/hwenc_nvcodec/nvcodec_h264_encoder.cpp
         src/hwenc_nvcodec/nvcodec_v4l2_capturer.cpp
         src/hwenc_nvcodec/nvcodec_h264_encoder_cuda.cpp
@@ -249,7 +266,7 @@ elseif (UNIX)
 
     # これらのソースは CUDA としてコンパイルする
     set_source_files_properties(
-        src/cuda/cuda_context_cuda.cpp
+        src/cuda_context_cuda.cpp
         src/hwenc_nvcodec/nvcodec_h264_encoder_cuda.cpp
         src/hwenc_nvcodec/nvcodec_decoder_cuda.cpp
         NvCodec/NvCodec/NvDecoder/NvDecoder.cpp

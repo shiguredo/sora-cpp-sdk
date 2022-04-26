@@ -20,7 +20,7 @@
 #endif
 
 #if defined(__APPLE__)
-#include "mac_helper/macos_version.h"
+#include "sora/macos/macos_version.h"
 #endif
 
 // バージョンやコミットハッシュ情報

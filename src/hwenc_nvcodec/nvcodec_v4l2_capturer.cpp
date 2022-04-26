@@ -8,6 +8,8 @@
 #include <modules/video_capture/video_capture_factory.h>
 #include <rtc_base/logging.h>
 
+namespace sora {
+
 rtc::scoped_refptr<V4L2VideoCapturer> NvCodecV4L2Capturer::Create(
     NvCodecV4L2CapturerConfig config) {
   rtc::scoped_refptr<V4L2VideoCapturer> capturer;
@@ -112,3 +114,5 @@ void NvCodecV4L2Capturer::OnCaptured(uint8_t* data, uint32_t bytesused) {
                 .build());
   }
 }
+
+}  // namespace sora

@@ -11,9 +11,10 @@
         "editor.formatOnSave": true
     },
     "files.associations": {
+        "*.cs": "csharp",
+        "*.txt": "plaintext",
         "CMakeLists.txt": "cmake",
         "VERSION": "shell",
-        "*.cs": "csharp",
         "iostream": "cpp",
         "*.ipp": "cpp",
         "exception": "cpp",
@@ -22,6 +23,7 @@
         "memory": "cpp",
         "functional": "cpp",
         "xtr1common": "cpp",
-        "chrono": "cpp"
+        "chrono": "cpp",
+        "vector": "cpp"
     }
 }

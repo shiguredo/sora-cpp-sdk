@@ -1,5 +1,5 @@
-#ifndef NVCODEC_H264_ENCODER_H_
-#define NVCODEC_H264_ENCODER_H_
+#ifndef SORA_HWENC_NVCODEC_NVCODEC_H264_ENCODER_H_
+#define SORA_HWENC_NVCODEC_NVCODEC_H264_ENCODER_H_
 
 #ifdef _WIN32
 #include <d3d11.h>
@@ -23,8 +23,10 @@
 #endif
 #ifdef __linux__
 #include "nvcodec_h264_encoder_cuda.h"
-#include "sora/cuda/cuda_context.h"
+#include "sora/cuda_context.h"
 #endif
+
+namespace sora {
 
 class NvCodecH264Encoder : public webrtc::VideoEncoder {
  public:
@@ -84,4 +86,6 @@ class NvCodecH264Encoder : public webrtc::VideoEncoder {
   webrtc::EncodedImage encoded_image_;
 };
 
-#endif  // NVCODEC_H264_ENCODER_H_
+}  // namespace sora
+
+#endif

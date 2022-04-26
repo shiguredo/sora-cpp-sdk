@@ -816,7 +816,7 @@ def main():
     mkdir_p(sora_build_dir)
     with cd(sora_build_dir):
         cmake_args = []
-        cmake_args.append('-DCMAKE_BUILD_TYPE=Release')
+        cmake_args.append(f'-DCMAKE_BUILD_TYPE={configuration}')
         cmake_args.append(f"-DBOOST_ROOT={cmake_path(os.path.join(install_dir, 'boost'))}")
         webrtc_info = get_webrtc_info(args.webrtcbuild, source_dir, build_dir, install_dir)
         webrtc_version = read_version_file(webrtc_info.version_file)

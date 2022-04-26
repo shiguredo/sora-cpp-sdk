@@ -1,8 +1,10 @@
-#ifndef NVCODEC_V4L2_CAPTURER_H_
-#define NVCODEC_V4L2_CAPTURER_H_
+#ifndef SORA_HWENC_NVCODEC_NVCODEC_V4L2_CAPTURER_H_
+#define SORA_HWENC_NVCODEC_NVCODEC_V4L2_CAPTURER_H_
 
 #include "nvcodec_decoder_cuda.h"
 #include "sora/v4l2_video_capturer.h"
+
+namespace sora {
 
 struct NvCodecV4L2CapturerConfig : V4L2VideoCapturerConfig {
   NvCodecV4L2CapturerConfig(const V4L2VideoCapturerConfig& config) {
@@ -29,4 +31,6 @@ class NvCodecV4L2Capturer : public V4L2VideoCapturer {
   std::shared_ptr<NvCodecDecoderCuda> decoder_;
 };
 
-#endif  // NVCODEC_V4L2_CAPTURER_H_
+}  // namespace sora
+
+#endif

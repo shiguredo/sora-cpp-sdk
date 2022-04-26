@@ -3,6 +3,8 @@
 
 #include <memory>
 
+namespace sora {
+
 // <cuda.h> に依存せずに CUDA のコンテキストを表す
 class CudaContext {
  public:
@@ -19,5 +21,7 @@ enum class CudaVideoCodec {
   VP9,
   JPEG,
 };
+
+}  // namespace sora
 
 #endif

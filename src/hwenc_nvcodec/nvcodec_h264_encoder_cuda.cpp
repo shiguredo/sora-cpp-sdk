@@ -6,8 +6,10 @@
 #include <NvDecoder/NvDecoder.h>
 #include <NvEncoder/NvEncoderCuda.h>
 
-#include "../cuda/cuda_context_cuda.h"
+#include "../cuda_context_cuda.h"
 #include "sora/dyn/cuda.h"
+
+namespace sora {
 
 class NvCodecH264EncoderCudaImpl {
  public:
@@ -172,3 +174,5 @@ NvEncoder* NvCodecH264EncoderCudaImpl::CreateNvEncoder(int width,
   CUcontext context = GetCudaContext(cuda_context_);
   return new NvEncoderCuda(context, width, height, nvenc_format);
 }
+
+}  // namespace sora

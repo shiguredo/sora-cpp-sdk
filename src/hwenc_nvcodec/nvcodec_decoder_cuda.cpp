@@ -2,7 +2,9 @@
 
 #include <NvDecoder/NvDecoder.h>
 
-#include "../cuda/cuda_context_cuda.h"
+#include "../cuda_context_cuda.h"
+
+namespace sora {
 
 static cudaVideoCodec ToCudaVideoCodec(CudaVideoCodec codec) {
   return codec == CudaVideoCodec::H264  ? cudaVideoCodec_H264
@@ -90,3 +92,5 @@ int NvCodecDecoderCuda::GetDeviceFramePitch() const {
 int NvCodecDecoderCuda::setReconfigParams() {
   return GetDecoder(impl_)->setReconfigParams(nullptr, nullptr);
 }
+
+}  // namespace sora

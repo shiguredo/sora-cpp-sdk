@@ -10,6 +10,8 @@
 #include "sora/dyn/cuda.h"
 #include "sora/dyn/nvcuvid.h"
 
+namespace sora {
+
 NvCodecVideoDecoder::NvCodecVideoDecoder(std::shared_ptr<CudaContext> ctx,
                                          CudaVideoCodec codec)
     : context_(ctx),
@@ -125,3 +127,5 @@ bool NvCodecVideoDecoder::InitNvCodec() {
 void NvCodecVideoDecoder::ReleaseNvCodec() {
   decoder_.reset();
 }
+
+}  // namespace sora
