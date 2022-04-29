@@ -91,42 +91,41 @@ target_compile_definitions(sora
 )
 
 # 指定したライブラリを自身の静的ライブラリにバンドルする
-function(bundle_static_library tgt_name static_lib bundled_tgt_name)
+function(bundle_static_library target static_lib bundled_target)
+  file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/bundled)
   set(bundled_tgt_full_name
-    ${CMAKE_BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${bundled_tgt_name}${CMAKE_STATIC_LIBRARY_SUFFIX})
+    ${CMAKE_BINARY_DIR}/bundled/${CMAKE_STATIC_LIBRARY_PREFIX}${target}${CMAKE_STATIC_LIBRARY_SUFFIX})
 
   if (MSVC)
     add_custom_command(
-      COMMAND ${CMAKE_AR} /NOLOGO /OUT:${bundled_tgt_full_name} $<TARGET_FILE:${tgt_name}> ${static_lib}
+      COMMAND ${CMAKE_AR} /NOLOGO /OUT:${bundled_tgt_full_name} $<TARGET_FILE:${target}> ${static_lib}
       OUTPUT ${bundled_tgt_full_name}
-      COMMENT "Bundling ${bundled_tgt_name}"
       VERBATIM)
   else ()
-    file(WRITE  ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in "CREATE ${bundled_tgt_full_name}\n" )
-    file(APPEND ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in "ADDLIB $<TARGET_FILE:${tgt_name}>\n")
-    file(APPEND ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in "ADDLIB ${static_lib}\n")
-    file(APPEND ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in "SAVE\n")
-    file(APPEND ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in "END\n")
+    file(WRITE  ${CMAKE_BINARY_DIR}/${bundled_target}.ar.in "CREATE ${bundled_tgt_full_name}\n" )
+    file(APPEND ${CMAKE_BINARY_DIR}/${bundled_target}.ar.in "ADDLIB $<TARGET_FILE:${target}>\n")
+    file(APPEND ${CMAKE_BINARY_DIR}/${bundled_target}.ar.in "ADDLIB ${static_lib}\n")
+    file(APPEND ${CMAKE_BINARY_DIR}/${bundled_target}.ar.in "SAVE\n")
+    file(APPEND ${CMAKE_BINARY_DIR}/${bundled_target}.ar.in "END\n")
     file(GENERATE
-      OUTPUT ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar
-      INPUT ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in)
+      OUTPUT ${CMAKE_BINARY_DIR}/${bundled_target}.ar
+      INPUT ${CMAKE_BINARY_DIR}/${bundled_target}.ar.in)
 
     add_custom_command(
-      COMMAND ${CMAKE_AR} -M < ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar
+      COMMAND ${CMAKE_AR} -M < ${CMAKE_BINARY_DIR}/${bundled_target}.ar
       OUTPUT ${bundled_tgt_full_name}
-      COMMENT "Bundling ${bundled_tgt_name}"
       VERBATIM)
   endif()
 
-  add_custom_target(bundling_target ALL DEPENDS ${bundled_tgt_full_name})
-  add_dependencies(bundling_target ${tgt_name})
+  add_custom_target(${bundled_target}_bundling ALL DEPENDS ${bundled_tgt_full_name})
+  add_dependencies(${bundled_target}_bundling ${target})
 
-  add_library(${bundled_tgt_name} STATIC IMPORTED)
-  set_target_properties(${bundled_tgt_name}
+  add_library(${bundled_target} STATIC IMPORTED)
+  set_target_properties(${bundled_target}
     PROPERTIES
       IMPORTED_LOCATION ${bundled_tgt_full_name}
-      INTERFACE_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:${tgt_name},INTERFACE_INCLUDE_DIRECTORIES>)
-  add_dependencies(${bundled_tgt_name} bundling_target)
+      INTERFACE_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:${target},INTERFACE_INCLUDE_DIRECTORIES>)
+  add_dependencies(${bundled_target} ${bundled_target}_bundling)
 endfunction()
 
 if (WIN32)
@@ -330,24 +329,11 @@ elseif (UNIX)
 endif()
 
 include(GNUInstallDirs)
+
 install(TARGETS sora
   EXPORT sora-config
   FILE_SET HEADERS
-  INCLUDES DESTINATION include
 )
-# ライブラリをインストールする
-# 場合によってはバンドルされたライブラリをインストールする必要があるので分岐させる
-if(TARGET bundled_sora)
-  install(FILES $<TARGET_FILE:bundled_sora>
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RENAME $<TARGET_FILE_NAME:sora>
-  )
-else()
-  install(TARGETS sora
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-  )
-endif()
-
 install(EXPORT sora-config
   DESTINATION ${CMAKE_INSTALL_DATADIR}/sora
   NAMESPACE Sora::

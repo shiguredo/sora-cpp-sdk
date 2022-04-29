@@ -852,6 +852,13 @@ def main():
         cmd(['cmake', BASE_DIR] + cmake_args)
         cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])
         cmd(['cmake', '--install', '.'])
+        # バンドルされたライブラリをインストールする
+        if platform.target.os == 'windows':
+            shutil.copyfile(os.path.join(sora_build_dir, 'bundled', 'sora.lib'),
+                            os.path.join(install_dir, 'sora', 'lib', 'sora.lib'))
+        else:
+            shutil.copyfile(os.path.join(sora_build_dir, 'bundled', 'libsora.a'),
+                            os.path.join(install_dir, 'sora', 'lib', 'libsora.a'))
 
     if args.test:
         test_build_dir = os.path.join(build_dir, 'test')
