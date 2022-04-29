@@ -783,6 +783,8 @@ def main():
     parser.add_argument("--webrtc-extra-gn-args", default='')
     parser.add_argument("--webrtc-nobuild", action='store_true')
     parser.add_argument("--test", action='store_true')
+    parser.add_argument("--run", action='store_true')
+    parser.add_argument("--package", action='store_true')
 
     args = parser.parse_args()
     if args.target == 'windows_x86_64':
@@ -804,6 +806,7 @@ def main():
     source_dir = os.path.join(BASE_DIR, '_source', dir, configuration)
     build_dir = os.path.join(BASE_DIR, '_build', dir, configuration)
     install_dir = os.path.join(BASE_DIR, '_install', dir, configuration)
+    package_dir = os.path.join(BASE_DIR, '_package', dir, configuration)
     mkdir_p(source_dir)
     mkdir_p(build_dir)
     mkdir_p(install_dir)
@@ -818,6 +821,7 @@ def main():
     with cd(sora_build_dir):
         cmake_args = []
         cmake_args.append(f'-DCMAKE_BUILD_TYPE={configuration}')
+        cmake_args.append(f"-DCMAKE_INSTALL_PREFIX={cmake_path(os.path.join(install_dir, 'sora'))}")
         cmake_args.append(f"-DBOOST_ROOT={cmake_path(os.path.join(install_dir, 'boost'))}")
         webrtc_info = get_webrtc_info(args.webrtcbuild, source_dir, build_dir, install_dir)
         webrtc_version = read_version_file(webrtc_info.version_file)
@@ -847,8 +851,54 @@ def main():
 
         cmd(['cmake', BASE_DIR] + cmake_args)
         cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])
-        if args.test:
-            cmd(['ctest', '--verbose', '--build-config', configuration])
+        cmd(['cmake', '--install', '.'])
+
+    if args.test:
+        test_build_dir = os.path.join(build_dir, 'test')
+        mkdir_p(test_build_dir)
+        with cd(test_build_dir):
+            cmake_args = []
+            cmake_args.append(f'-DCMAKE_BUILD_TYPE={configuration}')
+            cmake_args.append(f"-DBOOST_ROOT={cmake_path(os.path.join(install_dir, 'boost'))}")
+            cmake_args.append(f"-DWEBRTC_INCLUDE_DIR={cmake_path(webrtc_info.webrtc_include_dir)}")
+            cmake_args.append(f"-DWEBRTC_LIBRARY_DIR={cmake_path(webrtc_info.webrtc_library_dir)}")
+            cmake_args.append(f"-DSORA_DIR={cmake_path(os.path.join(install_dir, 'sora'))}")
+            cmake_args.append(f"-DCUDA_TOOLKIT_ROOT_DIR={cmake_path(os.path.join(install_dir, 'cuda', 'nvcc'))}")
+            cmd(['cmake', os.path.join(BASE_DIR, 'test')] + cmake_args)
+            cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])
+            if args.run:
+                if platform.target.os == 'windows':
+                    cmd([os.path.join(test_build_dir, configuration, 'hello.exe'),
+                        os.path.join(BASE_DIR, 'test', '.testparam.json')])
+                else:
+                    cmd([os.path.join(test_build_dir, 'hello'), os.path.join(BASE_DIR, 'test', '.testparam.json')])
+
+    if args.package:
+        mkdir_p(package_dir)
+        rm_rf(os.path.join(package_dir, 'sora'))
+        rm_rf(os.path.join(package_dir, 'sora.env'))
+
+        with cd(BASE_DIR):
+            version = read_version_file('VERSION')
+            sora_cpp_sdk_version = version['SORA_CPP_SDK_VERSION']
+
+        with cd(install_dir):
+            if platform.target.os == 'windows':
+                archive_path = os.path.join(package_dir, f'sora-cpp-sdk-{sora_cpp_sdk_version}.zip')
+                with zipfile.ZipFile(archive_path, 'w') as f:
+                    for file in enum_all_files('sora', '.'):
+                        f.write(filename=file, arcname=file)
+                with open(os.path.join(package_dir, 'sora.env'), 'w') as f:
+                    f.write('CONTENT_TYPE=application/zip\n')
+                    f.write(f'PACKAGE_NAME=sora-cpp-sdk-{sora_cpp_sdk_version}.zip\n')
+            else:
+                archive_path = os.path.join(package_dir, f'sora-cpp-sdk-{sora_cpp_sdk_version}.tar.gz')
+                with tarfile.open(archive_path, 'w:gz') as f:
+                    for file in enum_all_files('sora', '.'):
+                        f.add(name=file, arcname=file)
+                with open(os.path.join(package_dir, 'sora.env'), 'w') as f:
+                    f.write("CONTENT_TYPE=application/gzip\n")
+                    f.write(f'PACKAGE_NAME=sora-cpp-sdk-{sora_cpp_sdk_version}.tar.gz\n')
 
 
 if __name__ == '__main__':

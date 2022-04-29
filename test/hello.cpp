@@ -165,6 +165,7 @@ class HelloSora : public std::enable_shared_from_this<HelloSora>,
   }
   void OnDisconnect(sora::SoraSignalingErrorCode ec,
                     std::string message) override {
+    std::cout << "OnDisconnect: " << message << std::endl;
     ioc_->stop();
   }
   void OnNotify(std::string text) override {}

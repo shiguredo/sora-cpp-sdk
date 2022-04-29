@@ -1,4 +1,5 @@
 /_install
 /_build
 /_source
+/_package
 /test/*.json

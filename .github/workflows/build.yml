@@ -1,0 +1,249 @@
+name: build-workflow
+
+on:
+  push:
+    paths-ignore:
+    - 'doc/**'
+    - '**.md'
+    - 'LICENSE'
+    - 'NOTICE'
+
+jobs:
+  build-windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        name:
+          - windows_x86_64
+    name: Build sora-cpp-sdk for ${{ matrix.name }}
+    runs-on: windows-2019
+    steps:
+      - uses: actions/checkout@v3
+      - uses: microsoft/setup-msbuild@v1.1
+      - name: Get Versions
+        run: |
+          Get-Content "VERSION" | Foreach-Object {
+            if (!$_) { continue }
+            $var = $_.Split('=')
+            New-Variable -Name $var[0] -Value $var[1] -Force
+          }
+          echo "::set-output name=cuda_version::${CUDA_VERSION}"
+        id: versions
+      # CUDA のインストールバイナリのダウンロードは 3GB ぐらいあって、
+      # ビルドの度に取得するのはつらいのでキャッシュする
+      # （インストールする nvcc は解凍後で 100MB 程度なのでキャッシュ可能）
+      - name: Cache NVCC ${{ steps.versions.outputs.cuda_version }}
+        id: cache-cuda
+        uses: actions/cache@v3
+        with:
+          path: _install\windows_x86_64\release\cuda\nvcc
+          key: windows-cuda-${{ steps.versions.outputs.cuda_version }}.v1
+      - run: echo "${CUDA_VERSION}" > _install\windows_x86_64\release\cuda.version
+        if: steps.cache-cuda.outputs.cache-hit == 'true'
+      - run: python3 run.py --test --package ${{ name }}
+      - name: Get package name
+        run: |
+          Get-Content "_package\${{ matrix.name }}\release\sora.env" | Foreach-Object {
+            if (!$_) { continue }
+            $var = $_.Split('=')
+            New-Variable -Name $var[0] -Value $var[1] -Force
+          }
+          echo "::set-output name=name::${PACKAGE_NAME}"
+        id: package_name
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.package_name.outputs.name }}
+          path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.name }}
+      - name: Upload Environment
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.name }}.env
+          path: _package/${{ matrix.name }}/release/sora.env
+  #build-macos:
+  #  strategy:
+  #    fail-fast: false
+  #    matrix:
+  #      name:
+  #        - macos_x86_64
+  #  name: Build momo for ${{ matrix.name }}
+  #  runs-on: macos-11.0
+  #  steps:
+  #    - uses: actions/checkout@v3
+  #    - run: python3 run.py --test --package ${{ name }}
+  #    - name: Get package name
+  #      run: |
+  #        source _package/${{ matrix.name }}/release/sora.env
+  #        echo "::set-output name=name::${PACKAGE_NAME}"
+  #      id: package_name
+  #    - name: Upload Artifact
+  #      uses: actions/upload-artifact@v3
+  #      with:
+  #        name: ${{ steps.package_name.outputs.name }}
+  #        path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.name }}
+  #    - name: Upload Environment
+  #      uses: actions/upload-artifact@v3
+  #      with:
+  #        name: ${{ matrix.name }}.env
+  #        path: _package/${{ matrix.name }}/release/sora.env
+  #build-ubuntu-18.04:
+  #  strategy:
+  #    fail-fast: false
+  #    matrix:
+  #      name:
+  #        - raspberry-pi-os_armv6
+  #        - raspberry-pi-os_armv7
+  #        - raspberry-pi-os_armv8
+  #        - ubuntu-18.04_armv8_jetson_nano
+  #        - ubuntu-18.04_armv8_jetson_xavier
+  #        - ubuntu-18.04_x86_64
+  #  name: Build sora-cpp-sdk for ${{ matrix.name }}
+  #  runs-on: ubuntu-18.04
+  #  steps:
+  #    - uses: actions/checkout@v3
+  #    - run: python3 run.py --test --package ${{ name }}
+  #    - name: Get package name
+  #      run: |
+  #        source _package/${{ matrix.name }}/release/sora.env
+  #        echo "::set-output name=name::${PACKAGE_NAME}"
+  #      id: package_name
+  #    - name: Upload Artifact
+  #      uses: actions/upload-artifact@v3
+  #      with:
+  #        name: ${{ steps.package_name.outputs.name }}
+  #        path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.name }}
+  #    - name: Upload Environment
+  #      uses: actions/upload-artifact@v3
+  #      with:
+  #        name: ${{ matrix.name }}.env
+  #        path: _package/${{ matrix.name }}/release/sora.env
+  #build-ubuntu-20.04:
+  #  strategy:
+  #    fail-fast: false
+  #    matrix:
+  #      name:
+  #        - ubuntu-20.04_x86_64
+  #  name: Build sora-cpp-sdk for ${{ matrix.name }}
+  #  runs-on: ubuntu-20.04
+  #  steps:
+  #    - uses: actions/checkout@v3
+  #    - run: python3 run.py --test --package ${{ name }}
+  #    - name: Get package name
+  #      run: |
+  #        source _package/${{ matrix.name }}/release/sora.env
+  #        echo "::set-output name=name::${PACKAGE_NAME}"
+  #      id: package_name
+  #    - name: Upload Artifact
+  #      uses: actions/upload-artifact@v3
+  #      with:
+  #        name: ${{ steps.package_name.outputs.name }}
+  #        path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.name }}
+  #    - name: Upload Environment
+  #      uses: actions/upload-artifact@v3
+  #      with:
+  #        name: ${{ matrix.name }}.env
+  #        path: _package/${{ matrix.name }}/release/sora.env
+  create-release:
+    name: Create Release
+    if: contains(github.ref, 'tags/202')
+    needs:
+      - build-windows
+      #- build-macos
+      #- build-ubuntu-18.04
+      #- build-ubuntu-20.04
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1.1.4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+      - name: Output upload url
+        shell: bash
+        run: echo "UPLOAD_URL='${{ steps.create_release.outputs.upload_url }}'" > create-release.env
+      - name: Upload create-release Environment
+        uses: actions/upload-artifact@v3
+        with:
+          name: create-release.env
+          path: create-release.env
+  upload-assets:
+    name: Upload Assets to Release
+    needs:
+      - create-release
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        name:
+          - windows_x86_64
+          #- macos_arm64
+          #- macos_x86_64
+          #- raspberry-pi-os_armv6
+          #- raspberry-pi-os_armv7
+          #- raspberry-pi-os_armv8
+          #- ubuntu-18.04_armv8_jetson_nano
+          #- ubuntu-18.04_armv8_jetson_xavier
+          #- ubuntu-18.04_x86_64
+          #- ubuntu-20.04_x86_64
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: ${{ matrix.name }}.env
+          path: ${{ matrix.name }}.env
+      - uses: actions/download-artifact@v3
+        with:
+          name: create-release.env
+          path: create-release.env
+      - name: Env to output
+        shell: bash
+        run: |
+          source ${{ matrix.name }}.env/sora.env
+          source create-release.env/create-release.env
+          echo "::set-output name=package_name::$PACKAGE_NAME"
+          echo "::set-output name=content_type::$CONTENT_TYPE"
+          echo "::set-output name=upload_url::$UPLOAD_URL"
+        id: env
+      - uses: actions/download-artifact@v3
+        with:
+          name: ${{ steps.env.outputs.package_name }}
+          path: ${{ steps.env.outputs.package_name }}
+      - name: Upload ${{ matrix.name }} Release Asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.env.outputs.upload_url }}
+          asset_path: ${{ steps.env.outputs.package_name }}/${{ steps.env.outputs.package_name }}
+          asset_name: ${{ steps.env.outputs.package_name }}
+          asset_content_type: ${{ steps.env.outputs.content_type }}
+  #notification:
+  #  name: Slack Notification
+  #  runs-on: ubuntu-latest
+  #  needs:
+  #    - build-windows
+  #    - build-macos
+  #    - build-ubuntu-18.04
+  #    - build-ubuntu-20.04
+  #    - create-release
+  #    - upload-assets
+  #  if: always()
+  #  steps:
+  #    - uses: actions/checkout@v3
+  #    - uses: rtCamp/action-slack-notify@v2
+  #      if: |
+  #        needs.build-windows.result == 'failure' ||
+  #        needs.build-macos.result == 'failure' ||
+  #        needs.build-ubuntu-18.04.result == 'failure' ||
+  #        needs.build-ubuntu-20.04.result == 'failure' ||
+  #        needs.create-release.result == 'failure' ||
+  #        needs.upload-assets.result == 'failure'
+  #      env:
+  #        SLACK_CHANNEL: open-momo
+  #        SLACK_COLOR: danger
+  #        SLACK_TITLE: Failure build
+  #        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}

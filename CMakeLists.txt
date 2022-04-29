@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.23)
 
 # Only interpret if() arguments as variables or keywords when unquoted.
 cmake_policy(SET CMP0054 NEW)
@@ -22,12 +22,13 @@ if (WIN32)
 endif()
 
 find_package(WebRTC REQUIRED)
-find_package(Boost REQUIRED COMPONENTS filesystem json date_time system regex)
+find_package(Boost REQUIRED COMPONENTS json)
 find_package(Threads REQUIRED)
 
 # libsora.a を作る
 
 add_library(sora STATIC)
+add_library(sora::sora ALIAS sora)
 set_target_properties(sora PROPERTIES CXX_STANDARD 17 C_STANDARD 17)
 
 string(SUBSTRING "${SORA_CPP_SDK_COMMIT}" 0 8 SORA_CPP_SDK_COMMIT_SHORT)
@@ -54,6 +55,14 @@ target_sources(sora
     src/zlib_helper.cpp
 )
 
+# インストールするヘッダーファイル
+file(GLOB_RECURSE SORA_HEADERS RELATIVE ${CMAKE_SOURCE_DIR} "include/*")
+target_sources(sora
+  PUBLIC
+    FILE_SET HEADERS
+    BASE_DIRS include
+    FILES ${SORA_HEADERS})
+
 # NvCodec が無効な場合もダミーの実装をコンパイルする
 if (NOT USE_NVCODEC_ENCODER)
   target_sources(sora PRIVATE src/cuda_context_cuda.cpp)
@@ -62,14 +71,12 @@ endif()
 target_link_libraries(sora
   PUBLIC
     WebRTC::WebRTC
-    Boost::filesystem
-    Boost::system
     Boost::json
 )
 
 if (USE_LIBCXX)
   target_compile_options(sora
-    PUBLIC
+    PRIVATE
       "$<$<COMPILE_LANGUAGE:CXX>:-nostdinc++>"
       "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<BOOL:LIBCXX_INCLUDE_DIR>>:-isystem${LIBCXX_INCLUDE_DIR}>"
   )
@@ -82,6 +89,45 @@ target_compile_definitions(sora
   PRIVATE
     USE_NVCODEC_ENCODER=$<BOOL:${USE_NVCODEC_ENCODER}>
 )
+
+# 指定したライブラリを自身の静的ライブラリにバンドルする
+function(bundle_static_library tgt_name static_lib bundled_tgt_name)
+  set(bundled_tgt_full_name
+    ${CMAKE_BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${bundled_tgt_name}${CMAKE_STATIC_LIBRARY_SUFFIX})
+
+  if (MSVC)
+    add_custom_command(
+      COMMAND ${CMAKE_AR} /NOLOGO /OUT:${bundled_tgt_full_name} $<TARGET_FILE:${tgt_name}> ${static_lib}
+      OUTPUT ${bundled_tgt_full_name}
+      COMMENT "Bundling ${bundled_tgt_name}"
+      VERBATIM)
+  else ()
+    file(WRITE  ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in "CREATE ${bundled_tgt_full_name}\n" )
+    file(APPEND ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in "ADDLIB $<TARGET_FILE:${tgt_name}>\n")
+    file(APPEND ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in "ADDLIB ${static_lib}\n")
+    file(APPEND ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in "SAVE\n")
+    file(APPEND ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in "END\n")
+    file(GENERATE
+      OUTPUT ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar
+      INPUT ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in)
+
+    add_custom_command(
+      COMMAND ${CMAKE_AR} -M < ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar
+      OUTPUT ${bundled_tgt_full_name}
+      COMMENT "Bundling ${bundled_tgt_name}"
+      VERBATIM)
+  endif()
+
+  add_custom_target(bundling_target ALL DEPENDS ${bundled_tgt_full_name})
+  add_dependencies(bundling_target ${tgt_name})
+
+  add_library(${bundled_tgt_name} STATIC IMPORTED)
+  set_target_properties(${bundled_tgt_name}
+    PROPERTIES
+      IMPORTED_LOCATION ${bundled_tgt_full_name}
+      INTERFACE_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:${tgt_name},INTERFACE_INCLUDE_DIRECTORIES>)
+  add_dependencies(${bundled_tgt_name} bundling_target)
+endfunction()
 
 if (WIN32)
   # 文字コードを utf-8 として扱うのと、シンボルテーブル数を増やす
@@ -118,7 +164,7 @@ if (WIN32)
   )
 
   target_compile_definitions(sora
-    PUBLIC
+    PRIVATE
       _CONSOLE
       _WIN32_WINNT=0x0A00
       WEBRTC_WIN
@@ -126,6 +172,10 @@ if (WIN32)
       WIN32_LEAN_AND_MEAN
       UNICODE
       _UNICODE
+  )
+  target_compile_definitions(sora
+    PUBLIC
+      WEBRTC_WIN
       _HAS_ITERATOR_DEBUGGING=0
   )
 
@@ -175,11 +225,8 @@ if (WIN32)
     )
     target_sources(sora PRIVATE ${CUDA_FILES})
     target_include_directories(sora PRIVATE ${CUDA_INCLUDE_DIRS})
-    target_link_libraries(sora
-      PRIVATE
-        ${CUDA_TOOLKIT_ROOT_DIR}/lib/x64/cudart_static.lib 
-        #${CUDA_LIBRARIES}
-    )
+    # CUDA を要求したくないので sora.lib に含める
+    bundle_static_library(sora ${CUDA_TOOLKIT_ROOT_DIR}/lib/x64/cudart_static.lib bundled_sora)
   endif()
 elseif (APPLE)
   target_sources(sora
@@ -276,24 +323,35 @@ elseif (UNIX)
     )
 
     target_link_directories(sora PRIVATE /usr/local/cuda/lib64)
-    target_link_libraries(sora PRIVATE cudart_static dl rt)
+    # CUDA を要求したくないので libsora.a に含める
+    bundle_static_library(sora /usr/local/cuda/lib/libcudart_static.a bundled_sora)
+    target_link_libraries(sora PRIVATE dl rt)
   endif()
 endif()
 
-
-
-
-# テスト用バイナリを作る
-enable_testing()
-add_executable(test_hello test/hello.cpp)
-set_target_properties(test_hello PROPERTIES CXX_STANDARD 17 C_STANDARD 17)
-set_target_properties(test_hello PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-target_compile_options(test_hello PRIVATE /utf-8 /bigobj)
-target_include_directories(test_hello PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_link_libraries(test_hello PRIVATE sora)
-SET(CTEST_OUTPUT_ON_FAILURE ON)
-add_test(
-  NAME test_hello
-  COMMAND $<TARGET_FILE:test_hello> ${CMAKE_CURRENT_SOURCE_DIR}/test/.testparam.json
+include(GNUInstallDirs)
+install(TARGETS sora
+  EXPORT sora-config
+  FILE_SET HEADERS
+  INCLUDES DESTINATION include
 )
-# set_tests_properties(test_hello PROPERTIES TIMEOUT 3) 
+# ライブラリをインストールする
+# 場合によってはバンドルされたライブラリをインストールする必要があるので分岐させる
+if(TARGET bundled_sora)
+  install(FILES $<TARGET_FILE:bundled_sora>
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RENAME $<TARGET_FILE_NAME:sora>
+  )
+else()
+  install(TARGETS sora
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  )
+endif()
+
+install(EXPORT sora-config
+  DESTINATION ${CMAKE_INSTALL_DATADIR}/sora
+  NAMESPACE Sora::
+)
+install(FILES cmake/FindWebRTC.cmake
+  DESTINATION ${CMAKE_INSTALL_DATADIR}/cmake
+)
