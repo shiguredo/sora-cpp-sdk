@@ -33,10 +33,6 @@ rtc::scoped_refptr<V4L2VideoCapturer> NvCodecV4L2Capturer::Create(
   return nullptr;
 }
 
-bool NvCodecV4L2Capturer::UseNativeBuffer() {
-  return true;
-}
-
 rtc::scoped_refptr<V4L2VideoCapturer> NvCodecV4L2Capturer::Create(
     webrtc::VideoCaptureModule::DeviceInfo* device_info,
     NvCodecV4L2CapturerConfig config,

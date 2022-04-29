@@ -375,7 +375,7 @@ def install_llvm(version, install_dir,
         cmd(['git', 'clone', tools_url, 'tools'])
         with cd('tools'):
             cmd(['git', 'reset', '--hard', tools_commit])
-            cmd(['python',
+            cmd(['python3',
                 os.path.join('clang', 'scripts', 'update.py'),
                 '--output-dir', os.path.join(llvm_dir, 'clang')])
 
@@ -403,20 +403,18 @@ def install_boost(
     extract(archive, output_dir=build_dir, output_dirname='boost')
     with cd(os.path.join(build_dir, 'boost')):
         bootstrap = '.\\bootstrap.bat' if target_os == 'windows' else './bootstrap.sh'
+        b2 = 'b2' if target_os == 'windows' else './b2'
+        runtime_link = 'static' if target_os == 'windows' else 'shared'
 
         cmd([bootstrap])
         if len(cxx) != 0:
             with open('project-config.jam', 'w') as f:
                 f.write(f'using {toolset} : : {cxx} : ;')
         cmd([
-            'b2',
+            b2,
             'install',
             f'--prefix={os.path.join(install_dir, "boost")}',
-            '--with-filesystem',
             '--with-json',
-            '--with-date_time',
-            '--with-regex',
-            '--with-system',
             '--layout=system',
             '--ignore-site-config',
             f'variant={"debug" if debug else "release"}',
@@ -426,7 +424,7 @@ def install_boost(
             f'target-os={target_os}',
             'address-model=64',
             'link=static',
-            'runtime-link=static',
+            f'runtime-link={runtime_link}',
             'threading=multi'])
 
 #  && /root/setup_boost.sh "$BOOST_VERSION" /root/boost-source /root/_cache/boost \
@@ -477,7 +475,7 @@ def install_cmake(version, source_dir, install_dir, platform: str, ext):
 def install_cuda_windows(version, source_dir, build_dir, install_dir):
     rm_rf(os.path.join(build_dir, 'cuda'))
     rm_rf(os.path.join(install_dir, 'cuda'))
-    if version == '10.2':
+    if version == '10.2.89-1':
         url = 'http://developer.download.nvidia.com/compute/cuda/10.2/Prod/local_installers/cuda_10.2.89_441.22_win10.exe'  # noqa: E501
     else:
         raise f'Unknown CUDA version {version}'
@@ -707,15 +705,17 @@ def install_deps(platform, source_dir, build_dir, install_dir, debug,
             'install_dir': install_dir,
             'cxx': '',
             'cxxflags': [],
-            'toolset': 'msvc',
+            'toolset': '',
             'visibility': 'global',
-            'target_os': 'windows',
+            'target_os': '',
             'debug': debug,
         }
         if platform.target.os == 'windows':
             install_boost_args['cxxflags'] = [
                 '-D_HAS_ITERATOR_DEBUGGING=0'
             ]
+            install_boost_args['toolset'] = 'msvc'
+            install_boost_args['target_os'] = 'windows'
         else:
             install_boost_args['cxx'] = os.path.join(install_dir, 'llvm', 'clang', 'bin', 'clang++')
             install_boost_args['cxxflags'] = [
@@ -723,6 +723,7 @@ def install_deps(platform, source_dir, build_dir, install_dir, debug,
                 '-D_LIBCPP_DISABLE_AVAILABILITY',
                 '-nostdinc++',
                 f"-isystem{os.path.join(install_dir, 'llvm', 'libcxx', 'include')}",
+                '-fPIC',
             ]
             install_boost_args['toolset'] = 'clang'
             install_boost_args['visibility'] = 'global'
@@ -836,18 +837,23 @@ def main():
         cmake_args.append(f"-DWEBRTC_BUILD_VERSION={webrtc_version['WEBRTC_BUILD_VERSION']}")
         cmake_args.append(f"-DWEBRTC_READABLE_VERSION={webrtc_version['WEBRTC_READABLE_VERSION']}")
         cmake_args.append(f"-DWEBRTC_COMMIT={webrtc_version['WEBRTC_COMMIT']}")
-        if platform.build.os == 'ubuntu':
-            cmake_args.append(
-                f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(install_dir, 'llvm', 'clang', 'bin', 'clang'))}")
-            cmake_args.append(
-                f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(install_dir, 'llvm', 'clang', 'bin', 'clang++'))}")
+        if platform.target.os == 'ubuntu':
+            if platform.target.package_name == 'ubuntu-20.04_x86_64':
+                cmake_args.append("-DCMAKE_C_COMPILER=clang-10")
+                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-10")
+            else:
+                cmake_args.append(
+                    f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(install_dir, 'llvm', 'clang', 'bin', 'clang'))}")
+                cmake_args.append(
+                    f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(install_dir, 'llvm', 'clang', 'bin', 'clang++'))}")
             cmake_args.append("-DUSE_LIBCXX=ON'")
             cmake_args.append(
                 f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(install_dir, 'llvm', 'libcxx', 'include'))}")
         # NvCodec
         if platform.target.os in ('windows', 'ubuntu'):
             cmake_args.append('-DUSE_NVCODEC_ENCODER=ON')
-            cmake_args.append(f"-DCUDA_TOOLKIT_ROOT_DIR={cmake_path(os.path.join(install_dir, 'cuda', 'nvcc'))}")
+            if platform.target.os == 'windows':
+                cmake_args.append(f"-DCUDA_TOOLKIT_ROOT_DIR={cmake_path(os.path.join(install_dir, 'cuda', 'nvcc'))}")
 
         cmd(['cmake', BASE_DIR] + cmake_args)
         cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])
@@ -871,6 +877,10 @@ def main():
             cmake_args.append(f"-DWEBRTC_LIBRARY_DIR={cmake_path(webrtc_info.webrtc_library_dir)}")
             cmake_args.append(f"-DSORA_DIR={cmake_path(os.path.join(install_dir, 'sora'))}")
             cmake_args.append(f"-DCUDA_TOOLKIT_ROOT_DIR={cmake_path(os.path.join(install_dir, 'cuda', 'nvcc'))}")
+            if platform.target.os == 'ubuntu':
+                cmake_args.append("-DUSE_LIBCXX=ON'")
+                cmake_args.append(
+                    f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(install_dir, 'llvm', 'libcxx', 'include'))}")
             cmd(['cmake', os.path.join(BASE_DIR, 'test')] + cmake_args)
             cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])
             if args.run:

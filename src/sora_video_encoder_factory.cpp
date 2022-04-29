@@ -133,12 +133,14 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
                   absl::make_unique<NvCodecH264Encoder>(
                       cricket::VideoCodec(format), cuda_context));
             }
+#else
+            [](auto format) {
+              return std::unique_ptr<webrtc::VideoEncoder>(
+                  absl::make_unique<NvCodecH264Encoder>(
+                      cricket::VideoCodec(format)));
+            }
 #endif
-                [](auto format) {
-                  return std::unique_ptr<webrtc::VideoEncoder>(
-                      absl::make_unique<NvCodecH264Encoder>(
-                          cricket::VideoCodec(format)));
-                }));
+            ));
   }
 #endif
 

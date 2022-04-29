@@ -273,24 +273,24 @@ elseif (UNIX)
   target_compile_definitions(sora PUBLIC _LIBCPP_ABI_UNSTABLE _LIBCPP_DISABLE_AVAILABILITY)
 
   set_target_properties(sora PROPERTIES POSITION_INDEPENDENT_CODE ON)
-  #target_link_libraries(sora
-  #  PRIVATE
-  #    X11
-  #    Xau
-  #    Xdmcp
-  #    Xtst
-  #    xcb
-  #    plds4
-  #    Xext
-  #    expat
-  #    dl
-  #    nss3
-  #    nssutil3
-  #    plc4
-  #    nspr4
-  #    rt
-  #    Threads::Threads
-  #)
+  target_link_libraries(sora
+    PRIVATE
+      X11
+      #Xau
+      #Xdmcp
+      #Xtst
+      #xcb
+      #plds4
+      #Xext
+      #expat
+      dl
+      #nss3
+      #nssutil3
+      #plc4
+      #nspr4
+      rt
+      Threads::Threads
+  )
 
   if (USE_NVCODEC_ENCODER)
     target_sources(sora
@@ -321,10 +321,8 @@ elseif (UNIX)
         COMPILE_OPTIONS "-xcuda;--cuda-gpu-arch=sm_35;-std=gnu++14"
     )
 
-    target_link_directories(sora PRIVATE /usr/local/cuda/lib64)
     # CUDA を要求したくないので libsora.a に含める
-    bundle_static_library(sora /usr/local/cuda/lib/libcudart_static.a bundled_sora)
-    target_link_libraries(sora PRIVATE dl rt)
+    bundle_static_library(sora /usr/local/cuda/lib64/libcudart_static.a bundled_sora)
   endif()
 endif()
 
