@@ -86,7 +86,7 @@ jobs:
   #      with:
   #        name: ${{ matrix.name }}.env
   #        path: _package/${{ matrix.name }}/release/sora.env
-  #build-ubuntu-18.04:
+  #build-ubuntu-1804:
   #  strategy:
   #    fail-fast: false
   #    matrix:
@@ -117,7 +117,7 @@ jobs:
   #      with:
   #        name: ${{ matrix.name }}.env
   #        path: _package/${{ matrix.name }}/release/sora.env
-  build-ubuntu-20.04:
+  build-ubuntu-2004:
     strategy:
       fail-fast: false
       matrix:
@@ -162,8 +162,8 @@ jobs:
     needs:
       - build-windows
       #- build-macos
-      #- build-ubuntu-18.04
-      - build-ubuntu-20.04
+      #- build-ubuntu-1804
+      - build-ubuntu-2004
     runs-on: ubuntu-latest
     steps:
       - name: Create Release
@@ -240,8 +240,8 @@ jobs:
   #  needs:
   #    - build-windows
   #    - build-macos
-  #    - build-ubuntu-18.04
-  #    - build-ubuntu-20.04
+  #    - build-ubuntu-1804
+  #    - build-ubuntu-2004
   #    - create-release
   #    - upload-assets
   #  if: always()
@@ -251,8 +251,8 @@ jobs:
   #      if: |
   #        needs.build-windows.result == 'failure' ||
   #        needs.build-macos.result == 'failure' ||
-  #        needs.build-ubuntu-18.04.result == 'failure' ||
-  #        needs.build-ubuntu-20.04.result == 'failure' ||
+  #        needs.build-ubuntu-1804.result == 'failure' ||
+  #        needs.build-ubuntu-2004.result == 'failure' ||
   #        needs.create-release.result == 'failure' ||
   #        needs.upload-assets.result == 'failure'
   #      env:
