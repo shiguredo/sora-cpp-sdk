@@ -100,7 +100,7 @@ SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
   auto config = GetSoftwareOnlyVideoDecoderFactoryConfig();
 
 #if defined(__APPLE__)
-  config.encoders.insert(config.encoders.begin(),
+  config.decoders.insert(config.decoders.begin(),
                          VideoDecoderConfig(CreateMacosVideoDecoderFactory()));
 #endif
 

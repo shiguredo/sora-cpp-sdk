@@ -42,7 +42,7 @@ class MacCapturer : public ScalableVideoTrackSource {
               AVCaptureDevice* device);
   virtual ~MacCapturer();
 
-  void OnFrame(const webrtc::VideoFrame& frame) override;
+  void OnFrame(const webrtc::VideoFrame& frame);
 
  private:
   void Destroy();

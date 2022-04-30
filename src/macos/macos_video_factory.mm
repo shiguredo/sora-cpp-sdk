@@ -18,6 +18,8 @@
 #import <sdk/objc/components/video_codec/RTCDefaultVideoDecoderFactory.h>
 #import <sdk/objc/components/video_codec/RTCDefaultVideoEncoderFactory.h>
 
+namespace sora {
+
 std::unique_ptr<webrtc::VideoEncoderFactory> CreateMacosVideoEncoderFactory() {
   return webrtc::ObjCToNativeVideoEncoderFactory(
       [[RTCDefaultVideoEncoderFactory alloc] init]);
@@ -26,4 +28,6 @@ std::unique_ptr<webrtc::VideoEncoderFactory> CreateMacosVideoEncoderFactory() {
 std::unique_ptr<webrtc::VideoDecoderFactory> CreateMacosVideoDecoderFactory() {
   return webrtc::ObjCToNativeVideoDecoderFactory(
       [[RTCDefaultVideoDecoderFactory alloc] init]);
+}
+
 }

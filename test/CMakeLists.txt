@@ -61,5 +61,6 @@ if (WIN32)
       _UNICODE
   )
 elseif (APPLE)
+  set_target_properties(hello PROPERTIES CXX_VISIBILITY_PRESET hidden)
 elseif (UNIX)
 endif()

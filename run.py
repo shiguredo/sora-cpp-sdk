@@ -499,7 +499,7 @@ class PlatformTarget(object):
         if self.os == 'windows':
             return f'windows_{self.arch}'
         if self.os == 'macos':
-            return f'macos_{self.osver}'
+            return f'macos_{self.arch}'
         if self.os == 'ubuntu':
             return f'ubuntu-{self.osver}_{self.arch}'
         if self.os == 'ios':
@@ -672,7 +672,7 @@ def install_deps(platform, source_dir, build_dir, install_dir, debug,
         webrtc_version = read_version_file(webrtc_info.version_file)
 
         # Windows は MSVC を使うので LLVM は不要
-        if platform.target.os != 'windows':
+        if platform.build.os == 'ubuntu':
             # LLVM
             tools_url = webrtc_version['WEBRTC_SRC_TOOLS_URL']
             tools_commit = webrtc_version['WEBRTC_SRC_TOOLS_COMMIT']
@@ -716,6 +716,18 @@ def install_deps(platform, source_dir, build_dir, install_dir, debug,
             ]
             install_boost_args['toolset'] = 'msvc'
             install_boost_args['target_os'] = 'windows'
+        elif platform.target.os == 'macos':
+            install_boost_args['target_os'] = 'darwin'
+            install_boost_args['toolset'] = 'clang'
+            install_boost_args['cxxflags'] = [
+                '-std=gnu++17'
+            ]
+        elif platform.target.os == 'ios':
+            install_boost_args['target_os'] = 'iphone'
+            install_boost_args['toolset'] = 'clang'
+            install_boost_args['cxxflags'] = [
+                '-std=gnu++17'
+            ]
         else:
             install_boost_args['cxx'] = os.path.join(install_dir, 'llvm', 'clang', 'bin', 'clang++')
             install_boost_args['cxxflags'] = [
@@ -726,13 +738,7 @@ def install_deps(platform, source_dir, build_dir, install_dir, debug,
                 '-fPIC',
             ]
             install_boost_args['toolset'] = 'clang'
-            install_boost_args['visibility'] = 'global'
-            if platform.target.os == 'macos':
-                install_boost_args['target_os'] = 'darwin'
-            if platform.target.os == 'ios':
-                install_boost_args['target_os'] = 'iphone'
-            else:
-                install_boost_args['target_os'] = 'linux'
+            install_boost_args['target_os'] = 'linux'
         install_boost(**install_boost_args)
 
         # CMake
@@ -757,7 +763,10 @@ def install_deps(platform, source_dir, build_dir, install_dir, debug,
             raise Exception('Failed to install CMake')
         install_cmake(**install_cmake_args)
 
-        add_path(os.path.join(install_dir, 'cmake', 'bin'))
+        if platform.build.os == 'macos':
+            add_path(os.path.join(install_dir, 'cmake', 'CMake.app', 'Contents', 'bin'))
+        else:
+            add_path(os.path.join(install_dir, 'cmake', 'bin'))
 
         if platform.target.os == 'windows':
             install_cuda_args = {
@@ -862,7 +871,7 @@ def main():
         if platform.target.os == 'windows':
             shutil.copyfile(os.path.join(sora_build_dir, 'bundled', 'sora.lib'),
                             os.path.join(install_dir, 'sora', 'lib', 'sora.lib'))
-        else:
+        elif platform.target.os == 'ubuntu':
             shutil.copyfile(os.path.join(sora_build_dir, 'bundled', 'libsora.a'),
                             os.path.join(install_dir, 'sora', 'lib', 'libsora.a'))
 
@@ -876,11 +885,12 @@ def main():
             cmake_args.append(f"-DWEBRTC_INCLUDE_DIR={cmake_path(webrtc_info.webrtc_include_dir)}")
             cmake_args.append(f"-DWEBRTC_LIBRARY_DIR={cmake_path(webrtc_info.webrtc_library_dir)}")
             cmake_args.append(f"-DSORA_DIR={cmake_path(os.path.join(install_dir, 'sora'))}")
-            cmake_args.append(f"-DCUDA_TOOLKIT_ROOT_DIR={cmake_path(os.path.join(install_dir, 'cuda', 'nvcc'))}")
             if platform.target.os == 'ubuntu':
                 cmake_args.append("-DUSE_LIBCXX=ON'")
                 cmake_args.append(
                     f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(install_dir, 'llvm', 'libcxx', 'include'))}")
+            if platform.build.os == 'macos':
+                cmake_args.append('-DCMAKE_FIND_FRAMEWORK=LAST')
             cmd(['cmake', os.path.join(BASE_DIR, 'test')] + cmake_args)
             cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])
             if args.run:

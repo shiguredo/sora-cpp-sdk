@@ -20,7 +20,7 @@
 #import <sdk/objc/native/src/objc_frame_buffer.h>
 
 @interface RTCVideoSourceAdapter : NSObject <RTCVideoCapturerDelegate>
-@property(nonatomic) MacCapturer* capturer;
+@property(nonatomic) sora::MacCapturer* capturer;
 @end
 
 @implementation RTCVideoSourceAdapter
@@ -63,6 +63,8 @@ AVCaptureDeviceFormat* SelectClosestFormat(AVCaptureDevice* device,
 }
 
 }  // namespace
+
+namespace sora {
 
 MacCapturer::MacCapturer(size_t width,
                          size_t height,
@@ -156,4 +158,6 @@ MacCapturer::~MacCapturer() {
 
 void MacCapturer::OnFrame(const webrtc::VideoFrame& frame) {
   OnCapturedFrame(frame);
+}
+
 }

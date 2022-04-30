@@ -74,6 +74,8 @@
 
 ****************************************************************************************************/
 
+namespace sora {
+
 std::string MacosVersion::GetOSName() {
 // 今は Mac かどうかだけ分かれば良いだけなので、TARGET_OS_MAC で分ける
 #if TARGET_OS_MAC
@@ -87,4 +89,6 @@ std::string MacosVersion::GetOSVersion() {
   // "Version 10.8.2 (Build 12C60)" みたいな文字列を取得できる
   NSString* str = NSProcessInfo.processInfo.operatingSystemVersionString;
   return [str UTF8String];
+}
+
 }

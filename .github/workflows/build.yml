@@ -60,32 +60,32 @@ jobs:
         with:
           name: ${{ matrix.name }}.env
           path: _package/${{ matrix.name }}/release/sora.env
-  #build-macos:
-  #  strategy:
-  #    fail-fast: false
-  #    matrix:
-  #      name:
-  #        - macos_x86_64
-  #  name: Build momo for ${{ matrix.name }}
-  #  runs-on: macos-11.0
-  #  steps:
-  #    - uses: actions/checkout@v3
-  #    - run: python3 run.py --test --package ${{ matrix.name }}
-  #    - name: Get package name
-  #      run: |
-  #        source _package/${{ matrix.name }}/release/sora.env
-  #        echo "::set-output name=name::${PACKAGE_NAME}"
-  #      id: package_name
-  #    - name: Upload Artifact
-  #      uses: actions/upload-artifact@v3
-  #      with:
-  #        name: ${{ steps.package_name.outputs.name }}
-  #        path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.name }}
-  #    - name: Upload Environment
-  #      uses: actions/upload-artifact@v3
-  #      with:
-  #        name: ${{ matrix.name }}.env
-  #        path: _package/${{ matrix.name }}/release/sora.env
+  build-macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        name:
+          - macos_x86_64
+    name: Build momo for ${{ matrix.name }}
+    runs-on: macos-11.0
+    steps:
+      - uses: actions/checkout@v3
+      - run: python3 run.py --test --package ${{ matrix.name }}
+      - name: Get package name
+        run: |
+          source _package/${{ matrix.name }}/release/sora.env
+          echo "::set-output name=name::${PACKAGE_NAME}"
+        id: package_name
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.package_name.outputs.name }}
+          path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.name }}
+      - name: Upload Environment
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.name }}.env
+          path: _package/${{ matrix.name }}/release/sora.env
   #build-ubuntu-1804:
   #  strategy:
   #    fail-fast: false

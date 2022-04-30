@@ -29,6 +29,10 @@
 #include "sora/sora_video_decoder_factory.h"
 #include "sora/sora_video_encoder_factory.h"
 
+#if defined(__APPLE__)
+#include "sora/macos/mac_capturer.h"
+#endif
+
 struct HelloSoraConfig {
   std::vector<std::string> signaling_urls;
   std::string channel_id;
@@ -113,7 +117,11 @@ class HelloSora : public std::enable_shared_from_this<HelloSora>,
     factory_options.crypto_options.srtp.enable_gcm_crypto_suites = true;
     factory_->SetOptions(factory_options);
 
+#if defined(__APPLE__)
+    auto video_track_source = sora::MacCapturer::Create(640, 480, 30, "");
+#else
     auto video_track_source = sora::DeviceVideoCapturer::Create(640, 480, 30);
+#endif
 
     std::string audio_track_id = "0123456789abcdef";
     std::string video_track_id = "0123456789abcdefg";

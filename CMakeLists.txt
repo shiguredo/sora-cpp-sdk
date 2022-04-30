@@ -228,6 +228,8 @@ if (WIN32)
     bundle_static_library(sora ${CUDA_TOOLKIT_ROOT_DIR}/lib/x64/cudart_static.lib bundled_sora)
   endif()
 elseif (APPLE)
+  enable_language(OBJCXX)
+
   target_sources(sora
     PRIVATE
       src/macos/mac_capturer.mm
@@ -236,7 +238,7 @@ elseif (APPLE)
   )
 
   target_compile_options(sora PRIVATE -fconstant-string-class=NSConstantString -mmacosx-version-min=11.0)
-  target_link_options(sora PRIVATE -ObjC)
+  target_link_options(sora PUBLIC -ObjC)
   set_target_properties(sora PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
   target_compile_definitions(sora
@@ -245,24 +247,25 @@ elseif (APPLE)
       WEBRTC_MAC
   )
 
-  #target_link_libraries(sora
-  #  PRIVATE
-  #    "-framework Foundation"
-  #    "-framework AVFoundation"
-  #    "-framework CoreServices"
-  #    "-framework CoreFoundation"
-  #    "-framework AudioUnit"
-  #    "-framework AudioToolbox"
-  #    "-framework CoreAudio"
-  #    "-framework CoreGraphics"
-  #    "-framework CoreMedia"
-  #    "-framework CoreVideo"
-  #    "-framework VideoToolbox"
-  #    "-framework AppKit"
-  #    "-framework Metal"
-  #    "-framework MetalKit"
-  #    "-framework OpenGL"
-  #)
+  target_link_libraries(sora
+    PUBLIC
+      #"-framework Foundation"
+      "-framework AVFoundation"
+      #"-framework CoreServices"
+      #"-framework CoreFoundation"
+      #"-framework AudioUnit"
+      "-framework AudioToolbox"
+      "-framework CoreAudio"
+      "-framework QuartzCore"
+      #"-framework CoreGraphics"
+      "-framework CoreMedia"
+      #"-framework CoreVideo"
+      "-framework VideoToolbox"
+      "-framework AppKit"
+      "-framework Metal"
+      "-framework MetalKit"
+      "-framework OpenGL"
+  )
 
 elseif (UNIX)
   target_compile_definitions(sora

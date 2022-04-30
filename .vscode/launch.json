@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "cl.exe - アクティブ ファイルのビルドとデバッグ",
+            "name": "Windows Debug ビルドのデバッグ",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}\\_build\\windows_x86_64\\debug\\sora\\Debug\\test_hello.exe",
@@ -16,6 +16,19 @@
             "console": "externalTerminal",
             "justMyCode": true
             //"preLaunchTask": "C/C++: cl.exe アクティブなファイルのビルド"
-        }
+        },
+        {
+            "name": "macOS リリースビルドのデバッグ",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/_build/macos_x86_64/release/test/hello",
+            "args": ["${workspaceFolder}/test/.testparam.json"],
+            "stopAtEntry": false,
+            "cwd": "${fileDirname}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "lldb"
+        },
+
     ]
 }
