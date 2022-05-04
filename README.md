@@ -19,11 +19,17 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
 
 ## 動作環境
 
-- Ubuntu 20.04 x86_64
-- Android
-- iOS
-- Windows
-- macOS
+- windows_x86_64
+- macos_arm64
+- macos_x86_64
+- ubuntu-20.04_armv8
+    - Jetson AGX Orin
+    - Jetson AGX Xavier
+    - Jetson Xavier NX
+- ubuntu-22.04_x86_64
+- ubuntu-20.04_x86_64
+- android_arm64
+- ios_arm64
 
 ## 対応 Sora
 
