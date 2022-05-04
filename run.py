@@ -986,7 +986,7 @@ def main():
                         f.write(filename=file, arcname=file)
                 with open(os.path.join(package_dir, 'sora.env'), 'w') as f:
                     f.write('CONTENT_TYPE=application/zip\n')
-                    f.write(f'{archive_name}\n')
+                    f.write(f'PACKAGE_NAME={archive_name}\n')
             else:
                 archive_name = f'sora-cpp-sdk-{sora_cpp_sdk_version}_{platform.target.package_name}.tar.gz'
                 archive_path = os.path.join(package_dir, archive_name)
@@ -995,7 +995,7 @@ def main():
                         f.add(name=file, arcname=file)
                 with open(os.path.join(package_dir, 'sora.env'), 'w') as f:
                     f.write("CONTENT_TYPE=application/gzip\n")
-                    f.write(f'{archive_name}\n')
+                    f.write(f'PACKAGE_NAME={archive_name}\n')
 
 
 if __name__ == '__main__':

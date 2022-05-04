@@ -67,7 +67,7 @@ jobs:
         name:
           - macos_x86_64
           - ios
-    name: Build momo for ${{ matrix.name }}
+    name: Build sora-cpp-sdk for ${{ matrix.name }}
     runs-on: macos-11.0
     steps:
       - uses: actions/checkout@v3
