@@ -5,6 +5,7 @@ cmake_policy(SET CMP0054 NEW)
 # MSVC runtime library flags are selected by an abstraction.
 cmake_policy(SET CMP0091 NEW)
 
+set(SORA_CPP_SDK_TARGET "" CACHE STRING "ビルドターゲット")
 set(WEBRTC_INCLUDE_DIR "" CACHE PATH "WebRTC のインクルードディレクトリ")
 set(WEBRTC_LIBRARY_DIR "" CACHE PATH "WebRTC のライブラリディレクトリ")
 set(WEBRTC_LIBRARY_NAME "webrtc" CACHE STRING "WebRTC のライブラリ名")
@@ -14,6 +15,29 @@ set(USE_NVCODEC_ENCODER OFF CACHE BOOL "NVIDIA Video Codec SDK によるハー�
 
 project(sora-cpp-sdk C CXX)
 
+set(SORA_TARGET ${SORA_CPP_SDK_TARGET})
+
+if (SORA_TARGET STREQUAL "windows_x86_64")
+  set(SORA_TARGET_OS "windows")
+  set(SORA_TARGET_ARCH "x86_64")
+  set(SORA_TARGET_DEF "SORA_CPP_SDK_WINDOWS")
+elseif (SORA_TARGET STREQUAL "macos_x86_64")
+  set(SORA_TARGET_OS "macos")
+  set(SORA_TARGET_ARCH "x86_64")
+  set(SORA_TARGET_DEF "SORA_CPP_SDK_MACOS")
+elseif (SORA_TARGET STREQUAL "ios")
+  set(SORA_TARGET_OS "ios")
+  set(SORA_TARGET_DEF "SORA_CPP_SDK_IOS")
+elseif (SORA_TARGET STREQUAL "android")
+  set(SORA_TARGET_OS "android")
+  set(SORA_TARGET_DEF "SORA_CPP_SDK_ANDROID")
+elseif (SORA_TARGET STREQUAL "ubuntu-20.04_x86_64")
+  set(SORA_TARGET_OS "ubuntu")
+  set(SORA_TARGET_OS_VERSION "20.04")
+  set(SORA_TARGET_ARCH "x86_64")
+  set(SORA_TARGET_DEF "SORA_CPP_SDK_LINUX")
+endif()
+
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 set(Boost_USE_STATIC_LIBS ON)
@@ -21,9 +45,17 @@ if (WIN32)
   set(Boost_USE_STATIC_RUNTIME ON)
 endif()
 
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE NEVER)
+
 find_package(WebRTC REQUIRED)
 find_package(Boost REQUIRED COMPONENTS json)
 find_package(Threads REQUIRED)
+
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
 # libsora.a を作る
 
@@ -54,6 +86,8 @@ target_sources(sora
     src/websocket.cpp
     src/zlib_helper.cpp
 )
+
+target_compile_definitions(sora PRIVATE ${SORA_TARGET_DEF})
 
 # インストールするヘッダーファイル
 file(GLOB_RECURSE SORA_HEADERS RELATIVE ${CMAKE_SOURCE_DIR} "include/*")
@@ -128,7 +162,7 @@ function(bundle_static_library target static_lib bundled_target)
   add_dependencies(${bundled_target} ${bundled_target}_bundling)
 endfunction()
 
-if (WIN32)
+if (SORA_TARGET_OS STREQUAL "windows")
   # 文字コードを utf-8 として扱うのと、シンボルテーブル数を増やす
   target_compile_options(sora PRIVATE /utf-8 /bigobj)
   set_target_properties(sora
@@ -227,17 +261,17 @@ if (WIN32)
     # CUDA を要求したくないので sora.lib に含める
     bundle_static_library(sora ${CUDA_TOOLKIT_ROOT_DIR}/lib/x64/cudart_static.lib bundled_sora)
   endif()
-elseif (APPLE)
+elseif (SORA_TARGET_OS STREQUAL "macos")
   enable_language(OBJCXX)
 
   target_sources(sora
     PRIVATE
-      src/macos/mac_capturer.mm
-      src/macos/macos_version.mm
-      src/macos/macos_video_factory.mm
+      src/mac/mac_capturer.mm
+      src/mac/mac_version.mm
+      src/mac/mac_video_factory.mm
   )
 
-  target_compile_options(sora PRIVATE -fconstant-string-class=NSConstantString -mmacosx-version-min=11.0)
+  target_compile_options(sora PRIVATE -fconstant-string-class=NSConstantString)
   target_link_options(sora PUBLIC -ObjC)
   set_target_properties(sora PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
@@ -266,6 +300,29 @@ elseif (APPLE)
       "-framework MetalKit"
       "-framework OpenGL"
   )
+
+elseif (SORA_TARGET_OS STREQUAL "ios")
+  enable_language(OBJCXX)
+
+  target_sources(sora
+    PRIVATE
+      src/mac/mac_capturer.mm
+      src/mac/mac_version.mm
+      src/mac/mac_video_factory.mm
+  )
+
+  target_compile_options(sora PRIVATE -fconstant-string-class=NSConstantString)
+  target_link_options(sora PUBLIC -ObjC)
+  set_target_properties(sora PROPERTIES CXX_VISIBILITY_PRESET hidden)
+
+  target_compile_definitions(sora
+    PUBLIC
+      WEBRTC_POSIX
+      WEBRTC_MAC
+      WEBRTC_IOS
+      OPENSSL_IS_BORINGSSL
+  )
+
 
 elseif (UNIX)
   target_compile_definitions(sora
@@ -341,4 +398,7 @@ install(EXPORT sora-config
 )
 install(FILES cmake/FindWebRTC.cmake
   DESTINATION ${CMAKE_INSTALL_DATADIR}/cmake
+)
+install(FILES LICENSE NOTICE.md
+  DESTINATION ${CMAKE_INSTALL_DATADIR}
 )

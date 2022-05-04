@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef SORA_MACOS_MAC_CAPTURER_H_
-#define SORA_MACOS_MAC_CAPTURER_H_
+#ifndef SORA_MAC_MAC_CAPTURER_H_
+#define SORA_MAC_MAC_CAPTURER_H_
 
 #include <memory>
 #include <string>

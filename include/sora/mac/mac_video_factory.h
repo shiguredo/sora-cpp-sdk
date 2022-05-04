@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SORA_MACOS_MACOS_VIDEO_FACTORY_H_
-#define SORA_MACOS_MACOS_VIDEO_FACTORY_H_
+#ifndef SORA_MAC_MAC_VIDEO_FACTORY_H_
+#define SORA_MAC_MAC_VIDEO_FACTORY_H_
 
 #include <memory>
 
@@ -19,8 +19,8 @@
 
 namespace sora {
 
-std::unique_ptr<webrtc::VideoEncoderFactory> CreateMacosVideoEncoderFactory();
-std::unique_ptr<webrtc::VideoDecoderFactory> CreateMacosVideoDecoderFactory();
+std::unique_ptr<webrtc::VideoEncoderFactory> CreateMacVideoEncoderFactory();
+std::unique_ptr<webrtc::VideoDecoderFactory> CreateMacVideoDecoderFactory();
 
 }  // namespace sora
 

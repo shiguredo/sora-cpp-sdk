@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "sora/macos/mac_capturer.h"
+#include "sora/mac/mac_capturer.h"
 
 // WebRTC
 #include <rtc_base/logging.h>

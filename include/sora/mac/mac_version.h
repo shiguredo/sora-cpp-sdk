@@ -1,11 +1,11 @@
-#ifndef SORA_MACOS_MACOS_VERSION_H_
-#define SORA_MACOS_MACOS_VERSION_H_
+#ifndef SORA_MAC_MAC_VERSION_H_
+#define SORA_MAC_MAC_VERSION_H_
 
 #include <string>
 
 namespace sora {
 
-class MacosVersion {
+class MacVersion {
  public:
   static std::string GetOSName();
   static std::string GetOSVersion();
@@ -13,4 +13,4 @@ class MacosVersion {
 
 }  // namespace sora
 
-#endif  // MACOS_VERSION_H_
+#endif

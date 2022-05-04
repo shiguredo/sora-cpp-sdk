@@ -20,7 +20,7 @@
 #endif
 
 #if defined(__APPLE__)
-#include "sora/macos/macos_version.h"
+#include "sora/mac/mac_version.h"
 #endif
 
 // バージョンやコミットハッシュ情報
@@ -137,7 +137,7 @@ std::string Version::GetEnvironmentName() {
   }
 
 #if defined(__APPLE__)
-  os = MacosVersion::GetOSName() + " " + MacosVersion::GetOSVersion();
+  os = MacVersion::GetOSName() + " " + MacVersion::GetOSVersion();
 #else
   // /etc/os-release ファイルを読んで PRETTY_NAME を利用する
 

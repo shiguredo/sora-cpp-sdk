@@ -16,7 +16,7 @@
 #endif
 
 #if defined(__APPLE__)
-#include "sora/macos/macos_video_factory.h"
+#include "sora/mac/mac_video_factory.h"
 #endif
 
 #if USE_NVCODEC_ENCODER
@@ -101,7 +101,7 @@ SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
 
 #if defined(__APPLE__)
   config.decoders.insert(config.decoders.begin(),
-                         VideoDecoderConfig(CreateMacosVideoDecoderFactory()));
+                         VideoDecoderConfig(CreateMacVideoDecoderFactory()));
 #endif
 
 #if USE_NVCODEC_ENCODER

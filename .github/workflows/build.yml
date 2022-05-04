@@ -66,6 +66,7 @@ jobs:
       matrix:
         name:
           - macos_x86_64
+          - ios
     name: Build momo for ${{ matrix.name }}
     runs-on: macos-11.0
     steps:
@@ -161,7 +162,7 @@ jobs:
     if: contains(github.ref, 'tags/202')
     needs:
       - build-windows
-      #- build-macos
+      - build-macos
       #- build-ubuntu-1804
       - build-ubuntu-2004
     runs-on: ubuntu-latest
@@ -195,14 +196,15 @@ jobs:
         name:
           - windows_x86_64
           #- macos_arm64
-          #- macos_x86_64
+          - macos_x86_64
+          - ios
           #- raspberry-pi-os_armv6
           #- raspberry-pi-os_armv7
           #- raspberry-pi-os_armv8
           #- ubuntu-18.04_armv8_jetson_nano
           #- ubuntu-18.04_armv8_jetson_xavier
           #- ubuntu-18.04_x86_64
-          #- ubuntu-20.04_x86_64
+          - ubuntu-20.04_x86_64
     steps:
       - uses: actions/download-artifact@v3
         with:

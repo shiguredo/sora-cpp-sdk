@@ -3,3 +3,6 @@
 /_source
 /_package
 /test/*.json
+/test/hello/build/
+
+xcuserdata/

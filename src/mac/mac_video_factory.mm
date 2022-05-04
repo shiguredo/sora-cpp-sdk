@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "sora/macos/macos_video_factory.h"
+#include "sora/mac/mac_video_factory.h"
 
 // WebRTC
 #include <sdk/objc/native/api/video_decoder_factory.h>
@@ -20,12 +20,12 @@
 
 namespace sora {
 
-std::unique_ptr<webrtc::VideoEncoderFactory> CreateMacosVideoEncoderFactory() {
+std::unique_ptr<webrtc::VideoEncoderFactory> CreateMacVideoEncoderFactory() {
   return webrtc::ObjCToNativeVideoEncoderFactory(
       [[RTCDefaultVideoEncoderFactory alloc] init]);
 }
 
-std::unique_ptr<webrtc::VideoDecoderFactory> CreateMacosVideoDecoderFactory() {
+std::unique_ptr<webrtc::VideoDecoderFactory> CreateMacVideoDecoderFactory() {
   return webrtc::ObjCToNativeVideoDecoderFactory(
       [[RTCDefaultVideoDecoderFactory alloc] init]);
 }

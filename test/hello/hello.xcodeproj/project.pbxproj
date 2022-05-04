@@ -1,0 +1,469 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 55;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		DDBC4B932820E3770099E1F0 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = DDBC4B922820E3770099E1F0 /* AppDelegate.m */; };
+		DDBC4B962820E3770099E1F0 /* SceneDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = DDBC4B952820E3770099E1F0 /* SceneDelegate.m */; };
+		DDBC4B992820E3770099E1F0 /* ViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = DDBC4B982820E3770099E1F0 /* ViewController.mm */; };
+		DDBC4B9C2820E3770099E1F0 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = DDBC4B9A2820E3770099E1F0 /* Main.storyboard */; };
+		DDBC4B9E2820E3790099E1F0 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DDBC4B9D2820E3790099E1F0 /* Assets.xcassets */; };
+		DDBC4BA12820E3790099E1F0 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = DDBC4B9F2820E3790099E1F0 /* LaunchScreen.storyboard */; };
+		DDBC4BA42820E3790099E1F0 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = DDBC4BA32820E3790099E1F0 /* main.m */; };
+		DDBC4BAF2820EB4D0099E1F0 /* hello.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DDBC4BAE2820EB4D0099E1F0 /* hello.cpp */; };
+		DDBC4BB12820F3390099E1F0 /* libwebrtc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DDBC4BB02820F32D0099E1F0 /* libwebrtc.a */; };
+		DDBC4BB32820F3E90099E1F0 /* libboost_json.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DDBC4BB22820F3E10099E1F0 /* libboost_json.a */; };
+		DDBC4BB52820F4090099E1F0 /* libsora.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DDBC4BB42820F4000099E1F0 /* libsora.a */; };
+		DDBC4BB72820F43D0099E1F0 /* AVFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DDBC4BB62820F43D0099E1F0 /* AVFoundation.framework */; };
+		DDBC4BB92820F4490099E1F0 /* CoreAudio.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DDBC4BB82820F4490099E1F0 /* CoreAudio.framework */; };
+		DDBC4BBD2820F4D10099E1F0 /* CoreMedia.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DDBC4BBC2820F4D10099E1F0 /* CoreMedia.framework */; };
+		DDBC4BBF2820F4F80099E1F0 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DDBC4BBE2820F4F80099E1F0 /* AudioToolbox.framework */; };
+		DDBC4BC12820FEB90099E1F0 /* VideoToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DDBC4BC02820FEB90099E1F0 /* VideoToolbox.framework */; };
+		DDBC4BC3282216350099E1F0 /* Network.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DDBC4BC2282216340099E1F0 /* Network.framework */; };
+		DDBC4BC7282216890099E1F0 /* GLKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DDBC4BC6282216890099E1F0 /* GLKit.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		DDBC4B8E2820E3770099E1F0 /* hello.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = hello.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		DDBC4B912820E3770099E1F0 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		DDBC4B922820E3770099E1F0 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		DDBC4B942820E3770099E1F0 /* SceneDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SceneDelegate.h; sourceTree = "<group>"; };
+		DDBC4B952820E3770099E1F0 /* SceneDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SceneDelegate.m; sourceTree = "<group>"; };
+		DDBC4B972820E3770099E1F0 /* ViewController.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.h; path = ViewController.h; sourceTree = "<group>"; };
+		DDBC4B982820E3770099E1F0 /* ViewController.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = ViewController.mm; sourceTree = "<group>"; };
+		DDBC4B9B2820E3770099E1F0 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		DDBC4B9D2820E3790099E1F0 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		DDBC4BA02820E3790099E1F0 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		DDBC4BA22820E3790099E1F0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		DDBC4BA32820E3790099E1F0 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		DDBC4BAE2820EB4D0099E1F0 /* hello.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = hello.cpp; path = ../../hello.cpp; sourceTree = "<group>"; };
+		DDBC4BB02820F32D0099E1F0 /* libwebrtc.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libwebrtc.a; path = ../../_install/ios/release/webrtc/lib/libwebrtc.a; sourceTree = "<group>"; };
+		DDBC4BB22820F3E10099E1F0 /* libboost_json.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libboost_json.a; path = ../../_install/ios/release/boost/lib/libboost_json.a; sourceTree = "<group>"; };
+		DDBC4BB42820F4000099E1F0 /* libsora.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libsora.a; path = ../../_install/ios/release/sora/lib/libsora.a; sourceTree = "<group>"; };
+		DDBC4BB62820F43D0099E1F0 /* AVFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
+		DDBC4BB82820F4490099E1F0 /* CoreAudio.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreAudio.framework; path = System/Library/Frameworks/CoreAudio.framework; sourceTree = SDKROOT; };
+		DDBC4BBA2820F4670099E1F0 /* AudioUnit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioUnit.framework; path = System/Library/Frameworks/AudioUnit.framework; sourceTree = SDKROOT; };
+		DDBC4BBC2820F4D10099E1F0 /* CoreMedia.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreMedia.framework; path = System/Library/Frameworks/CoreMedia.framework; sourceTree = SDKROOT; };
+		DDBC4BBE2820F4F80099E1F0 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
+		DDBC4BC02820FEB90099E1F0 /* VideoToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = VideoToolbox.framework; path = System/Library/Frameworks/VideoToolbox.framework; sourceTree = SDKROOT; };
+		DDBC4BC2282216340099E1F0 /* Network.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Network.framework; path = System/Library/Frameworks/Network.framework; sourceTree = SDKROOT; };
+		DDBC4BC42822166B0099E1F0 /* OpenGLES.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGLES.framework; path = System/Library/Frameworks/OpenGLES.framework; sourceTree = SDKROOT; };
+		DDBC4BC6282216890099E1F0 /* GLKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLKit.framework; path = System/Library/Frameworks/GLKit.framework; sourceTree = SDKROOT; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		DDBC4B8B2820E3770099E1F0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DDBC4BC12820FEB90099E1F0 /* VideoToolbox.framework in Frameworks */,
+				DDBC4BBD2820F4D10099E1F0 /* CoreMedia.framework in Frameworks */,
+				DDBC4BC3282216350099E1F0 /* Network.framework in Frameworks */,
+				DDBC4BB72820F43D0099E1F0 /* AVFoundation.framework in Frameworks */,
+				DDBC4BB12820F3390099E1F0 /* libwebrtc.a in Frameworks */,
+				DDBC4BB32820F3E90099E1F0 /* libboost_json.a in Frameworks */,
+				DDBC4BBF2820F4F80099E1F0 /* AudioToolbox.framework in Frameworks */,
+				DDBC4BB92820F4490099E1F0 /* CoreAudio.framework in Frameworks */,
+				DDBC4BC7282216890099E1F0 /* GLKit.framework in Frameworks */,
+				DDBC4BB52820F4090099E1F0 /* libsora.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		DDBC4B852820E3770099E1F0 = {
+			isa = PBXGroup;
+			children = (
+				DDBC4B902820E3770099E1F0 /* hello */,
+				DDBC4B8F2820E3770099E1F0 /* Products */,
+				DDBC4BAA2820E9C30099E1F0 /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		DDBC4B8F2820E3770099E1F0 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				DDBC4B8E2820E3770099E1F0 /* hello.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		DDBC4B902820E3770099E1F0 /* hello */ = {
+			isa = PBXGroup;
+			children = (
+				DDBC4BAE2820EB4D0099E1F0 /* hello.cpp */,
+				DDBC4B912820E3770099E1F0 /* AppDelegate.h */,
+				DDBC4B922820E3770099E1F0 /* AppDelegate.m */,
+				DDBC4B942820E3770099E1F0 /* SceneDelegate.h */,
+				DDBC4B952820E3770099E1F0 /* SceneDelegate.m */,
+				DDBC4B972820E3770099E1F0 /* ViewController.h */,
+				DDBC4B982820E3770099E1F0 /* ViewController.mm */,
+				DDBC4B9A2820E3770099E1F0 /* Main.storyboard */,
+				DDBC4B9D2820E3790099E1F0 /* Assets.xcassets */,
+				DDBC4B9F2820E3790099E1F0 /* LaunchScreen.storyboard */,
+				DDBC4BA22820E3790099E1F0 /* Info.plist */,
+				DDBC4BA32820E3790099E1F0 /* main.m */,
+			);
+			path = hello;
+			sourceTree = "<group>";
+		};
+		DDBC4BAA2820E9C30099E1F0 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				DDBC4BC6282216890099E1F0 /* GLKit.framework */,
+				DDBC4BC42822166B0099E1F0 /* OpenGLES.framework */,
+				DDBC4BC2282216340099E1F0 /* Network.framework */,
+				DDBC4BC02820FEB90099E1F0 /* VideoToolbox.framework */,
+				DDBC4BBE2820F4F80099E1F0 /* AudioToolbox.framework */,
+				DDBC4BBC2820F4D10099E1F0 /* CoreMedia.framework */,
+				DDBC4BBA2820F4670099E1F0 /* AudioUnit.framework */,
+				DDBC4BB82820F4490099E1F0 /* CoreAudio.framework */,
+				DDBC4BB62820F43D0099E1F0 /* AVFoundation.framework */,
+				DDBC4BB42820F4000099E1F0 /* libsora.a */,
+				DDBC4BB22820F3E10099E1F0 /* libboost_json.a */,
+				DDBC4BB02820F32D0099E1F0 /* libwebrtc.a */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		DDBC4B8D2820E3770099E1F0 /* hello */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DDBC4BA72820E3790099E1F0 /* Build configuration list for PBXNativeTarget "hello" */;
+			buildPhases = (
+				DDBC4B8A2820E3770099E1F0 /* Sources */,
+				DDBC4B8B2820E3770099E1F0 /* Frameworks */,
+				DDBC4B8C2820E3770099E1F0 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = hello;
+			productName = hello;
+			productReference = DDBC4B8E2820E3770099E1F0 /* hello.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		DDBC4B862820E3770099E1F0 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastUpgradeCheck = 1330;
+				TargetAttributes = {
+					DDBC4B8D2820E3770099E1F0 = {
+						CreatedOnToolsVersion = 13.3.1;
+					};
+				};
+			};
+			buildConfigurationList = DDBC4B892820E3770099E1F0 /* Build configuration list for PBXProject "hello" */;
+			compatibilityVersion = "Xcode 13.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = DDBC4B852820E3770099E1F0;
+			productRefGroup = DDBC4B8F2820E3770099E1F0 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				DDBC4B8D2820E3770099E1F0 /* hello */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		DDBC4B8C2820E3770099E1F0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DDBC4BA12820E3790099E1F0 /* LaunchScreen.storyboard in Resources */,
+				DDBC4B9E2820E3790099E1F0 /* Assets.xcassets in Resources */,
+				DDBC4B9C2820E3770099E1F0 /* Main.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		DDBC4B8A2820E3770099E1F0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DDBC4BAF2820EB4D0099E1F0 /* hello.cpp in Sources */,
+				DDBC4B992820E3770099E1F0 /* ViewController.mm in Sources */,
+				DDBC4B932820E3770099E1F0 /* AppDelegate.m in Sources */,
+				DDBC4BA42820E3790099E1F0 /* main.m in Sources */,
+				DDBC4B962820E3770099E1F0 /* SceneDelegate.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		DDBC4B9A2820E3770099E1F0 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				DDBC4B9B2820E3770099E1F0 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		DDBC4B9F2820E3790099E1F0 /* LaunchScreen.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				DDBC4BA02820E3790099E1F0 /* Base */,
+			);
+			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		DDBC4BA52820E3790099E1F0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.4;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+			};
+			name = Debug;
+		};
+		DDBC4BA62820E3790099E1F0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.4;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		DDBC4BA82820E3790099E1F0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					WEBRTC_IOS,
+					WEBRTC_MAC,
+					WEBRTC_POSIX,
+					"DEBUG=1",
+					OPENSSL_IS_BORINGSSL,
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = "";
+				INFOPLIST_FILE = hello/Info.plist;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					../../_install/ios/release/sora/lib/,
+					../../_install/ios/release/boost/lib/,
+					../../_install/ios/release/webrtc/lib/,
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_BUNDLE_IDENTIFIER = jp.co.shiguredo.hello;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SYSTEM_HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/../../_install/ios/release/boost/include/",
+					"$(SRCROOT)/../../_install/ios/release/sora/include/",
+					"$(SRCROOT)/../../_install/ios/release/webrtc/include/",
+					"$(SRCROOT)/../../_install/ios/release/webrtc/include/third_party/abseil-cpp/",
+					"$(SRCROOT)/../../_install/ios/release/webrtc/include/third_party/boringssl/src/include/",
+					"$(SRCROOT)/../../_install/ios/release/webrtc/include/third_party/libyuv/include/",
+					"$(SRCROOT)/../../_install/ios/release/webrtc/include/third_party/zlib/",
+					"$(SRCROOT)/../../_install/ios/release/webrtc/include/sdk/objc/",
+				);
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		DDBC4BA92820E3790099E1F0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					WEBRTC_IOS,
+					WEBRTC_MAC,
+					WEBRTC_POSIX,
+					OPENSSL_IS_BORINGSSL,
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				HEADER_SEARCH_PATHS = "";
+				INFOPLIST_FILE = hello/Info.plist;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					../../_install/ios/release/sora/lib/,
+					../../_install/ios/release/boost/lib/,
+					../../_install/ios/release/webrtc/lib/,
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_BUNDLE_IDENTIFIER = jp.co.shiguredo.hello;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SYSTEM_HEADER_SEARCH_PATHS = (
+					"$(SRCROOT)/../../_install/ios/release/boost/include/",
+					"$(SRCROOT)/../../_install/ios/release/sora/include/",
+					"$(SRCROOT)/../../_install/ios/release/webrtc/include/",
+					"$(SRCROOT)/../../_install/ios/release/webrtc/include/third_party/abseil-cpp/",
+					"$(SRCROOT)/../../_install/ios/release/webrtc/include/third_party/boringssl/src/include/",
+					"$(SRCROOT)/../../_install/ios/release/webrtc/include/third_party/libyuv/include/",
+					"$(SRCROOT)/../../_install/ios/release/webrtc/include/third_party/zlib/",
+					"$(SRCROOT)/../../_install/ios/release/webrtc/include/sdk/objc/",
+				);
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		DDBC4B892820E3770099E1F0 /* Build configuration list for PBXProject "hello" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DDBC4BA52820E3790099E1F0 /* Debug */,
+				DDBC4BA62820E3790099E1F0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DDBC4BA72820E3790099E1F0 /* Build configuration list for PBXNativeTarget "hello" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DDBC4BA82820E3790099E1F0 /* Debug */,
+				DDBC4BA92820E3790099E1F0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = DDBC4B862820E3770099E1F0 /* Project object */;
+}

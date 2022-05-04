@@ -1,8 +1,9 @@
+#include "hello.h"
+
 #include <fstream>
 #include <iostream>
 
 // WebRTC
-#include <absl/memory/memory.h>
 #include <api/audio_codecs/builtin_audio_decoder_factory.h>
 #include <api/audio_codecs/builtin_audio_encoder_factory.h>
 #include <api/create_peerconnection_factory.h>
@@ -25,172 +26,148 @@
 #endif
 
 #include "sora/device_video_capturer.h"
-#include "sora/sora_signaling.h"
 #include "sora/sora_video_decoder_factory.h"
 #include "sora/sora_video_encoder_factory.h"
 
 #if defined(__APPLE__)
-#include "sora/macos/mac_capturer.h"
+#include "sora/mac/mac_capturer.h"
 #endif
 
-struct HelloSoraConfig {
-  std::vector<std::string> signaling_urls;
-  std::string channel_id;
-  std::string role;
-};
+HelloSora::HelloSora(HelloSoraConfig config) : config_(config) {}
+void HelloSora::Init() {
+  rtc::InitializeSSL();
 
-class HelloSora : public std::enable_shared_from_this<HelloSora>,
-                  public sora::SoraSignalingObserver {
- public:
-  HelloSora(HelloSoraConfig config) : config_(config) {}
-  void Init() {
-    rtc::InitializeSSL();
+  network_thread_ = rtc::Thread::CreateWithSocketServer();
+  network_thread_->Start();
+  worker_thread_ = rtc::Thread::Create();
+  worker_thread_->Start();
+  signaling_thread_ = rtc::Thread::Create();
+  signaling_thread_->Start();
 
-    network_thread_ = rtc::Thread::CreateWithSocketServer();
-    network_thread_->Start();
-    worker_thread_ = rtc::Thread::Create();
-    worker_thread_->Start();
-    signaling_thread_ = rtc::Thread::Create();
-    signaling_thread_->Start();
+  webrtc::PeerConnectionFactoryDependencies dependencies;
+  dependencies.network_thread = network_thread_.get();
+  dependencies.worker_thread = worker_thread_.get();
+  dependencies.signaling_thread = signaling_thread_.get();
+  dependencies.task_queue_factory = webrtc::CreateDefaultTaskQueueFactory();
+  dependencies.call_factory = webrtc::CreateCallFactory();
+  dependencies.event_log_factory =
+      absl::make_unique<webrtc::RtcEventLogFactory>(
+          dependencies.task_queue_factory.get());
 
-    webrtc::PeerConnectionFactoryDependencies dependencies;
-    dependencies.network_thread = network_thread_.get();
-    dependencies.worker_thread = worker_thread_.get();
-    dependencies.signaling_thread = signaling_thread_.get();
-    dependencies.task_queue_factory = webrtc::CreateDefaultTaskQueueFactory();
-    dependencies.call_factory = webrtc::CreateCallFactory();
-    dependencies.event_log_factory =
-        absl::make_unique<webrtc::RtcEventLogFactory>(
-            dependencies.task_queue_factory.get());
-
-    // media_dependencies
-    cricket::MediaEngineDependencies media_dependencies;
-    media_dependencies.task_queue_factory =
-        dependencies.task_queue_factory.get();
+  // media_dependencies
+  cricket::MediaEngineDependencies media_dependencies;
+  media_dependencies.task_queue_factory = dependencies.task_queue_factory.get();
 #if defined(_WIN32)
-    media_dependencies.adm =
-        worker_thread_->Invoke<rtc::scoped_refptr<webrtc::AudioDeviceModule>>(
-            RTC_FROM_HERE, [&] {
-              return webrtc::CreateWindowsCoreAudioAudioDeviceModule(
-                  dependencies.task_queue_factory.get());
-            });
+  media_dependencies.adm =
+      worker_thread_->Invoke<rtc::scoped_refptr<webrtc::AudioDeviceModule>>(
+          RTC_FROM_HERE, [&] {
+            return webrtc::CreateWindowsCoreAudioAudioDeviceModule(
+                dependencies.task_queue_factory.get());
+          });
 #else
-    media_dependencies.adm =
-        worker_thread_->Invoke<rtc::scoped_refptr<webrtc::AudioDeviceModule>>(
-            RTC_FROM_HERE, [&] {
-              return webrtc::AudioDeviceModule::Create(
-                  webrtc::AudioDeviceModule::kPlatformDefaultAudio,
-                  dependencies.task_queue_factory.get());
-            });
+  media_dependencies.adm =
+      worker_thread_->Invoke<rtc::scoped_refptr<webrtc::AudioDeviceModule>>(
+          RTC_FROM_HERE, [&] {
+            return webrtc::AudioDeviceModule::Create(
+                webrtc::AudioDeviceModule::kPlatformDefaultAudio,
+                dependencies.task_queue_factory.get());
+          });
 #endif
-    media_dependencies.audio_encoder_factory =
-        webrtc::CreateBuiltinAudioEncoderFactory();
-    media_dependencies.audio_decoder_factory =
-        webrtc::CreateBuiltinAudioDecoderFactory();
+  media_dependencies.audio_encoder_factory =
+      webrtc::CreateBuiltinAudioEncoderFactory();
+  media_dependencies.audio_decoder_factory =
+      webrtc::CreateBuiltinAudioDecoderFactory();
 
-    auto cuda_context = sora::CudaContext::Create();
-    {
-      auto config = sora::GetDefaultVideoEncoderFactoryConfig(cuda_context);
-      config.use_simulcast_adapter = true;
-      media_dependencies.video_encoder_factory =
-          absl::make_unique<sora::SoraVideoEncoderFactory>(std::move(config));
-    }
-    {
-      auto config = sora::GetDefaultVideoDecoderFactoryConfig(cuda_context);
-      media_dependencies.video_decoder_factory =
-          absl::make_unique<sora::SoraVideoDecoderFactory>(std::move(config));
-    }
+  auto cuda_context = sora::CudaContext::Create();
+  {
+    auto config = sora::GetDefaultVideoEncoderFactoryConfig(cuda_context);
+    config.use_simulcast_adapter = true;
+    media_dependencies.video_encoder_factory =
+        absl::make_unique<sora::SoraVideoEncoderFactory>(std::move(config));
+  }
+  {
+    auto config = sora::GetDefaultVideoDecoderFactoryConfig(cuda_context);
+    media_dependencies.video_decoder_factory =
+        absl::make_unique<sora::SoraVideoDecoderFactory>(std::move(config));
+  }
 
-    media_dependencies.audio_mixer = nullptr;
-    media_dependencies.audio_processing =
-        webrtc::AudioProcessingBuilder().Create();
+  media_dependencies.audio_mixer = nullptr;
+  media_dependencies.audio_processing =
+      webrtc::AudioProcessingBuilder().Create();
 
-    dependencies.media_engine =
-        cricket::CreateMediaEngine(std::move(media_dependencies));
+  dependencies.media_engine =
+      cricket::CreateMediaEngine(std::move(media_dependencies));
 
-    factory_ =
-        webrtc::CreateModularPeerConnectionFactory(std::move(dependencies));
+  factory_ =
+      webrtc::CreateModularPeerConnectionFactory(std::move(dependencies));
 
-    webrtc::PeerConnectionFactoryInterface::Options factory_options;
-    factory_options.disable_encryption = false;
-    factory_options.ssl_max_version = rtc::SSL_PROTOCOL_DTLS_12;
-    factory_options.crypto_options.srtp.enable_gcm_crypto_suites = true;
-    factory_->SetOptions(factory_options);
+  webrtc::PeerConnectionFactoryInterface::Options factory_options;
+  factory_options.disable_encryption = false;
+  factory_options.ssl_max_version = rtc::SSL_PROTOCOL_DTLS_12;
+  factory_options.crypto_options.srtp.enable_gcm_crypto_suites = true;
+  factory_->SetOptions(factory_options);
 
 #if defined(__APPLE__)
-    auto video_track_source = sora::MacCapturer::Create(640, 480, 30, "");
+  auto video_track_source = sora::MacCapturer::Create(640, 480, 30, "");
 #else
-    auto video_track_source = sora::DeviceVideoCapturer::Create(640, 480, 30);
+  auto video_track_source = sora::DeviceVideoCapturer::Create(640, 480, 30);
 #endif
 
-    std::string audio_track_id = "0123456789abcdef";
-    std::string video_track_id = "0123456789abcdefg";
-    audio_track_ = factory_->CreateAudioTrack(
-        audio_track_id, factory_->CreateAudioSource(cricket::AudioOptions()));
-    rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source =
-        webrtc::VideoTrackSourceProxy::Create(
-            signaling_thread_.get(), worker_thread_.get(), video_track_source);
-    video_track_ = factory_->CreateVideoTrack(video_track_id, video_source);
+  std::string audio_track_id = "0123456789abcdef";
+  std::string video_track_id = "0123456789abcdefg";
+  audio_track_ = factory_->CreateAudioTrack(
+      audio_track_id, factory_->CreateAudioSource(cricket::AudioOptions()));
+  rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source =
+      webrtc::VideoTrackSourceProxy::Create(
+          signaling_thread_.get(), worker_thread_.get(), video_track_source);
+  video_track_ = factory_->CreateVideoTrack(video_track_id, video_source);
 
-    ioc_.reset(new boost::asio::io_context(1));
+  ioc_.reset(new boost::asio::io_context(1));
 
-    sora::SoraSignalingConfig config;
-    config.pc_factory = factory_;
-    config.io_context = ioc_.get();
-    config.observer = shared_from_this();
-    config.signaling_urls = config_.signaling_urls;
-    config.channel_id = config_.channel_id;
-    config.sora_client = "Hello Sora";
-    config.role = config_.role;
-    config.video_codec_type = "H264";
-    conn_ = sora::SoraSignaling::Create(config);
-    if (conn_ == nullptr) {
-      RTC_LOG(LS_ERROR) << "Failed to sora::SoraSignaling::Create";
-      std::exit(2);
-    }
+  sora::SoraSignalingConfig config;
+  config.pc_factory = factory_;
+  config.io_context = ioc_.get();
+  config.observer = shared_from_this();
+  config.signaling_urls = config_.signaling_urls;
+  config.channel_id = config_.channel_id;
+  config.sora_client = "Hello Sora";
+  config.role = config_.role;
+  config.video_codec_type = "H264";
+  conn_ = sora::SoraSignaling::Create(config);
+  if (conn_ == nullptr) {
+    RTC_LOG(LS_ERROR) << "Failed to sora::SoraSignaling::Create";
+    std::exit(2);
   }
+}
 
-  void Run() {
-    boost::asio::executor_work_guard<boost::asio::io_context::executor_type>
-        work_guard(ioc_->get_executor());
+void HelloSora::Run() {
+  boost::asio::executor_work_guard<boost::asio::io_context::executor_type>
+      work_guard(ioc_->get_executor());
 
-    boost::asio::signal_set signals(*ioc_, SIGINT, SIGTERM);
-    signals.async_wait(
-        [this](const boost::system::error_code&, int) { conn_->Disconnect(); });
+  boost::asio::signal_set signals(*ioc_, SIGINT, SIGTERM);
+  signals.async_wait(
+      [this](const boost::system::error_code&, int) { conn_->Disconnect(); });
 
-    conn_->Connect();
-    ioc_->run();
-  }
+  conn_->Connect();
+  ioc_->run();
+}
 
-  void OnSetOffer() override {
-    std::string stream_id = "0123456789abcdef";
-    webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpSenderInterface>>
-        audio_result =
-            conn_->GetPeerConnection()->AddTrack(audio_track_, {stream_id});
-    webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpSenderInterface>>
-        video_result =
-            conn_->GetPeerConnection()->AddTrack(video_track_, {stream_id});
-  }
-  void OnDisconnect(sora::SoraSignalingErrorCode ec,
-                    std::string message) override {
-    std::cout << "OnDisconnect: " << message << std::endl;
-    ioc_->stop();
-  }
-  void OnNotify(std::string text) override {}
-  void OnPush(std::string text) override {}
-  void OnMessage(std::string label, std::string data) override {}
+void HelloSora::OnSetOffer() {
+  std::string stream_id = "0123456789abcdef";
+  webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpSenderInterface>>
+      audio_result =
+          conn_->GetPeerConnection()->AddTrack(audio_track_, {stream_id});
+  webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpSenderInterface>>
+      video_result =
+          conn_->GetPeerConnection()->AddTrack(video_track_, {stream_id});
+}
+void HelloSora::OnDisconnect(sora::SoraSignalingErrorCode ec,
+                             std::string message) {
+  std::cout << "OnDisconnect: " << message << std::endl;
+  ioc_->stop();
+}
 
- private:
-  HelloSoraConfig config_;
-  std::unique_ptr<rtc::Thread> network_thread_;
-  std::unique_ptr<rtc::Thread> worker_thread_;
-  std::unique_ptr<rtc::Thread> signaling_thread_;
-  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> factory_;
-  rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track_;
-  rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track_;
-  std::shared_ptr<sora::SoraSignaling> conn_;
-  std::unique_ptr<boost::asio::io_context> ioc_;
-};
+#if !defined(TARGET_OS_IPHONE) || !TARGET_OS_IPHONE
 
 int main(int argc, char* argv[]) {
   if (argc < 2) {
@@ -225,3 +202,5 @@ int main(int argc, char* argv[]) {
   hello->Init();
   hello->Run();
 }
+
+#endif

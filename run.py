@@ -407,50 +407,74 @@ def install_boost(
         runtime_link = 'static' if target_os == 'windows' else 'shared'
 
         cmd([bootstrap])
-        if len(cxx) != 0:
-            with open('project-config.jam', 'w') as f:
-                f.write(f'using {toolset} : : {cxx} : ;')
-        cmd([
-            b2,
-            'install',
-            f'--prefix={os.path.join(install_dir, "boost")}',
-            '--with-json',
-            '--layout=system',
-            '--ignore-site-config',
-            f'variant={"debug" if debug else "release"}',
-            f'cxxflags={" ".join(cxxflags)}',
-            f'toolset={toolset}',
-            f'visibility={visibility}',
-            f'target-os={target_os}',
-            'address-model=64',
-            'link=static',
-            f'runtime-link={runtime_link}',
-            'threading=multi'])
 
-#  && /root/setup_boost.sh "$BOOST_VERSION" /root/boost-source /root/_cache/boost \
-#  && cd /root/boost-source/source \
-#  && echo 'using clang : : /root/llvm/clang/bin/clang++ : ;' > project-config.jam \
-#  && ./b2 \
-#    cxxflags=' \
-#      -D_LIBCPP_ABI_UNSTABLE \
-#      -D_LIBCPP_DISABLE_AVAILABILITY \
-#      -nostdinc++ \
-#      -isystem/root/llvm/libcxx/include \
-#    ' \
-#    linkflags=' \
-#    ' \
-#    toolset=clang \
-#    visibility=global \
-#    target-os=linux \
-#    address-model=64 \
-#    link=static \
-#    variant=release \
-#    install \
-#    -j`nproc` \
-#    --ignore-site-config \
-#    --prefix=/root/boost \
-#    --with-filesystem \
-#    --with-json
+        if target_os != 'iphone':
+            if len(cxx) != 0:
+                with open('project-config.jam', 'w') as f:
+                    f.write(f'using {toolset} : : {cxx} : ;')
+            cmd([
+                b2,
+                'install',
+                f'--prefix={os.path.join(install_dir, "boost")}',
+                '--with-json',
+                '--layout=system',
+                '--ignore-site-config',
+                f'variant={"debug" if debug else "release"}',
+                f'cxxflags={" ".join(cxxflags)}',
+                f'toolset={toolset}',
+                f'visibility={visibility}',
+                f'target-os={target_os}',
+                'address-model=64',
+                'link=static',
+                f'runtime-link={runtime_link}',
+                'threading=multi'])
+        else:
+            # iOS の場合、シミュレータとデバイス用のライブラリを作って
+            # lipo で結合する
+            IOS_BUILD_TARGETS = [('x86_64', 'iphonesimulator'), ('arm64', 'iphoneos')]
+            for arch, sdk in IOS_BUILD_TARGETS:
+                clangpp = cmdcap(['xcodebuild', '-find', 'clang++'])
+                sysroot = cmdcap(['xcrun', '--sdk', sdk, '--show-sdk-path'])
+                boost_arch = 'x86' if arch == 'x86_64' else 'arm'
+                with open('project-config.jam', 'w') as f:
+                    f.write(f"using clang \
+                        : iphone \
+                        : {clangpp} -arch {arch} -isysroot {sysroot} \
+                          -fembed-bitcode \
+                          -mios-version-min=10.0 \
+                          -fvisibility=hidden \
+                        : <striper> <root>{sysroot} \
+                        ; \
+                        ")
+                cmd([
+                    b2,
+                    'install',
+                    f'--build-dir={os.path.join(build_dir, "boost", f"build-{arch}-{sdk}")}',
+                    f'--prefix={os.path.join(build_dir, "boost", f"install-{arch}-{sdk}")}',
+                    '--with-json',
+                    '--layout=system',
+                    '--ignore-site-config',
+                    f'variant={"debug" if debug else "release"}',
+                    f'cxxflags={" ".join(cxxflags)}',
+                    f'toolset={toolset}',
+                    f'visibility={visibility}',
+                    f'target-os={target_os}',
+                    'address-model=64',
+                    'link=static',
+                    f'runtime-link={runtime_link}',
+                    'threading=multi',
+                    f'architecture={boost_arch}'])
+            arch, sdk = IOS_BUILD_TARGETS[0]
+            installed_path = os.path.join(build_dir, 'boost', f'install-{arch}-{sdk}')
+            rm_rf(os.path.join(install_dir, 'boost'))
+            cmd(['cp', '-r', installed_path, os.path.join(install_dir, 'boost')])
+
+            for lib in enum_all_files(os.path.join(installed_path, 'lib'), os.path.join(installed_path, 'lib')):
+                if not lib.endswith('.a'):
+                    continue
+                files = [os.path.join(build_dir, 'boost', f'install-{arch}-{sdk}', 'lib', lib)
+                         for arch, sdk in IOS_BUILD_TARGETS]
+                cmd(['lipo', '-create', '-output', os.path.join(install_dir, 'boost', 'lib', lib)] + files)
 
 
 def cmake_path(path: str) -> str:
@@ -578,6 +602,8 @@ class Platform(object):
         elif p.os == 'jetson':
             self._check(p.osver in ('nano', 'xavier'))
             self._check(p.arch == 'arm64')
+        elif p.os == 'ios':
+            self._check(p.arch is None)
         else:
             self._check(p.arch in ('x86_64', 'arm64'))
 
@@ -739,6 +765,7 @@ def install_deps(platform, source_dir, build_dir, install_dir, debug,
             ]
             install_boost_args['toolset'] = 'clang'
             install_boost_args['target_os'] = 'linux'
+
         install_boost(**install_boost_args)
 
         # CMake
@@ -779,9 +806,12 @@ def install_deps(platform, source_dir, build_dir, install_dir, debug,
             install_cuda_windows(**install_cuda_args)
 
 
+AVAILABLE_TARGETS = ['windows_x86_64', 'macos_x86_64', 'macos_arm64', 'ubuntu-20.04_x86_64', 'ios']
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("target", choices=['windows_x86_64', 'macos_x86_64', 'macos_arm64', 'ubuntu-20.04_x86_64'])
+    parser.add_argument("target", choices=AVAILABLE_TARGETS)
     parser.add_argument("--debug", action='store_true')
     parser.add_argument("--webrtcbuild", action='store_true')
     parser.add_argument("--webrtcbuild-fetch", action='store_true')
@@ -805,6 +835,8 @@ def main():
         platform = Platform('macos', get_macos_osver(), 'arm64')
     elif args.target == 'ubuntu-20.04_x86_64':
         platform = Platform('ubuntu', '20.04', 'x86_64')
+    elif args.target == 'ios':
+        platform = Platform('ios', None, None)
     else:
         raise Exception(f'Unknown target {args.target}')
 
@@ -843,6 +875,7 @@ def main():
         cmake_args.append(f"-DWEBRTC_LIBRARY_DIR={cmake_path(webrtc_info.webrtc_library_dir)}")
         cmake_args.append(f"-DSORA_CPP_SDK_VERSION={sora_cpp_sdk_version}")
         cmake_args.append(f"-DSORA_CPP_SDK_COMMIT={sora_cpp_sdk_commit}")
+        cmake_args.append(f"-DSORA_CPP_SDK_TARGET={platform.target.package_name}")
         cmake_args.append(f"-DWEBRTC_BUILD_VERSION={webrtc_version['WEBRTC_BUILD_VERSION']}")
         cmake_args.append(f"-DWEBRTC_READABLE_VERSION={webrtc_version['WEBRTC_READABLE_VERSION']}")
         cmake_args.append(f"-DWEBRTC_COMMIT={webrtc_version['WEBRTC_COMMIT']}")
@@ -858,6 +891,13 @@ def main():
             cmake_args.append("-DUSE_LIBCXX=ON'")
             cmake_args.append(
                 f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(install_dir, 'llvm', 'libcxx', 'include'))}")
+        if platform.target.os == 'ios':
+            cmake_args += ['-G', 'Xcode']
+            cmake_args.append("-DCMAKE_SYSTEM_NAME=iOS")
+            cmake_args.append("-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64")
+            cmake_args.append("-DCMAKE_OSX_DEPLOYMENT_TARGET=10.0")
+            cmake_args.append("-DCMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH=NO")
+
         # NvCodec
         if platform.target.os in ('windows', 'ubuntu'):
             cmake_args.append('-DUSE_NVCODEC_ENCODER=ON')
@@ -865,8 +905,22 @@ def main():
                 cmake_args.append(f"-DCUDA_TOOLKIT_ROOT_DIR={cmake_path(os.path.join(install_dir, 'cuda', 'nvcc'))}")
 
         cmd(['cmake', BASE_DIR] + cmake_args)
-        cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])
-        cmd(['cmake', '--install', '.'])
+        if platform.target.os == 'ios':
+            cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration,
+                '--target', 'sora', '--', '-arch', 'x86_64', '-sdk', 'iphonesimulator'])
+            cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration,
+                '--target', 'sora', '--', '-arch', 'arm64', '-sdk', 'iphoneos'])
+            # 後でライブラリは差し替えるけど、他のデータをコピーするためにとりあえず install は呼んでおく
+            cmd(['cmake', '--install', '.'])
+            cmd(['lipo', '-create', '-output', os.path.join(build_dir, 'sora', 'libsora.a'),
+                os.path.join(build_dir, 'sora', f'{configuration}-iphonesimulator', 'libsora.a'),
+                os.path.join(build_dir, 'sora', f'{configuration}-iphoneos', 'libsora.a')])
+            shutil.copyfile(os.path.join(build_dir, 'sora', 'libsora.a'),
+                            os.path.join(install_dir, 'sora', 'lib', 'libsora.a'))
+        else:
+            cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])
+            cmd(['cmake', '--install', '.'])
+
         # バンドルされたライブラリをインストールする
         if platform.target.os == 'windows':
             shutil.copyfile(os.path.join(sora_build_dir, 'bundled', 'sora.lib'),
@@ -875,7 +929,7 @@ def main():
             shutil.copyfile(os.path.join(sora_build_dir, 'bundled', 'libsora.a'),
                             os.path.join(install_dir, 'sora', 'lib', 'libsora.a'))
 
-    if args.test:
+    if args.test and platform.target.os != 'ios':
         test_build_dir = os.path.join(build_dir, 'test')
         mkdir_p(test_build_dir)
         with cd(test_build_dir):
@@ -889,8 +943,6 @@ def main():
                 cmake_args.append("-DUSE_LIBCXX=ON'")
                 cmake_args.append(
                     f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(install_dir, 'llvm', 'libcxx', 'include'))}")
-            if platform.build.os == 'macos':
-                cmake_args.append('-DCMAKE_FIND_FRAMEWORK=LAST')
             cmd(['cmake', os.path.join(BASE_DIR, 'test')] + cmake_args)
             cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])
             if args.run:
@@ -899,6 +951,22 @@ def main():
                         os.path.join(BASE_DIR, 'test', '.testparam.json')])
                 else:
                     cmd([os.path.join(test_build_dir, 'hello'), os.path.join(BASE_DIR, 'test', '.testparam.json')])
+
+    # iOS の場合は事前に用意したプロジェクトをビルドする
+    if args.test and platform.target.os == 'ios':
+        cmd(['xcodebuild', 'build',
+             '-project', 'test/hello/hello.xcodeproj',
+             '-target', 'hello',
+             '-arch', 'x86_64',
+             '-sdk', 'iphonesimulator',
+             '-configuration', 'Release'])
+        # こっちは signing が必要になるのでやらない
+        # cmd(['xcodebuild', 'build',
+        #      '-project', 'test/hello/hello.xcodeproj',
+        #      '-target', 'hello',
+        #      '-arch', 'arm64',
+        #      '-sdk', 'iphoneos',
+        #      '-configuration', 'Release'])
 
     if args.package:
         mkdir_p(package_dir)
@@ -911,21 +979,23 @@ def main():
 
         with cd(install_dir):
             if platform.target.os == 'windows':
-                archive_path = os.path.join(package_dir, f'sora-cpp-sdk-{sora_cpp_sdk_version}.zip')
+                archive_name = f'sora-cpp-sdk-{sora_cpp_sdk_version}_{platform.target.package_name}.zip'
+                archive_path = os.path.join(package_dir, archive_name)
                 with zipfile.ZipFile(archive_path, 'w') as f:
                     for file in enum_all_files('sora', '.'):
                         f.write(filename=file, arcname=file)
                 with open(os.path.join(package_dir, 'sora.env'), 'w') as f:
                     f.write('CONTENT_TYPE=application/zip\n')
-                    f.write(f'PACKAGE_NAME=sora-cpp-sdk-{sora_cpp_sdk_version}.zip\n')
+                    f.write(f'{archive_name}\n')
             else:
-                archive_path = os.path.join(package_dir, f'sora-cpp-sdk-{sora_cpp_sdk_version}.tar.gz')
+                archive_name = f'sora-cpp-sdk-{sora_cpp_sdk_version}_{platform.target.package_name}.tar.gz'
+                archive_path = os.path.join(package_dir, archive_name)
                 with tarfile.open(archive_path, 'w:gz') as f:
                     for file in enum_all_files('sora', '.'):
                         f.add(name=file, arcname=file)
                 with open(os.path.join(package_dir, 'sora.env'), 'w') as f:
                     f.write("CONTENT_TYPE=application/gzip\n")
-                    f.write(f'PACKAGE_NAME=sora-cpp-sdk-{sora_cpp_sdk_version}.tar.gz\n')
+                    f.write(f'{archive_name}\n')
 
 
 if __name__ == '__main__':

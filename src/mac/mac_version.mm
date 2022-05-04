@@ -1,4 +1,4 @@
-#include "sora/macos/macos_version.h"
+#include "sora/mac/mac_version.h"
 
 #import <Foundation/Foundation.h>
 #include <TargetConditionals.h>
@@ -76,16 +76,17 @@
 
 namespace sora {
 
-std::string MacosVersion::GetOSName() {
-// 今は Mac かどうかだけ分かれば良いだけなので、TARGET_OS_MAC で分ける
+std::string MacVersion::GetOSName() {
 #if TARGET_OS_MAC
   return "macOS";
+#elif TARGET_OS_IPHONE
+  return "iPhone";
 #else
   return "Unknown OS";
 #endif
 }
 
-std::string MacosVersion::GetOSVersion() {
+std::string MacVersion::GetOSVersion() {
   // "Version 10.8.2 (Build 12C60)" みたいな文字列を取得できる
   NSString* str = NSProcessInfo.processInfo.operatingSystemVersionString;
   return [str UTF8String];
