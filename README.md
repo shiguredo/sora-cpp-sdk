@@ -21,7 +21,6 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
 
 - windows_x86_64
 - macos_arm64
-- macos_x86_64
 - ubuntu-20.04_armv8
     - Jetson AGX Orin
     - Jetson AGX Xavier
