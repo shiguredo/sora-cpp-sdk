@@ -19,6 +19,12 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
 
 ## 動作環境
 
+- Ubuntu 20.04 x86_64
+- Android
+- iOS
+- Windows
+- macOS
+
 ## 対応 Sora
 
 - WebRTC SFU Sora 2021.2 以降
