@@ -29,6 +29,35 @@
             "intelliSenseMode": "linux-gcc-x64"
         },
         {
+            "name": "android Release",
+            "includePath": [
+                "${workspaceFolder}/_install/android/release/boost/include",
+                "${workspaceFolder}/_install/android/release/webrtc/include",
+                "${workspaceFolder}/_install/android/release/webrtc/include/third_party/abseil-cpp",
+                "${workspaceFolder}/_install/android/release/webrtc/include/third_party/boringssl/src/include",
+                "${workspaceFolder}/_install/android/release/webrtc/include/third_party/libyuv/include",
+                "${workspaceFolder}/_install/android/release/webrtc/include/third_party/zlib",
+                "${workspaceFolder}/_install/android/release/llvm/libcxx/include",
+                "${workspaceFolder}/_install/android/release/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/include/",
+                "${workspaceFolder}/_build/android/release/sora",
+                "${workspaceFolder}/include"
+            ],
+            "defines": [
+                "SORA_CPP_SDK_ANDROID",
+                "WEBRTC_POSIX",
+                "WEBRTC_ANDROID",
+                "_LIBCPP_ABI_UNSTABLE",
+                "_LIBCPP_DISABLE_AVAILABILITY",
+                "OPENSSL_IS_BORINGSSL",
+                "USE_NVCODEC_ENCODER=0"
+            ],
+            "compilerPath": "${workspaceFolder}/_install/android/release/llvm/clang/bin/clang++",
+            "compilerArgs": ["-nostdinc++"],
+            "cStandard": "gnu17",
+            "cppStandard": "gnu++17",
+            "intelliSenseMode": "linux-clang-x64"
+        },
+        {
             "name": "macos_x86_64 Release",
             "includePath": [
                 "${workspaceFolder}/_install/macos_x86_64/release/boost/include",

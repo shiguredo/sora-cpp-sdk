@@ -191,7 +191,7 @@ def _is_single_dir(infos: List[Union[zipfile.ZipInfo, tarfile.TarInfo]],
             # ルートディレクトリにファイルが存在している
             if not is_dir(info):
                 return None
-            dir = name
+            dir = name.rstrip('/')
         else:
             dir = name[0:n]
         # ルートディレクトリに２個以上のディレクトリが存在している
@@ -208,6 +208,29 @@ def is_single_dir_tar(tar: tarfile.TarFile) -> Optional[str]:
 
 def is_single_dir_zip(zip: zipfile.ZipFile) -> Optional[str]:
     return _is_single_dir(zip.infolist(), lambda z: z.filename, lambda z: z.is_dir())
+
+
+# 解凍した上でファイル属性を付与する
+def _extractzip(z: zipfile.ZipFile, path: str):
+    z.extractall(path)
+    if platform.system() == 'Windows':
+        return
+    for info in z.infolist():
+        if info.is_dir():
+            continue
+        filepath = os.path.join(path, info.filename)
+        mod = info.external_attr >> 16
+        if (mod & 0o120000) == 0o120000:
+            # シンボリックリンク
+            with open(filepath, 'r') as f:
+                src = f.read()
+            os.remove(filepath)
+            with cd(os.path.dirname(filepath)):
+                if os.path.exists(src):
+                    os.symlink(src, filepath)
+        if os.path.exists(filepath):
+            # 普通のファイル
+            os.chmod(filepath, mod & 0o777)
 
 
 # zip または tar.gz ファイルを展開する。
@@ -256,12 +279,14 @@ def extract(file: str, output_dir: str, output_dirname: str, filetype: Optional[
             dir = is_single_dir_zip(z)
             if dir is None:
                 os.makedirs(path, exist_ok=True)
-                z.extractall(path)
+                # z.extractall(path)
+                _extractzip(z, path)
             else:
                 logging.info(f"Directory {dir} is stripped")
                 path2 = os.path.join(output_dir, dir)
                 rm_rf(path2)
-                z.extractall(output_dir)
+                # z.extractall(output_dir)
+                _extractzip(z, output_dir)
                 if path != path2:
                     logging.debug(f"mv {path2} {path}")
                     os.replace(path2, path)
@@ -363,6 +388,15 @@ def get_webrtc_info(webrtcbuild: bool, source_dir: str, build_dir: str, install_
 
 
 @versioned
+def install_android_ndk(version, install_dir, source_dir):
+    archive = download(
+        f'https://dl.google.com/android/repository/android-ndk-{version}-linux.zip',
+        source_dir)
+    rm_rf(os.path.join(install_dir, 'android-ndk'))
+    extract(archive, output_dir=install_dir, output_dirname='android-ndk')
+
+
+@versioned
 def install_llvm(version, install_dir,
                  tools_url, tools_commit,
                  libcxx_url, libcxx_commit,
@@ -395,7 +429,8 @@ def install_llvm(version, install_dir,
 @versioned
 def install_boost(
         version: str, source_dir, build_dir, install_dir,
-        debug: bool, cxx: str, cxxflags: List[str], toolset, visibility, target_os):
+        debug: bool, cxx: str, cxxflags: List[str], toolset, visibility, target_os,
+        android_ndk, native_api_level):
     version_underscore = version.replace('.', '_')
     archive = download(
         f'https://boostorg.jfrog.io/artifactory/main/release/{version}/source/boost_{version_underscore}.tar.gz',
@@ -408,27 +443,7 @@ def install_boost(
 
         cmd([bootstrap])
 
-        if target_os != 'iphone':
-            if len(cxx) != 0:
-                with open('project-config.jam', 'w') as f:
-                    f.write(f'using {toolset} : : {cxx} : ;')
-            cmd([
-                b2,
-                'install',
-                f'--prefix={os.path.join(install_dir, "boost")}',
-                '--with-json',
-                '--layout=system',
-                '--ignore-site-config',
-                f'variant={"debug" if debug else "release"}',
-                f'cxxflags={" ".join(cxxflags)}',
-                f'toolset={toolset}',
-                f'visibility={visibility}',
-                f'target-os={target_os}',
-                'address-model=64',
-                'link=static',
-                f'runtime-link={runtime_link}',
-                'threading=multi'])
-        else:
+        if target_os == 'iphone':
             # iOS の場合、シミュレータとデバイス用のライブラリを作って
             # lipo で結合する
             IOS_BUILD_TARGETS = [('x86_64', 'iphonesimulator'), ('arm64', 'iphoneos')]
@@ -475,6 +490,56 @@ def install_boost(
                 files = [os.path.join(build_dir, 'boost', f'install-{arch}-{sdk}', 'lib', lib)
                          for arch, sdk in IOS_BUILD_TARGETS]
                 cmd(['lipo', '-create', '-output', os.path.join(install_dir, 'boost', 'lib', lib)] + files)
+        elif target_os == 'android':
+            # Android の場合、android-ndk を使ってビルドする
+            with open('project-config.jam', 'w') as f:
+                bin = os.path.join(android_ndk, 'toolchains', 'llvm', 'prebuilt', 'linux-x86_64', 'bin')
+                sysroot = os.path.join(android_ndk, 'toolchains', 'llvm', 'prebuilt', 'linux-x86_64', 'sysroot')
+                f.write(f"using clang \
+                    : android \
+                    : {os.path.join(bin, f'aarch64-linux-android{native_api_level}-clang++')} \
+                      --sysroot={sysroot} \
+                    : <archiver>{os.path.join(bin, 'llvm-ar')} \
+                      <ranlib>{os.path.join(bin, 'llvm-ranlib')} \
+                    ; \
+                    ")
+            cmd([
+                b2,
+                'install',
+                f'--prefix={os.path.join(install_dir, "boost")}',
+                '--with-json',
+                '--layout=system',
+                '--ignore-site-config',
+                f'variant={"debug" if debug else "release"}',
+                f'cxxflags={" ".join(cxxflags)}',
+                f'toolset={toolset}',
+                f'visibility={visibility}',
+                f'target-os={target_os}',
+                'address-model=64',
+                'link=static',
+                f'runtime-link={runtime_link}',
+                'threading=multi',
+                'architecture=arm'])
+        else:
+            if len(cxx) != 0:
+                with open('project-config.jam', 'w') as f:
+                    f.write(f'using {toolset} : : {cxx} : ;')
+            cmd([
+                b2,
+                'install',
+                f'--prefix={os.path.join(install_dir, "boost")}',
+                '--with-json',
+                '--layout=system',
+                '--ignore-site-config',
+                f'variant={"debug" if debug else "release"}',
+                f'cxxflags={" ".join(cxxflags)}',
+                f'toolset={toolset}',
+                f'visibility={visibility}',
+                f'target-os={target_os}',
+                'address-model=64',
+                'link=static',
+                f'runtime-link={runtime_link}',
+                'threading=multi'])
 
 
 def cmake_path(path: str) -> str:
@@ -602,7 +667,7 @@ class Platform(object):
         elif p.os == 'jetson':
             self._check(p.osver in ('nano', 'xavier'))
             self._check(p.arch == 'arm64')
-        elif p.os == 'ios':
+        elif p.os in ('ios', 'android'):
             self._check(p.arch is None)
         else:
             self._check(p.arch in ('x86_64', 'arm64'))
@@ -652,6 +717,16 @@ def install_deps(platform, source_dir, build_dir, install_dir, debug,
                  webrtcbuild: bool, webrtc_config: WebrtcConfig, rotor_config: RotorConfig):
     with cd(BASE_DIR):
         version = read_version_file('VERSION')
+
+        # Android NDK
+        if platform.target.os == 'android':
+            install_android_ndk_args = {
+                'version': version['ANDROID_NDK_VERSION'],
+                'version_file': os.path.join(install_dir, 'android-ndk.version'),
+                'source_dir': source_dir,
+                'install_dir': install_dir,
+            }
+            install_android_ndk(**install_android_ndk_args)
 
         # WebRTC
         if platform.target.os == 'windows':
@@ -735,6 +810,8 @@ def install_deps(platform, source_dir, build_dir, install_dir, debug,
             'visibility': 'global',
             'target_os': '',
             'debug': debug,
+            'android_ndk': '',
+            'native_api_level': '',
         }
         if platform.target.os == 'windows':
             install_boost_args['cxxflags'] = [
@@ -754,7 +831,20 @@ def install_deps(platform, source_dir, build_dir, install_dir, debug,
             install_boost_args['cxxflags'] = [
                 '-std=gnu++17'
             ]
+        elif platform.target.os == 'android':
+            install_boost_args['target_os'] = 'android'
+            install_boost_args['cxxflags'] = [
+                '-D_LIBCPP_ABI_UNSTABLE',
+                '-D_LIBCPP_DISABLE_AVAILABILITY',
+                '-nostdinc++',
+                f"-isystem{os.path.join(install_dir, 'llvm', 'libcxx', 'include')}",
+                '-fPIC',
+            ]
+            install_boost_args['toolset'] = 'clang'
+            install_boost_args['android_ndk'] = os.path.join(install_dir, 'android-ndk')
+            install_boost_args['native_api_level'] = version['ANDROID_NATIVE_API_LEVEL']
         else:
+            install_boost_args['target_os'] = 'linux'
             install_boost_args['cxx'] = os.path.join(install_dir, 'llvm', 'clang', 'bin', 'clang++')
             install_boost_args['cxxflags'] = [
                 '-D_LIBCPP_ABI_UNSTABLE',
@@ -764,7 +854,6 @@ def install_deps(platform, source_dir, build_dir, install_dir, debug,
                 '-fPIC',
             ]
             install_boost_args['toolset'] = 'clang'
-            install_boost_args['target_os'] = 'linux'
 
         install_boost(**install_boost_args)
 
@@ -806,7 +895,7 @@ def install_deps(platform, source_dir, build_dir, install_dir, debug,
             install_cuda_windows(**install_cuda_args)
 
 
-AVAILABLE_TARGETS = ['windows_x86_64', 'macos_x86_64', 'macos_arm64', 'ubuntu-20.04_x86_64', 'ios']
+AVAILABLE_TARGETS = ['windows_x86_64', 'macos_x86_64', 'macos_arm64', 'ubuntu-20.04_x86_64', 'ios', 'android']
 
 
 def main():
@@ -837,6 +926,8 @@ def main():
         platform = Platform('ubuntu', '20.04', 'x86_64')
     elif args.target == 'ios':
         platform = Platform('ios', None, None)
+    elif args.target == 'android':
+        platform = Platform('android', None, None)
     else:
         raise Exception(f'Unknown target {args.target}')
 
@@ -871,6 +962,7 @@ def main():
             version = read_version_file('VERSION')
             sora_cpp_sdk_version = version['SORA_CPP_SDK_VERSION']
             sora_cpp_sdk_commit = cmdcap(['git', 'rev-parse', 'HEAD'])
+            android_native_api_level = version['ANDROID_NATIVE_API_LEVEL']
         cmake_args.append(f"-DWEBRTC_INCLUDE_DIR={cmake_path(webrtc_info.webrtc_include_dir)}")
         cmake_args.append(f"-DWEBRTC_LIBRARY_DIR={cmake_path(webrtc_info.webrtc_library_dir)}")
         cmake_args.append(f"-DSORA_CPP_SDK_VERSION={sora_cpp_sdk_version}")
@@ -888,7 +980,7 @@ def main():
                     f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(install_dir, 'llvm', 'clang', 'bin', 'clang'))}")
                 cmake_args.append(
                     f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(install_dir, 'llvm', 'clang', 'bin', 'clang++'))}")
-            cmake_args.append("-DUSE_LIBCXX=ON'")
+            cmake_args.append("-DUSE_LIBCXX=ON")
             cmake_args.append(
                 f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(install_dir, 'llvm', 'libcxx', 'include'))}")
         if platform.target.os == 'ios':
@@ -897,6 +989,21 @@ def main():
             cmake_args.append("-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64")
             cmake_args.append("-DCMAKE_OSX_DEPLOYMENT_TARGET=10.0")
             cmake_args.append("-DCMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH=NO")
+        if platform.target.os == 'android':
+            toolchain_file = os.path.join(install_dir, 'android-ndk', 'build', 'cmake', 'android.toolchain.cmake')
+            cmake_args.append(f"-DCMAKE_TOOLCHAIN_FILE={toolchain_file}")
+            cmake_args.append(f"-DANDROID_NATIVE_API_LEVEL={android_native_api_level}")
+            cmake_args.append('-DANDROID_ABI=arm64-v8a')
+            cmake_args.append('-DANDROID_STL=none')
+            cmake_args.append("-DUSE_LIBCXX=ON")
+            cmake_args.append(
+                f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(install_dir, 'llvm', 'libcxx', 'include'))}")
+            cmake_args.append(
+                f"-DLIBCXXABI_INCLUDE_DIR={cmake_path(os.path.join(install_dir, 'llvm', 'libcxxabi', 'include'))}")
+            cmake_args.append('-DANDROID_CPP_FEATURES=exceptions')
+            # r23b には ANDROID_CPP_FEATURES=exceptions でも例外が設定されない問題がある
+            # https://github.com/android/ndk/issues/1618
+            cmake_args.append('-DCMAKE_ANDROID_EXCEPTIONS=ON')
 
         # NvCodec
         if platform.target.os in ('windows', 'ubuntu'):
@@ -940,7 +1047,7 @@ def main():
             cmake_args.append(f"-DWEBRTC_LIBRARY_DIR={cmake_path(webrtc_info.webrtc_library_dir)}")
             cmake_args.append(f"-DSORA_DIR={cmake_path(os.path.join(install_dir, 'sora'))}")
             if platform.target.os == 'ubuntu':
-                cmake_args.append("-DUSE_LIBCXX=ON'")
+                cmake_args.append("-DUSE_LIBCXX=ON")
                 cmake_args.append(
                     f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(install_dir, 'llvm', 'libcxx', 'include'))}")
             cmd(['cmake', os.path.join(BASE_DIR, 'test')] + cmake_args)

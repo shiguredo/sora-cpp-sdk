@@ -19,6 +19,10 @@
 #include "sora/mac/mac_video_factory.h"
 #endif
 
+#if defined(SORA_CPP_SDK_ANDROID)
+#include "sora/android/android_video_factory.h"
+#endif
+
 #if USE_NVCODEC_ENCODER
 #include "sora/hwenc_nvcodec/nvcodec_video_decoder.h"
 #endif
@@ -96,12 +100,21 @@ SoraVideoDecoderFactory::CreateVideoDecoder(
 }
 
 SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
-    std::shared_ptr<CudaContext> cuda_context) {
+    std::shared_ptr<CudaContext> cuda_context,
+    void* env) {
   auto config = GetSoftwareOnlyVideoDecoderFactoryConfig();
 
 #if defined(__APPLE__)
   config.decoders.insert(config.decoders.begin(),
                          VideoDecoderConfig(CreateMacVideoDecoderFactory()));
+#endif
+
+#if defined(SORA_CPP_SDK_ANDROID)
+  if (env != nullptr) {
+    config.decoders.insert(config.decoders.begin(),
+                           VideoDecoderConfig(CreateAndroidVideoDecoderFactory(
+                               static_cast<JNIEnv*>(env))));
+  }
 #endif
 
 #if USE_NVCODEC_ENCODER

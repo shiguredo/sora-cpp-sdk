@@ -113,6 +113,7 @@ if (USE_LIBCXX)
     PRIVATE
       "$<$<COMPILE_LANGUAGE:CXX>:-nostdinc++>"
       "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<BOOL:LIBCXX_INCLUDE_DIR>>:-isystem${LIBCXX_INCLUDE_DIR}>"
+      "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<BOOL:LIBCXXABI_INCLUDE_DIR>>:-isystem${LIBCXXABI_INCLUDE_DIR}>"
   )
 endif()
 
@@ -323,6 +324,40 @@ elseif (SORA_TARGET_OS STREQUAL "ios")
       OPENSSL_IS_BORINGSSL
   )
 
+elseif (SORA_TARGET_OS STREQUAL "android")
+
+  target_sources(sora
+    PRIVATE
+      src/android/android_video_factory.cpp
+      src/android/android_capturer.cpp
+  )
+
+  target_compile_definitions(sora
+    PRIVATE
+      WEBRTC_POSIX
+      WEBRTC_LINUX
+      WEBRTC_ANDROID
+      _LIBCPP_ABI_UNSTABLE
+      _LIBCPP_DISABLE_AVAILABILITY
+      _LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS
+      _LIBCXXABI_DISABLE_VISIBILITY_ANNOTATIONS
+      _LIBCPP_ENABLE_NODISCARD
+  )
+
+  find_library(ANDROID_LIB_LOG log)
+  find_library(ANDROID_LIB_ANDROID android)
+  # find_library(ANDROID_LIB_OPENSLES OpenSLES)
+  # find_library(ANDROID_LIB_VULKAN vulkan)
+  # find_library(ANDROID_LIB_EGL EGL)
+
+  target_link_libraries(sora
+    PRIVATE
+      ${ANDROID_LIB_LOG}
+      ${ANDROID_LIB_ANDROID}
+  #     ${ANDROID_LIB_OPENSLES}
+  #     ${ANDROID_LIB_VULKAN}
+  #     ${ANDROID_LIB_EGL}
+  )
 
 elseif (UNIX)
   target_compile_definitions(sora
