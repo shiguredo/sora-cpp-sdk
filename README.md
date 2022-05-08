@@ -17,6 +17,8 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
 
 ## 特徴
 
+- 各プラットフォームで利用可能な HWA への対応
+
 ## 動作環境
 
 - windows_x86_64
@@ -32,13 +34,15 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
 
 ## 対応 Sora
 
-- WebRTC SFU Sora 2021.2 以降
+- WebRTC SFU Sora 2022.1 以降
 
 ## サンプル集
 
 https://github.com/shiguredo/sora-cpp-sdk-samples
 
 ## 優先実装
+
+- AMD 系 HWA 対応
 
 ## 対応予定
 
