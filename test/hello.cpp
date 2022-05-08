@@ -21,6 +21,12 @@
 #include <rtc_base/logging.h>
 #include <rtc_base/ssl_adapter.h>
 
+#if defined(HELLO_ANDROID)
+#include <sdk/android/native_api/audio_device_module/audio_device_android.h>
+#include <sdk/android/native_api/jni/jvm.h>
+#include <sdk/android/native_api/jni/scoped_java_ref.h>
+#endif
+
 #ifdef _WIN32
 #include <rtc_base/win/scoped_com_initializer.h>
 #endif
@@ -33,7 +39,15 @@
 #include "sora/mac/mac_capturer.h"
 #endif
 
+#if defined(HELLO_ANDROID)
+jobject GetAndroidApplicationContext(JNIEnv* env);
+#include "sora/android/android_capturer.h"
+#endif
+
 HelloSora::HelloSora(HelloSoraConfig config) : config_(config) {}
+HelloSora::~HelloSora() {
+  RTC_LOG(LS_INFO) << "HelloSora dtor";
+}
 void HelloSora::Init() {
   rtc::InitializeSSL();
 
@@ -64,6 +78,15 @@ void HelloSora::Init() {
             return webrtc::CreateWindowsCoreAudioAudioDeviceModule(
                 dependencies.task_queue_factory.get());
           });
+#elif defined(HELLO_ANDROID)
+  media_dependencies.adm =
+      worker_thread_->Invoke<rtc::scoped_refptr<webrtc::AudioDeviceModule>>(
+          RTC_FROM_HERE, [] {
+            JNIEnv* env = webrtc::AttachCurrentThreadIfNeeded();
+            auto context = GetAndroidApplicationContext(env);
+            auto p = webrtc::CreateJavaAudioDeviceModule(env, context);
+            return p;
+          });
 #else
   media_dependencies.adm =
       worker_thread_->Invoke<rtc::scoped_refptr<webrtc::AudioDeviceModule>>(
@@ -79,14 +102,19 @@ void HelloSora::Init() {
       webrtc::CreateBuiltinAudioDecoderFactory();
 
   auto cuda_context = sora::CudaContext::Create();
+#if defined(HELLO_ANDROID)
+  JNIEnv* env = webrtc::AttachCurrentThreadIfNeeded();
+#else
+  void* env = nullptr;
+#endif
   {
-    auto config = sora::GetDefaultVideoEncoderFactoryConfig(cuda_context);
+    auto config = sora::GetDefaultVideoEncoderFactoryConfig(cuda_context, env);
     config.use_simulcast_adapter = true;
     media_dependencies.video_encoder_factory =
         absl::make_unique<sora::SoraVideoEncoderFactory>(std::move(config));
   }
   {
-    auto config = sora::GetDefaultVideoDecoderFactoryConfig(cuda_context);
+    auto config = sora::GetDefaultVideoDecoderFactoryConfig(cuda_context, env);
     media_dependencies.video_decoder_factory =
         absl::make_unique<sora::SoraVideoDecoderFactory>(std::move(config));
   }
@@ -109,17 +137,24 @@ void HelloSora::Init() {
 
 #if defined(__APPLE__)
   auto video_track_source = sora::MacCapturer::Create(640, 480, 30, "");
+  rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source =
+      webrtc::VideoTrackSourceProxy::Create(
+          signaling_thread_.get(), worker_thread_.get(), video_track_source);
+#elif defined(HELLO_ANDROID)
+  auto context = GetAndroidApplicationContext(env);
+  auto video_source = sora::AndroidCapturer::Create(
+      env, context, signaling_thread_.get(), 640, 480, 30, "");
 #else
   auto video_track_source = sora::DeviceVideoCapturer::Create(640, 480, 30);
+  rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source =
+      webrtc::VideoTrackSourceProxy::Create(
+          signaling_thread_.get(), worker_thread_.get(), video_track_source);
 #endif
 
   std::string audio_track_id = "0123456789abcdef";
   std::string video_track_id = "0123456789abcdefg";
   audio_track_ = factory_->CreateAudioTrack(
       audio_track_id, factory_->CreateAudioSource(cricket::AudioOptions()));
-  rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source =
-      webrtc::VideoTrackSourceProxy::Create(
-          signaling_thread_.get(), worker_thread_.get(), video_track_source);
   video_track_ = factory_->CreateVideoTrack(video_track_id, video_source);
 
   ioc_.reset(new boost::asio::io_context(1));
@@ -163,11 +198,15 @@ void HelloSora::OnSetOffer() {
 }
 void HelloSora::OnDisconnect(sora::SoraSignalingErrorCode ec,
                              std::string message) {
-  std::cout << "OnDisconnect: " << message << std::endl;
+  RTC_LOG(LS_INFO) << "OnDisconnect: " << message;
   ioc_->stop();
 }
 
-#if !defined(TARGET_OS_IPHONE) || !TARGET_OS_IPHONE
+#if defined(HELLO_ANDROID) || (defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE)
+
+// iOS, Android は main を使わない
+
+#else
 
 int main(int argc, char* argv[]) {
   if (argc < 2) {

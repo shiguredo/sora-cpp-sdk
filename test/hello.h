@@ -16,6 +16,7 @@ class HelloSora : public std::enable_shared_from_this<HelloSora>,
                   public sora::SoraSignalingObserver {
  public:
   HelloSora(HelloSoraConfig config);
+  ~HelloSora();
   void Init();
   void Run();
 

@@ -314,9 +314,11 @@ def clone_and_checkout(url, version, dir, fetch, fetch_force):
 def install_webrtc(version, source_dir, install_dir, platform: str):
     win = platform.startswith("windows_")
     filename = f'webrtc.{platform}.{"zip" if win else "tar.gz"}'
+    rm_rf(os.path.join(source_dir, filename))
     archive = download(
         f'https://github.com/shiguredo-webrtc-build/webrtc-build/releases/download/{version}/{filename}',
         output_dir=source_dir)
+    rm_rf(os.path.join(install_dir, 'webrtc'))
     extract(archive, output_dir=install_dir, output_dirname='webrtc')
 
 
@@ -362,11 +364,20 @@ def build_install_webrtc(version, source_dir, build_dir, install_dir, platform, 
 
         cmd(['python3', 'run.py', 'build', platform, *args])
 
+    # インクルードディレクトリを増やしたくないので、
+    # __config_site を libc++ のディレクトリにコピーしておく
+    libcxx_dir = os.path.join(source_dir, 'webrtc', 'src', 'buildtools', 'third_party', 'libc++')
+    if not os.path.exists(os.path.join(libcxx_dir, 'trunk', 'include', '__config_site')):
+        shutil.copyfile(os.path.join(libcxx_dir, '__config_site'),
+                        os.path.join(libcxx_dir, 'trunk', 'include', '__config_site'))
+
 
 class WebrtcInfo(NamedTuple):
     version_file: str
     webrtc_include_dir: str
     webrtc_library_dir: str
+    clang_dir: str
+    libcxx_dir: str
 
 
 def get_webrtc_info(webrtcbuild: bool, source_dir: str, build_dir: str, install_dir: str) -> WebrtcInfo:
@@ -375,15 +386,20 @@ def get_webrtc_info(webrtcbuild: bool, source_dir: str, build_dir: str, install_
     webrtc_install_dir = os.path.join(install_dir, 'webrtc')
 
     if webrtcbuild:
-        return WebrtcInfo(version_file=os.path.join(source_dir, 'webrtc-build', 'VERSION'),
-                          webrtc_include_dir=os.path.join(webrtc_source_dir, 'src'),
-                          webrtc_library_dir=os.path.join(webrtc_build_dir, 'obj')
-                          if platform.system() == 'Windows' else webrtc_build_dir,)
+        return WebrtcInfo(
+            version_file=os.path.join(source_dir, 'webrtc-build', 'VERSION'),
+            webrtc_include_dir=os.path.join(webrtc_source_dir, 'src'),
+            webrtc_library_dir=os.path.join(webrtc_build_dir, 'obj')
+            if platform.system() == 'Windows' else webrtc_build_dir, clang_dir=os.path.join(
+                webrtc_source_dir, 'src', 'third_party', 'llvm-build', 'Release+Asserts'),
+            libcxx_dir=os.path.join(webrtc_source_dir, 'src', 'buildtools', 'third_party', 'libc++', 'trunk'),)
     else:
         return WebrtcInfo(
             version_file=os.path.join(webrtc_install_dir, 'VERSIONS'),
             webrtc_include_dir=os.path.join(webrtc_install_dir, 'include'),
             webrtc_library_dir=os.path.join(install_dir, 'webrtc', 'lib'),
+            clang_dir=os.path.join(install_dir, 'llvm', 'clang'),
+            libcxx_dir=os.path.join(install_dir, 'llvm', 'libcxx'),
         )
 
 
@@ -394,6 +410,19 @@ def install_android_ndk(version, install_dir, source_dir):
         source_dir)
     rm_rf(os.path.join(install_dir, 'android-ndk'))
     extract(archive, output_dir=install_dir, output_dirname='android-ndk')
+
+
+@versioned
+def install_android_sdk_cmdline_tools(version, install_dir, source_dir):
+    archive = download(
+        f'https://dl.google.com/android/repository/commandlinetools-linux-{version}_latest.zip',
+        source_dir)
+    tools_dir = os.path.join(install_dir, "android-sdk-cmdline-tools")
+    rm_rf(tools_dir)
+    extract(archive, output_dir=tools_dir, output_dirname='cmdline-tools')
+    # ライセンスを許諾する
+    cmd(['/bin/bash', '-c',
+        f'yes | {os.path.join(tools_dir, "cmdline-tools", "bin", "sdkmanager")} --sdk_root={tools_dir} --licenses'])
 
 
 @versioned
@@ -558,6 +587,11 @@ def install_cmake(version, source_dir, install_dir, platform: str, ext):
     url = f'https://github.com/Kitware/CMake/releases/download/v{version}/cmake-{version}-{platform}.{ext}'
     path = download(url, source_dir)
     extract(path, install_dir, 'cmake')
+    # Android で自前の CMake を利用する場合、ninja へのパスが見つけられない問題があるので、同じディレクトリに symlink を貼る
+    # https://issuetracker.google.com/issues/206099937
+    if platform.startswith('linux'):
+        with cd(os.path.join(install_dir, 'cmake', 'bin')):
+            cmd(['ln', '-s', '/usr/bin/ninja', 'ninja'])
 
 
 @versioned
@@ -728,6 +762,18 @@ def install_deps(platform, source_dir, build_dir, install_dir, debug,
             }
             install_android_ndk(**install_android_ndk_args)
 
+        # Android SDK Commandline Tools
+        if platform.target.os == 'android':
+            install_android_sdk_cmdline_tools_args = {
+                'version': version['ANDROID_SDK_CMDLINE_TOOLS_VERSION'],
+                'version_file': os.path.join(install_dir, 'android-sdk-cmdline-tools.version'),
+                'source_dir': source_dir,
+                'install_dir': install_dir,
+            }
+            install_android_sdk_cmdline_tools(**install_android_sdk_cmdline_tools_args)
+            add_path(os.path.join(install_dir, 'android-sdk-cmdline-tools', 'cmdline-tools', 'bin'))
+            os.environ['ANDROID_SDK_ROOT'] = os.path.join(install_dir, 'android-sdk-cmdline-tools')
+
         # WebRTC
         if platform.target.os == 'windows':
             webrtc_platform = f'windows_{platform.target.arch}'
@@ -772,8 +818,8 @@ def install_deps(platform, source_dir, build_dir, install_dir, debug,
         webrtc_info = get_webrtc_info(webrtcbuild, source_dir, build_dir, install_dir)
         webrtc_version = read_version_file(webrtc_info.version_file)
 
-        # Windows は MSVC を使うので LLVM は不要
-        if platform.build.os == 'ubuntu':
+        # Ubuntu 以外は MSVC や Apple Clang を使うので LLVM は不要
+        if platform.build.os == 'ubuntu' and not webrtcbuild:
             # LLVM
             tools_url = webrtc_version['WEBRTC_SRC_TOOLS_URL']
             tools_commit = webrtc_version['WEBRTC_SRC_TOOLS_COMMIT']
@@ -837,7 +883,7 @@ def install_deps(platform, source_dir, build_dir, install_dir, debug,
                 '-D_LIBCPP_ABI_UNSTABLE',
                 '-D_LIBCPP_DISABLE_AVAILABILITY',
                 '-nostdinc++',
-                f"-isystem{os.path.join(install_dir, 'llvm', 'libcxx', 'include')}",
+                f"-isystem{os.path.join(webrtc_info.libcxx_dir, 'include')}",
                 '-fPIC',
             ]
             install_boost_args['toolset'] = 'clang'
@@ -845,12 +891,12 @@ def install_deps(platform, source_dir, build_dir, install_dir, debug,
             install_boost_args['native_api_level'] = version['ANDROID_NATIVE_API_LEVEL']
         else:
             install_boost_args['target_os'] = 'linux'
-            install_boost_args['cxx'] = os.path.join(install_dir, 'llvm', 'clang', 'bin', 'clang++')
+            install_boost_args['cxx'] = os.path.join(webrtc_info.clang_dir, 'bin', 'clang++')
             install_boost_args['cxxflags'] = [
                 '-D_LIBCPP_ABI_UNSTABLE',
                 '-D_LIBCPP_DISABLE_AVAILABILITY',
                 '-nostdinc++',
-                f"-isystem{os.path.join(install_dir, 'llvm', 'libcxx', 'include')}",
+                f"-isystem{os.path.join(webrtc_info.libcxx_dir, 'include')}",
                 '-fPIC',
             ]
             install_boost_args['toolset'] = 'clang'
@@ -893,6 +939,28 @@ def install_deps(platform, source_dir, build_dir, install_dir, debug,
                 'install_dir': install_dir,
             }
             install_cuda_windows(**install_cuda_args)
+
+        if platform.target.os == 'android':
+            # Android 側からのコールバックする関数は消してはいけないので、
+            # libwebrtc.a の中から消してはいけない関数の一覧を作っておく
+            #
+            # readelf を使って libwebrtc.a の関数一覧を列挙して、その中から Java_org_webrtc_ を含む関数を取り出し、
+            # -Wl,--undefined=<関数名> に加工する。
+            # （-Wl,--undefined はアプリケーションから参照されていなくても関数を削除しないためのフラグ）
+            readelf = os.path.join(
+                install_dir, 'android-ndk', 'toolchains', 'llvm', 'prebuilt', 'linux-x86_64', 'bin', 'llvm-readelf')
+            libwebrtc = os.path.join(webrtc_info.webrtc_library_dir, 'arm64-v8a', 'libwebrtc.a')
+            m = cmdcap([readelf, '-Ws', libwebrtc])
+            ldflags = []
+            for line in m.splitlines():
+                if line.find('Java_org_webrtc_') == -1:
+                    continue
+                # この時点で line は以下のような文字列になっている
+                #    174: 0000000000000000    44 FUNC    GLOBAL DEFAULT    15 Java_org_webrtc_DataChannel_nativeClose
+                func = line.split()[7]
+                ldflags.append(f'-Wl,--undefined={func}')
+            with open(os.path.join(install_dir, 'webrtc.ldflags'), 'w') as f:
+                f.write('\n'.join(ldflags))
 
 
 AVAILABLE_TARGETS = ['windows_x86_64', 'macos_x86_64', 'macos_arm64', 'ubuntu-20.04_x86_64', 'ios', 'android']
@@ -973,16 +1041,16 @@ def main():
         cmake_args.append(f"-DWEBRTC_COMMIT={webrtc_version['WEBRTC_COMMIT']}")
         if platform.target.os == 'ubuntu':
             if platform.target.package_name == 'ubuntu-20.04_x86_64':
-                cmake_args.append("-DCMAKE_C_COMPILER=clang-10")
-                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-10")
+                cmake_args.append("-DCMAKE_C_COMPILER=clang-12")
+                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-12")
             else:
                 cmake_args.append(
-                    f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(install_dir, 'llvm', 'clang', 'bin', 'clang'))}")
+                    f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}")
                 cmake_args.append(
-                    f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(install_dir, 'llvm', 'clang', 'bin', 'clang++'))}")
+                    f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}")
             cmake_args.append("-DUSE_LIBCXX=ON")
             cmake_args.append(
-                f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(install_dir, 'llvm', 'libcxx', 'include'))}")
+                f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}")
         if platform.target.os == 'ios':
             cmake_args += ['-G', 'Xcode']
             cmake_args.append("-DCMAKE_SYSTEM_NAME=iOS")
@@ -997,13 +1065,12 @@ def main():
             cmake_args.append('-DANDROID_STL=none')
             cmake_args.append("-DUSE_LIBCXX=ON")
             cmake_args.append(
-                f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(install_dir, 'llvm', 'libcxx', 'include'))}")
-            cmake_args.append(
-                f"-DLIBCXXABI_INCLUDE_DIR={cmake_path(os.path.join(install_dir, 'llvm', 'libcxxabi', 'include'))}")
-            cmake_args.append('-DANDROID_CPP_FEATURES=exceptions')
+                f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}")
+            cmake_args.append('-DANDROID_CPP_FEATURES=exceptions rtti')
             # r23b には ANDROID_CPP_FEATURES=exceptions でも例外が設定されない問題がある
             # https://github.com/android/ndk/issues/1618
             cmake_args.append('-DCMAKE_ANDROID_EXCEPTIONS=ON')
+            cmake_args.append(f"-DSORA_WEBRTC_LDFLAGS={os.path.join(install_dir, 'webrtc.ldflags')}")
 
         # NvCodec
         if platform.target.os in ('windows', 'ubuntu'):
@@ -1036,44 +1103,49 @@ def main():
             shutil.copyfile(os.path.join(sora_build_dir, 'bundled', 'libsora.a'),
                             os.path.join(install_dir, 'sora', 'lib', 'libsora.a'))
 
-    if args.test and platform.target.os != 'ios':
-        test_build_dir = os.path.join(build_dir, 'test')
-        mkdir_p(test_build_dir)
-        with cd(test_build_dir):
-            cmake_args = []
-            cmake_args.append(f'-DCMAKE_BUILD_TYPE={configuration}')
-            cmake_args.append(f"-DBOOST_ROOT={cmake_path(os.path.join(install_dir, 'boost'))}")
-            cmake_args.append(f"-DWEBRTC_INCLUDE_DIR={cmake_path(webrtc_info.webrtc_include_dir)}")
-            cmake_args.append(f"-DWEBRTC_LIBRARY_DIR={cmake_path(webrtc_info.webrtc_library_dir)}")
-            cmake_args.append(f"-DSORA_DIR={cmake_path(os.path.join(install_dir, 'sora'))}")
-            if platform.target.os == 'ubuntu':
-                cmake_args.append("-DUSE_LIBCXX=ON")
-                cmake_args.append(
-                    f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(install_dir, 'llvm', 'libcxx', 'include'))}")
-            cmd(['cmake', os.path.join(BASE_DIR, 'test')] + cmake_args)
-            cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])
-            if args.run:
-                if platform.target.os == 'windows':
-                    cmd([os.path.join(test_build_dir, configuration, 'hello.exe'),
-                        os.path.join(BASE_DIR, 'test', '.testparam.json')])
-                else:
-                    cmd([os.path.join(test_build_dir, 'hello'), os.path.join(BASE_DIR, 'test', '.testparam.json')])
-
-    # iOS の場合は事前に用意したプロジェクトをビルドする
-    if args.test and platform.target.os == 'ios':
-        cmd(['xcodebuild', 'build',
-             '-project', 'test/hello/hello.xcodeproj',
-             '-target', 'hello',
-             '-arch', 'x86_64',
-             '-sdk', 'iphonesimulator',
-             '-configuration', 'Release'])
-        # こっちは signing が必要になるのでやらない
-        # cmd(['xcodebuild', 'build',
-        #      '-project', 'test/hello/hello.xcodeproj',
-        #      '-target', 'hello',
-        #      '-arch', 'arm64',
-        #      '-sdk', 'iphoneos',
-        #      '-configuration', 'Release'])
+    if args.test:
+        if platform.target.os == 'ios':
+            # iOS の場合は事前に用意したプロジェクトをビルドする
+            cmd(['xcodebuild', 'build',
+                '-project', 'test/hello/hello.xcodeproj',
+                 '-target', 'hello',
+                 '-arch', 'x86_64',
+                 '-sdk', 'iphonesimulator',
+                 '-configuration', 'Release'])
+            # こっちは signing が必要になるのでやらない
+            # cmd(['xcodebuild', 'build',
+            #      '-project', 'test/hello/hello.xcodeproj',
+            #      '-target', 'hello',
+            #      '-arch', 'arm64',
+            #      '-sdk', 'iphoneos',
+            #      '-configuration', 'Release'])
+        elif platform.target.os == 'android':
+            # Android の場合は事前に用意したプロジェクトをビルドする
+            with cd(os.path.join(BASE_DIR, 'test', 'android')):
+                cmd(['./gradlew', '--no-daemon', 'assemble'])
+        else:
+            # 普通のプロジェクトは CMake でビルドする
+            test_build_dir = os.path.join(build_dir, 'test')
+            mkdir_p(test_build_dir)
+            with cd(test_build_dir):
+                cmake_args = []
+                cmake_args.append(f'-DCMAKE_BUILD_TYPE={configuration}')
+                cmake_args.append(f"-DBOOST_ROOT={cmake_path(os.path.join(install_dir, 'boost'))}")
+                cmake_args.append(f"-DWEBRTC_INCLUDE_DIR={cmake_path(webrtc_info.webrtc_include_dir)}")
+                cmake_args.append(f"-DWEBRTC_LIBRARY_DIR={cmake_path(webrtc_info.webrtc_library_dir)}")
+                cmake_args.append(f"-DSORA_DIR={cmake_path(os.path.join(install_dir, 'sora'))}")
+                if platform.target.os == 'ubuntu':
+                    cmake_args.append("-DUSE_LIBCXX=ON")
+                    cmake_args.append(
+                        f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}")
+                cmd(['cmake', os.path.join(BASE_DIR, 'test')] + cmake_args)
+                cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])
+                if args.run:
+                    if platform.target.os == 'windows':
+                        cmd([os.path.join(test_build_dir, configuration, 'hello.exe'),
+                            os.path.join(BASE_DIR, 'test', '.testparam.json')])
+                    else:
+                        cmd([os.path.join(test_build_dir, 'hello'), os.path.join(BASE_DIR, 'test', '.testparam.json')])
 
     if args.package:
         mkdir_p(package_dir)

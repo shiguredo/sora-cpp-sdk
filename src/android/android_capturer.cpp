@@ -33,14 +33,14 @@ void AndroidCapturer::Stop() {
 
 rtc::scoped_refptr<AndroidCapturer> AndroidCapturer::Create(
     JNIEnv* env,
+    jobject context,
     rtc::Thread* signaling_thread,
     size_t width,
     size_t height,
     size_t target_fps,
     std::string video_capturer_device) {
-  rtc::scoped_refptr<AndroidCapturer> p(
-      new rtc::RefCountedObject<AndroidCapturer>(env, signaling_thread));
-  if (!p->Init(env, signaling_thread, width, height, target_fps,
+  auto p = rtc::make_ref_counted<AndroidCapturer>(env, signaling_thread);
+  if (!p->Init(env, context, signaling_thread, width, height, target_fps,
                video_capturer_device)) {
     return nullptr;
   }
@@ -49,9 +49,10 @@ rtc::scoped_refptr<AndroidCapturer> AndroidCapturer::Create(
 
 bool AndroidCapturer::EnumVideoDevice(
     JNIEnv* env,
+    jobject context,
     std::function<void(std::string, std::string)> f) {
-  auto context = getApplicationContext(env);
-  auto camera2enumerator = createCamera2Enumerator(env, context.obj());
+  //auto context = getApplicationContext(env);
+  auto camera2enumerator = createCamera2Enumerator(env, context);
   auto devices = enumDevices(env, camera2enumerator.obj());
 
   // デバイス名@[+frontfacing][+backfacing]
@@ -84,25 +85,6 @@ bool AndroidCapturer::EnumVideoDevice(
   return true;
 }
 
-webrtc::ScopedJavaLocalRef<jobject> AndroidCapturer::getApplicationContext(
-    JNIEnv* env) {
-  // applicationContext = UnityPlayer.currentActivity.getApplicationContext();
-  webrtc::ScopedJavaLocalRef<jclass> upcls =
-      webrtc::GetClass(env, "com/unity3d/player/UnityPlayer");
-  jfieldID actid = env->GetStaticFieldID(upcls.obj(), "currentActivity",
-                                         "Landroid/app/Activity;");
-  webrtc::ScopedJavaLocalRef<jobject> activity(
-      env, env->GetStaticObjectField(upcls.obj(), actid));
-
-  webrtc::ScopedJavaLocalRef<jclass> actcls(
-      env, env->GetObjectClass(activity.obj()));
-  jmethodID ctxid = env->GetMethodID(actcls.obj(), "getApplicationContext",
-                                     "()Landroid/content/Context;");
-  webrtc::ScopedJavaLocalRef<jobject> context(
-      env, env->CallObjectMethod(activity.obj(), ctxid));
-
-  return context;
-}
 webrtc::ScopedJavaLocalRef<jobject> AndroidCapturer::createSurfaceTextureHelper(
     JNIEnv* env) {
   // videoCapturerSurfaceTextureHelper = SurfaceTextureHelper.create("VideoCapturerThread", null);
@@ -221,6 +203,7 @@ void AndroidCapturer::dispose(JNIEnv* env, jobject capturer) {
 }
 
 bool AndroidCapturer::Init(JNIEnv* env,
+                           jobject context,
                            rtc::Thread* signaling_thread,
                            size_t width,
                            size_t height,
@@ -255,8 +238,8 @@ bool AndroidCapturer::Init(JNIEnv* env,
   // videoCapturer.initialize(videoCapturerSurfaceTextureHelper, applicationContext, nativeGetJavaVideoCapturerObserver(nativeClient));
   // videoCapturer.startCapture(width, height, target_fps);
 
-  auto context = getApplicationContext(env);
-  auto camera2enumerator = createCamera2Enumerator(env, context.obj());
+  //auto context = getApplicationContext(env);
+  auto camera2enumerator = createCamera2Enumerator(env, context);
   auto devices = enumDevices(env, camera2enumerator.obj());
   for (auto device : devices) {
     RTC_LOG(LS_INFO) << "camera device: " << device;
@@ -282,7 +265,7 @@ bool AndroidCapturer::Init(JNIEnv* env,
 
   auto capturer = createCapturer(env, camera2enumerator.obj(), devices[index]);
   auto helper = createSurfaceTextureHelper(env);
-  initializeCapturer(env, capturer.obj(), helper.obj(), context.obj(),
+  initializeCapturer(env, capturer.obj(), helper.obj(), context,
                      native_capturer_observer_->obj());
   startCapture(env, capturer.obj(), width, height, target_fps);
 

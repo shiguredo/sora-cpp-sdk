@@ -60,7 +60,8 @@ class SoraVideoEncoderFactory : public webrtc::VideoEncoderFactory {
 
 // ハードウェアエンコーダを出来るだけ使おうとして、見つからなければソフトウェアエンコーダを使う設定を返す
 SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
-    std::shared_ptr<CudaContext> cuda_context);
+    std::shared_ptr<CudaContext> cuda_context = nullptr,
+    void* env = nullptr);
 // ソフトウェアエンコーダのみを使う設定を返す
 SoraVideoEncoderFactoryConfig GetSoftwareOnlyVideoEncoderFactoryConfig();
 

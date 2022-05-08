@@ -113,13 +113,11 @@ if (USE_LIBCXX)
     PRIVATE
       "$<$<COMPILE_LANGUAGE:CXX>:-nostdinc++>"
       "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<BOOL:LIBCXX_INCLUDE_DIR>>:-isystem${LIBCXX_INCLUDE_DIR}>"
-      "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<BOOL:LIBCXXABI_INCLUDE_DIR>>:-isystem${LIBCXXABI_INCLUDE_DIR}>"
   )
 endif()
 
-target_include_directories(sora
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(sora PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(sora INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}> $<INSTALL_INTERFACE:include>)
 target_compile_definitions(sora
   PRIVATE
     USE_NVCODEC_ENCODER=$<BOOL:${USE_NVCODEC_ENCODER}>
@@ -333,7 +331,7 @@ elseif (SORA_TARGET_OS STREQUAL "android")
   )
 
   target_compile_definitions(sora
-    PRIVATE
+    PUBLIC
       WEBRTC_POSIX
       WEBRTC_LINUX
       WEBRTC_ANDROID
@@ -344,25 +342,11 @@ elseif (SORA_TARGET_OS STREQUAL "android")
       _LIBCPP_ENABLE_NODISCARD
   )
 
-  find_library(ANDROID_LIB_LOG log)
-  find_library(ANDROID_LIB_ANDROID android)
-  # find_library(ANDROID_LIB_OPENSLES OpenSLES)
-  # find_library(ANDROID_LIB_VULKAN vulkan)
-  # find_library(ANDROID_LIB_EGL EGL)
-
-  target_link_libraries(sora
-    PRIVATE
-      ${ANDROID_LIB_LOG}
-      ${ANDROID_LIB_ANDROID}
-  #     ${ANDROID_LIB_OPENSLES}
-  #     ${ANDROID_LIB_VULKAN}
-  #     ${ANDROID_LIB_EGL}
-  )
-
-elseif (UNIX)
+elseif (SORA_TARGET_OS STREQUAL "ubuntu")
   target_compile_definitions(sora
     PUBLIC
       WEBRTC_POSIX
+      WEBRTC_LINUX
   )
   # Linux 系の場合はカスタムされた libc++ を使っているためオプション追加
   target_compile_definitions(sora PUBLIC _LIBCPP_ABI_UNSTABLE _LIBCPP_DISABLE_AVAILABILITY)
@@ -413,7 +397,7 @@ elseif (UNIX)
         NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
         NvCodec/NvCodec/NvEncoder/NvEncoderCuda.cpp
       PROPERTIES
-        COMPILE_OPTIONS "-xcuda;--cuda-gpu-arch=sm_35;-std=gnu++14"
+        COMPILE_OPTIONS "-xcuda;--cuda-gpu-arch=sm_35;-std=gnu++17"
     )
 
     # CUDA を要求したくないので libsora.a に含める
@@ -426,6 +410,8 @@ include(GNUInstallDirs)
 install(TARGETS sora
   EXPORT sora-config
   FILE_SET HEADERS
+  # Android の場合はライブラリを ANDROID_ABI 以下のディレクトリにインストールする
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/$<$<STREQUAL:${SORA_TARGET},"android">:/${ANDROID_ABI}>
 )
 install(EXPORT sora-config
   DESTINATION ${CMAKE_INSTALL_DATADIR}/sora
@@ -435,5 +421,10 @@ install(FILES cmake/FindWebRTC.cmake
   DESTINATION ${CMAKE_INSTALL_DATADIR}/cmake
 )
 install(FILES LICENSE NOTICE.md
-  DESTINATION ${CMAKE_INSTALL_DATADIR}
+  DESTINATION ${CMAKE_INSTALL_PREFIX}
 )
+if (SORA_TARGET STREQUAL "android")
+  install(FILES ${SORA_WEBRTC_LDFLAGS}
+    DESTINATION ${CMAKE_INSTALL_DATADIR}
+  )
+endif()

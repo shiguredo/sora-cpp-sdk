@@ -83,7 +83,9 @@ class Websocket {
  private:
   bool IsSSL() const;
 
-  void OnResolve(boost::system::error_code ec,
+  void OnResolve(std::string host,
+                 std::string port,
+                 boost::system::error_code ec,
                  boost::asio::ip::tcp::resolver::results_type results);
   void OnSSLConnect(boost::system::error_code ec);
   void OnSSLHandshake(boost::system::error_code ec);

@@ -49,7 +49,8 @@
                 "_LIBCPP_ABI_UNSTABLE",
                 "_LIBCPP_DISABLE_AVAILABILITY",
                 "OPENSSL_IS_BORINGSSL",
-                "USE_NVCODEC_ENCODER=0"
+                "USE_NVCODEC_ENCODER=0",
+                "HELLO_ANDROID"
             ],
             "compilerPath": "${workspaceFolder}/_install/android/release/llvm/clang/bin/clang++",
             "compilerArgs": ["-nostdinc++"],

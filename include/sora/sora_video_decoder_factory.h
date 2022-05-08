@@ -56,7 +56,8 @@ class SoraVideoDecoderFactory : public webrtc::VideoDecoderFactory {
 
 // ハードウェアデコーダを出来るだけ使おうとして、見つからなければソフトウェアデコーダを使う設定を返す
 SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
-    std::shared_ptr<CudaContext> cuda_context);
+    std::shared_ptr<CudaContext> cuda_context = nullptr,
+    void* env = nullptr);
 // ソフトウェアデコーダのみを使う設定を返す
 SoraVideoDecoderFactoryConfig GetSoftwareOnlyVideoDecoderFactoryConfig();
 

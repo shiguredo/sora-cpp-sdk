@@ -20,6 +20,7 @@ class AndroidCapturer : public webrtc::jni::AndroidVideoTrackSource {
 
   static rtc::scoped_refptr<AndroidCapturer> Create(
       JNIEnv* env,
+      jobject context,
       rtc::Thread* signaling_thread,
       size_t width,
       size_t height,
@@ -27,10 +28,10 @@ class AndroidCapturer : public webrtc::jni::AndroidVideoTrackSource {
       std::string video_capturer_device);
 
   static bool EnumVideoDevice(JNIEnv* env,
+                              jobject context,
                               std::function<void(std::string, std::string)> f);
 
  private:
-  static webrtc::ScopedJavaLocalRef<jobject> getApplicationContext(JNIEnv* env);
   static webrtc::ScopedJavaLocalRef<jobject> createSurfaceTextureHelper(
       JNIEnv* env);
   static webrtc::ScopedJavaLocalRef<jobject> createCamera2Enumerator(
@@ -54,6 +55,7 @@ class AndroidCapturer : public webrtc::jni::AndroidVideoTrackSource {
   static void dispose(JNIEnv* env, jobject capturer);
 
   bool Init(JNIEnv* env,
+            jobject context,
             rtc::Thread* signaling_thread,
             size_t width,
             size_t height,

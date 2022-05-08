@@ -149,17 +149,24 @@ void Websocket::Connect(const std::string& url, connect_callback_t on_connect) {
   // DNS ルックアップ
   resolver_->async_resolve(
       parts_.host, port,
-      std::bind(&Websocket::OnResolve, this, std::placeholders::_1,
-                std::placeholders::_2));
+      std::bind(&Websocket::OnResolve, this, parts_.host, port,
+                std::placeholders::_1, std::placeholders::_2));
 }
 
 void Websocket::OnResolve(
+    std::string host,
+    std::string port,
     boost::system::error_code ec,
     boost::asio::ip::tcp::resolver::results_type results) {
   if (ec) {
     auto on_connect = std::move(on_connect_);
     on_connect(ec);
     return;
+  }
+
+  for (const auto& r : results) {
+    RTC_LOG(LS_INFO) << "host=" << host << ":" << port
+                     << " resolved=" << r.endpoint();
   }
 
   // DNS ルックアップで得られたエンドポイントに対して接続する

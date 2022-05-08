@@ -124,6 +124,7 @@ jobs:
       matrix:
         name:
           - ubuntu-20.04_x86_64
+          - android
     name: Build sora-cpp-sdk for ${{ matrix.name }}
     runs-on: ubuntu-20.04
     steps:
@@ -205,6 +206,7 @@ jobs:
           #- ubuntu-18.04_armv8_jetson_xavier
           #- ubuntu-18.04_x86_64
           - ubuntu-20.04_x86_64
+          - android
     steps:
       - uses: actions/download-artifact@v3
         with:
