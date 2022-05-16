@@ -130,9 +130,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Install deps
+        if: matrix.name != 'android'
         run: |
           source VERSION
-          # clang-10 と CUDA を入れる
+          # clang-12 と CUDA を入れる
           sudo apt-get update
           sudo apt-get install -y software-properties-common
           # CUDA 10 なので ubuntu1804 で正しい
@@ -141,7 +142,10 @@ jobs:
           sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
           sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
           sudo apt-get update
-          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install cuda=$CUDA_VERSION clang-10
+          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install cuda=$CUDA_VERSION clang-12
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2.0.8
+        if: matrix.name == 'android'
       - run: python3 run.py --test --package ${{ matrix.name }}
       - name: Get package name
         run: |

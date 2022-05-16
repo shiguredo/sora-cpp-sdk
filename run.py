@@ -764,15 +764,19 @@ def install_deps(platform, source_dir, build_dir, install_dir, debug,
 
         # Android SDK Commandline Tools
         if platform.target.os == 'android':
-            install_android_sdk_cmdline_tools_args = {
-                'version': version['ANDROID_SDK_CMDLINE_TOOLS_VERSION'],
-                'version_file': os.path.join(install_dir, 'android-sdk-cmdline-tools.version'),
-                'source_dir': source_dir,
-                'install_dir': install_dir,
-            }
-            install_android_sdk_cmdline_tools(**install_android_sdk_cmdline_tools_args)
-            add_path(os.path.join(install_dir, 'android-sdk-cmdline-tools', 'cmdline-tools', 'bin'))
-            os.environ['ANDROID_SDK_ROOT'] = os.path.join(install_dir, 'android-sdk-cmdline-tools')
+            if 'ANDROID_SDK_ROOT' in os.environ and os.path.exists(os.environ['ANDROID_SDK_ROOT']):
+                # 既に Android SDK が設定されている場合はインストールしない
+                pass
+            else:
+                install_android_sdk_cmdline_tools_args = {
+                    'version': version['ANDROID_SDK_CMDLINE_TOOLS_VERSION'],
+                    'version_file': os.path.join(install_dir, 'android-sdk-cmdline-tools.version'),
+                    'source_dir': source_dir,
+                    'install_dir': install_dir,
+                }
+                install_android_sdk_cmdline_tools(**install_android_sdk_cmdline_tools_args)
+                add_path(os.path.join(install_dir, 'android-sdk-cmdline-tools', 'cmdline-tools', 'bin'))
+                os.environ['ANDROID_SDK_ROOT'] = os.path.join(install_dir, 'android-sdk-cmdline-tools')
 
         # WebRTC
         if platform.target.os == 'windows':
