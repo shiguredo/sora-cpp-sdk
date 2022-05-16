@@ -1097,7 +1097,7 @@ def main():
                             os.path.join(install_dir, 'sora', 'lib', 'libsora.a'))
         else:
             cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])
-            cmd(['cmake', '--install', '.'])
+            cmd(['cmake', '--install', '.', '--config', configuration])
 
         # バンドルされたライブラリをインストールする
         if platform.target.os == 'windows':

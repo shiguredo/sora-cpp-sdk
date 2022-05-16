@@ -189,7 +189,7 @@ if (SORA_TARGET_OS STREQUAL "windows")
       Strmiids.lib
   #    crypt32.lib
       dmoguids.lib
-  #    iphlpapi.lib
+      iphlpapi.lib
       msdmo.lib
       Secur32.lib
       wmcodecdspuuid.lib
