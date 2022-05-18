@@ -147,7 +147,7 @@ jobs:
       - name: Install deps for Jetson Xavier series
         if: matrix.name == 'ubuntu-20.04_armv8_jetson_xavier'
         run: |
-          sudo apt install multistrap
+          sudo apt install multistrap gcc-aarch64-linux-gnu
           # multistrap に insecure なリポジトリからの取得を許可する設定を入れる
           sudo sed -e 's/Apt::Get::AllowUnauthenticated=true/Apt::Get::AllowUnauthenticated=true";\n$config_str .= " -o Acquire::AllowInsecureRepositories=true/' -i /usr/sbin/multistrap
       - name: Install deps for Android

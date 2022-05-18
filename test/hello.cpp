@@ -219,7 +219,9 @@ void HelloSora::OnDisconnect(sora::SoraSignalingErrorCode ec,
 
 #else
 
+#if defined(HELLO_JETSON_XAVIER)
 extern int log_level;
+#endif
 
 int main(int argc, char* argv[]) {
   if (argc < 2) {
@@ -236,7 +238,9 @@ int main(int argc, char* argv[]) {
   }
 #endif
 
+#if defined(HELLO_JETSON_XAVIER)
   log_level = 3;
+#endif
 
   // rtc::LogMessage::LogToDebug(rtc::LS_VERBOSE);
   // rtc::LogMessage::LogTimestamps();
