@@ -124,13 +124,14 @@ jobs:
       matrix:
         name:
           - ubuntu-20.04_x86_64
+          - ubuntu-20.04_armv8_jetson_xavier
           - android
     name: Build sora-cpp-sdk for ${{ matrix.name }}
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
-      - name: Install deps
-        if: matrix.name != 'android'
+      - name: Install deps for Ubuntu 20.04 x86_64
+        if: matrix.name == 'ubuntu-20.04_x86_64'
         run: |
           source VERSION
           # clang-12 と CUDA を入れる
@@ -143,6 +144,10 @@ jobs:
           sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
           sudo apt-get update
           DEBIAN_FRONTEND=noninteractive sudo apt-get -y install cuda=$CUDA_VERSION clang-12
+      - name: Install deps for Jetson Xavier series
+        if: matrix.name == 'ubuntu-20.04_armv8_jetson_xavier'
+        run: |
+          sudo apt install multistrap
       - name: Install deps for Android
         if: matrix.name == 'android'
         run: |
@@ -211,7 +216,7 @@ jobs:
           #- raspberry-pi-os_armv7
           #- raspberry-pi-os_armv8
           #- ubuntu-18.04_armv8_jetson_nano
-          #- ubuntu-18.04_armv8_jetson_xavier
+          - ubuntu-20.04_armv8_jetson_xavier
           #- ubuntu-18.04_x86_64
           - ubuntu-20.04_x86_64
           - android

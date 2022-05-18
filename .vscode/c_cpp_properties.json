@@ -26,7 +26,37 @@
             "compilerArgs": ["-nostdinc++"],
             "cStandard": "gnu17",
             "cppStandard": "gnu++17",
-            "intelliSenseMode": "linux-gcc-x64"
+            "intelliSenseMode": "linux-clang-x64"
+        },
+        {
+            "name": "ubuntu-20.04_armv8_jetson_xavier Release",
+            "includePath": [
+                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson_xavier/release/boost/include",
+                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson_xavier/release/webrtc/include",
+                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson_xavier/release/webrtc/include/third_party/abseil-cpp",
+                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson_xavier/release/webrtc/include/third_party/boringssl/src/include",
+                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson_xavier/release/webrtc/include/third_party/libyuv/include",
+                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson_xavier/release/webrtc/include/third_party/zlib",
+                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson_xavier/release/llvm/libcxx/include",
+                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson_xavier/release/sora",
+                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson_xavier/release/rootfs/usr/src/jetson_multimedia_api/include",
+                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson_xavier/release/rootfs/usr/src/jetson_multimedia_api/include/libjpeg-8b",
+                "${workspaceFolder}/_build/ubuntu-20.04_armv8_jetson_xavier/release/sora",
+                "${workspaceFolder}/include"
+            ],
+            "defines": [
+                "WEBRTC_POSIX",
+                "_LIBCPP_ABI_UNSTABLE",
+                "_LIBCPP_DISABLE_AVAILABILITY",
+                "OPENSSL_IS_BORINGSSL",
+                "USE_JETSON_ENCODER=1",
+                "HELLO_JETSON_XAVIER"
+            ],
+            "compilerPath": "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson_xavier/release/llvm/clang/bin/clang++",
+            "compilerArgs": ["-nostdinc++"],
+            "cStandard": "gnu17",
+            "cppStandard": "gnu++17",
+            "intelliSenseMode": "linux-clang-x64"
         },
         {
             "name": "android Release",

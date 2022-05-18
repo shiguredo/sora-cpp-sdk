@@ -8,6 +8,7 @@ import shutil
 import platform
 import argparse
 import multiprocessing
+import hashlib
 from typing import Callable, NamedTuple, Optional, List, Union, Dict
 if platform.system() == 'Windows':
     import winreg
@@ -404,6 +405,41 @@ def get_webrtc_info(webrtcbuild: bool, source_dir: str, build_dir: str, install_
 
 
 @versioned
+def install_rootfs(version, install_dir, conf):
+    rootfs_dir = os.path.join(install_dir, 'rootfs')
+    rm_rf(rootfs_dir)
+    cmd(['multistrap', '--no-auth', '-a', 'arm64', '-d', rootfs_dir, '-f', conf])
+    # 絶対パスのシンボリックリンクを相対パスに置き換えていく
+    for dir, _, filenames in os.walk(rootfs_dir):
+        for filename in filenames:
+            linkpath = os.path.join(dir, filename)
+            # symlink かどうか
+            if not os.path.islink(linkpath):
+                continue
+            target = os.readlink(linkpath)
+            # 絶対パスかどうか
+            if not os.path.isabs(target):
+                continue
+            # rootfs_dir を先頭に付けることで、
+            # rootfs の外から見て正しい絶対パスにする
+            targetpath = rootfs_dir + target
+            # 参照先の絶対パスが存在するかどうか
+            if not os.path.exists(targetpath):
+                continue
+            # 相対パスに置き換える
+            relpath = os.path.relpath(targetpath, dir)
+            logging.debug(f'{linkpath[len(rootfs_dir):]} targets {target} to {relpath}')
+            os.remove(linkpath)
+            os.symlink(relpath, linkpath)
+
+    # なぜかシンボリックリンクが登録されていないので作っておく
+    link = os.path.join(rootfs_dir, 'usr', 'lib', 'aarch64-linux-gnu', 'tegra', 'libnvbuf_fdmap.so')
+    file = os.path.join(rootfs_dir, 'usr', 'lib', 'aarch64-linux-gnu', 'tegra', 'libnvbuf_fdmap.so.1.0.0')
+    if os.path.exists(file) and not os.path.exists(link):
+        os.symlink(os.path.basename(file), link)
+
+
+@versioned
 def install_android_ndk(version, install_dir, source_dir):
     archive = download(
         f'https://dl.google.com/android/repository/android-ndk-{version}-linux.zip',
@@ -458,7 +494,8 @@ def install_llvm(version, install_dir,
 @versioned
 def install_boost(
         version: str, source_dir, build_dir, install_dir,
-        debug: bool, cxx: str, cxxflags: List[str], toolset, visibility, target_os,
+        debug: bool, cxx: str, cxxflags: List[str], linkflags: List[str],
+        toolset, visibility, target_os, architecture,
         android_ndk, native_api_level):
     version_underscore = version.replace('.', '_')
     archive = download(
@@ -500,6 +537,7 @@ def install_boost(
                     '--ignore-site-config',
                     f'variant={"debug" if debug else "release"}',
                     f'cxxflags={" ".join(cxxflags)}',
+                    f'linkflags={" ".join(linkflags)}',
                     f'toolset={toolset}',
                     f'visibility={visibility}',
                     f'target-os={target_os}',
@@ -541,6 +579,7 @@ def install_boost(
                 '--ignore-site-config',
                 f'variant={"debug" if debug else "release"}',
                 f'cxxflags={" ".join(cxxflags)}',
+                f'linkflags={" ".join(linkflags)}',
                 f'toolset={toolset}',
                 f'visibility={visibility}',
                 f'target-os={target_os}',
@@ -562,24 +601,19 @@ def install_boost(
                 '--ignore-site-config',
                 f'variant={"debug" if debug else "release"}',
                 f'cxxflags={" ".join(cxxflags)}',
+                f'linkflags={" ".join(linkflags)}',
                 f'toolset={toolset}',
                 f'visibility={visibility}',
                 f'target-os={target_os}',
                 'address-model=64',
                 'link=static',
                 f'runtime-link={runtime_link}',
-                'threading=multi'])
+                'threading=multi',
+                f'architecture={architecture}'])
 
 
 def cmake_path(path: str) -> str:
     return path.replace('\\', '/')
-
-
-class RotorConfig(NamedTuple):
-    rotor_fetch: bool
-    rotor_fetch_force: bool
-    rotor_gen: bool
-    rotor_gen_force: bool
 
 
 @versioned
@@ -632,7 +666,7 @@ class PlatformTarget(object):
         if self.os == 'raspberry-pi-os':
             return f'raspberry-pi-os_{self.arch}'
         if self.os == 'jetson':
-            return f'ubuntu-18.04_armv8_jetson_{self.osver}'
+            return f'ubuntu-20.04_armv8_jetson_{self.osver}'
         raise Exception('error')
 
 
@@ -700,7 +734,7 @@ class Platform(object):
             self._check(p.arch in ('armv6', 'armv7', 'armv8'))
         elif p.os == 'jetson':
             self._check(p.osver in ('nano', 'xavier'))
-            self._check(p.arch == 'arm64')
+            self._check(p.arch == 'armv8')
         elif p.os in ('ios', 'android'):
             self._check(p.arch is None)
         else:
@@ -747,10 +781,23 @@ class Platform(object):
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
-def install_deps(platform, source_dir, build_dir, install_dir, debug,
-                 webrtcbuild: bool, webrtc_config: WebrtcConfig, rotor_config: RotorConfig):
+def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
+                 webrtcbuild: bool, webrtc_config: WebrtcConfig):
     with cd(BASE_DIR):
         version = read_version_file('VERSION')
+
+        # multistrap を使った sysroot の構築
+        if platform.target.os == 'jetson':
+            conf = os.path.join(BASE_DIR, 'multistrap', f'{platform.target.package_name}.conf')
+            # conf ファイルのハッシュ値をバージョンとする
+            version_md5 = hashlib.md5(open(conf, 'rb').read()).hexdigest()
+            install_rootfs_args = {
+                'version': version_md5,
+                'version_file': os.path.join(install_dir, 'rootfs.version'),
+                'install_dir': install_dir,
+                'conf': conf,
+            }
+            install_rootfs(**install_rootfs_args)
 
         # Android NDK
         if platform.target.os == 'android':
@@ -792,7 +839,7 @@ def install_deps(platform, source_dir, build_dir, install_dir, debug,
         elif platform.target.os == 'raspberry-pi-os':
             webrtc_platform = f'raspberry-pi-os_{platform.target.arch}'
         elif platform.target.os == 'jetson':
-            webrtc_platform = 'ubuntu-18.04_armv8'
+            webrtc_platform = 'ubuntu-20.04_armv8'
         else:
             raise Exception(f'Unknown platform {platform.target.os}')
 
@@ -856,12 +903,14 @@ def install_deps(platform, source_dir, build_dir, install_dir, debug,
             'install_dir': install_dir,
             'cxx': '',
             'cxxflags': [],
+            'linkflags': [],
             'toolset': '',
             'visibility': 'global',
             'target_os': '',
             'debug': debug,
             'android_ndk': '',
             'native_api_level': '',
+            'architecture': 'x86',
         }
         if platform.target.os == 'windows':
             install_boost_args['cxxflags'] = [
@@ -893,6 +942,26 @@ def install_deps(platform, source_dir, build_dir, install_dir, debug,
             install_boost_args['toolset'] = 'clang'
             install_boost_args['android_ndk'] = os.path.join(install_dir, 'android-ndk')
             install_boost_args['native_api_level'] = version['ANDROID_NATIVE_API_LEVEL']
+        elif platform.target.os == 'jetson':
+            sysroot = os.path.join(install_dir, 'rootfs')
+            install_boost_args['target_os'] = 'linux'
+            install_boost_args['cxx'] = os.path.join(webrtc_info.clang_dir, 'bin', 'clang++')
+            install_boost_args['cxxflags'] = [
+                '-D_LIBCPP_ABI_UNSTABLE',
+                '-D_LIBCPP_DISABLE_AVAILABILITY',
+                '-nostdinc++',
+                f"-isystem{os.path.join(webrtc_info.libcxx_dir, 'include')}",
+                '-fPIC',
+                '--target=aarch64-linux-gnu',
+                f"--sysroot={sysroot}",
+                f"-I{os.path.join(sysroot, 'usr', 'include', 'aarch64-linux-gnu')}"
+            ]
+            install_boost_args['linkflags'] = [
+                f"-L{os.path.join(sysroot, 'usr', 'lib', 'aarch64-linux-gnu')}",
+                f"-B{os.path.join(sysroot, 'usr', 'lib', 'aarch64-linux-gnu')}",
+            ]
+            install_boost_args['toolset'] = 'clang'
+            install_boost_args['architecture'] = 'arm'
         else:
             install_boost_args['target_os'] = 'linux'
             install_boost_args['cxx'] = os.path.join(webrtc_info.clang_dir, 'bin', 'clang++')
@@ -967,7 +1036,8 @@ def install_deps(platform, source_dir, build_dir, install_dir, debug,
                 f.write('\n'.join(ldflags))
 
 
-AVAILABLE_TARGETS = ['windows_x86_64', 'macos_x86_64', 'macos_arm64', 'ubuntu-20.04_x86_64', 'ios', 'android']
+AVAILABLE_TARGETS = ['windows_x86_64', 'macos_x86_64', 'macos_arm64',
+                     'ubuntu-20.04_x86_64', 'ubuntu-20.04_armv8_jetson_xavier', 'ios', 'android']
 
 
 def main():
@@ -996,6 +1066,8 @@ def main():
         platform = Platform('macos', get_macos_osver(), 'arm64')
     elif args.target == 'ubuntu-20.04_x86_64':
         platform = Platform('ubuntu', '20.04', 'x86_64')
+    elif args.target == 'ubuntu-20.04_armv8_jetson_xavier':
+        platform = Platform('jetson', 'xavier', 'armv8')
     elif args.target == 'ios':
         platform = Platform('ios', None, None)
     elif args.target == 'android':
@@ -1017,7 +1089,7 @@ def main():
     mkdir_p(install_dir)
 
     install_deps(platform, source_dir, build_dir, install_dir, args.debug,
-                 webrtcbuild=args.webrtcbuild, webrtc_config=args, rotor_config=args)
+                 webrtcbuild=args.webrtcbuild, webrtc_config=args)
 
     configuration = 'Debug' if args.debug else 'Release'
 
@@ -1075,6 +1147,22 @@ def main():
             # https://github.com/android/ndk/issues/1618
             cmake_args.append('-DCMAKE_ANDROID_EXCEPTIONS=ON')
             cmake_args.append(f"-DSORA_WEBRTC_LDFLAGS={os.path.join(install_dir, 'webrtc.ldflags')}")
+        if platform.target.os == 'jetson':
+            sysroot = os.path.join(install_dir, 'rootfs')
+            cmake_args.append('-DCMAKE_SYSTEM_NAME=Linux')
+            cmake_args.append('-DCMAKE_SYSTEM_PROCESSOR=aarch64')
+            cmake_args.append(f'-DCMAKE_SYSROOT={sysroot}')
+            cmake_args.append('-DCMAKE_C_COMPILER_TARGET=aarch64-linux-gnu')
+            cmake_args.append('-DCMAKE_CXX_COMPILER_TARGET=aarch64-linux-gnu')
+            cmake_args.append(f'-DCMAKE_FIND_ROOT_PATH={sysroot}')
+            cmake_args.append("-DUSE_LIBCXX=ON")
+            cmake_args.append(
+                f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}")
+            cmake_args.append(
+                f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}")
+            cmake_args.append(
+                f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}")
+            cmake_args.append('-DUSE_JETSON_ENCODER=ON')
 
         # NvCodec
         if platform.target.os in ('windows', 'ubuntu'):
@@ -1142,6 +1230,26 @@ def main():
                     cmake_args.append("-DUSE_LIBCXX=ON")
                     cmake_args.append(
                         f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}")
+                if platform.target.os == 'jetson':
+                    sysroot = os.path.join(install_dir, 'rootfs')
+                    cmake_args.append('-DHELLO_JETSON_XAVIER=ON')
+                    cmake_args.append('-DCMAKE_SYSTEM_NAME=Linux')
+                    cmake_args.append('-DCMAKE_SYSTEM_PROCESSOR=aarch64')
+                    cmake_args.append(f'-DCMAKE_SYSROOT={sysroot}')
+                    cmake_args.append('-DCMAKE_C_COMPILER_TARGET=aarch64-linux-gnu')
+                    cmake_args.append('-DCMAKE_CXX_COMPILER_TARGET=aarch64-linux-gnu')
+                    cmake_args.append(f'-DCMAKE_FIND_ROOT_PATH={sysroot}')
+                    cmake_args.append('-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER')
+                    cmake_args.append('-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH')
+                    cmake_args.append('-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH')
+                    cmake_args.append('-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH')
+                    cmake_args.append("-DUSE_LIBCXX=ON")
+                    cmake_args.append(
+                        f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}")
+                    cmake_args.append(
+                        f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}")
+                    cmake_args.append(
+                        f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}")
                 cmd(['cmake', os.path.join(BASE_DIR, 'test')] + cmake_args)
                 cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])
                 if args.run:

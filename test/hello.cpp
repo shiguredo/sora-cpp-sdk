@@ -44,6 +44,10 @@ jobject GetAndroidApplicationContext(JNIEnv* env);
 #include "sora/android/android_capturer.h"
 #endif
 
+#if defined(HELLO_JETSON_XAVIER)
+#include "sora/hwenc_jetson/jetson_v4l2_capturer.h"
+#endif
+
 HelloSora::HelloSora(HelloSoraConfig config) : config_(config) {}
 HelloSora::~HelloSora() {
   RTC_LOG(LS_INFO) << "HelloSora dtor";
@@ -137,18 +141,25 @@ void HelloSora::Init() {
 
 #if defined(__APPLE__)
   auto video_track_source = sora::MacCapturer::Create(640, 480, 30, "");
-  rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source =
-      webrtc::VideoTrackSourceProxy::Create(
-          signaling_thread_.get(), worker_thread_.get(), video_track_source);
+  auto video_source = webrtc::VideoTrackSourceProxy::Create(
+      signaling_thread_.get(), worker_thread_.get(), video_track_source);
 #elif defined(HELLO_ANDROID)
   auto context = GetAndroidApplicationContext(env);
   auto video_source = sora::AndroidCapturer::Create(
       env, context, signaling_thread_.get(), 640, 480, 30, "");
+#elif defined(HELLO_JETSON_XAVIER)
+  sora::V4L2VideoCapturerConfig v4l2_config;
+  v4l2_config.width = 640;
+  v4l2_config.height = 480;
+  v4l2_config.framerate = 30;
+  //auto video_track_source = sora::JetsonV4L2Capturer::Create(v4l2_config);
+  auto video_track_source = sora::V4L2VideoCapturer::Create(v4l2_config);
+  auto video_source = webrtc::VideoTrackSourceProxy::Create(
+      signaling_thread_.get(), worker_thread_.get(), video_track_source);
 #else
   auto video_track_source = sora::DeviceVideoCapturer::Create(640, 480, 30);
-  rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source =
-      webrtc::VideoTrackSourceProxy::Create(
-          signaling_thread_.get(), worker_thread_.get(), video_track_source);
+  auto video_source = webrtc::VideoTrackSourceProxy::Create(
+      signaling_thread_.get(), worker_thread_.get(), video_track_source);
 #endif
 
   std::string audio_track_id = "0123456789abcdef";
@@ -208,6 +219,8 @@ void HelloSora::OnDisconnect(sora::SoraSignalingErrorCode ec,
 
 #else
 
+extern int log_level;
+
 int main(int argc, char* argv[]) {
   if (argc < 2) {
     std::cout << argv[0] << " <param.json>" << std::endl;
@@ -222,6 +235,13 @@ int main(int argc, char* argv[]) {
     return 1;
   }
 #endif
+
+  log_level = 3;
+
+  // rtc::LogMessage::LogToDebug(rtc::LS_VERBOSE);
+  // rtc::LogMessage::LogTimestamps();
+  // rtc::LogMessage::LogThreads();
+
   boost::json::value v;
   {
     std::ifstream ifs(argv[1]);

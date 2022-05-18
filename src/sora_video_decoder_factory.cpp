@@ -27,6 +27,10 @@
 #include "sora/hwenc_nvcodec/nvcodec_video_decoder.h"
 #endif
 
+#if USE_JETSON_ENCODER
+#include "sora/hwenc_jetson/jetson_video_decoder.h"
+#endif
+
 #include "default_video_formats.h"
 
 namespace sora {
@@ -144,6 +148,27 @@ SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
                                      cuda_context, CudaVideoCodec::H264));
                            }));
   }
+#endif
+
+#if USE_JETSON_ENCODER
+  config.decoders.insert(
+      config.decoders.begin(),
+      VideoDecoderConfig(webrtc::kVideoCodecVP8, [](auto format) {
+        return std::unique_ptr<webrtc::VideoDecoder>(
+            absl::make_unique<JetsonVideoDecoder>(webrtc::kVideoCodecVP8));
+      }));
+  config.decoders.insert(
+      config.decoders.begin(),
+      VideoDecoderConfig(webrtc::kVideoCodecVP9, [](auto format) {
+        return std::unique_ptr<webrtc::VideoDecoder>(
+            absl::make_unique<JetsonVideoDecoder>(webrtc::kVideoCodecVP9));
+      }));
+  config.decoders.insert(
+      config.decoders.begin(),
+      VideoDecoderConfig(webrtc::kVideoCodecH264, [](auto format) {
+        return std::unique_ptr<webrtc::VideoDecoder>(
+            absl::make_unique<JetsonVideoDecoder>(webrtc::kVideoCodecH264));
+      }));
 #endif
 
   return config;

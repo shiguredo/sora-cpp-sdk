@@ -22,7 +22,7 @@
 #include <rtc_base/platform_thread.h>
 #include <rtc_base/synchronization/mutex.h>
 
-#include "scalable_track_source.h"
+#include "sora/scalable_track_source.h"
 
 namespace sora {
 

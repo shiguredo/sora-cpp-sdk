@@ -35,7 +35,12 @@ elseif (SORA_TARGET STREQUAL "ubuntu-20.04_x86_64")
   set(SORA_TARGET_OS "ubuntu")
   set(SORA_TARGET_OS_VERSION "20.04")
   set(SORA_TARGET_ARCH "x86_64")
-  set(SORA_TARGET_DEF "SORA_CPP_SDK_LINUX")
+  set(SORA_TARGET_DEF "SORA_CPP_SDK_UBUNTU_2004")
+elseif (SORA_TARGET STREQUAL "ubuntu-20.04_armv8_jetson_xavier")
+  set(SORA_TARGET_OS "jetson")
+  set(SORA_TARGET_OS_VERSION "xavier")
+  set(SORA_TARGET_ARCH "armv8")
+  set(SORA_TARGET_DEF "SORA_CPP_SDK_JETSON_XAVIER")
 endif()
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -121,6 +126,7 @@ target_include_directories(sora INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOUR
 target_compile_definitions(sora
   PRIVATE
     USE_NVCODEC_ENCODER=$<BOOL:${USE_NVCODEC_ENCODER}>
+    USE_JETSON_ENCODER=$<BOOL:${USE_JETSON_ENCODER}>
 )
 
 # 指定したライブラリを自身の静的ライブラリにバンドルする
@@ -343,6 +349,8 @@ elseif (SORA_TARGET_OS STREQUAL "android")
   )
 
 elseif (SORA_TARGET_OS STREQUAL "ubuntu")
+  target_sources(sora PRIVATE src/v4l2/v4l2_video_capturer.cpp)
+
   target_compile_definitions(sora
     PUBLIC
       WEBRTC_POSIX
@@ -403,6 +411,80 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
     # CUDA を要求したくないので libsora.a に含める
     bundle_static_library(sora /usr/local/cuda/lib64/libcudart_static.a bundled_sora)
   endif()
+elseif (SORA_TARGET_OS STREQUAL "jetson")
+  target_sources(sora PRIVATE src/v4l2/v4l2_video_capturer.cpp)
+
+  target_compile_definitions(sora
+    PUBLIC
+      WEBRTC_POSIX
+      WEBRTC_LINUX
+  )
+  target_compile_definitions(sora PUBLIC _LIBCPP_ABI_UNSTABLE _LIBCPP_DISABLE_AVAILABILITY)
+
+  set_target_properties(sora PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  target_link_libraries(sora
+    PRIVATE
+      X11
+      #Xau
+      #Xdmcp
+      #Xtst
+      #xcb
+      #plds4
+      #Xext
+      #expat
+      dl
+      #nss3
+      #nssutil3
+      #plc4
+      #nspr4
+      rt
+      Threads::Threads
+  )
+
+  if (USE_JETSON_ENCODER)
+    target_sources(sora
+      PRIVATE
+        src/hwenc_jetson/jetson_buffer.cpp
+        src/hwenc_jetson/jetson_jpeg_decoder.cpp
+        src/hwenc_jetson/jetson_jpeg_decoder_pool.cpp
+        src/hwenc_jetson/jetson_v4l2_capturer.cpp
+        src/hwenc_jetson/jetson_video_encoder.cpp
+        src/hwenc_jetson/jetson_video_decoder.cpp
+        ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvBuffer.cpp
+        ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvElement.cpp
+        ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvElementProfiler.cpp
+        ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvJpegDecoder.cpp
+        ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvJpegEncoder.cpp
+        ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvLogging.cpp
+        ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvV4l2Element.cpp
+        ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvV4l2ElementPlane.cpp
+        ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvVideoConverter.cpp
+        ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvVideoEncoder.cpp
+        ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvVideoDecoder.cpp
+    )
+
+    target_include_directories(sora PRIVATE ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/include)
+    target_include_directories(sora PRIVATE ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/include/libjpeg-8b)
+    target_link_directories(sora PRIVATE ${CMAKE_SYSROOT}/usr/lib/aarch64-linux-gnu/tegra)
+    target_link_options(sora
+      PRIVATE
+        "-Wl,-rpath-link=${CMAKE_SYSROOT}/lib/aarch64-linux-gnu"
+        "-Wl,-rpath-link=${CMAKE_SYSROOT}/usr/lib/aarch64-linux-gnu"
+        "-Wl,-rpath-link=${CMAKE_SYSROOT}/usr/lib/aarch64-linux-gnu/tegra"
+    )
+    target_link_libraries(sora
+      PRIVATE
+        nvv4l2
+        nvv4lconvert
+        nvbuf_utils
+        #nvbuf_fdmap
+        #nvddk_vic
+        #nvddk_2d_v2
+        nvjpeg
+        nvbufsurface
+        #nvos
+    )
+  endif(USE_JETSON_ENCODER)
 endif()
 
 include(GNUInstallDirs)

@@ -2,7 +2,7 @@
 #define SORA_HWENC_NVCODEC_NVCODEC_V4L2_CAPTURER_H_
 
 #include "nvcodec_decoder_cuda.h"
-#include "sora/v4l2_video_capturer.h"
+#include "sora/v4l2/v4l2_video_capturer.h"
 
 namespace sora {
 

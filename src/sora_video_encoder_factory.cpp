@@ -30,6 +30,10 @@
 #include "sora/hwenc_nvcodec/nvcodec_h264_encoder.h"
 #endif
 
+#if USE_JETSON_ENCODER
+#include "sora/hwenc_jetson/jetson_video_encoder.h"
+#endif
+
 #include "default_video_formats.h"
 
 namespace sora {
@@ -155,6 +159,33 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
 #endif
             ));
   }
+#endif
+
+#if USE_JETSON_ENCODER
+  if (JetsonVideoEncoder::IsSupportedVP8()) {
+    config.encoders.insert(
+        config.encoders.begin(),
+        VideoEncoderConfig(webrtc::kVideoCodecVP8, [](auto format) {
+          return std::unique_ptr<webrtc::VideoEncoder>(
+              absl::make_unique<JetsonVideoEncoder>(
+                  cricket::VideoCodec(format)));
+        }));
+  }
+  if (JetsonVideoEncoder::IsSupportedVP8()) {
+    config.encoders.insert(
+        config.encoders.begin(),
+        VideoEncoderConfig(webrtc::kVideoCodecVP9, [](auto format) {
+          return std::unique_ptr<webrtc::VideoEncoder>(
+              absl::make_unique<JetsonVideoEncoder>(
+                  cricket::VideoCodec(format)));
+        }));
+  }
+  config.encoders.insert(
+      config.encoders.begin(),
+      VideoEncoderConfig(webrtc::kVideoCodecH264, [](auto format) {
+        return std::unique_ptr<webrtc::VideoEncoder>(
+            absl::make_unique<JetsonVideoEncoder>(cricket::VideoCodec(format)));
+      }));
 #endif
 
   return config;

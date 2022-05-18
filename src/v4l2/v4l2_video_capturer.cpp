@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "v4l2_video_capturer.h"
+#include "sora/v4l2/v4l2_video_capturer.h"
 
 // C
 #include <stdio.h>
@@ -363,11 +363,6 @@ int32_t V4L2VideoCapturer::StopCapture() {
   }
 
   return 0;
-}
-
-bool V4L2VideoCapturer::UseNativeBuffer() {
-  return _useNative && (_captureVideoType == webrtc::VideoType::kMJPEG ||
-                        _captureVideoType == webrtc::VideoType::kI420);
 }
 
 // critical section protected by the caller
