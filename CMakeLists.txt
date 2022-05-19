@@ -437,7 +437,7 @@ elseif (SORA_TARGET_OS STREQUAL "jetson")
       #nssutil3
       #plc4
       #nspr4
-      rt
+      #rt
       Threads::Threads
   )
 
@@ -473,7 +473,7 @@ elseif (SORA_TARGET_OS STREQUAL "jetson")
         "-Wl,-rpath-link=${CMAKE_SYSROOT}/usr/lib/aarch64-linux-gnu/tegra"
     )
     target_link_libraries(sora
-      PRIVATE
+      PUBLIC
         nvv4l2
         nvv4lconvert
         nvbuf_utils

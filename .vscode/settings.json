@@ -24,6 +24,7 @@
         "functional": "cpp",
         "xtr1common": "cpp",
         "chrono": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "ostream": "cpp"
     }
 }

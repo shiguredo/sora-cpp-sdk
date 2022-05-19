@@ -156,6 +156,9 @@ void HelloSora::Init() {
   auto video_track_source = sora::V4L2VideoCapturer::Create(v4l2_config);
   auto video_source = webrtc::VideoTrackSourceProxy::Create(
       signaling_thread_.get(), worker_thread_.get(), video_track_source);
+
+  //auto video_source = sora::JetsonV4L2Capturer::Create(v4l2_config);
+  //auto video_source = sora::V4L2VideoCapturer::Create(v4l2_config);
 #else
   auto video_track_source = sora::DeviceVideoCapturer::Create(640, 480, 30);
   auto video_source = webrtc::VideoTrackSourceProxy::Create(
@@ -219,10 +222,6 @@ void HelloSora::OnDisconnect(sora::SoraSignalingErrorCode ec,
 
 #else
 
-#if defined(HELLO_JETSON_XAVIER)
-extern int log_level;
-#endif
-
 int main(int argc, char* argv[]) {
   if (argc < 2) {
     std::cout << argv[0] << " <param.json>" << std::endl;
@@ -238,13 +237,9 @@ int main(int argc, char* argv[]) {
   }
 #endif
 
-#if defined(HELLO_JETSON_XAVIER)
-  log_level = 3;
-#endif
-
-  // rtc::LogMessage::LogToDebug(rtc::LS_VERBOSE);
-  // rtc::LogMessage::LogTimestamps();
-  // rtc::LogMessage::LogThreads();
+  //rtc::LogMessage::LogToDebug(rtc::LS_VERBOSE);
+  //rtc::LogMessage::LogTimestamps();
+  //rtc::LogMessage::LogThreads();
 
   boost::json::value v;
   {
