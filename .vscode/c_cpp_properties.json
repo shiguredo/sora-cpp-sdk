@@ -20,6 +20,7 @@
                 "_LIBCPP_ABI_UNSTABLE",
                 "_LIBCPP_DISABLE_AVAILABILITY",
                 "OPENSSL_IS_BORINGSSL",
+                "SORA_CPP_SDK_UBUNTU_2004",
                 "USE_NVCODEC_ENCODER=1"
             ],
             "compilerPath": "${workspaceFolder}/_install/ubuntu-20.04_x86_64/release/llvm/clang/bin/clang++",
@@ -50,6 +51,7 @@
                 "_LIBCPP_DISABLE_AVAILABILITY",
                 "OPENSSL_IS_BORINGSSL",
                 "USE_JETSON_ENCODER=1",
+                "SORA_CPP_SDK_JETSON_XAVIER",
                 "HELLO_JETSON_XAVIER"
             ],
             "compilerPath": "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson_xavier/release/llvm/clang/bin/clang++",
@@ -73,13 +75,13 @@
                 "${workspaceFolder}/include"
             ],
             "defines": [
-                "SORA_CPP_SDK_ANDROID",
                 "WEBRTC_POSIX",
                 "WEBRTC_ANDROID",
                 "_LIBCPP_ABI_UNSTABLE",
                 "_LIBCPP_DISABLE_AVAILABILITY",
                 "OPENSSL_IS_BORINGSSL",
                 "USE_NVCODEC_ENCODER=0",
+                "SORA_CPP_SDK_ANDROID",
                 "HELLO_ANDROID"
             ],
             "compilerPath": "${workspaceFolder}/_install/android/release/llvm/clang/bin/clang++",
