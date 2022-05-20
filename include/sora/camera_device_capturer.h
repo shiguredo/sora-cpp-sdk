@@ -7,6 +7,8 @@
 #include <api/media_stream_interface.h>
 #include <rtc_base/thread.h>
 
+#include "sora/cuda_context.h"
+
 namespace sora {
 
 struct CameraDeviceCapturerConfig {
@@ -18,6 +20,9 @@ struct CameraDeviceCapturerConfig {
   // Jetson と Linux の NvCodec の場合のみ利用可能
   bool use_native = false;
   bool force_i420 = false;
+
+  // Linux の NvCodec の場合のみ利用可能
+  std::shared_ptr<CudaContext> cuda_context;
 
   // Android の場合のみ必要かつ必須
   void* jni_env = nullptr;
