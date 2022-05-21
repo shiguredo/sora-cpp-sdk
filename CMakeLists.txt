@@ -111,7 +111,7 @@ endif()
 
 target_link_libraries(sora
   PUBLIC
-    WebRTC::WebRTC
+    WebRTC::webrtc
     Boost::json
 )
 

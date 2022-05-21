@@ -9,8 +9,8 @@ find_package_handle_standard_args(WebRTC DEFAULT_MSG WebRTC_LIBRARY WebRTC_INCLU
 mark_as_advanced(WebRTC_INCLUDE_DIR WebRTC_LIBRARY)
 
 if(WebRTC_FOUND)
-  if(NOT TARGET WebRTC::WebRTC)
-    add_library(WebRTC::WebRTC UNKNOWN IMPORTED)
+  if(NOT TARGET WebRTC::webrtc)
+    add_library(WebRTC::webrtc UNKNOWN IMPORTED)
 
     set(_DIRS
       ${WebRTC_INCLUDE_DIR}
@@ -25,7 +25,7 @@ if(WebRTC_FOUND)
         ${WebRTC_INCLUDE_DIR}/sdk/objc/base)
     endif()
 
-    set_target_properties(WebRTC::WebRTC PROPERTIES
+    set_target_properties(WebRTC::webrtc PROPERTIES
       INTERFACE_INCLUDE_DIRECTORIES "${_DIRS}"
       IMPORTED_LOCATION "${WebRTC_LIBRARY}")
   endif()

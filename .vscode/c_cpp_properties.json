@@ -104,10 +104,8 @@
             ],
             "defines": [
                 "WEBRTC_POSIX",
-                "_LIBCPP_ABI_UNSTABLE",
-                "_LIBCPP_DISABLE_AVAILABILITY",
-                "OPENSSL_IS_BORINGSSL",
-                "USE_NVCODEC_ENCODER=1"
+                "WEBRTC_MAC",
+                "OPENSSL_IS_BORINGSSL"
             ],
             "cStandard": "gnu17",
             "cppStandard": "gnu++17",

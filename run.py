@@ -494,7 +494,7 @@ def install_llvm(version, install_dir,
 @versioned
 def install_boost(
         version: str, source_dir, build_dir, install_dir,
-        debug: bool, cxx: str, cxxflags: List[str], linkflags: List[str],
+        debug: bool, cxx: str, cflags: List[str], cxxflags: List[str], linkflags: List[str],
         toolset, visibility, target_os, architecture,
         android_ndk, native_api_level):
     version_underscore = version.replace('.', '_')
@@ -529,6 +529,7 @@ def install_boost(
                         ")
                 cmd([
                     b2,
+                    '-q',
                     'install',
                     f'--build-dir={os.path.join(build_dir, "boost", f"build-{arch}-{sdk}")}',
                     f'--prefix={os.path.join(build_dir, "boost", f"install-{arch}-{sdk}")}',
@@ -536,6 +537,7 @@ def install_boost(
                     '--layout=system',
                     '--ignore-site-config',
                     f'variant={"debug" if debug else "release"}',
+                    f'cflags={" ".join(cflags)}',
                     f'cxxflags={" ".join(cxxflags)}',
                     f'linkflags={" ".join(linkflags)}',
                     f'toolset={toolset}',
@@ -572,12 +574,14 @@ def install_boost(
                     ")
             cmd([
                 b2,
+                '-q',
                 'install',
                 f'--prefix={os.path.join(install_dir, "boost")}',
                 '--with-json',
                 '--layout=system',
                 '--ignore-site-config',
                 f'variant={"debug" if debug else "release"}',
+                f'cflags={" ".join(cflags)}',
                 f'cxxflags={" ".join(cxxflags)}',
                 f'linkflags={" ".join(linkflags)}',
                 f'toolset={toolset}',
@@ -594,12 +598,14 @@ def install_boost(
                     f.write(f'using {toolset} : : {cxx} : ;')
             cmd([
                 b2,
+                '-q',
                 'install',
                 f'--prefix={os.path.join(install_dir, "boost")}',
                 '--with-json',
                 '--layout=system',
                 '--ignore-site-config',
                 f'variant={"debug" if debug else "release"}',
+                f'cflags={" ".join(cflags)}',
                 f'cxxflags={" ".join(cxxflags)}',
                 f'linkflags={" ".join(linkflags)}',
                 f'toolset={toolset}',
@@ -869,8 +875,10 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
         webrtc_info = get_webrtc_info(webrtcbuild, source_dir, build_dir, install_dir)
         webrtc_version = read_version_file(webrtc_info.version_file)
 
-        # Ubuntu 以外は MSVC や Apple Clang を使うので LLVM は不要
-        if platform.build.os == 'ubuntu' and not webrtcbuild:
+        # Windows は MSVC を使うので不要
+        # iOS は Apple Clang を使うので不要
+        # Android は Android NDK の Clang を使うので不要
+        if platform.target.os not in ('windows', 'ios', 'android') and not webrtcbuild:
             # LLVM
             tools_url = webrtc_version['WEBRTC_SRC_TOOLS_URL']
             tools_commit = webrtc_version['WEBRTC_SRC_TOOLS_COMMIT']
@@ -902,6 +910,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             'build_dir': build_dir,
             'install_dir': install_dir,
             'cxx': '',
+            'cflags': [],
             'cxxflags': [],
             'linkflags': [],
             'toolset': '',
@@ -919,11 +928,21 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             install_boost_args['toolset'] = 'msvc'
             install_boost_args['target_os'] = 'windows'
         elif platform.target.os == 'macos':
+            sysroot = cmdcap(['xcrun', '--sdk', 'macosx', '--show-sdk-path'])
             install_boost_args['target_os'] = 'darwin'
             install_boost_args['toolset'] = 'clang'
+            install_boost_args['cxx'] = os.path.join(webrtc_info.clang_dir, 'bin', 'clang++')
+            install_boost_args['cflags'] = [
+                f"--sysroot={sysroot}",
+            ]
             install_boost_args['cxxflags'] = [
+                '-fPIC',
+                f"--sysroot={sysroot}",
                 '-std=gnu++17'
             ]
+            install_boost_args['visibility'] = 'hidden'
+            if platform.target.arch == 'arm64':
+                install_boost_args['cxxflags'].append('--target=aarch64-apple-darwin')
         elif platform.target.os == 'ios':
             install_boost_args['target_os'] = 'iphone'
             install_boost_args['toolset'] = 'clang'
@@ -946,6 +965,9 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             sysroot = os.path.join(install_dir, 'rootfs')
             install_boost_args['target_os'] = 'linux'
             install_boost_args['cxx'] = os.path.join(webrtc_info.clang_dir, 'bin', 'clang++')
+            install_boost_args['cflags'] = [
+                f"--sysroot={sysroot}",
+            ]
             install_boost_args['cxxflags'] = [
                 '-D_LIBCPP_ABI_UNSTABLE',
                 '-D_LIBCPP_DISABLE_AVAILABILITY',
@@ -1127,6 +1149,15 @@ def main():
             cmake_args.append("-DUSE_LIBCXX=ON")
             cmake_args.append(
                 f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}")
+        if platform.target.os == 'macos':
+            cmake_args.append(f'-DCMAKE_SYSTEM_PROCESSOR={platform.target.arch}')
+            target = 'x86_64-apple-darwin' if platform.target.arch == 'x86_64' else 'aarch64-apple-darwin'
+            cmake_args.append(f'-DCMAKE_C_COMPILER_TARGET={target}')
+            cmake_args.append(f'-DCMAKE_CXX_COMPILER_TARGET={target}')
+            cmake_args.append(
+                f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}")
+            cmake_args.append(
+                f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}")
         if platform.target.os == 'ios':
             cmake_args += ['-G', 'Xcode']
             cmake_args.append("-DCMAKE_SYSTEM_NAME=iOS")
@@ -1226,6 +1257,15 @@ def main():
                 cmake_args.append(f"-DWEBRTC_INCLUDE_DIR={cmake_path(webrtc_info.webrtc_include_dir)}")
                 cmake_args.append(f"-DWEBRTC_LIBRARY_DIR={cmake_path(webrtc_info.webrtc_library_dir)}")
                 cmake_args.append(f"-DSORA_DIR={cmake_path(os.path.join(install_dir, 'sora'))}")
+                if platform.target.os == 'macos':
+                    cmake_args.append(f'-DCMAKE_SYSTEM_PROCESSOR={platform.target.arch}')
+                    target = 'x86_64-apple-darwin' if platform.target.arch == 'x86_64' else 'aarch64-apple-darwin'
+                    cmake_args.append(f'-DCMAKE_C_COMPILER_TARGET={target}')
+                    cmake_args.append(f'-DCMAKE_CXX_COMPILER_TARGET={target}')
+                    cmake_args.append(
+                        f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}")
+                    cmake_args.append(
+                        f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}")
                 if platform.target.os == 'ubuntu':
                     cmake_args.append("-DUSE_LIBCXX=ON")
                     cmake_args.append(
