@@ -876,9 +876,9 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
         webrtc_version = read_version_file(webrtc_info.version_file)
 
         # Windows は MSVC を使うので不要
-        # iOS は Apple Clang を使うので不要
+        # macOS と iOS は Apple Clang を使うので不要
         # Android は Android NDK の Clang を使うので不要
-        if platform.target.os not in ('windows', 'ios', 'android') and not webrtcbuild:
+        if platform.target.os not in ('windows', 'macos', 'ios', 'android') and not webrtcbuild:
             # LLVM
             tools_url = webrtc_version['WEBRTC_SRC_TOOLS_URL']
             tools_commit = webrtc_version['WEBRTC_SRC_TOOLS_COMMIT']
@@ -931,7 +931,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             sysroot = cmdcap(['xcrun', '--sdk', 'macosx', '--show-sdk-path'])
             install_boost_args['target_os'] = 'darwin'
             install_boost_args['toolset'] = 'clang'
-            install_boost_args['cxx'] = os.path.join(webrtc_info.clang_dir, 'bin', 'clang++')
+            install_boost_args['cxx'] = 'clang++'
             install_boost_args['cflags'] = [
                 f"--sysroot={sysroot}",
             ]
@@ -1154,10 +1154,6 @@ def main():
             target = 'x86_64-apple-darwin' if platform.target.arch == 'x86_64' else 'aarch64-apple-darwin'
             cmake_args.append(f'-DCMAKE_C_COMPILER_TARGET={target}')
             cmake_args.append(f'-DCMAKE_CXX_COMPILER_TARGET={target}')
-            cmake_args.append(
-                f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}")
-            cmake_args.append(
-                f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}")
         if platform.target.os == 'ios':
             cmake_args += ['-G', 'Xcode']
             cmake_args.append("-DCMAKE_SYSTEM_NAME=iOS")
@@ -1262,10 +1258,6 @@ def main():
                     target = 'x86_64-apple-darwin' if platform.target.arch == 'x86_64' else 'aarch64-apple-darwin'
                     cmake_args.append(f'-DCMAKE_C_COMPILER_TARGET={target}')
                     cmake_args.append(f'-DCMAKE_CXX_COMPILER_TARGET={target}')
-                    cmake_args.append(
-                        f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}")
-                    cmake_args.append(
-                        f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}")
                 if platform.target.os == 'ubuntu':
                     cmake_args.append("-DUSE_LIBCXX=ON")
                     cmake_args.append(
