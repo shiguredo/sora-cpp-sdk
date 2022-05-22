@@ -283,7 +283,7 @@ elseif (SORA_TARGET_OS STREQUAL "macos")
   )
 
   target_compile_options(sora PRIVATE -fconstant-string-class=NSConstantString)
-  target_link_options(sora PUBLIC -ObjC)
+  target_link_options(sora PUBLIC -ObjC -all_load)
   set_target_properties(sora PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
   target_compile_definitions(sora
@@ -310,6 +310,7 @@ elseif (SORA_TARGET_OS STREQUAL "macos")
       "-framework Metal"
       "-framework MetalKit"
       "-framework OpenGL"
+      "-framework IOSurface"
   )
 
 elseif (SORA_TARGET_OS STREQUAL "ios")

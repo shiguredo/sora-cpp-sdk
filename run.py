@@ -762,7 +762,7 @@ class Platform(object):
             self._check(build.arch == 'x86_64')
         if target.os == 'macos':
             self._check(build.os == 'macos')
-            self._check(build.arch == 'x86_64')
+            self._check(build.arch in ('x86_64', 'arm64'))
         if target.os == 'ios':
             self._check(build.os == 'macos')
             self._check(build.arch == 'x86_64')
