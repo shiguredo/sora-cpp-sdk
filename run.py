@@ -942,7 +942,9 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             ]
             install_boost_args['visibility'] = 'hidden'
             if platform.target.arch == 'arm64':
-                install_boost_args['cxxflags'].append('--target=aarch64-apple-darwin')
+                install_boost_args['cflags'] += ['-target', 'aarch64-apple-darwin']
+                install_boost_args['cxxflags'] += ['-target', 'aarch64-apple-darwin']
+                install_boost_args['architecture'] = 'arm'
         elif platform.target.os == 'ios':
             install_boost_args['target_os'] = 'iphone'
             install_boost_args['toolset'] = 'clang'
@@ -1154,6 +1156,7 @@ def main():
             target = 'x86_64-apple-darwin' if platform.target.arch == 'x86_64' else 'aarch64-apple-darwin'
             cmake_args.append(f'-DCMAKE_C_COMPILER_TARGET={target}')
             cmake_args.append(f'-DCMAKE_CXX_COMPILER_TARGET={target}')
+            cmake_args.append(f'-DCMAKE_OBJCXX_COMPILER_TARGET={target}')
         if platform.target.os == 'ios':
             cmake_args += ['-G', 'Xcode']
             cmake_args.append("-DCMAKE_SYSTEM_NAME=iOS")
@@ -1258,6 +1261,7 @@ def main():
                     target = 'x86_64-apple-darwin' if platform.target.arch == 'x86_64' else 'aarch64-apple-darwin'
                     cmake_args.append(f'-DCMAKE_C_COMPILER_TARGET={target}')
                     cmake_args.append(f'-DCMAKE_CXX_COMPILER_TARGET={target}')
+                    cmake_args.append(f'-DCMAKE_OBJCXX_COMPILER_TARGET={target}')
                 if platform.target.os == 'ubuntu':
                     cmake_args.append("-DUSE_LIBCXX=ON")
                     cmake_args.append(
