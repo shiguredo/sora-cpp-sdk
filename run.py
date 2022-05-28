@@ -517,7 +517,7 @@ def install_boost(
                 clangpp = cmdcap(['xcodebuild', '-find', 'clang++'])
                 sysroot = cmdcap(['xcrun', '--sdk', sdk, '--show-sdk-path'])
                 boost_arch = 'x86' if arch == 'x86_64' else 'arm'
-                with open('project-config.jam', 'w') as f:
+                with open('user-config.jam', 'w') as f:
                     f.write(f"using clang \
                         : iphone \
                         : {clangpp} -arch {arch} -isysroot {sysroot} \
@@ -529,13 +529,14 @@ def install_boost(
                         ")
                 cmd([
                     b2,
-                    '-q',
                     'install',
+                    '-d+0',
                     f'--build-dir={os.path.join(build_dir, "boost", f"build-{arch}-{sdk}")}',
                     f'--prefix={os.path.join(build_dir, "boost", f"install-{arch}-{sdk}")}',
                     '--with-json',
                     '--layout=system',
                     '--ignore-site-config',
+                    '--user-config=user-config.jam',
                     f'variant={"debug" if debug else "release"}',
                     f'cflags={" ".join(cflags)}',
                     f'cxxflags={" ".join(cxxflags)}',
@@ -561,7 +562,7 @@ def install_boost(
                 cmd(['lipo', '-create', '-output', os.path.join(install_dir, 'boost', 'lib', lib)] + files)
         elif target_os == 'android':
             # Android の場合、android-ndk を使ってビルドする
-            with open('project-config.jam', 'w') as f:
+            with open('user-config.jam', 'w') as f:
                 bin = os.path.join(android_ndk, 'toolchains', 'llvm', 'prebuilt', 'linux-x86_64', 'bin')
                 sysroot = os.path.join(android_ndk, 'toolchains', 'llvm', 'prebuilt', 'linux-x86_64', 'sysroot')
                 f.write(f"using clang \
@@ -574,13 +575,15 @@ def install_boost(
                     ")
             cmd([
                 b2,
-                '-q',
                 'install',
+                '-d+0',
                 f'--prefix={os.path.join(install_dir, "boost")}',
                 '--with-json',
                 '--layout=system',
                 '--ignore-site-config',
+                '--user-config=user-config.jam',
                 f'variant={"debug" if debug else "release"}',
+                f'compileflags=--sysroot={sysroot}',
                 f'cflags={" ".join(cflags)}',
                 f'cxxflags={" ".join(cxxflags)}',
                 f'linkflags={" ".join(linkflags)}',
@@ -594,16 +597,17 @@ def install_boost(
                 'architecture=arm'])
         else:
             if len(cxx) != 0:
-                with open('project-config.jam', 'w') as f:
+                with open('user-config.jam', 'w') as f:
                     f.write(f'using {toolset} : : {cxx} : ;')
             cmd([
                 b2,
-                '-q',
                 'install',
+                '-d+0',
                 f'--prefix={os.path.join(install_dir, "boost")}',
                 '--with-json',
                 '--layout=system',
                 '--ignore-site-config',
+                '--user-config=user-config.jam',
                 f'variant={"debug" if debug else "release"}',
                 f'cflags={" ".join(cflags)}',
                 f'cxxflags={" ".join(cxxflags)}',
@@ -877,8 +881,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
 
         # Windows は MSVC を使うので不要
         # macOS と iOS は Apple Clang を使うので不要
-        # Android は Android NDK の Clang を使うので不要
-        if platform.target.os not in ('windows', 'macos', 'ios', 'android') and not webrtcbuild:
+        if platform.target.os not in ('windows', 'macos', 'ios') and not webrtcbuild:
             # LLVM
             tools_url = webrtc_version['WEBRTC_SRC_TOOLS_URL']
             tools_commit = webrtc_version['WEBRTC_SRC_TOOLS_COMMIT']
@@ -957,12 +960,16 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             ]
         elif platform.target.os == 'android':
             install_boost_args['target_os'] = 'android'
+            install_boost_args['cflags'] = [
+                '-fPIC',
+            ]
             install_boost_args['cxxflags'] = [
+                '-fPIC',
                 '-D_LIBCPP_ABI_UNSTABLE',
                 '-D_LIBCPP_DISABLE_AVAILABILITY',
                 '-nostdinc++',
+                '-std=gnu++17',
                 f"-isystem{os.path.join(webrtc_info.libcxx_dir, 'include')}",
-                '-fPIC',
             ]
             install_boost_args['toolset'] = 'clang'
             install_boost_args['android_ndk'] = os.path.join(install_dir, 'android-ndk')
@@ -972,17 +979,21 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             install_boost_args['target_os'] = 'linux'
             install_boost_args['cxx'] = os.path.join(webrtc_info.clang_dir, 'bin', 'clang++')
             install_boost_args['cflags'] = [
+                '-fPIC',
                 f"--sysroot={sysroot}",
+                '--target=aarch64-linux-gnu',
+                f"-I{os.path.join(sysroot, 'usr', 'include', 'aarch64-linux-gnu')}",
             ]
             install_boost_args['cxxflags'] = [
-                '-D_LIBCPP_ABI_UNSTABLE',
-                '-D_LIBCPP_DISABLE_AVAILABILITY',
-                '-nostdinc++',
-                f"-isystem{os.path.join(webrtc_info.libcxx_dir, 'include')}",
                 '-fPIC',
                 '--target=aarch64-linux-gnu',
                 f"--sysroot={sysroot}",
-                f"-I{os.path.join(sysroot, 'usr', 'include', 'aarch64-linux-gnu')}"
+                f"-I{os.path.join(sysroot, 'usr', 'include', 'aarch64-linux-gnu')}",
+                '-D_LIBCPP_ABI_UNSTABLE',
+                '-D_LIBCPP_DISABLE_AVAILABILITY',
+                '-nostdinc++',
+                '-std=gnu++17',
+                f"-isystem{os.path.join(webrtc_info.libcxx_dir, 'include')}",
             ]
             install_boost_args['linkflags'] = [
                 f"-L{os.path.join(sysroot, 'usr', 'lib', 'aarch64-linux-gnu')}",
