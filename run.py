@@ -765,7 +765,7 @@ class Platform(object):
             self._check(build.arch in ('x86_64', 'arm64'))
         if target.os == 'ios':
             self._check(build.os == 'macos')
-            self._check(build.arch == 'x86_64')
+            self._check(build.arch in ('x86_64', 'arm64'))
         if target.os == 'android':
             self._check(build.os == 'ubuntu')
             self._check(build.arch == 'x86_64')
@@ -941,6 +941,10 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                 '-std=gnu++17'
             ]
             install_boost_args['visibility'] = 'hidden'
+            if platform.target.arch == 'x86_64':
+                install_boost_args['cflags'] += ['-target', 'x86_64-apple-darwin']
+                install_boost_args['cxxflags'] += ['-target', 'x86_64-apple-darwin']
+                install_boost_args['architecture'] = 'x86'
             if platform.target.arch == 'arm64':
                 install_boost_args['cflags'] += ['-target', 'aarch64-apple-darwin']
                 install_boost_args['cxxflags'] += ['-target', 'aarch64-apple-darwin']
@@ -1152,11 +1156,14 @@ def main():
             cmake_args.append(
                 f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}")
         if platform.target.os == 'macos':
-            cmake_args.append(f'-DCMAKE_SYSTEM_PROCESSOR={platform.target.arch}')
+            sysroot = cmdcap(['xcrun', '--sdk', 'macosx', '--show-sdk-path'])
             target = 'x86_64-apple-darwin' if platform.target.arch == 'x86_64' else 'aarch64-apple-darwin'
+            cmake_args.append(f'-DCMAKE_SYSTEM_PROCESSOR={platform.target.arch}')
+            cmake_args.append(f'-DCMAKE_OSX_ARCHITECTURES={platform.target.arch}')
             cmake_args.append(f'-DCMAKE_C_COMPILER_TARGET={target}')
             cmake_args.append(f'-DCMAKE_CXX_COMPILER_TARGET={target}')
             cmake_args.append(f'-DCMAKE_OBJCXX_COMPILER_TARGET={target}')
+            cmake_args.append(f'-DCMAKE_SYSROOT={sysroot}')
         if platform.target.os == 'ios':
             cmake_args += ['-G', 'Xcode']
             cmake_args.append("-DCMAKE_SYSTEM_NAME=iOS")
@@ -1257,11 +1264,14 @@ def main():
                 cmake_args.append(f"-DWEBRTC_LIBRARY_DIR={cmake_path(webrtc_info.webrtc_library_dir)}")
                 cmake_args.append(f"-DSORA_DIR={cmake_path(os.path.join(install_dir, 'sora'))}")
                 if platform.target.os == 'macos':
-                    cmake_args.append(f'-DCMAKE_SYSTEM_PROCESSOR={platform.target.arch}')
+                    sysroot = cmdcap(['xcrun', '--sdk', 'macosx', '--show-sdk-path'])
                     target = 'x86_64-apple-darwin' if platform.target.arch == 'x86_64' else 'aarch64-apple-darwin'
+                    cmake_args.append(f'-DCMAKE_SYSTEM_PROCESSOR={platform.target.arch}')
+                    cmake_args.append(f'-DCMAKE_OSX_ARCHITECTURES={platform.target.arch}')
                     cmake_args.append(f'-DCMAKE_C_COMPILER_TARGET={target}')
                     cmake_args.append(f'-DCMAKE_CXX_COMPILER_TARGET={target}')
                     cmake_args.append(f'-DCMAKE_OBJCXX_COMPILER_TARGET={target}')
+                    cmake_args.append(f'-DCMAKE_SYSROOT={sysroot}')
                 if platform.target.os == 'ubuntu':
                     cmake_args.append("-DUSE_LIBCXX=ON")
                     cmake_args.append(

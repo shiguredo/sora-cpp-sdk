@@ -65,11 +65,10 @@ jobs:
       fail-fast: false
       matrix:
         name:
-          - macos_x86_64
           - macos_arm64
           - ios
     name: Build sora-cpp-sdk for ${{ matrix.name }}
-    runs-on: macos-11.0
+    runs-on: macos-12
     steps:
       - uses: actions/checkout@v3
       - run: python3 run.py --test --package ${{ matrix.name }}
@@ -180,7 +179,6 @@ jobs:
       matrix:
         name:
           - windows_x86_64
-          - macos_x86_64
           - macos_arm64
           - ios
           - ubuntu-20.04_armv8_jetson_xavier

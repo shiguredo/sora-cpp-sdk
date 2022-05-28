@@ -283,7 +283,7 @@ elseif (SORA_TARGET_OS STREQUAL "macos")
   )
 
   target_compile_options(sora PRIVATE -fconstant-string-class=NSConstantString)
-  target_link_options(sora PUBLIC -ObjC -all_load)
+  target_link_options(sora PUBLIC -ObjC)
   set_target_properties(sora PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
   target_compile_definitions(sora
