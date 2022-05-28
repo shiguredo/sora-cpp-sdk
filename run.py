@@ -517,7 +517,7 @@ def install_boost(
                 clangpp = cmdcap(['xcodebuild', '-find', 'clang++'])
                 sysroot = cmdcap(['xcrun', '--sdk', sdk, '--show-sdk-path'])
                 boost_arch = 'x86' if arch == 'x86_64' else 'arm'
-                with open('user-config.jam', 'w') as f:
+                with open('project-config.jam', 'w') as f:
                     f.write(f"using clang \
                         : iphone \
                         : {clangpp} -arch {arch} -isysroot {sysroot} \
@@ -536,7 +536,6 @@ def install_boost(
                     '--with-json',
                     '--layout=system',
                     '--ignore-site-config',
-                    '--user-config=user-config.jam',
                     f'variant={"debug" if debug else "release"}',
                     f'cflags={" ".join(cflags)}',
                     f'cxxflags={" ".join(cxxflags)}',
@@ -562,7 +561,7 @@ def install_boost(
                 cmd(['lipo', '-create', '-output', os.path.join(install_dir, 'boost', 'lib', lib)] + files)
         elif target_os == 'android':
             # Android の場合、android-ndk を使ってビルドする
-            with open('user-config.jam', 'w') as f:
+            with open('project-config.jam', 'w') as f:
                 bin = os.path.join(android_ndk, 'toolchains', 'llvm', 'prebuilt', 'linux-x86_64', 'bin')
                 sysroot = os.path.join(android_ndk, 'toolchains', 'llvm', 'prebuilt', 'linux-x86_64', 'sysroot')
                 f.write(f"using clang \
@@ -581,7 +580,6 @@ def install_boost(
                 '--with-json',
                 '--layout=system',
                 '--ignore-site-config',
-                '--user-config=user-config.jam',
                 f'variant={"debug" if debug else "release"}',
                 f'compileflags=--sysroot={sysroot}',
                 f'cflags={" ".join(cflags)}',
@@ -597,7 +595,7 @@ def install_boost(
                 'architecture=arm'])
         else:
             if len(cxx) != 0:
-                with open('user-config.jam', 'w') as f:
+                with open('project-config.jam', 'w') as f:
                     f.write(f'using {toolset} : : {cxx} : ;')
             cmd([
                 b2,
@@ -607,7 +605,6 @@ def install_boost(
                 '--with-json',
                 '--layout=system',
                 '--ignore-site-config',
-                '--user-config=user-config.jam',
                 f'variant={"debug" if debug else "release"}',
                 f'cflags={" ".join(cflags)}',
                 f'cxxflags={" ".join(cxxflags)}',
