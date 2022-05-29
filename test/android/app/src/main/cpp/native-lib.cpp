@@ -30,10 +30,10 @@ Java_jp_shiguredo_hello_MainActivity_run(JNIEnv* env,
                                          jobject ctx) {
   SetAndroidApplicationContext(env, ctx);
   g_th.reset(new std::thread([]() {
-    HelloSoraConfig cfg;
-    cfg.signaling_urls.push_back("シグナリングURL");
-    cfg.channel_id = "チャンネルID";
-    cfg.role = "sendonly";
+    HelloSoraConfig config;
+    config.signaling_urls.push_back("シグナリングURL");
+    config.channel_id = "チャンネルID";
+    config.role = "sendonly";
     auto hello = sora::CreateSoraClient<HelloSora>(config);
     hello->Run();
     RTC_LOG(LS_INFO) << "Finished io_context thread";
