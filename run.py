@@ -1244,14 +1244,14 @@ def main():
         if platform.target.os == 'ios':
             # iOS の場合は事前に用意したプロジェクトをビルドする
             cmd(['xcodebuild', 'build',
-                '-project', 'test/hello/hello.xcodeproj',
+                '-project', 'test/ios/hello.xcodeproj',
                  '-target', 'hello',
                  '-arch', 'x86_64',
                  '-sdk', 'iphonesimulator',
                  '-configuration', 'Release'])
             # こっちは signing が必要になるのでやらない
             # cmd(['xcodebuild', 'build',
-            #      '-project', 'test/hello/hello.xcodeproj',
+            #      '-project', 'test/ios/hello.xcodeproj',
             #      '-target', 'hello',
             #      '-arch', 'arm64',
             #      '-sdk', 'iphoneos',

@@ -15,8 +15,7 @@ void Run() {
     config.signaling_urls.push_back("シグナリングURL");
     config.channel_id = "チャンネルID";
     config.role = "sendonly";
-    std::shared_ptr<HelloSora> hello(new HelloSora(config));
-    hello->Init();
+    auto hello = sora::CreateSoraClient<HelloSora>(config);
     hello->Run();
 }
 
