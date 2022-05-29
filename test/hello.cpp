@@ -5,7 +5,6 @@
 
 // WebRTC
 #include <rtc_base/logging.h>
-#include <rtc_base/ssl_adapter.h>
 
 #ifdef _WIN32
 #include <rtc_base/win/scoped_com_initializer.h>
