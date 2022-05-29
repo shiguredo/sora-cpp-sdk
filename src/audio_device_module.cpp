@@ -13,6 +13,11 @@ namespace sora {
 
 rtc::scoped_refptr<webrtc::AudioDeviceModule> CreateAudioDeviceModule(
     const AudioDeviceModuleConfig& config) {
+  if (config.audio_layer == webrtc::AudioDeviceModule::kDummyAudio) {
+    return webrtc::AudioDeviceModule::Create(
+        webrtc::AudioDeviceModule::kDummyAudio, config.task_queue_factory);
+  }
+
 #if defined(SORA_CPP_SDK_WINDOWS)
   return webrtc::CreateWindowsCoreAudioAudioDeviceModule(
       config.task_queue_factory);

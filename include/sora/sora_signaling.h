@@ -39,6 +39,11 @@ class SoraSignalingObserver {
   virtual void OnNotify(std::string text) = 0;
   virtual void OnPush(std::string text) = 0;
   virtual void OnMessage(std::string label, std::string data) = 0;
+
+  virtual void OnTrack(
+      rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver) = 0;
+  virtual void OnRemoveTrack(
+      rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) = 0;
 };
 
 struct SoraSignalingConfig {
@@ -169,6 +174,10 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
                            const std::string& url,
                            int error_code,
                            const std::string& error_text) override;
+  void OnTrack(
+      rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver) override;
+  void OnRemoveTrack(
+      rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override;
 
   // DataChannelObserver の実装
  private:

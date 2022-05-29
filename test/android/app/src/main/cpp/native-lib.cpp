@@ -20,7 +20,7 @@ void SetAndroidApplicationContext(JNIEnv* env, jobject ctx) {
     g_ctx = env->NewGlobalRef(ctx);
   }
 }
-jobject GetAndroidApplicationContext(JNIEnv* env) {
+void* GetAndroidApplicationContext(void* env) {
   return g_ctx;
 }
 
