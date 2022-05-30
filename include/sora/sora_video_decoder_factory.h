@@ -14,16 +14,20 @@ namespace sora {
 
 struct VideoDecoderConfig {
   VideoDecoderConfig() = default;
+  // 指定したコーデックに対応するデコーダを設定する
   VideoDecoderConfig(webrtc::VideoCodecType codec,
                      std::function<std::unique_ptr<webrtc::VideoDecoder>(
                          const webrtc::SdpVideoFormat&)> create_video_decoder)
       : codec(codec), create_video_decoder(std::move(create_video_decoder)) {}
+  // 特定の SdpVideoFormat に対応するデコーダを設定する
+  // コーデック指定だと物足りない人向け
   VideoDecoderConfig(std::function<std::vector<webrtc::SdpVideoFormat>()>
                          get_supported_formats,
                      std::function<std::unique_ptr<webrtc::VideoDecoder>(
                          const webrtc::SdpVideoFormat&)> create_video_decoder)
       : get_supported_formats(std::move(get_supported_formats)),
         create_video_decoder(std::move(create_video_decoder)) {}
+  // 指定した factory を使ってデコーダを設定する
   VideoDecoderConfig(std::unique_ptr<webrtc::VideoDecoderFactory> factory)
       : factory(std::move(factory)) {}
 
@@ -36,6 +40,8 @@ struct VideoDecoderConfig {
 };
 
 struct SoraVideoDecoderFactoryConfig {
+  // 指定されたコーデックに対して、どのデコーダを利用するかの設定
+  // decoders の 0 番目から順番に一致するコーデックを探して、見つかったらそれを利用する
   std::vector<VideoDecoderConfig> decoders;
 };
 

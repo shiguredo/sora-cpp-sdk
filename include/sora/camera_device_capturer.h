@@ -30,6 +30,9 @@ struct CameraDeviceCapturerConfig {
   rtc::Thread* signaling_thread = nullptr;
 };
 
+// カメラデバイスを使ったキャプチャラを生成する。
+// カメラデバイスが存在するならどのプラットフォームでも動作する。
+// カメラデバイスが存在しなければ nullptr を返す。
 rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>
 CreateCameraDeviceCapturer(const CameraDeviceCapturerConfig& config);
 

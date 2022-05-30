@@ -22,6 +22,10 @@
 
 namespace sora {
 
+// webrtc::VideoCaptureModule を使ったデバイスキャプチャラ。
+// このキャプチャラでは動かない環境もあるため、このキャプチャラを直接利用する必要は無い。
+// 様々な環境で動作するデバイスキャプチャラを利用したい場合、
+// CreateCameraDeviceCapturer 関数を利用して生成するのが良い。
 class DeviceVideoCapturer : public ScalableVideoTrackSource,
                             public rtc::VideoSinkInterface<webrtc::VideoFrame> {
  public:

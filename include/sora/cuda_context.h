@@ -8,6 +8,8 @@ namespace sora {
 // <cuda.h> に依存せずに CUDA のコンテキストを表す
 class CudaContext {
  public:
+  // CUDA コンテキスト生成する。
+  // CUDA に対応していないプラットフォームでは nullptr を返す。
   static std::shared_ptr<CudaContext> Create();
   void* Context() const;
 

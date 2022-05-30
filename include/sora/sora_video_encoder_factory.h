@@ -16,16 +16,20 @@ namespace sora {
 
 struct VideoEncoderConfig {
   VideoEncoderConfig() = default;
+  // 指定したコーデックに対応するエンコーダを設定する
   VideoEncoderConfig(webrtc::VideoCodecType codec,
                      std::function<std::unique_ptr<webrtc::VideoEncoder>(
                          const webrtc::SdpVideoFormat&)> create_video_encoder)
       : codec(codec), create_video_encoder(std::move(create_video_encoder)) {}
+  // 特定の SdpVideoFormat に対応するエンコーダを設定する
+  // コーデック指定だと物足りない人向け
   VideoEncoderConfig(std::function<std::vector<webrtc::SdpVideoFormat>()>
                          get_supported_formats,
                      std::function<std::unique_ptr<webrtc::VideoEncoder>(
                          const webrtc::SdpVideoFormat&)> create_video_encoder)
       : get_supported_formats(std::move(get_supported_formats)),
         create_video_encoder(std::move(create_video_encoder)) {}
+  // 指定した factory を使ってエンコーダを設定する
   VideoEncoderConfig(std::unique_ptr<webrtc::VideoEncoderFactory> factory)
       : factory(std::move(factory)) {}
 
@@ -38,7 +42,10 @@ struct VideoEncoderConfig {
 };
 
 struct SoraVideoEncoderFactoryConfig {
+  // 指定されたコーデックに対して、どのエンコーダを利用するかの設定
+  // encoders の 0 番目から順番に一致するコーデックを探して、見つかったらそれを利用する
   std::vector<VideoEncoderConfig> encoders;
+  // webrtc::SimulcastEncoderAdapter を
   bool use_simulcast_adapter = false;
 };
 
