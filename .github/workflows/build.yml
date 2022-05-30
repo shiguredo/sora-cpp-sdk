@@ -142,6 +142,46 @@ jobs:
         with:
           name: ${{ matrix.name }}.env
           path: _package/${{ matrix.name }}/release/sora.env
+  build-ubuntu-2204:
+    strategy:
+      fail-fast: false
+      matrix:
+        name:
+          - ubuntu-22.04_x86_64
+    name: Build sora-cpp-sdk for ${{ matrix.name }}
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install deps for Ubuntu 22.04 x86_64
+        if: matrix.name == 'ubuntu-22.04_x86_64'
+        run: |
+          source VERSION
+          # clang-12 と CUDA を入れる
+          sudo apt-get update
+          sudo apt-get install -y software-properties-common
+          # CUDA 10 なので ubuntu1804 で正しい
+          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin
+          sudo mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600
+          sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
+          sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
+          sudo apt-get update
+          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install cuda=$CUDA_VERSION clang-12
+      - run: python3 run.py --test --package ${{ matrix.name }}
+      - name: Get package name
+        run: |
+          source _package/${{ matrix.name }}/release/sora.env
+          echo "::set-output name=name::${PACKAGE_NAME}"
+        id: package_name
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.package_name.outputs.name }}
+          path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.name }}
+      - name: Upload Environment
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.name }}.env
+          path: _package/${{ matrix.name }}/release/sora.env
   create-release:
     name: Create Release
     if: contains(github.ref, 'tags/202')
@@ -149,6 +189,7 @@ jobs:
       - build-windows
       - build-macos
       - build-ubuntu-2004
+      - build-ubuntu-2204
     runs-on: ubuntu-latest
     steps:
       - name: Create Release

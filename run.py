@@ -1071,8 +1071,8 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                 f.write('\n'.join(ldflags))
 
 
-AVAILABLE_TARGETS = ['windows_x86_64', 'macos_x86_64', 'macos_arm64',
-                     'ubuntu-20.04_x86_64', 'ubuntu-20.04_armv8_jetson', 'ios', 'android']
+AVAILABLE_TARGETS = ['windows_x86_64', 'macos_x86_64', 'macos_arm64', 'ubuntu-20.04_x86_64',
+                     'ubuntu-22.04_x86_64', 'ubuntu-20.04_armv8_jetson', 'ios', 'android']
 
 
 def main():
@@ -1101,6 +1101,8 @@ def main():
         platform = Platform('macos', get_macos_osver(), 'arm64')
     elif args.target == 'ubuntu-20.04_x86_64':
         platform = Platform('ubuntu', '20.04', 'x86_64')
+    elif args.target == 'ubuntu-22.04_x86_64':
+        platform = Platform('ubuntu', '22.04', 'x86_64')
     elif args.target == 'ubuntu-20.04_armv8_jetson':
         platform = Platform('jetson', None, 'armv8')
     elif args.target == 'ios':
@@ -1151,7 +1153,7 @@ def main():
         cmake_args.append(f"-DWEBRTC_READABLE_VERSION={webrtc_version['WEBRTC_READABLE_VERSION']}")
         cmake_args.append(f"-DWEBRTC_COMMIT={webrtc_version['WEBRTC_COMMIT']}")
         if platform.target.os == 'ubuntu':
-            if platform.target.package_name == 'ubuntu-20.04_x86_64':
+            if platform.target.package_name in ('ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64'):
                 cmake_args.append("-DCMAKE_C_COMPILER=clang-12")
                 cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-12")
             else:
