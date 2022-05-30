@@ -6,7 +6,9 @@
 #include "sora/android/android_capturer.h"
 #elif defined(SORA_CPP_SDK_JETSON) && defined(USE_JETSON_ENCODER)
 #include "sora/hwenc_jetson/jetson_v4l2_capturer.h"
-#elif defined(SORA_CPP_SDK_UBUNTU_2004) && defined(USE_NVCODEC_ENCODER)
+#elif (defined(SORA_CPP_SDK_UBUNTU_2004) ||  \
+       defined(SORA_CPP_SDK_UBUNTU_2204)) && \
+    defined(USE_NVCODEC_ENCODER)
 #include "sora/hwenc_nvcodec/nvcodec_v4l2_capturer.h"
 #elif defined(__linux__)
 #include "sora/v4l2/v4l2_video_capturer.h"
@@ -39,7 +41,9 @@ CreateCameraDeviceCapturer(const CameraDeviceCapturerConfig& config) {
   } else {
     return sora::V4L2VideoCapturer::Create(v4l2_config);
   }
-#elif defined(SORA_CPP_SDK_UBUNTU_2004) && defined(USE_NVCODEC_ENCODER)
+#elif (defined(SORA_CPP_SDK_UBUNTU_2004) ||  \
+       defined(SORA_CPP_SDK_UBUNTU_2204)) && \
+    defined(USE_NVCODEC_ENCODER)
   sora::V4L2VideoCapturerConfig v4l2_config;
   v4l2_config.video_device = config.device_name;
   v4l2_config.width = config.width;
