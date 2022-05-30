@@ -93,7 +93,7 @@ jobs:
       matrix:
         name:
           - ubuntu-20.04_x86_64
-          - ubuntu-20.04_armv8_jetson_xavier
+          - ubuntu-20.04_armv8_jetson
           - android
     name: Build sora-cpp-sdk for ${{ matrix.name }}
     runs-on: ubuntu-20.04
@@ -113,8 +113,8 @@ jobs:
           sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
           sudo apt-get update
           DEBIAN_FRONTEND=noninteractive sudo apt-get -y install cuda=$CUDA_VERSION clang-12
-      - name: Install deps for Jetson Xavier series
-        if: matrix.name == 'ubuntu-20.04_armv8_jetson_xavier'
+      - name: Install deps for Jetson series
+        if: matrix.name == 'ubuntu-20.04_armv8_jetson'
         run: |
           sudo apt install multistrap binutils-aarch64-linux-gnu
           # multistrap に insecure なリポジトリからの取得を許可する設定を入れる
@@ -181,7 +181,7 @@ jobs:
           - windows_x86_64
           - macos_arm64
           - ios
-          - ubuntu-20.04_armv8_jetson_xavier
+          - ubuntu-20.04_armv8_jetson
           - ubuntu-20.04_x86_64
           - android
     steps:

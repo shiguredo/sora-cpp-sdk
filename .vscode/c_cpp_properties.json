@@ -30,19 +30,19 @@
             "intelliSenseMode": "linux-clang-x64"
         },
         {
-            "name": "ubuntu-20.04_armv8_jetson_xavier Release",
+            "name": "ubuntu-20.04_armv8_jetson Release",
             "includePath": [
-                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson_xavier/release/boost/include",
-                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson_xavier/release/webrtc/include",
-                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson_xavier/release/webrtc/include/third_party/abseil-cpp",
-                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson_xavier/release/webrtc/include/third_party/boringssl/src/include",
-                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson_xavier/release/webrtc/include/third_party/libyuv/include",
-                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson_xavier/release/webrtc/include/third_party/zlib",
-                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson_xavier/release/llvm/libcxx/include",
-                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson_xavier/release/sora",
-                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson_xavier/release/rootfs/usr/src/jetson_multimedia_api/include",
-                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson_xavier/release/rootfs/usr/src/jetson_multimedia_api/include/libjpeg-8b",
-                "${workspaceFolder}/_build/ubuntu-20.04_armv8_jetson_xavier/release/sora",
+                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson/release/boost/include",
+                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson/release/webrtc/include",
+                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson/release/webrtc/include/third_party/abseil-cpp",
+                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson/release/webrtc/include/third_party/boringssl/src/include",
+                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson/release/webrtc/include/third_party/libyuv/include",
+                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson/release/webrtc/include/third_party/zlib",
+                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson/release/llvm/libcxx/include",
+                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson/release/sora",
+                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson/release/rootfs/usr/src/jetson_multimedia_api/include",
+                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson/release/rootfs/usr/src/jetson_multimedia_api/include/libjpeg-8b",
+                "${workspaceFolder}/_build/ubuntu-20.04_armv8_jetson/release/sora",
                 "${workspaceFolder}/include"
             ],
             "defines": [
@@ -51,10 +51,10 @@
                 "_LIBCPP_DISABLE_AVAILABILITY",
                 "OPENSSL_IS_BORINGSSL",
                 "USE_JETSON_ENCODER=1",
-                "SORA_CPP_SDK_JETSON_XAVIER",
-                "HELLO_JETSON_XAVIER"
+                "SORA_CPP_SDK_JETSON",
+                "HELLO_JETSON"
             ],
-            "compilerPath": "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson_xavier/release/llvm/clang/bin/clang++",
+            "compilerPath": "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson/release/llvm/clang/bin/clang++",
             "compilerArgs": ["-nostdinc++"],
             "cStandard": "gnu17",
             "cppStandard": "gnu++17",

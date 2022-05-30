@@ -4,7 +4,7 @@
 #include "sora/mac/mac_capturer.h"
 #elif defined(SORA_CPP_SDK_ANDROID)
 #include "sora/android/android_capturer.h"
-#elif defined(SORA_CPP_SDK_JETSON_XAVIER) && defined(USE_JETSON_ENCODER)
+#elif defined(SORA_CPP_SDK_JETSON) && defined(USE_JETSON_ENCODER)
 #include "sora/hwenc_jetson/jetson_v4l2_capturer.h"
 #elif defined(SORA_CPP_SDK_UBUNTU_2004) && defined(USE_NVCODEC_ENCODER)
 #include "sora/hwenc_nvcodec/nvcodec_v4l2_capturer.h"
@@ -26,7 +26,7 @@ CreateCameraDeviceCapturer(const CameraDeviceCapturerConfig& config) {
       (JNIEnv*)config.jni_env, (jobject)config.application_context,
       config.signaling_thread, config.width, config.height, config.fps,
       config.device_name);
-#elif defined(SORA_CPP_SDK_JETSON_XAVIER) && defined(USE_JETSON_ENCODER)
+#elif defined(SORA_CPP_SDK_JETSON) && defined(USE_JETSON_ENCODER)
   sora::V4L2VideoCapturerConfig v4l2_config;
   v4l2_config.video_device = config.device_name;
   v4l2_config.width = config.width;

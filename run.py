@@ -673,7 +673,7 @@ class PlatformTarget(object):
         if self.os == 'raspberry-pi-os':
             return f'raspberry-pi-os_{self.arch}'
         if self.os == 'jetson':
-            return f'ubuntu-20.04_armv8_jetson_{self.osver}'
+            return 'ubuntu-20.04_armv8_jetson'
         raise Exception('error')
 
 
@@ -740,7 +740,6 @@ class Platform(object):
         if p.os == 'raspberry-pi-os':
             self._check(p.arch in ('armv6', 'armv7', 'armv8'))
         elif p.os == 'jetson':
-            self._check(p.osver in ('nano', 'xavier'))
             self._check(p.arch == 'armv8')
         elif p.os in ('ios', 'android'):
             self._check(p.arch is None)
@@ -1073,7 +1072,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
 
 
 AVAILABLE_TARGETS = ['windows_x86_64', 'macos_x86_64', 'macos_arm64',
-                     'ubuntu-20.04_x86_64', 'ubuntu-20.04_armv8_jetson_xavier', 'ios', 'android']
+                     'ubuntu-20.04_x86_64', 'ubuntu-20.04_armv8_jetson', 'ios', 'android']
 
 
 def main():
@@ -1102,8 +1101,8 @@ def main():
         platform = Platform('macos', get_macos_osver(), 'arm64')
     elif args.target == 'ubuntu-20.04_x86_64':
         platform = Platform('ubuntu', '20.04', 'x86_64')
-    elif args.target == 'ubuntu-20.04_armv8_jetson_xavier':
-        platform = Platform('jetson', 'xavier', 'armv8')
+    elif args.target == 'ubuntu-20.04_armv8_jetson':
+        platform = Platform('jetson', None, 'armv8')
     elif args.target == 'ios':
         platform = Platform('ios', None, None)
     elif args.target == 'android':
@@ -1286,7 +1285,7 @@ def main():
                         f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}")
                 if platform.target.os == 'jetson':
                     sysroot = os.path.join(install_dir, 'rootfs')
-                    cmake_args.append('-DHELLO_JETSON_XAVIER=ON')
+                    cmake_args.append('-DHELLO_JETSON=ON')
                     cmake_args.append('-DCMAKE_SYSTEM_NAME=Linux')
                     cmake_args.append('-DCMAKE_SYSTEM_PROCESSOR=aarch64')
                     cmake_args.append(f'-DCMAKE_SYSROOT={sysroot}')
