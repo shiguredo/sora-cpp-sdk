@@ -1,0 +1,284 @@
+name: build-workflow
+
+on:
+  push:
+    paths-ignore:
+    - 'doc/**'
+    - '**.md'
+    - 'LICENSE'
+    - 'NOTICE'
+
+jobs:
+  build-windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        name:
+          - windows_x86_64
+    name: Build sora-cpp-sdk for ${{ matrix.name }}
+    runs-on: windows-2019
+    steps:
+      - uses: actions/checkout@v3
+      - uses: microsoft/setup-msbuild@v1.1
+      - name: Get Versions
+        run: |
+          Get-Content "VERSION" | Foreach-Object {
+            if (!$_) { continue }
+            $var = $_.Split('=')
+            New-Variable -Name $var[0] -Value $var[1] -Force
+          }
+          echo "::set-output name=cuda_version::${CUDA_VERSION}"
+        id: versions
+      # CUDA のインストールバイナリのダウンロードは 3GB ぐらいあって、
+      # ビルドの度に取得するのはつらいのでキャッシュする
+      # （インストールする nvcc は解凍後で 100MB 程度なのでキャッシュ可能）
+      - name: Cache NVCC ${{ steps.versions.outputs.cuda_version }}
+        id: cache-cuda
+        uses: actions/cache@v3
+        with:
+          path: _install\windows_x86_64\release\cuda\nvcc
+          key: windows-cuda-${{ steps.versions.outputs.cuda_version }}.v1
+      - run: echo "${CUDA_VERSION}" > _install\windows_x86_64\release\cuda.version
+        if: steps.cache-cuda.outputs.cache-hit == 'true'
+      - run: python3 run.py --test --package ${{ matrix.name }}
+      - name: Get package name
+        run: |
+          Get-Content "_package\${{ matrix.name }}\release\sora.env" | Foreach-Object {
+            if (!$_) { continue }
+            $var = $_.Split('=')
+            New-Variable -Name $var[0] -Value $var[1] -Force
+          }
+          echo "::set-output name=name::${PACKAGE_NAME}"
+        id: package_name
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.package_name.outputs.name }}
+          path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.name }}
+      - name: Upload Environment
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.name }}.env
+          path: _package/${{ matrix.name }}/release/sora.env
+  build-macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        name:
+          - macos_arm64
+          - ios
+    name: Build sora-cpp-sdk for ${{ matrix.name }}
+    runs-on: macos-12
+    steps:
+      - uses: actions/checkout@v3
+      - run: python3 run.py --test --package ${{ matrix.name }}
+      - name: Get package name
+        run: |
+          source _package/${{ matrix.name }}/release/sora.env
+          echo "::set-output name=name::${PACKAGE_NAME}"
+        id: package_name
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.package_name.outputs.name }}
+          path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.name }}
+      - name: Upload Environment
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.name }}.env
+          path: _package/${{ matrix.name }}/release/sora.env
+  build-ubuntu-2004:
+    strategy:
+      fail-fast: false
+      matrix:
+        name:
+          - ubuntu-20.04_x86_64
+          - ubuntu-20.04_armv8_jetson
+          - android
+    name: Build sora-cpp-sdk for ${{ matrix.name }}
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install deps for Ubuntu 20.04 x86_64
+        if: matrix.name == 'ubuntu-20.04_x86_64'
+        run: |
+          source VERSION
+          # clang-12 と CUDA を入れる
+          sudo apt-get update
+          sudo apt-get install -y software-properties-common
+          # CUDA 10 なので ubuntu1804 で正しい
+          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin
+          sudo mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600
+          sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
+          sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
+          sudo apt-get update
+          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install cuda=$CUDA_VERSION clang-12
+      - name: Install deps for Jetson series
+        if: matrix.name == 'ubuntu-20.04_armv8_jetson'
+        run: |
+          sudo apt install multistrap binutils-aarch64-linux-gnu
+          # multistrap に insecure なリポジトリからの取得を許可する設定を入れる
+          sudo sed -e 's/Apt::Get::AllowUnauthenticated=true/Apt::Get::AllowUnauthenticated=true";\n$config_str .= " -o Acquire::AllowInsecureRepositories=true/' -i /usr/sbin/multistrap
+      - name: Install deps for Android
+        if: matrix.name == 'android'
+        run: |
+          sudo apt install ninja-build
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2.0.8
+        if: matrix.name == 'android'
+      - run: python3 run.py --test --package ${{ matrix.name }}
+      - name: Get package name
+        run: |
+          source _package/${{ matrix.name }}/release/sora.env
+          echo "::set-output name=name::${PACKAGE_NAME}"
+        id: package_name
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.package_name.outputs.name }}
+          path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.name }}
+      - name: Upload Environment
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.name }}.env
+          path: _package/${{ matrix.name }}/release/sora.env
+  build-ubuntu-2204:
+    strategy:
+      fail-fast: false
+      matrix:
+        name:
+          - ubuntu-22.04_x86_64
+    name: Build sora-cpp-sdk for ${{ matrix.name }}
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install deps for Ubuntu 22.04 x86_64
+        if: matrix.name == 'ubuntu-22.04_x86_64'
+        run: |
+          source VERSION
+          # clang-12 と CUDA を入れる
+          sudo apt-get update
+          sudo apt-get install -y software-properties-common
+          # CUDA 10 なので ubuntu1804 で正しい
+          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin
+          sudo mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600
+          sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
+          sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
+          sudo apt-get update
+          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install cuda=$CUDA_VERSION clang-12
+      - run: python3 run.py --test --package ${{ matrix.name }}
+      - name: Get package name
+        run: |
+          source _package/${{ matrix.name }}/release/sora.env
+          echo "::set-output name=name::${PACKAGE_NAME}"
+        id: package_name
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.package_name.outputs.name }}
+          path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.name }}
+      - name: Upload Environment
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.name }}.env
+          path: _package/${{ matrix.name }}/release/sora.env
+  create-release:
+    name: Create Release
+    if: contains(github.ref, 'tags/202')
+    needs:
+      - build-windows
+      - build-macos
+      - build-ubuntu-2004
+      - build-ubuntu-2204
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1.1.4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+      - name: Output upload url
+        shell: bash
+        run: echo "UPLOAD_URL='${{ steps.create_release.outputs.upload_url }}'" > create-release.env
+      - name: Upload create-release Environment
+        uses: actions/upload-artifact@v3
+        with:
+          name: create-release.env
+          path: create-release.env
+  upload-assets:
+    name: Upload Assets to Release
+    needs:
+      - create-release
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        name:
+          - windows_x86_64
+          - macos_arm64
+          - ios
+          - ubuntu-20.04_armv8_jetson
+          - ubuntu-20.04_x86_64
+          - android
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: ${{ matrix.name }}.env
+          path: ${{ matrix.name }}.env
+      - uses: actions/download-artifact@v3
+        with:
+          name: create-release.env
+          path: create-release.env
+      - name: Env to output
+        shell: bash
+        run: |
+          source ${{ matrix.name }}.env/sora.env
+          source create-release.env/create-release.env
+          echo "::set-output name=package_name::$PACKAGE_NAME"
+          echo "::set-output name=content_type::$CONTENT_TYPE"
+          echo "::set-output name=upload_url::$UPLOAD_URL"
+        id: env
+      - uses: actions/download-artifact@v3
+        with:
+          name: ${{ steps.env.outputs.package_name }}
+          path: ${{ steps.env.outputs.package_name }}
+      - name: Upload ${{ matrix.name }} Release Asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.env.outputs.upload_url }}
+          asset_path: ${{ steps.env.outputs.package_name }}/${{ steps.env.outputs.package_name }}
+          asset_name: ${{ steps.env.outputs.package_name }}
+          asset_content_type: ${{ steps.env.outputs.content_type }}
+  #notification:
+  #  name: Slack Notification
+  #  runs-on: ubuntu-latest
+  #  needs:
+  #    - build-windows
+  #    - build-macos
+  #    - build-ubuntu-1804
+  #    - build-ubuntu-2004
+  #    - create-release
+  #    - upload-assets
+  #  if: always()
+  #  steps:
+  #    - uses: actions/checkout@v3
+  #    - uses: rtCamp/action-slack-notify@v2
+  #      if: |
+  #        needs.build-windows.result == 'failure' ||
+  #        needs.build-macos.result == 'failure' ||
+  #        needs.build-ubuntu-1804.result == 'failure' ||
+  #        needs.build-ubuntu-2004.result == 'failure' ||
+  #        needs.create-release.result == 'failure' ||
+  #        needs.upload-assets.result == 'failure'
+  #      env:
+  #        SLACK_CHANNEL: open-momo
+  #        SLACK_COLOR: danger
+  #        SLACK_TITLE: Failure build
+  #        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
