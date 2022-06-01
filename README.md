@@ -40,13 +40,19 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
 
 https://github.com/shiguredo/sora-cpp-sdk-samples
 
+## ドキュメント
+
+準備中です。 
+
 ## 優先実装
 
+- Raspberry Pi OS 対応
+- Windows arm64 対応
 - AMD 系 HWA 対応
 
 ## 対応予定
 
-## 廃止予定
+- [oneVPL](https://github.com/oneapi-src/oneVPL)
 
 ## ライセンス
 
@@ -68,3 +74,4 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ```
+
