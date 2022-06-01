@@ -55,11 +55,11 @@ https://github.com/shiguredo/sora-cpp-sdk-samples
 
 ## 使ってみる
 
-TDB
+準備中。
 
 ## FAQ
 
-TBD
+準備中。
 
 ## 優先実装
 
