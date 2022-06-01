@@ -1,0 +1,25 @@
+{
+    "configurations": [
+        {
+            "name": "Windows Release",
+            "includePath": [
+                "${workspaceFolder}/_install/windows_x86_64/release/boost/include",
+                "${workspaceFolder}/_install/windows_x86_64/release/webrtc/include",
+                "${workspaceFolder}/_install/windows_x86_64/release/webrtc/include/third_party/abseil-cpp",
+                "${workspaceFolder}/_install/windows_x86_64/release/webrtc/include/third_party/boringssl/src/include",
+                "${workspaceFolder}/_install/windows_x86_64/release/webrtc/include/third_party/libyuv/include",
+                "${workspaceFolder}/_install/windows_x86_64/release/webrtc/include/third_party/zlib",
+                "${workspaceFolder}/_install/windows_x86_64/release/sora/include",
+                "${workspaceFolder}/_install/windows_x86_64/release/cli11/include",
+                "${workspaceFolder}/_install/windows_x86_64/release/SDL2/include"
+            ],
+            "defines": [
+                "WEBRTC_WIN"
+            ],
+            "cStandard": "gnu17",
+            "cppStandard": "gnu++17",
+            "intelliSenseMode": "msvc-x64"
+        }
+    ],
+    "version": 4
+}
