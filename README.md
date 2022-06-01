@@ -15,9 +15,26 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
 
 ## Sora C++ SDK について
 
+様々なプラットフォームに対応した [WebRTC SFU Sora](https://sora.shiguredo.jp/) 向けの C++ SDK です。
+
 ## 特徴
 
 - 各プラットフォームで利用可能な HWA への対応
+    - NVIDIA VIDEO CODEC SDK (NVENC / NVDEC)
+    - NVIDIA Jetson Video HWA
+    - Apple macOS / iOS Video Toolbox
+    - Google Android HWA
+    - Intel Media SDK
+
+## ライブラリのバイナリ提供について
+
+以下からダウンロードが可能です。
+
+https://github.com/shiguredo/sora-cpp-sdk/releases
+
+## 対応 Sora
+
+- WebRTC SFU Sora 2022.1 以降
 
 ## 動作環境
 
@@ -32,19 +49,25 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
 - android_arm64
 - ios_arm64
 
-## 対応 Sora
-
-- WebRTC SFU Sora 2022.1 以降
-
 ## サンプル集
 
 https://github.com/shiguredo/sora-cpp-sdk-samples
 
-## ドキュメント
+## 使ってみる
 
-準備中です。 
+TDB
+
+## FAQ
+
+TBD
 
 ## 優先実装
+
+優先実装とは Sora のライセンスを契約頂いているお客様限定で Sora C++ SDK の実装予定機能を有償にて前倒しで実装することです。
+
+### 優先実装が可能な機能一覧
+
+**詳細は Discord やメールなどでお気軽にお問い合わせください**
 
 - Raspberry Pi OS 対応
 - Windows arm64 対応
@@ -53,6 +76,22 @@ https://github.com/shiguredo/sora-cpp-sdk-samples
 ## 対応予定
 
 - [oneVPL](https://github.com/oneapi-src/oneVPL)
+
+## サポートについて
+
+### Discord
+
+- **サポートしません**
+- アドバイスします
+- フィードバック歓迎します
+
+最新の状況などは Discord で共有しています。質問や相談も Discord でのみ受け付けています。
+
+https://discord.gg/shiguredo
+
+### バグ報告
+
+Discord へお願いします。
 
 ## ライセンス
 
@@ -74,4 +113,3 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ```
-
