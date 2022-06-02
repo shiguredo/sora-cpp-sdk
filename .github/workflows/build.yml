@@ -224,6 +224,7 @@ jobs:
           - ios
           - ubuntu-20.04_armv8_jetson
           - ubuntu-20.04_x86_64
+          - ubuntu-22.04_x86_64
           - android
     steps:
       - uses: actions/download-artifact@v3
