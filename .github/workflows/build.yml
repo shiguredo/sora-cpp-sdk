@@ -1,0 +1,63 @@
+name: build-workflow
+
+on:
+  push:
+    paths-ignore:
+    - 'doc/**'
+    - '**.md'
+    - 'LICENSE'
+    - 'NOTICE'
+
+jobs:
+  build-windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        name:
+          - windows_x86_64
+    name: Build sora-cpp-sdk-samples for ${{ matrix.name }}
+    runs-on: windows-2019
+    steps:
+      - uses: actions/checkout@v3
+      - uses: microsoft/setup-msbuild@v1.1
+      - run: python3 sdl_sample/${{ matrix.name }}/run.py
+  build-macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        name:
+          - macos_arm64
+    name: Build sora-cpp-sdk-samples for ${{ matrix.name }}
+    runs-on: macos-12
+    steps:
+      - uses: actions/checkout@v3
+      - run: python3 sdl_sample/${{ matrix.name }}/run.py
+  build-ubuntu-2004:
+    strategy:
+      fail-fast: false
+      matrix:
+        name:
+          - ubuntu-20.04_x86_64
+          - ubuntu-20.04_armv8_jetson
+    name: Build sora-cpp-sdk-samples for ${{ matrix.name }}
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install deps for Jetson series
+        if: matrix.name == 'ubuntu-20.04_armv8_jetson'
+        run: |
+          sudo apt install multistrap binutils-aarch64-linux-gnu
+          # multistrap に insecure なリポジトリからの取得を許可する設定を入れる
+          sudo sed -e 's/Apt::Get::AllowUnauthenticated=true/Apt::Get::AllowUnauthenticated=true";\n$config_str .= " -o Acquire::AllowInsecureRepositories=true/' -i /usr/sbin/multistrap
+      - run: python3 sdl_sample/${{ matrix.name }}/run.py
+  build-ubuntu-2204:
+    strategy:
+      fail-fast: false
+      matrix:
+        name:
+          - ubuntu-22.04_x86_64
+    name: Build sora-cpp-sdk-samples for ${{ matrix.name }}
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - run: python3 sdl_sample/${{ matrix.name }}/run.py
