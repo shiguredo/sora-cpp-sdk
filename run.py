@@ -311,6 +311,16 @@ def clone_and_checkout(url, version, dir, fetch, fetch_force):
             cmd(['git', 'checkout', '-f', version])
 
 
+def git_clone_shallow(url, hash, dir):
+    rm_rf(dir)
+    mkdir_p(dir)
+    with cd(dir):
+        cmd(['git', 'init'])
+        cmd(['git', 'remote', 'add', 'origin', url])
+        cmd(['git', 'fetch', '--depth=1', 'origin', hash])
+        cmd(['git', 'reset', '--hard', 'FETCH_HEAD'])
+
+
 @versioned
 def install_webrtc(version, source_dir, install_dir, platform: str):
     win = platform.startswith("windows_")
@@ -471,20 +481,17 @@ def install_llvm(version, install_dir,
     mkdir_p(llvm_dir)
     with cd(llvm_dir):
         # tools の update.py を叩いて特定バージョンの clang バイナリを拾う
-        cmd(['git', 'clone', tools_url, 'tools'])
+        git_clone_shallow(tools_url, tools_commit, 'tools')
         with cd('tools'):
-            cmd(['git', 'reset', '--hard', tools_commit])
             cmd(['python3',
                 os.path.join('clang', 'scripts', 'update.py'),
                 '--output-dir', os.path.join(llvm_dir, 'clang')])
 
         # 特定バージョンの libcxx を利用する
-        cmd(['git', 'clone', libcxx_url, 'libcxx'])
-        with cd('libcxx'):
-            cmd(['git', 'reset', '--hard', libcxx_commit])
+        git_clone_shallow(libcxx_url, libcxx_commit, 'libcxx')
 
         # __config_site のために特定バージョンの buildtools を取得する
-        cmd(['git', 'clone', buildtools_url, 'buildtools'])
+        git_clone_shallow(buildtools_url, buildtools_commit, 'buildtools')
         with cd('buildtools'):
             cmd(['git', 'reset', '--hard', buildtools_commit])
         shutil.copyfile(os.path.join(llvm_dir, 'buildtools', 'third_party', 'libc++', '__config_site'),
