@@ -1,7 +1,7 @@
 {
     "configurations": [
         {
-            "name": "Windows Release",
+            "name": "[Release] windows_x86_64",
             "includePath": [
                 "${workspaceFolder}/_install/windows_x86_64/release/boost/include",
                 "${workspaceFolder}/_install/windows_x86_64/release/webrtc/include",
@@ -19,6 +19,31 @@
             "cStandard": "gnu17",
             "cppStandard": "gnu++17",
             "intelliSenseMode": "msvc-x64"
+        },
+        {
+            "name": "[Release] ubuntu-20.04_armv8_jetson",
+            "includePath": [
+                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson/release/boost/include",
+                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson/release/webrtc/include",
+                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson/release/webrtc/include/third_party/abseil-cpp",
+                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson/release/webrtc/include/third_party/boringssl/src/include",
+                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson/release/webrtc/include/third_party/libyuv/include",
+                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson/release/webrtc/include/third_party/zlib",
+                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson/release/sora/include",
+                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson/release/cli11/include",
+                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson/release/sdl2/include",
+                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson/release/rootfs/usr/src/jetson_multimedia_api/include",
+                "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson/release/rootfs/usr/src/jetson_multimedia_api/include/libjpeg-8b"
+            ],
+            "defines": [
+                "WEBRTC_POSIX",
+                "WEBRTC_LINUX"
+            ],
+            "compilerPath": "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson/release/llvm/clang/bin/clang++",
+            "compilerArgs": ["-nostdinc++"],
+            "cStandard": "gnu17",
+            "cppStandard": "gnu++17",
+            "intelliSenseMode": "clang-x64"
         }
     ],
     "version": 4

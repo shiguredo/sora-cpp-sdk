@@ -81,6 +81,8 @@ def install_deps(source_dir, build_dir, install_dir, debug):
             'build_dir': build_dir,
             'install_dir': install_dir,
             'debug': debug,
+            'platform': 'windows',
+            'cmake_args': [],
         }
         install_sdl2(**install_sdl2_args)
 

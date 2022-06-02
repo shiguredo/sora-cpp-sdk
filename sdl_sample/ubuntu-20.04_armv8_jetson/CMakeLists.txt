@@ -19,34 +19,24 @@ list(APPEND CMAKE_PREFIX_PATH ${SORA_DIR} ${SDL2_DIR})
 list(APPEND CMAKE_MODULE_PATH ${SORA_DIR}/share/cmake)
 
 set(Boost_USE_STATIC_LIBS ON)
-set(Boost_USE_STATIC_RUNTIME ON)
 
 find_package(Boost REQUIRED COMPONENTS json)
 find_package(WebRTC REQUIRED)
 find_package(Sora REQUIRED)
 find_package(SDL2 REQUIRED)
+find_package(Threads REQUIRED)
 
 add_executable(sdl_sample)
 set_target_properties(sdl_sample PROPERTIES CXX_STANDARD 17 C_STANDARD 17)
 set_target_properties(sdl_sample PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_sources(sdl_sample PRIVATE ../src/sdl_sample.cpp ../src/sdl_renderer.cpp)
 
+target_compile_options(sdl_sample
+  PRIVATE
+    "$<$<COMPILE_LANGUAGE:CXX>:-nostdinc++>"
+    "$<$<COMPILE_LANGUAGE:CXX>:-isystem${LIBCXX_INCLUDE_DIR}>"
+)
 target_include_directories(sdl_sample PRIVATE ${CLI11_DIR}/include)
 target_link_libraries(sdl_sample PRIVATE Sora::sora SDL2::SDL2 SDL2::SDL2main)
-
-# 文字コードを utf-8 として扱うのと、シンボルテーブル数を増やす
-target_compile_options(sdl_sample PRIVATE /utf-8 /bigobj)
-set_target_properties(sdl_sample
-  PROPERTIES
-    # CRTライブラリを静的リンクさせる
-    MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
-)
-
-target_compile_definitions(sdl_sample
-  PRIVATE
-    _CONSOLE
-    _WIN32_WINNT=0x0A00
-    NOMINMAX
-    WIN32_LEAN_AND_MEAN
-    CLI11_HAS_FILESYSTEM=0
-)
+target_link_directories(sdl_sample PRIVATE ${CMAKE_SYSROOT}/usr/lib/aarch64-linux-gnu/tegra)
+target_compile_definitions(sdl_sample PRIVATE CLI11_HAS_FILESYSTEM=0)

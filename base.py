@@ -6,6 +6,7 @@ import zipfile
 import tarfile
 import shutil
 import platform
+import multiprocessing
 from typing import Callable, NamedTuple, Optional, List, Union, Dict
 
 
@@ -307,6 +308,41 @@ def clone_and_checkout(url, version, dir, fetch, fetch_force):
 
 
 @versioned
+def install_rootfs(version, install_dir, conf):
+    rootfs_dir = os.path.join(install_dir, 'rootfs')
+    rm_rf(rootfs_dir)
+    cmd(['multistrap', '--no-auth', '-a', 'arm64', '-d', rootfs_dir, '-f', conf])
+    # 絶対パスのシンボリックリンクを相対パスに置き換えていく
+    for dir, _, filenames in os.walk(rootfs_dir):
+        for filename in filenames:
+            linkpath = os.path.join(dir, filename)
+            # symlink かどうか
+            if not os.path.islink(linkpath):
+                continue
+            target = os.readlink(linkpath)
+            # 絶対パスかどうか
+            if not os.path.isabs(target):
+                continue
+            # rootfs_dir を先頭に付けることで、
+            # rootfs の外から見て正しい絶対パスにする
+            targetpath = rootfs_dir + target
+            # 参照先の絶対パスが存在するかどうか
+            if not os.path.exists(targetpath):
+                continue
+            # 相対パスに置き換える
+            relpath = os.path.relpath(targetpath, dir)
+            logging.debug(f'{linkpath[len(rootfs_dir):]} targets {target} to {relpath}')
+            os.remove(linkpath)
+            os.symlink(relpath, linkpath)
+
+    # なぜかシンボリックリンクが登録されていないので作っておく
+    link = os.path.join(rootfs_dir, 'usr', 'lib', 'aarch64-linux-gnu', 'tegra', 'libnvbuf_fdmap.so')
+    file = os.path.join(rootfs_dir, 'usr', 'lib', 'aarch64-linux-gnu', 'tegra', 'libnvbuf_fdmap.so.1.0.0')
+    if os.path.exists(file) and not os.path.exists(link):
+        os.symlink(os.path.basename(file), link)
+
+
+@versioned
 def install_webrtc(version, source_dir, install_dir, platform: str):
     win = platform.startswith("windows_")
     filename = f'webrtc.{platform}.{"zip" if win else "tar.gz"}'
@@ -347,6 +383,36 @@ def get_webrtc_info(webrtcbuild: bool, source_dir: str, build_dir: str, install_
             clang_dir=os.path.join(install_dir, 'llvm', 'clang'),
             libcxx_dir=os.path.join(install_dir, 'llvm', 'libcxx'),
         )
+
+
+@versioned
+def install_llvm(version, install_dir,
+                 tools_url, tools_commit,
+                 libcxx_url, libcxx_commit,
+                 buildtools_url, buildtools_commit):
+    llvm_dir = os.path.join(install_dir, 'llvm')
+    rm_rf(llvm_dir)
+    mkdir_p(llvm_dir)
+    with cd(llvm_dir):
+        # tools の update.py を叩いて特定バージョンの clang バイナリを拾う
+        cmd(['git', 'clone', tools_url, 'tools'])
+        with cd('tools'):
+            cmd(['git', 'reset', '--hard', tools_commit])
+            cmd(['python3',
+                os.path.join('clang', 'scripts', 'update.py'),
+                '--output-dir', os.path.join(llvm_dir, 'clang')])
+
+        # 特定バージョンの libcxx を利用する
+        cmd(['git', 'clone', libcxx_url, 'libcxx'])
+        with cd('libcxx'):
+            cmd(['git', 'reset', '--hard', libcxx_commit])
+
+        # __config_site のために特定バージョンの buildtools を取得する
+        cmd(['git', 'clone', buildtools_url, 'buildtools'])
+        with cd('buildtools'):
+            cmd(['git', 'reset', '--hard', buildtools_commit])
+        shutil.copyfile(os.path.join(llvm_dir, 'buildtools', 'third_party', 'libc++', '__config_site'),
+                        os.path.join(llvm_dir, 'libcxx', 'include', '__config_site'))
 
 
 @versioned
@@ -494,7 +560,7 @@ def install_cmake(version, source_dir, install_dir, platform: str, ext):
 
 
 @versioned
-def install_sdl2(version, source_dir, build_dir, install_dir, debug: bool):
+def install_sdl2(version, source_dir, build_dir, install_dir, debug: bool, platform: str, cmake_args: List[str]):
     url = f'http://www.libsdl.org/release/SDL2-{version}.zip'
     path = download(url, source_dir)
     sdl2_source_dir = os.path.join(source_dir, 'sdl2')
@@ -508,17 +574,61 @@ def install_sdl2(version, source_dir, build_dir, install_dir, debug: bool):
     mkdir_p(sdl2_build_dir)
     with cd(sdl2_build_dir):
         configuration = 'Debug' if debug else 'Release'
-        cmd(['cmake',
-            '-G', 'Visual Studio 16 2019',
-             f"-DCMAKE_BUILD_TYPE={configuration}",
-             '-DSDL_FORCE_STATIC_VCRT=ON',
-             '-DBUILD_SHARED_LIBS=OFF',
-             '-DHAVE_LIBC=ON',
-             f"-DCMAKE_INSTALL_PREFIX={cmake_path(sdl2_install_dir)}",
-             sdl2_source_dir])
+        cmake_args = cmake_args[:]
+        cmake_args += [
+            sdl2_source_dir,
+            f"-DCMAKE_BUILD_TYPE={configuration}",
+            f"-DCMAKE_INSTALL_PREFIX={cmake_path(sdl2_install_dir)}",
+            '-DBUILD_SHARED_LIBS=OFF',
+        ]
+        if platform == 'windows':
+            cmake_args += [
+                '-G', 'Visual Studio 16 2019',
+                '-DSDL_FORCE_STATIC_VCRT=ON',
+                '-DHAVE_LIBC=ON',
+            ]
+        elif platform == 'linux':
+            # システムでインストール済みかによって ON/OFF が切り替わってしまうため、
+            # どの環境でも同じようにインストールされるようにするため全部 ON/OFF を明示的に指定する
+            cmake_args += [
+                '-DSDL_ATOMIC=OFF',
+                '-DSDL_AUDIO=OFF',
+                '-DSDL_VIDEO=ON',
+                '-DSDL_RENDER=ON',
+                '-DSDL_EVENTS=ON',
+                '-DSDL_JOYSTICK=ON',
+                '-DSDL_HAPTIC=ON',
+                '-DSDL_POWER=ON',
+                '-DSDL_THREADS=ON',
+                '-DSDL_TIMERS=OFF',
+                '-DSDL_FILE=OFF',
+                '-DSDL_LOADSO=ON',
+                '-DSDL_CPUINFO=OFF',
+                '-DSDL_FILESYSTEM=OFF',
+                '-DSDL_SENSOR=ON',
+                '-DSDL_OPENGL=ON',
+                '-DSDL_OPENGLES=ON',
+                '-DSDL_RPI=OFF',
+                '-DSDL_WAYLAND=OFF',
+                '-DSDL_X11=ON',
+                '-DSDL_X11_SHARED=OFF',
+                '-DSDL_X11_XCURSOR=OFF',
+                '-DSDL_X11_XINERAMA=OFF',
+                '-DSDL_X11_XINPUT=OFF',
+                '-DSDL_X11_XRANDR=OFF',
+                '-DSDL_X11_XSCRNSAVER=OFF',
+                '-DSDL_X11_XSHAPE=OFF',
+                '-DSDL_X11_XVM=OFF',
+                '-DSDL_VULKAN=OFF',
+                '-DSDL_VIVANTE=OFF',
+                '-DSDL_COCOA=OFF',
+                '-DSDL_METAL=OFF',
+                '-DSDL_KMSDRM=OFF',
+            ]
+        cmd(['cmake'] + cmake_args)
 
-        cmd(['cmake', '--build', '.', '--config', configuration])
-        cmd(['cmake', '--build', '.', '--config', configuration, '--target', 'INSTALL'])
+        cmd(['cmake', '--build', '.', '--config', configuration, f'-j{multiprocessing.cpu_count()}'])
+        cmd(['cmake', '--install', '.', '--config', configuration])
 
 
 @versioned

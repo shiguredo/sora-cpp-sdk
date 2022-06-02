@@ -147,6 +147,12 @@ int main(int argc, char* argv[]) {
   app.set_help_all_flag("--help-all",
                         "Print help message for all modes and exit");
 
+  int log_level = (int)rtc::LS_ERROR;
+  auto log_level_map = std::vector<std::pair<std::string, int>>(
+      {{"verbose", 0}, {"info", 1}, {"warning", 2}, {"error", 3}, {"none", 4}});
+  app.add_option("--log-level", log_level, "Log severity level threshold")
+      ->transform(CLI::CheckedTransformer(log_level_map, CLI::ignore_case));
+
   // Sora に関するオプション
   app.add_option("--signaling-url", config.signaling_url, "Signaling URL")
       ->required();
@@ -173,9 +179,11 @@ int main(int argc, char* argv[]) {
     exit(app.exit(e));
   }
 
-  // rtc::LogMessage::LogToDebug(rtc::LS_VERBOSE);
-  // rtc::LogMessage::LogTimestamps();
-  // rtc::LogMessage::LogThreads();
+  if (log_level != rtc::LS_NONE) {
+    rtc::LogMessage::LogToDebug((rtc::LoggingSeverity)log_level);
+    rtc::LogMessage::LogTimestamps();
+    rtc::LogMessage::LogThreads();
+  }
 
   auto sdlsample = sora::CreateSoraClient<SDLSample>(config);
   sdlsample->Run();
