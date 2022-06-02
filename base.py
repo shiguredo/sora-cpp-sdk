@@ -587,6 +587,36 @@ def install_sdl2(version, source_dir, build_dir, install_dir, debug: bool, platf
                 '-DSDL_FORCE_STATIC_VCRT=ON',
                 '-DHAVE_LIBC=ON',
             ]
+        elif platform == 'macos':
+            # システムでインストール済みかによって ON/OFF が切り替わってしまうため、
+            # どの環境でも同じようにインストールされるようにするため全部 ON/OFF を明示的に指定する
+            cmake_args += [
+                '-DSDL_ATOMIC=OFF',
+                '-DSDL_AUDIO=OFF',
+                '-DSDL_VIDEO=ON',
+                '-DSDL_RENDER=ON',
+                '-DSDL_EVENTS=ON',
+                '-DSDL_JOYSTICK=ON',
+                '-DSDL_HAPTIC=ON',
+                '-DSDL_POWER=ON',
+                '-DSDL_THREADS=ON',
+                '-DSDL_TIMERS=OFF',
+                '-DSDL_FILE=OFF',
+                '-DSDL_LOADSO=ON',
+                '-DSDL_CPUINFO=OFF',
+                '-DSDL_FILESYSTEM=OFF',
+                '-DSDL_SENSOR=ON',
+                '-DSDL_OPENGL=ON',
+                '-DSDL_OPENGLES=ON',
+                '-DSDL_RPI=OFF',
+                '-DSDL_WAYLAND=OFF',
+                '-DSDL_X11=OFF',
+                '-DSDL_VULKAN=OFF',
+                '-DSDL_VIVANTE=OFF',
+                '-DSDL_COCOA=ON',
+                '-DSDL_METAL=ON',
+                '-DSDL_KMSDRM=OFF',
+            ]
         elif platform == 'linux':
             # システムでインストール済みかによって ON/OFF が切り替わってしまうため、
             # どの環境でも同じようにインストールされるようにするため全部 ON/OFF を明示的に指定する
