@@ -139,25 +139,16 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
 #endif
 
 #if USE_NVCODEC_ENCODER
-  if (cuda_context != nullptr) {
+  if (NvCodecH264Encoder::IsSupported(cuda_context)) {
     config.encoders.insert(
         config.encoders.begin(),
-        VideoEncoderConfig(
-            webrtc::kVideoCodecH264,
-#if defined(__linux__)
-            [cuda_context = cuda_context](auto format) {
-              return std::unique_ptr<webrtc::VideoEncoder>(
-                  absl::make_unique<NvCodecH264Encoder>(
-                      cricket::VideoCodec(format), cuda_context));
-            }
-#else
-            [](auto format) {
-              return std::unique_ptr<webrtc::VideoEncoder>(
-                  absl::make_unique<NvCodecH264Encoder>(
-                      cricket::VideoCodec(format)));
-            }
-#endif
-            ));
+        VideoEncoderConfig(webrtc::kVideoCodecH264,
+                           [cuda_context = cuda_context](auto format) {
+                             return std::unique_ptr<webrtc::VideoEncoder>(
+                                 absl::make_unique<NvCodecH264Encoder>(
+                                     cricket::VideoCodec(format),
+                                     cuda_context));
+                           }));
   }
 #endif
 

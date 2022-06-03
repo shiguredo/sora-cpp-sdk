@@ -122,7 +122,8 @@ SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
 #endif
 
 #if USE_NVCODEC_ENCODER
-  if (cuda_context != nullptr) {
+  if (NvCodecVideoDecoder::IsSupported(cuda_context,
+                                       sora::CudaVideoCodec::VP8)) {
     config.decoders.insert(
         config.decoders.begin(),
         VideoDecoderConfig(webrtc::kVideoCodecVP8,
@@ -131,6 +132,9 @@ SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
                                  absl::make_unique<NvCodecVideoDecoder>(
                                      cuda_context, CudaVideoCodec::VP8));
                            }));
+  }
+  if (NvCodecVideoDecoder::IsSupported(cuda_context,
+                                       sora::CudaVideoCodec::VP9)) {
     config.decoders.insert(
         config.decoders.begin(),
         VideoDecoderConfig(webrtc::kVideoCodecVP9,
@@ -139,6 +143,9 @@ SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
                                  absl::make_unique<NvCodecVideoDecoder>(
                                      cuda_context, CudaVideoCodec::VP9));
                            }));
+  }
+  if (NvCodecVideoDecoder::IsSupported(cuda_context,
+                                       sora::CudaVideoCodec::H264)) {
     config.decoders.insert(
         config.decoders.begin(),
         VideoDecoderConfig(webrtc::kVideoCodecH264,

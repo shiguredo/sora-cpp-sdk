@@ -18,6 +18,7 @@ void* CudaContext::Context() const {
 
 #include "cuda_context_cuda.h"
 
+// NvCodec
 #include <NvDecoder/NvDecoder.h>
 
 #include "sora/dyn/cuda.h"
@@ -54,7 +55,7 @@ std::shared_ptr<CudaContext> CudaContext::Create() {
   ckerror(dyn::cuDeviceGet(&device, 0));
   char device_name[80];
   ckerror(dyn::cuDeviceGetName(device_name, sizeof(device_name), device));
-  std::cout << "GPU in use: " << device_name << std::endl;
+  //RTC_LOG(LS_INFO) << "GPU in use: " << device_name;
   ckerror(dyn::cuCtxCreate(&context, 0, device));
 
   std::shared_ptr<CudaContextImpl> impl(new CudaContextImpl());

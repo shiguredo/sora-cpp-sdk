@@ -81,6 +81,11 @@ void NvEncoder::TryLoadNvEncApi() {
       (NvEncodeAPIGetMaxSupportedVersion_Type)dlsym(
           hModule, "NvEncodeAPIGetMaxSupportedVersion");
 #endif
+  if (NvEncodeAPIGetMaxSupportedVersion == NULL) {
+    NVENC_THROW_ERROR(
+        "NvEncodeAPIGetMaxSupportedVersion function is not exported",
+        NV_ENC_ERR_NO_ENCODE_DEVICE);
+  }
 
   uint32_t version = 0;
   uint32_t currentVersion =

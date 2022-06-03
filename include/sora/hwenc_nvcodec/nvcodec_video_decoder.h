@@ -17,7 +17,8 @@ class NvCodecVideoDecoder : public webrtc::VideoDecoder {
                       CudaVideoCodec codec);
   ~NvCodecVideoDecoder() override;
 
-  static bool IsSupported(CudaVideoCodec codec);
+  static bool IsSupported(std::shared_ptr<CudaContext> context,
+                          CudaVideoCodec codec);
 
   bool Configure(const Settings& settings) override;
 
