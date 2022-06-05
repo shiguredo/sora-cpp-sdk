@@ -116,6 +116,7 @@
             "includePath": [
                 "${workspaceFolder}/_install/windows_x86_64/release/boost/include",
                 "${workspaceFolder}/_install/windows_x86_64/release/cuda/nvcc/include",
+                "${workspaceFolder}/_install/windows_x86_64/release/msdk/include",
                 "${workspaceFolder}/_install/windows_x86_64/release/webrtc/include",
                 "${workspaceFolder}/_install/windows_x86_64/release/webrtc/include/third_party/abseil-cpp",
                 "${workspaceFolder}/_install/windows_x86_64/release/webrtc/include/third_party/boringssl/src/include",
@@ -129,7 +130,8 @@
             "defines": [
                 "SORA_CPP_SDK_WINDOWS",
                 "WEBRTC_WIN",
-                "USE_NVCODEC_ENCODER=1"
+                "USE_NVCODEC_ENCODER=1",
+                "USE_MSDK_ENCODER=1"
             ],
             "cStandard": "gnu17",
             "cppStandard": "gnu++17",

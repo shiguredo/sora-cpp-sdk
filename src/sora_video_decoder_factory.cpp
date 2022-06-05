@@ -27,6 +27,10 @@
 #include "sora/hwenc_nvcodec/nvcodec_video_decoder.h"
 #endif
 
+#if USE_MSDK_ENCODER
+#include "sora/hwenc_msdk/msdk_video_decoder.h"
+#endif
+
 #if USE_JETSON_ENCODER
 #include "sora/hwenc_jetson/jetson_video_decoder.h"
 #endif
@@ -154,6 +158,50 @@ SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
                                  absl::make_unique<NvCodecVideoDecoder>(
                                      cuda_context, CudaVideoCodec::H264));
                            }));
+  }
+#endif
+
+#if USE_MSDK_ENCODER
+  auto session = MsdkSession::Create();
+  if (MsdkVideoDecoder::IsSupported(session, webrtc::kVideoCodecVP8)) {
+    config.decoders.insert(
+        config.decoders.begin(),
+        VideoDecoderConfig(
+            webrtc::kVideoCodecVP8,
+            [](auto format) -> std::unique_ptr<webrtc::VideoDecoder> {
+              return MsdkVideoDecoder::Create(MsdkSession::Create(),
+                                              webrtc::kVideoCodecVP8);
+            }));
+  }
+  if (MsdkVideoDecoder::IsSupported(session, webrtc::kVideoCodecVP9)) {
+    config.decoders.insert(
+        config.decoders.begin(),
+        VideoDecoderConfig(
+            webrtc::kVideoCodecVP9,
+            [](auto format) -> std::unique_ptr<webrtc::VideoDecoder> {
+              return MsdkVideoDecoder::Create(MsdkSession::Create(),
+                                              webrtc::kVideoCodecVP9);
+            }));
+  }
+  if (MsdkVideoDecoder::IsSupported(session, webrtc::kVideoCodecH264)) {
+    config.decoders.insert(
+        config.decoders.begin(),
+        VideoDecoderConfig(
+            webrtc::kVideoCodecH264,
+            [](auto format) -> std::unique_ptr<webrtc::VideoDecoder> {
+              return MsdkVideoDecoder::Create(MsdkSession::Create(),
+                                              webrtc::kVideoCodecH264);
+            }));
+  }
+  if (MsdkVideoDecoder::IsSupported(session, webrtc::kVideoCodecAV1)) {
+    config.decoders.insert(
+        config.decoders.begin(),
+        VideoDecoderConfig(
+            webrtc::kVideoCodecAV1,
+            [](auto format) -> std::unique_ptr<webrtc::VideoDecoder> {
+              return MsdkVideoDecoder::Create(MsdkSession::Create(),
+                                              webrtc::kVideoCodecAV1);
+            }));
   }
 #endif
 
