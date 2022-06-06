@@ -4,11 +4,11 @@ find_path(MSDK_INCLUDE_DIR NAMES mfx/mfxenc.h PATHS "${MSDK_ROOT_DIR}/include" N
 find_library(MSDK_LIBRARY NAMES mfx PATHS "${MSDK_ROOT_DIR}/lib" NO_DEFAULT_PATH)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(MSDK DEFAULT_MSG MSDK_LIBRARY MSDK_INCLUDE_DIR)
+find_package_handle_standard_args(Msdk DEFAULT_MSG MSDK_LIBRARY MSDK_INCLUDE_DIR)
 
 mark_as_advanced(MSDK_INCLUDE_DIR MSDK_LIBRARY)
 
-if(MSDK_FOUND)
+if(Msdk_FOUND)
   if(NOT TARGET Msdk::mfx)
     add_library(Msdk::mfx UNKNOWN IMPORTED)
 

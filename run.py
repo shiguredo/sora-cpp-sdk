@@ -660,8 +660,25 @@ def install_cuda_windows(version, source_dir, build_dir, install_dir):
 
 
 @versioned
-def install_libva(version, source_dir, build_dir, install_dir):
-    pass
+def install_libva(version, source_dir, build_dir, install_dir, env):
+    libva_source_dir = os.path.join(source_dir, 'libva')
+    libva_build_dir = os.path.join(build_dir, 'libva')
+    libva_install_dir = os.path.join(install_dir, 'libva')
+    rm_rf(libva_source_dir)
+    rm_rf(libva_build_dir)
+    rm_rf(libva_install_dir)
+    git_clone_shallow('https://github.com/intel/libva.git', version, libva_source_dir)
+    env = {**os.environ, **env}
+    mkdir_p(libva_build_dir)
+    with cd(libva_build_dir):
+        cmd([os.path.join(libva_source_dir, 'autogen.sh'),
+             '--enable-static',
+             '--disable-shared',
+             '--with-drivers-path=/usr/lib/x86_64-linux-gnu/dri',
+             '--prefix', libva_install_dir],
+            env=env)
+        cmd(['make', f'-j{multiprocessing.cpu_count()}'])
+        cmd(['make', 'install'])
 
 
 @versioned
@@ -696,8 +713,32 @@ def install_msdk_windows(version, source_dir, install_dir):
 
 
 @versioned
-def install_msdk_linux(version, source_dir, build_dir, install_dir):
-    pass
+def install_msdk_linux(version, source_dir, build_dir, install_dir, libva_installed_dir, cmake_args):
+    msdk_source_dir = os.path.join(source_dir, 'msdk')
+    msdk_build_dir = os.path.join(build_dir, 'msdk')
+    msdk_install_dir = os.path.join(install_dir, 'msdk')
+    rm_rf(msdk_source_dir)
+    rm_rf(msdk_build_dir)
+    rm_rf(msdk_install_dir)
+    git_clone_shallow('https://github.com/Intel-Media-SDK/MediaSDK.git', version, msdk_source_dir)
+    mkdir_p(msdk_build_dir)
+    with cd(msdk_source_dir):
+        # 共有ライブラリではなく静的ライブラリを作る
+        files = cmdcap(['find', '.', '-name', 'CMakeLists.txt']).splitlines()
+        for file in files:
+            cmd(['sed', '-i', 's/SHARED/STATIC/g', file])
+
+    with cd(msdk_build_dir):
+        cmd(['cmake',
+             f'-DCMAKE_INSTALL_PREFIX={cmake_path(msdk_install_dir)}',
+             '-DCMAKE_BUILD_TYPE=Release',
+             f'-DCMAKE_PREFIX_PATH={libva_installed_dir}',
+             '-DBUILD_SAMPLES=OFF',
+             '-DBUILD_TUTORIALS=OFF',
+             msdk_source_dir,
+             *cmake_args])
+        cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}'])
+        cmd(['cmake', '--install', '.'])
 
 
 class PlatformTarget(object):
@@ -1098,7 +1139,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             install_cuda_windows(**install_cuda_args)
 
         # Intel Media SDK
-        if platform.target.os == 'windows':
+        if platform.target.os == 'windows' and platform.target.arch == 'x86_64':
             # 普通のビルド環境ならこれでパスが通るはず
             # GitHub Actions は microsoft/setup-msbuild で既にパスが通ってるので問題ない
             add_path('C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\MSBuild\\Current\\Bin')
@@ -1109,6 +1150,34 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                 'install_dir': install_dir,
             }
             install_msdk_windows(**install_msdk_args)
+        if platform.target.os == 'ubuntu' and platform.target.arch == 'x86_64':
+            install_libva_args = {
+                'version': version['LIBVA_VERSION'],
+                'version_file': os.path.join(install_dir, 'libva.version'),
+                'source_dir': source_dir,
+                'build_dir': build_dir,
+                'install_dir': install_dir,
+                'env': {
+                    'CC': os.path.join(webrtc_info.clang_dir, 'bin', 'clang'),
+                    'CXX': os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'),
+                    'CFLAGS': '-fPIC',
+                },
+            }
+            install_libva(**install_libva_args)
+
+            install_msdk_args = {
+                'version': version['MSDK_VERSION'],
+                'version_file': os.path.join(install_dir, 'msdk.version'),
+                'source_dir': source_dir,
+                'build_dir': build_dir,
+                'install_dir': install_dir,
+                'libva_installed_dir': os.path.join(install_dir, 'libva'),
+                'cmake_args': [
+                    f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}",
+                    f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}",
+                ]
+            }
+            install_msdk_linux(**install_msdk_args)
 
         if platform.target.os == 'android':
             # Android 側からのコールバックする関数は消してはいけないので、
@@ -1273,14 +1342,16 @@ def main():
             cmake_args.append('-DUSE_JETSON_ENCODER=ON')
 
         # NvCodec
-        if platform.target.os in ('windows', 'ubuntu'):
+        if platform.target.os in ('windows', 'ubuntu') and platform.target.arch == 'x86_64':
             cmake_args.append('-DUSE_NVCODEC_ENCODER=ON')
             if platform.target.os == 'windows':
                 cmake_args.append(f"-DCUDA_TOOLKIT_ROOT_DIR={cmake_path(os.path.join(install_dir, 'cuda', 'nvcc'))}")
 
-        if platform.target.os in ('windows', 'ubuntu'):
+        if platform.target.os in ('windows', 'ubuntu') and platform.target.arch == 'x86_64':
             cmake_args.append('-DUSE_MSDK_ENCODER=ON')
             cmake_args.append(f"-DMSDK_ROOT_DIR={cmake_path(os.path.join(install_dir, 'msdk'))}")
+            if platform.target.os == 'ubuntu':
+                cmake_args.append(f"-DLIBVA_ROOT_DIR={cmake_path(os.path.join(install_dir, 'libva'))}")
 
         cmd(['cmake', BASE_DIR] + cmake_args)
         if platform.target.os == 'ios':
@@ -1348,6 +1419,14 @@ def main():
                     cmake_args.append(f'-DCMAKE_OBJCXX_COMPILER_TARGET={target}')
                     cmake_args.append(f'-DCMAKE_SYSROOT={sysroot}')
                 if platform.target.os == 'ubuntu':
+                    if platform.target.package_name in ('ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64'):
+                        cmake_args.append("-DCMAKE_C_COMPILER=clang-12")
+                        cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-12")
+                    else:
+                        cmake_args.append(
+                            f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}")
+                        cmake_args.append(
+                            f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}")
                     cmake_args.append("-DUSE_LIBCXX=ON")
                     cmake_args.append(
                         f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}")

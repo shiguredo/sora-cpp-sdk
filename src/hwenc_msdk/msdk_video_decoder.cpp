@@ -332,7 +332,7 @@ void MsdkVideoDecoderImpl::ReleaseMediaSDK() {
 bool MsdkVideoDecoder::IsSupported(std::shared_ptr<MsdkSession> session,
                                    webrtc::VideoCodecType codec) {
   if (session == nullptr) {
-    return nullptr;
+    return false;
   }
 
   int width = 640;

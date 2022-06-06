@@ -448,6 +448,8 @@ std::unique_ptr<NvEncoder> NvCodecH264Encoder::CreateEncoder(
     bool is_nv12
 #endif
 ) {
+  std::unique_ptr<NvEncoder> encoder;
+
 #ifdef _WIN32
   DXGI_FORMAT dxgi_format = DXGI_FORMAT_NV12;
   NV_ENC_BUFFER_FORMAT nvenc_format = NV_ENC_BUFFER_FORMAT_NV12;
@@ -464,7 +466,6 @@ std::unique_ptr<NvEncoder> NvCodecH264Encoder::CreateEncoder(
   desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
   id3d11_device->CreateTexture2D(&desc, NULL, out_id3d11_texture);
 
-  std::unique_ptr<NvEncoder> encoder;
   // Driver が古いとかに気づくのはココ
   try {
     encoder.reset(

@@ -10,10 +10,13 @@
                 "${workspaceFolder}/_install/ubuntu-20.04_x86_64/release/webrtc/include/third_party/libyuv/include",
                 "${workspaceFolder}/_install/ubuntu-20.04_x86_64/release/webrtc/include/third_party/zlib",
                 "${workspaceFolder}/_install/ubuntu-20.04_x86_64/release/llvm/libcxx/include",
+                "${workspaceFolder}/_install/ubuntu-20.04_x86_64/release/libva/include",
+                "${workspaceFolder}/_install/ubuntu-20.04_x86_64/release/msdk/include",
                 "${workspaceFolder}/_build/ubuntu-20.04_x86_64/release/sora",
                 "${workspaceFolder}/NvCodec/include",
                 "${workspaceFolder}/NvCodec/NvCodec",
-                "${workspaceFolder}/include"
+                "${workspaceFolder}/include",
+                "/usr/local/cuda/include"
             ],
             "defines": [
                 "WEBRTC_POSIX",

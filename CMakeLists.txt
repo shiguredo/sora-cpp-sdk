@@ -157,7 +157,7 @@ function(bundle_static_library target static_libs bundled_target)
   else ()
     file(WRITE  ${CMAKE_BINARY_DIR}/${bundled_target}.ar.in "CREATE ${bundled_tgt_full_name}\n" )
     file(APPEND ${CMAKE_BINARY_DIR}/${bundled_target}.ar.in "ADDLIB $<TARGET_FILE:${target}>\n")
-    foreach(lib IN LISTS ${static_libs})
+    foreach(lib IN LISTS static_libs)
       file(APPEND ${CMAKE_BINARY_DIR}/${bundled_target}.ar.in "ADDLIB ${lib}\n")
     endforeach()
     file(APPEND ${CMAKE_BINARY_DIR}/${bundled_target}.ar.in "SAVE\n")
@@ -445,6 +445,25 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
     # CUDA を要求したくないので libsora.a に含める
     list(APPEND BUNDLE_STATIC_LIBS /usr/local/cuda/lib64/libcudart_static.a)
   endif()
+
+  if (USE_MSDK_ENCODER)
+    find_package(Msdk REQUIRED)
+    target_include_directories(sora PRIVATE /usr/local/cuda/include)
+    target_sources(sora
+      PRIVATE
+        src/hwenc_msdk/msdk_session_impl.cpp
+        src/hwenc_msdk/msdk_video_decoder.cpp
+        src/hwenc_msdk/msdk_video_encoder.cpp
+        src/hwenc_msdk/vaapi_utils_drm.cpp
+        src/hwenc_msdk/vaapi_utils.cpp
+    )
+    target_link_libraries(sora PRIVATE "$<BUILD_INTERFACE:Msdk::mfx>")
+    # drm は依存に含める
+    target_link_libraries(sora PUBLIC Libdrm::drm)
+    # mfx を要求したくないので libsora.a に含める
+    list(APPEND BUNDLE_STATIC_LIBS $<TARGET_FILE:Msdk::mfx> $<TARGET_FILE:Libva::va> $<TARGET_FILE:Libva::va_drm>)
+  endif()
+
 elseif (SORA_TARGET_OS STREQUAL "jetson")
   target_sources(sora PRIVATE src/v4l2/v4l2_video_capturer.cpp)
 
@@ -519,26 +538,12 @@ elseif (SORA_TARGET_OS STREQUAL "jetson")
         #nvos
     )
   endif(USE_JETSON_ENCODER)
-
-  if (USE_MSDK_ENCODER)
-    find_package(Msdk REQUIRED)
-    target_sources(sora
-      PRIVATE
-        src/hwenc_msdk/msdk_session_impl.cpp
-        src/hwenc_msdk/msdk_video_decoder.cpp
-        src/hwenc_msdk/msdk_video_encoder.cpp
-        src/hwenc_msdk/vaapi_utils_drm.cpp
-        src/hwenc_msdk/vaapi_utils.cpp
-    )
-    target_link_libraries(sora PRIVATE Msdk::mfx)
-    # mfx を要求したくないので libsora.a に含める
-    list(APPEND BUNDLE_STATIC_LIBS "$<TARGET_FILE:Msdk::mfx>" "$<TARGET_FILE:Libva::va>" "$<TARGET_FILE:Libva::va_drm>")
-  endif()
-
 endif()
 
 # 静的ライブラリを sora.lib に含める
-bundle_static_library(sora "${BUNDLE_STATIC_LIBS}" bundled_sora)
+if (BUNDLE_STATIC_LIBS)
+  bundle_static_library(sora "${BUNDLE_STATIC_LIBS}" bundled_sora)
+endif()
 
 include(GNUInstallDirs)
 
@@ -552,7 +557,7 @@ install(EXPORT sora-config
   DESTINATION ${CMAKE_INSTALL_DATADIR}/sora
   NAMESPACE Sora::
 )
-install(FILES cmake/FindWebRTC.cmake
+install(FILES cmake/FindWebRTC.cmake cmake/FindLibdrm.cmake
   DESTINATION ${CMAKE_INSTALL_DATADIR}/cmake
 )
 install(FILES LICENSE NOTICE.md

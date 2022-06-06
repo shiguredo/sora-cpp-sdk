@@ -1,25 +1,15 @@
-find_package(PkgConfig)
-pkg_check_modules(Libdrm libdrm)
-if(LIBDRM_FOUND)
-  if(NOT TARGET Libdrm::drm)
-    add_library(Libdrm::drm UNKNOWN IMPORTED)
-
-    set_target_properties(Libdrm::drm PROPERTIES
-      INTERFACE_INCLUDE_DIRECTORIES "${LIBDRM_INCLUDE_DIRS}"
-      IMPORTED_LOCATION "${LIBDRM_LINK_LIBRARIES}")
-  endif()
-endif()
+find_package(Libdrm REQUIRED)
 
 find_path(LIBVA_INCLUDE_DIR NAMES va/va.h PATHS "${LIBVA_ROOT_DIR}/include" NO_DEFAULT_PATH)
 find_library(LIBVA_LIBRARY NAMES va PATHS "${LIBVA_ROOT_DIR}/lib" NO_DEFAULT_PATH)
 find_library(LIBVA_DRM_LIBRARY NAMES va-drm PATHS "${LIBVA_ROOT_DIR}/lib" NO_DEFAULT_PATH)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(LIBVA DEFAULT_MSG LIBVA_INCLUDE_DIR LIBVA_LIBRARY LIBVA_DRM_LIBRARY)
+find_package_handle_standard_args(Libva DEFAULT_MSG LIBVA_INCLUDE_DIR LIBVA_LIBRARY LIBVA_DRM_LIBRARY)
 
 mark_as_advanced(LIBVA_INCLUDE_DIR LIBVA_LIBRARY LIBVA_DRM_LIBRARY)
 
-if(LIBVA_FOUND)
+if(Libva_FOUND)
   if(NOT TARGET Libva::va)
     add_library(Libva::va UNKNOWN IMPORTED)
 

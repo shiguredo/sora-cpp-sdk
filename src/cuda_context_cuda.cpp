@@ -44,26 +44,31 @@ struct CudaContextImpl {
   throw std::exception()
 
 std::shared_ptr<CudaContext> CudaContext::Create() {
-  CUdevice device;
-  CUcontext context;
+  std::shared_ptr<CudaContext> ctx;
+  try {
+    CUdevice device;
+    CUcontext context;
 
-  if (!dyn::DynModule::Instance().IsLoadable(dyn::CUDA_SO)) {
-    throw std::exception();
+    if (!dyn::DynModule::Instance().IsLoadable(dyn::CUDA_SO)) {
+      throw std::exception();
+    }
+
+    ckerror(dyn::cuInit(0));
+    ckerror(dyn::cuDeviceGet(&device, 0));
+    char device_name[80];
+    ckerror(dyn::cuDeviceGetName(device_name, sizeof(device_name), device));
+    //RTC_LOG(LS_INFO) << "GPU in use: " << device_name;
+    ckerror(dyn::cuCtxCreate(&context, 0, device));
+
+    std::shared_ptr<CudaContextImpl> impl(new CudaContextImpl());
+    impl->device = device;
+    impl->context = context;
+
+    ctx.reset(new CudaContext());
+    ctx->impl_ = impl;
+  } catch (std::exception&) {
+    return nullptr;
   }
-
-  ckerror(dyn::cuInit(0));
-  ckerror(dyn::cuDeviceGet(&device, 0));
-  char device_name[80];
-  ckerror(dyn::cuDeviceGetName(device_name, sizeof(device_name), device));
-  //RTC_LOG(LS_INFO) << "GPU in use: " << device_name;
-  ckerror(dyn::cuCtxCreate(&context, 0, device));
-
-  std::shared_ptr<CudaContextImpl> impl(new CudaContextImpl());
-  impl->device = device;
-  impl->context = context;
-
-  std::shared_ptr<CudaContext> ctx(new CudaContext());
-  ctx->impl_ = impl;
 
   return ctx;
 }
