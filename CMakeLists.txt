@@ -294,7 +294,7 @@ if (SORA_TARGET_OS STREQUAL "windows")
         src/hwenc_msdk/msdk_video_encoder.cpp
     )
     target_include_directories(sora PRIVATE ${MSDK_ROOT_DIR}/include)
-    target_link_libraries(sora PRIVATE ${MSDK_ROOT_DIR}/lib/libmfx.lib)
+    target_link_libraries(sora PRIVATE "$<BUILD_INTERFACE:${MSDK_ROOT_DIR}/lib/libmfx.lib>")
     # mfx を要求したくないので sora.lib に含める
     list(APPEND BUNDLE_STATIC_LIBS ${MSDK_ROOT_DIR}/lib/libmfx.lib)
   endif()
