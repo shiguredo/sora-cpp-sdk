@@ -23,22 +23,19 @@
 #endif
 #ifdef __linux__
 #include "nvcodec_h264_encoder_cuda.h"
-#include "sora/cuda_context.h"
 #endif
+
+#include "sora/cuda_context.h"
 
 namespace sora {
 
 class NvCodecH264Encoder : public webrtc::VideoEncoder {
  public:
-#ifdef __linux__
   explicit NvCodecH264Encoder(const cricket::VideoCodec& codec,
-                              std::shared_ptr<CudaContext> cc);
-#else
-  explicit NvCodecH264Encoder(const cricket::VideoCodec& codec);
-#endif
+                              std::shared_ptr<CudaContext> cuda_context);
   ~NvCodecH264Encoder() override;
 
-  static bool IsSupported();
+  static bool IsSupported(std::shared_ptr<CudaContext> cuda_context);
 
   int32_t InitEncode(const webrtc::VideoCodec* codec_settings,
                      int32_t number_of_cores,
@@ -64,16 +61,32 @@ class NvCodecH264Encoder : public webrtc::VideoEncoder {
   int32_t ReleaseNvEnc();
   webrtc::H264BitstreamParser h264_bitstream_parser_;
 
+  static std::unique_ptr<NvEncoder> CreateEncoder(
+      int width,
+      int height,
+      int framerate,
+      int target_bitrate_bps,
+      int max_bitrate_bps
+#ifdef _WIN32
+      ,
+      ID3D11Device* id3d11_device,
+      ID3D11Texture2D** out_id3d11_texture
+#endif
+#ifdef __linux__
+      , NvCodecH264EncoderCuda* cuda
+      , bool is_nv12
+#endif
+  );
+
+  std::shared_ptr<CudaContext> cuda_context_;
+  std::unique_ptr<NvEncoder> nv_encoder_;
 #ifdef _WIN32
   Microsoft::WRL::ComPtr<ID3D11Device> id3d11_device_;
   Microsoft::WRL::ComPtr<ID3D11DeviceContext> id3d11_context_;
   Microsoft::WRL::ComPtr<ID3D11Texture2D> id3d11_texture_;
-  std::unique_ptr<NvEncoderD3D11> nv_encoder_;
 #endif
 #ifdef __linux__
-  std::shared_ptr<CudaContext> cuda_context_;
   std::unique_ptr<NvCodecH264EncoderCuda> cuda_;
-  std::unique_ptr<NvEncoder> nv_encoder_;
   bool is_nv12_ = false;
 #endif
   bool reconfigure_needed_ = false;

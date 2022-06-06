@@ -25,15 +25,10 @@ struct nal_entry {
 using Microsoft::WRL::ComPtr;
 #endif
 
-#ifdef __linux__
-NvCodecH264Encoder::NvCodecH264Encoder(const cricket::VideoCodec& codec,
-                                       std::shared_ptr<CudaContext> cc)
-    : cuda_context_(cc),
-#else
-NvCodecH264Encoder::NvCodecH264Encoder(const cricket::VideoCodec& codec)
-    :
-#endif
-      bitrate_adjuster_(0.5, 0.95) {
+NvCodecH264Encoder::NvCodecH264Encoder(
+    const cricket::VideoCodec& codec,
+    std::shared_ptr<CudaContext> cuda_context)
+    : cuda_context_(cuda_context), bitrate_adjuster_(0.5, 0.95) {
 #ifdef _WIN32
   ComPtr<IDXGIFactory1> idxgi_factory;
   RTC_CHECK(!FAILED(CreateDXGIFactory1(__uuidof(IDXGIFactory1),
@@ -61,22 +56,67 @@ NvCodecH264Encoder::NvCodecH264Encoder(const cricket::VideoCodec& codec)
 
 NvCodecH264Encoder::~NvCodecH264Encoder() {}
 
-bool NvCodecH264Encoder::IsSupported() {
+bool NvCodecH264Encoder::IsSupported(
+    std::shared_ptr<CudaContext> cuda_context) {
   try {
     NvEncoder::TryLoadNvEncApi();
 
     // Linux の場合、cuda と nvcuvid のロードも必要なのでチェックする
 #ifdef __linux__
+    if (cuda_context == nullptr) {
+      return false;
+    }
+
     if (!dyn::DynModule::Instance().IsLoadable(dyn::CUDA_SO)) {
       return false;
     }
     if (!dyn::DynModule::Instance().IsLoadable(dyn::NVCUVID_SO)) {
       return false;
     }
+    // 関数が存在するかチェックする
+    if (dyn::DynModule::Instance().GetFunc(dyn::CUDA_SO, "cuDeviceGetName") ==
+        nullptr) {
+      return false;
+    }
+    if (dyn::DynModule::Instance().GetFunc(dyn::NVCUVID_SO,
+                                           "cuvidMapVideoFrame") == nullptr) {
+      return false;
+    }
 #endif
+
+    // 実際にエンコーダを作れるかを確認する
+#ifdef _WIN32
+    ComPtr<IDXGIFactory1> idxgi_factory;
+    RTC_CHECK(!FAILED(CreateDXGIFactory1(
+        __uuidof(IDXGIFactory1), (void**)idxgi_factory.GetAddressOf())));
+    ComPtr<IDXGIAdapter> idxgi_adapter;
+    RTC_CHECK(
+        !FAILED(idxgi_factory->EnumAdapters(0, idxgi_adapter.GetAddressOf())));
+    Microsoft::WRL::ComPtr<ID3D11Device> id3d11_device;
+    Microsoft::WRL::ComPtr<ID3D11DeviceContext> id3d11_context;
+    Microsoft::WRL::ComPtr<ID3D11Texture2D> id3d11_texture;
+    RTC_CHECK(!FAILED(D3D11CreateDevice(
+        idxgi_adapter.Get(), D3D_DRIVER_TYPE_UNKNOWN, NULL, 0, NULL, 0,
+        D3D11_SDK_VERSION, id3d11_device.GetAddressOf(), NULL,
+        id3d11_context.GetAddressOf())));
+
+    auto encoder =
+        CreateEncoder(640, 480, 30, 100 * 1000, 500 * 1000, id3d11_device.Get(),
+                      id3d11_texture.GetAddressOf());
+#endif
+#ifdef __linux__
+    auto cuda = std::unique_ptr<NvCodecH264EncoderCuda>(
+        new NvCodecH264EncoderCuda(cuda_context));
+    auto encoder =
+        CreateEncoder(640, 480, 30, 100 * 1000, 500 * 1000, cuda.get(), true);
+#endif
+    if (encoder == nullptr) {
+      return false;
+    }
+
     return true;
   } catch (const NVENCException& e) {
-    RTC_LOG(LS_ERROR) << __FUNCTION__ << e.what();
+    RTC_LOG(LS_ERROR) << __FUNCTION__ << ": " << e.what();
     return false;
   }
 }
@@ -357,85 +397,16 @@ webrtc::VideoEncoder::EncoderInfo NvCodecH264Encoder::GetEncoderInfo() const {
 
 int32_t NvCodecH264Encoder::InitNvEnc() {
 #ifdef _WIN32
-  DXGI_FORMAT dxgi_format = DXGI_FORMAT_NV12;
-  NV_ENC_BUFFER_FORMAT nvenc_format = NV_ENC_BUFFER_FORMAT_NV12;
-  D3D11_TEXTURE2D_DESC desc;
-  ZeroMemory(&desc, sizeof(D3D11_TEXTURE2D_DESC));
-  desc.Width = width_;
-  desc.Height = height_;
-  desc.MipLevels = 1;
-  desc.ArraySize = 1;
-  desc.Format = dxgi_format;
-  desc.SampleDesc.Count = 1;
-  desc.Usage = D3D11_USAGE_STAGING;
-  desc.BindFlags = 0;
-  desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-  id3d11_device_->CreateTexture2D(&desc, NULL, id3d11_texture_.GetAddressOf());
-
-  // Driver が古いとかに気づくのはココ
-  try {
-    nv_encoder_.reset(new NvEncoderD3D11(id3d11_device_.Get(), width_, height_,
-                                         nvenc_format));
-  } catch (const NVENCException& e) {
-    RTC_LOG(LS_ERROR) << __FUNCTION__ << e.what();
-    return WEBRTC_VIDEO_CODEC_ERROR;
-  }
+  nv_encoder_ = CreateEncoder(width_, height_, framerate_, target_bitrate_bps_,
+                              max_bitrate_bps_, id3d11_device_.Get(),
+                              id3d11_texture_.GetAddressOf());
 #endif
-
 #ifdef __linux__
-  try {
-    nv_encoder_.reset(cuda_->CreateNvEncoder(width_, height_, is_nv12_));
-  } catch (const NVENCException& e) {
-    RTC_LOG(LS_ERROR) << __FUNCTION__ << e.what();
-    return WEBRTC_VIDEO_CODEC_ERROR;
-  }
+  nv_encoder_ = CreateEncoder(width_, height_, framerate_, target_bitrate_bps_,
+                              max_bitrate_bps_, cuda_.get(), is_nv12_);
 #endif
 
-  initialize_params_ = {NV_ENC_INITIALIZE_PARAMS_VER};
-  NV_ENC_CONFIG encode_config = {NV_ENC_CONFIG_VER};
-  initialize_params_.encodeConfig = &encode_config;
-  try {
-    nv_encoder_->CreateDefaultEncoderParams(
-        &initialize_params_, NV_ENC_CODEC_H264_GUID, NV_ENC_PRESET_P3_GUID,
-        NV_ENC_TUNING_INFO_LOW_LATENCY);
-
-    //initialize_params_.enablePTD = 1;
-    initialize_params_.frameRateDen = 1;
-    initialize_params_.frameRateNum = framerate_;
-    initialize_params_.maxEncodeWidth = width_;
-    initialize_params_.maxEncodeHeight = height_;
-
-    //encode_config.profileGUID = NV_ENC_H264_PROFILE_BASELINE_GUID;
-    //encode_config.rcParams.rateControlMode = NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ;
-    encode_config.rcParams.averageBitRate = target_bitrate_bps_;
-    encode_config.rcParams.maxBitRate = max_bitrate_bps_;
-
-    encode_config.rcParams.disableBadapt = 1;
-    encode_config.rcParams.vbvBufferSize =
-        encode_config.rcParams.averageBitRate *
-        initialize_params_.frameRateDen / initialize_params_.frameRateNum;
-    encode_config.rcParams.vbvInitialDelay =
-        encode_config.rcParams.vbvBufferSize;
-    encode_config.gopLength = NVENC_INFINITE_GOPLENGTH;
-    encode_config.frameIntervalP = 1;
-    encode_config.rcParams.enableAQ = 1;
-
-    //encode_config.encodeCodecConfig.h264Config.outputAUD = 1;
-    //encode_config.encodeCodecConfig.h264Config.level = NV_ENC_LEVEL_H264_31;
-    //encode_config.encodeCodecConfig.h264Config.entropyCodingMode = NV_ENC_H264_ENTROPY_CODING_MODE_CAVLC;
-    encode_config.encodeCodecConfig.h264Config.idrPeriod =
-        NVENC_INFINITE_GOPLENGTH;
-    encode_config.encodeCodecConfig.h264Config.repeatSPSPPS = 1;
-    encode_config.encodeCodecConfig.h264Config.sliceMode = 0;
-    encode_config.encodeCodecConfig.h264Config.sliceModeData = 0;
-
-    nv_encoder_->CreateEncoder(&initialize_params_);
-
-    RTC_LOG(LS_INFO) << __FUNCTION__ << " framerate_:" << framerate_
-                     << " bitrate_bps_:" << target_bitrate_bps_
-                     << " maxBitRate:" << encode_config.rcParams.maxBitRate;
-  } catch (const NVENCException& e) {
-    RTC_LOG(LS_ERROR) << __FUNCTION__ << e.what();
+  if (nv_encoder_ == nullptr) {
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
@@ -458,6 +429,111 @@ int32_t NvCodecH264Encoder::ReleaseNvEnc() {
 #endif
   }
   return WEBRTC_VIDEO_CODEC_OK;
+}
+
+std::unique_ptr<NvEncoder> NvCodecH264Encoder::CreateEncoder(
+    int width,
+    int height,
+    int framerate,
+    int target_bitrate_bps,
+    int max_bitrate_bps
+#ifdef _WIN32
+    ,
+    ID3D11Device* id3d11_device,
+    ID3D11Texture2D** out_id3d11_texture
+#endif
+#ifdef __linux__
+    ,
+    NvCodecH264EncoderCuda* cuda,
+    bool is_nv12
+#endif
+) {
+  std::unique_ptr<NvEncoder> encoder;
+
+#ifdef _WIN32
+  DXGI_FORMAT dxgi_format = DXGI_FORMAT_NV12;
+  NV_ENC_BUFFER_FORMAT nvenc_format = NV_ENC_BUFFER_FORMAT_NV12;
+  D3D11_TEXTURE2D_DESC desc;
+  ZeroMemory(&desc, sizeof(D3D11_TEXTURE2D_DESC));
+  desc.Width = width;
+  desc.Height = height;
+  desc.MipLevels = 1;
+  desc.ArraySize = 1;
+  desc.Format = dxgi_format;
+  desc.SampleDesc.Count = 1;
+  desc.Usage = D3D11_USAGE_STAGING;
+  desc.BindFlags = 0;
+  desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+  id3d11_device->CreateTexture2D(&desc, NULL, out_id3d11_texture);
+
+  // Driver が古いとかに気づくのはココ
+  try {
+    encoder.reset(
+        new NvEncoderD3D11(id3d11_device, width, height, nvenc_format));
+  } catch (const NVENCException& e) {
+    RTC_LOG(LS_ERROR) << __FUNCTION__ << e.what();
+    return nullptr;
+  }
+#endif
+
+#ifdef __linux__
+  try {
+    encoder.reset(cuda->CreateNvEncoder(width, height, is_nv12));
+  } catch (const NVENCException& e) {
+    RTC_LOG(LS_ERROR) << __FUNCTION__ << e.what();
+    return nullptr;
+  }
+#endif
+
+  NV_ENC_INITIALIZE_PARAMS initialize_params = {NV_ENC_INITIALIZE_PARAMS_VER};
+  NV_ENC_CONFIG encode_config = {NV_ENC_CONFIG_VER};
+  initialize_params.encodeConfig = &encode_config;
+  try {
+    encoder->CreateDefaultEncoderParams(
+        &initialize_params, NV_ENC_CODEC_H264_GUID, NV_ENC_PRESET_P3_GUID,
+        NV_ENC_TUNING_INFO_LOW_LATENCY);
+
+    //initialize_params.enablePTD = 1;
+    initialize_params.frameRateDen = 1;
+    initialize_params.frameRateNum = framerate;
+    initialize_params.maxEncodeWidth = width;
+    initialize_params.maxEncodeHeight = height;
+
+    //encode_config.profileGUID = NV_ENC_H264_PROFILE_BASELINE_GUID;
+    //encode_config.rcParams.rateControlMode = NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ;
+    encode_config.rcParams.averageBitRate = target_bitrate_bps;
+    encode_config.rcParams.maxBitRate = max_bitrate_bps;
+
+    encode_config.rcParams.disableBadapt = 1;
+    encode_config.rcParams.vbvBufferSize =
+        encode_config.rcParams.averageBitRate * initialize_params.frameRateDen /
+        initialize_params.frameRateNum;
+    encode_config.rcParams.vbvInitialDelay =
+        encode_config.rcParams.vbvBufferSize;
+    encode_config.gopLength = NVENC_INFINITE_GOPLENGTH;
+    encode_config.frameIntervalP = 1;
+    encode_config.rcParams.enableAQ = 1;
+
+    //encode_config.encodeCodecConfig.h264Config.outputAUD = 1;
+    //encode_config.encodeCodecConfig.h264Config.level = NV_ENC_LEVEL_H264_31;
+    //encode_config.encodeCodecConfig.h264Config.entropyCodingMode = NV_ENC_H264_ENTROPY_CODING_MODE_CAVLC;
+    encode_config.encodeCodecConfig.h264Config.idrPeriod =
+        NVENC_INFINITE_GOPLENGTH;
+    encode_config.encodeCodecConfig.h264Config.repeatSPSPPS = 1;
+    encode_config.encodeCodecConfig.h264Config.sliceMode = 0;
+    encode_config.encodeCodecConfig.h264Config.sliceModeData = 0;
+
+    encoder->CreateEncoder(&initialize_params);
+
+    RTC_LOG(LS_INFO) << __FUNCTION__ << " framerate:" << framerate
+                     << " bitrate_bps:" << target_bitrate_bps
+                     << " maxBitRate:" << encode_config.rcParams.maxBitRate;
+  } catch (const NVENCException& e) {
+    RTC_LOG(LS_ERROR) << __FUNCTION__ << ": " << e.what();
+    return nullptr;
+  }
+
+  return encoder;
 }
 
 }  // namespace sora

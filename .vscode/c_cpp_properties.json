@@ -10,10 +10,13 @@
                 "${workspaceFolder}/_install/ubuntu-20.04_x86_64/release/webrtc/include/third_party/libyuv/include",
                 "${workspaceFolder}/_install/ubuntu-20.04_x86_64/release/webrtc/include/third_party/zlib",
                 "${workspaceFolder}/_install/ubuntu-20.04_x86_64/release/llvm/libcxx/include",
+                "${workspaceFolder}/_install/ubuntu-20.04_x86_64/release/libva/include",
+                "${workspaceFolder}/_install/ubuntu-20.04_x86_64/release/msdk/include",
                 "${workspaceFolder}/_build/ubuntu-20.04_x86_64/release/sora",
                 "${workspaceFolder}/NvCodec/include",
                 "${workspaceFolder}/NvCodec/NvCodec",
-                "${workspaceFolder}/include"
+                "${workspaceFolder}/include",
+                "/usr/local/cuda/include"
             ],
             "defines": [
                 "WEBRTC_POSIX",
@@ -116,6 +119,7 @@
             "includePath": [
                 "${workspaceFolder}/_install/windows_x86_64/release/boost/include",
                 "${workspaceFolder}/_install/windows_x86_64/release/cuda/nvcc/include",
+                "${workspaceFolder}/_install/windows_x86_64/release/msdk/include",
                 "${workspaceFolder}/_install/windows_x86_64/release/webrtc/include",
                 "${workspaceFolder}/_install/windows_x86_64/release/webrtc/include/third_party/abseil-cpp",
                 "${workspaceFolder}/_install/windows_x86_64/release/webrtc/include/third_party/boringssl/src/include",
@@ -129,7 +133,8 @@
             "defines": [
                 "SORA_CPP_SDK_WINDOWS",
                 "WEBRTC_WIN",
-                "USE_NVCODEC_ENCODER=1"
+                "USE_NVCODEC_ENCODER=1",
+                "USE_MSDK_ENCODER=1"
             ],
             "cStandard": "gnu17",
             "cppStandard": "gnu++17",

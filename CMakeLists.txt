@@ -139,23 +139,27 @@ target_compile_definitions(sora
   PRIVATE
     USE_NVCODEC_ENCODER=$<BOOL:${USE_NVCODEC_ENCODER}>
     USE_JETSON_ENCODER=$<BOOL:${USE_JETSON_ENCODER}>
+    USE_MSDK_ENCODER=$<BOOL:${USE_MSDK_ENCODER}>
 )
 
 # 指定したライブラリを自身の静的ライブラリにバンドルする
-function(bundle_static_library target static_lib bundled_target)
+function(bundle_static_library target static_libs bundled_target)
   file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/bundled)
   set(bundled_tgt_full_name
     ${CMAKE_BINARY_DIR}/bundled/${CMAKE_STATIC_LIBRARY_PREFIX}${target}${CMAKE_STATIC_LIBRARY_SUFFIX})
 
   if (MSVC)
     add_custom_command(
-      COMMAND ${CMAKE_AR} /NOLOGO /OUT:${bundled_tgt_full_name} $<TARGET_FILE:${target}> ${static_lib}
+      COMMAND ${CMAKE_AR} /NOLOGO /OUT:${bundled_tgt_full_name} $<TARGET_FILE:${target}> ${static_libs}
       OUTPUT ${bundled_tgt_full_name}
-      VERBATIM)
+      VERBATIM
+      COMMENT "Bundling libs: ${static_libs} to $<TARGET_FILE:${target}>")
   else ()
     file(WRITE  ${CMAKE_BINARY_DIR}/${bundled_target}.ar.in "CREATE ${bundled_tgt_full_name}\n" )
     file(APPEND ${CMAKE_BINARY_DIR}/${bundled_target}.ar.in "ADDLIB $<TARGET_FILE:${target}>\n")
-    file(APPEND ${CMAKE_BINARY_DIR}/${bundled_target}.ar.in "ADDLIB ${static_lib}\n")
+    foreach(lib IN LISTS static_libs)
+      file(APPEND ${CMAKE_BINARY_DIR}/${bundled_target}.ar.in "ADDLIB ${lib}\n")
+    endforeach()
     file(APPEND ${CMAKE_BINARY_DIR}/${bundled_target}.ar.in "SAVE\n")
     file(APPEND ${CMAKE_BINARY_DIR}/${bundled_target}.ar.in "END\n")
     file(GENERATE
@@ -165,7 +169,8 @@ function(bundle_static_library target static_lib bundled_target)
     add_custom_command(
       COMMAND ${CMAKE_AR} -M < ${CMAKE_BINARY_DIR}/${bundled_target}.ar
       OUTPUT ${bundled_tgt_full_name}
-      VERBATIM)
+      VERBATIM
+      COMMENT "Bundling libs: ${static_libs} to $<TARGET_FILE:${target}>")
   endif()
 
   add_custom_target(${bundled_target}_bundling ALL DEPENDS ${bundled_tgt_full_name})
@@ -178,6 +183,8 @@ function(bundle_static_library target static_lib bundled_target)
       INTERFACE_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:${target},INTERFACE_INCLUDE_DIRECTORIES>)
   add_dependencies(${bundled_target} ${bundled_target}_bundling)
 endfunction()
+
+set(BUNDLE_STATIC_LIBS)
 
 if (SORA_TARGET_OS STREQUAL "windows")
   # 文字コードを utf-8 として扱うのと、シンボルテーブル数を増やす
@@ -276,8 +283,22 @@ if (SORA_TARGET_OS STREQUAL "windows")
     target_sources(sora PRIVATE ${CUDA_FILES})
     target_include_directories(sora PRIVATE ${CUDA_INCLUDE_DIRS})
     # CUDA を要求したくないので sora.lib に含める
-    bundle_static_library(sora ${CUDA_TOOLKIT_ROOT_DIR}/lib/x64/cudart_static.lib bundled_sora)
+    list(APPEND BUNDLE_STATIC_LIBS ${CUDA_TOOLKIT_ROOT_DIR}/lib/x64/cudart_static.lib)
   endif()
+
+  if (USE_MSDK_ENCODER)
+    target_sources(sora
+      PRIVATE
+        src/hwenc_msdk/msdk_session_impl.cpp
+        src/hwenc_msdk/msdk_video_decoder.cpp
+        src/hwenc_msdk/msdk_video_encoder.cpp
+    )
+    target_include_directories(sora PRIVATE ${MSDK_ROOT_DIR}/include)
+    target_link_libraries(sora PRIVATE ${MSDK_ROOT_DIR}/lib/libmfx.lib)
+    # mfx を要求したくないので sora.lib に含める
+    list(APPEND BUNDLE_STATIC_LIBS ${MSDK_ROOT_DIR}/lib/libmfx.lib)
+  endif()
+
 elseif (SORA_TARGET_OS STREQUAL "macos")
   enable_language(OBJCXX)
 
@@ -422,8 +443,27 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
     )
 
     # CUDA を要求したくないので libsora.a に含める
-    bundle_static_library(sora /usr/local/cuda/lib64/libcudart_static.a bundled_sora)
+    list(APPEND BUNDLE_STATIC_LIBS /usr/local/cuda/lib64/libcudart_static.a)
   endif()
+
+  if (USE_MSDK_ENCODER)
+    find_package(Msdk REQUIRED)
+    target_include_directories(sora PRIVATE /usr/local/cuda/include)
+    target_sources(sora
+      PRIVATE
+        src/hwenc_msdk/msdk_session_impl.cpp
+        src/hwenc_msdk/msdk_video_decoder.cpp
+        src/hwenc_msdk/msdk_video_encoder.cpp
+        src/hwenc_msdk/vaapi_utils_drm.cpp
+        src/hwenc_msdk/vaapi_utils.cpp
+    )
+    target_link_libraries(sora PRIVATE "$<BUILD_INTERFACE:Msdk::mfx>")
+    # drm は依存に含める
+    target_link_libraries(sora PUBLIC Libdrm::drm)
+    # mfx を要求したくないので libsora.a に含める
+    list(APPEND BUNDLE_STATIC_LIBS $<TARGET_FILE:Msdk::mfx> $<TARGET_FILE:Libva::va> $<TARGET_FILE:Libva::va_drm>)
+  endif()
+
 elseif (SORA_TARGET_OS STREQUAL "jetson")
   target_sources(sora PRIVATE src/v4l2/v4l2_video_capturer.cpp)
 
@@ -500,6 +540,11 @@ elseif (SORA_TARGET_OS STREQUAL "jetson")
   endif(USE_JETSON_ENCODER)
 endif()
 
+# 静的ライブラリを sora.lib に含める
+if (BUNDLE_STATIC_LIBS)
+  bundle_static_library(sora "${BUNDLE_STATIC_LIBS}" bundled_sora)
+endif()
+
 include(GNUInstallDirs)
 
 install(TARGETS sora
@@ -512,7 +557,7 @@ install(EXPORT sora-config
   DESTINATION ${CMAKE_INSTALL_DATADIR}/sora
   NAMESPACE Sora::
 )
-install(FILES cmake/FindWebRTC.cmake
+install(FILES cmake/FindWebRTC.cmake cmake/FindLibdrm.cmake
   DESTINATION ${CMAKE_INSTALL_DATADIR}/cmake
 )
 install(FILES LICENSE NOTICE.md

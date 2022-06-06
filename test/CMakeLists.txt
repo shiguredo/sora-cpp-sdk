@@ -25,6 +25,7 @@ find_package(Boost REQUIRED COMPONENTS json)
 find_package(WebRTC REQUIRED)
 find_package(Sora REQUIRED)
 find_package(Threads REQUIRED)
+find_package(Libdrm)
 
 # hello.exe を作る
 

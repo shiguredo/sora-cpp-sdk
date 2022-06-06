@@ -30,6 +30,10 @@
 #include "sora/hwenc_nvcodec/nvcodec_h264_encoder.h"
 #endif
 
+#if USE_MSDK_ENCODER
+#include "sora/hwenc_msdk/msdk_video_encoder.h"
+#endif
+
 #if USE_JETSON_ENCODER
 #include "sora/hwenc_jetson/jetson_video_encoder.h"
 #endif
@@ -139,25 +143,60 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
 #endif
 
 #if USE_NVCODEC_ENCODER
-  if (cuda_context != nullptr) {
+  if (NvCodecH264Encoder::IsSupported(cuda_context)) {
+    config.encoders.insert(
+        config.encoders.begin(),
+        VideoEncoderConfig(webrtc::kVideoCodecH264,
+                           [cuda_context = cuda_context](auto format) {
+                             return std::unique_ptr<webrtc::VideoEncoder>(
+                                 absl::make_unique<NvCodecH264Encoder>(
+                                     cricket::VideoCodec(format),
+                                     cuda_context));
+                           }));
+  }
+#endif
+
+#if USE_MSDK_ENCODER
+  auto session = MsdkSession::Create();
+  if (MsdkVideoEncoder::IsSupported(session, webrtc::kVideoCodecVP8)) {
+    config.encoders.insert(
+        config.encoders.begin(),
+        VideoEncoderConfig(
+            webrtc::kVideoCodecVP8,
+            [](auto format) -> std::unique_ptr<webrtc::VideoEncoder> {
+              return MsdkVideoEncoder::Create(MsdkSession::Create(),
+                                              webrtc::kVideoCodecVP8);
+            }));
+  }
+  if (MsdkVideoEncoder::IsSupported(session, webrtc::kVideoCodecVP9)) {
+    config.encoders.insert(
+        config.encoders.begin(),
+        VideoEncoderConfig(
+            webrtc::kVideoCodecVP9,
+            [](auto format) -> std::unique_ptr<webrtc::VideoEncoder> {
+              return MsdkVideoEncoder::Create(MsdkSession::Create(),
+                                              webrtc::kVideoCodecVP9);
+            }));
+  }
+  if (MsdkVideoEncoder::IsSupported(session, webrtc::kVideoCodecH264)) {
     config.encoders.insert(
         config.encoders.begin(),
         VideoEncoderConfig(
             webrtc::kVideoCodecH264,
-#if defined(__linux__)
-            [cuda_context = cuda_context](auto format) {
-              return std::unique_ptr<webrtc::VideoEncoder>(
-                  absl::make_unique<NvCodecH264Encoder>(
-                      cricket::VideoCodec(format), cuda_context));
-            }
-#else
-            [](auto format) {
-              return std::unique_ptr<webrtc::VideoEncoder>(
-                  absl::make_unique<NvCodecH264Encoder>(
-                      cricket::VideoCodec(format)));
-            }
-#endif
-            ));
+            [](auto format) -> std::unique_ptr<webrtc::VideoEncoder> {
+              return MsdkVideoEncoder::Create(MsdkSession::Create(),
+                                              webrtc::kVideoCodecH264);
+            }));
+  }
+  if (MsdkVideoEncoder::IsSupported(session, webrtc::kVideoCodecAV1)) {
+    config.encoders.insert(
+        config.encoders.begin(),
+        VideoEncoderConfig(
+            webrtc::kVideoCodecAV1,
+            [](auto format) -> std::unique_ptr<webrtc::VideoEncoder> {
+              return MsdkVideoEncoder::Create(MsdkSession::Create(),
+                                              webrtc::kVideoCodecAV1);
+            }));
   }
 #endif
 

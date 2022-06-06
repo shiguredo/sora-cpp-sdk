@@ -23,7 +23,12 @@ NvCodecVideoDecoder::~NvCodecVideoDecoder() {
   Release();
 }
 
-bool NvCodecVideoDecoder::IsSupported(CudaVideoCodec codec) {
+bool NvCodecVideoDecoder::IsSupported(std::shared_ptr<CudaContext> context,
+                                      CudaVideoCodec codec) {
+  if (context == nullptr) {
+    return false;
+  }
+
   // CUDA 周りのライブラリがロードできるか確認する
   if (!dyn::DynModule::Instance().IsLoadable(dyn::CUDA_SO)) {
     return false;
@@ -31,9 +36,17 @@ bool NvCodecVideoDecoder::IsSupported(CudaVideoCodec codec) {
   if (!dyn::DynModule::Instance().IsLoadable(dyn::NVCUVID_SO)) {
     return false;
   }
+  // 関数が存在するかチェックする
+  if (dyn::DynModule::Instance().GetFunc(dyn::CUDA_SO, "cuDeviceGetName") ==
+      nullptr) {
+    return false;
+  }
+  if (dyn::DynModule::Instance().GetFunc(dyn::NVCUVID_SO,
+                                         "cuvidMapVideoFrame") == nullptr) {
+    return false;
+  }
 
   try {
-    auto context = CudaContext::Create();
     auto p = new NvCodecDecoderCuda(context, codec);
     delete p;
     return true;
