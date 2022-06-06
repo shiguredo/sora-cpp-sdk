@@ -11,6 +11,11 @@
 
 ## develop
 
+## 2022.2.1
+
+- [FIX] Windows で libmfx.lib ライブラリを要求してしまっていたのを修正
+    - @melpon
+
 ## 2022.2.0
 
 - [ADD] Intel Media SDK を使ったハードウェアエンコーダ/デコーダを実装
