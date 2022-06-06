@@ -11,6 +11,8 @@
 
 ## develop
 
+## 2022.2.0
+
 - [ADD] Intel Media SDK を使ったハードウェアエンコーダ/デコーダを実装
     - @melpon
 
