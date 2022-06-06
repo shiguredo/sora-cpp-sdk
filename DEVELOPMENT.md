@@ -11,8 +11,8 @@
 
 ## メモ
 
-- ubuntu-20.04_x86_64 に必要な依存
-  - clang-10
+- ubuntu-20.04_x86_64, ubuntu-22.04_x86_64 のビルドに必要な依存
+  - clang-12
   - CUDA
 ```bash
 sudo apt-get update
@@ -25,11 +25,15 @@ sudo apt-get update
 # 10.2.89-1 の部分は VERSION ファイルの CUDA_VERSION を参照すること
 sudo apt-get -y install cuda=10.2.89-1
 
-# 以下は CUDA 11 以上でしか使えない
+# CUDA の Ubuntu-20.04 のリポジトリは CUDA 11 以上でしか使えないので、以下のコマンドではインストールできない
 # wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin
 # sudo mv cuda-ubuntu2004.pin /etc/apt/preferences.d/cuda-repository-pin-600
 # sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/3bf863cc.pub
 # sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/ /"
 # sudo apt-get update
-# sudo apt-get -y install cuda=10.2 clang-10
+# sudo apt-get -y install cuda=10.2 clang-12
 ```
+  - libdrm-dev
+- ubuntu-20.04_x86_64, ubuntu-22.04_x86_64 の実行に必要な依存
+  - libdrm2
+  - （もし Intel Media SDK を有効にしたいなら）libmfx1
