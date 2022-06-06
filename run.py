@@ -1158,13 +1158,16 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                 'build_dir': build_dir,
                 'install_dir': install_dir,
                 'env': {
-                    'CC': os.path.join(webrtc_info.clang_dir, 'bin', 'clang'),
-                    'CXX': os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'),
+                    'CC': 'clang-12',
                     'CFLAGS': '-fPIC',
                 },
             }
             install_libva(**install_libva_args)
 
+            cxxflags = [
+                '-D_LIBCPP_ABI_UNSTABLE',
+                '-D_LIBCPP_DISABLE_AVAILABILITY',
+            ]
             install_msdk_args = {
                 'version': version['MSDK_VERSION'],
                 'version_file': os.path.join(install_dir, 'msdk.version'),
@@ -1173,8 +1176,9 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                 'install_dir': install_dir,
                 'libva_installed_dir': os.path.join(install_dir, 'libva'),
                 'cmake_args': [
-                    f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}",
-                    f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}",
+                    "-DCMAKE_C_COMPILER=clang-12",
+                    "-DCMAKE_CXX_COMPILER=clang++-12",
+                    f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}",
                 ]
             }
             install_msdk_linux(**install_msdk_args)
