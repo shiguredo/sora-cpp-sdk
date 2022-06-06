@@ -733,6 +733,7 @@ def install_msdk_linux(version, source_dir, build_dir, install_dir, libva_instal
              f'-DCMAKE_INSTALL_PREFIX={cmake_path(msdk_install_dir)}',
              '-DCMAKE_BUILD_TYPE=Release',
              f'-DCMAKE_PREFIX_PATH={libva_installed_dir}',
+             '-DBUILD_RUNTIME=OFF',
              '-DBUILD_SAMPLES=OFF',
              '-DBUILD_TUTORIALS=OFF',
              msdk_source_dir,
@@ -1165,6 +1166,8 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             install_libva(**install_libva_args)
 
             cxxflags = [
+                '-nostdinc++',
+                f"-isystem{os.path.join(webrtc_info.libcxx_dir, 'include')}",
                 '-D_LIBCPP_ABI_UNSTABLE',
                 '-D_LIBCPP_DISABLE_AVAILABILITY',
             ]
