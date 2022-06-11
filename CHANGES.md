@@ -11,6 +11,8 @@
 
 ## develop
 
+## 2022.3.0
+
 - [ADD] client_id, spotlight_focus_rid, spotlight_unfocus_rid, simulcast_rid を追加
     - @melpon
 - [FIX] 公開ヘッダーが NvCodec ヘッダーに依存していたのを修正
