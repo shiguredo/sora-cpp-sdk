@@ -1,10 +1,30 @@
 #include "sora/hwenc_nvcodec/nvcodec_h264_encoder.h"
 
+#ifdef _WIN32
+#include <d3d11.h>
+#include <wrl.h>
+#endif
+
+#include <chrono>
+#include <memory>
+#include <mutex>
+#include <queue>
+
 // WebRTC
 #include <api/video/nv12_buffer.h>
+#include <common_video/h264/h264_bitstream_parser.h>
+#include <common_video/include/bitrate_adjuster.h>
 #include <libyuv.h>
 #include <modules/video_coding/codecs/h264/include/h264.h>
 #include <rtc_base/logging.h>
+
+// NvCodec
+#ifdef _WIN32
+#include <NvEncoder/NvEncoderD3D11.h>
+#endif
+#ifdef __linux__
+#include "nvcodec_h264_encoder_cuda.h"
+#endif
 
 #ifdef __linux__
 #include "sora/dyn/cuda.h"
@@ -25,7 +45,78 @@ struct nal_entry {
 using Microsoft::WRL::ComPtr;
 #endif
 
-NvCodecH264Encoder::NvCodecH264Encoder(
+class NvCodecH264EncoderImpl : public NvCodecH264Encoder {
+ public:
+  NvCodecH264EncoderImpl(const cricket::VideoCodec& codec,
+                         std::shared_ptr<CudaContext> cuda_context);
+  ~NvCodecH264EncoderImpl() override;
+
+  static bool IsSupported(std::shared_ptr<CudaContext> cuda_context);
+
+  int32_t InitEncode(const webrtc::VideoCodec* codec_settings,
+                     int32_t number_of_cores,
+                     size_t max_payload_size) override;
+  int32_t RegisterEncodeCompleteCallback(
+      webrtc::EncodedImageCallback* callback) override;
+  int32_t Release() override;
+  int32_t Encode(
+      const webrtc::VideoFrame& frame,
+      const std::vector<webrtc::VideoFrameType>* frame_types) override;
+  void SetRates(
+      const webrtc::VideoEncoder::RateControlParameters& parameters) override;
+  webrtc::VideoEncoder::EncoderInfo GetEncoderInfo() const override;
+
+  static std::unique_ptr<NvEncoder> CreateEncoder(
+      int width,
+      int height,
+      int framerate,
+      int target_bitrate_bps,
+      int max_bitrate_bps
+#ifdef _WIN32
+      ,
+      ID3D11Device* id3d11_device,
+      ID3D11Texture2D** out_id3d11_texture
+#endif
+#ifdef __linux__
+      ,
+      NvCodecH264EncoderCuda* cuda,
+      bool is_nv12
+#endif
+  );
+
+ private:
+  std::mutex mutex_;
+  webrtc::EncodedImageCallback* callback_ = nullptr;
+  webrtc::BitrateAdjuster bitrate_adjuster_;
+  uint32_t target_bitrate_bps_ = 0;
+  uint32_t max_bitrate_bps_ = 0;
+
+  int32_t InitNvEnc();
+  int32_t ReleaseNvEnc();
+  webrtc::H264BitstreamParser h264_bitstream_parser_;
+
+  std::shared_ptr<CudaContext> cuda_context_;
+  std::unique_ptr<NvEncoder> nv_encoder_;
+#ifdef _WIN32
+  Microsoft::WRL::ComPtr<ID3D11Device> id3d11_device_;
+  Microsoft::WRL::ComPtr<ID3D11DeviceContext> id3d11_context_;
+  Microsoft::WRL::ComPtr<ID3D11Texture2D> id3d11_texture_;
+#endif
+#ifdef __linux__
+  std::unique_ptr<NvCodecH264EncoderCuda> cuda_;
+  bool is_nv12_ = false;
+#endif
+  bool reconfigure_needed_ = false;
+  uint32_t width_ = 0;
+  uint32_t height_ = 0;
+  uint32_t framerate_ = 0;
+  webrtc::VideoCodecMode mode_ = webrtc::VideoCodecMode::kRealtimeVideo;
+  NV_ENC_INITIALIZE_PARAMS initialize_params_;
+  std::vector<std::vector<uint8_t>> v_packet_;
+  webrtc::EncodedImage encoded_image_;
+};
+
+NvCodecH264EncoderImpl::NvCodecH264EncoderImpl(
     const cricket::VideoCodec& codec,
     std::shared_ptr<CudaContext> cuda_context)
     : cuda_context_(cuda_context), bitrate_adjuster_(0.5, 0.95) {
@@ -54,76 +145,12 @@ NvCodecH264Encoder::NvCodecH264Encoder(
 #endif
 }
 
-NvCodecH264Encoder::~NvCodecH264Encoder() {}
+NvCodecH264EncoderImpl::~NvCodecH264EncoderImpl() {}
 
-bool NvCodecH264Encoder::IsSupported(
-    std::shared_ptr<CudaContext> cuda_context) {
-  try {
-    NvEncoder::TryLoadNvEncApi();
-
-    // Linux の場合、cuda と nvcuvid のロードも必要なのでチェックする
-#ifdef __linux__
-    if (cuda_context == nullptr) {
-      return false;
-    }
-
-    if (!dyn::DynModule::Instance().IsLoadable(dyn::CUDA_SO)) {
-      return false;
-    }
-    if (!dyn::DynModule::Instance().IsLoadable(dyn::NVCUVID_SO)) {
-      return false;
-    }
-    // 関数が存在するかチェックする
-    if (dyn::DynModule::Instance().GetFunc(dyn::CUDA_SO, "cuDeviceGetName") ==
-        nullptr) {
-      return false;
-    }
-    if (dyn::DynModule::Instance().GetFunc(dyn::NVCUVID_SO,
-                                           "cuvidMapVideoFrame") == nullptr) {
-      return false;
-    }
-#endif
-
-    // 実際にエンコーダを作れるかを確認する
-#ifdef _WIN32
-    ComPtr<IDXGIFactory1> idxgi_factory;
-    RTC_CHECK(!FAILED(CreateDXGIFactory1(
-        __uuidof(IDXGIFactory1), (void**)idxgi_factory.GetAddressOf())));
-    ComPtr<IDXGIAdapter> idxgi_adapter;
-    RTC_CHECK(
-        !FAILED(idxgi_factory->EnumAdapters(0, idxgi_adapter.GetAddressOf())));
-    Microsoft::WRL::ComPtr<ID3D11Device> id3d11_device;
-    Microsoft::WRL::ComPtr<ID3D11DeviceContext> id3d11_context;
-    Microsoft::WRL::ComPtr<ID3D11Texture2D> id3d11_texture;
-    RTC_CHECK(!FAILED(D3D11CreateDevice(
-        idxgi_adapter.Get(), D3D_DRIVER_TYPE_UNKNOWN, NULL, 0, NULL, 0,
-        D3D11_SDK_VERSION, id3d11_device.GetAddressOf(), NULL,
-        id3d11_context.GetAddressOf())));
-
-    auto encoder =
-        CreateEncoder(640, 480, 30, 100 * 1000, 500 * 1000, id3d11_device.Get(),
-                      id3d11_texture.GetAddressOf());
-#endif
-#ifdef __linux__
-    auto cuda = std::unique_ptr<NvCodecH264EncoderCuda>(
-        new NvCodecH264EncoderCuda(cuda_context));
-    auto encoder =
-        CreateEncoder(640, 480, 30, 100 * 1000, 500 * 1000, cuda.get(), true);
-#endif
-    if (encoder == nullptr) {
-      return false;
-    }
-
-    return true;
-  } catch (const NVENCException& e) {
-    RTC_LOG(LS_ERROR) << __FUNCTION__ << ": " << e.what();
-    return false;
-  }
-}
-
-int32_t NvCodecH264Encoder::InitEncode(const webrtc::VideoCodec* codec_settings,
-                                       int32_t number_of_cores,
-                                       size_t max_payload_size) {
+int32_t NvCodecH264EncoderImpl::InitEncode(
+    const webrtc::VideoCodec* codec_settings,
+    int32_t number_of_cores,
+    size_t max_payload_size) {
   RTC_DCHECK(codec_settings);
   RTC_DCHECK_EQ(codec_settings->codecType, webrtc::kVideoCodecH264);
 
@@ -145,18 +172,18 @@ int32_t NvCodecH264Encoder::InitEncode(const webrtc::VideoCodec* codec_settings,
   return InitNvEnc();
 }
 
-int32_t NvCodecH264Encoder::RegisterEncodeCompleteCallback(
+int32_t NvCodecH264EncoderImpl::RegisterEncodeCompleteCallback(
     webrtc::EncodedImageCallback* callback) {
   std::lock_guard<std::mutex> lock(mutex_);
   callback_ = callback;
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int32_t NvCodecH264Encoder::Release() {
+int32_t NvCodecH264EncoderImpl::Release() {
   return ReleaseNvEnc();
 }
 
-int32_t NvCodecH264Encoder::Encode(
+int32_t NvCodecH264EncoderImpl::Encode(
     const webrtc::VideoFrame& frame,
     const std::vector<webrtc::VideoFrameType>* frame_types) {
   //RTC_LOG(LS_ERROR) << __FUNCTION__ << " Start";
@@ -361,7 +388,7 @@ int32_t NvCodecH264Encoder::Encode(
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-void NvCodecH264Encoder::SetRates(
+void NvCodecH264EncoderImpl::SetRates(
     const webrtc::VideoEncoder::RateControlParameters& parameters) {
   if (!nv_encoder_) {
     RTC_LOG(LS_WARNING) << "SetRates() while uninitialized.";
@@ -386,7 +413,8 @@ void NvCodecH264Encoder::SetRates(
   reconfigure_needed_ = true;
 }
 
-webrtc::VideoEncoder::EncoderInfo NvCodecH264Encoder::GetEncoderInfo() const {
+webrtc::VideoEncoder::EncoderInfo NvCodecH264EncoderImpl::GetEncoderInfo()
+    const {
   webrtc::VideoEncoder::EncoderInfo info;
   info.supports_native_handle = true;
   info.implementation_name = "NvCodec H264";
@@ -395,7 +423,7 @@ webrtc::VideoEncoder::EncoderInfo NvCodecH264Encoder::GetEncoderInfo() const {
   return info;
 }
 
-int32_t NvCodecH264Encoder::InitNvEnc() {
+int32_t NvCodecH264EncoderImpl::InitNvEnc() {
 #ifdef _WIN32
   nv_encoder_ = CreateEncoder(width_, height_, framerate_, target_bitrate_bps_,
                               max_bitrate_bps_, id3d11_device_.Get(),
@@ -415,7 +443,7 @@ int32_t NvCodecH264Encoder::InitNvEnc() {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int32_t NvCodecH264Encoder::ReleaseNvEnc() {
+int32_t NvCodecH264EncoderImpl::ReleaseNvEnc() {
   if (nv_encoder_) {
     try {
       nv_encoder_->EndEncode(v_packet_);
@@ -431,7 +459,7 @@ int32_t NvCodecH264Encoder::ReleaseNvEnc() {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-std::unique_ptr<NvEncoder> NvCodecH264Encoder::CreateEncoder(
+std::unique_ptr<NvEncoder> NvCodecH264EncoderImpl::CreateEncoder(
     int width,
     int height,
     int framerate,
@@ -534,6 +562,78 @@ std::unique_ptr<NvEncoder> NvCodecH264Encoder::CreateEncoder(
   }
 
   return encoder;
+}
+
+bool NvCodecH264Encoder::IsSupported(
+    std::shared_ptr<CudaContext> cuda_context) {
+  try {
+    NvEncoder::TryLoadNvEncApi();
+
+    // Linux の場合、cuda と nvcuvid のロードも必要なのでチェックする
+#ifdef __linux__
+    if (cuda_context == nullptr) {
+      return false;
+    }
+
+    if (!dyn::DynModule::Instance().IsLoadable(dyn::CUDA_SO)) {
+      return false;
+    }
+    if (!dyn::DynModule::Instance().IsLoadable(dyn::NVCUVID_SO)) {
+      return false;
+    }
+    // 関数が存在するかチェックする
+    if (dyn::DynModule::Instance().GetFunc(dyn::CUDA_SO, "cuDeviceGetName") ==
+        nullptr) {
+      return false;
+    }
+    if (dyn::DynModule::Instance().GetFunc(dyn::NVCUVID_SO,
+                                           "cuvidMapVideoFrame") == nullptr) {
+      return false;
+    }
+#endif
+
+    // 実際にエンコーダを作れるかを確認する
+#ifdef _WIN32
+    ComPtr<IDXGIFactory1> idxgi_factory;
+    RTC_CHECK(!FAILED(CreateDXGIFactory1(
+        __uuidof(IDXGIFactory1), (void**)idxgi_factory.GetAddressOf())));
+    ComPtr<IDXGIAdapter> idxgi_adapter;
+    RTC_CHECK(
+        !FAILED(idxgi_factory->EnumAdapters(0, idxgi_adapter.GetAddressOf())));
+    Microsoft::WRL::ComPtr<ID3D11Device> id3d11_device;
+    Microsoft::WRL::ComPtr<ID3D11DeviceContext> id3d11_context;
+    Microsoft::WRL::ComPtr<ID3D11Texture2D> id3d11_texture;
+    RTC_CHECK(!FAILED(D3D11CreateDevice(
+        idxgi_adapter.Get(), D3D_DRIVER_TYPE_UNKNOWN, NULL, 0, NULL, 0,
+        D3D11_SDK_VERSION, id3d11_device.GetAddressOf(), NULL,
+        id3d11_context.GetAddressOf())));
+
+    auto encoder = NvCodecH264EncoderImpl::CreateEncoder(
+        640, 480, 30, 100 * 1000, 500 * 1000, id3d11_device.Get(),
+        id3d11_texture.GetAddressOf());
+#endif
+#ifdef __linux__
+    auto cuda = std::unique_ptr<NvCodecH264EncoderCuda>(
+        new NvCodecH264EncoderCuda(cuda_context));
+    auto encoder = NvCodecH264EncoderImpl::CreateEncoder(
+        640, 480, 30, 100 * 1000, 500 * 1000, cuda.get(), true);
+#endif
+    if (encoder == nullptr) {
+      return false;
+    }
+
+    return true;
+  } catch (const NVENCException& e) {
+    RTC_LOG(LS_ERROR) << __FUNCTION__ << ": " << e.what();
+    return false;
+  }
+}
+
+std::unique_ptr<NvCodecH264Encoder> NvCodecH264Encoder::Create(
+    const cricket::VideoCodec& codec,
+    std::shared_ptr<CudaContext> cuda_context) {
+  return std::unique_ptr<NvCodecH264Encoder>(
+      new NvCodecH264EncoderImpl(codec, cuda_context));
 }
 
 }  // namespace sora

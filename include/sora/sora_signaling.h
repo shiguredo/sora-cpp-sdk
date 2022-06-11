@@ -53,6 +53,7 @@ struct SoraSignalingConfig {
 
   std::vector<std::string> signaling_urls;
   std::string channel_id;
+  std::string client_id;
 
   std::string sora_client;
 
@@ -68,7 +69,10 @@ struct SoraSignalingConfig {
   bool multistream = false;
   bool spotlight = false;
   int spotlight_number = 0;
+  std::string spotlight_focus_rid;
+  std::string spotlight_unfocus_rid;
   bool simulcast = false;
+  std::string simulcast_rid;
   boost::optional<bool> data_channel_signaling;
   int data_channel_signaling_timeout = 180;
   boost::optional<bool> ignore_disconnect_websocket;

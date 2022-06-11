@@ -48,4 +48,4 @@ class NvCodecVideoDecoder : public webrtc::VideoDecoder {
 
 }  // namespace sora
 
-#endif  // NVCODEC_VIDEO_DECODER_H_
+#endif
