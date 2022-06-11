@@ -1,4 +1,4 @@
-#include "sora/hwenc_nvcodec/nvcodec_h264_encoder_cuda.h"
+#include "nvcodec_h264_encoder_cuda.h"
 
 #include <iostream>
 

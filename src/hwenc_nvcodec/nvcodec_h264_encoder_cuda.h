@@ -1,15 +1,14 @@
 #ifndef SORA_HWENC_NVCODEC_NVCODEC_H264_ENCODER_CUDA_H_
 #define SORA_HWENC_NVCODEC_NVCODEC_H264_ENCODER_CUDA_H_
 
-// CUDA と WebRTC のヘッダを混ぜてコンパイルすると酷いことになったので、
+// CUDA と WebRTC のヘッダを混ぜてコンパイルすると大量のエラーが発生したので、
 // CUDA の処理だけさせる単純な CUDA ファイルを用意する
-
-// このヘッダーファイルは、外から呼ばれるので #include <cuda.h> をしてはいけない
-// また、CUDA 側に WebRTC のヘッダを混ぜることができないので WebRTC のヘッダも include してはいけない
 
 #include <NvEncoder/NvEncoder.h>
 
 #include "sora/cuda_context.h"
+
+class NvEncoder;
 
 namespace sora {
 
