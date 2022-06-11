@@ -195,6 +195,10 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     m["redirect"] = true;
   }
 
+  if (!config_.client_id.empty()) {
+    m["client_id"] = config_.client_id;
+  }
+
   if (!config_.sora_client.empty()) {
     m["sora_client"] = config_.sora_client;
   }
@@ -207,11 +211,23 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     m["simulcast"] = true;
   }
 
+  if (!config_.simulcast_rid.empty()) {
+    m["simulcast_rid"] = config_.simulcast_rid;
+  }
+
   if (config_.spotlight) {
     m["spotlight"] = true;
   }
-  if (config_.spotlight && config_.spotlight_number > 0) {
+  if (config_.spotlight_number > 0) {
     m["spotlight_number"] = config_.spotlight_number;
+  }
+
+  if (!config_.spotlight_focus_rid.empty()) {
+    m["spotlight_focus_rid"] = config_.spotlight_focus_rid;
+  }
+
+  if (!config_.spotlight_unfocus_rid.empty()) {
+    m["spotlight_unfocus_rid"] = config_.spotlight_unfocus_rid;
   }
 
   if (!config_.metadata.is_null()) {

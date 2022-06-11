@@ -11,6 +11,9 @@
 
 ## develop
 
+- [ADD] client_id, spotlight_focus_rid, spotlight_unfocus_rid, simulcast_rid を追加
+    - @melpon
+
 ## 2022.2.1
 
 - [FIX] Windows で libmfx.lib ライブラリを要求してしまっていたのを修正
