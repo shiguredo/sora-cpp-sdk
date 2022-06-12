@@ -102,6 +102,7 @@
                 "${workspaceFolder}/_install/macos_x86_64/release/webrtc/include/third_party/boringssl/src/include",
                 "${workspaceFolder}/_install/macos_x86_64/release/webrtc/include/third_party/libyuv/include",
                 "${workspaceFolder}/_install/macos_x86_64/release/webrtc/include/third_party/zlib",
+                "${workspaceFolder}/_install/macos_x86_64/release/webrtc/include/sdk/objc",
                 "${workspaceFolder}/_build/macos_x86_64/release/sora",
                 "${workspaceFolder}/include"
             ],

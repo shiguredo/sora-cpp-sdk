@@ -11,6 +11,11 @@
 
 ## develop
 
+## 2022.4.0
+
+- [ADD] `MacCapturer::EnumVideoDevice` を追加
+    - @melpon
+
 ## 2022.3.0
 
 - [ADD] client_id, spotlight_focus_rid, spotlight_unfocus_rid, simulcast_rid を追加
