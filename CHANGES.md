@@ -11,6 +11,8 @@
 
 ## develop
 
+## 2022.4.0
+
 - [ADD] `MacCapturer::EnumVideoDevice` を追加
     - @melpon
 
