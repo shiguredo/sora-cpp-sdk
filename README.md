@@ -59,7 +59,7 @@ https://github.com/shiguredo/sora-cpp-sdk-samples
 
 ## FAQ
 
-[FAQ.md](doc/FAQ.md) をお読みください。
+[faq.md](doc/faq.md) をお読みください。
 
 ## 優先実装
 
