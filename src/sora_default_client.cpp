@@ -23,6 +23,7 @@
 #include "sora/audio_device_module.h"
 #include "sora/camera_device_capturer.h"
 #include "sora/java_context.h"
+#include "sora/sora_peer_connection_factory.h"
 #include "sora/sora_video_decoder_factory.h"
 #include "sora/sora_video_encoder_factory.h"
 
@@ -102,8 +103,8 @@ bool SoraDefaultClient::Configure() {
 
   ConfigureDependencies(dependencies);
 
-  factory_ =
-      webrtc::CreateModularPeerConnectionFactory(std::move(dependencies));
+  factory_ = sora::CreateModularPeerConnectionFactoryWithContext(
+      std::move(dependencies), connection_context_);
 
   if (factory_ == nullptr) {
     RTC_LOG(LS_ERROR) << "Failed to create PeerConnectionFactory";

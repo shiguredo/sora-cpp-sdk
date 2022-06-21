@@ -29,6 +29,10 @@ HelloSora::HelloSora(HelloSoraConfig config)
 
 HelloSora::~HelloSora() {
   RTC_LOG(LS_INFO) << "HelloSora dtor";
+  ioc_.reset();
+  video_track_ = nullptr;
+  audio_track_ = nullptr;
+  video_source_ = nullptr;
 }
 
 void HelloSora::Run() {
@@ -40,13 +44,13 @@ void HelloSora::Run() {
   cam_config.fps = 30;
   cam_config.jni_env = env;
   cam_config.application_context = GetAndroidApplicationContext(env);
-  auto video_source = sora::CreateCameraDeviceCapturer(cam_config);
+  video_source_ = sora::CreateCameraDeviceCapturer(cam_config);
 
-  std::string audio_track_id = "0123456789abcdef";
-  std::string video_track_id = "0123456789abcdefg";
+  std::string audio_track_id = rtc::CreateRandomString(16);
+  std::string video_track_id = rtc::CreateRandomString(16);
   audio_track_ = factory()->CreateAudioTrack(
       audio_track_id, factory()->CreateAudioSource(cricket::AudioOptions()));
-  video_track_ = factory()->CreateVideoTrack(video_track_id, video_source);
+  video_track_ = factory()->CreateVideoTrack(video_track_id, video_source_);
 
   ioc_.reset(new boost::asio::io_context(1));
 
@@ -59,6 +63,7 @@ void HelloSora::Run() {
   config.sora_client = "Hello Sora";
   config.role = config_.role;
   config.video_codec_type = "H264";
+  config.multistream = true;
   conn_ = sora::SoraSignaling::Create(config);
 
   boost::asio::executor_work_guard<boost::asio::io_context::executor_type>
@@ -77,7 +82,7 @@ void* HelloSora::GetAndroidApplicationContext(void* env) {
 }
 
 void HelloSora::OnSetOffer() {
-  std::string stream_id = "0123456789abcdef";
+  std::string stream_id = rtc::CreateRandomString(16);
   webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpSenderInterface>>
       audio_result =
           conn_->GetPeerConnection()->AddTrack(audio_track_, {stream_id});

@@ -41,6 +41,7 @@ class Websocket {
   typedef std::function<void(boost::system::error_code ec)> close_callback_t;
 
   struct ssl_tag {};
+  struct https_proxy_tag {};
 
  public:
   // 非SSL+クライアント
@@ -51,13 +52,15 @@ class Websocket {
             bool insecure,
             const std::string& client_cert,
             const std::string& client_key);
-
- private:
-  // SSL+クライアントの内部用コンストラクタ
-  Websocket(ssl_tag,
+  // HTTP Proxy + SSL
+  Websocket(https_proxy_tag,
             boost::asio::io_context& ioc,
             bool insecure,
-            boost::asio::ssl::context ssl_ctx);
+            const std::string& client_cert,
+            const std::string& client_key,
+            std::string proxy_url,
+            std::string proxy_username,
+            std::string proxy_password);
 
  public:
   // サーバ
@@ -82,6 +85,7 @@ class Websocket {
 
  private:
   bool IsSSL() const;
+  void InitWss(ssl_websocket_t* wss, bool insecure);
 
   void OnResolve(std::string host,
                  std::string port,
@@ -101,6 +105,16 @@ class Websocket {
   void DoClose(close_callback_t on_close, int timeout_seconds);
   void OnClose(close_callback_t on_close, boost::system::error_code ec);
 
+  void ConnectProxy(const std::string& url, connect_callback_t on_connect);
+  void OnResolveProxy(std::string host,
+                      std::string port,
+                      boost::system::error_code ec,
+                      boost::asio::ip::tcp::resolver::results_type results);
+  void OnConnectProxy(boost::system::error_code ec);
+  void OnWriteProxy(boost::system::error_code ec,
+                    std::size_t bytes_transferred);
+  void OnReadProxy(boost::system::error_code ec, std::size_t bytes_transferred);
+
  private:
   void DoWriteText(std::string text, write_callback_t on_write);
   void DoWrite();
@@ -114,6 +128,9 @@ class Websocket {
   connect_callback_t on_connect_;
   URLParts parts_;
 
+  bool insecure_ = false;
+  std::shared_ptr<boost::asio::ssl::context> ssl_ctx_;
+
   boost::asio::strand<websocket_t::executor_type> strand_;
 
   boost::beast::multi_buffer read_buffer_;
@@ -126,6 +143,19 @@ class Websocket {
 
   boost::asio::deadline_timer close_timeout_timer_;
   bool closed_ = false;
+
+  bool https_proxy_ = false;
+  std::string proxy_url_;
+  std::string proxy_username_;
+  std::string proxy_password_;
+  URLParts proxy_parts_;
+  std::unique_ptr<boost::asio::ip::tcp::socket> proxy_socket_;
+  boost::beast::http::request<boost::beast::http::string_body> proxy_req_;
+  boost::beast::http::response<boost::beast::http::empty_body> proxy_resp_;
+  std::unique_ptr<
+      boost::beast::http::response_parser<boost::beast::http::empty_body>>
+      proxy_resp_parser_;
+  boost::beast::flat_buffer proxy_buffer_;
 };
 
 }  // namespace sora

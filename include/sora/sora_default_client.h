@@ -3,6 +3,7 @@
 
 // WebRTC
 #include <api/peer_connection_interface.h>
+#include <pc/connection_context.h>
 
 #include "sora/sora_signaling.h"
 
@@ -74,7 +75,10 @@ class SoraDefaultClient : public sora::SoraSignalingObserver {
   rtc::Thread* signaling_thread() const { return signaling_thread_.get(); }
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> factory() const {
     return factory_;
-  };
+  }
+  rtc::scoped_refptr<webrtc::ConnectionContext> connection_context() const {
+    return connection_context_;
+  }
 
  private:
   SoraDefaultClientConfig config_;
@@ -82,6 +86,7 @@ class SoraDefaultClient : public sora::SoraSignalingObserver {
   std::unique_ptr<rtc::Thread> worker_thread_;
   std::unique_ptr<rtc::Thread> signaling_thread_;
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> factory_;
+  rtc::scoped_refptr<webrtc::ConnectionContext> connection_context_;
 };
 
 // SoraDefaultClient を継承したクラスのオブジェクトを生成する関数

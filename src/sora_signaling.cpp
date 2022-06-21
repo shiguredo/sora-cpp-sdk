@@ -1,11 +1,13 @@
 #include "sora/sora_signaling.h"
 
 // WebRTC
+#include <p2p/client/basic_port_allocator.h>
 #include <pc/rtp_media_utils.h>
 
 #include "sora/rtc_ssl_verifier.h"
 #include "sora/rtc_stats.h"
 #include "sora/session_description.h"
+#include "sora/url_parts.h"
 #include "sora/version.h"
 #include "sora/zlib_helper.h"
 
@@ -124,10 +126,18 @@ void SoraSignaling::Redirect(std::string url) {
 
       std::shared_ptr<Websocket> ws;
       if (ssl) {
-        ws.reset(new Websocket(Websocket::ssl_tag(), *self->config_.io_context,
-                               self->config_.insecure,
-                               self->config_.client_cert,
-                               self->config_.client_key));
+        if (self->config_.proxy_url.empty()) {
+          ws.reset(
+              new Websocket(Websocket::ssl_tag(), *self->config_.io_context,
+                            self->config_.insecure, self->config_.client_cert,
+                            self->config_.client_key));
+        } else {
+          ws.reset(new Websocket(
+              Websocket::https_proxy_tag(), *self->config_.io_context,
+              self->config_.insecure, self->config_.client_cert,
+              self->config_.client_key, self->config_.proxy_url,
+              self->config_.proxy_username, self->config_.proxy_password));
+        }
       } else {
         ws.reset(new Websocket(*self->config_.io_context));
       }
@@ -342,6 +352,28 @@ void SoraSignaling::DoSendUpdate(const std::string& sdp, std::string type) {
   }
 }
 
+class RawCryptString : public rtc::CryptStringImpl {
+ public:
+  RawCryptString(const std::string& str) : str_(str) {}
+  size_t GetLength() const override { return str_.size(); }
+  void CopyTo(char* dest, bool nullterminate) const override {
+    for (int i = 0; i < str_.size(); i++) {
+      *dest++ = str_[i];
+    }
+    if (nullterminate) {
+      *dest = '\0';
+    }
+  }
+  std::string UrlEncode() const override { throw std::exception(); }
+  CryptStringImpl* Copy() const { return new RawCryptString(str_); }
+  void CopyRawTo(std::vector<unsigned char>* dest) const {
+    dest->assign(str_.begin(), str_.end());
+  }
+
+ private:
+  std::string str_;
+};
+
 rtc::scoped_refptr<webrtc::PeerConnectionInterface>
 SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
   webrtc::PeerConnectionInterface::RTCConfiguration rtc_config;
@@ -380,6 +412,42 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
   // それを解消するために tls_cert_verifier を設定して自前で検証を行う。
   dependencies.tls_cert_verifier = std::unique_ptr<rtc::SSLCertificateVerifier>(
       new RTCSSLVerifier(config_.insecure));
+
+  // Proxy を設定する
+  if (!config_.proxy_url.empty() && config_.network_manager != nullptr &&
+      config_.socket_factory) {
+    dependencies.allocator.reset(new cricket::BasicPortAllocator(
+        config_.network_manager, config_.socket_factory,
+        rtc_config.turn_customizer));
+    dependencies.allocator->SetPortRange(
+        rtc_config.port_allocator_config.min_port,
+        rtc_config.port_allocator_config.max_port);
+    dependencies.allocator->set_flags(rtc_config.port_allocator_config.flags);
+
+    RTC_LOG(LS_INFO) << "Set Proxy: type="
+                     << rtc::ProxyToString(rtc::PROXY_HTTPS)
+                     << " url=" << config_.proxy_url
+                     << " username=" << config_.proxy_username;
+    rtc::ProxyInfo pi;
+    pi.type = rtc::PROXY_HTTPS;
+    URLParts parts;
+    if (!URLParts::Parse(config_.proxy_url, parts)) {
+      RTC_LOG(LS_ERROR) << "Failed to parse: proxy_url=" << config_.proxy_url;
+      return nullptr;
+    }
+    pi.address = rtc::SocketAddress(parts.host, std::stoi(parts.GetPort()));
+    if (!config_.proxy_username.empty()) {
+      pi.username = config_.proxy_username;
+    }
+    if (!config_.proxy_password.empty()) {
+      pi.password = rtc::CryptString(RawCryptString(config_.proxy_password));
+    }
+    std::string proxy_agent = "Sora C++ SDK";
+    if (!config_.proxy_agent.empty()) {
+      proxy_agent = config_.proxy_agent;
+    }
+    dependencies.allocator->set_proxy(proxy_agent, pi);
+  }
 
   webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::PeerConnectionInterface>>
       connection = config_.pc_factory->CreatePeerConnectionOrError(
@@ -926,9 +994,16 @@ void SoraSignaling::DoConnect() {
 
     std::shared_ptr<Websocket> ws;
     if (ssl) {
-      ws.reset(new Websocket(Websocket::ssl_tag(), *config_.io_context,
-                             config_.insecure, config_.client_cert,
-                             config_.client_key));
+      if (config_.proxy_url.empty()) {
+        ws.reset(new Websocket(Websocket::ssl_tag(), *config_.io_context,
+                               config_.insecure, config_.client_cert,
+                               config_.client_key));
+      } else {
+        ws.reset(new Websocket(
+            Websocket::https_proxy_tag(), *config_.io_context, config_.insecure,
+            config_.client_cert, config_.client_key, config_.proxy_url,
+            config_.proxy_username, config_.proxy_password));
+      }
     } else {
       ws.reset(new Websocket(*config_.io_context));
     }

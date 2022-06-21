@@ -44,4 +44,15 @@ bool URLParts::Parse(std::string url, URLParts& parts) {
   return true;
 }
 
+std::string URLParts::GetPort() const {
+  if (!port.empty()) {
+    return port;
+  }
+  if (scheme == "wss" || scheme == "https") {
+    return "443";
+  } else {
+    return "80";
+  }
+}
+
 }  // namespace sora

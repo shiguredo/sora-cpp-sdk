@@ -24,6 +24,7 @@ class HelloSora : public std::enable_shared_from_this<HelloSora>,
 
  private:
   HelloSoraConfig config_;
+  rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source_;
   rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track_;
   rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track_;
   std::shared_ptr<sora::SoraSignaling> conn_;

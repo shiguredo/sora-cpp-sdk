@@ -11,6 +11,13 @@
 
 ## develop
 
+- [ADD] bundle_id を追加
+    - @melpon
+- [ADD] HTTP Proxy に対応
+    - @melpon
+- [CHANGE] multistream, simulcast, spotlight を optional 型に変更
+    - @melpon
+
 ## 2022.4.0
 
 - [ADD] `MacCapturer::EnumVideoDevice` を追加

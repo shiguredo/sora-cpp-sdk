@@ -94,6 +94,14 @@ struct SoraSignalingConfig {
 
   int websocket_close_timeout = 3;
   int websocket_connection_timeout = 30;
+
+  std::string proxy_url;
+  std::string proxy_username;
+  std::string proxy_password;
+  std::string proxy_agent;
+  // proxy を設定する場合は必須
+  rtc::NetworkManager* network_manager = nullptr;
+  rtc::PacketSocketFactory* socket_factory = nullptr;
 };
 
 class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,

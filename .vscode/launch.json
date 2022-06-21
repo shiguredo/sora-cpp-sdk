@@ -8,13 +8,12 @@
             "name": "Windows Debug ビルドのデバッグ",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}\\_build\\windows_x86_64\\debug\\sora\\Debug\\test_hello.exe",
+            "program": "${workspaceFolder}\\_build\\windows_x86_64\\debug\\test\\Debug\\hello.exe",
             "args": ["${workspaceFolder}\\test\\.testparam.json"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "console": "externalTerminal",
-            "justMyCode": true
             //"preLaunchTask": "C/C++: cl.exe アクティブなファイルのビルド"
         },
         {
