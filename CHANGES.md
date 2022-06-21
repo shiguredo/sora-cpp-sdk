@@ -11,6 +11,8 @@
 
 ## develop
 
+## 2022.5.0 (2022/6/22)
+
 - [ADD] bundle_id を追加
     - @melpon
 - [ADD] HTTP Proxy に対応
