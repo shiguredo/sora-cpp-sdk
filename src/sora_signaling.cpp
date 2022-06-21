@@ -781,17 +781,10 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
                 auto it = m.as_object().find("mid");
                 if (it != m.as_object().end()) {
                   const auto& midobj = it->value().as_object();
-                  // video: false の場合は video フィールドが mid が無いのでチェックする
                   it = midobj.find("video");
                   if (it != midobj.end()) {
                     mid = it->value().as_string().c_str();
                   }
-                }
-                // mid が見つからないのはおかしいのでエラーにする
-                if (mid.empty()) {
-                  self->DoInternalDisconnect(
-                      SoraSignalingErrorCode::INVALID_PARAMETER,
-                      "INTERNAL-ERROR", "mid field not found");
                 }
               }
               RTC_LOG(LS_INFO) << "mid: " << mid;
@@ -983,25 +976,10 @@ void SoraSignaling::SetEncodingParameters(
   }
 
   rtc::scoped_refptr<webrtc::RtpTransceiverInterface> video_transceiver;
-  if (mid.empty()) {
-    // TODO(melpon): mid が手に入るようになったので、こっちの実装はそのうち消す
-
-    // setRD のあとの direction は recv only になる。
-    // 現状 sender.track.streamIds を取れないので connection ID との比較もできない。
-    // video upstream 持っているときは、ひとつめの video type transceiver を
-    // 自分が send すべき transceiver と決め打ちする。
-    for (auto transceiver : pc_->GetTransceivers()) {
-      if (transceiver->media_type() == cricket::MediaType::MEDIA_TYPE_VIDEO) {
-        video_transceiver = transceiver;
-        break;
-      }
-    }
-  } else {
-    for (auto transceiver : pc_->GetTransceivers()) {
-      if (transceiver->mid() && *transceiver->mid() == mid) {
-        video_transceiver = transceiver;
-        break;
-      }
+  for (auto transceiver : pc_->GetTransceivers()) {
+    if (transceiver->mid() && *transceiver->mid() == mid) {
+      video_transceiver = transceiver;
+      break;
     }
   }
 
