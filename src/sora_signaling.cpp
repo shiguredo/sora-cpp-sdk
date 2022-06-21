@@ -199,16 +199,20 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     m["client_id"] = config_.client_id;
   }
 
+  if (!config_.bundle_id.empty()) {
+    m["bundle_id"] = config_.bundle_id;
+  }
+
   if (!config_.sora_client.empty()) {
     m["sora_client"] = config_.sora_client;
   }
 
   if (config_.multistream) {
-    m["multistream"] = true;
+    m["multistream"] = *config_.multistream;
   }
 
   if (config_.simulcast) {
-    m["simulcast"] = true;
+    m["simulcast"] = *config_.simulcast;
   }
 
   if (!config_.simulcast_rid.empty()) {
@@ -216,7 +220,7 @@ void SoraSignaling::DoSendConnect(bool redirect) {
   }
 
   if (config_.spotlight) {
-    m["spotlight"] = true;
+    m["spotlight"] = *config_.spotlight;
   }
   if (config_.spotlight_number > 0) {
     m["spotlight_number"] = config_.spotlight_number;
@@ -362,7 +366,7 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
   // macOS のサイマルキャスト時、なぜか無限に解像度が落ちていくので、
   // それを回避するために cpu_adaptation を無効にする。
 #if defined(__APPLE__)
-  if (config_.simulcast) {
+  if (offer_config_.simulcast) {
     rtc_config.set_cpu_adaptation(false);
   }
 #endif
@@ -681,6 +685,22 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
     // Redirect の中で次の Read をしているのでここで return する
     return;
   } else if (type == "offer") {
+    {
+      boost::json::object::iterator it;
+      it = m.as_object().find("multistream");
+      if (it != m.as_object().end()) {
+        offer_config_.multistream = it->value().as_bool();
+      }
+      it = m.as_object().find("simulcast");
+      if (it != m.as_object().end()) {
+        offer_config_.simulcast = it->value().as_bool();
+      }
+      it = m.as_object().find("spotlight");
+      if (it != m.as_object().end()) {
+        offer_config_.spotlight = it->value().as_bool();
+      }
+    }
+
     // Data Channel の圧縮されたデータが送られてくるラベルを覚えておく
     {
       auto it = m.as_object().find("data_channels");
@@ -712,7 +732,7 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
               ob->OnSetOffer();
             }
 
-            if (self->config_.simulcast &&
+            if (self->offer_config_.simulcast &&
                 m.as_object().count("encodings") != 0) {
               std::vector<webrtc::RtpEncodingParameters> encoding_parameters;
 
@@ -816,7 +836,7 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
             }
 
             // エンコーディングパラメータの情報がクリアされるので設定し直す
-            if (self->config_.simulcast) {
+            if (self->offer_config_.simulcast) {
               self->ResetEncodingParameters();
             }
 
@@ -1283,7 +1303,7 @@ void SoraSignaling::OnMessage(
               }
 
               // エンコーディングパラメータの情報がクリアされるので設定し直す
-              if (self->config_.simulcast) {
+              if (self->offer_config_.simulcast) {
                 self->ResetEncodingParameters();
               }
 

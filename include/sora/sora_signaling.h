@@ -54,6 +54,7 @@ struct SoraSignalingConfig {
   std::vector<std::string> signaling_urls;
   std::string channel_id;
   std::string client_id;
+  std::string bundle_id;
 
   std::string sora_client;
 
@@ -66,12 +67,12 @@ struct SoraSignalingConfig {
   int audio_bit_rate = 0;
   boost::json::value metadata;
   std::string role = "sendonly";
-  bool multistream = false;
-  bool spotlight = false;
+  boost::optional<bool> multistream;
+  boost::optional<bool> spotlight;
   int spotlight_number = 0;
   std::string spotlight_focus_rid;
   std::string spotlight_unfocus_rid;
-  bool simulcast = false;
+  boost::optional<bool> simulcast;
   std::string simulcast_rid;
   boost::optional<bool> data_channel_signaling;
   int data_channel_signaling_timeout = 180;
@@ -192,6 +193,13 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
 
  private:
   SoraSignalingConfig config_;
+
+  struct OfferConfig {
+    bool multistream = false;
+    bool simulcast = false;
+    bool spotlight = false;
+  };
+  OfferConfig offer_config_;
 
   std::vector<std::shared_ptr<Websocket>> connecting_wss_;
   std::string connected_signaling_url_;
