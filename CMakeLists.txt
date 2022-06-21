@@ -94,6 +94,7 @@ target_sources(sora
     src/scalable_track_source.cpp
     src/session_description.cpp
     src/sora_default_client.cpp
+    src/sora_peer_connection_factory.cpp
     src/sora_signaling.cpp
     src/sora_video_decoder_factory.cpp
     src/sora_video_encoder_factory.cpp

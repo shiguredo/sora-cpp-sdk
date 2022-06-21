@@ -1,11 +1,13 @@
 #include "sora/sora_signaling.h"
 
 // WebRTC
+#include <p2p/client/basic_port_allocator.h>
 #include <pc/rtp_media_utils.h>
 
 #include "sora/rtc_ssl_verifier.h"
 #include "sora/rtc_stats.h"
 #include "sora/session_description.h"
+#include "sora/url_parts.h"
 #include "sora/version.h"
 #include "sora/zlib_helper.h"
 
@@ -124,10 +126,18 @@ void SoraSignaling::Redirect(std::string url) {
 
       std::shared_ptr<Websocket> ws;
       if (ssl) {
-        ws.reset(new Websocket(Websocket::ssl_tag(), *self->config_.io_context,
-                               self->config_.insecure,
-                               self->config_.client_cert,
-                               self->config_.client_key));
+        if (self->config_.proxy_url.empty()) {
+          ws.reset(
+              new Websocket(Websocket::ssl_tag(), *self->config_.io_context,
+                            self->config_.insecure, self->config_.client_cert,
+                            self->config_.client_key));
+        } else {
+          ws.reset(new Websocket(
+              Websocket::https_proxy_tag(), *self->config_.io_context,
+              self->config_.insecure, self->config_.client_cert,
+              self->config_.client_key, self->config_.proxy_url,
+              self->config_.proxy_username, self->config_.proxy_password));
+        }
       } else {
         ws.reset(new Websocket(*self->config_.io_context));
       }
@@ -199,16 +209,20 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     m["client_id"] = config_.client_id;
   }
 
+  if (!config_.bundle_id.empty()) {
+    m["bundle_id"] = config_.bundle_id;
+  }
+
   if (!config_.sora_client.empty()) {
     m["sora_client"] = config_.sora_client;
   }
 
   if (config_.multistream) {
-    m["multistream"] = true;
+    m["multistream"] = *config_.multistream;
   }
 
   if (config_.simulcast) {
-    m["simulcast"] = true;
+    m["simulcast"] = *config_.simulcast;
   }
 
   if (!config_.simulcast_rid.empty()) {
@@ -216,7 +230,7 @@ void SoraSignaling::DoSendConnect(bool redirect) {
   }
 
   if (config_.spotlight) {
-    m["spotlight"] = true;
+    m["spotlight"] = *config_.spotlight;
   }
   if (config_.spotlight_number > 0) {
     m["spotlight_number"] = config_.spotlight_number;
@@ -338,6 +352,28 @@ void SoraSignaling::DoSendUpdate(const std::string& sdp, std::string type) {
   }
 }
 
+class RawCryptString : public rtc::CryptStringImpl {
+ public:
+  RawCryptString(const std::string& str) : str_(str) {}
+  size_t GetLength() const override { return str_.size(); }
+  void CopyTo(char* dest, bool nullterminate) const override {
+    for (int i = 0; i < str_.size(); i++) {
+      *dest++ = str_[i];
+    }
+    if (nullterminate) {
+      *dest = '\0';
+    }
+  }
+  std::string UrlEncode() const override { throw std::exception(); }
+  CryptStringImpl* Copy() const { return new RawCryptString(str_); }
+  void CopyRawTo(std::vector<unsigned char>* dest) const {
+    dest->assign(str_.begin(), str_.end());
+  }
+
+ private:
+  std::string str_;
+};
+
 rtc::scoped_refptr<webrtc::PeerConnectionInterface>
 SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
   webrtc::PeerConnectionInterface::RTCConfiguration rtc_config;
@@ -362,7 +398,7 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
   // macOS のサイマルキャスト時、なぜか無限に解像度が落ちていくので、
   // それを回避するために cpu_adaptation を無効にする。
 #if defined(__APPLE__)
-  if (config_.simulcast) {
+  if (offer_config_.simulcast) {
     rtc_config.set_cpu_adaptation(false);
   }
 #endif
@@ -376,6 +412,42 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
   // それを解消するために tls_cert_verifier を設定して自前で検証を行う。
   dependencies.tls_cert_verifier = std::unique_ptr<rtc::SSLCertificateVerifier>(
       new RTCSSLVerifier(config_.insecure));
+
+  // Proxy を設定する
+  if (!config_.proxy_url.empty() && config_.network_manager != nullptr &&
+      config_.socket_factory) {
+    dependencies.allocator.reset(new cricket::BasicPortAllocator(
+        config_.network_manager, config_.socket_factory,
+        rtc_config.turn_customizer));
+    dependencies.allocator->SetPortRange(
+        rtc_config.port_allocator_config.min_port,
+        rtc_config.port_allocator_config.max_port);
+    dependencies.allocator->set_flags(rtc_config.port_allocator_config.flags);
+
+    RTC_LOG(LS_INFO) << "Set Proxy: type="
+                     << rtc::ProxyToString(rtc::PROXY_HTTPS)
+                     << " url=" << config_.proxy_url
+                     << " username=" << config_.proxy_username;
+    rtc::ProxyInfo pi;
+    pi.type = rtc::PROXY_HTTPS;
+    URLParts parts;
+    if (!URLParts::Parse(config_.proxy_url, parts)) {
+      RTC_LOG(LS_ERROR) << "Failed to parse: proxy_url=" << config_.proxy_url;
+      return nullptr;
+    }
+    pi.address = rtc::SocketAddress(parts.host, std::stoi(parts.GetPort()));
+    if (!config_.proxy_username.empty()) {
+      pi.username = config_.proxy_username;
+    }
+    if (!config_.proxy_password.empty()) {
+      pi.password = rtc::CryptString(RawCryptString(config_.proxy_password));
+    }
+    std::string proxy_agent = "Sora C++ SDK";
+    if (!config_.proxy_agent.empty()) {
+      proxy_agent = config_.proxy_agent;
+    }
+    dependencies.allocator->set_proxy(proxy_agent, pi);
+  }
 
   webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::PeerConnectionInterface>>
       connection = config_.pc_factory->CreatePeerConnectionOrError(
@@ -681,6 +753,22 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
     // Redirect の中で次の Read をしているのでここで return する
     return;
   } else if (type == "offer") {
+    {
+      boost::json::object::iterator it;
+      it = m.as_object().find("multistream");
+      if (it != m.as_object().end()) {
+        offer_config_.multistream = it->value().as_bool();
+      }
+      it = m.as_object().find("simulcast");
+      if (it != m.as_object().end()) {
+        offer_config_.simulcast = it->value().as_bool();
+      }
+      it = m.as_object().find("spotlight");
+      if (it != m.as_object().end()) {
+        offer_config_.spotlight = it->value().as_bool();
+      }
+    }
+
     // Data Channel の圧縮されたデータが送られてくるラベルを覚えておく
     {
       auto it = m.as_object().find("data_channels");
@@ -712,7 +800,7 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
               ob->OnSetOffer();
             }
 
-            if (self->config_.simulcast &&
+            if (self->offer_config_.simulcast &&
                 m.as_object().count("encodings") != 0) {
               std::vector<webrtc::RtpEncodingParameters> encoding_parameters;
 
@@ -761,17 +849,10 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
                 auto it = m.as_object().find("mid");
                 if (it != m.as_object().end()) {
                   const auto& midobj = it->value().as_object();
-                  // video: false の場合は video フィールドが mid が無いのでチェックする
                   it = midobj.find("video");
                   if (it != midobj.end()) {
                     mid = it->value().as_string().c_str();
                   }
-                }
-                // mid が見つからないのはおかしいのでエラーにする
-                if (mid.empty()) {
-                  self->DoInternalDisconnect(
-                      SoraSignalingErrorCode::INVALID_PARAMETER,
-                      "INTERNAL-ERROR", "mid field not found");
                 }
               }
               RTC_LOG(LS_INFO) << "mid: " << mid;
@@ -816,7 +897,7 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
             }
 
             // エンコーディングパラメータの情報がクリアされるので設定し直す
-            if (self->config_.simulcast) {
+            if (self->offer_config_.simulcast) {
               self->ResetEncodingParameters();
             }
 
@@ -913,9 +994,16 @@ void SoraSignaling::DoConnect() {
 
     std::shared_ptr<Websocket> ws;
     if (ssl) {
-      ws.reset(new Websocket(Websocket::ssl_tag(), *config_.io_context,
-                             config_.insecure, config_.client_cert,
-                             config_.client_key));
+      if (config_.proxy_url.empty()) {
+        ws.reset(new Websocket(Websocket::ssl_tag(), *config_.io_context,
+                               config_.insecure, config_.client_cert,
+                               config_.client_key));
+      } else {
+        ws.reset(new Websocket(
+            Websocket::https_proxy_tag(), *config_.io_context, config_.insecure,
+            config_.client_cert, config_.client_key, config_.proxy_url,
+            config_.proxy_username, config_.proxy_password));
+      }
     } else {
       ws.reset(new Websocket(*config_.io_context));
     }
@@ -963,25 +1051,10 @@ void SoraSignaling::SetEncodingParameters(
   }
 
   rtc::scoped_refptr<webrtc::RtpTransceiverInterface> video_transceiver;
-  if (mid.empty()) {
-    // TODO(melpon): mid が手に入るようになったので、こっちの実装はそのうち消す
-
-    // setRD のあとの direction は recv only になる。
-    // 現状 sender.track.streamIds を取れないので connection ID との比較もできない。
-    // video upstream 持っているときは、ひとつめの video type transceiver を
-    // 自分が send すべき transceiver と決め打ちする。
-    for (auto transceiver : pc_->GetTransceivers()) {
-      if (transceiver->media_type() == cricket::MediaType::MEDIA_TYPE_VIDEO) {
-        video_transceiver = transceiver;
-        break;
-      }
-    }
-  } else {
-    for (auto transceiver : pc_->GetTransceivers()) {
-      if (transceiver->mid() && *transceiver->mid() == mid) {
-        video_transceiver = transceiver;
-        break;
-      }
+  for (auto transceiver : pc_->GetTransceivers()) {
+    if (transceiver->mid() && *transceiver->mid() == mid) {
+      video_transceiver = transceiver;
+      break;
     }
   }
 
@@ -1283,7 +1356,7 @@ void SoraSignaling::OnMessage(
               }
 
               // エンコーディングパラメータの情報がクリアされるので設定し直す
-              if (self->config_.simulcast) {
+              if (self->offer_config_.simulcast) {
                 self->ResetEncodingParameters();
               }
 
