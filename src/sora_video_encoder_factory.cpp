@@ -209,10 +209,19 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
                   cricket::VideoCodec(format)));
         }));
   }
-  if (JetsonVideoEncoder::IsSupportedVP8()) {
+  if (JetsonVideoEncoder::IsSupportedVP9()) {
     config.encoders.insert(
         config.encoders.begin(),
         VideoEncoderConfig(webrtc::kVideoCodecVP9, [](auto format) {
+          return std::unique_ptr<webrtc::VideoEncoder>(
+              absl::make_unique<JetsonVideoEncoder>(
+                  cricket::VideoCodec(format)));
+        }));
+  }
+  if (JetsonVideoEncoder::IsSupportedAV1()) {
+    config.encoders.insert(
+        config.encoders.begin(),
+        VideoEncoderConfig(webrtc::kVideoCodecAV1, [](auto format) {
           return std::unique_ptr<webrtc::VideoEncoder>(
               absl::make_unique<JetsonVideoEncoder>(
                   cricket::VideoCodec(format)));

@@ -28,6 +28,9 @@ class JetsonVideoDecoder : public webrtc::VideoDecoder {
   JetsonVideoDecoder(webrtc::VideoCodecType codec);
   ~JetsonVideoDecoder() override;
 
+  static bool IsSupportedVP8();
+  static bool IsSupportedAV1();
+
   bool Configure(const Settings& settings) override;
 
   int32_t Decode(const webrtc::EncodedImage& input_image,

@@ -16,6 +16,7 @@
 
 // WebRTC
 #include <common_video/libyuv/include/webrtc_libyuv.h>
+#include <modules/video_coding/svc/create_scalability_structure.h>
 #include <rtc_base/checks.h>
 #include <rtc_base/logging.h>
 #include <rtc_base/time_utils.h>
@@ -99,6 +100,17 @@ bool JetsonVideoEncoder::IsSupportedVP9() {
   return ret >= 0;
 }
 
+bool JetsonVideoEncoder::IsSupportedAV1() {
+  //SuppressErrors sup;
+
+  auto encoder = NvVideoEncoder::createVideoEncoder("enc0");
+  auto ret = encoder->setCapturePlaneFormat(V4L2_PIX_FMT_AV1, 1024, 768,
+                                            2 * 1024 * 1024);
+  delete encoder;
+
+  return ret >= 0;
+}
+
 int32_t JetsonVideoEncoder::InitEncode(const webrtc::VideoCodec* codec_settings,
                                        int32_t number_of_cores,
                                        size_t max_payload_size) {
@@ -137,6 +149,14 @@ int32_t JetsonVideoEncoder::InitEncode(const webrtc::VideoCodec* codec_settings,
                      << codec_settings->VP9().numberOfSpatialLayers;
     RTC_LOG(LS_INFO) << "interLayerPred: "
                      << codec_settings->VP9().interLayerPred;
+  } else if (codec_settings->codecType == webrtc::kVideoCodecAV1) {
+    absl::string_view scalability_mode = codec_settings->ScalabilityMode();
+    if (scalability_mode.empty()) {
+      RTC_LOG(LS_WARNING) << "Scalability mode is not set, using 'L1T1'.";
+      scalability_mode = "L1T1";
+    }
+    RTC_LOG(LS_INFO) << "InitEncode scalability_mode:" << scalability_mode;
+    svc_controller_ = webrtc::CreateScalabilityStructure(scalability_mode);
   }
   framerate_ = codec_settings->maxFramerate;
 
@@ -234,6 +254,9 @@ int32_t JetsonVideoEncoder::JetsonConfigure() {
                                           2 * 1024 * 1024);
   } else if (codec_.codecType == webrtc::kVideoCodecVP9) {
     ret = encoder_->setCapturePlaneFormat(V4L2_PIX_FMT_VP9, width_, height_,
+                                          2 * 1024 * 1024);
+  } else if (codec_.codecType == webrtc::kVideoCodecAV1) {
+    ret = encoder_->setCapturePlaneFormat(V4L2_PIX_FMT_AV1, width_, height_,
                                           2 * 1024 * 1024);
   }
   INIT_ERROR(ret < 0, "Failed to encoder setCapturePlaneFormat");
@@ -609,6 +632,10 @@ void JetsonVideoEncoder::SetRates(const RateControlParameters& parameters) {
 
   RTC_LOG(LS_INFO) << __FUNCTION__ << " framerate:" << parameters.framerate_fps
                    << " bitrate:" << parameters.bitrate.ToString();
+  if (svc_controller_) {
+    svc_controller_->OnRatesUpdated(parameters.bitrate);
+  }
+
   framerate_ = parameters.framerate_fps;
   target_bitrate_bps_ = parameters.bitrate.get_sum_bps();
 
@@ -671,6 +698,11 @@ webrtc::VideoEncoder::EncoderInfo JetsonVideoEncoder::GetEncoderInfo() const {
     static const int kHighVp9QpThreshold = 151;
     info.scaling_settings =
         VideoEncoder::ScalingSettings(kLowVp9QpThreshold, kHighVp9QpThreshold);
+  } else if (codec_.codecType == webrtc::kVideoCodecAV1) {
+    static const int kLowAv1QpThreshold = 145;
+    static const int kHighAv1QpThreshold = 205;
+    info.scaling_settings =
+        VideoEncoder::ScalingSettings(kLowAv1QpThreshold, kHighAv1QpThreshold);
   }
   return info;
 }
@@ -931,9 +963,10 @@ int32_t JetsonVideoEncoder::SendFrame(
 
     codec_specific.codecSpecific.H264.packetization_mode =
         webrtc::H264PacketizationMode::NonInterleaved;
-  } else if (codec_.codecType == webrtc::kVideoCodecVP9 ||
+  } else if (codec_.codecType == webrtc::kVideoCodecAV1 ||
+             codec_.codecType == webrtc::kVideoCodecVP9 ||
              codec_.codecType == webrtc::kVideoCodecVP8) {
-    // VP8, VP9 はIVFヘッダーがエンコードフレームについているので取り除く
+    // VP8, VP9, AV1 はIVFヘッダーがエンコードフレームについているので取り除く
     if ((buffer[0] == 'D') && (buffer[1] == 'K') && (buffer[2] == 'I') &&
         (buffer[3] == 'F')) {
       buffer += 32;
@@ -976,6 +1009,27 @@ int32_t JetsonVideoEncoder::SendFrame(
         codec_specific.codecSpecific.VP9.height[0] =
             encoded_image_._encodedHeight;
         codec_specific.codecSpecific.VP9.gof.CopyGofInfoVP9(gof_);
+      }
+    } else if (codec_.codecType == webrtc::kVideoCodecAV1) {
+      bool is_key = buffer[2] == 0x0a;
+      // v4l2_ctrl_videoenc_outputbuf_metadata.KeyFrame が効いていない
+      // キーフレームの時には OBU_SEQUENCE_HEADER が入っているために 0x0a になるためこれを使う
+      // キーフレームではない時には OBU_FRAME が入っていて 0x32 になっている
+      if (is_key) {
+        encoded_image_._frameType = webrtc::VideoFrameType::kVideoFrameKey;
+      }
+
+      std::vector<webrtc::ScalableVideoController::LayerFrameConfig>
+          layer_frames = svc_controller_->NextFrameConfig(is_key);
+      codec_specific.end_of_picture = true;
+      codec_specific.generic_frame_info =
+          svc_controller_->OnEncodeDone(layer_frames[0]);
+      if (is_key && codec_specific.generic_frame_info) {
+        codec_specific.template_structure =
+            svc_controller_->DependencyStructure();
+        auto& resolutions = codec_specific.template_structure->resolutions;
+        resolutions = {webrtc::RenderResolution(encoded_image_._encodedWidth,
+                                                encoded_image_._encodedHeight)};
       }
     }
   }

@@ -11,6 +11,9 @@
 
 ## develop
 
+- [ADD] Jetson の AV1 HWA に対応
+    - @melpon
+
 ## 2022.5.0 (2022/6/22)
 
 - [ADD] bundle_id を追加
