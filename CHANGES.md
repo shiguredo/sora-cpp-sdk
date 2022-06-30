@@ -11,6 +11,9 @@
 
 ## develop
 
+- [FIX] Jetson の AV1 HWA のデコーダがうまく動いてなかったのを修正
+    - @melpon
+
 ## 2022.6.0 (2022-06-30)
 
 - [ADD] Jetson の AV1 HWA に対応

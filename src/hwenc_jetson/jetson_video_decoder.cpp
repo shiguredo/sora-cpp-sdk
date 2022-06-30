@@ -41,6 +41,7 @@ JetsonVideoDecoder::JetsonVideoDecoder(webrtc::VideoCodecType codec)
     : input_format_(codec == webrtc::kVideoCodecVP8    ? V4L2_PIX_FMT_VP8
                     : codec == webrtc::kVideoCodecVP9  ? V4L2_PIX_FMT_VP9
                     : codec == webrtc::kVideoCodecH264 ? V4L2_PIX_FMT_H264
+                    : codec == webrtc::kVideoCodecAV1  ? V4L2_PIX_FMT_AV1
                                                        : 0),
       decoder_(nullptr),
       decode_complete_callback_(nullptr),
