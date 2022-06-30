@@ -24,7 +24,8 @@
 #include <common_video/include/bitrate_adjuster.h>
 #include <modules/video_coding/codecs/h264/include/h264.h>
 #include <modules/video_coding/codecs/vp9/include/vp9_globals.h>
-#include "rtc_base/synchronization/mutex.h"
+#include <modules/video_coding/svc/scalable_video_controller.h>
+#include <rtc_base/synchronization/mutex.h>
 
 #include "jetson_jpeg_decoder.h"
 
@@ -45,6 +46,7 @@ class JetsonVideoEncoder : public webrtc::VideoEncoder {
 
   static bool IsSupportedVP8();
   static bool IsSupportedVP9();
+  static bool IsSupportedAV1();
 
   int32_t InitEncode(const webrtc::VideoCodec* codec_settings,
                      int32_t number_of_cores,
@@ -143,6 +145,8 @@ class JetsonVideoEncoder : public webrtc::VideoEncoder {
 
   webrtc::GofInfoVP9 gof_;
   size_t gof_idx_;
+
+  std::unique_ptr<webrtc::ScalableVideoController> svc_controller_;
 
   webrtc::Mutex frame_params_lock_;
   std::queue<std::unique_ptr<FrameParams>> frame_params_;

@@ -206,12 +206,22 @@ SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
 #endif
 
 #if USE_JETSON_ENCODER
-  config.decoders.insert(
-      config.decoders.begin(),
-      VideoDecoderConfig(webrtc::kVideoCodecVP8, [](auto format) {
-        return std::unique_ptr<webrtc::VideoDecoder>(
-            absl::make_unique<JetsonVideoDecoder>(webrtc::kVideoCodecVP8));
-      }));
+  if (JetsonVideoDecoder::IsSupportedVP8()) {
+    config.decoders.insert(
+        config.decoders.begin(),
+        VideoDecoderConfig(webrtc::kVideoCodecVP8, [](auto format) {
+          return std::unique_ptr<webrtc::VideoDecoder>(
+              absl::make_unique<JetsonVideoDecoder>(webrtc::kVideoCodecVP8));
+        }));
+  }
+  if (JetsonVideoDecoder::IsSupportedAV1()) {
+    config.decoders.insert(
+        config.decoders.begin(),
+        VideoDecoderConfig(webrtc::kVideoCodecAV1, [](auto format) {
+          return std::unique_ptr<webrtc::VideoDecoder>(
+              absl::make_unique<JetsonVideoDecoder>(webrtc::kVideoCodecAV1));
+        }));
+  }
   config.decoders.insert(
       config.decoders.begin(),
       VideoDecoderConfig(webrtc::kVideoCodecVP9, [](auto format) {

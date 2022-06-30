@@ -53,6 +53,24 @@ JetsonVideoDecoder::~JetsonVideoDecoder() {
   Release();
 }
 
+bool JetsonVideoDecoder::IsSupportedVP8() {
+  //SuppressErrors sup;
+
+  auto decoder = NvVideoDecoder::createVideoDecoder("dec0");
+  auto ret = decoder->setOutputPlaneFormat(V4L2_PIX_FMT_VP8, CHUNK_SIZE);
+  delete decoder;
+  return ret >= 0;
+}
+
+bool JetsonVideoDecoder::IsSupportedAV1() {
+  //SuppressErrors sup;
+
+  auto decoder = NvVideoDecoder::createVideoDecoder("dec0");
+  auto ret = decoder->setOutputPlaneFormat(V4L2_PIX_FMT_AV1, CHUNK_SIZE);
+  delete decoder;
+  return ret >= 0;
+}
+
 bool JetsonVideoDecoder::Configure(const Settings& settings) {
   if (JetsonConfigure() != WEBRTC_VIDEO_CODEC_OK) {
     RTC_LOG(LS_ERROR) << __FUNCTION__ << "Failed to JetsonConfigure";
