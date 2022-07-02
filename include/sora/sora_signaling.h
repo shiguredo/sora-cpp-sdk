@@ -117,7 +117,7 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
 
   void Connect();
   void Disconnect();
-  void SendDataChannel(const std::string& label, const std::string& data);
+  bool SendDataChannel(const std::string& label, const std::string& data);
 
  private:
   static bool ParseURL(const std::string& url, URLParts& parts, bool& ssl);

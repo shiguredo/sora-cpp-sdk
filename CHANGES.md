@@ -11,6 +11,9 @@
 
 ## develop
 
+- [FIX] DataChannel が有効だと切断時にエラーが起きていたのを修正
+    - @melpon
+
 ## 2022.6.1 (2022-06-30)
 
 - [FIX] Jetson の AV1 HWA のデコーダがうまく動いてなかったのを修正
