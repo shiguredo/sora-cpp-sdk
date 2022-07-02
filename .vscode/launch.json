@@ -5,10 +5,22 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Windows Debug ビルドのデバッグ",
+            "name": "[hello] Windows Debug ビルドのデバッグ",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}\\_build\\windows_x86_64\\debug\\test\\Debug\\hello.exe",
+            "args": ["${workspaceFolder}\\test\\.testparam.json"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "console": "externalTerminal",
+            //"preLaunchTask": "C/C++: cl.exe アクティブなファイルのビルド"
+        },
+        {
+            "name": "[connect_disconnect] Windows Debug ビルドのデバッグ",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}\\_build\\windows_x86_64\\debug\\test\\Debug\\connect_disconnect.exe",
             "args": ["${workspaceFolder}\\test\\.testparam.json"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

@@ -15,6 +15,9 @@ void DataChannel::Thunk::OnBufferedAmountChange(uint64_t previous_amount) {
 DataChannel::DataChannel(boost::asio::io_context& ioc,
                          std::weak_ptr<DataChannelObserver> observer)
     : ioc_(&ioc), timer_(ioc), observer_(observer) {}
+DataChannel::~DataChannel() {
+  RTC_LOG(LS_INFO) << "dtor DataChannel";
+}
 bool DataChannel::IsOpen(std::string label) const {
   return labels_.find(label) != labels_.end();
 }

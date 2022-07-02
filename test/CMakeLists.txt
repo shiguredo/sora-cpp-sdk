@@ -27,45 +27,55 @@ find_package(Sora REQUIRED)
 find_package(Threads REQUIRED)
 find_package(Libdrm)
 
+function (init_target target)
+  set_target_properties(${target} PROPERTIES CXX_STANDARD 17 C_STANDARD 17)
+  set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  target_link_libraries(${target} PRIVATE Sora::sora)
+
+  if (USE_LIBCXX)
+    target_compile_options(${target}
+      PRIVATE
+        "$<$<COMPILE_LANGUAGE:CXX>:-nostdinc++>"
+        "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<BOOL:LIBCXX_INCLUDE_DIR>>:-isystem${LIBCXX_INCLUDE_DIR}>"
+    )
+  endif()
+
+  if (WIN32)
+    # 文字コードを utf-8 として扱うのと、シンボルテーブル数を増やす
+    target_compile_options(${target} PRIVATE /utf-8 /bigobj)
+    set_target_properties(${target}
+      PROPERTIES
+        # CRTライブラリを静的リンクさせる
+        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+    )
+
+    target_compile_definitions(${target}
+      PRIVATE
+        _CONSOLE
+        _WIN32_WINNT=0x0A00
+        NOMINMAX
+        WIN32_LEAN_AND_MEAN
+        UNICODE
+        _UNICODE
+    )
+  elseif (APPLE)
+    set_target_properties(${target} PROPERTIES CXX_VISIBILITY_PRESET hidden)
+  endif()
+endfunction()
+
 # hello.exe を作る
 
 add_executable(hello)
-set_target_properties(hello PROPERTIES CXX_STANDARD 17 C_STANDARD 17)
-set_target_properties(hello PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_sources(hello PRIVATE hello.cpp)
+init_target(hello)
 
-target_link_libraries(hello PRIVATE Sora::sora)
-
-if (USE_LIBCXX)
-  target_compile_options(hello
-    PRIVATE
-      "$<$<COMPILE_LANGUAGE:CXX>:-nostdinc++>"
-      "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<BOOL:LIBCXX_INCLUDE_DIR>>:-isystem${LIBCXX_INCLUDE_DIR}>"
-  )
-endif()
-
-if (WIN32)
-  # 文字コードを utf-8 として扱うのと、シンボルテーブル数を増やす
-  target_compile_options(hello PRIVATE /utf-8 /bigobj)
-  set_target_properties(hello
-    PROPERTIES
-      # CRTライブラリを静的リンクさせる
-      MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
-  )
-
-  target_compile_definitions(hello
-    PRIVATE
-      _CONSOLE
-      _WIN32_WINNT=0x0A00
-      NOMINMAX
-      WIN32_LEAN_AND_MEAN
-      UNICODE
-      _UNICODE
-  )
-elseif (APPLE)
-  set_target_properties(hello PROPERTIES CXX_VISIBILITY_PRESET hidden)
-elseif (HELLO_JETSON)
+if (HELLO_JETSON)
   target_compile_definitions(hello PRIVATE HELLO_JETSON)
   target_link_directories(hello PRIVATE ${CMAKE_SYSROOT}/usr/lib/aarch64-linux-gnu/tegra)
-elseif (UNIX)
+endif()
+
+if (TEST_CONNECT_DISCONNECT)
+  add_executable(connect_disconnect)
+  target_sources(connect_disconnect PRIVATE connect_disconnect.cpp)
+  init_target(connect_disconnect)
 endif()

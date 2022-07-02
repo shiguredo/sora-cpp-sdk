@@ -38,6 +38,7 @@ class DataChannel {
  public:
   DataChannel(boost::asio::io_context& ioc,
               std::weak_ptr<DataChannelObserver> observer);
+  ~DataChannel();
   bool IsOpen(std::string label) const;
   void Send(std::string label, const webrtc::DataBuffer& data);
   void Close(const webrtc::DataBuffer& disconnect_message,

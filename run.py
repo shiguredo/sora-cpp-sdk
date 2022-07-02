@@ -1457,6 +1457,10 @@ def main():
                         f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}")
                     cmake_args.append(
                         f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}")
+
+                if platform.target.os in ('windows', 'macos', 'ubuntu'):
+                    cmake_args.append("-DTEST_CONNECT_DISCONNECT=ON")
+
                 cmd(['cmake', os.path.join(BASE_DIR, 'test')] + cmake_args)
                 cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])
                 if args.run:

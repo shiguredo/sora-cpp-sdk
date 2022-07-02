@@ -4,6 +4,7 @@
 #include <p2p/client/basic_port_allocator.h>
 #include <pc/rtp_media_utils.h>
 
+#include "sora/data_channel.h"
 #include "sora/rtc_ssl_verifier.h"
 #include "sora/rtc_stats.h"
 #include "sora/session_description.h"
@@ -970,6 +971,8 @@ void SoraSignaling::DoConnect() {
     return;
   }
 
+  dc_.reset(new DataChannel(*config_.io_context, shared_from_this()));
+
   // 接続タイムアウト用の処理
   connection_timeout_timer_.expires_from_now(boost::posix_time::seconds(30));
   connection_timeout_timer_.async_wait(
@@ -1153,10 +1156,15 @@ webrtc::DataBuffer SoraSignaling::ConvertToDataBuffer(
   return webrtc::DataBuffer(rtc::CopyOnWriteBuffer(str), true);
 }
 
-void SoraSignaling::SendDataChannel(const std::string& label,
+bool SoraSignaling::SendDataChannel(const std::string& label,
                                     const std::string& input) {
+  if (dc_ == nullptr || !using_datachannel_) {
+    return false;
+  }
+
   webrtc::DataBuffer data = ConvertToDataBuffer(label, input);
   dc_->Send(label, data);
+  return true;
 }
 
 void SoraSignaling::Clear() {
