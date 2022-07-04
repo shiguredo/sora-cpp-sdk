@@ -2,6 +2,8 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
+このリポジトリには、 [Sora C++ SDK](https://github.com/shiguredo/sora-cpp-sdk) を利用したサンプルアプリを掲載しています。実際の利用シーンに即したサンプルをご用意しておりますので、目的に応じた Sora C++ SDK の使い方を簡単に学ぶことができます。
+
 ## About Shiguredo's open source software
 
 We will not respond to PRs or issues that have not been discussed on Discord. Also, Discord is only available in Japanese.
@@ -12,22 +14,11 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
 
 利用前に https://github.com/shiguredo/oss をお読みください。
 
-## Sora C++ SDK サンプル集について
-
-## 特徴
-
-
 ## 動作環境
 
 ## 対応 Sora
 
 - WebRTC SFU Sora 2022.1 以降
-
-## 優先実装
-
-## 対応予定
-
-## 廃止予定
 
 ## ライセンス
 
