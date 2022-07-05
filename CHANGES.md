@@ -11,6 +11,9 @@
 
 ## develop
 
+- [UPDATE] libwebrtc を m103.5060.5.0 に上げる
+    - @voluntas
+
 ## 2022.6.2 (2022-07-03)
 
 - [FIX] DataChannel が有効だと切断時にエラーが起きていたのを修正
