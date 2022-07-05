@@ -12,7 +12,7 @@
 ## develop
 
 - [UPDATE] libwebrtc を m103.5060.5.0 に上げる
-    - @voluntas
+    - @voluntas @melpon
 
 ## 2022.6.2 (2022-07-03)
 

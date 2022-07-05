@@ -787,7 +787,7 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
     const std::string sdp = m.at("sdp").as_string().c_str();
 
     SessionDescription::SetOffer(
-        pc_, sdp,
+        pc_.get(), sdp,
         [self = shared_from_this(), m]() {
           boost::asio::post(*self->config_.io_context, [self, m]() {
             if (self->state_ != State::Connected) {
@@ -861,7 +861,7 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
             }
 
             SessionDescription::CreateAnswer(
-                self->pc_,
+                self->pc_.get(),
                 [self](webrtc::SessionDescriptionInterface* desc) {
                   std::string sdp;
                   desc->ToString(&sdp);
@@ -889,7 +889,7 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
     std::string answer_type = type == "update" ? "update" : "re-answer";
     const std::string sdp = m.at("sdp").as_string().c_str();
     SessionDescription::SetOffer(
-        pc_, sdp,
+        pc_.get(), sdp,
         [self = shared_from_this(), type, answer_type]() {
           boost::asio::post(*self->config_.io_context, [self, type,
                                                         answer_type]() {
@@ -903,7 +903,7 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
             }
 
             SessionDescription::CreateAnswer(
-                self->pc_,
+                self->pc_.get(),
                 [self, answer_type](webrtc::SessionDescriptionInterface* desc) {
                   std::string sdp;
                   desc->ToString(&sdp);
@@ -936,15 +936,18 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
   } else if (type == "ping") {
     auto it = m.as_object().find("stats");
     if (it != m.as_object().end() && it->value().as_bool()) {
-      pc_->GetStats(RTCStatsCallback::Create(
-          [self = shared_from_this()](
-              const rtc::scoped_refptr<const webrtc::RTCStatsReport>& report) {
-            if (self->state_ != State::Connected) {
-              return;
-            }
+      pc_->GetStats(
+          RTCStatsCallback::Create(
+              [self = shared_from_this()](
+                  const rtc::scoped_refptr<const webrtc::RTCStatsReport>&
+                      report) {
+                if (self->state_ != State::Connected) {
+                  return;
+                }
 
-            self->DoSendPong(report);
-          }));
+                self->DoSendPong(report);
+              })
+              .get());
     } else {
       DoSendPong();
     }
@@ -1356,7 +1359,7 @@ void SoraSignaling::OnMessage(
     if (type == "re-offer") {
       const std::string sdp = json.at("sdp").as_string().c_str();
       SessionDescription::SetOffer(
-          pc_, sdp,
+          pc_.get(), sdp,
           [self = shared_from_this()]() {
             boost::asio::post(*self->config_.io_context, [self]() {
               if (self->state_ != State::Connected) {
@@ -1369,7 +1372,7 @@ void SoraSignaling::OnMessage(
               }
 
               SessionDescription::CreateAnswer(
-                  self->pc_,
+                  self->pc_.get(),
                   [self](webrtc::SessionDescriptionInterface* desc) {
                     std::string sdp;
                     desc->ToString(&sdp);
@@ -1391,14 +1394,17 @@ void SoraSignaling::OnMessage(
   }
 
   if (label == "stats") {
-    pc_->GetStats(RTCStatsCallback::Create(
-        [self = shared_from_this()](
-            const rtc::scoped_refptr<const webrtc::RTCStatsReport>& report) {
-          if (self->state_ != State::Connected) {
-            return;
-          }
-          self->DoSendPong(report);
-        }));
+    pc_->GetStats(
+        RTCStatsCallback::Create(
+            [self = shared_from_this()](
+                const rtc::scoped_refptr<const webrtc::RTCStatsReport>&
+                    report) {
+              if (self->state_ != State::Connected) {
+                return;
+              }
+              self->DoSendPong(report);
+            })
+            .get());
     return;
   }
 
