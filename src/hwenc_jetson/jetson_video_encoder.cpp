@@ -150,13 +150,14 @@ int32_t JetsonVideoEncoder::InitEncode(const webrtc::VideoCodec* codec_settings,
     RTC_LOG(LS_INFO) << "interLayerPred: "
                      << codec_settings->VP9().interLayerPred;
   } else if (codec_settings->codecType == webrtc::kVideoCodecAV1) {
-    absl::string_view scalability_mode = codec_settings->ScalabilityMode();
-    if (scalability_mode.empty()) {
+    auto scalability_mode = codec_settings->GetScalabilityMode();
+    if (!scalability_mode) {
       RTC_LOG(LS_WARNING) << "Scalability mode is not set, using 'L1T1'.";
-      scalability_mode = "L1T1";
+      scalability_mode = webrtc::ScalabilityMode::kL1T1;
     }
-    RTC_LOG(LS_INFO) << "InitEncode scalability_mode:" << scalability_mode;
-    svc_controller_ = webrtc::CreateScalabilityStructure(scalability_mode);
+    RTC_LOG(LS_INFO) << "InitEncode scalability_mode:"
+                     << (int)*scalability_mode;
+    svc_controller_ = webrtc::CreateScalabilityStructure(*scalability_mode);
   }
   framerate_ = codec_settings->maxFramerate;
 
