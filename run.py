@@ -1217,6 +1217,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("target", choices=AVAILABLE_TARGETS)
     parser.add_argument("--debug", action='store_true')
+    parser.add_argument("--relwithdebinfo", action='store_true')
     parser.add_argument("--webrtcbuild", action='store_true')
     parser.add_argument("--webrtcbuild-fetch", action='store_true')
     parser.add_argument("--webrtcbuild-fetch-force", action='store_true')
@@ -1266,7 +1267,11 @@ def main():
     install_deps(platform, source_dir, build_dir, install_dir, args.debug,
                  webrtcbuild=args.webrtcbuild, webrtc_config=args)
 
-    configuration = 'Debug' if args.debug else 'Release'
+    configuration = 'Release'
+    if args.debug:
+        configuration = 'Debug'
+    if args.relwithdebinfo:
+        configuration = 'RelWithDebInfo'
 
     sora_build_dir = os.path.join(build_dir, 'sora')
     mkdir_p(sora_build_dir)

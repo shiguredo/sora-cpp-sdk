@@ -11,8 +11,12 @@
 
 ## develop
 
+- [ADD] run.py に --relwithdebinfo フラグを追加
+    - @melpon
 - [UPDATE] libwebrtc を m103.5060.5.0 に上げる
     - @voluntas @melpon
+- [FIX] boost::asio::post に strand を渡してなかったのを修正
+    - @melpon
 
 ## 2022.6.2 (2022-07-03)
 
