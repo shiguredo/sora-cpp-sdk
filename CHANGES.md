@@ -11,6 +11,8 @@
 
 ## develop
 
+## 2022.7.0 (2022-07-11)
+
 - [ADD] run.py に --relwithdebinfo フラグを追加
     - @melpon
 - [UPDATE] libwebrtc を m103.5060.5.0 に上げる
