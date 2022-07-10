@@ -11,7 +11,7 @@
 
 ## develop
 
-## 2022.7.0 (2022-07-11)
+## 2022.7.1 (2022-07-11)
 
 - [ADD] run.py に --relwithdebinfo フラグを追加
     - @melpon
