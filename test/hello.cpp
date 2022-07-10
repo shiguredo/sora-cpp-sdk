@@ -49,8 +49,10 @@ void HelloSora::Run() {
   std::string audio_track_id = rtc::CreateRandomString(16);
   std::string video_track_id = rtc::CreateRandomString(16);
   audio_track_ = factory()->CreateAudioTrack(
-      audio_track_id, factory()->CreateAudioSource(cricket::AudioOptions()));
-  video_track_ = factory()->CreateVideoTrack(video_track_id, video_source_);
+      audio_track_id,
+      factory()->CreateAudioSource(cricket::AudioOptions()).get());
+  video_track_ =
+      factory()->CreateVideoTrack(video_track_id, video_source_.get());
 
   ioc_.reset(new boost::asio::io_context(1));
 

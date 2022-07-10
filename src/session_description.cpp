@@ -72,7 +72,8 @@ void SessionDescription::SetOffer(webrtc::PeerConnectionInterface* pc,
     return;
   }
   pc->SetRemoteDescription(SetSessionDescriptionThunk::Create(
-                               std::move(on_success), std::move(on_failure)),
+                               std::move(on_success), std::move(on_failure))
+                               .get(),
                            session_description.release());
 }
 
@@ -86,13 +87,14 @@ void SessionDescription::CreateAnswer(webrtc::PeerConnectionInterface* pc,
     desc->ToString(&sdp);
     RTC_LOG(LS_INFO) << "Created session description : " << sdp;
     rpc->SetLocalDescription(
-        SetSessionDescriptionThunk::Create(nullptr, nullptr), desc);
+        SetSessionDescriptionThunk::Create(nullptr, nullptr).get(), desc);
     if (on_success) {
       on_success(desc);
     }
   };
   rpc->CreateAnswer(CreateSessionDescriptionThunk::Create(
-                        std::move(with_set_local_desc), std::move(on_failure)),
+                        std::move(with_set_local_desc), std::move(on_failure))
+                        .get(),
                     webrtc::PeerConnectionInterface::RTCOfferAnswerOptions());
 }
 
@@ -113,7 +115,8 @@ void SessionDescription::SetAnswer(webrtc::PeerConnectionInterface* pc,
     return;
   }
   pc->SetRemoteDescription(SetSessionDescriptionThunk::Create(
-                               std::move(on_success), std::move(on_failure)),
+                               std::move(on_success), std::move(on_failure))
+                               .get(),
                            session_description.release());
 }
 
