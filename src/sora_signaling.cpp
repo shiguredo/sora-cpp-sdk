@@ -1290,22 +1290,24 @@ void SoraSignaling::OnIceCandidateError(const std::string& address,
 
 void SoraSignaling::OnTrack(
     rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver) {
-  boost::asio::post([self = shared_from_this(), transceiver]() {
-    auto ob = self->config_.observer.lock();
-    if (ob != nullptr) {
-      ob->OnTrack(transceiver);
-    }
-  });
+  boost::asio::post(*config_.io_context,
+                    [self = shared_from_this(), transceiver]() {
+                      auto ob = self->config_.observer.lock();
+                      if (ob != nullptr) {
+                        ob->OnTrack(transceiver);
+                      }
+                    });
 }
 
 void SoraSignaling::OnRemoveTrack(
     rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) {
-  boost::asio::post([self = shared_from_this(), receiver]() {
-    auto ob = self->config_.observer.lock();
-    if (ob != nullptr) {
-      ob->OnRemoveTrack(receiver);
-    }
-  });
+  boost::asio::post(*config_.io_context,
+                    [self = shared_from_this(), receiver]() {
+                      auto ob = self->config_.observer.lock();
+                      if (ob != nullptr) {
+                        ob->OnRemoveTrack(receiver);
+                      }
+                    });
 }
 
 // -----------------------------
