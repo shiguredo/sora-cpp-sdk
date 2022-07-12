@@ -25,7 +25,7 @@ class DataChannelObserver {
 };
 
 // 複数の DataChannel を纏めてコールバックで受け取るためのクラス
-class DataChannel {
+class DataChannel : public std::enable_shared_from_this<DataChannel> {
   struct Thunk : webrtc::DataChannelObserver,
                  std::enable_shared_from_this<Thunk> {
     DataChannel* p;

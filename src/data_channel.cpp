@@ -61,31 +61,35 @@ void DataChannel::Close(const webrtc::DataBuffer& disconnect_message,
 
 void DataChannel::AddDataChannel(
     rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) {
-  boost::asio::post(*ioc_, [this, data_channel]() {
+  boost::asio::post(*ioc_, [self = shared_from_this(), data_channel]() {
     std::shared_ptr<Thunk> thunk(new Thunk());
-    thunk->p = this;
+    thunk->p = self.get();
     thunk->dc = data_channel;
     data_channel->RegisterObserver(thunk.get());
-    thunks_.insert(std::make_pair(thunk, data_channel));
-    labels_.insert(std::make_pair(data_channel->label(), data_channel));
+    self->thunks_.insert(std::make_pair(thunk, data_channel));
+    self->labels_.insert(std::make_pair(data_channel->label(), data_channel));
   });
 }
 
 void DataChannel::OnStateChange(std::shared_ptr<Thunk> thunk) {
-  boost::asio::post(*ioc_, [this, thunk]() {
-    auto data_channel = thunks_.at(thunk);
+  boost::asio::post(*ioc_, [self = shared_from_this(), thunk]() {
+    if (self->thunks_.find(thunk) == self->thunks_.end()) {
+      return;
+    }
+
+    auto data_channel = self->thunks_.at(thunk);
     if (data_channel->state() == webrtc::DataChannelInterface::kClosed) {
-      labels_.erase(data_channel->label());
-      thunks_.erase(thunk);
+      self->labels_.erase(data_channel->label());
+      self->thunks_.erase(thunk);
       data_channel->UnregisterObserver();
       RTC_LOG(LS_INFO) << "DataChannel closed label=" << data_channel->label();
     }
-    auto observer = observer_;
-    auto on_close = on_close_;
-    auto empty = thunks_.empty();
+    auto observer = self->observer_;
+    auto on_close = self->on_close_;
+    auto empty = self->thunks_.empty();
     if (on_close != nullptr && empty) {
-      on_close_ = nullptr;
-      timer_.cancel();
+      self->on_close_ = nullptr;
+      self->timer_.cancel();
     }
     auto ob = observer.lock();
     if (ob != nullptr) {
@@ -101,9 +105,13 @@ void DataChannel::OnStateChange(std::shared_ptr<Thunk> thunk) {
 
 void DataChannel::OnMessage(std::shared_ptr<Thunk> thunk,
                             const webrtc::DataBuffer& buffer) {
-  boost::asio::post(*ioc_, [this, thunk, buffer]() {
-    auto observer = observer_;
-    auto data_channel = thunks_.at(thunk);
+  boost::asio::post(*ioc_, [self = shared_from_this(), thunk, buffer]() {
+    if (self->thunks_.find(thunk) == self->thunks_.end()) {
+      return;
+    }
+
+    auto observer = self->observer_;
+    auto data_channel = self->thunks_.at(thunk);
     auto ob = observer.lock();
     if (ob != nullptr) {
       ob->OnMessage(data_channel, buffer);
