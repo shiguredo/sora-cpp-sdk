@@ -44,8 +44,8 @@ class SDLSample : public std::enable_shared_from_this<SDLSample>,
       std::string video_track_id = "0123456789abcdefg";
       audio_track_ = factory()->CreateAudioTrack(
           audio_track_id,
-          factory()->CreateAudioSource(cricket::AudioOptions()));
-      video_track_ = factory()->CreateVideoTrack(video_track_id, video_source);
+          factory()->CreateAudioSource(cricket::AudioOptions()).get());
+      video_track_ = factory()->CreateVideoTrack(video_track_id, video_source.get());
       if (config_.show_me) {
         renderer_->AddTrack(video_track_.get());
       }
