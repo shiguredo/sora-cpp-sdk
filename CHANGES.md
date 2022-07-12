@@ -11,6 +11,9 @@
 
 ## develop
 
+- [FIX] DataChannel の切れ方によってはアクセス違反になることがあったのを修正
+    - @melpon
+
 ## 2022.7.1 (2022-07-11)
 
 - [ADD] run.py に --relwithdebinfo フラグを追加
