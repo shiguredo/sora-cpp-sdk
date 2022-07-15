@@ -5,6 +5,9 @@
 // CLI11
 #include <CLI/CLI.hpp>
 
+// Boost
+#include <boost/optional/optional_io.hpp>
+
 #include "sdl_renderer.h"
 
 #ifdef _WIN32
@@ -16,7 +19,7 @@ struct SDLSampleConfig : sora::SoraDefaultClientConfig {
   std::string channel_id;
   std::string role;
   std::string video_codec_type;
-  bool multistream = false;
+  boost::optional<bool> multistream;
   int width = 640;
   int height = 480;
   bool show_me = false;
@@ -140,8 +143,9 @@ int main(int argc, char* argv[]) {
 
   SDLSampleConfig config;
 
-  auto bool_map = std::vector<std::pair<std::string, bool>>(
-      {{"false", false}, {"true", true}});
+  auto optional_bool_map =
+    std::vector<std::pair<std::string, boost::optional<bool>>>(
+        {{"false", false}, {"true", true}, {"none", boost::none}});
 
   CLI::App app("SDL Sample for Sora C++ SDK");
   app.set_help_all_flag("--help-all",
@@ -164,8 +168,8 @@ int main(int argc, char* argv[]) {
                  "Video codec for send")
       ->check(CLI::IsMember({"", "VP8", "VP9", "AV1", "H264"}));
   app.add_option("--multistream", config.multistream,
-                 "Use multistream (default: false)")
-      ->transform(CLI::CheckedTransformer(bool_map, CLI::ignore_case));
+                 "Use multistream (default: none)")
+      ->transform(CLI::CheckedTransformer(optional_bool_map, CLI::ignore_case));
 
   // SDL に関するオプション
   app.add_option("--width", config.width, "SDL window width");
