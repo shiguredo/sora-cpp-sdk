@@ -83,6 +83,7 @@ target_include_directories(sora PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 target_sources(sora
   PRIVATE
+    src/aligned_encoder_adapter.cpp
     src/audio_device_module.cpp
     src/camera_device_capturer.cpp
     src/data_channel.cpp

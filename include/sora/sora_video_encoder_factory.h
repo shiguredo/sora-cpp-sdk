@@ -19,16 +19,21 @@ struct VideoEncoderConfig {
   // 指定したコーデックに対応するエンコーダを設定する
   VideoEncoderConfig(webrtc::VideoCodecType codec,
                      std::function<std::unique_ptr<webrtc::VideoEncoder>(
-                         const webrtc::SdpVideoFormat&)> create_video_encoder)
-      : codec(codec), create_video_encoder(std::move(create_video_encoder)) {}
+                         const webrtc::SdpVideoFormat&)> create_video_encoder,
+                     int alignment = 0)
+      : codec(codec),
+        create_video_encoder(std::move(create_video_encoder)),
+        alignment(alignment) {}
   // 特定の SdpVideoFormat に対応するエンコーダを設定する
   // コーデック指定だと物足りない人向け
   VideoEncoderConfig(std::function<std::vector<webrtc::SdpVideoFormat>()>
                          get_supported_formats,
                      std::function<std::unique_ptr<webrtc::VideoEncoder>(
-                         const webrtc::SdpVideoFormat&)> create_video_encoder)
+                         const webrtc::SdpVideoFormat&)> create_video_encoder,
+                     int alignment = 0)
       : get_supported_formats(std::move(get_supported_formats)),
-        create_video_encoder(std::move(create_video_encoder)) {}
+        create_video_encoder(std::move(create_video_encoder)),
+        alignment(alignment) {}
   // 指定した factory を使ってエンコーダを設定する
   VideoEncoderConfig(std::unique_ptr<webrtc::VideoEncoderFactory> factory)
       : factory(std::move(factory)) {}
@@ -39,14 +44,18 @@ struct VideoEncoderConfig {
       const webrtc::SdpVideoFormat&)>
       create_video_encoder;
   std::shared_ptr<webrtc::VideoEncoderFactory> factory;
+  int alignment = 0;
 };
 
 struct SoraVideoEncoderFactoryConfig {
   // 指定されたコーデックに対して、どのエンコーダを利用するかの設定
   // encoders の 0 番目から順番に一致するコーデックを探して、見つかったらそれを利用する
   std::vector<VideoEncoderConfig> encoders;
-  // webrtc::SimulcastEncoderAdapter を
+  // webrtc::SimulcastEncoderAdapter を噛ますかどうか
   bool use_simulcast_adapter = false;
+
+  // 内部用。触らないこと。
+  bool is_internal = false;
 };
 
 class SoraVideoEncoderFactory : public webrtc::VideoEncoderFactory {
@@ -58,6 +67,12 @@ class SoraVideoEncoderFactory : public webrtc::VideoEncoderFactory {
 
   std::unique_ptr<webrtc::VideoEncoder> CreateVideoEncoder(
       const webrtc::SdpVideoFormat& format) override;
+
+ private:
+  // 一番内側のエンコーダを作る
+  std::unique_ptr<webrtc::VideoEncoder> CreateInternalVideoEncoder(
+      const webrtc::SdpVideoFormat& format,
+      int& alignment);
 
  private:
   SoraVideoEncoderFactoryConfig config_;
