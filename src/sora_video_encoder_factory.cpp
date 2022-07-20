@@ -40,6 +40,7 @@
 
 #include "default_video_formats.h"
 #include "sora/aligned_encoder_adapter.h"
+#include "sora/i420_encoder_adapter.h"
 
 namespace sora {
 
@@ -124,10 +125,12 @@ SoraVideoEncoderFactory::CreateVideoEncoder(
     const webrtc::SdpVideoFormat& format) {
   if (internal_encoder_factory_ != nullptr) {
     // サイマルキャストの場合はアダプタを噛ましつつ、無条件ですべてアライメントする
-    return std::unique_ptr<webrtc::VideoEncoder>(new AlignedEncoderAdapter(
-        std::make_shared<webrtc::SimulcastEncoderAdapter>(
-            internal_encoder_factory_.get(), format),
-        16, 16));
+    auto encoder = std::make_shared<webrtc::SimulcastEncoderAdapter>(
+        internal_encoder_factory_.get(), format);
+    // kNative を I420 に変換する
+    auto adapted1 = std::make_shared<I420EncoderAdapter>(encoder);
+    auto adapted2 = absl::make_unique<AlignedEncoderAdapter>(adapted1, 16, 16);
+    return adapted2;
   }
 
   int alignment = 0;
