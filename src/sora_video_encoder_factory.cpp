@@ -39,6 +39,7 @@
 #endif
 
 #include "default_video_formats.h"
+#include "sora/aligned_encoder_adapter.h"
 
 namespace sora {
 
@@ -48,6 +49,7 @@ SoraVideoEncoderFactory::SoraVideoEncoderFactory(
   if (config.use_simulcast_adapter) {
     auto config2 = config;
     config2.use_simulcast_adapter = false;
+    config2.is_internal = true;
     internal_encoder_factory_.reset(new SoraVideoEncoderFactory(config2));
   }
 }
@@ -76,14 +78,9 @@ SoraVideoEncoderFactory::GetSupportedFormats() const {
 }
 
 std::unique_ptr<webrtc::VideoEncoder>
-SoraVideoEncoderFactory::CreateVideoEncoder(
-    const webrtc::SdpVideoFormat& format) {
-  if (internal_encoder_factory_ != nullptr) {
-    return std::unique_ptr<webrtc::VideoEncoder>(
-        new webrtc::SimulcastEncoderAdapter(internal_encoder_factory_.get(),
-                                            format));
-  }
-
+SoraVideoEncoderFactory::CreateInternalVideoEncoder(
+    const webrtc::SdpVideoFormat& format,
+    int& alignment) {
   if (formats_.empty()) {
     GetSupportedFormats();
   }
@@ -106,22 +103,53 @@ SoraVideoEncoderFactory::CreateVideoEncoder(
           [factory = enc.factory.get()](const webrtc::SdpVideoFormat& format) {
             return factory->CreateVideoEncoder(format);
           };
+      // Factory 経由で作ったエンコーダはアライメントが必要かどうか分からないので全部アライメントする
+      alignment = 16;
     } else if (enc.create_video_encoder != nullptr) {
       create_video_encoder = enc.create_video_encoder;
+      alignment = enc.alignment;
     }
 
-    std::unique_ptr<webrtc::VideoEncoder> r;
     for (const auto& f : supported_formats) {
       if (f.IsSameCodec(format)) {
         return create_video_encoder(format);
       }
     }
-
-    if (r != nullptr) {
-      return r;
-    }
   }
   return nullptr;
+}
+
+std::unique_ptr<webrtc::VideoEncoder>
+SoraVideoEncoderFactory::CreateVideoEncoder(
+    const webrtc::SdpVideoFormat& format) {
+  if (internal_encoder_factory_ != nullptr) {
+    // サイマルキャストの場合はアダプタを噛ましつつ、無条件ですべてアライメントする
+    return std::unique_ptr<webrtc::VideoEncoder>(new AlignedEncoderAdapter(
+        std::make_shared<webrtc::SimulcastEncoderAdapter>(
+            internal_encoder_factory_.get(), format),
+        16, 16));
+  }
+
+  int alignment = 0;
+  auto encoder = CreateInternalVideoEncoder(format, alignment);
+  if (encoder == nullptr) {
+    return nullptr;
+  }
+
+  // この場合は呼び出し元でラップするのでここでは何もしない
+  if (config_.is_internal) {
+    return encoder;
+  }
+
+  // アライメントが必要ないなら何もしない
+  if (alignment == 0) {
+    return encoder;
+  }
+
+  // アライメント付きのエンコーダを利用する
+  return std::unique_ptr<webrtc::VideoEncoder>(new AlignedEncoderAdapter(
+      std::shared_ptr<webrtc::VideoEncoder>(std::move(encoder)), alignment,
+      alignment));
 }
 
 SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
@@ -144,14 +172,15 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
 
 #if USE_NVCODEC_ENCODER
   if (NvCodecH264Encoder::IsSupported(cuda_context)) {
-    config.encoders.insert(
-        config.encoders.begin(),
-        VideoEncoderConfig(webrtc::kVideoCodecH264,
-                           [cuda_context = cuda_context](auto format)
-                               -> std::unique_ptr<webrtc::VideoEncoder> {
-                             return NvCodecH264Encoder::Create(
-                                 cricket::VideoCodec(format), cuda_context);
-                           }));
+    config.encoders.insert(config.encoders.begin(),
+                           VideoEncoderConfig(
+                               webrtc::kVideoCodecH264,
+                               [cuda_context = cuda_context](auto format)
+                                   -> std::unique_ptr<webrtc::VideoEncoder> {
+                                 return NvCodecH264Encoder::Create(
+                                     cricket::VideoCodec(format), cuda_context);
+                               },
+                               16));
   }
 #endif
 
@@ -165,7 +194,8 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
             [](auto format) -> std::unique_ptr<webrtc::VideoEncoder> {
               return MsdkVideoEncoder::Create(MsdkSession::Create(),
                                               webrtc::kVideoCodecVP8);
-            }));
+            },
+            16));
   }
   if (MsdkVideoEncoder::IsSupported(session, webrtc::kVideoCodecVP9)) {
     config.encoders.insert(
@@ -175,7 +205,8 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
             [](auto format) -> std::unique_ptr<webrtc::VideoEncoder> {
               return MsdkVideoEncoder::Create(MsdkSession::Create(),
                                               webrtc::kVideoCodecVP9);
-            }));
+            },
+            16));
   }
   if (MsdkVideoEncoder::IsSupported(session, webrtc::kVideoCodecH264)) {
     config.encoders.insert(
@@ -185,7 +216,8 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
             [](auto format) -> std::unique_ptr<webrtc::VideoEncoder> {
               return MsdkVideoEncoder::Create(MsdkSession::Create(),
                                               webrtc::kVideoCodecH264);
-            }));
+            },
+            16));
   }
   if (MsdkVideoEncoder::IsSupported(session, webrtc::kVideoCodecAV1)) {
     config.encoders.insert(
@@ -195,44 +227,54 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
             [](auto format) -> std::unique_ptr<webrtc::VideoEncoder> {
               return MsdkVideoEncoder::Create(MsdkSession::Create(),
                                               webrtc::kVideoCodecAV1);
-            }));
+            },
+            16));
   }
 #endif
 
 #if USE_JETSON_ENCODER
   if (JetsonVideoEncoder::IsSupportedVP8()) {
-    config.encoders.insert(
-        config.encoders.begin(),
-        VideoEncoderConfig(webrtc::kVideoCodecVP8, [](auto format) {
-          return std::unique_ptr<webrtc::VideoEncoder>(
-              absl::make_unique<JetsonVideoEncoder>(
-                  cricket::VideoCodec(format)));
-        }));
+    config.encoders.insert(config.encoders.begin(),
+                           VideoEncoderConfig(
+                               webrtc::kVideoCodecVP8,
+                               [](auto format) {
+                                 return std::unique_ptr<webrtc::VideoEncoder>(
+                                     absl::make_unique<JetsonVideoEncoder>(
+                                         cricket::VideoCodec(format)));
+                               },
+                               16));
   }
   if (JetsonVideoEncoder::IsSupportedVP9()) {
-    config.encoders.insert(
-        config.encoders.begin(),
-        VideoEncoderConfig(webrtc::kVideoCodecVP9, [](auto format) {
-          return std::unique_ptr<webrtc::VideoEncoder>(
-              absl::make_unique<JetsonVideoEncoder>(
-                  cricket::VideoCodec(format)));
-        }));
+    config.encoders.insert(config.encoders.begin(),
+                           VideoEncoderConfig(
+                               webrtc::kVideoCodecVP9,
+                               [](auto format) {
+                                 return std::unique_ptr<webrtc::VideoEncoder>(
+                                     absl::make_unique<JetsonVideoEncoder>(
+                                         cricket::VideoCodec(format)));
+                               },
+                               16));
   }
   if (JetsonVideoEncoder::IsSupportedAV1()) {
-    config.encoders.insert(
-        config.encoders.begin(),
-        VideoEncoderConfig(webrtc::kVideoCodecAV1, [](auto format) {
-          return std::unique_ptr<webrtc::VideoEncoder>(
-              absl::make_unique<JetsonVideoEncoder>(
-                  cricket::VideoCodec(format)));
-        }));
+    config.encoders.insert(config.encoders.begin(),
+                           VideoEncoderConfig(
+                               webrtc::kVideoCodecAV1,
+                               [](auto format) {
+                                 return std::unique_ptr<webrtc::VideoEncoder>(
+                                     absl::make_unique<JetsonVideoEncoder>(
+                                         cricket::VideoCodec(format)));
+                               },
+                               16));
   }
-  config.encoders.insert(
-      config.encoders.begin(),
-      VideoEncoderConfig(webrtc::kVideoCodecH264, [](auto format) {
-        return std::unique_ptr<webrtc::VideoEncoder>(
-            absl::make_unique<JetsonVideoEncoder>(cricket::VideoCodec(format)));
-      }));
+  config.encoders.insert(config.encoders.begin(),
+                         VideoEncoderConfig(
+                             webrtc::kVideoCodecH264,
+                             [](auto format) {
+                               return std::unique_ptr<webrtc::VideoEncoder>(
+                                   absl::make_unique<JetsonVideoEncoder>(
+                                       cricket::VideoCodec(format)));
+                             },
+                             16));
 #endif
 
   return config;

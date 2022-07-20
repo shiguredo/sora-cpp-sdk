@@ -33,9 +33,8 @@
 #define SORA_CPP_SDK_COMMIT_SHORT "unknown"
 #endif
 
-#define SORA_NAME                                                   \
-  "WebRTC Native Client Library Sora C++ SDK " SORA_CPP_SDK_VERSION \
-  " (" SORA_CPP_SDK_COMMIT_SHORT ")"
+#define SORA_NAME \
+  "Sora C++ SDK " SORA_CPP_SDK_VERSION " (" SORA_CPP_SDK_COMMIT_SHORT ")"
 
 #if defined(WEBRTC_READABLE_VERSION) && defined(WEBRTC_COMMIT_SHORT) && \
     defined(WEBRTC_BUILD_VERSION)
