@@ -17,13 +17,13 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
 ## 動作環境
 
 - Windows 10 21H2 x86_64 以降
-- macOS 12.4 M1 以降
+- macOS 12.4 arm64 以降
 - Ubuntu 20.04 ARMv8 Jetson
     - [NVIDIA Jetson AGX Orin](https://www.nvidia.com/ja-jp/autonomous-machines/embedded-systems/jetson-orin/)
     - [NVIDIA Jetson Xavier NX](https://www.nvidia.com/ja-jp/autonomous-machines/embedded-systems/jetson-xavier-nx/)
     - [NVIDIA Jetson AGX Xavier](https://www.nvidia.com/ja-jp/autonomous-machines/embedded-systems/jetson-agx-xavier/)
-- Ubuntu 22.04 x86_64 以降
-- Ubuntu 20.04 x86_64 以降
+- Ubuntu 22.04 x86_64
+- Ubuntu 20.04 x86_64
 
 ## 対応 Sora
 
@@ -33,7 +33,7 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
 
 ### SDL サンプル
 
-Sora と映像の送受信を行い、SDL (Simple DirectMedia Layer) を利用して受信映像を表示するサンプルです。
+Sora と映像の送受信を行い、[SDL (Simple DirectMedia Layer)](https://www.libsdl.org) を利用して受信映像を表示するサンプルです。
 使い方は [SDL サンプルを使ってみる](./doc/USE_SDL_SAMPLE.md) をお読みください。
 
 ## ライセンス

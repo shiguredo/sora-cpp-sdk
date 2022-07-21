@@ -16,23 +16,28 @@ Sora と映像の送受信を行い、SDL (Simple DirectMedia Layer) を利用�
 
 ## サンプルをビルドする
 
-**ビルドに関する質問は受け付けていません**
+**ビルド方法の詳細は [GitHub Actions](https://github.com/shiguredo/sora-cpp-sdk-samples/blob/develop/.github/workflows/build.yml) をご確認ください、ビルドに関しての問い合わせは受け付けておりません**
+
 
 ### リポジトリをダウンロードする
 
 [main ブランチ](https://github.com/shiguredo/sora-cpp-sdk-samples/tree/main) をダウンロード、もしくはクローンして利用してください。
 develop ブランチは開発ブランチであり、正常に動作しないことがあります。
 
+```shell
+$ git clone -b main https://github.com/shiguredo/sora-cpp-sdk-samples.git
+```
+
 コマンドラインでクローンした場合は以下のコマンドでダウンロードしたディレクトリのトップに移動します。
 以降のコマンドはダウンロードしたディレクトリのトップにいることを前提とします。
 
-```
-cd sora-cpp-sdk-samples
+```shell
+$ cd sora-cpp-sdk-samples
 ```
 
 ### SDL サンプルをビルドする
 
-#### Windows 向けのビルドをする
+#### Windows x86_64 向けのビルドをする
 
 ##### 事前準備
 
@@ -44,32 +49,31 @@ cd sora-cpp-sdk-samples
 
 ##### ビルド
 
-```
-python .¥sdl_sample¥windows_x86_64¥run.py
+```powershell
+> python .¥sdl_sample¥windows_x86_64¥run.py
 ```
 
 成功した場合、以下のファイルが作成されます。`.¥_build¥windows_x86_64¥release¥sdl_sample¥Release` に `sdl_sample.exe` が作成されます。
 
-```
-dir .¥_build¥windows_x86_64¥release¥sdl_sample¥Release¥sdl_sample.exe
+```powershell
+> dir .¥_build¥windows_x86_64¥release¥sdl_sample¥Release¥sdl_sample.exe
 ```
 
-#### Mac 向けのビルドをする
+#### macOS arm64 向けのビルドをする
 
 ##### ビルド
 
-```
-python3 sdl_sample/macos_arm64/run.py
+```shell
+$ python3 sdl_sample/macos_arm64/run.py
 ```
 
 成功した場合、以下のファイルが作成されます。`_build/macos_arm64/release/sdl_sample` に `sdl_sample` が作成されます。
 
-```
-ls -l _build/macos_arm64/release/sdl_sample/sdl_sample
+```shell
+$ ls -l _build/macos_arm64/release/sdl_sample/sdl_sample
 ```
 
-
-#### Ubuntu 20.04 向けのビルドをする
+#### Ubuntu 20.04 x86_64 向けのビルドをする
 
 ##### 事前準備
 
@@ -81,17 +85,17 @@ ls -l _build/macos_arm64/release/sdl_sample/sdl_sample
 
 ##### ビルド
 
-```
-python3 sdl_sample/ubuntu-20.04_x86_64/run.py
+```shell
+$ python3 sdl_sample/ubuntu-20.04_x86_64/run.py
 ```
 
 成功した場合、以下のファイルが作成されます。`_build/ubuntu-20.04_x86_64/release/sdl_sample` に `sdl_sample` が作成されます。
 
-```
-ls -l _build/ubuntu-20.04_x86_64/release/sdl_sample/sdl_sample
+```shell
+$ ls -l _build/ubuntu-20.04_x86_64/release/sdl_sample/sdl_sample
 ```
 
-#### Ubuntu 22.04 向けのビルドをする
+#### Ubuntu 22.04 x86_64 向けのビルドをする
 
 ##### 事前準備
 
@@ -103,17 +107,17 @@ ls -l _build/ubuntu-20.04_x86_64/release/sdl_sample/sdl_sample
 
 ##### ビルド
 
-```
-python3 sdl_sample/ubuntu-22.04_x86_64/run.py
+```shell
+$ python3 sdl_sample/ubuntu-22.04_x86_64/run.py
 ```
 
 成功した場合、以下のファイルが作成されます。`_build/ubuntu-22.04_x86_64/release/sdl_sample` に `sdl_sample` が作成されます。
 
-```
-ls -l _build/ubuntu-22.04_x86_64/release/sdl_sample/sdl_sample
+```shell
+$ ls -l _build/ubuntu-22.04_x86_64/release/sdl_sample/sdl_sample
 ```
 
-#### Ubuntu 20.04 で Ubuntu 20.04 (armv8) Jetson 向けのビルドをする
+#### Ubuntu 20.04 x86_64 で Ubuntu 20.04 armv8 Jetson 向けのビルドをする
 
 NVIDIA Jetson 上ではビルドできません。Ubuntu 20.04 x86_64 上でクロスコンパイルしたバイナリを利用するようにしてください。
 
@@ -122,26 +126,20 @@ NVIDIA Jetson 上ではビルドできません。Ubuntu 20.04 x86_64 上でク�
 環境により必要なパッケージをインストールするようにしてください。
 
 - multistrap
+  - insecure なリポジトリからの取得を許可する設定を行う
 - binutils-aarch64-linux-gnu
 - Python 3 
 
-multistrap に insecure なリポジトリからの取得を許可する設定をします
-
-```
-sudo sed -e 's/Apt::Get::AllowUnauthenticated=true/Apt::Get::AllowUnauthenticated=true";\n$config_str .= " -o Acquire::AllowInsecureRepositories=true/' -i /usr/sbin/multistrap
-```
-
-
 ##### ビルド
 
-```
-python3 sdl_sample/ubuntu-20.04_x86_64/run.py
+```shell
+$ python3 sdl_sample/ubuntu-20.04_x86_64/run.py
 ```
 
 成功した場合、以下のファイルが作成されます。`_build/ubuntu-20.04_armv8_jetson/release/sdl_sample` に `sdl_sample` が作成されます。
 
-```
-ls -l _build/ubuntu-20.04_armv8_jetson/release/sdl_sample/sdl_sample
+```shell
+$ ls -l _build/ubuntu-20.04_armv8_jetson/release/sdl_sample/sdl_sample
 ```
 
 
@@ -150,16 +148,16 @@ ls -l _build/ubuntu-20.04_armv8_jetson/release/sdl_sample/sdl_sample
 ### コマンドラインから必要なオプションを指定して実行します
 
 ビルドされたバイナリのあるディレクトリに移動して、コマンドラインから必要なオプションを指定して実行します。
-以下は Sora サーバのシグナリング URL `wss://sora.example.com` の `sora` チャンネルに `sendrecv` で接続する例です。
+以下は Sora サーバのシグナリング URL `wss://sora.example.com/signaling` の `sora` チャンネルに `sendrecv` で接続する例です。
 
 Windows の場合
-```
-.¥sdl_sample.exe --signaling-url wss://sora.example.com/signaling --role sendrecv --channel-id sora --multistream true
+```powershell
+> .¥sdl_sample.exe --signaling-url wss://sora.example.com/signaling --role sendrecv --channel-id sora --multistream true
 ```
 
 Windows 以外の場合
-```
-./sdl_sample  --signaling-url wss://sora.example.com/signaling --role sendrecv --channel-id sora --multistream true
+```shell
+$ ./sdl_sample  --signaling-url wss://sora.example.com/signaling --role sendrecv --channel-id sora --multistream true
 ```
 
 #### Sora に関するオプション
