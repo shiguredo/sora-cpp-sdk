@@ -77,7 +77,7 @@ $ ls -l _build/macos_arm64/release/sdl_sample/sdl_sample
 
 ##### 事前準備
 
-環境により必要なパッケージをインストールするようにしてください。
+以下のパッケージをインストールしてください。
 
 - libdrm-dev
 - pkg-config
@@ -99,7 +99,7 @@ $ ls -l _build/ubuntu-20.04_x86_64/release/sdl_sample/sdl_sample
 
 ##### 事前準備
 
-環境により必要なパッケージをインストールするようにしてください。
+以下のパッケージをインストールしてください。
 
 - libdrm-dev
 - pkg-config
@@ -123,7 +123,7 @@ NVIDIA Jetson 上ではビルドできません。Ubuntu 20.04 x86_64 上でク�
 
 ##### 事前準備
 
-環境により必要なパッケージをインストールするようにしてください。
+以下のパッケージをインストールしてください。
 
 - multistrap
   - insecure なリポジトリからの取得を許可する設定を行う
