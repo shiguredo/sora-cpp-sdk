@@ -32,7 +32,7 @@ cd sora-cpp-sdk-samples
 
 ### SDL サンプルをビルドする
 
-#### Windows で Windows 版をビルドする
+#### Windows 向けのビルドをする
 
 ##### 事前準備
 
@@ -54,7 +54,7 @@ python .¥sdl_sample¥windows_x86_64¥run.py
 dir .¥_build¥windows_x86_64¥release¥sdl_sample¥Release¥sdl_sample.exe
 ```
 
-#### Mac で Mac 版をビルドする
+#### Mac 向けのビルドをする
 
 ##### ビルド
 
@@ -69,7 +69,7 @@ ls -l _build/macos_arm64/release/sdl_sample/sdl_sample
 ```
 
 
-#### Ubuntu 20.04 で Ubuntu 20.04 版をビルドする
+#### Ubuntu 20.04 向けのビルドをする
 
 ##### 事前準備
 
@@ -91,7 +91,7 @@ python3 sdl_sample/ubuntu-20.04_x86_64/run.py
 ls -l _build/ubuntu-20.04_x86_64/release/sdl_sample/sdl_sample
 ```
 
-#### Ubuntu 22.04 で Ubuntu 22.04 版をビルドする
+#### Ubuntu 22.04 向けのビルドをする
 
 ##### 事前準備
 
@@ -113,7 +113,7 @@ python3 sdl_sample/ubuntu-22.04_x86_64/run.py
 ls -l _build/ubuntu-22.04_x86_64/release/sdl_sample/sdl_sample
 ```
 
-#### Ubuntu 20.04 でUbuntu 20.04 (armv8) Jetson 版をビルドする
+#### Ubuntu 20.04 で Ubuntu 20.04 (armv8) Jetson 向けのビルドをする
 
 NVIDIA Jetson 上ではビルドできません。Ubuntu 20.04 x86_64 上でクロスコンパイルしたバイナリを利用するようにしてください。
 
