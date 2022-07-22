@@ -33,7 +33,7 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
 
 ### SDL サンプル
 
-Sora と映像の送受信を行い、[SDL (Simple DirectMedia Layer)](https://www.libsdl.org) を利用して受信映像を表示するサンプルです。
+Sora と映像の送受信を行い、[SDL (Simple DirectMedia Layer)](https://www.libsdl.org/) を利用して受信映像を表示するサンプルです。
 使い方は [SDL サンプルを使ってみる](./doc/USE_SDL_SAMPLE.md) をお読みください。
 
 ## ライセンス
