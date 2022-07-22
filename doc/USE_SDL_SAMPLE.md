@@ -131,11 +131,7 @@ _build/macos_arm64/release/sdl_sample
 
 ##### 事前準備
 
-以下のパッケージをインストールしてください。
-
-- libdrm-dev
-- pkg-config
-- python3 
+必要なパッケージをインストールしてください。
 
 ```shell
 $ sudo apt install libdrm-dev
@@ -208,11 +204,7 @@ _build/ubuntu-20.04_x86_64/release/sdl_sample/
 
 ##### 事前準備
 
-以下のパッケージをインストールしてください。
-
-- libdrm-dev
-- pkg-config
-- python3 
+必要なパッケージをインストールしてください。
 
 ```shell
 $ sudo apt install libdrm-dev
@@ -285,11 +277,7 @@ _build/ubuntu-22.04_x86_64/release/sdl_sample/
 
 ##### 事前準備
 
-以下のパッケージをインストールしてください。
-
-- multistrap
-- binutils-aarch64-linux-gnu
-- python3
+必要なパッケージをインストールしてください。
 
 ```shell
 $ sudo apt install multistrap
