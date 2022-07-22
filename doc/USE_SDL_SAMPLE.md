@@ -49,9 +49,6 @@ $ cd sora-cpp-sdk-samples
 
 成功した場合、`_build\windows_x86_64\release\sdl_sample\Release` に `sdl_sample.exe` が作成されます。
 
-<details>
-<summary>実行ファイルが作成されるディレクトリの tree コマンド結果</summary>
-
 ```
 > tree _build\windows_x86_64\release\sdl_sample\Release /F
 \_BUILD\WINDOWS_X86_64\RELEASE\SDL_SAMPLE\RELEASE
@@ -59,8 +56,6 @@ $ cd sora-cpp-sdk-samples
     sdl_sample.exp
     sdl_sample.lib
 ```
-
-</details>
 
 #### macOS arm64 向けのビルドをする
 
@@ -77,9 +72,6 @@ $ python3 sdl_sample/macos_arm64/run.py
 ```
 
 成功した場合、`_build/macos_arm64/release/sdl_sample` に `sdl_sample` が作成されます。
-
-<details>
-<summary>実行ファイルが作成されるディレクトリの tree コマンド結果</summary>
 
 ```
 $ tree _build/macos_arm64/release/sdl_sample
@@ -135,8 +127,6 @@ _build/macos_arm64/release/sdl_sample
 └── sdl_sample
 ```
 
-</details>
-
 #### Ubuntu 20.04 x86_64 向けのビルドをする
 
 ##### 事前準備
@@ -160,9 +150,6 @@ $ python3 sdl_sample/ubuntu-20.04_x86_64/run.py
 ```
 
 成功した場合、`_build/ubuntu-20.04_x86_64/release/sdl_sample` に `sdl_sample` が作成されます。
-
-<details>
-<summary>実行ファイルが作成されるディレクトリの tree コマンド結果</summary>
 
 ```
 $ tree _build/macos_arm64/release/sdl_sample
@@ -217,8 +204,6 @@ _build/ubuntu-20.04_x86_64/release/sdl_sample/
 └── sdl_sample
 ```
 
-</details>
-
 #### Ubuntu 22.04 x86_64 向けのビルドをする
 
 ##### 事前準備
@@ -242,9 +227,6 @@ $ python3 sdl_sample/ubuntu-22.04_x86_64/run.py
 ```
 
 成功した場合、以下のファイルが作成されます。`_build/ubuntu-22.04_x86_64/release/sdl_sample` に `sdl_sample` が作成されます。
-
-<details>
-<summary>実行ファイルが作成されるディレクトリの tree コマンド結果</summary>
 
 ```
 $ tree _build/ubuntu-22.04_x86_64/release/sdl_sample/
@@ -297,8 +279,6 @@ _build/ubuntu-22.04_x86_64/release/sdl_sample/
 └── sdl_sample
 ```
 
-</details>
-
 #### Ubuntu 20.04 x86_64 で Ubuntu 20.04 armv8 Jetson 向けのビルドをする
 
 **NVIDIA Jetson 上ではビルドできません。Ubuntu 20.04 x86_64 上でクロスコンパイルしたバイナリを利用するようにしてください。**
@@ -326,9 +306,6 @@ $ python3 sdl_sample/ubuntu-20.04_x86_64/run.py
 ```
 
 成功した場合、以下のファイルが作成されます。`_build/ubuntu-20.04_armv8_jetson/release/sdl_sample` に `sdl_sample` が作成されます。
-
-<details>
-<summary>実行ファイルが作成されるディレクトリの tree コマンド結果</summary>
 
 ```
 $ tree _build/ubuntu-20.04_armv8_jetson/release/sdl_sample/
@@ -382,8 +359,6 @@ _build/ubuntu-20.04_armv8_jetson/release/sdl_sample/
 ├── cmake_install.cmake
 └── sdl_sample
 ```
-
-</details>
 
 ## 実行する
 
