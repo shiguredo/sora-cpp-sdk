@@ -288,7 +288,6 @@ _build/ubuntu-22.04_x86_64/release/sdl_sample/
 以下のパッケージをインストールしてください。
 
 - multistrap
-  - insecure なリポジトリからの取得を許可する設定を行います。[GitHub Actions](https://github.com/shiguredo/sora-cpp-sdk-samples/blob/develop/.github/workflows/build.yml) をご確認ください
 - binutils-aarch64-linux-gnu
 - python3
 
@@ -296,13 +295,18 @@ _build/ubuntu-22.04_x86_64/release/sdl_sample/
 $ sudo apt install multistrap
 $ sudo apt install binutils-aarch64-linux-gnu
 $ sudo apt install python3
+```
+
+multistrap に insecure なリポジトリからの取得を許可する設定を行います。
+
+```shell
 $ sudo sed -e 's/Apt::Get::AllowUnauthenticated=true/Apt::Get::AllowUnauthenticated=true";\n$config_str .= " -o Acquire::AllowInsecureRepositories=true/' -i /usr/sbin/multistrap
 ```
 
 ##### ビルド
 
 ```shell
-$ python3 sdl_sample/ubuntu-20.04_x86_64/run.py
+$ python3 sdl_sample/ubuntu-20.04_armv8_jetson/run.py
 ```
 
 成功した場合、以下のファイルが作成されます。`_build/ubuntu-20.04_armv8_jetson/release/sdl_sample` に `sdl_sample` が作成されます。
