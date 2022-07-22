@@ -7,6 +7,9 @@
 #include <rtc_base/time_utils.h>
 #include <third_party/libyuv/include/libyuv/convert.h>
 
+// NvCodec
+#include <NvDecoder/NvDecoder.h>
+
 #include "sora/dyn/cuda.h"
 #include "sora/dyn/nvcuvid.h"
 
@@ -73,8 +76,13 @@ int32_t NvCodecVideoDecoder::Decode(const webrtc::EncodedImage& input_image,
   }
 
   uint8_t** frames = nullptr;
-  int frame_count =
-      decoder_->Decode(input_image.data(), (int)input_image.size());
+  int frame_count;
+  try {
+    frame_count = decoder_->Decode(input_image.data(), (int)input_image.size());
+  } catch (NVDECException& e) {
+    RTC_LOG(LS_ERROR) << e.getErrorString();
+    return WEBRTC_VIDEO_CODEC_ERROR;
+  }
   if (frame_count == 0) {
     return WEBRTC_VIDEO_CODEC_OK;
   }
