@@ -241,6 +241,10 @@ bool AndroidCapturer::Init(JNIEnv* env,
   //auto context = getApplicationContext(env);
   auto camera2enumerator = createCamera2Enumerator(env, context);
   auto devices = enumDevices(env, camera2enumerator.obj());
+  if (devices.empty()) {
+    RTC_LOG(LS_ERROR) << "Camera device not found.";
+    return false;
+  }
   for (auto device : devices) {
     RTC_LOG(LS_INFO) << "camera device: " << device;
   }
