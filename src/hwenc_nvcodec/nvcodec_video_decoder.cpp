@@ -7,6 +7,9 @@
 #include <rtc_base/time_utils.h>
 #include <third_party/libyuv/include/libyuv/convert.h>
 
+// NvCodec
+#include <NvDecoder/NvDecoder.h>
+
 #include "sora/dyn/cuda.h"
 #include "sora/dyn/nvcuvid.h"
 
@@ -73,8 +76,13 @@ int32_t NvCodecVideoDecoder::Decode(const webrtc::EncodedImage& input_image,
   }
 
   uint8_t** frames = nullptr;
-  int frame_count =
-      decoder_->Decode(input_image.data(), (int)input_image.size());
+  int frame_count;
+  try {
+    frame_count = decoder_->Decode(input_image.data(), (int)input_image.size());
+  } catch (NVDECException& e) {
+    RTC_LOG(LS_ERROR) << e.getErrorString();
+    return WEBRTC_VIDEO_CODEC_ERROR;
+  }
   if (frame_count == 0) {
     return WEBRTC_VIDEO_CODEC_OK;
   }
@@ -88,7 +96,7 @@ int32_t NvCodecVideoDecoder::Decode(const webrtc::EncodedImage& input_image,
   uint32_t pts = input_image.Timestamp();
 
   for (int i = 0; i < frame_count; i++) {
-    const auto* frame = decoder_->GetFrame();
+    auto* frame = decoder_->GetLockedFrame();
     // NV12 から I420 に変換
     rtc::scoped_refptr<webrtc::I420Buffer> i420_buffer =
         buffer_pool_.CreateI420Buffer(decoder_->GetWidth(),
@@ -108,9 +116,10 @@ int32_t NvCodecVideoDecoder::Decode(const webrtc::EncodedImage& input_image,
     decode_complete_callback_->Decoded(decoded_image, absl::nullopt,
                                        absl::nullopt);
 
-    // 次のフレームで縦横サイズが変わったときに追従するためのマジックコード
-    decoder_->setReconfigParams();
+    decoder_->UnlockFrame(frame);
   }
+  // 次のフレームで縦横サイズが変わったときに追従するためのマジックコード
+  decoder_->setReconfigParams();
 
   return WEBRTC_VIDEO_CODEC_OK;
 }

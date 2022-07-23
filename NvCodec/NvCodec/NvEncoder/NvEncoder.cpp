@@ -1,5 +1,5 @@
 /*
-* Copyright 2017-2020 NVIDIA Corporation.  All rights reserved.
+* Copyright 2017-2021 NVIDIA Corporation.  All rights reserved.
 *
 * Please refer to the NVIDIA end user license agreement (EULA) associated
 * with this source code for terms and conditions that govern your use of
@@ -23,7 +23,7 @@ static inline bool operator!=(const GUID &guid1, const GUID &guid2) {
 #endif
 
 NvEncoder::NvEncoder(NV_ENC_DEVICE_TYPE eDeviceType, void *pDevice, uint32_t nWidth, uint32_t nHeight, NV_ENC_BUFFER_FORMAT eBufferFormat,
-                            uint32_t nExtraOutputDelay, bool bMotionEstimationOnly, bool bOutputInVideoMemory) :
+                            uint32_t nExtraOutputDelay, bool bMotionEstimationOnly, bool bOutputInVideoMemory, bool bDX12Encode) :
     m_pDevice(pDevice), 
     m_eDeviceType(eDeviceType),
     m_nWidth(nWidth),
@@ -33,6 +33,7 @@ NvEncoder::NvEncoder(NV_ENC_DEVICE_TYPE eDeviceType, void *pDevice, uint32_t nWi
     m_eBufferFormat(eBufferFormat), 
     m_bMotionEstimationOnly(bMotionEstimationOnly), 
     m_bOutputInVideoMemory(bOutputInVideoMemory),
+    m_bIsDX12Encode(bDX12Encode),
     m_nExtraOutputDelay(nExtraOutputDelay), 
     m_hEncoder(nullptr)
 {
@@ -259,6 +260,11 @@ void NvEncoder::CreateDefaultEncoderParams(NV_ENC_INITIALIZE_PARAMS* pIntializeP
         pIntializeParams->encodeConfig->encodeCodecConfig.hevcConfig.idrPeriod = pIntializeParams->encodeConfig->gopLength;
     }
 
+    if (m_bIsDX12Encode)
+    {
+        pIntializeParams->bufferFormat = m_eBufferFormat;
+    }
+    
     return;
 }
 
@@ -352,7 +358,6 @@ void NvEncoder::CreateEncoder(const NV_ENC_INITIALIZE_PARAMS* pEncoderParams)
 
     m_nEncoderBuffer = m_encodeConfig.frameIntervalP + m_encodeConfig.rcParams.lookaheadDepth + m_nExtraOutputDelay;
     m_nOutputDelay = m_nEncoderBuffer - 1;
-    m_vMappedInputBuffers.resize(m_nEncoderBuffer, nullptr);
 
     if (!m_bOutputInVideoMemory)
     {
@@ -363,27 +368,35 @@ void NvEncoder::CreateEncoder(const NV_ENC_INITIALIZE_PARAMS* pEncoderParams)
     for (uint32_t i = 0; i < m_vpCompletionEvent.size(); i++) 
     {
         m_vpCompletionEvent[i] = CreateEvent(NULL, FALSE, FALSE, NULL);
-        NV_ENC_EVENT_PARAMS eventParams = { NV_ENC_EVENT_PARAMS_VER };
-        eventParams.completionEvent = m_vpCompletionEvent[i];
-        m_nvenc.nvEncRegisterAsyncEvent(m_hEncoder, &eventParams);
+        if (!m_bIsDX12Encode)
+        {
+            NV_ENC_EVENT_PARAMS eventParams = { NV_ENC_EVENT_PARAMS_VER };
+            eventParams.completionEvent = m_vpCompletionEvent[i];
+            m_nvenc.nvEncRegisterAsyncEvent(m_hEncoder, &eventParams);
+        }
     }
 #endif
 
-    if (m_bMotionEstimationOnly)
+    if (!m_bIsDX12Encode)
     {
-        m_vMappedRefBuffers.resize(m_nEncoderBuffer, nullptr);
+        m_vMappedInputBuffers.resize(m_nEncoderBuffer, nullptr);
 
-        if (!m_bOutputInVideoMemory)
+        if (m_bMotionEstimationOnly)
         {
-            InitializeMVOutputBuffer();
+            m_vMappedRefBuffers.resize(m_nEncoderBuffer, nullptr);
+
+            if (!m_bOutputInVideoMemory)
+            {
+                InitializeMVOutputBuffer();
+            }
         }
-    }
-    else
-    {
-        if (!m_bOutputInVideoMemory)
+        else
         {
-            m_vBitstreamOutputBuffer.resize(m_nEncoderBuffer, nullptr);
-            InitializeBitstreamBuffer();
+            if (!m_bOutputInVideoMemory)
+            {
+                m_vBitstreamOutputBuffer.resize(m_nEncoderBuffer, nullptr);
+                InitializeBitstreamBuffer();
+            }
         }
     }
 
@@ -414,9 +427,12 @@ void NvEncoder::DestroyHWEncoder()
     {
         if (m_vpCompletionEvent[i])
         {
-            NV_ENC_EVENT_PARAMS eventParams = { NV_ENC_EVENT_PARAMS_VER };
-            eventParams.completionEvent = m_vpCompletionEvent[i];
-            m_nvenc.nvEncUnregisterAsyncEvent(m_hEncoder, &eventParams);
+            if (!m_bIsDX12Encode)
+            {
+                NV_ENC_EVENT_PARAMS eventParams = { NV_ENC_EVENT_PARAMS_VER };
+                eventParams.completionEvent = m_vpCompletionEvent[i];
+                m_nvenc.nvEncUnregisterAsyncEvent(m_hEncoder, &eventParams);
+            }
             CloseHandle(m_vpCompletionEvent[i]);
         }
     }
@@ -429,7 +445,8 @@ void NvEncoder::DestroyHWEncoder()
     }
     else
     {
-        DestroyBitstreamBuffer();
+        if (!m_bIsDX12Encode)
+            DestroyBitstreamBuffer();
     }
 
     m_nvenc.nvEncDestroyEncoder(m_hEncoder);
@@ -636,7 +653,8 @@ bool NvEncoder::Reconfigure(const NV_ENC_RECONFIGURE_PARAMS *pReconfigureParams)
 }
 
 NV_ENC_REGISTERED_PTR NvEncoder::RegisterResource(void *pBuffer, NV_ENC_INPUT_RESOURCE_TYPE eResourceType,
-    int width, int height, int pitch, NV_ENC_BUFFER_FORMAT bufferFormat, NV_ENC_BUFFER_USAGE bufferUsage)
+    int width, int height, int pitch, NV_ENC_BUFFER_FORMAT bufferFormat, NV_ENC_BUFFER_USAGE bufferUsage, 
+    NV_ENC_FENCE_POINT_D3D12* pInputFencePoint, NV_ENC_FENCE_POINT_D3D12* pOutputFencePoint)
 {
     NV_ENC_REGISTER_RESOURCE registerResource = { NV_ENC_REGISTER_RESOURCE_VER };
     registerResource.resourceType = eResourceType;
@@ -646,6 +664,8 @@ NV_ENC_REGISTERED_PTR NvEncoder::RegisterResource(void *pBuffer, NV_ENC_INPUT_RE
     registerResource.pitch = pitch;
     registerResource.bufferFormat = bufferFormat;
     registerResource.bufferUsage = bufferUsage;
+    registerResource.pInputFencePoint = pInputFencePoint;
+    registerResource.pOutputFencePoint = pOutputFencePoint;
     NVENC_API_CALL(m_nvenc.nvEncRegisterResource(m_hEncoder, &registerResource));
 
     return registerResource.registeredResource;

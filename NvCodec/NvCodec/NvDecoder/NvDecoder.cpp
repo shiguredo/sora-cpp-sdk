@@ -1,5 +1,5 @@
 /*
-* Copyright 2017-2020 NVIDIA Corporation.  All rights reserved.
+* Copyright 2017-2021 NVIDIA Corporation.  All rights reserved.
 *
 * Please refer to the NVIDIA end user license agreement (EULA) associated
 * with this source code for terms and conditions that govern your use of
@@ -12,15 +12,18 @@
 #include <iostream>
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 
 #include "NvDecoder.h"
 #include "sora/dyn/cuda.h"
 #include "sora/dyn/nvcuvid.h"
 
 #define START_TIMER auto start = std::chrono::high_resolution_clock::now();
-#define STOP_TIMER(print_message) std::cout << print_message << \
-    std::chrono::duration_cast<std::chrono::milliseconds>( \
-    std::chrono::high_resolution_clock::now() - start).count() \
+
+#define STOP_TIMER(print_message) int64_t elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>( \
+    std::chrono::high_resolution_clock::now() - start).count(); \
+    std::cout << print_message << \
+    elapsedTime \
     << " ms " << std::endl;
 
 #define CUDA_DRVAPI_CALL( call )                                                                                                 \
@@ -54,6 +57,7 @@ static const char * GetVideoCodecString(cudaVideoCodec eCodec) {
         { cudaVideoCodec_HEVC,      "H.265/HEVC"   },
         { cudaVideoCodec_VP8,       "VP8"          },
         { cudaVideoCodec_VP9,       "VP9"          },
+        { cudaVideoCodec_AV1,       "AV1"          },
         { cudaVideoCodec_NumCodecs, "Invalid"      },
         { cudaVideoCodec_YUV420,    "YUV  4:2:0"   },
         { cudaVideoCodec_YV12,      "YV12 4:2:0"   },
@@ -126,12 +130,36 @@ static int GetChromaPlaneCount(cudaVideoSurfaceFormat eSurfaceFormat)
     return numPlane;
 }
 
+std::map<int, int64_t> NvDecoder::sessionOverHead = { {0,0}, {1,0} };
+
 /**
 *   @brief  This function is used to get codec string from codec id
 */
 const char *NvDecoder::GetCodecString(cudaVideoCodec eCodec)
 {
     return GetVideoCodecString(eCodec);
+}
+
+/* Called when the parser encounters sequence header for AV1 SVC content
+*  return value interpretation:
+*      < 0 : fail, >=0: succeeded (bit 0-9: currOperatingPoint, bit 10-10: bDispAllLayer, bit 11-30: reserved, must be set 0)
+*/
+int NvDecoder::GetOperatingPoint(CUVIDOPERATINGPOINTINFO *pOPInfo)
+{
+    if (pOPInfo->codec == cudaVideoCodec_AV1)
+    {
+        if (pOPInfo->av1.operating_points_cnt > 1)
+        {
+            // clip has SVC enabled
+            if (m_nOperatingPoint >= pOPInfo->av1.operating_points_cnt)
+                m_nOperatingPoint = 0;
+
+            printf("AV1 SVC clip: operating point count %d  ", pOPInfo->av1.operating_points_cnt);
+            printf("Selected operating point: %d, IDC 0x%x bOutputAllLayers %d\n", m_nOperatingPoint, pOPInfo->av1.operating_points_idc[m_nOperatingPoint], m_bDispAllLayers);
+            return (m_nOperatingPoint | (m_bDispAllLayers << 10));
+        }
+    }
+    return -1;
 }
 
 /* Return value from HandleVideoSequence() are interpreted as   :
@@ -213,7 +241,7 @@ int NvDecoder::HandleVideoSequence(CUVIDEOFORMAT *pVideoFormat)
     m_nBPP = m_nBitDepthMinus8 > 0 ? 2 : 1;
 
     // Set the output surface format same as chroma format
-    if (m_eChromaFormat == cudaVideoChromaFormat_420)
+    if (m_eChromaFormat == cudaVideoChromaFormat_420 || cudaVideoChromaFormat_Monochrome)
         m_eOutputFormat = pVideoFormat->bit_depth_luma_minus8 ? cudaVideoSurfaceFormat_P016 : cudaVideoSurfaceFormat_NV12;
     else if (m_eChromaFormat == cudaVideoChromaFormat_444)
         m_eOutputFormat = pVideoFormat->bit_depth_luma_minus8 ? cudaVideoSurfaceFormat_YUV444_16Bit : cudaVideoSurfaceFormat_YUV444;
@@ -252,6 +280,17 @@ int NvDecoder::HandleVideoSequence(CUVIDEOFORMAT *pVideoFormat)
     videoDecodeCreateInfo.vidLock = m_ctxLock;
     videoDecodeCreateInfo.ulWidth = pVideoFormat->coded_width;
     videoDecodeCreateInfo.ulHeight = pVideoFormat->coded_height;
+    // AV1 has max width/height of sequence in sequence header
+    if (pVideoFormat->codec == cudaVideoCodec_AV1 && pVideoFormat->seqhdr_data_length > 0)
+    {
+        // dont overwrite if it is already set from cmdline or reconfig.txt
+        if (!(m_nMaxWidth > pVideoFormat->coded_width || m_nMaxHeight > pVideoFormat->coded_height))
+        {
+            CUVIDEOFORMATEX *vidFormatEx = (CUVIDEOFORMATEX *)pVideoFormat;
+            m_nMaxWidth = vidFormatEx->av1.max_width;
+            m_nMaxHeight = vidFormatEx->av1.max_height;
+        }
+    }
     if (m_nMaxWidth < (int)pVideoFormat->coded_width)
         m_nMaxWidth = pVideoFormat->coded_width;
     if (m_nMaxHeight < (int)pVideoFormat->coded_height)
@@ -286,7 +325,7 @@ int NvDecoder::HandleVideoSequence(CUVIDEOFORMAT *pVideoFormat)
         videoDecodeCreateInfo.ulTargetHeight = m_nLumaHeight;
     }
 
-    m_nChromaHeight = (int)(m_nLumaHeight * GetChromaHeightFactor(m_eOutputFormat));
+    m_nChromaHeight = (int)(ceil(m_nLumaHeight * GetChromaHeightFactor(m_eOutputFormat)));
     m_nNumChromaPlanes = GetChromaPlaneCount(m_eOutputFormat);
     m_nSurfaceHeight = videoDecodeCreateInfo.ulTargetHeight;
     m_nSurfaceWidth = videoDecodeCreateInfo.ulTargetWidth;
@@ -308,6 +347,7 @@ int NvDecoder::HandleVideoSequence(CUVIDEOFORMAT *pVideoFormat)
     NVDEC_API_CALL(dyn::cuvidCreateDecoder(&m_hDecoder, &videoDecodeCreateInfo));
     CUDA_DRVAPI_CALL(dyn::cuCtxPopCurrent(nullptr));
     STOP_TIMER("Session Initialization Time: ");
+    NvDecoder::addDecoderSessionOverHead(getDecoderSessionID(), elapsedTime);
     return nDecodeSurface;
 }
 
@@ -345,7 +385,7 @@ int NvDecoder::ReconfigureDecoder(CUVIDEOFORMAT *pVideoFormat)
         {
             m_nWidth = pVideoFormat->display_area.right - pVideoFormat->display_area.left;
             m_nLumaHeight = pVideoFormat->display_area.bottom - pVideoFormat->display_area.top;
-            m_nChromaHeight = int(m_nLumaHeight * GetChromaHeightFactor(m_eOutputFormat));
+            m_nChromaHeight = (int)ceil(m_nLumaHeight * GetChromaHeightFactor(m_eOutputFormat));
             m_nNumChromaPlanes = GetChromaPlaneCount(m_eOutputFormat);
         }
 
@@ -401,7 +441,7 @@ int NvDecoder::ReconfigureDecoder(CUVIDEOFORMAT *pVideoFormat)
             reconfigParams.ulTargetHeight = m_nLumaHeight;
         }
 
-        m_nChromaHeight = int(m_nLumaHeight * GetChromaHeightFactor(m_eOutputFormat));
+        m_nChromaHeight = (int)ceil(m_nLumaHeight * GetChromaHeightFactor(m_eOutputFormat));
         m_nNumChromaPlanes = GetChromaPlaneCount(m_eOutputFormat);
         m_nSurfaceHeight = reconfigParams.ulTargetHeight;
         m_nSurfaceWidth = reconfigParams.ulTargetWidth;
@@ -475,7 +515,18 @@ int NvDecoder::HandlePictureDecode(CUVIDPICPARAMS *pPicParams) {
         return false;
     }
     m_nPicNumInDecodeOrder[pPicParams->CurrPicIdx] = m_nDecodePicCnt++;
+    CUDA_DRVAPI_CALL(dyn::cuCtxPushCurrent(m_cuContext));
     NVDEC_API_CALL(dyn::cuvidDecodePicture(m_hDecoder, pPicParams));
+    if (m_bForce_zero_latency && ((!pPicParams->field_pic_flag) || (pPicParams->second_field)))
+    {
+        CUVIDPARSERDISPINFO dispInfo;
+        memset(&dispInfo, 0, sizeof(dispInfo));
+        dispInfo.picture_index = pPicParams->CurrPicIdx;
+        dispInfo.progressive_frame = !pPicParams->field_pic_flag;
+        dispInfo.top_field_first = pPicParams->bottom_field_flag ^ 1;
+        HandlePictureDisplay(&dispInfo);
+    }
+    CUDA_DRVAPI_CALL(dyn::cuCtxPopCurrent(nullptr));
     return 1;
 }
 
@@ -492,6 +543,7 @@ int NvDecoder::HandlePictureDisplay(CUVIDPARSERDISPINFO *pDispInfo) {
 
     CUdeviceptr dpSrcFrame = 0;
     unsigned int nSrcPitch = 0;
+    CUDA_DRVAPI_CALL(dyn::cuCtxPushCurrent(m_cuContext));
     NVDEC_API_CALL(dyn::cuvidMapVideoFrame(m_hDecoder, pDispInfo->picture_index, &dpSrcFrame,
         &nSrcPitch, &videoProcessingParameters));
 
@@ -513,16 +565,14 @@ int NvDecoder::HandlePictureDisplay(CUVIDPARSERDISPINFO *pDispInfo) {
             uint8_t *pFrame = NULL;
             if (m_bUseDeviceFrame)
             {
-                CUDA_DRVAPI_CALL(dyn::cuCtxPushCurrent(m_cuContext));
                 if (m_bDeviceFramePitched)
                 {
-                    CUDA_DRVAPI_CALL(dyn::cuMemAllocPitch((CUdeviceptr *)&pFrame, &m_nDeviceFramePitch, m_nWidth * m_nBPP, m_nLumaHeight + (m_nChromaHeight * m_nNumChromaPlanes), 16));
+                    CUDA_DRVAPI_CALL(dyn::cuMemAllocPitch((CUdeviceptr *)&pFrame, &m_nDeviceFramePitch, GetWidth() * m_nBPP, m_nLumaHeight + (m_nChromaHeight * m_nNumChromaPlanes), 16));
                 }
                 else
                 {
                     CUDA_DRVAPI_CALL(dyn::cuMemAlloc((CUdeviceptr *)&pFrame, GetFrameSize()));
                 }
-                CUDA_DRVAPI_CALL(dyn::cuCtxPopCurrent(nullptr));
             }
             else
             {
@@ -533,26 +583,28 @@ int NvDecoder::HandlePictureDisplay(CUVIDPARSERDISPINFO *pDispInfo) {
         pDecodedFrame = m_vpFrame[m_nDecodedFrame - 1];
     }
 
-    CUDA_DRVAPI_CALL(dyn::cuCtxPushCurrent(m_cuContext));
+    // Copy luma plane
     CUDA_MEMCPY2D m = { 0 };
     m.srcMemoryType = CU_MEMORYTYPE_DEVICE;
     m.srcDevice = dpSrcFrame;
     m.srcPitch = nSrcPitch;
     m.dstMemoryType = m_bUseDeviceFrame ? CU_MEMORYTYPE_DEVICE : CU_MEMORYTYPE_HOST;
     m.dstDevice = (CUdeviceptr)(m.dstHost = pDecodedFrame);
-    m.dstPitch = m_nDeviceFramePitch ? m_nDeviceFramePitch : m_nWidth * m_nBPP;
-    m.WidthInBytes = m_nWidth * m_nBPP;
+    m.dstPitch = m_nDeviceFramePitch ? m_nDeviceFramePitch : GetWidth() * m_nBPP;
+    m.WidthInBytes = GetWidth() * m_nBPP;
     m.Height = m_nLumaHeight;
     CUDA_DRVAPI_CALL(dyn::cuMemcpy2DAsync(&m, m_cuvidStream));
 
-    m.srcDevice = (CUdeviceptr)((uint8_t *)dpSrcFrame + m.srcPitch * m_nSurfaceHeight);
+    // Copy chroma plane
+    // NVDEC output has luma height aligned by 2. Adjust chroma offset by aligning height
+    m.srcDevice = (CUdeviceptr)((uint8_t *)dpSrcFrame + m.srcPitch * ((m_nSurfaceHeight + 1) & ~1));
     m.dstDevice = (CUdeviceptr)(m.dstHost = pDecodedFrame + m.dstPitch * m_nLumaHeight);
     m.Height = m_nChromaHeight;
     CUDA_DRVAPI_CALL(dyn::cuMemcpy2DAsync(&m, m_cuvidStream));
 
     if (m_nNumChromaPlanes == 2)
     {
-        m.srcDevice = (CUdeviceptr)((uint8_t *)dpSrcFrame + m.srcPitch * m_nSurfaceHeight * 2);
+        m.srcDevice = (CUdeviceptr)((uint8_t *)dpSrcFrame + m.srcPitch * ((m_nSurfaceHeight + 1) & ~1) * 2);
         m.dstDevice = (CUdeviceptr)(m.dstHost = pDecodedFrame + m.dstPitch * m_nLumaHeight * 2);
         m.Height = m_nChromaHeight;
         CUDA_DRVAPI_CALL(dyn::cuMemcpy2DAsync(&m, m_cuvidStream));
@@ -570,14 +622,17 @@ int NvDecoder::HandlePictureDisplay(CUVIDPARSERDISPINFO *pDispInfo) {
 }
 
 NvDecoder::NvDecoder(CUcontext cuContext, bool bUseDeviceFrame, cudaVideoCodec eCodec, bool bLowLatency, 
-    bool bDeviceFramePitched, const Rect *pCropRect, const Dim *pResizeDim, int maxWidth, int maxHeight, unsigned int clkRate) :
+    bool bDeviceFramePitched, const Rect *pCropRect, const Dim *pResizeDim, int maxWidth, int maxHeight, unsigned int clkRate,
+    bool force_zero_latency) :
     m_cuContext(cuContext), m_bUseDeviceFrame(bUseDeviceFrame), m_eCodec(eCodec), m_bDeviceFramePitched(bDeviceFramePitched),
-    m_nMaxWidth (maxWidth), m_nMaxHeight(maxHeight)
+    m_nMaxWidth (maxWidth), m_nMaxHeight(maxHeight), m_bForce_zero_latency(force_zero_latency)
 {
     if (pCropRect) m_cropRect = *pCropRect;
     if (pResizeDim) m_resizeDim = *pResizeDim;
 
     NVDEC_API_CALL(dyn::cuvidCtxLockCreate(&m_ctxLock, cuContext));
+
+    decoderSessionID = 0;
 
     CUVIDPARSERPARAMS videoParserParameters = {};
     videoParserParameters.CodecType = eCodec;
@@ -587,20 +642,19 @@ NvDecoder::NvDecoder(CUcontext cuContext, bool bUseDeviceFrame, cudaVideoCodec e
     videoParserParameters.pUserData = this;
     videoParserParameters.pfnSequenceCallback = HandleVideoSequenceProc;
     videoParserParameters.pfnDecodePicture = HandlePictureDecodeProc;
-    videoParserParameters.pfnDisplayPicture = HandlePictureDisplayProc;
+    videoParserParameters.pfnDisplayPicture = m_bForce_zero_latency ? NULL : HandlePictureDisplayProc;
+    videoParserParameters.pfnGetOperatingPoint = HandleOperatingPointProc;
     NVDEC_API_CALL(dyn::cuvidCreateVideoParser(&m_hParser, &videoParserParameters));
 }
 
 NvDecoder::~NvDecoder() {
 
     START_TIMER
-    dyn::cuCtxPushCurrent(m_cuContext);
-    dyn::cuCtxPopCurrent(nullptr);
 
     if (m_hParser) {
         dyn::cuvidDestroyVideoParser(m_hParser);
     }
-
+    dyn::cuCtxPushCurrent(m_cuContext);
     if (m_hDecoder) {
         dyn::cuvidDestroyDecoder(m_hDecoder);
     }
@@ -611,17 +665,20 @@ NvDecoder::~NvDecoder() {
     {
         if (m_bUseDeviceFrame)
         {
-            dyn::cuCtxPushCurrent(m_cuContext);
             dyn::cuMemFree((CUdeviceptr)pFrame);
-            dyn::cuCtxPopCurrent(nullptr);
         }
         else
         {
             delete[] pFrame;
         }
     }
+    dyn::cuCtxPopCurrent(nullptr);
+
     dyn::cuvidCtxLockDestroy(m_ctxLock);
+
     STOP_TIMER("Session Deinitialization Time: ");
+
+    NvDecoder::addDecoderSessionOverHead(getDecoderSessionID(), elapsedTime);
 }
 
 int NvDecoder::Decode(const uint8_t *pData, int nSize, int nFlags, int64_t nTimestamp)

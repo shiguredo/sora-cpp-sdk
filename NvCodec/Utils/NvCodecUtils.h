@@ -1,5 +1,5 @@
 /*
-* Copyright 2017-2020 NVIDIA Corporation.  All rights reserved.
+* Copyright 2017-2021 NVIDIA Corporation.  All rights reserved.
 *
 * Please refer to the NVIDIA end user license agreement (EULA) associated
 * with this source code for terms and conditions that govern your use of
@@ -243,28 +243,34 @@ template<typename T>
 class YuvConverter {
 public:
     YuvConverter(int nWidth, int nHeight) : nWidth(nWidth), nHeight(nHeight) {
-        pQuad = new T[nWidth * nHeight / 4];
+        pQuad = new T[((nWidth + 1) / 2) * ((nHeight + 1) / 2)];
     }
     ~YuvConverter() {
-        delete pQuad;
+        delete[] pQuad;
     }
     void PlanarToUVInterleaved(T *pFrame, int nPitch = 0) {
         if (nPitch == 0) {
             nPitch = nWidth;
         }
-        T *puv = pFrame + nPitch * nHeight;
+
+        // sizes of source surface plane
+        int nSizePlaneY = nPitch * nHeight;
+        int nSizePlaneU = ((nPitch + 1) / 2) * ((nHeight + 1) / 2);
+        int nSizePlaneV = nSizePlaneU;
+
+        T *puv = pFrame + nSizePlaneY;
         if (nPitch == nWidth) {
-            memcpy(pQuad, puv, nWidth * nHeight / 4 * sizeof(T));
+            memcpy(pQuad, puv, nSizePlaneU * sizeof(T));
         } else {
-            for (int i = 0; i < nHeight / 2; i++) {
-                memcpy(pQuad + nWidth / 2 * i, puv + nPitch / 2 * i, nWidth / 2 * sizeof(T));
+            for (int i = 0; i < (nHeight + 1) / 2; i++) {
+                memcpy(pQuad + ((nWidth + 1) / 2) * i, puv + ((nPitch + 1) / 2) * i, ((nWidth + 1) / 2) * sizeof(T));
             }
         }
-        T *pv = puv + (nPitch / 2) * (nHeight / 2);
-        for (int y = 0; y < nHeight / 2; y++) {
-            for (int x = 0; x < nWidth / 2; x++) {
-                puv[y * nPitch + x * 2] = pQuad[y * nWidth / 2 + x];
-                puv[y * nPitch + x * 2 + 1] = pv[y * nPitch / 2 + x];
+        T *pv = puv + nSizePlaneU;
+        for (int y = 0; y < (nHeight + 1) / 2; y++) {
+            for (int x = 0; x < (nWidth + 1) / 2; x++) {
+                puv[y * nPitch + x * 2] = pQuad[y * ((nWidth + 1) / 2) + x];
+                puv[y * nPitch + x * 2 + 1] = pv[y * ((nPitch + 1) / 2) + x];
             }
         }
     }
@@ -272,20 +278,28 @@ public:
         if (nPitch == 0) {
             nPitch = nWidth;
         }
-        T *puv = pFrame + nPitch * nHeight, 
+
+        // sizes of source surface plane
+        int nSizePlaneY = nPitch * nHeight;
+        int nSizePlaneU = ((nPitch + 1) / 2) * ((nHeight + 1) / 2);
+        int nSizePlaneV = nSizePlaneU;
+
+        T *puv = pFrame + nSizePlaneY,
             *pu = puv, 
-            *pv = puv + nPitch * nHeight / 4;
-        for (int y = 0; y < nHeight / 2; y++) {
-            for (int x = 0; x < nWidth / 2; x++) {
-                pu[y * nPitch / 2 + x] = puv[y * nPitch + x * 2];
-                pQuad[y * nWidth / 2 + x] = puv[y * nPitch + x * 2 + 1];
+            *pv = puv + nSizePlaneU;
+
+        // split chroma from interleave to planar
+        for (int y = 0; y < (nHeight + 1) / 2; y++) {
+            for (int x = 0; x < (nWidth + 1) / 2; x++) {
+                pu[y * ((nPitch + 1) / 2) + x] = puv[y * nPitch + x * 2];
+                pQuad[y * ((nWidth + 1) / 2) + x] = puv[y * nPitch + x * 2 + 1];
             }
         }
         if (nPitch == nWidth) {
-            memcpy(pv, pQuad, nWidth * nHeight / 4 * sizeof(T));
+            memcpy(pv, pQuad, nSizePlaneV * sizeof(T));
         } else {
-            for (int i = 0; i < nHeight / 2; i++) {
-                memcpy(pv + nPitch / 2 * i, pQuad + nWidth / 2 * i, nWidth / 2 * sizeof(T));
+            for (int i = 0; i < (nHeight + 1) / 2; i++) {
+                memcpy(pv + ((nPitch + 1) / 2) * i, pQuad + ((nWidth + 1) / 2) * i, ((nWidth + 1) / 2) * sizeof(T));
             }
         }
     }
