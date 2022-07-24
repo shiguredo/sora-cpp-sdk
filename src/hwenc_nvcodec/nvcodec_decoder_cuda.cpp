@@ -36,7 +36,9 @@ NvCodecDecoderCuda::NvCodecDecoderCuda(std::shared_ptr<CudaContext> ctx,
                           nullptr,
                           nullptr,
                           3840,
-                          3840)) {
+                          3840,
+                          1000,
+                          true)) {
   // このコーデックでデコード可能かどうかを調べる
   CUVIDDECODECAPS decodecaps;
   memset(&decodecaps, 0, sizeof(decodecaps));
