@@ -48,7 +48,8 @@ class SDLSample : public std::enable_shared_from_this<SDLSample>,
       audio_track_ = factory()->CreateAudioTrack(
           audio_track_id,
           factory()->CreateAudioSource(cricket::AudioOptions()).get());
-      video_track_ = factory()->CreateVideoTrack(video_track_id, video_source.get());
+      video_track_ =
+          factory()->CreateVideoTrack(video_track_id, video_source.get());
       if (config_.show_me) {
         renderer_->AddTrack(video_track_.get());
       }
@@ -144,8 +145,8 @@ int main(int argc, char* argv[]) {
   SDLSampleConfig config;
 
   auto optional_bool_map =
-    std::vector<std::pair<std::string, boost::optional<bool>>>(
-        {{"false", false}, {"true", true}, {"none", boost::none}});
+      std::vector<std::pair<std::string, boost::optional<bool>>>(
+          {{"false", false}, {"true", true}, {"none", boost::none}});
 
   CLI::App app("SDL Sample for Sora C++ SDK");
   app.set_help_all_flag("--help-all",
@@ -173,7 +174,7 @@ int main(int argc, char* argv[]) {
 
   // SDL に関するオプション
   app.add_option("--width", config.width, "SDL window width");
-  app.add_option("--height", config.width, "SDL window height");
+  app.add_option("--height", config.height, "SDL window height");
   app.add_flag("--fullscreen", config.fullscreen);
   app.add_flag("--show-me", config.show_me);
 
