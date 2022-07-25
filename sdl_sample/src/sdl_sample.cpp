@@ -43,8 +43,8 @@ class SDLSample : public std::enable_shared_from_this<SDLSample>,
       cam_config.fps = 30;
       auto video_source = sora::CreateCameraDeviceCapturer(cam_config);
 
-      std::string audio_track_id = "0123456789abcdef";
-      std::string video_track_id = "0123456789abcdefg";
+      std::string audio_track_id = rtc::CreateRandomString(16);
+      std::string video_track_id = rtc::CreateRandomString(16);
       audio_track_ = factory()->CreateAudioTrack(
           audio_track_id,
           factory()->CreateAudioSource(cricket::AudioOptions()).get());
@@ -87,7 +87,7 @@ class SDLSample : public std::enable_shared_from_this<SDLSample>,
   }
 
   void OnSetOffer() override {
-    std::string stream_id = "0123456789abcdef";
+    std::string stream_id = rtc::CreateRandomString(16);
     if (audio_track_ != nullptr) {
       webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpSenderInterface>>
           audio_result =
