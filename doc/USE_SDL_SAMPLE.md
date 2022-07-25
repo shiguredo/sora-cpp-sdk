@@ -2,7 +2,7 @@
 
 ## 概要
 
-[Sora](https://sora.shiguredo.jp/) と映像の送受信を行い、[SDL (Simple DirectMedia Layer)](https://www.libsdl.org/) を利用して映像を表示するサンプルです。
+[Sora](https://sora.shiguredo.jp/) と音声や映像の送受信を行い、[SDL (Simple DirectMedia Layer)](https://www.libsdl.org/) を利用して映像を表示するサンプルです。
 
 このサンプルに [Sora Labo](https://sora-labo.shiguredo.app/) / [Tobi](https://tobi.shiguredo.jp/) に接続する機能を用意する予定は現在ありません。独自に実装していただく必要があります。
 
