@@ -50,11 +50,8 @@ $ cd sora-cpp-sdk-samples
 成功した場合、`_build\windows_x86_64\release\sdl_sample\Release` に `sdl_sample.exe` が作成されます。
 
 ```
-> tree _build\windows_x86_64\release\sdl_sample\Release /F
 \_BUILD\WINDOWS_X86_64\RELEASE\SDL_SAMPLE\RELEASE
     sdl_sample.exe
-    sdl_sample.exp
-    sdl_sample.lib
 ```
 
 #### macOS arm64 向けのビルドをする
@@ -74,56 +71,7 @@ $ python3 sdl_sample/macos_arm64/run.py
 成功した場合、`_build/macos_arm64/release/sdl_sample` に `sdl_sample` が作成されます。
 
 ```
-$ tree _build/macos_arm64/release/sdl_sample
 _build/macos_arm64/release/sdl_sample
-├── CMakeCache.txt
-├── CMakeFiles
-│   ├── 3.23.1
-│   │   ├── CMakeCCompiler.cmake
-│   │   ├── CMakeCXXCompiler.cmake
-│   │   ├── CMakeDetermineCompilerABI_C.bin
-│   │   ├── CMakeDetermineCompilerABI_CXX.bin
-│   │   ├── CMakeSystem.cmake
-│   │   ├── CompilerIdC
-│   │   │   ├── CMakeCCompilerId.c
-│   │   │   ├── CMakeCCompilerId.o
-│   │   │   └── tmp
-│   │   └── CompilerIdCXX
-│   │       ├── CMakeCXXCompilerId.cpp
-│   │       ├── CMakeCXXCompilerId.o
-│   │       └── tmp
-│   ├── CMakeDirectoryInformation.cmake
-│   ├── CMakeOutput.log
-│   ├── CMakeTmp
-│   ├── Makefile.cmake
-│   ├── Makefile2
-│   ├── TargetDirectories.txt
-│   ├── cmake.check_cache
-│   ├── progress.marks
-│   └── sdl_sample.dir
-│       ├── DependInfo.cmake
-│       ├── Users
-│       │   └── mio
-│       │       └── Git
-│       │           └── shiguredo
-│       │               └── sora-cpp-sdk-samples
-│       │                   └── sdl_sample
-│       │                       └── src
-│       │                           ├── sdl_renderer.cpp.o
-│       │                           ├── sdl_renderer.cpp.o.d
-│       │                           ├── sdl_sample.cpp.o
-│       │                           └── sdl_sample.cpp.o.d
-│       ├── build.make
-│       ├── cmake_clean.cmake
-│       ├── compiler_depend.internal
-│       ├── compiler_depend.make
-│       ├── compiler_depend.ts
-│       ├── depend.make
-│       ├── flags.make
-│       ├── link.txt
-│       └── progress.make
-├── Makefile
-├── cmake_install.cmake
 └── sdl_sample
 ```
 
@@ -148,55 +96,7 @@ $ python3 sdl_sample/ubuntu-20.04_x86_64/run.py
 成功した場合、`_build/ubuntu-20.04_x86_64/release/sdl_sample` に `sdl_sample` が作成されます。
 
 ```
-$ tree _build/macos_arm64/release/sdl_sample
 _build/ubuntu-20.04_x86_64/release/sdl_sample/
-├── CMakeCache.txt
-├── CMakeFiles
-│   ├── 3.23.1
-│   │   ├── CMakeCCompiler.cmake
-│   │   ├── CMakeCXXCompiler.cmake
-│   │   ├── CMakeDetermineCompilerABI_C.bin
-│   │   ├── CMakeDetermineCompilerABI_CXX.bin
-│   │   ├── CMakeSystem.cmake
-│   │   ├── CompilerIdC
-│   │   │   ├── CMakeCCompilerId.c
-│   │   │   ├── a.out
-│   │   │   └── tmp
-│   │   └── CompilerIdCXX
-│   │       ├── CMakeCXXCompilerId.cpp
-│   │       ├── a.out
-│   │       └── tmp
-│   ├── CMakeDirectoryInformation.cmake
-│   ├── CMakeError.log
-│   ├── CMakeOutput.log
-│   ├── CMakeTmp
-│   ├── Makefile.cmake
-│   ├── Makefile2
-│   ├── TargetDirectories.txt
-│   ├── cmake.check_cache
-│   ├── progress.marks
-│   └── sdl_sample.dir
-│       ├── DependInfo.cmake
-│       ├── build.make
-│       ├── cmake_clean.cmake
-│       ├── compiler_depend.make
-│       ├── compiler_depend.ts
-│       ├── depend.make
-│       ├── flags.make
-│       ├── home
-│       │   └── mio
-│       │       └── git
-│       │           └── sora-cpp-sdk-samples_x86
-│       │               └── sdl_sample
-│       │                   └── src
-│       │                       ├── sdl_renderer.cpp.o
-│       │                       ├── sdl_renderer.cpp.o.d
-│       │                       ├── sdl_sample.cpp.o
-│       │                       └── sdl_sample.cpp.o.d
-│       ├── link.txt
-│       └── progress.make
-├── Makefile
-├── cmake_install.cmake
 └── sdl_sample
 ```
 
@@ -221,53 +121,7 @@ $ python3 sdl_sample/ubuntu-22.04_x86_64/run.py
 成功した場合、以下のファイルが作成されます。`_build/ubuntu-22.04_x86_64/release/sdl_sample` に `sdl_sample` が作成されます。
 
 ```
-$ tree _build/ubuntu-22.04_x86_64/release/sdl_sample/
 _build/ubuntu-22.04_x86_64/release/sdl_sample/
-├── CMakeCache.txt
-├── CMakeFiles
-│   ├── 3.23.1
-│   │   ├── CMakeCCompiler.cmake
-│   │   ├── CMakeCXXCompiler.cmake
-│   │   ├── CMakeDetermineCompilerABI_C.bin
-│   │   ├── CMakeDetermineCompilerABI_CXX.bin
-│   │   ├── CMakeSystem.cmake
-│   │   ├── CompilerIdC
-│   │   │   ├── a.out
-│   │   │   ├── CMakeCCompilerId.c
-│   │   │   └── tmp
-│   │   └── CompilerIdCXX
-│   │       ├── a.out
-│   │       ├── CMakeCXXCompilerId.cpp
-│   │       └── tmp
-│   ├── cmake.check_cache
-│   ├── CMakeDirectoryInformation.cmake
-│   ├── CMakeOutput.log
-│   ├── CMakeTmp
-│   ├── Makefile2
-│   ├── Makefile.cmake
-│   ├── progress.marks
-│   ├── sdl_sample.dir
-│   │   ├── build.make
-│   │   ├── cmake_clean.cmake
-│   │   ├── compiler_depend.make
-│   │   ├── compiler_depend.ts
-│   │   ├── DependInfo.cmake
-│   │   ├── depend.make
-│   │   ├── flags.make
-│   │   ├── home
-│   │   │   └── k
-│   │   │       └── sora-cpp-sdk-samples
-│   │   │           └── sdl_sample
-│   │   │               └── src
-│   │   │                   ├── sdl_renderer.cpp.o
-│   │   │                   ├── sdl_renderer.cpp.o.d
-│   │   │                   ├── sdl_sample.cpp.o
-│   │   │                   └── sdl_sample.cpp.o.d
-│   │   ├── link.txt
-│   │   └── progress.make
-│   └── TargetDirectories.txt
-├── cmake_install.cmake
-├── Makefile
 └── sdl_sample
 ```
 
@@ -300,55 +154,7 @@ $ python3 sdl_sample/ubuntu-20.04_armv8_jetson/run.py
 成功した場合、以下のファイルが作成されます。`_build/ubuntu-20.04_armv8_jetson/release/sdl_sample` に `sdl_sample` が作成されます。
 
 ```
-$ tree _build/ubuntu-20.04_armv8_jetson/release/sdl_sample/
 _build/ubuntu-20.04_armv8_jetson/release/sdl_sample/
-├── CMakeCache.txt
-├── CMakeFiles
-│   ├── 3.23.1
-│   │   ├── CMakeCCompiler.cmake
-│   │   ├── CMakeCXXCompiler.cmake
-│   │   ├── CMakeDetermineCompilerABI_C.bin
-│   │   ├── CMakeDetermineCompilerABI_CXX.bin
-│   │   ├── CMakeSystem.cmake
-│   │   ├── CompilerIdC
-│   │   │   ├── CMakeCCompilerId.c
-│   │   │   ├── CMakeCCompilerId.o
-│   │   │   └── tmp
-│   │   └── CompilerIdCXX
-│   │       ├── CMakeCXXCompilerId.cpp
-│   │       ├── CMakeCXXCompilerId.o
-│   │       └── tmp
-│   ├── CMakeDirectoryInformation.cmake
-│   ├── CMakeError.log
-│   ├── CMakeOutput.log
-│   ├── CMakeTmp
-│   ├── Makefile.cmake
-│   ├── Makefile2
-│   ├── TargetDirectories.txt
-│   ├── cmake.check_cache
-│   ├── progress.marks
-│   └── sdl_sample.dir
-│       ├── DependInfo.cmake
-│       ├── build.make
-│       ├── cmake_clean.cmake
-│       ├── compiler_depend.make
-│       ├── compiler_depend.ts
-│       ├── depend.make
-│       ├── flags.make
-│       ├── home
-│       │   └── mio
-│       │       └── git
-│       │           └── sora-cpp-sdk-samples_armv8
-│       │               └── sdl_sample
-│       │                   └── src
-│       │                       ├── sdl_renderer.cpp.o
-│       │                       ├── sdl_renderer.cpp.o.d
-│       │                       ├── sdl_sample.cpp.o
-│       │                       └── sdl_sample.cpp.o.d
-│       ├── link.txt
-│       └── progress.make
-├── Makefile
-├── cmake_install.cmake
 └── sdl_sample
 ```
 
