@@ -90,7 +90,7 @@ class MomoSample : public std::enable_shared_from_this<MomoSample>,
     config.role = config_.role;
     config.multistream = config_.multistream;
     config.video_codec_type = config_.video_codec_type;
-    config.client_id;
+    config.client_id = config_.client_id;
     config.video = config_.video;
     config.audio = config_.audio;
     config.video_codec_type = config_.video_codec_type;
