@@ -21,11 +21,10 @@
 
 ### リポジトリをクローンする
 
-[main ブランチ](https://github.com/shiguredo/sora-cpp-sdk-samples/tree/main) をクローンして利用してください。
-develop ブランチは開発ブランチであり、正常に動作しないことがあります。
+[develop ブランチ](https://github.com/shiguredo/sora-cpp-sdk-samples.git) をクローンして利用してください。
 
 ```shell
-$ git clone -b main https://github.com/shiguredo/sora-cpp-sdk-samples.git
+$ git clone https://github.com/shiguredo/sora-cpp-sdk-samples.git
 $ cd sora-cpp-sdk-samples
 ```
 
