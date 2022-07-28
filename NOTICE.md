@@ -351,10 +351,14 @@ shall be binding upon assignees.
 ###############################################################################
 ```
 
-## Intel Media SDK
+## oneVPL
+
+https://github.com/oneapi-src/oneVPL
 
 ```
-Copyright (c) 2017 Intel Corporation
+MIT License
+
+Copyright (c) 2020 Intel Corporation
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

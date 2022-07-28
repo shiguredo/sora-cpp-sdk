@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-// Intel Media SDK
+// oneVPL
 #include <vpl/mfxvideo++.h>
 
 #include "sora/hwenc_vpl/vpl_session.h"

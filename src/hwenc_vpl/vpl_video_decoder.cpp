@@ -13,7 +13,7 @@
 #include <rtc_base/time_utils.h>
 #include <third_party/libyuv/include/libyuv/convert.h>
 
-// msdk
+// oneVPL
 #include <vpl/mfxdefs.h>
 #include <vpl/mfxvideo++.h>
 #include <vpl/mfxvp8.h>
@@ -49,8 +49,8 @@ class VplVideoDecoderImpl : public VplVideoDecoder {
       bool init);
 
  private:
-  bool InitMediaSDK();
-  void ReleaseMediaSDK();
+  bool InitVpl();
+  void ReleaseVpl();
 
   int width_ = 0;
   int height_ = 0;
@@ -136,7 +136,7 @@ std::unique_ptr<MFXVideoDECODE> VplVideoDecoderImpl::CreateDecoder(
   //}
 
   if (init) {
-    // Initialize the Media SDK encoder
+    // Initialize the oneVPL encoder
     sts = decoder->Init(&param);
     if (sts != MFX_ERR_NONE) {
       return nullptr;
@@ -151,7 +151,7 @@ bool VplVideoDecoderImpl::Configure(
   width_ = settings.max_render_resolution().Width();
   height_ = settings.max_render_resolution().Height();
 
-  return InitMediaSDK();
+  return InitVpl();
 }
 
 int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
@@ -225,10 +225,10 @@ int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
   if (!syncp) {
     return WEBRTC_VIDEO_CODEC_OK;
   }
-  MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+  VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
   sts = MFXVideoCORE_SyncOperation(GetVplSession(session_), syncp, 600000);
-  MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+  VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
   // NV12 から I420 に変換
   rtc::scoped_refptr<webrtc::I420Buffer> i420_buffer =
@@ -257,16 +257,16 @@ int32_t VplVideoDecoderImpl::RegisterDecodeCompleteCallback(
 }
 
 int32_t VplVideoDecoderImpl::Release() {
-  ReleaseMediaSDK();
+  ReleaseVpl();
   buffer_pool_.Release();
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
 const char* VplVideoDecoderImpl::ImplementationName() const {
-  return "Intel Media SDK";
+  return "oneVPL";
 }
 
-bool VplVideoDecoderImpl::InitMediaSDK() {
+bool VplVideoDecoderImpl::InitVpl() {
   decoder_ = CreateDecoder(session_, codec_, width_, height_, true);
 
   mfxStatus sts = MFX_ERR_NONE;
@@ -281,7 +281,7 @@ bool VplVideoDecoderImpl::InitMediaSDK() {
   // Query number of required surfaces for encoder
   memset(&alloc_request_, 0, sizeof(alloc_request_));
   sts = decoder_->QueryIOSurf(&param, &alloc_request_);
-  MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+  VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
   RTC_LOG(LS_INFO) << "Decoder NumFrameSuggested="
                    << alloc_request_.NumFrameSuggested;
@@ -318,7 +318,7 @@ bool VplVideoDecoderImpl::InitMediaSDK() {
   return true;
 }
 
-void VplVideoDecoderImpl::ReleaseMediaSDK() {
+void VplVideoDecoderImpl::ReleaseVpl() {
   if (decoder_ != nullptr) {
     decoder_->Close();
   }
