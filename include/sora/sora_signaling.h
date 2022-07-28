@@ -114,6 +114,7 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
   static std::shared_ptr<SoraSignaling> Create(
       const SoraSignalingConfig& config);
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> GetPeerConnection() const;
+  std::string GetMid() const;
 
   void Connect();
   void Disconnect();

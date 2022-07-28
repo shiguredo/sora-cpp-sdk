@@ -33,6 +33,10 @@ SoraSignaling::GetPeerConnection() const {
   return pc_;
 }
 
+std::string SoraSignaling::GetMid() const {
+  return mid_;
+}
+
 void SoraSignaling::Connect() {
   RTC_LOG(LS_INFO) << "SoraSignaling::Connect";
 
@@ -794,6 +798,20 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
               return;
             }
 
+            std::string mid;
+            {
+              auto it = m.as_object().find("mid");
+              if (it != m.as_object().end()) {
+                const auto& midobj = it->value().as_object();
+                it = midobj.find("video");
+                if (it != midobj.end()) {
+                  mid = it->value().as_string().c_str();
+                }
+              }
+            }
+            RTC_LOG(LS_INFO) << "mid: " << mid;
+            self->mid_ = mid;
+
             // simulcast では offer の setRemoteDescription が終わった後に
             // トラックを追加する必要があるため、ここで初期化する
             auto ob = self->config_.observer.lock();
@@ -845,19 +863,8 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
                 encoding_parameters.push_back(params);
               }
 
-              std::string mid;
-              {
-                auto it = m.as_object().find("mid");
-                if (it != m.as_object().end()) {
-                  const auto& midobj = it->value().as_object();
-                  it = midobj.find("video");
-                  if (it != midobj.end()) {
-                    mid = it->value().as_string().c_str();
-                  }
-                }
-              }
-              RTC_LOG(LS_INFO) << "mid: " << mid;
-              self->SetEncodingParameters(mid, std::move(encoding_parameters));
+              self->SetEncodingParameters(self->mid_,
+                                          std::move(encoding_parameters));
             }
 
             SessionDescription::CreateAnswer(
@@ -1074,7 +1081,6 @@ void SoraSignaling::SetEncodingParameters(
   webrtc::RtpParameters parameters = sender->GetParameters();
   parameters.encodings = encodings;
   sender->SetParameters(parameters);
-  mid_ = *video_transceiver->mid();
 
   encodings_ = encodings;
 }

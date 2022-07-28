@@ -11,6 +11,9 @@
 
 ## develop
 
+- [ADD] mid を取得する関数を追加
+    - @melpon
+
 ## 2022.8.0 (2022-07-28)
 
 - [CHANGE] Intel Media SDK を利用したハードウェアエンコーダ/デコーダを削除
