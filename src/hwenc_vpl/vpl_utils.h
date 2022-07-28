@@ -1,11 +1,11 @@
-#ifndef SORA_HWENC_MSDK_MSDK_UTILS_H_
-#define SORA_HWENC_MSDK_MSDK_UTILS_H_
+#ifndef SORA_HWENC_VPL_VPL_UTILS_H_
+#define SORA_HWENC_VPL_VPL_UTILS_H_
 
 // WebRTC
 #include <api/video/video_codec_type.h>
 
 // Intel Media SDK
-#include <mfx/mfxdefs.h>
+#include <vpl/mfxdefs.h>
 
 #define MSDK_CHECK_RESULT(P, X, ERR)                         \
   {                                                          \

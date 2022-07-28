@@ -1,4 +1,4 @@
-#include "sora/hwenc_msdk/msdk_video_decoder.h"
+#include "sora/hwenc_vpl/vpl_video_decoder.h"
 
 #include <iostream>
 #include <thread>
@@ -14,19 +14,19 @@
 #include <third_party/libyuv/include/libyuv/convert.h>
 
 // msdk
-#include <mfx/mfxdefs.h>
-#include <mfx/mfxvideo++.h>
-#include <mfx/mfxvp8.h>
+#include <vpl/mfxdefs.h>
+#include <vpl/mfxvideo++.h>
+#include <vpl/mfxvp8.h>
 
-#include "msdk_session_impl.h"
-#include "msdk_utils.h"
+#include "vpl_session_impl.h"
+#include "vpl_utils.h"
 
 namespace sora {
 
-class MsdkVideoDecoderImpl : public MsdkVideoDecoder {
+class VplVideoDecoderImpl : public VplVideoDecoder {
  public:
-  MsdkVideoDecoderImpl(std::shared_ptr<MsdkSession> session, mfxU32 codec);
-  ~MsdkVideoDecoderImpl() override;
+  VplVideoDecoderImpl(std::shared_ptr<VplSession> session, mfxU32 codec);
+  ~VplVideoDecoderImpl() override;
 
   bool Configure(const Settings& settings) override;
 
@@ -42,7 +42,7 @@ class MsdkVideoDecoderImpl : public MsdkVideoDecoder {
   const char* ImplementationName() const override;
 
   static std::unique_ptr<MFXVideoDECODE> CreateDecoder(
-      std::shared_ptr<MsdkSession> session,
+      std::shared_ptr<VplSession> session,
       mfxU32 codec,
       int width,
       int height,
@@ -58,7 +58,7 @@ class MsdkVideoDecoderImpl : public MsdkVideoDecoder {
   webrtc::VideoFrameBufferPool buffer_pool_;
 
   mfxU32 codec_;
-  std::shared_ptr<MsdkSession> session_;
+  std::shared_ptr<VplSession> session_;
   mfxFrameAllocRequest alloc_request_;
   std::unique_ptr<MFXVideoDECODE> decoder_;
   std::vector<uint8_t> surface_buffer_;
@@ -67,26 +67,26 @@ class MsdkVideoDecoderImpl : public MsdkVideoDecoder {
   mfxBitstream bitstream_;
 };
 
-MsdkVideoDecoderImpl::MsdkVideoDecoderImpl(std::shared_ptr<MsdkSession> session,
-                                           mfxU32 codec)
+VplVideoDecoderImpl::VplVideoDecoderImpl(std::shared_ptr<VplSession> session,
+                                         mfxU32 codec)
     : session_(session),
       codec_(codec),
       decoder_(nullptr),
       decode_complete_callback_(nullptr),
       buffer_pool_(false, 300 /* max_number_of_buffers*/) {}
 
-MsdkVideoDecoderImpl::~MsdkVideoDecoderImpl() {
+VplVideoDecoderImpl::~VplVideoDecoderImpl() {
   Release();
 }
 
-std::unique_ptr<MFXVideoDECODE> MsdkVideoDecoderImpl::CreateDecoder(
-    std::shared_ptr<MsdkSession> session,
+std::unique_ptr<MFXVideoDECODE> VplVideoDecoderImpl::CreateDecoder(
+    std::shared_ptr<VplSession> session,
     mfxU32 codec,
     int width,
     int height,
     bool init) {
   std::unique_ptr<MFXVideoDECODE> decoder(
-      new MFXVideoDECODE(GetMsdkSession(session)));
+      new MFXVideoDECODE(GetVplSession(session)));
 
   mfxStatus sts = MFX_ERR_NONE;
 
@@ -146,7 +146,7 @@ std::unique_ptr<MFXVideoDECODE> MsdkVideoDecoderImpl::CreateDecoder(
   return decoder;
 }
 
-bool MsdkVideoDecoderImpl::Configure(
+bool VplVideoDecoderImpl::Configure(
     const webrtc::VideoDecoder::Settings& settings) {
   width_ = settings.max_render_resolution().Width();
   height_ = settings.max_render_resolution().Height();
@@ -154,9 +154,9 @@ bool MsdkVideoDecoderImpl::Configure(
   return InitMediaSDK();
 }
 
-int32_t MsdkVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
-                                     bool missing_frames,
-                                     int64_t render_time_ms) {
+int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
+                                    bool missing_frames,
+                                    int64_t render_time_ms) {
   if (decoder_ == nullptr) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
@@ -227,7 +227,7 @@ int32_t MsdkVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
   }
   MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-  sts = MFXVideoCORE_SyncOperation(GetMsdkSession(session_), syncp, 600000);
+  sts = MFXVideoCORE_SyncOperation(GetVplSession(session_), syncp, 600000);
   MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
   // NV12 から I420 に変換
@@ -250,23 +250,23 @@ int32_t MsdkVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int32_t MsdkVideoDecoderImpl::RegisterDecodeCompleteCallback(
+int32_t VplVideoDecoderImpl::RegisterDecodeCompleteCallback(
     webrtc::DecodedImageCallback* callback) {
   decode_complete_callback_ = callback;
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int32_t MsdkVideoDecoderImpl::Release() {
+int32_t VplVideoDecoderImpl::Release() {
   ReleaseMediaSDK();
   buffer_pool_.Release();
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-const char* MsdkVideoDecoderImpl::ImplementationName() const {
+const char* VplVideoDecoderImpl::ImplementationName() const {
   return "Intel Media SDK";
 }
 
-bool MsdkVideoDecoderImpl::InitMediaSDK() {
+bool VplVideoDecoderImpl::InitMediaSDK() {
   decoder_ = CreateDecoder(session_, codec_, width_, height_, true);
 
   mfxStatus sts = MFX_ERR_NONE;
@@ -318,7 +318,7 @@ bool MsdkVideoDecoderImpl::InitMediaSDK() {
   return true;
 }
 
-void MsdkVideoDecoderImpl::ReleaseMediaSDK() {
+void VplVideoDecoderImpl::ReleaseMediaSDK() {
   if (decoder_ != nullptr) {
     decoder_->Close();
   }
@@ -326,11 +326,11 @@ void MsdkVideoDecoderImpl::ReleaseMediaSDK() {
 }
 
 ////////////////////////
-// MsdkVideoDecoder
+// VplVideoDecoder
 ////////////////////////
 
-bool MsdkVideoDecoder::IsSupported(std::shared_ptr<MsdkSession> session,
-                                   webrtc::VideoCodecType codec) {
+bool VplVideoDecoder::IsSupported(std::shared_ptr<VplSession> session,
+                                  webrtc::VideoCodecType codec) {
   if (session == nullptr) {
     return false;
   }
@@ -338,17 +338,17 @@ bool MsdkVideoDecoder::IsSupported(std::shared_ptr<MsdkSession> session,
   int width = 640;
   int height = 480;
 
-  auto decoder = MsdkVideoDecoderImpl::CreateDecoder(session, ToMfxCodec(codec),
-                                                     640, 480, false);
+  auto decoder = VplVideoDecoderImpl::CreateDecoder(session, ToMfxCodec(codec),
+                                                    640, 480, false);
 
   return decoder != nullptr;
 }
 
-std::unique_ptr<MsdkVideoDecoder> MsdkVideoDecoder::Create(
-    std::shared_ptr<MsdkSession> session,
+std::unique_ptr<VplVideoDecoder> VplVideoDecoder::Create(
+    std::shared_ptr<VplSession> session,
     webrtc::VideoCodecType codec) {
-  return std::unique_ptr<MsdkVideoDecoder>(
-      new MsdkVideoDecoderImpl(session, ToMfxCodec(codec)));
+  return std::unique_ptr<VplVideoDecoder>(
+      new VplVideoDecoderImpl(session, ToMfxCodec(codec)));
 }
 
 }  // namespace sora

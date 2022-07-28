@@ -52,6 +52,9 @@ elseif (SORA_TARGET STREQUAL "ubuntu-20.04_armv8_jetson")
 endif()
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+if (USE_VPL_ENCODER)
+  list(APPEND CMAKE_PREFIX_PATH ${VPL_ROOT_DIR}/lib/cmake/vpl)
+endif()
 
 set(Boost_USE_STATIC_LIBS ON)
 if (WIN32)
@@ -73,7 +76,6 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 # libsora.a を作る
 
 add_library(sora STATIC)
-add_library(sora::sora ALIAS sora)
 set_target_properties(sora PROPERTIES CXX_STANDARD 17 C_STANDARD 17)
 
 string(SUBSTRING "${SORA_CPP_SDK_COMMIT}" 0 8 SORA_CPP_SDK_COMMIT_SHORT)
@@ -142,7 +144,7 @@ target_compile_definitions(sora
   PRIVATE
     USE_NVCODEC_ENCODER=$<BOOL:${USE_NVCODEC_ENCODER}>
     USE_JETSON_ENCODER=$<BOOL:${USE_JETSON_ENCODER}>
-    USE_MSDK_ENCODER=$<BOOL:${USE_MSDK_ENCODER}>
+    USE_VPL_ENCODER=$<BOOL:${USE_VPL_ENCODER}>
 )
 
 # 指定したライブラリを自身の静的ライブラリにバンドルする
@@ -289,17 +291,17 @@ if (SORA_TARGET_OS STREQUAL "windows")
     list(APPEND BUNDLE_STATIC_LIBS ${CUDA_TOOLKIT_ROOT_DIR}/lib/x64/cudart_static.lib)
   endif()
 
-  if (USE_MSDK_ENCODER)
+  if (USE_VPL_ENCODER)
+    find_package(VPL REQUIRED)
     target_sources(sora
       PRIVATE
-        src/hwenc_msdk/msdk_session_impl.cpp
-        src/hwenc_msdk/msdk_video_decoder.cpp
-        src/hwenc_msdk/msdk_video_encoder.cpp
+        src/hwenc_vpl/vpl_session_impl.cpp
+        src/hwenc_vpl/vpl_video_decoder.cpp
+        src/hwenc_vpl/vpl_video_encoder.cpp
     )
-    target_include_directories(sora PRIVATE ${MSDK_ROOT_DIR}/include)
-    target_link_libraries(sora PRIVATE "$<BUILD_INTERFACE:${MSDK_ROOT_DIR}/lib/libmfx.lib>")
-    # mfx を要求したくないので sora.lib に含める
-    list(APPEND BUNDLE_STATIC_LIBS ${MSDK_ROOT_DIR}/lib/libmfx.lib)
+    target_link_libraries(sora PRIVATE "$<BUILD_INTERFACE:VPL::dispatcher>")
+    # vpl を要求したくないので sora.lib に含める
+    list(APPEND BUNDLE_STATIC_LIBS ${VPL_ROOT_DIR}/lib/vpl.lib)
   endif()
 
 elseif (SORA_TARGET_OS STREQUAL "macos")
@@ -449,22 +451,24 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
     list(APPEND BUNDLE_STATIC_LIBS /usr/local/cuda/lib64/libcudart_static.a)
   endif()
 
-  if (USE_MSDK_ENCODER)
-    find_package(Msdk REQUIRED)
+  if (USE_VPL_ENCODER)
+    find_package(Libdrm REQUIRED)
+    find_package(Libva REQUIRED)
+    find_package(VPL REQUIRED)
     target_include_directories(sora PRIVATE /usr/local/cuda/include)
     target_sources(sora
       PRIVATE
-        src/hwenc_msdk/msdk_session_impl.cpp
-        src/hwenc_msdk/msdk_video_decoder.cpp
-        src/hwenc_msdk/msdk_video_encoder.cpp
-        src/hwenc_msdk/vaapi_utils_drm.cpp
-        src/hwenc_msdk/vaapi_utils.cpp
+        src/hwenc_vpl/vpl_session_impl.cpp
+        src/hwenc_vpl/vpl_video_decoder.cpp
+        src/hwenc_vpl/vpl_video_encoder.cpp
+        src/hwenc_vpl/vaapi_utils_drm.cpp
+        src/hwenc_vpl/vaapi_utils.cpp
     )
-    target_link_libraries(sora PRIVATE "$<BUILD_INTERFACE:Msdk::mfx>")
-    # drm は依存に含める
-    target_link_libraries(sora PUBLIC Libdrm::drm)
-    # mfx を要求したくないので libsora.a に含める
-    list(APPEND BUNDLE_STATIC_LIBS $<TARGET_FILE:Msdk::mfx> $<TARGET_FILE:Libva::va> $<TARGET_FILE:Libva::va_drm>)
+    target_link_libraries(sora PRIVATE "$<BUILD_INTERFACE:VPL::dispatcher>")
+    # va と drm は依存に含める
+    target_link_libraries(sora PUBLIC Libdrm::drm Libva::va Libva::va_drm)
+    # vpl を要求したくないので libsora.a に含める
+    list(APPEND BUNDLE_STATIC_LIBS $<TARGET_FILE:VPL::dispatcher>)
   endif()
 
 elseif (SORA_TARGET_OS STREQUAL "jetson")
@@ -546,6 +550,9 @@ endif()
 # 静的ライブラリを sora.lib に含める
 if (BUNDLE_STATIC_LIBS)
   bundle_static_library(sora "${BUNDLE_STATIC_LIBS}" bundled_sora)
+  add_library(Sora::sora ALIAS bundled_sora)
+else()
+  add_library(Sora::sora ALIAS sora)
 endif()
 
 include(GNUInstallDirs)

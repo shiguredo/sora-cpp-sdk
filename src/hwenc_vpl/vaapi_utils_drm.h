@@ -1,4 +1,4 @@
-// https://github.com/Intel-Media-SDK/MediaSDK/blob/master/samples/sample_common/include/vaapi_utils.h より。
+// https://github.com/Intel-Media-SDK/MediaSDK/blob/master/samples/sample_common/include/vaapi_utils_drm.h より。
 // オリジナルのライセンスは以下。
 /******************************************************************************\
 Copyright (c) 2005-2019, Intel Corporation
@@ -13,35 +13,34 @@ The original version of this sample may be obtained from https://software.intel.
 or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
 
-#ifndef SORA_HWENC_MSDK_VAAPI_UTILS_H_
-#define SORA_HWENC_MSDK_VAAPI_UTILS_H_
+#ifndef SORA_HWENC_VPL_VAAPI_UTILS_DRM_H_
+#define SORA_HWENC_VPL_VAAPI_UTILS_DRM_H_
 
-// msdk
-#include <mfx/mfxdefs.h>
+#include <memory>
+#include <string>
 
-// libva
-#include <va/va.h>
+#include "vaapi_utils.h"
 
 namespace sora {
 
-class CLibVA {
+class DRMLibVA : public CLibVA {
  public:
-  virtual ~CLibVA(void) {}
+  DRMLibVA(const std::string& devicePath);
+  virtual ~DRMLibVA(void);
 
-  VADisplay GetVADisplay() { return m_va_dpy; }
+  inline int getFD() { return m_fd; }
 
  protected:
-  CLibVA() : m_va_dpy(NULL) {}
-  VADisplay m_va_dpy;
+  int m_fd;
 
  private:
-  CLibVA(CLibVA&&) = delete;
-  CLibVA(const CLibVA&) = delete;
-  CLibVA& operator=(CLibVA&&) = delete;
-  CLibVA& operator=(const CLibVA&) = delete;
+  DRMLibVA(DRMLibVA&&) = delete;
+  DRMLibVA(const DRMLibVA&) = delete;
+  DRMLibVA& operator=(DRMLibVA&&) = delete;
+  DRMLibVA& operator=(const DRMLibVA&) = delete;
 };
 
-mfxStatus va_to_mfx_status(VAStatus va_res);
+std::unique_ptr<DRMLibVA> CreateDRMLibVA(const std::string& devicePath = "");
 
 }  // namespace sora
 

@@ -33,7 +33,10 @@ sudo apt-get -y install cuda=10.2.89-1
 # sudo apt-get update
 # sudo apt-get -y install cuda=10.2 clang-12
 ```
+  - libva-dev
   - libdrm-dev
 - ubuntu-20.04_x86_64, ubuntu-22.04_x86_64 の実行に必要な依存
+  - libva2
   - libdrm2
-  - （もし Intel Media SDK を有効にしたいなら）libmfx1
+  - （もし内部実装が Intel Media SDK の oneVPL を有効にしたいなら）libmfx1
+  - （もし内部実装が oneVPL GPU の oneVPL を有効にしたいなら）libmfx-gen1.2 （Ubuntu 22.04 のみ利用可）
