@@ -570,6 +570,9 @@ install(EXPORT sora-config
 install(FILES cmake/FindWebRTC.cmake cmake/FindLibdrm.cmake
   DESTINATION ${CMAKE_INSTALL_DATADIR}/cmake
 )
+install(FILES cmake/FindWebRTC.cmake cmake/FindLibva.cmake
+  DESTINATION ${CMAKE_INSTALL_DATADIR}/cmake
+)
 install(FILES LICENSE NOTICE.md
   DESTINATION ${CMAKE_INSTALL_PREFIX}
 )

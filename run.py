@@ -743,7 +743,7 @@ def install_libva(version, source_dir, build_dir, install_dir, env):
 #
 
 @versioned
-def install_vpl(version, source_dir, build_dir, install_dir, cmake_args):
+def install_vpl(version, configuration, source_dir, build_dir, install_dir, cmake_args):
     vpl_source_dir = os.path.join(source_dir, 'vpl')
     vpl_build_dir = os.path.join(build_dir, 'vpl')
     vpl_install_dir = os.path.join(install_dir, 'vpl')
@@ -755,8 +755,8 @@ def install_vpl(version, source_dir, build_dir, install_dir, cmake_args):
     mkdir_p(vpl_build_dir)
     with cd(vpl_build_dir):
         cmd(['cmake',
-            f'-DCMAKE_INSTALL_PREFIX={cmake_path(vpl_install_dir)}',
-             '-DCMAKE_BUILD_TYPE=Release',
+             f'-DCMAKE_INSTALL_PREFIX={cmake_path(vpl_install_dir)}',
+             f'-DCMAKE_BUILD_TYPE={configuration}',
              '-DBUILD_SHARED_LIBS=OFF',
              '-DBUILD_TOOLS=OFF',
              '-DBUILD_EXAMPLES=OFF',
@@ -775,8 +775,8 @@ def install_vpl(version, source_dir, build_dir, install_dir, cmake_args):
             s = s.replace('MultiThreadedDebugDLL', 'MultiThreadedDebug')
             open(vpl_path, 'w', encoding='utf-8').write(s)
 
-        cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', 'Release'])
-        cmd(['cmake', '--install', '.', '--config', 'Release'])
+        cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])
+        cmd(['cmake', '--install', '.', '--config', configuration])
 
 
 class PlatformTarget(object):
@@ -1181,11 +1181,24 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             install_vpl_args = {
                 'version': version['VPL_VERSION'],
                 'version_file': os.path.join(install_dir, 'vpl.version'),
+                'configuration': 'Debug' if debug else 'Release',
                 'source_dir': source_dir,
                 'build_dir': build_dir,
                 'install_dir': install_dir,
                 'cmake_args': [],
             }
+            if platform.target.os == 'ubuntu':
+                cmake_args = []
+                cmake_args.append("-DCMAKE_C_COMPILER=clang-12")
+                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-12")
+                path = cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))
+                cmake_args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
+                flags = [
+                    '-nostdinc++', '-D_LIBCPP_ABI_UNSTABLE', '-D_LIBCPP_DISABLE_AVAILABILITY',
+                    '-D_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS', '-D_LIBCXXABI_DISABLE_VISIBILITY_ANNOTATIONS',
+                    '-D_LIBCPP_ENABLE_NODISCARD']
+                cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(flags)}")
+                install_vpl_args['cmake_args'] = cmake_args
             install_vpl(**install_vpl_args)
 
         if platform.target.os == 'android':

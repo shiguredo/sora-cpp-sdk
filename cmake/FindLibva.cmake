@@ -1,8 +1,8 @@
 find_package(Libdrm REQUIRED)
 
-find_path(LIBVA_INCLUDE_DIR NAMES va/va.h PATHS "${LIBVA_ROOT_DIR}/include" NO_DEFAULT_PATH)
-find_library(LIBVA_LIBRARY NAMES va PATHS "${LIBVA_ROOT_DIR}/lib" NO_DEFAULT_PATH)
-find_library(LIBVA_DRM_LIBRARY NAMES va-drm PATHS "${LIBVA_ROOT_DIR}/lib" NO_DEFAULT_PATH)
+find_path(LIBVA_INCLUDE_DIR NAMES va/va.h)
+find_library(LIBVA_LIBRARY NAMES va)
+find_library(LIBVA_DRM_LIBRARY NAMES va-drm)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(Libva DEFAULT_MSG LIBVA_INCLUDE_DIR LIBVA_LIBRARY LIBVA_DRM_LIBRARY)
