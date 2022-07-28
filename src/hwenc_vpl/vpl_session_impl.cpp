@@ -44,7 +44,7 @@ std::shared_ptr<VplSession> VplSession::Create() {
 
   sts = MFXCreateSession(session->loader, 0, &session->session);
   if (sts != MFX_ERR_NONE) {
-    std::cerr << "Failed to MFXCreateSession: sts=" << sts << std::endl;
+    // std::cerr << "Failed to MFXCreateSession: sts=" << sts << std::endl;
     return nullptr;
   }
 
@@ -77,10 +77,10 @@ std::shared_ptr<VplSession> VplSession::Create() {
     return nullptr;
   }
 
-  std::cout << "oneVPL Implementation: "
-            << (impl == MFX_IMPL_SOFTWARE ? "SOFTWARE" : "HARDWARE")
-            << std::endl;
-  std::cout << "oneVPL Version: " << ver.Major << "." << ver.Minor << std::endl;
+  // std::cout << "oneVPL Implementation: "
+  //           << (impl == MFX_IMPL_SOFTWARE ? "SOFTWARE" : "HARDWARE")
+  //           << std::endl;
+  // std::cout << "oneVPL Version: " << ver.Major << "." << ver.Minor << std::endl;
   return session;
 }
 
