@@ -681,67 +681,6 @@ def install_libva(version, source_dir, build_dir, install_dir, env):
         cmd(['make', 'install'])
 
 
-# @versioned
-# def install_msdk_windows(version, source_dir, install_dir):
-#     # ソースディレクトリは通常より１ディレクトリ深く作成する。
-#     # msdk/build にビルドしたバイナリが置かれることになるため。
-#     msdk_source_dir = os.path.join(source_dir, 'msdk', 'MediaSDK')
-#     msdk_build_dir = os.path.join(source_dir, 'msdk', 'build')
-#     msdk_install_dir = os.path.join(install_dir, 'msdk')
-#     rm_rf(msdk_source_dir)
-#     rm_rf(msdk_build_dir)
-#     rm_rf(msdk_install_dir)
-#     git_clone_shallow('https://github.com/Intel-Media-SDK/MediaSDK.git', version, msdk_source_dir)
-#     mkdir_p(os.path.join(msdk_install_dir, 'include'))
-#     mkdir_p(os.path.join(msdk_install_dir, 'lib'))
-#     shutil.copytree(os.path.join(msdk_source_dir, 'api', 'include'), os.path.join(msdk_install_dir, 'include', 'mfx'))
-#
-#     regpath = "SOFTWARE\\WOW6432Node\\Microsoft\\Microsoft SDKs\\Windows\\v10.0"
-#     with winreg.OpenKeyEx(winreg.HKEY_LOCAL_MACHINE, regpath) as key:
-#         wsdk_version = winreg.QueryValueEx(key, "ProductVersion")[0]
-#     configs = [
-#         'Release',
-#         'Platform=x64',
-#         'PlatformToolset=v142',
-#         'SpectreMitigation=false',
-#         f'WindowsTargetPlatformVersion={wsdk_version}.0',
-#     ]
-#     cmd(['MSBuild', '/t:build', f"/p:Configuration={';'.join(configs)}",
-#          os.path.join(msdk_source_dir, 'api', 'mfx_dispatch', 'windows', 'libmfx_vs2015.vcxproj')])
-#     shutil.copyfile(os.path.join(msdk_build_dir, 'win_x64', 'Release', 'lib', 'libmfx_vs2015.lib'),
-#                     os.path.join(msdk_install_dir, 'lib', 'libmfx.lib'))
-#
-#
-# @versioned
-# def install_msdk_linux(version, source_dir, build_dir, install_dir, libva_installed_dir, cmake_args):
-#     msdk_source_dir = os.path.join(source_dir, 'msdk')
-#     msdk_build_dir = os.path.join(build_dir, 'msdk')
-#     msdk_install_dir = os.path.join(install_dir, 'msdk')
-#     rm_rf(msdk_source_dir)
-#     rm_rf(msdk_build_dir)
-#     rm_rf(msdk_install_dir)
-#     git_clone_shallow('https://github.com/Intel-Media-SDK/MediaSDK.git', version, msdk_source_dir)
-#     mkdir_p(msdk_build_dir)
-#     with cd(msdk_source_dir):
-#         # 共有ライブラリではなく静的ライブラリを作る
-#         files = cmdcap(['find', '.', '-name', 'CMakeLists.txt']).splitlines()
-#         for file in files:
-#             cmd(['sed', '-i', 's/SHARED/STATIC/g', file])
-#
-#     with cd(msdk_build_dir):
-#         cmd(['cmake',
-#              f'-DCMAKE_INSTALL_PREFIX={cmake_path(msdk_install_dir)}',
-#              '-DCMAKE_BUILD_TYPE=Release',
-#              f'-DCMAKE_PREFIX_PATH={libva_installed_dir}',
-#              '-DBUILD_RUNTIME=OFF',
-#              '-DBUILD_SAMPLES=OFF',
-#              '-DBUILD_TUTORIALS=OFF',
-#              msdk_source_dir,
-#              *cmake_args])
-#         cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}'])
-#         cmd(['cmake', '--install', '.'])
-#
-
 @versioned
 def install_vpl(version, configuration, source_dir, build_dir, install_dir, cmake_args):
     vpl_source_dir = os.path.join(source_dir, 'vpl')
