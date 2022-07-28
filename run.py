@@ -660,28 +660,6 @@ def install_cuda_windows(version, source_dir, build_dir, install_dir):
 
 
 @versioned
-def install_libva(version, source_dir, build_dir, install_dir, env):
-    libva_source_dir = os.path.join(source_dir, 'libva')
-    libva_build_dir = os.path.join(build_dir, 'libva')
-    libva_install_dir = os.path.join(install_dir, 'libva')
-    rm_rf(libva_source_dir)
-    rm_rf(libva_build_dir)
-    rm_rf(libva_install_dir)
-    git_clone_shallow('https://github.com/intel/libva.git', version, libva_source_dir)
-    env = {**os.environ, **env}
-    mkdir_p(libva_build_dir)
-    with cd(libva_build_dir):
-        cmd([os.path.join(libva_source_dir, 'autogen.sh'),
-             '--enable-static',
-             '--disable-shared',
-             '--with-drivers-path=/usr/lib/x86_64-linux-gnu/dri',
-             '--prefix', libva_install_dir],
-            env=env)
-        cmd(['make', f'-j{multiprocessing.cpu_count()}'])
-        cmd(['make', 'install'])
-
-
-@versioned
 def install_vpl(version, configuration, source_dir, build_dir, install_dir, cmake_args):
     vpl_source_dir = os.path.join(source_dir, 'vpl')
     vpl_build_dir = os.path.join(build_dir, 'vpl')
