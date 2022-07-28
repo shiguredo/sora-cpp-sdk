@@ -22,6 +22,16 @@ jobs:
       - uses: microsoft/setup-msbuild@v1.1
       - run: python3 sdl_sample/${{ matrix.name }}/run.py
       - run: python3 momo_sample/${{ matrix.name }}/run.py
+      - name: Create Artifact
+        run: |
+          mkdir ${{ matrix.name }}
+          cp _build\${{ matrix.name }}\release\sdl_sample\Release\sdl_sample.exe ${{ matrix.name }}
+          cp _build\${{ matrix.name }}\release\momo_sample\Release\momo_sample.exe ${{ matrix.name }}
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.name }}
+          path: ${{ matrix.name }}
   build-macos:
     strategy:
       fail-fast: false
@@ -34,6 +44,16 @@ jobs:
       - uses: actions/checkout@v3
       - run: python3 sdl_sample/${{ matrix.name }}/run.py
       - run: python3 momo_sample/${{ matrix.name }}/run.py
+      - name: Create Artifact
+        run: |
+          mkdir ${{ matrix.name }}
+          cp _build/${{ matrix.name }}/release/sdl_sample/sdl_sample ${{ matrix.name }}
+          cp _build/${{ matrix.name }}/release/momo_sample/momo_sample ${{ matrix.name }}
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.name }}
+          path: ${{ matrix.name }}
   build-ubuntu-2004:
     strategy:
       fail-fast: false
@@ -57,6 +77,16 @@ jobs:
           sudo apt install libdrm-dev libva-dev
       - run: python3 sdl_sample/${{ matrix.name }}/run.py
       - run: python3 momo_sample/${{ matrix.name }}/run.py
+      - name: Create Artifact
+        run: |
+          mkdir ${{ matrix.name }}
+          cp _build/${{ matrix.name }}/release/sdl_sample/sdl_sample ${{ matrix.name }}
+          cp _build/${{ matrix.name }}/release/momo_sample/momo_sample ${{ matrix.name }}
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.name }}
+          path: ${{ matrix.name }}
   build-ubuntu-2204:
     strategy:
       fail-fast: false
@@ -73,6 +103,16 @@ jobs:
           sudo apt install libdrm-dev libva-dev
       - run: python3 sdl_sample/${{ matrix.name }}/run.py
       - run: python3 momo_sample/${{ matrix.name }}/run.py
+      - name: Create Artifact
+        run: |
+          mkdir ${{ matrix.name }}
+          cp _build/${{ matrix.name }}/release/sdl_sample/sdl_sample ${{ matrix.name }}
+          cp _build/${{ matrix.name }}/release/momo_sample/momo_sample ${{ matrix.name }}
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.name }}
+          path: ${{ matrix.name }}
   create-release:
     name: Create Release
     if: contains(github.ref, 'tags/202')
