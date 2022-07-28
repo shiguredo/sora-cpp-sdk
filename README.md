@@ -21,10 +21,16 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
 
 - 各プラットフォームで利用可能な HWA への対応
     - NVIDIA VIDEO CODEC SDK (NVENC / NVDEC)
+        - VP9 / H.264
     - NVIDIA Jetson Video HWA
+        - VP9 / AV1 / H.264
     - Apple macOS / iOS Video Toolbox
+        - H.264
     - Google Android HWA
     - oneVPL
+        - VP8 / VP9 / H.264
+    - Intel Media SDK
+        - VP9 / H.264
 
 ## ライブラリのバイナリ提供について
 
