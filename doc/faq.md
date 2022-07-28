@@ -12,3 +12,7 @@ GitHub Actions のビルドが失敗していたり、
 ### NVIDIA Jetson Orin (Ubuntu 20.04 arm64) でビルドできません
 
 Ubuntu 20.04 x86_64 でクロスコンパイルしたバイナリを利用するようにしてください。
+
+## NVIDIA 搭載の Windows で width height のいずれかが 128 未満のサイズの VP9 の映像を受信できません
+
+NVIDIA VIDEO CODEC SDK のハードウェアデコーダでは width height のいずれかが 128 未満である場合 VP9 の映像をデコードできません。 width height のいずれかが 128 未満のサイズの映像を受信したい場合は VP9 以外のコーデックを利用するようにしてください。

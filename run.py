@@ -660,86 +660,40 @@ def install_cuda_windows(version, source_dir, build_dir, install_dir):
 
 
 @versioned
-def install_libva(version, source_dir, build_dir, install_dir, env):
-    libva_source_dir = os.path.join(source_dir, 'libva')
-    libva_build_dir = os.path.join(build_dir, 'libva')
-    libva_install_dir = os.path.join(install_dir, 'libva')
-    rm_rf(libva_source_dir)
-    rm_rf(libva_build_dir)
-    rm_rf(libva_install_dir)
-    git_clone_shallow('https://github.com/intel/libva.git', version, libva_source_dir)
-    env = {**os.environ, **env}
-    mkdir_p(libva_build_dir)
-    with cd(libva_build_dir):
-        cmd([os.path.join(libva_source_dir, 'autogen.sh'),
-             '--enable-static',
-             '--disable-shared',
-             '--with-drivers-path=/usr/lib/x86_64-linux-gnu/dri',
-             '--prefix', libva_install_dir],
-            env=env)
-        cmd(['make', f'-j{multiprocessing.cpu_count()}'])
-        cmd(['make', 'install'])
+def install_vpl(version, configuration, source_dir, build_dir, install_dir, cmake_args):
+    vpl_source_dir = os.path.join(source_dir, 'vpl')
+    vpl_build_dir = os.path.join(build_dir, 'vpl')
+    vpl_install_dir = os.path.join(install_dir, 'vpl')
+    rm_rf(vpl_source_dir)
+    rm_rf(vpl_build_dir)
+    rm_rf(vpl_install_dir)
+    git_clone_shallow('https://github.com/oneapi-src/oneVPL.git', version, vpl_source_dir)
 
-
-@versioned
-def install_msdk_windows(version, source_dir, install_dir):
-    # ソースディレクトリは通常より１ディレクトリ深く作成する。
-    # msdk/build にビルドしたバイナリが置かれることになるため。
-    msdk_source_dir = os.path.join(source_dir, 'msdk', 'MediaSDK')
-    msdk_build_dir = os.path.join(source_dir, 'msdk', 'build')
-    msdk_install_dir = os.path.join(install_dir, 'msdk')
-    rm_rf(msdk_source_dir)
-    rm_rf(msdk_build_dir)
-    rm_rf(msdk_install_dir)
-    git_clone_shallow('https://github.com/Intel-Media-SDK/MediaSDK.git', version, msdk_source_dir)
-    mkdir_p(os.path.join(msdk_install_dir, 'include'))
-    mkdir_p(os.path.join(msdk_install_dir, 'lib'))
-    shutil.copytree(os.path.join(msdk_source_dir, 'api', 'include'), os.path.join(msdk_install_dir, 'include', 'mfx'))
-
-    regpath = "SOFTWARE\\WOW6432Node\\Microsoft\\Microsoft SDKs\\Windows\\v10.0"
-    with winreg.OpenKeyEx(winreg.HKEY_LOCAL_MACHINE, regpath) as key:
-        wsdk_version = winreg.QueryValueEx(key, "ProductVersion")[0]
-    configs = [
-        'Release',
-        'Platform=x64',
-        'PlatformToolset=v142',
-        'SpectreMitigation=false',
-        f'WindowsTargetPlatformVersion={wsdk_version}.0',
-    ]
-    cmd(['MSBuild', '/t:build', f"/p:Configuration={';'.join(configs)}",
-         os.path.join(msdk_source_dir, 'api', 'mfx_dispatch', 'windows', 'libmfx_vs2015.vcxproj')])
-    shutil.copyfile(os.path.join(msdk_build_dir, 'win_x64', 'Release', 'lib', 'libmfx_vs2015.lib'),
-                    os.path.join(msdk_install_dir, 'lib', 'libmfx.lib'))
-
-
-@versioned
-def install_msdk_linux(version, source_dir, build_dir, install_dir, libva_installed_dir, cmake_args):
-    msdk_source_dir = os.path.join(source_dir, 'msdk')
-    msdk_build_dir = os.path.join(build_dir, 'msdk')
-    msdk_install_dir = os.path.join(install_dir, 'msdk')
-    rm_rf(msdk_source_dir)
-    rm_rf(msdk_build_dir)
-    rm_rf(msdk_install_dir)
-    git_clone_shallow('https://github.com/Intel-Media-SDK/MediaSDK.git', version, msdk_source_dir)
-    mkdir_p(msdk_build_dir)
-    with cd(msdk_source_dir):
-        # 共有ライブラリではなく静的ライブラリを作る
-        files = cmdcap(['find', '.', '-name', 'CMakeLists.txt']).splitlines()
-        for file in files:
-            cmd(['sed', '-i', 's/SHARED/STATIC/g', file])
-
-    with cd(msdk_build_dir):
+    mkdir_p(vpl_build_dir)
+    with cd(vpl_build_dir):
         cmd(['cmake',
-             f'-DCMAKE_INSTALL_PREFIX={cmake_path(msdk_install_dir)}',
-             '-DCMAKE_BUILD_TYPE=Release',
-             f'-DCMAKE_PREFIX_PATH={libva_installed_dir}',
-             '-DBUILD_RUNTIME=OFF',
-             '-DBUILD_SAMPLES=OFF',
-             '-DBUILD_TUTORIALS=OFF',
-             msdk_source_dir,
+             f'-DCMAKE_INSTALL_PREFIX={cmake_path(vpl_install_dir)}',
+             f'-DCMAKE_BUILD_TYPE={configuration}',
+             '-DBUILD_SHARED_LIBS=OFF',
+             '-DBUILD_TOOLS=OFF',
+             '-DBUILD_EXAMPLES=OFF',
+             '-DBUILD_PREVIEW=OFF',
+             '-DINSTALL_EXAMPLE_CODE=OFF',
+             '-DBUILD_TOOLS_ONEVPL_EXPERIMENTAL=OFF',
+             '-DUSE_MSVC_STATIC_RUNTIME=ON',
+             vpl_source_dir,
              *cmake_args])
-        cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}'])
-        cmd(['cmake', '--install', '.'])
+        # なぜか MSVC_STATIC_RUNTIME が効かずに DLL ランタイムを使ってしまうので
+        # 生成されたプロジェクトに対して静的ランタイムを使うように変更する
+        vpl_path = os.path.join('dispatcher', 'VPL.vcxproj')
+        if os.path.exists(vpl_path):
+            s = open(vpl_path, 'r', encoding='utf-8').read()
+            s = s.replace('MultiThreadedDLL', 'MultiThreaded')
+            s = s.replace('MultiThreadedDebugDLL', 'MultiThreadedDebug')
+            open(vpl_path, 'w', encoding='utf-8').write(s)
+
+        cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])
+        cmd(['cmake', '--install', '.', '--config', configuration])
 
 
 class PlatformTarget(object):
@@ -1139,52 +1093,30 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             }
             install_cuda_windows(**install_cuda_args)
 
-        # Intel Media SDK
-        if platform.target.os == 'windows' and platform.target.arch == 'x86_64':
-            # 普通のビルド環境ならこれでパスが通るはず
-            # GitHub Actions は microsoft/setup-msbuild で既にパスが通ってるので問題ない
-            add_path('C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\MSBuild\\Current\\Bin')
-            install_msdk_args = {
-                'version': version['MSDK_VERSION'],
-                'version_file': os.path.join(install_dir, 'msdk.version'),
-                'source_dir': source_dir,
-                'install_dir': install_dir,
-            }
-            install_msdk_windows(**install_msdk_args)
-        if platform.target.os == 'ubuntu' and platform.target.arch == 'x86_64':
-            install_libva_args = {
-                'version': version['LIBVA_VERSION'],
-                'version_file': os.path.join(install_dir, 'libva.version'),
+        # oneVPL
+        if platform.target.os in ('windows', 'ubuntu') and platform.target.arch == 'x86_64':
+            install_vpl_args = {
+                'version': version['VPL_VERSION'],
+                'version_file': os.path.join(install_dir, 'vpl.version'),
+                'configuration': 'Debug' if debug else 'Release',
                 'source_dir': source_dir,
                 'build_dir': build_dir,
                 'install_dir': install_dir,
-                'env': {
-                    'CC': 'clang-12',
-                    'CFLAGS': '-fPIC',
-                },
+                'cmake_args': [],
             }
-            install_libva(**install_libva_args)
-
-            cxxflags = [
-                '-nostdinc++',
-                f"-isystem{os.path.join(webrtc_info.libcxx_dir, 'include')}",
-                '-D_LIBCPP_ABI_UNSTABLE',
-                '-D_LIBCPP_DISABLE_AVAILABILITY',
-            ]
-            install_msdk_args = {
-                'version': version['MSDK_VERSION'],
-                'version_file': os.path.join(install_dir, 'msdk.version'),
-                'source_dir': source_dir,
-                'build_dir': build_dir,
-                'install_dir': install_dir,
-                'libva_installed_dir': os.path.join(install_dir, 'libva'),
-                'cmake_args': [
-                    "-DCMAKE_C_COMPILER=clang-12",
-                    "-DCMAKE_CXX_COMPILER=clang++-12",
-                    f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}",
-                ]
-            }
-            install_msdk_linux(**install_msdk_args)
+            if platform.target.os == 'ubuntu':
+                cmake_args = []
+                cmake_args.append("-DCMAKE_C_COMPILER=clang-12")
+                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-12")
+                path = cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))
+                cmake_args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
+                flags = [
+                    '-nostdinc++', '-D_LIBCPP_ABI_UNSTABLE', '-D_LIBCPP_DISABLE_AVAILABILITY',
+                    '-D_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS', '-D_LIBCXXABI_DISABLE_VISIBILITY_ANNOTATIONS',
+                    '-D_LIBCPP_ENABLE_NODISCARD']
+                cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(flags)}")
+                install_vpl_args['cmake_args'] = cmake_args
+            install_vpl(**install_vpl_args)
 
         if platform.target.os == 'android':
             # Android 側からのコールバックする関数は消してはいけないので、
@@ -1360,10 +1292,8 @@ def main():
                 cmake_args.append(f"-DCUDA_TOOLKIT_ROOT_DIR={cmake_path(os.path.join(install_dir, 'cuda', 'nvcc'))}")
 
         if platform.target.os in ('windows', 'ubuntu') and platform.target.arch == 'x86_64':
-            cmake_args.append('-DUSE_MSDK_ENCODER=ON')
-            cmake_args.append(f"-DMSDK_ROOT_DIR={cmake_path(os.path.join(install_dir, 'msdk'))}")
-            if platform.target.os == 'ubuntu':
-                cmake_args.append(f"-DLIBVA_ROOT_DIR={cmake_path(os.path.join(install_dir, 'libva'))}")
+            cmake_args.append('-DUSE_VPL_ENCODER=ON')
+            cmake_args.append(f"-DVPL_ROOT_DIR={cmake_path(os.path.join(install_dir, 'vpl'))}")
 
         cmd(['cmake', BASE_DIR] + cmake_args)
         if platform.target.os == 'ios':

@@ -26,6 +26,7 @@ find_package(WebRTC REQUIRED)
 find_package(Sora REQUIRED)
 find_package(Threads REQUIRED)
 find_package(Libdrm)
+find_package(Libva)
 
 function (init_target target)
   set_target_properties(${target} PROPERTIES CXX_STANDARD 17 C_STANDARD 17)

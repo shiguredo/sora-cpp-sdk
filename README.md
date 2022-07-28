@@ -24,7 +24,7 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
     - NVIDIA Jetson Video HWA
     - Apple macOS / iOS Video Toolbox
     - Google Android HWA
-    - Intel Media SDK
+    - oneVPL
 
 ## ライブラリのバイナリ提供について
 
