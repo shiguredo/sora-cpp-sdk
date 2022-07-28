@@ -54,7 +54,7 @@ jobs:
       - name: Install deps for Ubuntu x86_64
         if: matrix.name == 'ubuntu-20.04_x86_64'
         run: |
-          sudo apt install libdrm-dev
+          sudo apt install libdrm-dev libva-dev
       - run: python3 sdl_sample/${{ matrix.name }}/run.py
       - run: python3 momo_sample/${{ matrix.name }}/run.py
   build-ubuntu-2204:
@@ -70,7 +70,7 @@ jobs:
       - name: Install deps for Ubuntu x86_64
         if: matrix.name == 'ubuntu-22.04_x86_64'
         run: |
-          sudo apt install libdrm-dev
+          sudo apt install libdrm-dev libva-dev
       - run: python3 sdl_sample/${{ matrix.name }}/run.py
       - run: python3 momo_sample/${{ matrix.name }}/run.py
   create-release:
