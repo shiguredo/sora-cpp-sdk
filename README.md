@@ -29,7 +29,7 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
     - Google Android HWA
     - oneVPL
         - VP8 / VP9 / H.264
-    - Intel oneVPL (Intel Media SDK の後継)
+    - [Intel oneVPL](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onevpl.html) (Intel Media SDK の後継)
         - VP9 / AV1 / H.264
 
 ## ライブラリのバイナリ提供について
