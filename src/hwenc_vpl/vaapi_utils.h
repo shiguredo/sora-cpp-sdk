@@ -13,14 +13,14 @@ The original version of this sample may be obtained from https://software.intel.
 or https://software.intel.com/en-us/media-client-solutions-support.
 \**********************************************************************************/
 
-#ifndef SORA_HWENC_MSDK_VAAPI_UTILS_H_
-#define SORA_HWENC_MSDK_VAAPI_UTILS_H_
-
-// msdk
-#include <mfx/mfxdefs.h>
+#ifndef SORA_HWENC_VPL_VAAPI_UTILS_H_
+#define SORA_HWENC_VPL_VAAPI_UTILS_H_
 
 // libva
 #include <va/va.h>
+
+// oneVPL
+#include <vpl/mfxdefs.h>
 
 namespace sora {
 

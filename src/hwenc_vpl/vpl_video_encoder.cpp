@@ -1,4 +1,4 @@
-#include "sora/hwenc_msdk/msdk_video_encoder.h"
+#include "sora/hwenc_vpl/vpl_video_encoder.h"
 
 #include <chrono>
 #include <iostream>
@@ -11,22 +11,22 @@
 #include <rtc_base/logging.h>
 #include <rtc_base/synchronization/mutex.h>
 
-// msdk
-#include <mfx/mfxvideo++.h>
-#include <mfx/mfxvp8.h>
+// oneVPL
+#include <vpl/mfxvideo++.h>
+#include <vpl/mfxvp8.h>
 
 // libyuv
 #include <libyuv.h>
 
-#include "msdk_session_impl.h"
-#include "msdk_utils.h"
+#include "vpl_session_impl.h"
+#include "vpl_utils.h"
 
 namespace sora {
 
-class MsdkVideoEncoderImpl : public MsdkVideoEncoder {
+class VplVideoEncoderImpl : public VplVideoEncoder {
  public:
-  MsdkVideoEncoderImpl(std::shared_ptr<MsdkSession> session, mfxU32 codec);
-  ~MsdkVideoEncoderImpl() override;
+  VplVideoEncoderImpl(std::shared_ptr<VplSession> session, mfxU32 codec);
+  ~VplVideoEncoderImpl() override;
 
   int32_t InitEncode(const webrtc::VideoCodec* codec_settings,
                      int32_t number_of_cores,
@@ -41,7 +41,7 @@ class MsdkVideoEncoderImpl : public MsdkVideoEncoder {
   webrtc::VideoEncoder::EncoderInfo GetEncoderInfo() const override;
 
   static std::unique_ptr<MFXVideoENCODE> CreateEncoder(
-      std::shared_ptr<MsdkSession> session,
+      std::shared_ptr<VplSession> session,
       mfxU32 codec,
       int width,
       int height,
@@ -66,13 +66,13 @@ class MsdkVideoEncoderImpl : public MsdkVideoEncoder {
   webrtc::EncodedImage encoded_image_;
   webrtc::H264BitstreamParser h264_bitstream_parser_;
 
-  int32_t InitMediaSDK();
-  int32_t ReleaseMediaSDK();
+  int32_t InitVpl();
+  int32_t ReleaseVpl();
 
   std::vector<uint8_t> surface_buffer_;
   std::vector<mfxFrameSurface1> surfaces_;
 
-  std::shared_ptr<MsdkSession> session_;
+  std::shared_ptr<VplSession> session_;
   mfxU32 codec_;
   mfxFrameAllocRequest alloc_request_;
   std::unique_ptr<MFXVideoENCODE> encoder_;
@@ -84,16 +84,16 @@ class MsdkVideoEncoderImpl : public MsdkVideoEncoder {
 const int kLowH264QpThreshold = 34;
 const int kHighH264QpThreshold = 40;
 
-MsdkVideoEncoderImpl::MsdkVideoEncoderImpl(std::shared_ptr<MsdkSession> session,
-                                           mfxU32 codec)
+VplVideoEncoderImpl::VplVideoEncoderImpl(std::shared_ptr<VplSession> session,
+                                         mfxU32 codec)
     : session_(session), codec_(codec), bitrate_adjuster_(0.5, 0.95) {}
 
-MsdkVideoEncoderImpl::~MsdkVideoEncoderImpl() {
+VplVideoEncoderImpl::~VplVideoEncoderImpl() {
   Release();
 }
 
-std::unique_ptr<MFXVideoENCODE> MsdkVideoEncoderImpl::CreateEncoder(
-    std::shared_ptr<MsdkSession> session,
+std::unique_ptr<MFXVideoENCODE> VplVideoEncoderImpl::CreateEncoder(
+    std::shared_ptr<VplSession> session,
     mfxU32 codec,
     int width,
     int height,
@@ -187,7 +187,7 @@ std::unique_ptr<MFXVideoENCODE> MsdkVideoEncoderImpl::CreateEncoder(
   }
 
   std::unique_ptr<MFXVideoENCODE> encoder(
-      new MFXVideoENCODE(GetMsdkSession(session)));
+      new MFXVideoENCODE(GetVplSession(session)));
 
   // MFX_ERR_NONE	The function completed successfully.
   // MFX_ERR_UNSUPPORTED	The function failed to identify a specific implementation for the required features.
@@ -287,7 +287,7 @@ std::unique_ptr<MFXVideoENCODE> MsdkVideoEncoderImpl::CreateEncoder(
   return encoder;
 }
 
-int32_t MsdkVideoEncoderImpl::InitEncode(
+int32_t VplVideoEncoderImpl::InitEncode(
     const webrtc::VideoCodec* codec_settings,
     int32_t number_of_cores,
     size_t max_payload_size) {
@@ -320,18 +320,18 @@ int32_t MsdkVideoEncoderImpl::InitEncode(
           ? webrtc::VideoContentType::SCREENSHARE
           : webrtc::VideoContentType::UNSPECIFIED;
 
-  return InitMediaSDK();
+  return InitVpl();
 }
-int32_t MsdkVideoEncoderImpl::RegisterEncodeCompleteCallback(
+int32_t VplVideoEncoderImpl::RegisterEncodeCompleteCallback(
     webrtc::EncodedImageCallback* callback) {
   std::lock_guard<std::mutex> lock(mutex_);
   callback_ = callback;
   return WEBRTC_VIDEO_CODEC_OK;
 }
-int32_t MsdkVideoEncoderImpl::Release() {
-  return ReleaseMediaSDK();
+int32_t VplVideoEncoderImpl::Release() {
+  return ReleaseVpl();
 }
-int32_t MsdkVideoEncoderImpl::Encode(
+int32_t VplVideoEncoderImpl::Encode(
     const webrtc::VideoFrame& frame,
     const std::vector<webrtc::VideoFrameType>* frame_types) {
   bool send_key_frame = false;
@@ -387,7 +387,7 @@ int32_t MsdkVideoEncoderImpl::Encode(
     memset(&param, 0, sizeof(param));
 
     sts = encoder_->GetVideoParam(&param);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     // ビットレートとフレームレートを変更する。
     // なお、encoder_->Reset() はキューイングしているサーフェスを
@@ -406,7 +406,7 @@ int32_t MsdkVideoEncoderImpl::Encode(
     param.mfx.FrameInfo.FrameRateExtD = 1;
 
     sts = encoder_->Reset(&param);
-    MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     reconfigure_needed_ = false;
 
@@ -426,10 +426,10 @@ int32_t MsdkVideoEncoderImpl::Encode(
     // もっと入力が必要なので出直す
     return WEBRTC_VIDEO_CODEC_OK;
   }
-  MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+  VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-  sts = MFXVideoCORE_SyncOperation(GetMsdkSession(session_), syncp, 600000);
-  MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+  sts = MFXVideoCORE_SyncOperation(GetVplSession(session_), syncp, 600000);
+  VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
   //RTC_LOG(LS_ERROR) << "SurfaceSize=" << (surface->Data.U - surface->Data.Y);
   //RTC_LOG(LS_ERROR) << "DataLength=" << bitstream_.DataLength;
@@ -485,7 +485,7 @@ int32_t MsdkVideoEncoderImpl::Encode(
 
   return WEBRTC_VIDEO_CODEC_OK;
 }
-void MsdkVideoEncoderImpl::SetRates(const RateControlParameters& parameters) {
+void VplVideoEncoderImpl::SetRates(const RateControlParameters& parameters) {
   if (parameters.framerate_fps < 1.0) {
     RTC_LOG(LS_WARNING) << "Invalid frame rate: " << parameters.framerate_fps;
     return;
@@ -503,7 +503,7 @@ void MsdkVideoEncoderImpl::SetRates(const RateControlParameters& parameters) {
   bitrate_adjuster_.SetTargetBitrateBps(target_bitrate_bps_);
   reconfigure_needed_ = true;
 }
-webrtc::VideoEncoder::EncoderInfo MsdkVideoEncoderImpl::GetEncoderInfo() const {
+webrtc::VideoEncoder::EncoderInfo VplVideoEncoderImpl::GetEncoderInfo() const {
   webrtc::VideoEncoder::EncoderInfo info;
   info.supports_native_handle = true;
   info.implementation_name = "NvCodec H264";
@@ -513,7 +513,7 @@ webrtc::VideoEncoder::EncoderInfo MsdkVideoEncoderImpl::GetEncoderInfo() const {
   return info;
 }
 
-int32_t MsdkVideoEncoderImpl::InitMediaSDK() {
+int32_t VplVideoEncoderImpl::InitVpl() {
   encoder_ = CreateEncoder(session_, codec_, width_, height_, framerate_,
                            bitrate_adjuster_.GetAdjustedBitrateBps() / 1000,
                            max_bitrate_bps_ / 1000, true);
@@ -530,13 +530,13 @@ int32_t MsdkVideoEncoderImpl::InitMediaSDK() {
   // Retrieve video parameters selected by encoder.
   // - BufferSizeInKB parameter is required to set bit stream buffer size
   sts = encoder_->GetVideoParam(&param);
-  MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+  VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
   RTC_LOG(LS_INFO) << "BufferSizeInKB=" << param.mfx.BufferSizeInKB;
 
   // Query number of required surfaces for encoder
   memset(&alloc_request_, 0, sizeof(alloc_request_));
   sts = encoder_->QueryIOSurf(&param, &alloc_request_);
-  MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+  VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
   RTC_LOG(LS_INFO) << "Encoder NumFrameSuggested="
                    << alloc_request_.NumFrameSuggested;
@@ -575,7 +575,7 @@ int32_t MsdkVideoEncoderImpl::InitMediaSDK() {
 
   return WEBRTC_VIDEO_CODEC_OK;
 }
-int32_t MsdkVideoEncoderImpl::ReleaseMediaSDK() {
+int32_t VplVideoEncoderImpl::ReleaseVpl() {
   if (encoder_ != nullptr) {
     encoder_->Close();
   }
@@ -584,25 +584,25 @@ int32_t MsdkVideoEncoderImpl::ReleaseMediaSDK() {
 }
 
 ////////////////////////
-// MsdkVideoEncoder
+// VplVideoEncoder
 ////////////////////////
 
-bool MsdkVideoEncoder::IsSupported(std::shared_ptr<MsdkSession> session,
-                                   webrtc::VideoCodecType codec) {
+bool VplVideoEncoder::IsSupported(std::shared_ptr<VplSession> session,
+                                  webrtc::VideoCodecType codec) {
   if (session == nullptr) {
     return false;
   }
 
-  auto encoder = MsdkVideoEncoderImpl::CreateEncoder(
+  auto encoder = VplVideoEncoderImpl::CreateEncoder(
       session, ToMfxCodec(codec), 1920, 1080, 30, 10, 20, false);
   return encoder != nullptr;
 }
 
-std::unique_ptr<MsdkVideoEncoder> MsdkVideoEncoder::Create(
-    std::shared_ptr<MsdkSession> session,
+std::unique_ptr<VplVideoEncoder> VplVideoEncoder::Create(
+    std::shared_ptr<VplSession> session,
     webrtc::VideoCodecType codec) {
-  return std::unique_ptr<MsdkVideoEncoder>(
-      new MsdkVideoEncoderImpl(session, ToMfxCodec(codec)));
+  return std::unique_ptr<VplVideoEncoder>(
+      new VplVideoEncoderImpl(session, ToMfxCodec(codec)));
 }
 
 }  // namespace sora
