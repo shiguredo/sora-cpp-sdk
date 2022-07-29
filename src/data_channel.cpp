@@ -19,12 +19,22 @@ DataChannel::~DataChannel() {
   RTC_LOG(LS_INFO) << "dtor DataChannel";
 }
 bool DataChannel::IsOpen(std::string label) const {
-  return labels_.find(label) != labels_.end();
-}
-void DataChannel::Send(std::string label, const webrtc::DataBuffer& data) {
   auto it = labels_.find(label);
   if (it == labels_.end()) {
-    return;
+    return false;
+  }
+  if (it->second->state() != webrtc::DataChannelInterface::kOpen) {
+    return false;
+  }
+  return true;
+}
+bool DataChannel::Send(std::string label, const webrtc::DataBuffer& data) {
+  auto it = labels_.find(label);
+  if (it == labels_.end()) {
+    return false;
+  }
+  if (it->second->state() != webrtc::DataChannelInterface::kOpen) {
+    return false;
   }
   if (!data.binary) {
     std::string str((const char*)data.data.cdata(),
@@ -33,6 +43,7 @@ void DataChannel::Send(std::string label, const webrtc::DataBuffer& data) {
   }
   auto data_channel = it->second;
   data_channel->Send(data);
+  return true;
 }
 void DataChannel::Close(const webrtc::DataBuffer& disconnect_message,
                         std::function<void(boost::system::error_code)> on_close,
@@ -68,6 +79,10 @@ void DataChannel::AddDataChannel(
     data_channel->RegisterObserver(thunk.get());
     self->thunks_.insert(std::make_pair(thunk, data_channel));
     self->labels_.insert(std::make_pair(data_channel->label(), data_channel));
+    // 初期状態以外だったら OnStateChange を呼ぶ
+    if (data_channel->state() != webrtc::DataChannelInterface::kConnecting) {
+      self->OnStateChange(thunk);
+    }
   });
 }
 
@@ -78,11 +93,16 @@ void DataChannel::OnStateChange(std::shared_ptr<Thunk> thunk) {
     }
 
     auto data_channel = self->thunks_.at(thunk);
-    if (data_channel->state() == webrtc::DataChannelInterface::kClosed) {
-      self->labels_.erase(data_channel->label());
+    auto state = data_channel->state();
+    auto label = data_channel->label();
+    if (state == webrtc::DataChannelInterface::kOpen) {
+      RTC_LOG(LS_INFO) << "DataChannel opened label=" << label;
+    }
+    if (state == webrtc::DataChannelInterface::kClosed) {
+      self->labels_.erase(label);
       self->thunks_.erase(thunk);
       data_channel->UnregisterObserver();
-      RTC_LOG(LS_INFO) << "DataChannel closed label=" << data_channel->label();
+      RTC_LOG(LS_INFO) << "DataChannel closed label=" << label;
     }
     auto observer = self->observer_;
     auto on_close = self->on_close_;

@@ -40,7 +40,7 @@ class DataChannel : public std::enable_shared_from_this<DataChannel> {
               std::weak_ptr<DataChannelObserver> observer);
   ~DataChannel();
   bool IsOpen(std::string label) const;
-  void Send(std::string label, const webrtc::DataBuffer& data);
+  bool Send(std::string label, const webrtc::DataBuffer& data);
   void Close(const webrtc::DataBuffer& disconnect_message,
              std::function<void(boost::system::error_code)> on_close,
              double disconnect_wait_timeout);

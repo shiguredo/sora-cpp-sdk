@@ -44,6 +44,8 @@ class SoraSignalingObserver {
       rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver) = 0;
   virtual void OnRemoveTrack(
       rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) = 0;
+
+  virtual void OnDataChannel(std::string label) = 0;
 };
 
 struct SoraSignalingConfig {
@@ -114,6 +116,7 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
   static std::shared_ptr<SoraSignaling> Create(
       const SoraSignalingConfig& config);
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> GetPeerConnection() const;
+  std::string GetVideoMid() const;
 
   void Connect();
   void Disconnect();
@@ -215,11 +218,15 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
   std::shared_ptr<DataChannel> dc_;
   bool using_datachannel_ = false;
   bool ws_connected_ = false;
-  std::set<std::string> compressed_labels_;
+  struct DataChannelInfo {
+    bool compressed = false;
+    bool notified = false;
+  };
+  std::map<std::string, DataChannelInfo> dc_labels_;
 
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> pc_;
   std::vector<webrtc::RtpEncodingParameters> encodings_;
-  std::string mid_;
+  std::string video_mid_;
 
   boost::asio::deadline_timer connection_timeout_timer_;
   boost::asio::deadline_timer closing_timeout_timer_;
