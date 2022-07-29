@@ -82,6 +82,7 @@ _build/macos_arm64/release/sdl_sample
 
 ```shell
 $ sudo apt install libdrm-dev
+$ sudo apt install libva-dev
 $ sudo apt install pkg-config
 $ sudo apt install python3
 ```
@@ -107,6 +108,7 @@ _build/ubuntu-20.04_x86_64/release/sdl_sample/
 
 ```shell
 $ sudo apt install libdrm-dev
+$ sudo apt install libva-dev
 $ sudo apt install pkg-config
 $ sudo apt install python3
 ```
