@@ -33,8 +33,8 @@ SoraSignaling::GetPeerConnection() const {
   return pc_;
 }
 
-std::string SoraSignaling::GetMid() const {
-  return mid_;
+std::string SoraSignaling::GetVideoMid() const {
+  return video_mid_;
 }
 
 void SoraSignaling::Connect() {
@@ -780,9 +780,10 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
       if (it != m.as_object().end()) {
         const auto& ar = it->value().as_array();
         for (const auto& v : ar) {
-          if (v.at("compress").as_bool()) {
-            compressed_labels_.insert(v.at("label").as_string().c_str());
-          }
+          std::string label = v.at("label").as_string().c_str();
+          DataChannelInfo info;
+          info.compressed = v.at("compress").as_bool();
+          dc_labels_.insert(std::make_pair(label, info));
         }
       }
     }
@@ -810,7 +811,7 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
               }
             }
             RTC_LOG(LS_INFO) << "mid: " << mid;
-            self->mid_ = mid;
+            self->video_mid_ = mid;
 
             // simulcast では offer の setRemoteDescription が終わった後に
             // トラックを追加する必要があるため、ここで初期化する
@@ -863,7 +864,7 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
                 encoding_parameters.push_back(params);
               }
 
-              self->SetEncodingParameters(self->mid_,
+              self->SetEncodingParameters(self->video_mid_,
                                           std::move(encoding_parameters));
             }
 
@@ -961,6 +962,17 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
   } else if (type == "switched") {
     // Data Channel による通信の開始
     using_datachannel_ = true;
+
+    // 既に kOpen になっているチャンネルに通知を送る
+    auto ob = config_.observer.lock();
+    if (ob != nullptr) {
+      for (auto& kv : dc_labels_) {
+        if (kv.first[0] == '#' && !kv.second.notified && dc_->IsOpen(kv.first)) {
+          ob->OnDataChannel(kv.first);
+          kv.second.notified = true;
+        }
+      }
+    }
 
     // ignore_disconnect_websocket == true の場合は WS を切断する
     auto it = m.as_object().find("ignore_disconnect_websocket");
@@ -1086,7 +1098,7 @@ void SoraSignaling::SetEncodingParameters(
 }
 
 void SoraSignaling::ResetEncodingParameters() {
-  if (encodings_.empty() || mid_.empty()) {
+  if (encodings_.empty() || video_mid_.empty()) {
     return;
   }
 
@@ -1104,7 +1116,7 @@ void SoraSignaling::ResetEncodingParameters() {
 
   rtc::scoped_refptr<webrtc::RtpTransceiverInterface> video_transceiver;
   for (auto transceiver : pc_->GetTransceivers()) {
-    if (transceiver->mid() == mid_) {
+    if (transceiver->mid() == video_mid_) {
       video_transceiver = transceiver;
       break;
     }
@@ -1158,7 +1170,8 @@ void SoraSignaling::SendOnDisconnect(SoraSignalingErrorCode ec,
 webrtc::DataBuffer SoraSignaling::ConvertToDataBuffer(
     const std::string& label,
     const std::string& input) {
-  bool compressed = compressed_labels_.find(label) != compressed_labels_.end();
+  auto it = dc_labels_.find(label);
+  bool compressed = it != dc_labels_.end() && it->second.compressed;
   RTC_LOG(LS_INFO) << "Convert to DataChannel label=" << label
                    << " compressed=" << compressed << " input=" << input;
   const std::string& str = compressed ? ZlibHelper::Compress(input) : input;
@@ -1186,9 +1199,9 @@ void SoraSignaling::Clear() {
   ws_ = nullptr;
   using_datachannel_ = false;
   dc_ = nullptr;
-  compressed_labels_.clear();
+  dc_labels_.clear();
   encodings_.clear();
-  mid_.clear();
+  video_mid_.clear();
   on_ws_close_ = nullptr;
   ice_state_ = webrtc::PeerConnectionInterface::kIceConnectionNew;
   connection_state_ =
@@ -1321,7 +1334,22 @@ void SoraSignaling::OnRemoveTrack(
 // -----------------------------
 
 void SoraSignaling::OnStateChange(
-    rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) {}
+    rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) {
+  // switched が来てなければ何もしない
+  if (!using_datachannel_) {
+    return;
+  }
+  // switched 済みで、まだ通知してないチャンネルが開いてた場合は通知を送る
+  auto ob = config_.observer.lock();
+  if (ob != nullptr) {
+    for (auto& kv : dc_labels_) {
+      if (kv.first[0] == '#' && !kv.second.notified && dc_->IsOpen(kv.first)) {
+        ob->OnDataChannel(kv.first);
+        kv.second.notified = true;
+      }
+    }
+  }
+}
 void SoraSignaling::OnMessage(
     rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel,
     const webrtc::DataBuffer& buffer) {
@@ -1330,7 +1358,8 @@ void SoraSignaling::OnMessage(
   }
 
   std::string label = data_channel->label();
-  bool compressed = compressed_labels_.find(label) != compressed_labels_.end();
+  auto it = dc_labels_.find(label);
+  bool compressed = it != dc_labels_.end() && it->second.compressed;
   std::string data;
   if (compressed) {
     data = ZlibHelper::Uncompress(buffer.data.cdata(), buffer.size());

@@ -11,6 +11,9 @@
 
 ## develop
 
+- [CHANGE] DataChannel の準備が完了したことを示す通知を追加
+    - 純粋仮想関数を追加したため破壊的変更となる
+    - @melpon
 - [ADD] mid を取得する関数を追加
     - @melpon
 

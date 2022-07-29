@@ -69,6 +69,7 @@ class SoraDefaultClient : public sora::SoraSignalingObserver {
       override {}
   void OnRemoveTrack(
       rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override {}
+  void OnDataChannel(std::string label) override {}
 
   rtc::Thread* network_thread() const { return network_thread_.get(); }
   rtc::Thread* worker_thread() const { return worker_thread_.get(); }
