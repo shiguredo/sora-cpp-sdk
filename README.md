@@ -27,7 +27,6 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
     - Apple macOS / iOS Video Toolbox
         - H.264
     - Google Android HWA
-    - oneVPL
         - VP8 / VP9 / H.264
     - [Intel oneVPL](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onevpl.html) (Intel Media SDK の後継)
         - VP9 / AV1 / H.264
@@ -78,10 +77,6 @@ https://github.com/shiguredo/sora-cpp-sdk-samples
 - Raspberry Pi OS 対応
 - Windows arm64 対応
 - AMD 系 HWA 対応
-
-## 対応予定
-
-- [oneVPL](https://github.com/oneapi-src/oneVPL)
 
 ## サポートについて
 
