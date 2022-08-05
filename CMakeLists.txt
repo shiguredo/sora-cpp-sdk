@@ -380,7 +380,8 @@ elseif (SORA_TARGET_OS STREQUAL "android")
       WEBRTC_POSIX
       WEBRTC_LINUX
       WEBRTC_ANDROID
-      _LIBCPP_ABI_UNSTABLE
+      _LIBCPP_ABI_NAMESPACE=Cr
+      _LIBCPP_ABI_VERSION=2
       _LIBCPP_DISABLE_AVAILABILITY
       _LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS
       _LIBCXXABI_DISABLE_VISIBILITY_ANNOTATIONS
@@ -396,7 +397,7 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
       WEBRTC_LINUX
   )
   # Linux 系の場合はカスタムされた libc++ を使っているためオプション追加
-  target_compile_definitions(sora PUBLIC _LIBCPP_ABI_UNSTABLE _LIBCPP_DISABLE_AVAILABILITY)
+  target_compile_definitions(sora PUBLIC _LIBCPP_ABI_NAMESPACE=Cr _LIBCPP_ABI_VERSION=2 _LIBCPP_DISABLE_AVAILABILITY)
 
   set_target_properties(sora PROPERTIES POSITION_INDEPENDENT_CODE ON)
   target_link_libraries(sora
@@ -479,7 +480,7 @@ elseif (SORA_TARGET_OS STREQUAL "jetson")
       WEBRTC_POSIX
       WEBRTC_LINUX
   )
-  target_compile_definitions(sora PUBLIC _LIBCPP_ABI_UNSTABLE _LIBCPP_DISABLE_AVAILABILITY)
+  target_compile_definitions(sora PUBLIC _LIBCPP_ABI_NAMESPACE=Cr _LIBCPP_ABI_VERSION=2 _LIBCPP_DISABLE_AVAILABILITY)
 
   set_target_properties(sora PROPERTIES POSITION_INDEPENDENT_CODE ON)
   target_link_libraries(sora
