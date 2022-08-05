@@ -36,6 +36,11 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
 Sora と映像の送受信を行い、[SDL (Simple DirectMedia Layer)](https://www.libsdl.org/) を利用して受信映像を表示するサンプルです。
 使い方は [SDL サンプルを使ってみる](./doc/USE_SDL_SAMPLE.md) をお読みください。
 
+### Momo サンプル
+
+[Momo](https://github.com/shiguredo/momo) の [Sora](https://sora.shiguredo.jp/) モードを模したサンプルです。
+使い方は [Momo サンプルを使ってみる](./doc/USE_MOMO_SAMPLE.md) をお読みください。
+
 ## ライセンス
 
 Apache License 2.0
