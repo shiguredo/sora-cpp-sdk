@@ -7,7 +7,7 @@ android {
 
     defaultConfig {
         applicationId "jp.shiguredo.hello"
-        minSdk 24
+        minSdk 29
         targetSdk 32
         versionCode 1
         versionName "1.0"
@@ -34,7 +34,8 @@ android {
                     // "-DWEBRTC_LIBRARY_DIR=$projectDir/../../../_build/android/release/webrtc",
                     // "-DLIBCXX_INCLUDE_DIR=$projectDir/../../../_source/android/release/webrtc/src/buildtools/third_party/libc++/trunk/include",
                     "-DANDROID_STL=none",
-                    "-DANDROID_NATIVE_API_LEVEL=24",
+                    "-DANDROID_NATIVE_API_LEVEL=29",
+                    "-DANDROID_PLATFORM=29",
                     "-DANDROID_ABI=arm64-v8a",
                     "-DANDROID_CPP_FEATURES=exceptions rtti",
                     "-DCMAKE_ANDROID_EXCEPTIONS=ON"

@@ -1261,6 +1261,7 @@ def main():
             toolchain_file = os.path.join(install_dir, 'android-ndk', 'build', 'cmake', 'android.toolchain.cmake')
             cmake_args.append(f"-DCMAKE_TOOLCHAIN_FILE={toolchain_file}")
             cmake_args.append(f"-DANDROID_NATIVE_API_LEVEL={android_native_api_level}")
+            cmake_args.append(f"-DANDROID_PLATFORM={android_native_api_level}")
             cmake_args.append('-DANDROID_ABI=arm64-v8a')
             cmake_args.append('-DANDROID_STL=none')
             cmake_args.append("-DUSE_LIBCXX=ON")
