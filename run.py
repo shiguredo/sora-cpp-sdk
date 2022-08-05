@@ -1005,7 +1005,8 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             ]
             install_boost_args['cxxflags'] = [
                 '-fPIC',
-                '-D_LIBCPP_ABI_UNSTABLE',
+                '-D_LIBCPP_ABI_NAMESPACE=Cr',
+                '-D_LIBCPP_ABI_VERSION=2',
                 '-D_LIBCPP_DISABLE_AVAILABILITY',
                 '-nostdinc++',
                 '-std=gnu++17',
@@ -1029,7 +1030,8 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                 '--target=aarch64-linux-gnu',
                 f"--sysroot={sysroot}",
                 f"-I{os.path.join(sysroot, 'usr', 'include', 'aarch64-linux-gnu')}",
-                '-D_LIBCPP_ABI_UNSTABLE',
+                '-D_LIBCPP_ABI_NAMESPACE=Cr',
+                '-D_LIBCPP_ABI_VERSION=2',
                 '-D_LIBCPP_DISABLE_AVAILABILITY',
                 '-nostdinc++',
                 '-std=gnu++17',
@@ -1045,7 +1047,8 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             install_boost_args['target_os'] = 'linux'
             install_boost_args['cxx'] = os.path.join(webrtc_info.clang_dir, 'bin', 'clang++')
             install_boost_args['cxxflags'] = [
-                '-D_LIBCPP_ABI_UNSTABLE',
+                '-D_LIBCPP_ABI_NAMESPACE=Cr',
+                '-D_LIBCPP_ABI_VERSION=2',
                 '-D_LIBCPP_DISABLE_AVAILABILITY',
                 '-nostdinc++',
                 f"-isystem{os.path.join(webrtc_info.libcxx_dir, 'include')}",
@@ -1111,9 +1114,9 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                 path = cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))
                 cmake_args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
                 flags = [
-                    '-nostdinc++', '-D_LIBCPP_ABI_UNSTABLE', '-D_LIBCPP_DISABLE_AVAILABILITY',
-                    '-D_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS', '-D_LIBCXXABI_DISABLE_VISIBILITY_ANNOTATIONS',
-                    '-D_LIBCPP_ENABLE_NODISCARD']
+                    '-nostdinc++', '-D_LIBCPP_ABI_NAMESPACE=Cr', '-D_LIBCPP_ABI_VERSION=2',
+                    '-D_LIBCPP_DISABLE_AVAILABILITY', '-D_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS',
+                    '-D_LIBCXXABI_DISABLE_VISIBILITY_ANNOTATIONS', '-D_LIBCPP_ENABLE_NODISCARD']
                 cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(flags)}")
                 install_vpl_args['cmake_args'] = cmake_args
             install_vpl(**install_vpl_args)
