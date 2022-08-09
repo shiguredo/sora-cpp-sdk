@@ -6,7 +6,7 @@
 #include <CLI/CLI.hpp>
 
 // Boost
-#include <boost/optional/optional_io.hpp>
+#include <boost/optional/optional.hpp>
 
 #include "sdl_renderer.h"
 
@@ -184,6 +184,26 @@ class MomoSample : public std::enable_shared_from_this<MomoSample>,
   std::unique_ptr<SDLRenderer> renderer_;
 };
 
+void add_optional_bool(CLI::App& app,
+                       const std::string& option_name,
+                       boost::optional<bool>& v,
+                       const std::string& help_text) {
+  auto f = [&v](const std::string& input) {
+    if (input == "true") {
+      v = true;
+    } else if (input == "false") {
+      v = false;
+    } else if (input == "none") {
+      v = boost::none;
+    } else {
+      throw CLI::ConversionError(input, "optional<bool>");
+    }
+  };
+  app.add_option_function<std::string>(option_name, f, help_text)
+      ->type_name("TEXT")
+      ->check(CLI::IsMember({"true", "false", "none"}));
+}
+
 int main(int argc, char* argv[]) {
 #ifdef _WIN32
   webrtc::ScopedCOMInitializer com_initializer(
@@ -196,11 +216,6 @@ int main(int argc, char* argv[]) {
 
   MomoSampleConfig config;
 
-  auto bool_map = std::vector<std::pair<std::string, boost::optional<bool>>>(
-      {{"false", false}, {"true", true}});
-  auto optional_bool_map =
-      std::vector<std::pair<std::string, boost::optional<bool>>>(
-          {{"false", false}, {"true", true}, {"none", boost::none}});
   auto is_json = CLI::Validator(
       [](std::string input) -> std::string {
         boost::json::error_code ec;
@@ -244,27 +259,21 @@ int main(int argc, char* argv[]) {
   app.add_option("--metadata", metadata,
                  "Signaling metadata used in connect message")
       ->check(is_json);
-  app.add_option("--multistream", config.multistream,
-                 "Use multistream (default: none)")
-      ->transform(CLI::CheckedTransformer(optional_bool_map, CLI::ignore_case));
-  app.add_option("--spotlight", config.spotlight, "Use spotlight")
-      ->transform(CLI::CheckedTransformer(bool_map, CLI::ignore_case));
+  add_optional_bool(app, "--multistream", config.multistream,
+                    "Use multistream (default: none)");
+  add_optional_bool(app, "--spotlight", config.spotlight,
+                    "Use spotlight (default: none)");
   app.add_option("--spotlight-number", config.spotlight_number,
                  "Stream count delivered in spotlight")
       ->check(CLI::Range(0, 8));
-  app.add_option("--simulcast", config.simulcast,
-                 "Use simulcast (default: false)")
-      ->transform(CLI::CheckedTransformer(bool_map, CLI::ignore_case));
-  app.add_option("--data-channel-signaling", config.data_channel_signaling,
-                 "Use DataChannel for Sora signaling (default: none)")
-      ->type_name("TEXT")
-      ->transform(CLI::CheckedTransformer(optional_bool_map, CLI::ignore_case));
-  app.add_option("--ignore-disconnect-websocket",
-                 config.ignore_disconnect_websocket,
-                 "Ignore WebSocket disconnection if using Data Channel "
-                 "(default: none)")
-      ->type_name("TEXT")
-      ->transform(CLI::CheckedTransformer(optional_bool_map, CLI::ignore_case));
+  add_optional_bool(app, "--simulcast", config.simulcast,
+                    "Use simulcast (default: none)");
+  add_optional_bool(app, "--data-channel-signaling",
+                    config.data_channel_signaling,
+                    "Use DataChannel for Sora signaling (default: none)");
+  add_optional_bool(
+      app, "--ignore-disconnect-websocket", config.ignore_disconnect_websocket,
+      "Ignore WebSocket disconnection if using Data Channel (default: none)");
 
   // proxy の設定
   app.add_option("--proxy-url", config.proxy_url, "Proxy URL");
