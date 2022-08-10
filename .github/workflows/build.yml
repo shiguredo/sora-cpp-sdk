@@ -68,12 +68,14 @@ jobs:
       - name: Install deps for Jetson series
         if: matrix.name == 'ubuntu-20.04_armv8_jetson'
         run: |
+          sudo apt update
           sudo apt install multistrap binutils-aarch64-linux-gnu
           # multistrap に insecure なリポジトリからの取得を許可する設定を入れる
           sudo sed -e 's/Apt::Get::AllowUnauthenticated=true/Apt::Get::AllowUnauthenticated=true";\n$config_str .= " -o Acquire::AllowInsecureRepositories=true/' -i /usr/sbin/multistrap
       - name: Install deps for Ubuntu x86_64
         if: matrix.name == 'ubuntu-20.04_x86_64'
         run: |
+          sudo apt update
           sudo apt install libdrm-dev libva-dev
       - run: python3 sdl_sample/${{ matrix.name }}/run.py
       - run: python3 momo_sample/${{ matrix.name }}/run.py
@@ -100,6 +102,7 @@ jobs:
       - name: Install deps for Ubuntu x86_64
         if: matrix.name == 'ubuntu-22.04_x86_64'
         run: |
+          sudo apt update
           sudo apt install libdrm-dev libva-dev
       - run: python3 sdl_sample/${{ matrix.name }}/run.py
       - run: python3 momo_sample/${{ matrix.name }}/run.py
