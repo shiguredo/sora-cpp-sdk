@@ -49,12 +49,18 @@ jobs:
             New-Variable -Name $var[0] -Value $var[1] -Force
           }
           echo "::set-output name=name::${PACKAGE_NAME}"
+          echo "::set-output name=boost_name::${BOOST_PACKAGE_NAME}"
         id: package_name
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
           name: ${{ steps.package_name.outputs.name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.name }}
+      - name: Upload Boost Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.package_name.outputs.boost_name }}
+          path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.boost_name }}
       - name: Upload Environment
         uses: actions/upload-artifact@v3
         with:
@@ -131,12 +137,18 @@ jobs:
         run: |
           source _package/${{ matrix.name }}/release/sora.env
           echo "::set-output name=name::${PACKAGE_NAME}"
+          echo "::set-output name=boost_name::${BOOST_PACKAGE_NAME}"
         id: package_name
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
           name: ${{ steps.package_name.outputs.name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.name }}
+      - name: Upload Boost Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.package_name.outputs.boost_name }}
+          path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.boost_name }}
       - name: Upload Environment
         uses: actions/upload-artifact@v3
         with:
@@ -171,12 +183,18 @@ jobs:
         run: |
           source _package/${{ matrix.name }}/release/sora.env
           echo "::set-output name=name::${PACKAGE_NAME}"
+          echo "::set-output name=boost_name::${BOOST_PACKAGE_NAME}"
         id: package_name
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
           name: ${{ steps.package_name.outputs.name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.name }}
+      - name: Upload Boost Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.package_name.outputs.boost_name }}
+          path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.boost_name }}
       - name: Upload Environment
         uses: actions/upload-artifact@v3
         with:
@@ -241,6 +259,7 @@ jobs:
           source ${{ matrix.name }}.env/sora.env
           source create-release.env/create-release.env
           echo "::set-output name=package_name::$PACKAGE_NAME"
+          echo "::set-output name=boost_package_name::$BOOST_PACKAGE_NAME"
           echo "::set-output name=content_type::$CONTENT_TYPE"
           echo "::set-output name=upload_url::$UPLOAD_URL"
         id: env
@@ -256,6 +275,15 @@ jobs:
           upload_url: ${{ steps.env.outputs.upload_url }}
           asset_path: ${{ steps.env.outputs.package_name }}/${{ steps.env.outputs.package_name }}
           asset_name: ${{ steps.env.outputs.package_name }}
+          asset_content_type: ${{ steps.env.outputs.content_type }}
+      - name: Upload ${{ matrix.name }} Release Asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.env.outputs.upload_url }}
+          asset_path: ${{ steps.env.outputs.boost_package_name }}/${{ steps.env.outputs.boost_package_name }}
+          asset_name: ${{ steps.env.outputs.boost_package_name }}
           asset_content_type: ${{ steps.env.outputs.content_type }}
   #notification:
   #  name: Slack Notification

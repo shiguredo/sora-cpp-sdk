@@ -1418,6 +1418,7 @@ def main():
         with cd(BASE_DIR):
             version = read_version_file('VERSION')
             sora_cpp_sdk_version = version['SORA_CPP_SDK_VERSION']
+            boost_version = version['BOOST_VERSION']
 
         with cd(install_dir):
             if platform.target.os == 'windows':
@@ -1426,18 +1427,32 @@ def main():
                 with zipfile.ZipFile(archive_path, 'w') as f:
                     for file in enum_all_files('sora', '.'):
                         f.write(filename=file, arcname=file)
+                boost_archive_name = \
+                    f'boost-{boost_version}_sora-cpp-sdk-{sora_cpp_sdk_version}_{platform.target.package_name}.zip'
+                boost_archive_path = os.path.join(package_dir, boost_archive_name)
+                with zipfile.ZipFile(boost_archive_path, 'w') as f:
+                    for file in enum_all_files('boost', '.'):
+                        f.write(filename=file, arcname=file)
                 with open(os.path.join(package_dir, 'sora.env'), 'w') as f:
                     f.write('CONTENT_TYPE=application/zip\n')
                     f.write(f'PACKAGE_NAME={archive_name}\n')
+                    f.write(f'BOOST_PACKAGE_NAME={boost_archive_name}\n')
             else:
                 archive_name = f'sora-cpp-sdk-{sora_cpp_sdk_version}_{platform.target.package_name}.tar.gz'
                 archive_path = os.path.join(package_dir, archive_name)
                 with tarfile.open(archive_path, 'w:gz') as f:
                     for file in enum_all_files('sora', '.'):
                         f.add(name=file, arcname=file)
+                boost_archive_name = \
+                    f'boost-{boost_version}_sora-cpp-sdk-{sora_cpp_sdk_version}_{platform.target.package_name}.zip'
+                boost_archive_path = os.path.join(package_dir, boost_archive_name)
+                with tarfile.open(boost_archive_path, 'w:gz') as f:
+                    for file in enum_all_files('boost', '.'):
+                        f.add(name=file, arcname=file)
                 with open(os.path.join(package_dir, 'sora.env'), 'w') as f:
                     f.write("CONTENT_TYPE=application/gzip\n")
                     f.write(f'PACKAGE_NAME={archive_name}\n')
+                    f.write(f'BOOST_PACKAGE_NAME={archive_name}\n')
 
 
 if __name__ == '__main__':
