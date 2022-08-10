@@ -6,7 +6,7 @@
 #include <CLI/CLI.hpp>
 
 // Boost
-#include <boost/optional/optional_io.hpp>
+#include <boost/optional/optional.hpp>
 
 #include "sdl_renderer.h"
 
@@ -132,6 +132,26 @@ class SDLSample : public std::enable_shared_from_this<SDLSample>,
   std::unique_ptr<SDLRenderer> renderer_;
 };
 
+void add_optional_bool(CLI::App& app,
+                       const std::string& option_name,
+                       boost::optional<bool>& v,
+                       const std::string& help_text) {
+  auto f = [&v](const std::string& input) {
+    if (input == "true") {
+      v = true;
+    } else if (input == "false") {
+      v = false;
+    } else if (input == "none") {
+      v = boost::none;
+    } else {
+      throw CLI::ConversionError(input, "optional<bool>");
+    }
+  };
+  app.add_option_function<std::string>(option_name, f, help_text)
+      ->type_name("TEXT")
+      ->check(CLI::IsMember({"true", "false", "none"}));
+}
+
 int main(int argc, char* argv[]) {
 #ifdef _WIN32
   webrtc::ScopedCOMInitializer com_initializer(
@@ -143,10 +163,6 @@ int main(int argc, char* argv[]) {
 #endif
 
   SDLSampleConfig config;
-
-  auto optional_bool_map =
-      std::vector<std::pair<std::string, boost::optional<bool>>>(
-          {{"false", false}, {"true", true}, {"none", boost::none}});
 
   CLI::App app("SDL Sample for Sora C++ SDK");
   app.set_help_all_flag("--help-all",
@@ -168,9 +184,8 @@ int main(int argc, char* argv[]) {
   app.add_option("--video-codec-type", config.video_codec_type,
                  "Video codec for send")
       ->check(CLI::IsMember({"", "VP8", "VP9", "AV1", "H264"}));
-  app.add_option("--multistream", config.multistream,
-                 "Use multistream (default: none)")
-      ->transform(CLI::CheckedTransformer(optional_bool_map, CLI::ignore_case));
+  add_optional_bool(app, "--multistream", config.multistream,
+                    "Use multistream (default: none)");
 
   // SDL に関するオプション
   app.add_option("--width", config.width, "SDL window width");
