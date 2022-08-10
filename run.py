@@ -1452,7 +1452,7 @@ def main():
                 with open(os.path.join(package_dir, 'sora.env'), 'w') as f:
                     f.write("CONTENT_TYPE=application/gzip\n")
                     f.write(f'PACKAGE_NAME={archive_name}\n')
-                    f.write(f'BOOST_PACKAGE_NAME={archive_name}\n')
+                    f.write(f'BOOST_PACKAGE_NAME={boost_archive_name}\n')
 
 
 if __name__ == '__main__':

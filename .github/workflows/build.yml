@@ -82,12 +82,18 @@ jobs:
         run: |
           source _package/${{ matrix.name }}/release/sora.env
           echo "::set-output name=name::${PACKAGE_NAME}"
+          echo "::set-output name=boost_name::${BOOST_PACKAGE_NAME}"
         id: package_name
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
           name: ${{ steps.package_name.outputs.name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.name }}
+      - name: Upload Boost Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.package_name.outputs.boost_name }}
+          path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.boost_name }}
       - name: Upload Environment
         uses: actions/upload-artifact@v3
         with:
