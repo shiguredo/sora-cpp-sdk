@@ -1444,7 +1444,7 @@ def main():
                     for file in enum_all_files('sora', '.'):
                         f.add(name=file, arcname=file)
                 boost_archive_name = \
-                    f'boost-{boost_version}_sora-cpp-sdk-{sora_cpp_sdk_version}_{platform.target.package_name}.zip'
+                    f'boost-{boost_version}_sora-cpp-sdk-{sora_cpp_sdk_version}_{platform.target.package_name}.tar.gz'
                 boost_archive_path = os.path.join(package_dir, boost_archive_name)
                 with tarfile.open(boost_archive_path, 'w:gz') as f:
                     for file in enum_all_files('boost', '.'):
