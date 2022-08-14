@@ -11,6 +11,8 @@
 
 ## develop
 
+## 2022.10.0 (2022-08-15)
+
 - [CHANGE] Android の要求バージョンを `24` から `29` に上げる
     - @melpon
 - [UPDATE] libwebrtc を m104.5112.7.0 に上げる
