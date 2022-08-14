@@ -11,12 +11,17 @@
 
 ## develop
 
+- [CHANGE] Android の要求バージョンを `24` から `29` に上げる
+    - @melpon
+- [UPDATE] libwebrtc を m104.5112.7.0 に上げる
+    - @melpon
+- [ADD] Sora C++ SDK のリリースに Boost パッケージを含める
+    - @melpon
+
 ## 2022.9.0 (2022-07-29)
 
 - [CHANGE] DataChannel の準備が完了したことを示す通知を追加
     - 純粋仮想関数を追加したため破壊的変更となる
-    - @melpon
-- [UPDATE] libwebrtc を m104.5112.7.0 に上げる
     - @melpon
 - [ADD] mid を取得する関数を追加
     - @melpon
