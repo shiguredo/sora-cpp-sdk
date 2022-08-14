@@ -1005,7 +1005,8 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             ]
             install_boost_args['cxxflags'] = [
                 '-fPIC',
-                '-D_LIBCPP_ABI_UNSTABLE',
+                '-D_LIBCPP_ABI_NAMESPACE=Cr',
+                '-D_LIBCPP_ABI_VERSION=2',
                 '-D_LIBCPP_DISABLE_AVAILABILITY',
                 '-nostdinc++',
                 '-std=gnu++17',
@@ -1029,7 +1030,8 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                 '--target=aarch64-linux-gnu',
                 f"--sysroot={sysroot}",
                 f"-I{os.path.join(sysroot, 'usr', 'include', 'aarch64-linux-gnu')}",
-                '-D_LIBCPP_ABI_UNSTABLE',
+                '-D_LIBCPP_ABI_NAMESPACE=Cr',
+                '-D_LIBCPP_ABI_VERSION=2',
                 '-D_LIBCPP_DISABLE_AVAILABILITY',
                 '-nostdinc++',
                 '-std=gnu++17',
@@ -1045,7 +1047,8 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             install_boost_args['target_os'] = 'linux'
             install_boost_args['cxx'] = os.path.join(webrtc_info.clang_dir, 'bin', 'clang++')
             install_boost_args['cxxflags'] = [
-                '-D_LIBCPP_ABI_UNSTABLE',
+                '-D_LIBCPP_ABI_NAMESPACE=Cr',
+                '-D_LIBCPP_ABI_VERSION=2',
                 '-D_LIBCPP_DISABLE_AVAILABILITY',
                 '-nostdinc++',
                 f"-isystem{os.path.join(webrtc_info.libcxx_dir, 'include')}",
@@ -1111,9 +1114,9 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                 path = cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))
                 cmake_args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
                 flags = [
-                    '-nostdinc++', '-D_LIBCPP_ABI_UNSTABLE', '-D_LIBCPP_DISABLE_AVAILABILITY',
-                    '-D_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS', '-D_LIBCXXABI_DISABLE_VISIBILITY_ANNOTATIONS',
-                    '-D_LIBCPP_ENABLE_NODISCARD']
+                    '-nostdinc++', '-D_LIBCPP_ABI_NAMESPACE=Cr', '-D_LIBCPP_ABI_VERSION=2',
+                    '-D_LIBCPP_DISABLE_AVAILABILITY', '-D_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS',
+                    '-D_LIBCXXABI_DISABLE_VISIBILITY_ANNOTATIONS', '-D_LIBCPP_ENABLE_NODISCARD']
                 cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(flags)}")
                 install_vpl_args['cmake_args'] = cmake_args
             install_vpl(**install_vpl_args)
@@ -1258,6 +1261,7 @@ def main():
             toolchain_file = os.path.join(install_dir, 'android-ndk', 'build', 'cmake', 'android.toolchain.cmake')
             cmake_args.append(f"-DCMAKE_TOOLCHAIN_FILE={toolchain_file}")
             cmake_args.append(f"-DANDROID_NATIVE_API_LEVEL={android_native_api_level}")
+            cmake_args.append(f"-DANDROID_PLATFORM={android_native_api_level}")
             cmake_args.append('-DANDROID_ABI=arm64-v8a')
             cmake_args.append('-DANDROID_STL=none')
             cmake_args.append("-DUSE_LIBCXX=ON")
@@ -1414,6 +1418,7 @@ def main():
         with cd(BASE_DIR):
             version = read_version_file('VERSION')
             sora_cpp_sdk_version = version['SORA_CPP_SDK_VERSION']
+            boost_version = version['BOOST_VERSION']
 
         with cd(install_dir):
             if platform.target.os == 'windows':
@@ -1422,18 +1427,32 @@ def main():
                 with zipfile.ZipFile(archive_path, 'w') as f:
                     for file in enum_all_files('sora', '.'):
                         f.write(filename=file, arcname=file)
+                boost_archive_name = \
+                    f'boost-{boost_version}_sora-cpp-sdk-{sora_cpp_sdk_version}_{platform.target.package_name}.zip'
+                boost_archive_path = os.path.join(package_dir, boost_archive_name)
+                with zipfile.ZipFile(boost_archive_path, 'w') as f:
+                    for file in enum_all_files('boost', '.'):
+                        f.write(filename=file, arcname=file)
                 with open(os.path.join(package_dir, 'sora.env'), 'w') as f:
                     f.write('CONTENT_TYPE=application/zip\n')
                     f.write(f'PACKAGE_NAME={archive_name}\n')
+                    f.write(f'BOOST_PACKAGE_NAME={boost_archive_name}\n')
             else:
                 archive_name = f'sora-cpp-sdk-{sora_cpp_sdk_version}_{platform.target.package_name}.tar.gz'
                 archive_path = os.path.join(package_dir, archive_name)
                 with tarfile.open(archive_path, 'w:gz') as f:
                     for file in enum_all_files('sora', '.'):
                         f.add(name=file, arcname=file)
+                boost_archive_name = \
+                    f'boost-{boost_version}_sora-cpp-sdk-{sora_cpp_sdk_version}_{platform.target.package_name}.tar.gz'
+                boost_archive_path = os.path.join(package_dir, boost_archive_name)
+                with tarfile.open(boost_archive_path, 'w:gz') as f:
+                    for file in enum_all_files('boost', '.'):
+                        f.add(name=file, arcname=file)
                 with open(os.path.join(package_dir, 'sora.env'), 'w') as f:
                     f.write("CONTENT_TYPE=application/gzip\n")
                     f.write(f'PACKAGE_NAME={archive_name}\n')
+                    f.write(f'BOOST_PACKAGE_NAME={boost_archive_name}\n')
 
 
 if __name__ == '__main__':
