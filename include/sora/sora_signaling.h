@@ -34,7 +34,7 @@ enum class SoraSignalingErrorCode {
 
 class SoraSignalingObserver {
  public:
-  virtual void OnSetOffer() = 0;
+  virtual void OnSetOffer(std::string offer) = 0;
   virtual void OnDisconnect(SoraSignalingErrorCode ec, std::string message) = 0;
   virtual void OnNotify(std::string text) = 0;
   virtual void OnPush(std::string text) = 0;

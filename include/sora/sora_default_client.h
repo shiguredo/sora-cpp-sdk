@@ -59,7 +59,7 @@ class SoraDefaultClient : public sora::SoraSignalingObserver {
   virtual void* GetAndroidApplicationContext(void* env) { return nullptr; }
 
   // SoraSignalingObserver の実装
-  void OnSetOffer() override {}
+  void OnSetOffer(std::string offer) override {}
   void OnDisconnect(sora::SoraSignalingErrorCode ec,
                     std::string message) override {}
   void OnNotify(std::string text) override {}

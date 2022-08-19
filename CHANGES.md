@@ -11,6 +11,9 @@
 
 ## develop
 
+- [CHANGE] OnSetOffer に type: offer メッセージ全体を渡す
+    - @melpon
+
 ## 2022.10.1 (2022-08-15)
 
 - [CHANGE] Android の要求バージョンを `24` から `29` に上げる

@@ -793,8 +793,8 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
 
     SessionDescription::SetOffer(
         pc_.get(), sdp,
-        [self = shared_from_this(), m]() {
-          boost::asio::post(*self->config_.io_context, [self, m]() {
+        [self = shared_from_this(), m, text]() {
+          boost::asio::post(*self->config_.io_context, [self, m, text]() {
             if (self->state_ != State::Connected) {
               return;
             }
@@ -817,7 +817,7 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
             // トラックを追加する必要があるため、ここで初期化する
             auto ob = self->config_.observer.lock();
             if (ob != nullptr) {
-              ob->OnSetOffer();
+              ob->OnSetOffer(std::move(text));
             }
 
             if (self->offer_config_.simulcast &&
@@ -967,7 +967,8 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
     auto ob = config_.observer.lock();
     if (ob != nullptr) {
       for (auto& kv : dc_labels_) {
-        if (kv.first[0] == '#' && !kv.second.notified && dc_->IsOpen(kv.first)) {
+        if (kv.first[0] == '#' && !kv.second.notified &&
+            dc_->IsOpen(kv.first)) {
           ob->OnDataChannel(kv.first);
           kv.second.notified = true;
         }
