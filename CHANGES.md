@@ -13,6 +13,8 @@
 
 - [CHANGE] OnSetOffer に type: offer メッセージ全体を渡す
     - @melpon
+- [UPDATE] libwebrtc を m105.5195.0.0 に上げる
+    - @voluntas @melpon
 
 ## 2022.10.1 (2022-08-15)
 
