@@ -83,48 +83,49 @@ bool JetsonV4L2Capturer::DeAllocateVideoBuffers() {
 }
 
 void JetsonV4L2Capturer::OnCaptured(uint8_t* data, uint32_t bytesused) {
-  const int64_t timestamp_us = rtc::TimeMicros();
-  int adapted_width, adapted_height, crop_width, crop_height, crop_x, crop_y;
-  if (!AdaptFrame(_currentWidth, _currentHeight, timestamp_us, &adapted_width,
-                  &adapted_height, &crop_width, &crop_height, &crop_x,
-                  &crop_y)) {
-    return;
-  }
+  V4L2VideoCapturer::OnCaptured(data, bytesused);
+  //const int64_t timestamp_us = rtc::TimeMicros();
+  //int adapted_width, adapted_height, crop_width, crop_height, crop_x, crop_y;
+  //if (!AdaptFrame(_currentWidth, _currentHeight, timestamp_us, &adapted_width,
+  //                &adapted_height, &crop_width, &crop_height, &crop_x,
+  //                &crop_y)) {
+  //  return;
+  //}
 
-  if (_captureVideoType == webrtc::VideoType::kMJPEG) {
-    auto decoder = jpeg_decoder_pool_->Pop();
-    int fd = 0;
-    uint32_t width, height, pixfmt;
-    if (decoder->DecodeToFd(fd, data, bytesused, pixfmt, width, height) < 0) {
-      RTC_LOG(LS_ERROR) << "decodeToFd Failed";
-      return;
-    }
+  //if (_captureVideoType == webrtc::VideoType::kMJPEG) {
+  //  auto decoder = jpeg_decoder_pool_->Pop();
+  //  int fd = 0;
+  //  uint32_t width, height, pixfmt;
+  //  if (decoder->DecodeToFd(fd, data, bytesused, pixfmt, width, height) < 0) {
+  //    RTC_LOG(LS_ERROR) << "decodeToFd Failed";
+  //    return;
+  //  }
 
-    rtc::scoped_refptr<JetsonBuffer> jetson_buffer(
-        JetsonBuffer::Create(_captureVideoType, width, height, adapted_width,
-                             adapted_height, fd, pixfmt, std::move(decoder)));
-    OnFrame(webrtc::VideoFrame::Builder()
-                .set_video_frame_buffer(jetson_buffer)
-                .set_timestamp_rtp(0)
-                .set_timestamp_ms(rtc::TimeMillis())
-                .set_timestamp_us(rtc::TimeMicros())
-                .set_rotation(webrtc::kVideoRotation_0)
-                .build());
+  //  rtc::scoped_refptr<JetsonBuffer> jetson_buffer(
+  //      JetsonBuffer::Create(_captureVideoType, width, height, adapted_width,
+  //                           adapted_height, fd, pixfmt, std::move(decoder)));
+  //  OnFrame(webrtc::VideoFrame::Builder()
+  //              .set_video_frame_buffer(jetson_buffer)
+  //              .set_timestamp_rtp(0)
+  //              .set_timestamp_ms(rtc::TimeMillis())
+  //              .set_timestamp_us(rtc::TimeMicros())
+  //              .set_rotation(webrtc::kVideoRotation_0)
+  //              .build());
 
-  } else {
-    rtc::scoped_refptr<JetsonBuffer> jetson_buffer(
-        JetsonBuffer::Create(_captureVideoType, _currentWidth, _currentHeight,
-                             adapted_width, adapted_height));
-    memcpy(jetson_buffer->Data(), data, bytesused);
-    jetson_buffer->SetLength(bytesused);
-    OnFrame(webrtc::VideoFrame::Builder()
-                .set_video_frame_buffer(jetson_buffer)
-                .set_timestamp_rtp(0)
-                .set_timestamp_ms(rtc::TimeMillis())
-                .set_timestamp_us(rtc::TimeMicros())
-                .set_rotation(webrtc::kVideoRotation_0)
-                .build());
-  }
+  //} else {
+  //  rtc::scoped_refptr<JetsonBuffer> jetson_buffer(
+  //      JetsonBuffer::Create(_captureVideoType, _currentWidth, _currentHeight,
+  //                           adapted_width, adapted_height));
+  //  memcpy(jetson_buffer->Data(), data, bytesused);
+  //  jetson_buffer->SetLength(bytesused);
+  //  OnFrame(webrtc::VideoFrame::Builder()
+  //              .set_video_frame_buffer(jetson_buffer)
+  //              .set_timestamp_rtp(0)
+  //              .set_timestamp_ms(rtc::TimeMillis())
+  //              .set_timestamp_us(rtc::TimeMicros())
+  //              .set_rotation(webrtc::kVideoRotation_0)
+  //              .build());
+  //}
 }
 
 }  // namespace sora
