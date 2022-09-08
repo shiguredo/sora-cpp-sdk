@@ -11,6 +11,8 @@
 
 ## develop
 
+## 2022.11.0 (2022-09-09)
+
 - [CHANGE] Jetson の HW MJPEG デコーダを一時的に無効にする
     - @melpon
 - [CHANGE] OnSetOffer に type: offer メッセージ全体を渡す
