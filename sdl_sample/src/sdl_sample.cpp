@@ -86,7 +86,7 @@ class SDLSample : public std::enable_shared_from_this<SDLSample>,
     ioc_->run();
   }
 
-  void OnSetOffer() override {
+  void OnSetOffer(std::string offer) override {
     std::string stream_id = rtc::CreateRandomString(16);
     if (audio_track_ != nullptr) {
       webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpSenderInterface>>

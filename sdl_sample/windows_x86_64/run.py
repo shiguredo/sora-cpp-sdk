@@ -44,19 +44,9 @@ def install_deps(source_dir, build_dir, install_dir, debug):
             'version': version['BOOST_VERSION'],
             'version_file': os.path.join(install_dir, 'boost.version'),
             'source_dir': source_dir,
-            'build_dir': build_dir,
             'install_dir': install_dir,
-            'cxx': '',
-            'cflags': [],
-            'cxxflags': ['-D_HAS_ITERATOR_DEBUGGING=0'],
-            'linkflags': [],
-            'toolset': 'msvc',
-            'visibility': 'global',
-            'target_os': 'windows',
-            'debug': debug,
-            'android_ndk': '',
-            'native_api_level': '',
-            'architecture': 'x86',
+            'sora_version': version['SORA_CPP_SDK_VERSION'],
+            'platform': 'windows_x86_64',
         }
         install_boost(**install_boost_args)
 

@@ -70,28 +70,9 @@ def install_deps(source_dir, build_dir, install_dir, debug):
             'version': version['BOOST_VERSION'],
             'version_file': os.path.join(install_dir, 'boost.version'),
             'source_dir': source_dir,
-            'build_dir': build_dir,
             'install_dir': install_dir,
-            'cxx': os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'),
-            'cflags': [
-                '-fPIC',
-            ],
-            'cxxflags': [
-                '-fPIC',
-                '-D_LIBCPP_ABI_UNSTABLE',
-                '-D_LIBCPP_DISABLE_AVAILABILITY',
-                '-nostdinc++',
-                '-std=gnu++17',
-                f"-isystem{os.path.join(webrtc_info.libcxx_dir, 'include')}",
-            ],
-            'linkflags': [],
-            'toolset': 'clang',
-            'visibility': 'hidden',
-            'target_os': 'linux',
-            'debug': debug,
-            'android_ndk': '',
-            'native_api_level': '',
-            'architecture': 'x86',
+            'sora_version': version['SORA_CPP_SDK_VERSION'],
+            'platform': 'ubuntu-20.04_x86_64',
         }
         install_boost(**install_boost_args)
 

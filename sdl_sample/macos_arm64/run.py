@@ -46,28 +46,9 @@ def install_deps(source_dir, build_dir, install_dir, debug):
             'version': version['BOOST_VERSION'],
             'version_file': os.path.join(install_dir, 'boost.version'),
             'source_dir': source_dir,
-            'build_dir': build_dir,
             'install_dir': install_dir,
-            'cxx': 'clang++',
-            'cflags': [
-                '-fPIC',
-                f"--sysroot={sysroot}",
-                '-target', 'aarch64-apple-darwin',
-            ],
-            'cxxflags': [
-                '-fPIC',
-                f"--sysroot={sysroot}",
-                '-target', 'aarch64-apple-darwin',
-                '-std=gnu++17',
-            ],
-            'linkflags': [],
-            'toolset': 'clang',
-            'visibility': 'hidden',
-            'target_os': 'darwin',
-            'debug': debug,
-            'android_ndk': '',
-            'native_api_level': '',
-            'architecture': 'arm',
+            'sora_version': version['SORA_CPP_SDK_VERSION'],
+            'platform': 'macos_arm64',
         }
         install_boost(**install_boost_args)
 
