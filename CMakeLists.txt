@@ -386,6 +386,8 @@ elseif (SORA_TARGET_OS STREQUAL "android")
       _LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS
       _LIBCXXABI_DISABLE_VISIBILITY_ANNOTATIONS
       _LIBCPP_ENABLE_NODISCARD
+      # https://github.com/boostorg/container_hash/issues/22 と同じ問題が clang-15 でも起きるので、これを手動で定義して回避する
+      BOOST_NO_CXX98_FUNCTION_BASE
   )
 
 elseif (SORA_TARGET_OS STREQUAL "ubuntu")
