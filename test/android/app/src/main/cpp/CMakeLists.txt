@@ -65,6 +65,5 @@ file(READ ${SORA_DIR}/share/webrtc.ldflags _WEBRTC_ANDROID_LDFLAGS)
 string(REGEX REPLACE "\n" ";" _WEBRTC_ANDROID_LDFLAGS "${_WEBRTC_ANDROID_LDFLAGS}")
 target_link_options(hello
   PRIVATE
-    -fuse-ld=gold
     ${_WEBRTC_ANDROID_LDFLAGS}
 )
