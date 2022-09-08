@@ -26,7 +26,7 @@
 #include <third_party/libyuv/include/libyuv/video_common.h>
 
 // Jetson Linux Multimedia API
-#include <NvVideoConverter.h>
+//#include <NvVideoConverter.h>
 #include <NvVideoEncoder.h>
 
 // L4T Multimedia API
@@ -46,7 +46,7 @@ namespace sora {
 
 JetsonVideoEncoder::JetsonVideoEncoder(const cricket::VideoCodec& codec)
     : callback_(nullptr),
-      converter_(nullptr),
+      //converter_(nullptr),
       encoder_(nullptr),
       configured_framerate_(30),
       use_native_(false),
@@ -188,57 +188,57 @@ int32_t JetsonVideoEncoder::JetsonConfigure() {
                       decode_pixfmt_ != V4L2_PIX_FMT_YUV420M);
 
   if (use_converter) {
-    enc0_buffer_queue_ = new std::queue<NvBuffer*>;
+    //enc0_buffer_queue_ = new std::queue<NvBuffer*>;
 
-    converter_ = NvVideoConverter::createVideoConverter("conv");
-    INIT_ERROR(!converter_, "Failed to createVideoConverter");
+    //converter_ = NvVideoConverter::createVideoConverter("conv");
+    //INIT_ERROR(!converter_, "Failed to createVideoConverter");
 
-    ret = converter_->setOutputPlaneFormat(
-        decode_pixfmt_, raw_width_, raw_height_, V4L2_NV_BUFFER_LAYOUT_PITCH);
-    INIT_ERROR(ret < 0, "Failed to converter setOutputPlaneFormat");
+    //ret = converter_->setOutputPlaneFormat(
+    //    decode_pixfmt_, raw_width_, raw_height_, V4L2_NV_BUFFER_LAYOUT_PITCH);
+    //INIT_ERROR(ret < 0, "Failed to converter setOutputPlaneFormat");
 
-    ret =
-        converter_->setCapturePlaneFormat(V4L2_PIX_FMT_YUV420M, width_, height_,
-                                          V4L2_NV_BUFFER_LAYOUT_BLOCKLINEAR);
-    INIT_ERROR(ret < 0, "Failed to converter setCapturePlaneFormat");
+    //ret =
+    //    converter_->setCapturePlaneFormat(V4L2_PIX_FMT_YUV420M, width_, height_,
+    //                                      V4L2_NV_BUFFER_LAYOUT_BLOCKLINEAR);
+    //INIT_ERROR(ret < 0, "Failed to converter setCapturePlaneFormat");
 
-    ret = converter_->setCropRect(0, 0, raw_width_, raw_height_);
-    INIT_ERROR(ret < 0, "Failed to converter setCropRect");
+    //ret = converter_->setCropRect(0, 0, raw_width_, raw_height_);
+    //INIT_ERROR(ret < 0, "Failed to converter setCropRect");
 
-    if (use_dmabuff_) {
-      ret = converter_->output_plane.setupPlane(V4L2_MEMORY_DMABUF, 1, false,
-                                                false);
-      INIT_ERROR(ret < 0, "Failed to setupPlane at converter output_plane");
-    } else {
-      ret = converter_->output_plane.setupPlane(V4L2_MEMORY_USERPTR, 1, false,
-                                                false);
-      INIT_ERROR(ret < 0, "Failed to setupPlane at converter output_plane");
-    }
+    //if (use_dmabuff_) {
+    //  ret = converter_->output_plane.setupPlane(V4L2_MEMORY_DMABUF, 1, false,
+    //                                            false);
+    //  INIT_ERROR(ret < 0, "Failed to setupPlane at converter output_plane");
+    //} else {
+    //  ret = converter_->output_plane.setupPlane(V4L2_MEMORY_USERPTR, 1, false,
+    //                                            false);
+    //  INIT_ERROR(ret < 0, "Failed to setupPlane at converter output_plane");
+    //}
 
-    NvBufferCreateParams create_params = {0};
-    create_params.width = width_;
-    create_params.height = height_;
-    create_params.layout = NvBufferLayout_BlockLinear;
-    create_params.payloadType = NvBufferPayload_SurfArray;
-    create_params.colorFormat = NvBufferColorFormat_YUV420;
-    create_params.nvbuf_tag = NvBufferTag_VIDEO_ENC;
-    for (int i = 0; i < CONVERTER_CAPTURE_NUM; i++) {
-      ret = NvBufferCreateEx(&dmabuff_fd_[i], &create_params);
-      INIT_ERROR(ret < 0, "Failed to NvBufferCreateEx at converter");
-    }
+    //NvBufferCreateParams create_params = {0};
+    //create_params.width = width_;
+    //create_params.height = height_;
+    //create_params.layout = NvBufferLayout_BlockLinear;
+    //create_params.payloadType = NvBufferPayload_SurfArray;
+    //create_params.colorFormat = NvBufferColorFormat_YUV420;
+    //create_params.nvbuf_tag = NvBufferTag_VIDEO_ENC;
+    //for (int i = 0; i < CONVERTER_CAPTURE_NUM; i++) {
+    //  ret = NvBufferCreateEx(&dmabuff_fd_[i], &create_params);
+    //  INIT_ERROR(ret < 0, "Failed to NvBufferCreateEx at converter");
+    //}
 
-    ret = converter_->capture_plane.reqbufs(V4L2_MEMORY_DMABUF,
-                                            CONVERTER_CAPTURE_NUM);
-    INIT_ERROR(ret < 0, "Failed to reqbufs at converter capture_plane");
+    //ret = converter_->capture_plane.reqbufs(V4L2_MEMORY_DMABUF,
+    //                                        CONVERTER_CAPTURE_NUM);
+    //INIT_ERROR(ret < 0, "Failed to reqbufs at converter capture_plane");
 
-    ret = converter_->output_plane.setStreamStatus(true);
-    INIT_ERROR(ret < 0, "Failed to setStreamStatus at converter output_plane");
+    //ret = converter_->output_plane.setStreamStatus(true);
+    //INIT_ERROR(ret < 0, "Failed to setStreamStatus at converter output_plane");
 
-    ret = converter_->capture_plane.setStreamStatus(true);
-    INIT_ERROR(ret < 0, "Failed to setStreamStatus at converter capture_plane");
+    //ret = converter_->capture_plane.setStreamStatus(true);
+    //INIT_ERROR(ret < 0, "Failed to setStreamStatus at converter capture_plane");
 
-    converter_->capture_plane.setDQThreadCallback(
-        ConvertFinishedCallbackFunction);
+    //converter_->capture_plane.setDQThreadCallback(
+    //    ConvertFinishedCallbackFunction);
   }
 
   encoder_ = NvVideoEncoder::createVideoEncoder("enc0");
@@ -353,31 +353,31 @@ int32_t JetsonVideoEncoder::JetsonConfigure() {
   INIT_ERROR(ret < 0, "Failed to setStreamStatus at encoder capture_plane");
 
   if (use_converter) {
-    converter_->capture_plane.startDQThread(this);
+    //converter_->capture_plane.startDQThread(this);
 
-    for (uint32_t i = 0; i < CONVERTER_CAPTURE_NUM; i++) {
-      struct v4l2_buffer v4l2_buf;
-      struct v4l2_plane planes[MAX_PLANES];
+    //for (uint32_t i = 0; i < CONVERTER_CAPTURE_NUM; i++) {
+    //  struct v4l2_buffer v4l2_buf;
+    //  struct v4l2_plane planes[MAX_PLANES];
 
-      memset(&v4l2_buf, 0, sizeof(v4l2_buf));
-      memset(planes, 0, MAX_PLANES * sizeof(struct v4l2_plane));
+    //  memset(&v4l2_buf, 0, sizeof(v4l2_buf));
+    //  memset(planes, 0, MAX_PLANES * sizeof(struct v4l2_plane));
 
-      v4l2_buf.index = i;
-      v4l2_buf.m.planes = planes;
-      v4l2_buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-      v4l2_buf.memory = V4L2_MEMORY_DMABUF;
-      v4l2_buf.m.planes[0].m.fd = dmabuff_fd_[i];
-      ret = converter_->capture_plane.qBuffer(v4l2_buf, nullptr);
-      INIT_ERROR(ret < 0, "Failed to qBuffer at converter capture_plane");
-    }
+    //  v4l2_buf.index = i;
+    //  v4l2_buf.m.planes = planes;
+    //  v4l2_buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    //  v4l2_buf.memory = V4L2_MEMORY_DMABUF;
+    //  v4l2_buf.m.planes[0].m.fd = dmabuff_fd_[i];
+    //  ret = converter_->capture_plane.qBuffer(v4l2_buf, nullptr);
+    //  INIT_ERROR(ret < 0, "Failed to qBuffer at converter capture_plane");
+    //}
 
-    for (uint32_t i = 0; i < encoder_->output_plane.getNumBuffers(); i++) {
-      enc0_buffer_queue_->push(encoder_->output_plane.getNthBuffer(i));
-    }
-    encoder_->output_plane.setDQThreadCallback(EncodeOutputCallbackFunction);
-    encoder_->output_plane.startDQThread(this);
+    //for (uint32_t i = 0; i < encoder_->output_plane.getNumBuffers(); i++) {
+    //  enc0_buffer_queue_->push(encoder_->output_plane.getNthBuffer(i));
+    //}
+    //encoder_->output_plane.setDQThreadCallback(EncodeOutputCallbackFunction);
+    //encoder_->output_plane.startDQThread(this);
 
-    native_input_elem_ = converter_;
+    //native_input_elem_ = converter_;
   } else {
     native_input_elem_ = encoder_;
   }
@@ -403,29 +403,29 @@ int32_t JetsonVideoEncoder::JetsonConfigure() {
 void JetsonVideoEncoder::JetsonRelease() {
   if (!encoder_)
     return;
-  if (converter_) {
-    SendEOS(converter_);
-  } else {
-    SendEOS(encoder_);
-  }
+  //if (converter_) {
+  //  SendEOS(converter_);
+  //} else {
+  SendEOS(encoder_);
+  //}
   encoder_->capture_plane.waitForDQThread(2000);
   encoder_->capture_plane.deinitPlane();
   encoder_->output_plane.deinitPlane();
-  if (converter_) {
-    delete enc0_buffer_queue_;
-  }
+  //if (converter_) {
+  //  delete enc0_buffer_queue_;
+  //}
   delete encoder_;
   encoder_ = nullptr;
-  if (converter_) {
-    converter_->capture_plane.waitForDQThread(2000);
-    for (int i = 0; i < CONVERTER_CAPTURE_NUM; i++) {
-      if (dmabuff_fd_[i] != 0) {
-        NvBufferDestroy(dmabuff_fd_[i]);
-      }
-    }
-    delete converter_;
-    converter_ = nullptr;
-  }
+  //if (converter_) {
+  //  converter_->capture_plane.waitForDQThread(2000);
+  //  for (int i = 0; i < CONVERTER_CAPTURE_NUM; i++) {
+  //    if (dmabuff_fd_[i] != 0) {
+  //      NvBufferDestroy(dmabuff_fd_[i]);
+  //    }
+  //  }
+  //  delete converter_;
+  //  converter_ = nullptr;
+  //}
 }
 
 void JetsonVideoEncoder::SendEOS(NvV4l2Element* element) {
@@ -520,32 +520,32 @@ bool JetsonVideoEncoder::EncodeOutputCallbackFunction(
 bool JetsonVideoEncoder::EncodeOutputCallback(struct v4l2_buffer* v4l2_buf,
                                               NvBuffer* buffer,
                                               NvBuffer* shared_buffer) {
-  struct v4l2_buffer conv_qbuf;
-  struct v4l2_plane planes[MAX_PLANES];
+  //struct v4l2_buffer conv_qbuf;
+  //struct v4l2_plane planes[MAX_PLANES];
 
-  if (!v4l2_buf) {
-    RTC_LOG(LS_INFO) << __FUNCTION__ << " v4l2_buf is null";
-    return false;
-  }
+  //if (!v4l2_buf) {
+  //  RTC_LOG(LS_INFO) << __FUNCTION__ << " v4l2_buf is null";
+  //  return false;
+  //}
 
-  memset(&conv_qbuf, 0, sizeof(conv_qbuf));
-  memset(&planes, 0, sizeof(planes));
+  //memset(&conv_qbuf, 0, sizeof(conv_qbuf));
+  //memset(&planes, 0, sizeof(planes));
 
-  conv_qbuf.index = shared_buffer->index;
-  conv_qbuf.m.planes = planes;
-  conv_qbuf.m.planes[0].m.fd = dmabuff_fd_[shared_buffer->index];
-  {
-    std::unique_lock<std::mutex> lock(enc0_buffer_mtx_);
-    enc0_buffer_queue_->push(buffer);
+  //conv_qbuf.index = shared_buffer->index;
+  //conv_qbuf.m.planes = planes;
+  //conv_qbuf.m.planes[0].m.fd = dmabuff_fd_[shared_buffer->index];
+  //{
+  //  std::unique_lock<std::mutex> lock(enc0_buffer_mtx_);
+  //  enc0_buffer_queue_->push(buffer);
 
-    if (converter_->capture_plane.qBuffer(conv_qbuf, nullptr) < 0) {
-      RTC_LOG(LS_ERROR) << __FUNCTION__
-                        << "Failed to qBuffer at converter capture_plane";
-      return false;
-    }
+  //  if (converter_->capture_plane.qBuffer(conv_qbuf, nullptr) < 0) {
+  //    RTC_LOG(LS_ERROR) << __FUNCTION__
+  //                      << "Failed to qBuffer at converter capture_plane";
+  //    return false;
+  //  }
 
-    enc0_buffer_cond_.notify_all();
-  }
+  //  enc0_buffer_cond_.notify_all();
+  //}
 
   return true;
 }
