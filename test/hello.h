@@ -18,7 +18,7 @@ class HelloSora : public std::enable_shared_from_this<HelloSora>,
   void Run();
 
   void* GetAndroidApplicationContext(void* env) override;
-  void OnSetOffer() override;
+  void OnSetOffer(std::string offer) override;
   void OnDisconnect(sora::SoraSignalingErrorCode ec,
                     std::string message) override;
 

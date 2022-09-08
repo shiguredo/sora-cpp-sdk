@@ -11,6 +11,19 @@
 
 ## develop
 
+## 2022.11.0 (2022-09-09)
+
+- [CHANGE] Jetson の HW MJPEG デコーダを一時的に無効にする
+    - @melpon
+- [CHANGE] OnSetOffer に type: offer メッセージ全体を渡す
+    - @melpon
+- [UPDATE] libwebrtc を m105.5195.0.0 に上げる
+    - @voluntas @melpon
+- [UPDATE] boost を 1.80.0 に上げる
+    - @voluntas
+- [UPDATE] Android NDK を r25b に上げる
+    - @melpon
+
 ## 2022.10.1 (2022-08-15)
 
 - [CHANGE] Android の要求バージョンを `24` から `29` に上げる

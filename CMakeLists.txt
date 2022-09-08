@@ -386,6 +386,8 @@ elseif (SORA_TARGET_OS STREQUAL "android")
       _LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS
       _LIBCXXABI_DISABLE_VISIBILITY_ANNOTATIONS
       _LIBCPP_ENABLE_NODISCARD
+      # https://github.com/boostorg/container_hash/issues/22 と同じ問題が clang-15 でも起きるので、これを手動で定義して回避する
+      BOOST_NO_CXX98_FUNCTION_BASE
   )
 
 elseif (SORA_TARGET_OS STREQUAL "ubuntu")
@@ -395,9 +397,12 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
     PUBLIC
       WEBRTC_POSIX
       WEBRTC_LINUX
+      _LIBCPP_ABI_NAMESPACE=Cr
+      _LIBCPP_ABI_VERSION=2
+      _LIBCPP_DISABLE_AVAILABILITY
+      # https://github.com/boostorg/container_hash/issues/22 と同じ問題が clang-15 でも起きるので、これを手動で定義して回避する
+      BOOST_NO_CXX98_FUNCTION_BASE
   )
-  # Linux 系の場合はカスタムされた libc++ を使っているためオプション追加
-  target_compile_definitions(sora PUBLIC _LIBCPP_ABI_NAMESPACE=Cr _LIBCPP_ABI_VERSION=2 _LIBCPP_DISABLE_AVAILABILITY)
 
   set_target_properties(sora PROPERTIES POSITION_INDEPENDENT_CODE ON)
   target_link_libraries(sora
@@ -479,8 +484,12 @@ elseif (SORA_TARGET_OS STREQUAL "jetson")
     PUBLIC
       WEBRTC_POSIX
       WEBRTC_LINUX
+      _LIBCPP_ABI_NAMESPACE=Cr
+      _LIBCPP_ABI_VERSION=2
+      _LIBCPP_DISABLE_AVAILABILITY
+      # https://github.com/boostorg/container_hash/issues/22 と同じ問題が clang-15 でも起きるので、これを手動で定義して回避する
+      BOOST_NO_CXX98_FUNCTION_BASE
   )
-  target_compile_definitions(sora PUBLIC _LIBCPP_ABI_NAMESPACE=Cr _LIBCPP_ABI_VERSION=2 _LIBCPP_DISABLE_AVAILABILITY)
 
   set_target_properties(sora PROPERTIES POSITION_INDEPENDENT_CODE ON)
   target_link_libraries(sora
@@ -519,7 +528,6 @@ elseif (SORA_TARGET_OS STREQUAL "jetson")
         ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvLogging.cpp
         ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvV4l2Element.cpp
         ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvV4l2ElementPlane.cpp
-        ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvVideoConverter.cpp
         ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvVideoEncoder.cpp
         ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvVideoDecoder.cpp
     )

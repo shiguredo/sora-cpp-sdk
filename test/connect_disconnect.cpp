@@ -89,7 +89,7 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
     ioc_->run();
   }
 
-  void OnSetOffer() override {
+  void OnSetOffer(std::string offer) override {
     std::string stream_id = rtc::CreateRandomString(16);
     webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpSenderInterface>>
         audio_result =

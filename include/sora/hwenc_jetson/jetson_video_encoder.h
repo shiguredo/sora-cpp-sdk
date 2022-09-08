@@ -33,7 +33,7 @@
 
 class NvBuffer;
 class NvV4l2Element;
-class NvVideoConverter;
+//class NvVideoConverter;
 class NvVideoEncoder;
 struct v4l2_ctrl_videoenc_outputbuf_metadata_;
 
@@ -125,7 +125,7 @@ class JetsonVideoEncoder : public webrtc::VideoEncoder {
 
   webrtc::VideoCodec codec_;
   webrtc::EncodedImageCallback* callback_;
-  NvVideoConverter* converter_;
+  //NvVideoConverter* converter_;
   NvVideoEncoder* encoder_;
   std::unique_ptr<webrtc::BitrateAdjuster> bitrate_adjuster_;
   uint32_t framerate_;

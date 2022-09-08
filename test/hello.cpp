@@ -83,7 +83,7 @@ void* HelloSora::GetAndroidApplicationContext(void* env) {
   return ::GetAndroidApplicationContext(env);
 }
 
-void HelloSora::OnSetOffer() {
+void HelloSora::OnSetOffer(std::string offer) {
   std::string stream_id = rtc::CreateRandomString(16);
   webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpSenderInterface>>
       audio_result =
