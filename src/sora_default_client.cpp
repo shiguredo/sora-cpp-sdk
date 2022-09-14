@@ -61,12 +61,13 @@ bool SoraDefaultClient::Configure() {
       worker_thread_->Invoke<rtc::scoped_refptr<webrtc::AudioDeviceModule>>(
           RTC_FROM_HERE, [&] {
             sora::AudioDeviceModuleConfig config;
-            if (!config_.use_audio_deivce) {
+            if (!config_.use_audio_device) {
               config.audio_layer = webrtc::AudioDeviceModule::kDummyAudio;
             }
             config.task_queue_factory = dependencies.task_queue_factory.get();
-            config.jni_env = env;
-            config.application_context = GetAndroidApplicationContext(env);
+            config.jni_env = sora::GetJNIEnv();
+            config.application_context =
+                GetAndroidApplicationContext(config.jni_env);
             return sora::CreateAudioDeviceModule(config);
           });
 

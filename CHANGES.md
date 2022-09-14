@@ -11,6 +11,13 @@
 
 ## develop
 
+## 2022.11.1 (2022-09-14)
+
+- [FIX] Android で SoraDefaultClient が使えなかったのを修正
+    - @melpon
+- [FIX] SoraDefaultClientConfig の `use_audio_deivce` はスペルミスなので `use_audio_device` に修正
+    - @melpon
+
 ## 2022.11.0 (2022-09-09)
 
 - [CHANGE] Jetson の HW MJPEG デコーダを一時的に無効にする

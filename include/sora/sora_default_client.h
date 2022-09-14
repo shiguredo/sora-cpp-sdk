@@ -12,7 +12,7 @@ namespace sora {
 struct SoraDefaultClientConfig {
   // オーディオデバイスを利用するかどうか
   // false にすると一切オーディオデバイスを掴まなくなる
-  bool use_audio_deivce = true;
+  bool use_audio_device = true;
   // ハードウェアエンコーダ/デコーダを利用するかどうか
   // false にするとソフトウェアエンコーダ/デコーダのみになる（H.264 は利用できない）
   bool use_hardware_encoder = true;
