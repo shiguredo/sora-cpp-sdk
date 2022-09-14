@@ -148,7 +148,7 @@ int main(int argc, char* argv[]) {
     v = boost::json::parse(js);
   }
   SoraClientConfig config;
-  config.use_audio_deivce = false;
+  config.use_audio_device = false;
   config.use_hardware_encoder = false;
   for (auto&& x : v.as_object().at("signaling_urls").as_array()) {
     config.signaling_urls.push_back(x.as_string().c_str());
