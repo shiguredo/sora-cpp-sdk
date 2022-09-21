@@ -35,6 +35,10 @@
 #include "sora/hwenc_jetson/jetson_video_decoder.h"
 #endif
 
+#if defined(SORA_CPP_SDK_HOLOLENS2)
+#include <modules/video_coding/codecs/h264/winuwp/decoder/h264_decoder_mf_impl.h>
+#endif
+
 #include "default_video_formats.h"
 
 namespace sora {
@@ -236,6 +240,15 @@ SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
       }));
 #endif
 
+#if defined(SORA_CPP_SDK_HOLOLENS2)
+  config.decoders.insert(
+      config.decoders.begin(),
+      VideoDecoderConfig(webrtc::kVideoCodecH264, [](auto format) {
+        return std::unique_ptr<webrtc::VideoDecoder>(
+            absl::make_unique<webrtc::H264DecoderMFImpl>());
+      }));
+#endif
+
   return config;
 }
 
@@ -247,7 +260,8 @@ SoraVideoDecoderFactoryConfig GetSoftwareOnlyVideoDecoderFactoryConfig() {
   config.decoders.push_back(VideoDecoderConfig(
       webrtc::kVideoCodecVP9,
       [](auto format) { return webrtc::VP9Decoder::Create(); }));
-#if !defined(__arm__) || defined(__aarch64__) || defined(__ARM_NEON__)
+#if (!defined(__arm__) || defined(__aarch64__) || defined(__ARM_NEON__)) && \
+    !defined(SORA_CPP_SDK_HOLOLENS2)
   config.decoders.push_back(VideoDecoderConfig(
       webrtc::kVideoCodecAV1,
       [](auto format) { return webrtc::CreateLibaomAv1Decoder(); }));

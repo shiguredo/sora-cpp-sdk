@@ -164,6 +164,27 @@
             "cStandard": "gnu17",
             "cppStandard": "gnu++17",
             "intelliSenseMode": "msvc-x64"
+        },
+        {
+            "name": "Windows HoloLens2 Release",
+            "includePath": [
+                "${workspaceFolder}/_install/windows_hololens2/release/boost/include",
+                "${workspaceFolder}/_install/windows_hololens2/release/webrtc/include",
+                "${workspaceFolder}/_install/windows_hololens2/release/webrtc/include/third_party/abseil-cpp",
+                "${workspaceFolder}/_install/windows_hololens2/release/webrtc/include/third_party/boringssl/src/include",
+                "${workspaceFolder}/_install/windows_hololens2/release/webrtc/include/third_party/libyuv/include",
+                "${workspaceFolder}/_install/windows_hololens2/release/webrtc/include/third_party/zlib",
+                "${workspaceFolder}/_build/windows_hololens2/release/sora",
+                "${workspaceFolder}/include"
+            ],
+            "defines": [
+                "SORA_CPP_SDK_HOLOLENS2",
+                "WEBRTC_WIN",
+                "WEBRTC_VIDEO_CAPTURE_WINRT"
+            ],
+            "cStandard": "gnu17",
+            "cppStandard": "gnu++17",
+            "intelliSenseMode": "msvc-x64"
         }
     ],
     "version": 4

@@ -59,7 +59,7 @@ std::string Version::GetLibwebrtcName() {
   return LIBWEBRTC_NAME;
 }
 
-#ifdef WIN32
+#ifdef SORA_CPP_SDK_WINDOWS
 
 static int RtlGetVersion(LPOSVERSIONINFOW lpOSVersionInfo) {
   HMODULE module = GetModuleHandle(L"ntdll.dll");
@@ -82,7 +82,7 @@ static int RtlGetVersion(LPOSVERSIONINFOW lpOSVersionInfo) {
 std::string Version::GetEnvironmentName() {
   std::string environment = "Unknown Environment";
 
-#if defined(WIN32)
+#if defined(SORA_CPP_SDK_WINDOWS)
   SYSTEM_INFO sysInfo;
   GetSystemInfo(&sysInfo);
   std::string arch;
@@ -123,6 +123,10 @@ std::string Version::GetEnvironmentName() {
   }
 
   environment = "[" + arch + "] " + os;
+
+#elif defined(SORA_CPP_SDK_HOLOLENS2)
+
+  environment = "[arm64] HoloLens 2";
 
 #elif defined(__APPLE__) || defined(__linux__)
   std::string arch = "unknown arch";

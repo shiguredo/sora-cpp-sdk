@@ -17,6 +17,9 @@
 #include <api/scoped_refptr.h>
 #include <modules/video_capture/video_capture.h>
 #include <rtc_base/ref_counted_object.h>
+#if defined(SORA_CPP_SDK_HOLOLENS2)
+#include <modules/video_capture/winuwp/mrc_video_effect_definition.h>
+#endif
 
 #include "scalable_track_source.h"
 
@@ -29,19 +32,35 @@ namespace sora {
 class DeviceVideoCapturer : public ScalableVideoTrackSource,
                             public rtc::VideoSinkInterface<webrtc::VideoFrame> {
  public:
-  static rtc::scoped_refptr<DeviceVideoCapturer> Create(size_t width,
-                                                        size_t height,
-                                                        size_t target_fps);
+  static rtc::scoped_refptr<DeviceVideoCapturer> Create(
+      size_t width,
+      size_t height,
+      size_t target_fps
+#if defined(SORA_CPP_SDK_HOLOLENS2)
+      ,
+      std::shared_ptr<webrtc::MrcVideoEffectDefinition> mrc
+#endif
+  );
   static rtc::scoped_refptr<DeviceVideoCapturer> Create(
       size_t width,
       size_t height,
       size_t target_fps,
-      size_t capture_device_index);
+      size_t capture_device_index
+#if defined(SORA_CPP_SDK_HOLOLENS2)
+      ,
+      std::shared_ptr<webrtc::MrcVideoEffectDefinition> mrc
+#endif
+  );
   static rtc::scoped_refptr<DeviceVideoCapturer> Create(
       size_t width,
       size_t height,
       size_t target_fps,
-      const std::string& capture_device);
+      const std::string& capture_device
+#if defined(SORA_CPP_SDK_HOLOLENS2)
+      ,
+      std::shared_ptr<webrtc::MrcVideoEffectDefinition> mrc
+#endif
+  );
   DeviceVideoCapturer();
   virtual ~DeviceVideoCapturer();
 
@@ -49,7 +68,12 @@ class DeviceVideoCapturer : public ScalableVideoTrackSource,
   bool Init(size_t width,
             size_t height,
             size_t target_fps,
-            size_t capture_device_index);
+            size_t capture_device_index
+#if defined(SORA_CPP_SDK_HOLOLENS2)
+            ,
+            std::shared_ptr<webrtc::MrcVideoEffectDefinition> mrc
+#endif
+  );
   void Destroy();
 
   // rtc::VideoSinkInterface interface.

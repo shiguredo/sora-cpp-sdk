@@ -17,7 +17,7 @@ list(APPEND CMAKE_PREFIX_PATH ${SORA_DIR})
 list(APPEND CMAKE_MODULE_PATH ${SORA_DIR}/share/cmake)
 
 set(Boost_USE_STATIC_LIBS ON)
-if (WIN32)
+if (WIN32 AND NOT HELLO_HOLOLENS2)
   set(Boost_USE_STATIC_RUNTIME ON)
 endif()
 
@@ -44,11 +44,19 @@ function (init_target target)
   if (WIN32)
     # 文字コードを utf-8 として扱うのと、シンボルテーブル数を増やす
     target_compile_options(${target} PRIVATE /utf-8 /bigobj)
-    set_target_properties(${target}
-      PROPERTIES
-        # CRTライブラリを静的リンクさせる
-        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
-    )
+    if (HELLO_HOLOLENS2)
+      set_target_properties(${target}
+        PROPERTIES
+          # CRTライブラリを静的リンクさせる
+          MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
+      )
+    else()
+      set_target_properties(${target}
+        PROPERTIES
+          # CRTライブラリを静的リンクさせる
+          MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+      )
+    endif()
 
     target_compile_definitions(${target}
       PRIVATE

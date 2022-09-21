@@ -38,6 +38,10 @@
 #include "sora/hwenc_jetson/jetson_video_encoder.h"
 #endif
 
+#if defined(SORA_CPP_SDK_HOLOLENS2)
+#include <modules/video_coding/codecs/h264/winuwp/encoder/h264_encoder_mf_impl.h>
+#endif
+
 #include "default_video_formats.h"
 #include "sora/aligned_encoder_adapter.h"
 #include "sora/i420_encoder_adapter.h"
@@ -280,6 +284,18 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
                              16));
 #endif
 
+#if defined(SORA_CPP_SDK_HOLOLENS2)
+  config.encoders.insert(
+      config.encoders.begin(),
+      VideoEncoderConfig(
+          webrtc::kVideoCodecH264,
+          [](auto format) {
+            return std::unique_ptr<webrtc::VideoEncoder>(
+                absl::make_unique<webrtc::H264EncoderMFImpl>());
+          },
+          16));
+#endif
+
   return config;
 }
 
@@ -292,7 +308,8 @@ SoraVideoEncoderFactoryConfig GetSoftwareOnlyVideoEncoderFactoryConfig() {
       VideoEncoderConfig(webrtc::kVideoCodecVP9, [](auto format) {
         return webrtc::VP9Encoder::Create(cricket::VideoCodec(format));
       }));
-#if !defined(__arm__) || defined(__aarch64__) || defined(__ARM_NEON__)
+#if (!defined(__arm__) || defined(__aarch64__) || defined(__ARM_NEON__)) && \
+    !defined(SORA_CPP_SDK_HOLOLENS2)
   config.encoders.push_back(VideoEncoderConfig(
       webrtc::kVideoCodecAV1,
       [](auto format) { return webrtc::CreateLibaomAv1Encoder(); }));

@@ -6,6 +6,9 @@
 // WebRTC
 #include <api/media_stream_interface.h>
 #include <rtc_base/thread.h>
+#if defined(SORA_CPP_SDK_HOLOLENS2)
+#include <modules/video_capture/winuwp/mrc_video_effect_definition.h>
+#endif
 
 #include "sora/cuda_context.h"
 
@@ -28,6 +31,10 @@ struct CameraDeviceCapturerConfig {
   void* jni_env = nullptr;
   void* application_context = nullptr;
   rtc::Thread* signaling_thread = nullptr;
+
+#if defined(SORA_CPP_SDK_HOLOLENS2)
+  std::shared_ptr<webrtc::MrcVideoEffectDefinition> mrc;
+#endif
 };
 
 // カメラデバイスを使ったキャプチャラを生成する。

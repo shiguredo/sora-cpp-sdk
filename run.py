@@ -512,7 +512,7 @@ def install_boost(
     with cd(os.path.join(build_dir, 'boost')):
         bootstrap = '.\\bootstrap.bat' if target_os == 'windows' else './bootstrap.sh'
         b2 = 'b2' if target_os == 'windows' else './b2'
-        runtime_link = 'static' if target_os == 'windows' else 'shared'
+        runtime_link = 'static' if target_os == 'windows' and architecture == 'x86' else 'shared'
 
         cmd([bootstrap])
 
@@ -788,7 +788,7 @@ class Platform(object):
         elif p.os in ('ios', 'android'):
             self._check(p.arch is None)
         else:
-            self._check(p.arch in ('x86_64', 'arm64'))
+            self._check(p.arch in ('x86_64', 'arm64', 'hololens2'))
 
     def __init__(self, target_os, target_osver, target_arch):
         build = get_build_platform()
@@ -801,7 +801,7 @@ class Platform(object):
         self._check_platform_target(target)
 
         if target.os == 'windows':
-            self._check(target.arch == 'x86_64')
+            self._check(target.arch in ('x86_64', 'hololens2'))
             self._check(build.os == 'windows')
             self._check(build.arch == 'x86_64')
         if target.os == 'macos':
@@ -970,6 +970,10 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             ]
             install_boost_args['toolset'] = 'msvc'
             install_boost_args['target_os'] = 'windows'
+            if platform.target.arch == 'x86_64':
+                install_boost_args['architecture'] = 'x86'
+            else:
+                install_boost_args['architecture'] = 'arm'
         elif platform.target.os == 'macos':
             sysroot = cmdcap(['xcrun', '--sdk', 'macosx', '--show-sdk-path'])
             install_boost_args['target_os'] = 'darwin'
@@ -1144,7 +1148,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                 f.write('\n'.join(ldflags))
 
 
-AVAILABLE_TARGETS = ['windows_x86_64', 'macos_x86_64', 'macos_arm64', 'ubuntu-20.04_x86_64',
+AVAILABLE_TARGETS = ['windows_x86_64', 'windows_hololens2', 'macos_x86_64', 'macos_arm64', 'ubuntu-20.04_x86_64',
                      'ubuntu-22.04_x86_64', 'ubuntu-20.04_armv8_jetson', 'ios', 'android']
 
 
@@ -1169,6 +1173,8 @@ def main():
     args = parser.parse_args()
     if args.target == 'windows_x86_64':
         platform = Platform('windows', get_windows_osver(), 'x86_64')
+    elif args.target == 'windows_hololens2':
+        platform = Platform('windows', get_windows_osver(), 'hololens2')
     elif args.target == 'macos_x86_64':
         platform = Platform('macos', get_macos_osver(), 'x86_64')
     elif args.target == 'macos_arm64':
@@ -1230,6 +1236,11 @@ def main():
         cmake_args.append(f"-DWEBRTC_BUILD_VERSION={webrtc_version['WEBRTC_BUILD_VERSION']}")
         cmake_args.append(f"-DWEBRTC_READABLE_VERSION={webrtc_version['WEBRTC_READABLE_VERSION']}")
         cmake_args.append(f"-DWEBRTC_COMMIT={webrtc_version['WEBRTC_COMMIT']}")
+        if platform.target.os == 'windows':
+            if platform.target.arch == 'hololens2':
+                cmake_args.append('-DCMAKE_SYSTEM_NAME=WindowsStore')
+                cmake_args.append('-DCMAKE_SYSTEM_VERSION=10.0')
+                cmake_args += ['-A', 'ARM64']
         if platform.target.os == 'ubuntu':
             if platform.target.package_name in ('ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64'):
                 cmake_args.append("-DCMAKE_C_COMPILER=clang-12")
@@ -1317,7 +1328,7 @@ def main():
             cmd(['cmake', '--install', '.', '--config', configuration])
 
         # バンドルされたライブラリをインストールする
-        if platform.target.os == 'windows':
+        if platform.target.os == 'windows' and platform.target.arch == 'x86_64':
             shutil.copyfile(os.path.join(sora_build_dir, 'bundled', 'sora.lib'),
                             os.path.join(install_dir, 'sora', 'lib', 'sora.lib'))
         elif platform.target.os == 'ubuntu':
@@ -1355,6 +1366,12 @@ def main():
                 cmake_args.append(f"-DWEBRTC_INCLUDE_DIR={cmake_path(webrtc_info.webrtc_include_dir)}")
                 cmake_args.append(f"-DWEBRTC_LIBRARY_DIR={cmake_path(webrtc_info.webrtc_library_dir)}")
                 cmake_args.append(f"-DSORA_DIR={cmake_path(os.path.join(install_dir, 'sora'))}")
+                if platform.target.os == 'windows':
+                    if platform.target.arch == 'hololens2':
+                        cmake_args.append('-DCMAKE_SYSTEM_NAME=WindowsStore')
+                        cmake_args.append('-DCMAKE_SYSTEM_VERSION=10.0')
+                        cmake_args += ['-A', 'ARM64']
+                        cmake_args.append('-DHELLO_HOLOLENS2=ON')
                 if platform.target.os == 'macos':
                     sysroot = cmdcap(['xcrun', '--sdk', 'macosx', '--show-sdk-path'])
                     target = 'x86_64-apple-darwin' if platform.target.arch == 'x86_64' else 'aarch64-apple-darwin'

@@ -21,6 +21,10 @@ if (SORA_TARGET STREQUAL "windows_x86_64")
   set(SORA_TARGET_OS "windows")
   set(SORA_TARGET_ARCH "x86_64")
   set(SORA_TARGET_DEF "SORA_CPP_SDK_WINDOWS")
+elseif (SORA_TARGET STREQUAL "windows_hololens2")
+  set(SORA_TARGET_OS "windows")
+  set(SORA_TARGET_ARCH "hololens2")
+  set(SORA_TARGET_DEF "SORA_CPP_SDK_HOLOLENS2")
 elseif (SORA_TARGET STREQUAL "macos_x86_64")
   set(SORA_TARGET_OS "macos")
   set(SORA_TARGET_ARCH "x86_64")
@@ -57,7 +61,7 @@ if (USE_VPL_ENCODER)
 endif()
 
 set(Boost_USE_STATIC_LIBS ON)
-if (WIN32)
+if (SORA_TARGET STREQUAL "windows_x86_64")
   set(Boost_USE_STATIC_RUNTIME ON)
 endif()
 
@@ -194,11 +198,18 @@ set(BUNDLE_STATIC_LIBS)
 if (SORA_TARGET_OS STREQUAL "windows")
   # 文字コードを utf-8 として扱うのと、シンボルテーブル数を増やす
   target_compile_options(sora PRIVATE /utf-8 /bigobj)
-  set_target_properties(sora
-    PROPERTIES
-      # CRTライブラリを静的リンクさせる
-      MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
-  )
+  if (SORA_TARGET_ARCH STREQUAL "hololens2")
+    set_target_properties(sora
+      PROPERTIES
+        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL"
+    )
+  else()
+    set_target_properties(sora
+      PROPERTIES
+        # CRTライブラリを静的リンクさせる
+        MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+    )
+  endif()
 
   target_link_libraries(sora
     PUBLIC
@@ -240,6 +251,22 @@ if (SORA_TARGET_OS STREQUAL "windows")
       WEBRTC_WIN
       _HAS_ITERATOR_DEBUGGING=0
   )
+
+  if (SORA_TARGET_ARCH STREQUAL "hololens2")
+    target_link_libraries(sora
+      PUBLIC
+        dxgi.lib
+        D3D11.lib
+        mfreadwrite.lib
+        mfplat.lib
+        mfuuid.lib
+    )
+    target_compile_definitions(sora
+      PUBLIC
+        WEBRTC_VIDEO_CAPTURE_WINRT
+    )
+  endif()
+
 
   if (USE_NVCODEC_ENCODER)
     target_sources(sora

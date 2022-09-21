@@ -58,6 +58,9 @@ CreateCameraDeviceCapturer(const CameraDeviceCapturerConfig& config) {
   } else {
     return sora::V4L2VideoCapturer::Create(v4l2_config);
   }
+#elif defined(SORA_CPP_SDK_HOLOLENS2)
+  return sora::DeviceVideoCapturer::Create(
+      config.width, config.height, config.fps, config.device_name, config.mrc);
 #elif defined(__linux__)
   sora::V4L2VideoCapturerConfig v4l2_config;
   v4l2_config.width = config.width;
