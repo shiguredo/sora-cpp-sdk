@@ -15,6 +15,7 @@ jobs:
       matrix:
         name:
           - windows_x86_64
+          - windows_hololens2
     name: Build sora-cpp-sdk for ${{ matrix.name }}
     runs-on: windows-2019
     steps:
@@ -244,6 +245,7 @@ jobs:
       matrix:
         name:
           - windows_x86_64
+          - windows_hololens2
           - macos_arm64
           - ios
           - ubuntu-20.04_armv8_jetson
