@@ -51,7 +51,7 @@ rtc::scoped_refptr<V4L2VideoCapturer> JetsonV4L2Capturer::Create(
     return nullptr;
   }
 
-  rtc::scoped_refptr<V4L2VideoCapturer> v4l2_capturer
+  rtc::scoped_refptr<V4L2VideoCapturer> v4l2_capturer =
       rtc::make_ref_counted<JetsonV4L2Capturer>(config);
 
   if (v4l2_capturer->Init((const char*)&unique_name, config.video_device) < 0) {
