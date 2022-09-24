@@ -12,7 +12,7 @@
 namespace sora {
 
 JetsonV4L2Capturer::JetsonV4L2Capturer(const V4L2VideoCapturerConfig& config)
-    : ScalableVideoTrackSource(config) {}
+    : V4L2VideoCapturer(config) {}
 
 rtc::scoped_refptr<V4L2VideoCapturer> JetsonV4L2Capturer::Create(
     const V4L2VideoCapturerConfig& config) {

@@ -79,15 +79,16 @@ MacCapturer::MacCapturer(const MacCapturerConfig& config) : ScalableVideoTrackSo
 }
 
 rtc::scoped_refptr<MacCapturer> MacCapturer::Create(const MacCapturerConfig& config) {
-  if (config.device == nullptr) {
-    AVCaptureDevice* device = FindVideoDevice(config.device_name);
+  MacCapturerConfig c = config;
+  if (c.device == nullptr) {
+    AVCaptureDevice* device = FindVideoDevice(c.device_name);
     if (!device) {
       RTC_LOG(LS_ERROR) << "Failed to create MacCapture";
       return nullptr;
     }
-    config.device = device;
+    c.device = device;
   }
-  return rtc::make_ref_counted<MacCapturer>(config);
+  return rtc::make_ref_counted<MacCapturer>(c);
 }
 
 bool MacCapturer::EnumVideoDevice(

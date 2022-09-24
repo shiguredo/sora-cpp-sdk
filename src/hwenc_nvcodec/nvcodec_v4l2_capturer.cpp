@@ -12,7 +12,7 @@ namespace sora {
 
 NvCodecV4L2Capturer::NvCodecV4L2Capturer(
     const NvCodecV4L2CapturerConfig& config)
-    : ScalableVideoTrackSource(config) {}
+    : V4L2VideoCapturer(config) {}
 
 rtc::scoped_refptr<V4L2VideoCapturer> NvCodecV4L2Capturer::Create(
     const NvCodecV4L2CapturerConfig& config) {
@@ -52,7 +52,7 @@ rtc::scoped_refptr<V4L2VideoCapturer> NvCodecV4L2Capturer::Create(
   }
 
   rtc::scoped_refptr<NvCodecV4L2Capturer> v4l2_capturer =
-      rtc::make_ref_counted<NvCodecV4L2Capturer>();
+      rtc::make_ref_counted<NvCodecV4L2Capturer>(config);
 
   v4l2_capturer->decoder_.reset(
       new NvCodecDecoderCuda(config.cuda_context, CudaVideoCodec::JPEG));
