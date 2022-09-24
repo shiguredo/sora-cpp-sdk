@@ -24,8 +24,9 @@
 
 namespace sora {
 
-ScalableVideoTrackSource::ScalableVideoTrackSource()
-    : AdaptedVideoTrackSource(4) {}
+ScalableVideoTrackSource::ScalableVideoTrackSource(
+    ScalableVideoTrackSourceConfig config)
+    : AdaptedVideoTrackSource(4), config_(config) {}
 ScalableVideoTrackSource::~ScalableVideoTrackSource() {}
 
 bool ScalableVideoTrackSource::is_screencast() const {
@@ -101,6 +102,10 @@ void ScalableVideoTrackSource::OnCapturedFrame(
                   &adapted_height, &crop_width, &crop_height, &crop_x,
                   &crop_y)) {
     return;
+  }
+
+  if (config_.on_frame) {
+    config_.on_frame(frame);
   }
 
   if (frame.video_frame_buffer()->type() ==

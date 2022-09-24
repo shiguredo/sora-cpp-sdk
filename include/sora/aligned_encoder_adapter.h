@@ -41,6 +41,8 @@ class AlignedEncoderAdapter : public webrtc::VideoEncoder {
   std::shared_ptr<webrtc::VideoEncoder> encoder_;
   int horizontal_alignment_;
   int vertical_alignment_;
+  int width_;
+  int height_;
 };
 
 }  // namespace sora

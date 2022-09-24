@@ -8,13 +8,14 @@ namespace sora {
 
 class JetsonV4L2Capturer : public V4L2VideoCapturer {
  public:
+  JetsonV4L2Capturer::JetsonV4L2Capturer(const V4L2VideoCapturerConfig& config);
   static rtc::scoped_refptr<V4L2VideoCapturer> Create(
-      V4L2VideoCapturerConfig config);
+      const V4L2VideoCapturerConfig& config);
 
  private:
   static rtc::scoped_refptr<V4L2VideoCapturer> Create(
       webrtc::VideoCaptureModule::DeviceInfo* device_info,
-      V4L2VideoCapturerConfig config,
+      const V4L2VideoCapturerConfig& config,
       size_t capture_device_index);
 
   bool AllocateVideoBuffers() override;
