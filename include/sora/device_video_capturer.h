@@ -13,6 +13,9 @@
 #include <memory>
 #include <vector>
 
+// Boost
+#include <boost/optional.hpp>
+
 // WebRTC
 #include <api/scoped_refptr.h>
 #include <modules/video_capture/video_capture.h>
@@ -22,6 +25,17 @@
 
 namespace sora {
 
+struct DeviceVideoCapturerConfig : ScalableVideoTrackSourceConfig {
+  int width = 0;
+  int height = 0;
+  int target_fps = 0;
+  // これが空以外だったらデバイス名から検索する
+  std::string device_name;
+  // これが非noneならデバイスインデックスから検索する
+  // device_name と device_index どちらも指定が無い場合は 0 番から順に作成していく
+  boost::optional<int> device_index = 0;
+};
+
 // webrtc::VideoCaptureModule を使ったデバイスキャプチャラ。
 // このキャプチャラでは動かない環境もあるため、このキャプチャラを直接利用する必要は無い。
 // 様々な環境で動作するデバイスキャプチャラを利用したい場合、
@@ -29,20 +43,9 @@ namespace sora {
 class DeviceVideoCapturer : public ScalableVideoTrackSource,
                             public rtc::VideoSinkInterface<webrtc::VideoFrame> {
  public:
-  static rtc::scoped_refptr<DeviceVideoCapturer> Create(size_t width,
-                                                        size_t height,
-                                                        size_t target_fps);
   static rtc::scoped_refptr<DeviceVideoCapturer> Create(
-      size_t width,
-      size_t height,
-      size_t target_fps,
-      size_t capture_device_index);
-  static rtc::scoped_refptr<DeviceVideoCapturer> Create(
-      size_t width,
-      size_t height,
-      size_t target_fps,
-      const std::string& capture_device);
-  DeviceVideoCapturer();
+      const DeviceVideoCapturerConfig& config);
+  DeviceVideoCapturer(const DeviceVideoCapturerConfig& config);
   virtual ~DeviceVideoCapturer();
 
  private:

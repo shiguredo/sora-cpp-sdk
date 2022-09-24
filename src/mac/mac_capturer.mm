@@ -66,33 +66,29 @@ AVCaptureDeviceFormat* SelectClosestFormat(AVCaptureDevice* device,
 
 namespace sora {
 
-MacCapturer::MacCapturer(size_t width,
-                         size_t height,
-                         size_t target_fps,
-                         AVCaptureDevice* device) {
-  RTC_LOG(LS_INFO) << "MacCapturer width=" << width << ", height=" << height
-                   << ", target_fps=" << target_fps;
+MacCapturer::MacCapturer(const MacCapturerConfig& config) : ScalableVideoTrackSource(config) {
+  RTC_LOG(LS_INFO) << "MacCapturer width=" << config.width << ", height=" << config.height
+                   << ", target_fps=" << config.target_fps;
 
   adapter_ = [[RTCVideoSourceAdapter alloc] init];
   adapter_.capturer = this;
 
   capturer_ = [[RTCCameraVideoCapturer alloc] initWithDelegate:adapter_];
-  AVCaptureDeviceFormat* format = SelectClosestFormat(device, width, height);
-  [capturer_ startCaptureWithDevice:device format:format fps:target_fps];
+  AVCaptureDeviceFormat* format = SelectClosestFormat(config.device, config.width, config.height);
+  [capturer_ startCaptureWithDevice:config.device format:format fps:config.target_fps];
 }
 
-rtc::scoped_refptr<MacCapturer> MacCapturer::Create(
-    size_t width,
-    size_t height,
-    size_t target_fps,
-    const std::string& specifiedVideoDevice) {
-  AVCaptureDevice* device = FindVideoDevice(specifiedVideoDevice);
-  if (!device) {
-    RTC_LOG(LS_ERROR) << "Failed to create MacCapture";
-    return nullptr;
+rtc::scoped_refptr<MacCapturer> MacCapturer::Create(const MacCapturerConfig& config) {
+  MacCapturerConfig c = config;
+  if (c.device == nullptr) {
+    AVCaptureDevice* device = FindVideoDevice(c.device_name);
+    if (!device) {
+      RTC_LOG(LS_ERROR) << "Failed to create MacCapture";
+      return nullptr;
+    }
+    c.device = device;
   }
-  return rtc::make_ref_counted<MacCapturer>(
-          width, height, target_fps, device);
+  return rtc::make_ref_counted<MacCapturer>(c);
 }
 
 bool MacCapturer::EnumVideoDevice(

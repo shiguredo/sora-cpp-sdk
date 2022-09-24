@@ -21,9 +21,13 @@
 
 namespace sora {
 
+struct ScalableVideoTrackSourceConfig {
+  std::function<void(const webrtc::VideoFrame&)> on_frame;
+};
+
 class ScalableVideoTrackSource : public rtc::AdaptedVideoTrackSource {
  public:
-  ScalableVideoTrackSource();
+  ScalableVideoTrackSource(ScalableVideoTrackSourceConfig config);
   virtual ~ScalableVideoTrackSource();
 
   bool is_screencast() const override;
@@ -33,9 +37,10 @@ class ScalableVideoTrackSource : public rtc::AdaptedVideoTrackSource {
   void OnCapturedFrame(const webrtc::VideoFrame& frame);
 
  private:
+  ScalableVideoTrackSourceConfig config_;
   rtc::TimestampAligner timestamp_aligner_;
 };
 
-}
+}  // namespace sora
 
 #endif

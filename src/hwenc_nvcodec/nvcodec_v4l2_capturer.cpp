@@ -10,8 +10,12 @@
 
 namespace sora {
 
+NvCodecV4L2Capturer::NvCodecV4L2Capturer(
+    const NvCodecV4L2CapturerConfig& config)
+    : V4L2VideoCapturer(config) {}
+
 rtc::scoped_refptr<V4L2VideoCapturer> NvCodecV4L2Capturer::Create(
-    NvCodecV4L2CapturerConfig config) {
+    const NvCodecV4L2CapturerConfig& config) {
   rtc::scoped_refptr<V4L2VideoCapturer> capturer;
   std::unique_ptr<webrtc::VideoCaptureModule::DeviceInfo> device_info(
       webrtc::VideoCaptureFactory::CreateDeviceInfo());
@@ -35,7 +39,7 @@ rtc::scoped_refptr<V4L2VideoCapturer> NvCodecV4L2Capturer::Create(
 
 rtc::scoped_refptr<V4L2VideoCapturer> NvCodecV4L2Capturer::Create(
     webrtc::VideoCaptureModule::DeviceInfo* device_info,
-    NvCodecV4L2CapturerConfig config,
+    const NvCodecV4L2CapturerConfig& config,
     size_t capture_device_index) {
   char device_name[256];
   char unique_name[256];
@@ -47,8 +51,8 @@ rtc::scoped_refptr<V4L2VideoCapturer> NvCodecV4L2Capturer::Create(
     return nullptr;
   }
 
-  rtc::scoped_refptr<NvCodecV4L2Capturer> v4l2_capturer(
-      new rtc::RefCountedObject<NvCodecV4L2Capturer>());
+  rtc::scoped_refptr<NvCodecV4L2Capturer> v4l2_capturer =
+      rtc::make_ref_counted<NvCodecV4L2Capturer>(config);
 
   v4l2_capturer->decoder_.reset(
       new NvCodecDecoderCuda(config.cuda_context, CudaVideoCodec::JPEG));

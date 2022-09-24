@@ -29,17 +29,19 @@ RTC_FWD_DECL_OBJC_CLASS(RTCVideoSourceAdapter);
 
 namespace sora {
 
+struct MacCapturerConfig : ScalableVideoTrackSourceConfig {
+  int width = 0;
+  int height = 0;
+  int target_fps = 0;
+  std::string device_name;
+  AVCaptureDevice* device = nullptr;
+};
+
 class MacCapturer : public ScalableVideoTrackSource {
  public:
   static rtc::scoped_refptr<MacCapturer> Create(
-      size_t width,
-      size_t height,
-      size_t target_fps,
-      const std::string& specifiedVideoDevice);
-  MacCapturer(size_t width,
-              size_t height,
-              size_t target_fps,
-              AVCaptureDevice* device);
+      const MacCapturerConfig& config);
+  MacCapturer(const MacCapturerConfig& config);
   virtual ~MacCapturer();
 
   void OnFrame(const webrtc::VideoFrame& frame);

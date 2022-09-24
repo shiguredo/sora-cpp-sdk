@@ -35,22 +35,42 @@ int AlignedEncoderAdapter::InitEncode(
     cs.simulcastStream[i].height =
         Align(cs.simulcastStream[i].height, vertical_alignment_);
   }
+  width_ = cs.width;
+  height_ = cs.height;
   return encoder_->InitEncode(&cs, settings);
 }
 int AlignedEncoderAdapter::Encode(
     const webrtc::VideoFrame& input_image,
     const std::vector<webrtc::VideoFrameType>* frame_types) {
   auto frame = input_image;
-  auto crop_x = frame.width() % horizontal_alignment_;
-  auto crop_y = frame.height() % vertical_alignment_;
-  auto crop_width = frame.width() - crop_x;
-  auto crop_height = frame.height() - crop_y;
-  if (crop_x != 0 || crop_y != 0) {
+  auto frame_ratio = (double)frame.width() / frame.height();
+  auto target_ratio = (double)width_ / height_;
+  int crop_width;
+  int crop_height;
+  if (frame_ratio > target_ratio) {
+    // frame の横の方が広い場合は height に合わせる
+    crop_height = frame.height();
+    crop_width = (int)(crop_height * target_ratio);
+  } else {
+    // frame の縦の方が広い場合は width に合わせる
+    crop_width = frame.width();
+    crop_height = (int)(crop_width / target_ratio);
+  }
+  auto crop_x = (frame.width() - crop_width) / 2;
+  auto crop_y = (frame.height() - crop_height) / 2;
+  RTC_LOG(LS_INFO) << "type=" << frame.video_frame_buffer()->type()
+                   << " crop_x=" << crop_x << " crop_y=" << crop_y
+                   << " crop_width=" << crop_width
+                   << " crop_height=" << crop_height << " width_=" << width_
+                   << " height_=" << height_ << " frame_width=" << frame.width()
+                   << " frame_height=" << frame.height();
+  if (crop_x != 0 || crop_y != 0 || frame.width() != width_ ||
+      frame.height() != height_) {
     auto buffer = frame.video_frame_buffer()->CropAndScale(
-        crop_x / 2, crop_y / 2, crop_width, crop_height, crop_width,
-        crop_height);
+        crop_x / 2, crop_y / 2, crop_width, crop_height, width_, height_);
     frame.set_video_frame_buffer(buffer);
   }
+
   return encoder_->Encode(frame, frame_types);
 }
 

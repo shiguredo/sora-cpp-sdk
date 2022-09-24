@@ -43,7 +43,7 @@
 namespace sora {
 
 rtc::scoped_refptr<V4L2VideoCapturer> V4L2VideoCapturer::Create(
-    V4L2VideoCapturerConfig config) {
+    const V4L2VideoCapturerConfig& config) {
   rtc::scoped_refptr<V4L2VideoCapturer> capturer;
   std::unique_ptr<webrtc::VideoCaptureModule::DeviceInfo> device_info(
       webrtc::VideoCaptureFactory::CreateDeviceInfo());
@@ -84,7 +84,7 @@ void V4L2VideoCapturer::LogDeviceList(
 
 rtc::scoped_refptr<V4L2VideoCapturer> V4L2VideoCapturer::Create(
     webrtc::VideoCaptureModule::DeviceInfo* device_info,
-    V4L2VideoCapturerConfig config,
+    const V4L2VideoCapturerConfig& config,
     size_t capture_device_index) {
   char device_name[256];
   char unique_name[256];
@@ -94,8 +94,8 @@ rtc::scoped_refptr<V4L2VideoCapturer> V4L2VideoCapturer::Create(
     RTC_LOG(LS_WARNING) << "Failed to GetDeviceName";
     return nullptr;
   }
-  rtc::scoped_refptr<V4L2VideoCapturer> v4l2_capturer(
-      new rtc::RefCountedObject<V4L2VideoCapturer>());
+  rtc::scoped_refptr<V4L2VideoCapturer> v4l2_capturer =
+      rtc::make_ref_counted<V4L2VideoCapturer>(config);
   if (v4l2_capturer->Init((const char*)&unique_name, config.video_device) < 0) {
     RTC_LOG(LS_WARNING) << "Failed to create V4L2VideoCapturer(" << unique_name
                         << ")";
@@ -110,8 +110,9 @@ rtc::scoped_refptr<V4L2VideoCapturer> V4L2VideoCapturer::Create(
   return v4l2_capturer;
 }
 
-V4L2VideoCapturer::V4L2VideoCapturer()
-    : _deviceFd(-1),
+V4L2VideoCapturer::V4L2VideoCapturer(const V4L2VideoCapturerConfig& config)
+    : ScalableVideoTrackSource(config),
+      _deviceFd(-1),
       _buffersAllocatedByDevice(-1),
       _currentWidth(-1),
       _currentHeight(-1),
@@ -182,7 +183,7 @@ V4L2VideoCapturer::~V4L2VideoCapturer() {
     close(_deviceFd);
 }
 
-int32_t V4L2VideoCapturer::StartCapture(V4L2VideoCapturerConfig config) {
+int32_t V4L2VideoCapturer::StartCapture(const V4L2VideoCapturerConfig& config) {
   if (_captureStarted) {
     if (config.width == _currentWidth && config.height == _currentHeight) {
       return 0;
@@ -550,4 +551,4 @@ void V4L2VideoCapturer::OnCaptured(uint8_t* data, uint32_t bytesused) {
   }
 }
 
-}
+}  // namespace sora
