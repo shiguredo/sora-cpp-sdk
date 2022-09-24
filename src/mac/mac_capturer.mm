@@ -75,7 +75,7 @@ MacCapturer::MacCapturer(const MacCapturerConfig& config) : ScalableVideoTrackSo
 
   capturer_ = [[RTCCameraVideoCapturer alloc] initWithDelegate:adapter_];
   AVCaptureDeviceFormat* format = SelectClosestFormat(config.device, config.width, config.height);
-  [capturer_ startCaptureWithDevice:device format:format fps:config.target_fps];
+  [capturer_ startCaptureWithDevice:config.device format:format fps:config.target_fps];
 }
 
 rtc::scoped_refptr<MacCapturer> MacCapturer::Create(const MacCapturerConfig& config) {

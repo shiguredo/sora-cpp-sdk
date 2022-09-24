@@ -68,7 +68,7 @@ class V4L2VideoCapturer : public ScalableVideoTrackSource {
  private:
   static rtc::scoped_refptr<V4L2VideoCapturer> Create(
       webrtc::VideoCaptureModule::DeviceInfo* device_info,
-      V4L2VideoCapturerConfig config,
+      const V4L2VideoCapturerConfig& config,
       size_t capture_device_index);
   bool FindDevice(const char* deviceUniqueIdUTF8, const std::string& device);
 
