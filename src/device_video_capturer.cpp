@@ -21,7 +21,9 @@
 
 namespace sora {
 
-DeviceVideoCapturer::DeviceVideoCapturer() : vcm_(nullptr) {}
+DeviceVideoCapturer::DeviceVideoCapturer(
+    const DeviceVideoCapturerConfig& config)
+    : ScalableVideoTrackSource(config), vcm_(nullptr) {}
 
 DeviceVideoCapturer::~DeviceVideoCapturer() {
   Destroy();
@@ -158,15 +160,53 @@ bool DeviceVideoCapturer::Init(
 }
 
 rtc::scoped_refptr<DeviceVideoCapturer> DeviceVideoCapturer::Create(
-    size_t width,
-    size_t height,
-    size_t target_fps
+    const DeviceVideoCapturerConfig& config) {
+  rtc::scoped_refptr<DeviceVideoCapturer> capturer =
+      rtc::make_ref_counted<DeviceVideoCapturer>(config);
+
+  // 便利なのでデバイスの一覧をログに出力しておく
+  if (capturer->LogDeviceInfo() != 0) {
+    return nullptr;
+  }
+
+  // デバイス指定あり
+  if (!config.device_name.empty()) {
+    auto index = capturer->GetDeviceIndex(config.device_name);
+    if (index < 0) {
+      RTC_LOG(LS_WARNING) << "Not found device " << config.device_name;
+      return nullptr;
+    }
+    if (!capturer->Init(config.width, config.height, config.target_fps, index
 #if defined(SORA_CPP_SDK_HOLOLENS2)
-    ,
-    std::shared_ptr<webrtc::MrcVideoEffectDefinition> mrc
+                        ,
+                        config.mrc
 #endif
-) {
-  rtc::scoped_refptr<DeviceVideoCapturer> capturer;
+                        )) {
+      RTC_LOG(LS_WARNING) << "Failed to create DeviceVideoCapturer(w = "
+                          << config.width << ", h = " << config.height
+                          << ", fps = " << config.target_fps << ")";
+      return nullptr;
+    }
+    return capturer;
+  }
+
+  // デバイスインデックス指定あり
+  if (config.device_index) {
+    if (!capturer->Init(config.width, config.height, config.target_fps,
+                        *config.device_index
+#if defined(SORA_CPP_SDK_HOLOLENS2)
+                        ,
+                        config.mrc
+#endif
+                        )) {
+      RTC_LOG(LS_WARNING) << "Failed to create DeviceVideoCapturer(w = "
+                          << config.width << ", h = " << config.height
+                          << ", fps = " << config.target_fps << ")";
+      return nullptr;
+    }
+    return capturer;
+  }
+
   std::unique_ptr<webrtc::VideoCaptureModule::DeviceInfo> info(
       webrtc::VideoCaptureFactory::CreateDeviceInfo());
   if (!info) {
@@ -175,86 +215,23 @@ rtc::scoped_refptr<DeviceVideoCapturer> DeviceVideoCapturer::Create(
   }
   int num_devices = info->NumberOfDevices();
   for (int i = 0; i < num_devices; ++i) {
-    capturer = Create(width, height, target_fps, i
+    capturer = rtc::make_ref_counted<DeviceVideoCapturer>(config);
+    if (!capturer->Init(config.width, config.height, config.target_fps, i
 #if defined(SORA_CPP_SDK_HOLOLENS2)
-                      ,
-                      mrc
+                        ,
+                        config.mrc
 #endif
-    );
-    if (capturer) {
-      RTC_LOG(LS_WARNING) << "Get Capture";
-      return capturer;
+                        )) {
+      RTC_LOG(LS_WARNING) << "Failed to create DeviceVideoCapturer(w = "
+                          << config.width << ", h = " << config.height
+                          << ", fps = " << config.target_fps << ")";
+      continue;
     }
+    return capturer;
   }
   RTC_LOG(LS_WARNING) << "Failed to create DeviceVideoCapturer";
 
   return nullptr;
-}
-
-rtc::scoped_refptr<DeviceVideoCapturer> DeviceVideoCapturer::Create(
-    size_t width,
-    size_t height,
-    size_t target_fps,
-    size_t capture_device_index
-#if defined(SORA_CPP_SDK_HOLOLENS2)
-    ,
-    std::shared_ptr<webrtc::MrcVideoEffectDefinition> mrc
-#endif
-) {
-  rtc::scoped_refptr<DeviceVideoCapturer> vcm_capturer(
-      new rtc::RefCountedObject<DeviceVideoCapturer>());
-  if (!vcm_capturer->Init(width, height, target_fps, capture_device_index
-#if defined(SORA_CPP_SDK_HOLOLENS2)
-                          ,
-                          mrc
-#endif
-                          )) {
-    RTC_LOG(LS_WARNING) << "Failed to create DeviceVideoCapturer(w = " << width
-                        << ", h = " << height << ", fps = " << target_fps
-                        << ")";
-    return nullptr;
-  }
-  return vcm_capturer;
-}
-
-rtc::scoped_refptr<DeviceVideoCapturer> DeviceVideoCapturer::Create(
-    size_t width,
-    size_t height,
-    size_t target_fps,
-    const std::string& capture_device
-#if defined(SORA_CPP_SDK_HOLOLENS2)
-    ,
-    std::shared_ptr<webrtc::MrcVideoEffectDefinition> mrc
-#endif
-) {
-  rtc::scoped_refptr<DeviceVideoCapturer> vcm_capturer(
-      new rtc::RefCountedObject<DeviceVideoCapturer>());
-
-  // 便利なのでデバイスの一覧をログに出力しておく
-  if (vcm_capturer->LogDeviceInfo() != 0) {
-    return nullptr;
-  }
-
-  // デバイス指定なし
-  if (capture_device.empty()) {
-    return Create(width, height, target_fps
-#if defined(SORA_CPP_SDK_HOLOLENS2)
-                  ,
-                  mrc
-#endif
-    );
-  }
-
-  auto index = vcm_capturer->GetDeviceIndex(capture_device);
-  if (index < 0) {
-    return nullptr;
-  }
-  return Create(width, height, target_fps, static_cast<size_t>(index)
-#if defined(SORA_CPP_SDK_HOLOLENS2)
-                                               ,
-                mrc
-#endif
-  );
 }
 
 void DeviceVideoCapturer::Destroy() {

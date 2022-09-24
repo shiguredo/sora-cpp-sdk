@@ -21,8 +21,13 @@ namespace sora {
 rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>
 CreateCameraDeviceCapturer(const CameraDeviceCapturerConfig& config) {
 #if defined(__APPLE__)
-  return sora::MacCapturer::Create(config.width, config.height, config.fps,
-                                   config.device_name);
+  MacCapturerConfig c;
+  c.on_frame = config.on_frame;
+  c.width = config.width;
+  c.height = config.height;
+  c.target_fps = config.fps;
+  c.device_name = config.device_name;
+  return sora::MacCapturer::Create(c);
 #elif defined(SORA_CPP_SDK_ANDROID)
   return sora::AndroidCapturer::Create(
       (JNIEnv*)config.jni_env, (jobject)config.application_context,
@@ -30,6 +35,7 @@ CreateCameraDeviceCapturer(const CameraDeviceCapturerConfig& config) {
       config.device_name);
 #elif defined(SORA_CPP_SDK_JETSON) && defined(USE_JETSON_ENCODER)
   sora::V4L2VideoCapturerConfig v4l2_config;
+  v4l2_config.on_frame = config.on_frame;
   v4l2_config.video_device = config.device_name;
   v4l2_config.width = config.width;
   v4l2_config.height = config.height;
@@ -45,6 +51,7 @@ CreateCameraDeviceCapturer(const CameraDeviceCapturerConfig& config) {
        defined(SORA_CPP_SDK_UBUNTU_2204)) && \
     defined(USE_NVCODEC_ENCODER)
   sora::V4L2VideoCapturerConfig v4l2_config;
+  v4l2_config.on_frame = config.on_frame;
   v4l2_config.video_device = config.device_name;
   v4l2_config.width = config.width;
   v4l2_config.height = config.height;
@@ -59,10 +66,16 @@ CreateCameraDeviceCapturer(const CameraDeviceCapturerConfig& config) {
     return sora::V4L2VideoCapturer::Create(v4l2_config);
   }
 #elif defined(SORA_CPP_SDK_HOLOLENS2)
-  return sora::DeviceVideoCapturer::Create(
-      config.width, config.height, config.fps, config.device_name, config.mrc);
+  sora::DeviceVideoCapturerConfig c;
+  c.width = config.width;
+  c.height = config.height;
+  c.target_fps = config.fps;
+  c.device_name = config.device_name;
+  c.mrc = config.mrc;
+  return sora::DeviceVideoCapturer::Create(c);
 #elif defined(__linux__)
   sora::V4L2VideoCapturerConfig v4l2_config;
+  v4l2_config.on_frame = config.on_frame;
   v4l2_config.width = config.width;
   v4l2_config.height = config.height;
   v4l2_config.framerate = config.fps;
@@ -70,8 +83,13 @@ CreateCameraDeviceCapturer(const CameraDeviceCapturerConfig& config) {
   v4l2_config.use_native = config.use_native;
   return sora::V4L2VideoCapturer::Create(v4l2_config);
 #else
-  return sora::DeviceVideoCapturer::Create(config.width, config.height,
-                                           config.fps, config.device_name);
+  DeviceVideoCapturerConfig c;
+  c.on_frame = config.on_frame;
+  c.width = config.width;
+  c.height = config.height;
+  c.target_fps = config.fps;
+  c.device_name = config.device_name;
+  return sora::DeviceVideoCapturer::Create(c);
 #endif
 }
 

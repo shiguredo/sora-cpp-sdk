@@ -26,7 +26,7 @@
 
 namespace sora {
 
-struct V4L2VideoCapturerConfig {
+struct V4L2VideoCapturerConfig : ScalableVideoTrackSourceConfig {
   std::string video_device;
   int width = 640;
   int height = 480;
@@ -38,15 +38,15 @@ struct V4L2VideoCapturerConfig {
 class V4L2VideoCapturer : public ScalableVideoTrackSource {
  public:
   static rtc::scoped_refptr<V4L2VideoCapturer> Create(
-      V4L2VideoCapturerConfig config);
+      const V4L2VideoCapturerConfig& config);
   static void LogDeviceList(
       webrtc::VideoCaptureModule::DeviceInfo* device_info);
-  V4L2VideoCapturer();
+  V4L2VideoCapturer(const V4L2VideoCapturerConfig& config);
   ~V4L2VideoCapturer();
 
   int32_t Init(const char* deviceUniqueId,
                const std::string& specifiedVideoDevice);
-  virtual int32_t StartCapture(V4L2VideoCapturerConfig config);
+  virtual int32_t StartCapture(const V4L2VideoCapturerConfig& config);
 
  protected:
   virtual int32_t StopCapture();
@@ -68,7 +68,7 @@ class V4L2VideoCapturer : public ScalableVideoTrackSource {
  private:
   static rtc::scoped_refptr<V4L2VideoCapturer> Create(
       webrtc::VideoCaptureModule::DeviceInfo* device_info,
-      V4L2VideoCapturerConfig config,
+      const V4L2VideoCapturerConfig& config,
       size_t capture_device_index);
   bool FindDevice(const char* deviceUniqueIdUTF8, const std::string& device);
 

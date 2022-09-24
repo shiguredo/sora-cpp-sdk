@@ -20,6 +20,11 @@ struct CameraDeviceCapturerConfig {
   int fps = 30;
   std::string device_name;
 
+  // キャプチャしたフレームを受け取るためのコールバック。
+  // capturer->AddOrUpdateSink(...) した場合と違って、adapt する前のフレームがコールバックされる。
+  // Android 以外で利用可能
+  std::function<void(const webrtc::VideoFrame&)> on_frame;
+
   // Jetson と Linux の NvCodec の場合のみ利用可能
   bool use_native = false;
   bool force_i420 = false;
