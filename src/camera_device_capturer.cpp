@@ -67,6 +67,7 @@ CreateCameraDeviceCapturer(const CameraDeviceCapturerConfig& config) {
   }
 #elif defined(SORA_CPP_SDK_HOLOLENS2)
   sora::DeviceVideoCapturerConfig c;
+  c.on_frame = config.on_frame;
   c.width = config.width;
   c.height = config.height;
   c.target_fps = config.fps;
