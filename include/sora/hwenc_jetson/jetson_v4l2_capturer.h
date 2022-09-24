@@ -8,7 +8,7 @@ namespace sora {
 
 class JetsonV4L2Capturer : public V4L2VideoCapturer {
  public:
-  JetsonV4L2Capturer::JetsonV4L2Capturer(const V4L2VideoCapturerConfig& config);
+  JetsonV4L2Capturer(const V4L2VideoCapturerConfig& config);
   static rtc::scoped_refptr<V4L2VideoCapturer> Create(
       const V4L2VideoCapturerConfig& config);
 

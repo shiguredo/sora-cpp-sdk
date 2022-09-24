@@ -110,7 +110,7 @@ rtc::scoped_refptr<V4L2VideoCapturer> V4L2VideoCapturer::Create(
   return v4l2_capturer;
 }
 
-V4L2VideoCapturer::V4L2VideoCapturer(const V4L2VideoCapturerConfig config)
+V4L2VideoCapturer::V4L2VideoCapturer(const V4L2VideoCapturerConfig& config)
     : ScalableVideoTrackSource(config),
       _deviceFd(-1),
       _buffersAllocatedByDevice(-1),
