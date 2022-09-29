@@ -2,18 +2,18 @@
 
 ## 概要
 
-[Momo](https://github.com/shiguredo/momo) の [Sora](https://sora.shiguredo.jp/) モードを模したサンプルです。
+[WebRTC Native Client Momo](https://github.com/shiguredo/momo) の sora モードを模したサンプルです。
 
 ## 動作環境
 
 [動作環境](../README.md#動作環境) をご確認ください。
 
-接続先として Sora サーバ が必要です。[対応 Sora](../README.md#対応-sora) をご確認ください。
+接続先として WebRTC SFU Sora サーバ ([Sora Labo](https://sora-labo.shiguredo.app/) / [Tobi](https://tobi.shiguredo.jp/) を含む) が必要です。[対応 Sora](../README.md#対応-sora) もご確認ください。
 
 ## サンプルをビルドする
 
-**ビルド方法の詳細は [GitHub Actions](https://github.com/shiguredo/sora-cpp-sdk-samples/blob/develop/.github/workflows/build.yml) をご確認ください、ビルドに関しての問い合わせは受け付けておりません**
-
+以下にそれぞれのプラットフォームでのビルド方法を記載します。
+**ビルドに関しての問い合わせは受け付けておりません。うまくいかない場合は [GitHub Actions](https://github.com/shiguredo/sora-cpp-sdk-samples/blob/develop/.github/workflows/build.yml) の内容をご確認ください。**
 
 ### リポジトリをクローンする
 
@@ -164,12 +164,12 @@ _build/ubuntu-20.04_armv8_jetson/release/momo_sample/
 
 Windows の場合
 ```powershell
-> .\momo_sample.exe --signaling-url wss://sora.example.com/signaling --role sendrecv --channel-id sora --multistream true
+> .\momo_sample.exe --signaling-url wss://sora.example.com/signaling --role sendrecv --channel-id sora --multistream true --use-sdl
 ```
 
 Windows 以外の場合
 ```shell
-$ ./momo_sample --signaling-url wss://sora.example.com/signaling --role sendrecv --channel-id sora --multistream true
+$ ./momo_sample --signaling-url wss://sora.example.com/signaling --role sendrecv --channel-id sora --multistream true --use-sdl
 ```
 
 #### Sora に関するオプション
@@ -179,7 +179,7 @@ $ ./momo_sample --signaling-url wss://sora.example.com/signaling --role sendrecv
 - `--signaling-url` : Sora サーバのシグナリング URL (必須)
 - `--channel-id` : [channel_id](https://sora-doc.shiguredo.jp/SIGNALING#ee30e9) (必須)
 - `--role` : [role](https://sora-doc.shiguredo.jp/SIGNALING#6d21b9) (必須)
-    -  sendrecv / sendonly / recvonly のいずれかを指定
+    - sendrecv / sendonly / recvonly のいずれかを指定
 - `--client-id` : [client_id](https://sora-doc.shiguredo.jp/SIGNALING#d00933) 
 - `--video` : 映像の利用 (true/false)
     - 未指定の場合は true が設定されます

@@ -2,21 +2,22 @@
 
 ## 概要
 
-[Sora](https://sora.shiguredo.jp/) と音声や映像の送受信を行い、[SDL (Simple DirectMedia Layer)](https://www.libsdl.org/) を利用して映像を表示するサンプルです。
+[WebRTC SFU Sora](https://sora.shiguredo.jp/) と音声や映像の送受信を行い、[SDL (Simple DirectMedia Layer)](https://www.libsdl.org/) を利用して映像を表示するサンプルです。
 
 このサンプルに [Sora Labo](https://sora-labo.shiguredo.app/) / [Tobi](https://tobi.shiguredo.jp/) に接続する機能を用意する予定は現在ありません。独自に実装していただく必要があります。
 
-  - 参考記事 : [sora-cpp-sdk-samples にmomoのオプションを移植した](https://zenn.dev/tetsu_koba/articles/06e11dd4870796)
+    - 参考記事 : [sora-cpp-sdk-samples にmomoのオプションを移植した](https://zenn.dev/tetsu_koba/articles/06e11dd4870796)
 
 ## 動作環境
 
 [動作環境](../README.md#動作環境) をご確認ください。
 
-接続先として Sora サーバ が必要です。[対応 Sora](../README.md#対応-sora) をご確認ください。
+接続先として WebRTC SFU Sora サーバ が必要です。[対応 Sora](../README.md#対応-sora) をご確認ください。
 
 ## サンプルをビルドする
 
-**ビルド方法の詳細は [GitHub Actions](https://github.com/shiguredo/sora-cpp-sdk-samples/blob/develop/.github/workflows/build.yml) をご確認ください、ビルドに関しての問い合わせは受け付けておりません**
+以下にそれぞれのプラットフォームでのビルド方法を記載します。
+**ビルドに関しての問い合わせは受け付けておりません。うまくいかない場合は [GitHub Actions](https://github.com/shiguredo/sora-cpp-sdk-samples/blob/develop/.github/workflows/build.yml) の内容をご確認ください。**
 
 
 ### リポジトリをクローンする
@@ -37,7 +38,7 @@ $ cd sora-cpp-sdk-samples
 以下のツールを準備してください。
 
 - [Visual Studio 2019](https://visualstudio.microsoft.com/ja/downloads/)
-  - C++ をビルドするためのコンポーネントを入れてください。
+    - C++ をビルドするためのコンポーネントを入れてください。
 - Python 3.10.5
 
 ##### ビルド
@@ -184,7 +185,7 @@ $ ./sdl_sample --signaling-url wss://sora.example.com/signaling --role sendrecv 
 - `--channel-id` : channel_id (必須)
     - 任意のチャンネル ID
 - `--role` : role (必須)
-    -  sendrecv / sendonly / recvonly のいずれかを指定
+    - sendrecv / sendonly / recvonly のいずれかを指定
 - `--video-codec-type` : ビデオコーデック指定
     - VP8 / VP9 / AV1 / H264 が指定可能ですが利用可能なコーデックはプラットフォームに依存します
     - 未指定の場合は Sora のデフォルトである VP9 が利用されます
