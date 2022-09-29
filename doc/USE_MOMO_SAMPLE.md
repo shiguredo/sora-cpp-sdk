@@ -13,6 +13,7 @@
 ## サンプルをビルドする
 
 以下にそれぞれのプラットフォームでのビルド方法を記載します。
+
 **ビルドに関しての問い合わせは受け付けておりません。うまくいかない場合は [GitHub Actions](https://github.com/shiguredo/sora-cpp-sdk-samples/blob/develop/.github/workflows/build.yml) の内容をご確認ください。**
 
 ### リポジトリをクローンする
