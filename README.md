@@ -25,7 +25,7 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
 - Ubuntu 22.04 x86_64
 - Ubuntu 20.04 x86_64
 
-## 対応 Sora
+## 対応 WebRTC SFU Sora
 
 - WebRTC SFU Sora 2022.1.1 以降
 
@@ -33,8 +33,13 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
 
 ### SDL サンプル
 
-Sora と映像の送受信を行い、[SDL (Simple DirectMedia Layer)](https://www.libsdl.org/) を利用して受信映像を表示するサンプルです。
+WebRTC SFU Sora と映像の送受信を行い、[SDL (Simple DirectMedia Layer)](https://www.libsdl.org/) を利用して受信映像を表示するサンプルです。
 使い方は [SDL サンプルを使ってみる](./doc/USE_SDL_SAMPLE.md) をお読みください。
+
+### Momo サンプル
+
+[WebRTC Native Client Momo](https://github.com/shiguredo/momo) の sora モードを模したサンプルです。
+使い方は [Momo サンプルを使ってみる](./doc/USE_MOMO_SAMPLE.md) をお読みください。
 
 ## ライセンス
 
