@@ -14,6 +14,7 @@
 struct MessagingRecvOnlySampleConfig : sora::SoraDefaultClientConfig {
   std::string signaling_url;
   std::string channel_id;
+  boost::json::value data_channels;
 };
 
 class MessagingRecvOnlySample : public std::enable_shared_from_this<MessagingRecvOnlySample>,
@@ -32,6 +33,35 @@ class MessagingRecvOnlySample : public std::enable_shared_from_this<MessagingRec
     config.signaling_urls.push_back(config_.signaling_url);
     config.channel_id = config_.channel_id;
     config.role = "recvonly";
+
+    for (auto data_channel_value : config_.data_channels.as_array()) {
+      auto data_channel_object = data_channel_value.as_object();
+      sora::SoraSignalingConfig::DataChannel data_channel;
+      data_channel.label = data_channel_object["label"].as_string();
+      if (data_channel_object["direction"].is_string()) {
+        data_channel.direction = data_channel_object["direction"].as_string();
+      } else {
+        data_channel.direction = "recvonly";
+      }
+      if (data_channel_object["protocol"].is_string()) {
+        data_channel.protocol.emplace(data_channel_object["protocol"].as_string());
+      }
+      if (data_channel_object["ordered"].is_bool()) {
+        data_channel.ordered = data_channel_object["ordered"].as_bool();
+      }
+      if (data_channel_object["compress"].is_bool()) {
+        data_channel.compress = data_channel_object["compress"].as_bool();
+      }
+      if (data_channel_object["max_packet_life_time"].is_int64()) {
+        data_channel.max_packet_life_time = data_channel_object["max_packet_life_time"].as_int64();
+      }
+      if (data_channel_object["max_retransmits"].is_int64()) {
+        data_channel.max_retransmits = data_channel_object["max_retransmits"].as_int64();
+      }
+
+      config.data_channels.push_back(data_channel);
+    }
+
     conn_ = sora::SoraSignaling::Create(config);
 
     boost::asio::executor_work_guard<boost::asio::io_context::executor_type>
@@ -51,6 +81,9 @@ class MessagingRecvOnlySample : public std::enable_shared_from_this<MessagingRec
     ioc_->stop();
   }
 
+  void OnMessage(std::string label, std::string data) override {
+    RTC_LOG(LS_ERROR) << "OnMessage: [" << label << "] " << data;
+  }
 
  private:
   MessagingRecvOnlySampleConfig config_;
@@ -90,6 +123,17 @@ int main(int argc, char* argv[]) {
 
   MessagingRecvOnlySampleConfig config;
 
+  auto is_json = CLI::Validator(
+      [](std::string input) -> std::string {
+        boost::json::error_code ec;
+        boost::json::parse(input);
+        if (ec) {
+          return "Value " + input + " is not JSON Value";
+        }
+        return std::string();
+      },
+      "JSON Value");
+
   CLI::App app("Messaging Recvonly Sample for Sora C++ SDK");
   app.set_help_all_flag("--help-all",
                         "Print help message for all modes and exit");
@@ -105,10 +149,22 @@ int main(int argc, char* argv[]) {
       ->required();
   app.add_option("--channel-id", config.channel_id, "Channel ID")->required();
 
+  const std::string default_data_channels = "[{\"label\":\"#sora-devtools\", \"direction\":\"recvonly\"}]";
+  std::string data_channels;
+  app.add_option("--data-channels", data_channels,
+                 "Data channels specification (default: " + default_data_channels + ")")
+      ->check(is_json);
+
   try {
     app.parse(argc, argv);
   } catch (const CLI::ParseError& e) {
     exit(app.exit(e));
+  }
+
+  if (!data_channels.empty()) {
+    config.data_channels = boost::json::parse(data_channels);
+  } else {
+    config.data_channels = boost::json::parse(default_data_channels);
   }
 
   config.use_audio_device = false;
@@ -120,8 +176,8 @@ int main(int argc, char* argv[]) {
     rtc::LogMessage::LogThreads();
   }
 
-  auto sdlsample = sora::CreateSoraClient<MessagingRecvOnlySample>(config);
-  sdlsample->Run();
+  auto messaging_recvonly_sample = sora::CreateSoraClient<MessagingRecvOnlySample>(config);
+  messaging_recvonly_sample->Run();
 
   return 0;
 }
