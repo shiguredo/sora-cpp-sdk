@@ -82,7 +82,7 @@ class MessagingRecvOnlySample : public std::enable_shared_from_this<MessagingRec
   }
 
   void OnMessage(std::string label, std::string data) override {
-    RTC_LOG(LS_ERROR) << "OnMessage: [" << label << "] " << data;
+    RTC_LOG(LS_INFO) << "OnMessage: label=" << label << ", data=" << data.size() << " bytes";
   }
 
  private:
