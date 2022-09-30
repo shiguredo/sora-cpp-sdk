@@ -41,6 +41,11 @@ WebRTC SFU Sora と映像の送受信を行い、[SDL (Simple DirectMedia Layer)
 [WebRTC Native Client Momo](https://github.com/shiguredo/momo) の sora モードを模したサンプルです。
 使い方は [Momo サンプルを使ってみる](./doc/USE_MOMO_SAMPLE.md) をお読みください。
 
+### メッセージング受信サンプル
+
+WebRTC SFU Sora の [メッセージング機能](https://sora-doc.shiguredo.jp/MESSAGING) を使って送信されたメッセージを受信するサンプルです。
+使い方は [メッセージング受信サンプルを使ってみる](./doc/USE_MESSAGING_RECVONLY_SAMPLE.md) をお読みください。
+
 ## ライセンス
 
 Apache License 2.0
@@ -61,4 +66,3 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 ```
-
