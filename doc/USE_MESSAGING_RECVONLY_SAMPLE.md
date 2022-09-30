@@ -184,7 +184,7 @@ $ ./messaging_recvonly_sample --signaling-url wss://sora.example.com/signaling -
     - 任意のチャンネル ID
 - `--data-channels` : 受信対象のデータチャネルのリストを JSON 形式で指定します
     - 未指定の場合は `[{"label":"#sora-devtools", "direction":"recvonly"}]` が設定されます
-    - 指定可能な内容については Sora のドキュメントの ["type": "connect" 時の "data_channels"](https://develop.shiguredo-sora-doc.pages.dev/MESSAGING#8e04a8) を参照してください
+    - 指定可能な内容については Sora のドキュメントの ["type": "connect" 時の "data_channels"](https://sora-doc.shiguredo.jp/MESSAGING#8e04a8) を参照してください
 
 #### その他のオプション
 
