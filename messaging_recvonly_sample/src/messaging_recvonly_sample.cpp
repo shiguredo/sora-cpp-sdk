@@ -52,11 +52,11 @@ class MessagingRecvOnlySample : public std::enable_shared_from_this<MessagingRec
       if (data_channel_object["compress"].is_bool()) {
         data_channel.compress = data_channel_object["compress"].as_bool();
       }
-      if (data_channel_object["max_packet_life_time"].is_int64()) {
-        data_channel.max_packet_life_time = data_channel_object["max_packet_life_time"].as_int64();
+      if (data_channel_object["max_packet_life_time"].is_number()) {
+        data_channel.max_packet_life_time = boost::json::value_to<int32_t>(data_channel_object["max_packet_life_time"]);
       }
-      if (data_channel_object["max_retransmits"].is_int64()) {
-        data_channel.max_retransmits = data_channel_object["max_retransmits"].as_int64();
+      if (data_channel_object["max_retransmits"].is_number()) {
+        data_channel.max_retransmits = boost::json::value_to<int32_t>(data_channel_object["max_retransmits"]);
       }
 
       config.data_channels.push_back(data_channel);
