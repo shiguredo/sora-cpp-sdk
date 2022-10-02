@@ -998,6 +998,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             install_boost_args['cxxflags'] = [
                 '-std=gnu++17'
             ]
+            install_boost_args['visibility'] = 'hidden'
         elif platform.target.os == 'android':
             install_boost_args['target_os'] = 'android'
             install_boost_args['cflags'] = [
@@ -1255,7 +1256,7 @@ def main():
             cmake_args += ['-G', 'Xcode']
             cmake_args.append("-DCMAKE_SYSTEM_NAME=iOS")
             cmake_args.append("-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64")
-            cmake_args.append("-DCMAKE_OSX_DEPLOYMENT_TARGET=10.0")
+            cmake_args.append("-DCMAKE_OSX_DEPLOYMENT_TARGET=13.0")
             cmake_args.append("-DCMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH=NO")
         if platform.target.os == 'android':
             toolchain_file = os.path.join(install_dir, 'android-ndk', 'build', 'cmake', 'android.toolchain.cmake')
