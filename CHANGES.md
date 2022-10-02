@@ -11,6 +11,9 @@
 
 ## develop
 
+- [UPDATE] iOS の IPHONE_DEPLOYMENT_TARGET を 10.0 から 13.0 に上げる
+    - @melpon
+
 ## 2022.12.1 (2022-09-24)
 
 - [FIX] ログが毎フレーム出力されてしまっていたのを修正
