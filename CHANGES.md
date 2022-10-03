@@ -11,6 +11,9 @@
 
 ## develop
 
+- [UPDATE] Boost のビルド済みバイナリに Filesystem を追加
+    - @melpon
+
 ## 2022.12.2 (2022-10-02)
 
 - [UPDATE] iOS の IPHONE_DEPLOYMENT_TARGET を 10.0 から 13.0 に上げる
