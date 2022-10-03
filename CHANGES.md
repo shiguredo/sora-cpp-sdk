@@ -11,6 +11,8 @@
 
 ## develop
 
+## 2022.12.3 (2022-10-03)
+
 - [UPDATE] Boost のビルド済みバイナリに Filesystem を追加
     - @melpon
 
