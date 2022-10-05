@@ -11,6 +11,8 @@
 
 ## develop
 
+## 2022.14.0 (2022-10-05)
+
 - [ADD] SoraSignaling に `GetConnectionID`, `GetConnectedSignalingURL`, `IsConnectedDataChannel`, `IsConnectedWebsocket` 関数を追加
     - @melpon
 
