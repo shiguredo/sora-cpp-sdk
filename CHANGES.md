@@ -11,6 +11,11 @@
 
 ## develop
 
+## 2022.14.0 (2022-10-05)
+
+- [ADD] SoraSignaling に `GetConnectionID`, `GetConnectedSignalingURL`, `IsConnectedDataChannel`, `IsConnectedWebsocket` 関数を追加
+    - @melpon
+
 ## 2022.13.0 (2022-10-05)
 
 - [CHANGE] `ScalableVideoTrackSource::OnCapturedFrame` の戻り値を void から bool にする

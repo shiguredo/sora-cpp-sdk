@@ -37,6 +37,19 @@ std::string SoraSignaling::GetVideoMid() const {
   return video_mid_;
 }
 
+std::string SoraSignaling::GetConnectionID() const {
+  return connection_id_;
+}
+std::string SoraSignaling::GetConnectedSignalingURL() const {
+  return connected_signaling_url_;
+}
+bool SoraSignaling::IsConnectedDataChannel() const {
+  return dc_ && using_datachannel_;
+}
+bool SoraSignaling::IsConnectedWebsocket() const {
+  return ws_connected_;
+}
+
 void SoraSignaling::Connect() {
   RTC_LOG(LS_INFO) << "SoraSignaling::Connect";
 
@@ -797,6 +810,8 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
         }
       }
     }
+
+    connection_id_ = m.at("connection_id").as_string().c_str();
 
     pc_ = CreatePeerConnection(m.at("config"));
     const std::string sdp = m.at("sdp").as_string().c_str();

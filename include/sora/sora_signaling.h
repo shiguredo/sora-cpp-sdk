@@ -126,6 +126,11 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
   void Disconnect();
   bool SendDataChannel(const std::string& label, const std::string& data);
 
+  std::string GetConnectionID() const;
+  std::string GetConnectedSignalingURL() const;
+  bool IsConnectedDataChannel() const;
+  bool IsConnectedWebsocket() const;
+
  private:
   static bool ParseURL(const std::string& url, URLParts& parts, bool& ssl);
 
@@ -216,6 +221,7 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
   };
   OfferConfig offer_config_;
 
+  std::string connection_id_;
   std::vector<std::shared_ptr<Websocket>> connecting_wss_;
   std::string connected_signaling_url_;
   std::shared_ptr<Websocket> ws_;
