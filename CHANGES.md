@@ -11,6 +11,8 @@
 
 ## develop
 
+## 2022.13.0 (2022-10-05)
+
 - [CHANGE] `ScalableVideoTrackSource::OnCapturedFrame` の戻り値を void から bool にする
     - @melpon
 - [ADD] SoraSignalingConfig に `audio_opus_params_clock_rate`, `signaling_notify_metadata`, `disable_signaling_url_randomization` を追加
