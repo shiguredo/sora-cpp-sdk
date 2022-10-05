@@ -253,6 +253,10 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     m["metadata"] = config_.metadata;
   }
 
+  if (!config_.signaling_notify_metadata.is_null()) {
+    m["signaling_notify_metadata"] = config_.signaling_notify_metadata;
+  }
+
   if (!config_.video) {
     // video: false の場合はそのまま設定
     m["video"] = false;
@@ -274,7 +278,8 @@ void SoraSignaling::DoSendConnect(bool redirect) {
   if (!config_.audio) {
     m["audio"] = false;
   } else if (config_.audio && config_.audio_codec_type.empty() &&
-             config_.audio_bit_rate == 0) {
+             config_.audio_bit_rate == 0 &&
+             config_.audio_opus_params_clock_rate == 0) {
     m["audio"] = true;
   } else {
     m["audio"] = boost::json::object();
@@ -283,6 +288,11 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     }
     if (config_.audio_bit_rate != 0) {
       m["audio"].as_object()["bit_rate"] = config_.audio_bit_rate;
+    }
+    if (config_.audio_opus_params_clock_rate != 0) {
+      m["audio"].as_object()["opus_params"] = boost::json::object();
+      m["audio"].as_object()["opus_params"].as_object()["clock_rate"] =
+          config_.audio_opus_params_clock_rate;
     }
   }
 
@@ -1008,8 +1018,16 @@ void SoraSignaling::DoConnect() {
                                "Connection timeout");
       });
 
+  auto signaling_urls = config_.signaling_urls;
+  if (!config_.disable_signaling_url_randomization) {
+    // ランダムに並び替える
+    std::random_device seed_gen;
+    std::mt19937 engine(seed_gen());
+    std::shuffle(signaling_urls.begin(), signaling_urls.end(), engine);
+  }
+
   std::string error_messages;
-  for (const auto& url : config_.signaling_urls) {
+  for (const auto& url : signaling_urls) {
     URLParts parts;
     bool ssl;
     if (!ParseURL(url, parts, ssl)) {
