@@ -67,7 +67,9 @@ struct SoraSignalingConfig {
   std::string audio_codec_type = "";
   int video_bit_rate = 0;
   int audio_bit_rate = 0;
+  int audio_opus_params_clock_rate = 0;
   boost::json::value metadata;
+  boost::json::value signaling_notify_metadata;
   std::string role = "sendonly";
   boost::optional<bool> multistream;
   boost::optional<bool> spotlight;
@@ -104,6 +106,8 @@ struct SoraSignalingConfig {
   // proxy を設定する場合は必須
   rtc::NetworkManager* network_manager = nullptr;
   rtc::PacketSocketFactory* socket_factory = nullptr;
+
+  bool disable_signaling_url_randomization = false;
 };
 
 class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,

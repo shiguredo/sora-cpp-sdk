@@ -11,6 +11,13 @@
 
 ## develop
 
+## 2022.13.0 (2022-10-05)
+
+- [CHANGE] `ScalableVideoTrackSource::OnCapturedFrame` の戻り値を void から bool にする
+    - @melpon
+- [ADD] SoraSignalingConfig に `audio_opus_params_clock_rate`, `signaling_notify_metadata`, `disable_signaling_url_randomization` を追加
+    - @melpon
+
 ## 2022.12.3 (2022-10-03)
 
 - [UPDATE] Boost のビルド済みバイナリに Filesystem を追加

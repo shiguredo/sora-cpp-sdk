@@ -46,7 +46,7 @@ bool ScalableVideoTrackSource::remote() const {
   return false;
 }
 
-void ScalableVideoTrackSource::OnCapturedFrame(
+bool ScalableVideoTrackSource::OnCapturedFrame(
     const webrtc::VideoFrame& video_frame) {
   webrtc::VideoFrame frame = video_frame;
 
@@ -101,7 +101,7 @@ void ScalableVideoTrackSource::OnCapturedFrame(
   if (!AdaptFrame(frame.width(), frame.height(), timestamp_us, &adapted_width,
                   &adapted_height, &crop_width, &crop_height, &crop_x,
                   &crop_y)) {
-    return;
+    return false;
   }
 
   if (config_.on_frame) {
@@ -111,7 +111,7 @@ void ScalableVideoTrackSource::OnCapturedFrame(
   if (frame.video_frame_buffer()->type() ==
       webrtc::VideoFrameBuffer::Type::kNative) {
     OnFrame(frame);
-    return;
+    return true;
   }
 
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer =
@@ -131,6 +131,8 @@ void ScalableVideoTrackSource::OnCapturedFrame(
               .set_rotation(frame.rotation())
               .set_timestamp_us(translated_timestamp_us)
               .build());
+
+  return true;
 }
 
 }  // namespace sora
