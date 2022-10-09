@@ -15,6 +15,7 @@
 // WebRTC
 #include <api/scoped_refptr.h>
 #include <api/video/i420_buffer.h>
+#include <api/video/nv12_buffer.h>
 #include <api/video/video_frame_buffer.h>
 #include <api/video/video_rotation.h>
 #include <rtc_base/logging.h>
@@ -120,10 +121,19 @@ void ScalableVideoTrackSource::OnCapturedFrame(
   if (adapted_width != frame.width() || adapted_height != frame.height()) {
     // Video adapter has requested a down-scale. Allocate a new buffer and
     // return scaled version.
-    rtc::scoped_refptr<webrtc::I420Buffer> i420_buffer =
-        webrtc::I420Buffer::Create(adapted_width, adapted_height);
-    i420_buffer->ScaleFrom(*buffer->ToI420());
-    buffer = i420_buffer;
+    if (buffer->type() == webrtc::VideoFrameBuffer::Type::kNV12) {
+      rtc::scoped_refptr<webrtc::NV12Buffer> nv12_buffer =
+          webrtc::NV12Buffer::Create(adapted_width, adapted_height);
+      nv12_buffer->CropAndScaleFrom(
+          static_cast<webrtc::NV12BufferInterface&>(*buffer), 0, 0,
+          buffer->width(), buffer->height());
+      buffer = nv12_buffer;
+    } else {
+      rtc::scoped_refptr<webrtc::I420Buffer> i420_buffer =
+          webrtc::I420Buffer::Create(adapted_width, adapted_height);
+      i420_buffer->ScaleFrom(*buffer->ToI420());
+      buffer = i420_buffer;
+    }
   }
 
   OnFrame(webrtc::VideoFrame::Builder()
