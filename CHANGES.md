@@ -11,6 +11,8 @@
 
 ## develop
 
+- [FIX] 廃止になった `audio_opus_params_clock_rate` を削除する
+
 ## 2022.14.0 (2022-10-05)
 
 - [ADD] SoraSignaling に `GetConnectionID`, `GetConnectedSignalingURL`, `IsConnectedDataChannel`, `IsConnectedWebsocket` 関数を追加
