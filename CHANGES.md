@@ -14,6 +14,7 @@
 - [UPDATE] libwebrtc を `M107.5304@{#4}` に上げる
     - @torikizi
 - [FIX] 廃止になった `audio_opus_params_clock_rate` を削除する
+    - @torikizi
 
 ## 2022.14.0 (2022-10-05)
 
