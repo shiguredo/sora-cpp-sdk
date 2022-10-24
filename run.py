@@ -969,7 +969,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
         }
         if platform.target.os == 'windows':
             install_boost_args['cxxflags'] = [
-                '-D_HAS_ITERATOR_DEBUGGING=0'
+                '-D_ITERATOR_DEBUG_LEVEL=0'
             ]
             install_boost_args['toolset'] = 'msvc'
             install_boost_args['target_os'] = 'windows'
@@ -1111,6 +1111,12 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                 'install_dir': install_dir,
                 'cmake_args': [],
             }
+            if platform.target.os == 'windows':
+                cxxflags = [
+                    '/DWIN32', '/D_WINDOWS', '/W3', '/GR', '/EHsc',
+                    '/D_ITERATOR_DEBUG_LEVEL=0',
+                ]
+                install_vpl_args['cmake_args'].append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
             if platform.target.os == 'ubuntu':
                 cmake_args = []
                 cmake_args.append("-DCMAKE_C_COMPILER=clang-12")
@@ -1122,7 +1128,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                     '-D_LIBCPP_DISABLE_AVAILABILITY', '-D_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS',
                     '-D_LIBCXXABI_DISABLE_VISIBILITY_ANNOTATIONS', '-D_LIBCPP_ENABLE_NODISCARD']
                 cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(flags)}")
-                install_vpl_args['cmake_args'] = cmake_args
+                install_vpl_args['cmake_args'] += cmake_args
             install_vpl(**install_vpl_args)
 
         if platform.target.os == 'android':
@@ -1302,6 +1308,11 @@ def main():
         if platform.target.os in ('windows', 'ubuntu') and platform.target.arch == 'x86_64':
             cmake_args.append('-DUSE_VPL_ENCODER=ON')
             cmake_args.append(f"-DVPL_ROOT_DIR={cmake_path(os.path.join(install_dir, 'vpl'))}")
+
+        # バンドルされたライブラリを消しておく
+        # （CMake でうまく依存関係を解消できなくて更新されないため）
+        rm_rf(os.path.join(sora_build_dir, 'bundled'))
+        rm_rf(os.path.join(sora_build_dir, 'libsora.a'))
 
         cmd(['cmake', BASE_DIR] + cmake_args)
         if platform.target.os == 'ios':
