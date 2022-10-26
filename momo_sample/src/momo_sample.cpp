@@ -218,7 +218,7 @@ int main(int argc, char* argv[]) {
   auto is_json = CLI::Validator(
       [](std::string input) -> std::string {
         boost::json::error_code ec;
-        boost::json::parse(input);
+        boost::json::parse(input, ec);
         if (ec) {
           return "Value " + input + " is not JSON Value";
         }
