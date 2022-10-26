@@ -1192,7 +1192,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
 
         if platform.target.os == 'windows':
             with cd(os.path.join('third_party', 'lyra')):
-                if os.environ['BAZEL_SH'] is None:
+                if 'BAZEL_SH' not in os.environ:
                     git_bash_path = 'C:\\Program Files\\Git\\git-bash.exe'
                     if shutil.which('git-bash') is not None:
                         os.environ['BAZEL_SH'] = 'git-bash'
