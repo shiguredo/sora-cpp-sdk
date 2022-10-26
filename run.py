@@ -1194,9 +1194,9 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             with cd(os.path.join('third_party', 'lyra')):
                 if 'BAZEL_SH' not in os.environ:
                     git_bash_path = 'C:\\Program Files\\Git\\git-bash.exe'
-                    if shutil.which('git-bash') is not None:
-                        os.environ['BAZEL_SH'] = 'git-bash'
-                    elif os.path.exists(git_bash_path):
+                    # if shutil.which('git-bash') is not None:
+                    #     os.environ['BAZEL_SH'] = 'git-bash'
+                    if os.path.exists(git_bash_path):
                         os.environ['BAZEL_SH'] = git_bash_path
                 cmd(['bazel', 'build', *([] if debug else ['-c', 'opt']), ':lyra'])
 
