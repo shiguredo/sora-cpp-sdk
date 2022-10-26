@@ -40,6 +40,7 @@ jobs:
           key: windows-cuda-${{ steps.versions.outputs.cuda_version }}.v1
       - run: echo "${CUDA_VERSION}" > _install\windows_x86_64\release\cuda.version
         if: steps.cache-cuda.outputs.cache-hit == 'true'
+      - run: pip install numpy
       - run: python3 run.py --test --package ${{ matrix.name }}
       - name: Get package name
         run: |
