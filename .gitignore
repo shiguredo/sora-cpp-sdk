@@ -2,6 +2,7 @@
 /_build
 /_source
 /_package
+/third_party/lyra/bazel-*
 /test/*.json
 /test/hello/build/
 

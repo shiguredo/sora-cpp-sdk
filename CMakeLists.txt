@@ -82,11 +82,14 @@ string(SUBSTRING "${SORA_CPP_SDK_COMMIT}" 0 8 SORA_CPP_SDK_COMMIT_SHORT)
 string(SUBSTRING "${WEBRTC_COMMIT}" 0 8 WEBRTC_COMMIT_SHORT)
 configure_file(src/version.gen.h.template ${CMAKE_CURRENT_BINARY_DIR}/version.gen.h)
 target_include_directories(sora PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(sora PRIVATE ${CMAKE_SOURCE_DIR}/third_party/lyra)
 
 target_sources(sora
   PRIVATE
     src/aligned_encoder_adapter.cpp
+    src/audio_decoder_lyra.cpp
     src/audio_device_module.cpp
+    src/audio_encoder_lyra.cpp
     src/camera_device_capturer.cpp
     src/data_channel.cpp
     src/default_video_formats.cpp
@@ -97,6 +100,8 @@ target_sources(sora
     src/rtc_stats.cpp
     src/scalable_track_source.cpp
     src/session_description.cpp
+    src/sora_audio_decoder_factory.cpp
+    src/sora_audio_encoder_factory.cpp
     src/sora_default_client.cpp
     src/sora_peer_connection_factory.cpp
     src/sora_signaling.cpp
@@ -238,20 +243,20 @@ if (SORA_TARGET_OS STREQUAL "windows")
   target_compile_definitions(sora
     PUBLIC
       WEBRTC_WIN
-      _HAS_ITERATOR_DEBUGGING=0
+      _ITERATOR_DEBUG_LEVEL=0
   )
 
   if (USE_NVCODEC_ENCODER)
     target_sources(sora
       PRIVATE
         src/hwenc_nvcodec/nvcodec_h264_encoder.cpp
-        NvCodec/NvCodec/NvEncoder/NvEncoder.cpp
-        NvCodec/NvCodec/NvEncoder/NvEncoderD3D11.cpp
+        third_party/NvCodec/NvCodec/NvEncoder/NvEncoder.cpp
+        third_party/NvCodec/NvCodec/NvEncoder/NvEncoderD3D11.cpp
         src/hwenc_nvcodec/nvcodec_video_decoder.cpp)
     target_include_directories(sora
       PRIVATE
-        NvCodec/include
-        NvCodec/NvCodec)
+        third_party/NvCodec/include
+        third_party/NvCodec/NvCodec)
     target_link_libraries(sora
       PRIVATE
         DXGI.lib
@@ -267,19 +272,19 @@ if (SORA_TARGET_OS STREQUAL "windows")
 
     set_source_files_properties(
         src/cuda_context_cuda.cpp
-        NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
+        third_party/NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
         src/hwenc_nvcodec/nvcodec_decoder_cuda.cpp
       PROPERTIES
         CUDA_SOURCE_PROPERTY_FORMAT OBJ
     )
     cuda_compile(CUDA_FILES
         src/cuda_context_cuda.cpp
-        NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
+        third_party/NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
         src/hwenc_nvcodec/nvcodec_decoder_cuda.cpp
       OPTIONS
         -Xcompiler /utf-8
-        -Xcompiler /I${CMAKE_CURRENT_SOURCE_DIR}/NvCodec/include
-        -Xcompiler /I${CMAKE_CURRENT_SOURCE_DIR}/NvCodec/NvCodec
+        -Xcompiler /I${CMAKE_CURRENT_SOURCE_DIR}/third_party/NvCodec/include
+        -Xcompiler /I${CMAKE_CURRENT_SOURCE_DIR}/third_party/NvCodec/NvCodec
         -Xcompiler /I${CMAKE_CURRENT_SOURCE_DIR}/include
         -Xcompiler "/MT$<$<CONFIG:Debug>:d>"
         -Xcompiler /D_HAS_ITERATOR_DEBUGGING=0
@@ -301,7 +306,7 @@ if (SORA_TARGET_OS STREQUAL "windows")
     )
     target_link_libraries(sora PRIVATE "$<BUILD_INTERFACE:VPL::dispatcher>")
     # vpl を要求したくないので sora.lib に含める
-    list(APPEND BUNDLE_STATIC_LIBS ${VPL_ROOT_DIR}/lib/vpl.lib)
+    list(APPEND BUNDLE_STATIC_LIBS ${VPL_ROOT_DIR}/lib/vpl$<$<CONFIG:Debug>:d>.lib)
   endif()
 
 elseif (SORA_TARGET_OS STREQUAL "macos")
@@ -433,13 +438,13 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
         src/hwenc_nvcodec/nvcodec_h264_encoder_cuda.cpp
         src/hwenc_nvcodec/nvcodec_decoder_cuda.cpp
         src/hwenc_nvcodec/nvcodec_video_decoder.cpp
-        NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
-        NvCodec/NvCodec/NvEncoder/NvEncoder.cpp
-        NvCodec/NvCodec/NvEncoder/NvEncoderCuda.cpp)
+        third_party/NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
+        third_party/NvCodec/NvCodec/NvEncoder/NvEncoder.cpp
+        third_party/NvCodec/NvCodec/NvEncoder/NvEncoderCuda.cpp)
     target_include_directories(sora
       PRIVATE
-        NvCodec/include
-        NvCodec/NvCodec
+        third_party/NvCodec/include
+        third_party/NvCodec/NvCodec
         /usr/local/cuda/include)
 
     # これらのソースは CUDA としてコンパイルする
@@ -447,8 +452,8 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
         src/cuda_context_cuda.cpp
         src/hwenc_nvcodec/nvcodec_h264_encoder_cuda.cpp
         src/hwenc_nvcodec/nvcodec_decoder_cuda.cpp
-        NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
-        NvCodec/NvCodec/NvEncoder/NvEncoderCuda.cpp
+        third_party/NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
+        third_party/NvCodec/NvCodec/NvEncoder/NvEncoderCuda.cpp
       PROPERTIES
         COMPILE_OPTIONS "-xcuda;--cuda-gpu-arch=sm_35;-std=gnu++17"
     )

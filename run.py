@@ -646,6 +646,20 @@ def install_cmake(version, source_dir, install_dir, platform: str, ext):
 
 
 @versioned
+def install_bazel(version, source_dir, install_dir, platform: str):
+    rm_rf(os.path.join(install_dir, 'bazel'))
+    is_windows = platform.startswith('windows')
+    exe = '.exe' if is_windows else ''
+    url = f'https://github.com/bazelbuild/bazel/releases/download/{version}/bazel-{version}-{platform}{exe}'
+    src_path = download(url, source_dir)
+    dst_path = os.path.join(install_dir, 'bazel', f'bazel{exe}')
+    mkdir_p(os.path.join(install_dir, 'bazel'))
+    os.rename(src_path, dst_path)
+    if not is_windows:
+        cmd(['chmod', '+x', dst_path])
+
+
+@versioned
 def install_cuda_windows(version, source_dir, build_dir, install_dir):
     rm_rf(os.path.join(build_dir, 'cuda'))
     rm_rf(os.path.join(install_dir, 'cuda'))
@@ -1089,6 +1103,29 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
         else:
             add_path(os.path.join(install_dir, 'cmake', 'bin'))
 
+        # Bazel
+        install_bazel_args = {
+            'version': version['BAZEL_VERSION'],
+            'version_file': os.path.join(install_dir, 'bazel.version'),
+            'source_dir': source_dir,
+            'install_dir': install_dir,
+            'platform': '',
+        }
+        if platform.build.os == 'windows' and platform.build.arch == 'x86_64':
+            install_bazel_args['platform'] = 'windows-x86_64'
+        elif platform.build.os == 'macos' and platform.build.arch == 'x86_64':
+            install_bazel_args['platform'] = 'darwin-x86_64'
+        elif platform.build.os == 'macos' and platform.build.arch == 'arm64':
+            install_bazel_args['platform'] = 'darwin-arm64'
+        elif platform.build.os == 'ubuntu' and platform.build.arch == 'x86_64':
+            install_bazel_args['platform'] = 'linux-x86_64'
+        elif platform.build.os == 'ubuntu' and platform.build.arch == 'arm64':
+            install_bazel_args['platform'] = 'linux-arm64'
+        else:
+            raise Exception('Failed to install Bazel')
+        install_bazel(**install_bazel_args)
+        add_path(os.path.join(install_dir, 'bazel'))
+
         # CUDA
         if platform.target.os == 'windows':
             install_cuda_args = {
@@ -1152,6 +1189,16 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                 ldflags.append(f'-Wl,--undefined={func}')
             with open(os.path.join(install_dir, 'webrtc.ldflags'), 'w') as f:
                 f.write('\n'.join(ldflags))
+
+        if platform.target.os == 'windows':
+            with cd(os.path.join('third_party', 'lyra')):
+                if os.environ['BAZEL_SH'] is None:
+                    git_bash_path = 'C:\\Program Files\\Git\\git-bash.exe'
+                    if shutil.which('git-bash') is not None:
+                        os.environ['BAZEL_SH'] = 'git-bash'
+                    elif os.path.exists(git_bash_path):
+                        os.environ['BAZEL_SH'] = git_bash_path
+                cmd(['bazel', 'build', *([] if debug else ['-c', 'opt']), ':lyra'])
 
 
 AVAILABLE_TARGETS = ['windows_x86_64', 'macos_x86_64', 'macos_arm64', 'ubuntu-20.04_x86_64',
@@ -1415,6 +1462,8 @@ def main():
                 if platform.target.os in ('windows', 'macos', 'ubuntu'):
                     cmake_args.append("-DTEST_CONNECT_DISCONNECT=ON")
                     cmake_args.append("-DTEST_DATACHANNEL=ON")
+                if platform.target.os in ('windows'):
+                    cmake_args.append("-DTEST_LYRA=ON")
 
                 cmd(['cmake', os.path.join(BASE_DIR, 'test')] + cmake_args)
                 cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])

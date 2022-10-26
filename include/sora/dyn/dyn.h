@@ -1,6 +1,7 @@
 #ifndef DYN_DYN_H_
 #define DYN_DYN_H_
 
+#include <iostream>
 #include <map>
 #include <memory>
 #include <string>
@@ -27,7 +28,7 @@ class DynModule {
   typedef void* module_ptr_t;
 #endif
 
-  bool IsLoadable(const char* name) {
+  static bool IsLoadable(const char* name) {
 #if defined(_WIN32)
     module_ptr_t module = LoadLibraryA(name);
     if (module == nullptr) {
@@ -117,6 +118,8 @@ class DynModule {
     auto f =                                                                   \
         (func_type)DynModule::Instance().GetFunc(soname, DYN_STRINGIZE(func)); \
     if (f == nullptr) {                                                        \
+      std::cerr << "Failed to GetFunc: " << DYN_STRINGIZE(func)                \
+                << " soname=" << soname << std::endl;                          \
       exit(1);                                                                 \
     }                                                                          \
     return f(args...);                                                         \
