@@ -5,7 +5,7 @@ cc_binary(
         "lyra.cc",
     ],
     defines = [
-        "-DLYRA_EXPORTS",
+        "LYRA_EXPORTS",
     ],
     deps = [
         "@lyra//:lyra_encoder",

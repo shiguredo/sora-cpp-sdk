@@ -46,3 +46,10 @@ sudo apt-get -y install cuda=10.2.89-1
 デフォルトでは実行ファイルのディレクトリ下にある `model_coeffs` ディレクトリを検索する。
 
 ただし `SORA_LYRA_MODEL_COEFFS_PATH` 環境変数が設定されている場合は、この環境変数に指定されているディレクトリを検索する。
+
+## Lyra の実行
+
+警告以上のログを表示している時に `Lyra is not supported` という文字列が出てきたら、Lyra の共有ライブラリが適切に配置されていない可能性が高い。
+
+macOS で Lyra を利用するには、liblyra.so をカレントディレクトリに配置するか、`DYLD_LIBRARY_PATH` を指定して実行する必要がある。
+

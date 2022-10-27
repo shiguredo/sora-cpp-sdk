@@ -1190,18 +1190,19 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             with open(os.path.join(install_dir, 'webrtc.ldflags'), 'w') as f:
                 f.write('\n'.join(ldflags))
 
-        if platform.target.os == 'windows':
+        if platform.target.os in ('windows', 'macos'):
             with cd(os.path.join('third_party', 'lyra')):
-                # ローカルの bash を使うとビルドに失敗してしまったので、
-                # git-bash を利用して lyra をビルドする
-                if 'BAZEL_SH' not in os.environ:
-                    # CI では git-bash を使うと逆に失敗してしまう
-                    if os.environ.get('GITHUB_ACTIONS') != 'true':
-                        git_bash_path = 'C:\\Program Files\\Git\\git-bash.exe'
-                        if shutil.which('git-bash') is not None:
-                            os.environ['BAZEL_SH'] = 'git-bash'
-                        if os.path.exists(git_bash_path):
-                            os.environ['BAZEL_SH'] = git_bash_path
+                if platform.target.os == 'windows':
+                    # ローカルの bash を使うとビルドに失敗してしまったので、
+                    # git-bash を利用して lyra をビルドする
+                    if 'BAZEL_SH' not in os.environ:
+                        # CI では git-bash を使うと逆に失敗してしまう
+                        if os.environ.get('GITHUB_ACTIONS') != 'true':
+                            git_bash_path = 'C:\\Program Files\\Git\\git-bash.exe'
+                            if shutil.which('git-bash') is not None:
+                                os.environ['BAZEL_SH'] = 'git-bash'
+                            if os.path.exists(git_bash_path):
+                                os.environ['BAZEL_SH'] = git_bash_path
                 cmd(['bazel', 'build', *([] if debug else ['-c', 'opt']), ':lyra'])
 
 
@@ -1391,11 +1392,15 @@ def main():
                             os.path.join(install_dir, 'sora', 'lib', 'libsora.a'))
 
         # Lyra の共有ライブラリとモデル係数ファイルをインストールする
-        if platform.target.os in ('windows',):
+        if platform.target.os in ('windows', 'macos'):
             mkdir_p(os.path.join(install_dir, 'sora', 'share', 'lyra'))
             if platform.target.os in ('windows',):
                 lyra_dll_src = os.path.join(BASE_DIR, 'third_party', 'lyra', 'bazel-bin', 'lyra.dll')
                 lyra_dll_dst = os.path.join(install_dir, 'sora', 'share', 'lyra', 'lyra.dll')
+                model_dst = os.path.join(install_dir, 'sora', 'share', 'lyra', 'model_coeffs')
+            if platform.target.os in ('macos',):
+                lyra_dll_src = os.path.join(BASE_DIR, 'third_party', 'lyra', 'bazel-bin', 'liblyra.so')
+                lyra_dll_dst = os.path.join(install_dir, 'sora', 'share', 'lyra', 'liblyra.so')
                 model_dst = os.path.join(install_dir, 'sora', 'share', 'lyra', 'model_coeffs')
             rm_rf(model_dst)
             shutil.copyfile(lyra_dll_src, lyra_dll_dst)
@@ -1480,7 +1485,7 @@ def main():
                 if platform.target.os in ('windows', 'macos', 'ubuntu'):
                     cmake_args.append("-DTEST_CONNECT_DISCONNECT=ON")
                     cmake_args.append("-DTEST_DATACHANNEL=ON")
-                if platform.target.os in ('windows'):
+                if platform.target.os in ('windows', 'macos'):
                     cmake_args.append("-DTEST_LYRA=ON")
 
                 cmd(['cmake', os.path.join(BASE_DIR, 'test')] + cmake_args)
@@ -1488,11 +1493,15 @@ def main():
 
                 # Lyra テストのビルド先のディレクトリに
                 # Lyra の共有ライブラリとモデル係数ファイルをコピーする
-                if platform.target.os in ('windows',):
+                if platform.target.os in ('windows', 'macos'):
                     if platform.target.os in ('windows',):
                         lyra_dll_src = os.path.join(BASE_DIR, 'third_party', 'lyra', 'bazel-bin', 'lyra.dll')
                         lyra_dll_dst = os.path.join(test_build_dir, configuration, 'lyra.dll')
                         model_dst = os.path.join(test_build_dir, configuration, 'model_coeffs')
+                    if platform.target.os in ('macos',):
+                        lyra_dll_src = os.path.join(BASE_DIR, 'third_party', 'lyra', 'bazel-bin', 'liblyra.so')
+                        lyra_dll_dst = os.path.join(test_build_dir, 'liblyra.so')
+                        model_dst = os.path.join(test_build_dir, 'model_coeffs')
                     rm_rf(model_dst)
                     shutil.copyfile(lyra_dll_src, lyra_dll_dst)
                     with cd(os.path.join(BASE_DIR, 'third_party', 'lyra')):
