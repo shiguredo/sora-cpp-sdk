@@ -1,5 +1,10 @@
 #include "sora/audio_encoder_lyra.h"
 
+#include <cstdlib>
+
+// Boost
+#include <boost/dll/runtime_symbol_info.hpp>
+
 // WebRTC
 #include <absl/strings/match.h>
 #include <api/audio_codecs/audio_encoder.h>
@@ -415,14 +420,14 @@ bool AudioEncoderLyraImpl::RecreateEncoderInstance(
   input_buffer_.clear();
   input_buffer_.reserve(Num10msFramesPerPacket() * SamplesPer10msFrame());
   const int bitrate = GetBitrateBps(config);
+  auto path = boost::dll::program_location().parent_path() / "model_coeffs";
+  std::string dir = path.string();
+  auto env = std::getenv("SORA_LYRA_MODEL_COEFFS_PATH");
+  if (env != NULL) {
+    dir = env;
+  }
   inst_ = dyn::lyra_encoder_create(config.sample_rate_hz, config.num_channels,
-                                   bitrate, config.dtx_enabled,
-#if defined(_WIN32)
-                                   "model_coeffs"
-#else
-                                   "model_coeffs"
-#endif
-  );
+                                   bitrate, config.dtx_enabled, dir.c_str());
   RTC_LOG(LS_INFO) << "Created Lyra encoder: sample_rate_hz="
                    << config.sample_rate_hz
                    << " num_channels=" << config.num_channels

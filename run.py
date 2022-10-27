@@ -1192,12 +1192,16 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
 
         if platform.target.os == 'windows':
             with cd(os.path.join('third_party', 'lyra')):
-                # if 'BAZEL_SH' not in os.environ:
-                #     git_bash_path = 'C:\\Program Files\\Git\\git-bash.exe'
-                #     if shutil.which('git-bash') is not None:
-                #         os.environ['BAZEL_SH'] = 'git-bash'
-                #     if os.path.exists(git_bash_path):
-                #         os.environ['BAZEL_SH'] = git_bash_path
+                # ローカルの bash を使うとビルドに失敗してしまったので、
+                # git-bash を利用して lyra をビルドする
+                if 'BAZEL_SH' not in os.environ:
+                    # CI では git-bash を使うと逆に失敗してしまう
+                    if os.environ.get('GITHUB_ACTIONS') != 'true':
+                        git_bash_path = 'C:\\Program Files\\Git\\git-bash.exe'
+                        if shutil.which('git-bash') is not None:
+                            os.environ['BAZEL_SH'] = 'git-bash'
+                        if os.path.exists(git_bash_path):
+                            os.environ['BAZEL_SH'] = git_bash_path
                 cmd(['bazel', 'build', *([] if debug else ['-c', 'opt']), ':lyra'])
 
 

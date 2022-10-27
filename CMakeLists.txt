@@ -66,7 +66,7 @@ set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE NEVER)
 
 find_package(WebRTC REQUIRED)
-find_package(Boost REQUIRED COMPONENTS json)
+find_package(Boost REQUIRED COMPONENTS json filesystem)
 find_package(Threads REQUIRED)
 
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
@@ -133,6 +133,7 @@ target_link_libraries(sora
   PUBLIC
     WebRTC::webrtc
     Boost::json
+    Boost::filesystem
 )
 
 if (USE_LIBCXX)

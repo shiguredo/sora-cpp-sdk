@@ -21,7 +21,7 @@ if (WIN32)
   set(Boost_USE_STATIC_RUNTIME ON)
 endif()
 
-find_package(Boost REQUIRED COMPONENTS json)
+find_package(Boost REQUIRED COMPONENTS json filesystem)
 find_package(WebRTC REQUIRED)
 find_package(Sora REQUIRED)
 find_package(Threads REQUIRED)

@@ -1,5 +1,10 @@
 #include "sora/audio_decoder_lyra.h"
 
+#include <cstdlib>
+
+// Boost
+#include <boost/dll/runtime_symbol_info.hpp>
+
 // WebRTC
 #include <absl/strings/match.h>
 #include <rtc_base/logging.h>
@@ -153,13 +158,14 @@ int AudioDecoderLyraImpl::DecodeRedundantInternal(const uint8_t* encoded,
 void AudioDecoderLyraImpl::Reset() {
   if (dec_state_)
     dyn::lyra_decoder_destroy(dec_state_);
-  dec_state_ = dyn::lyra_decoder_create(sample_rate_hz_, channels_,
-#if defined(_WIN32)
-                                        "lyra\\lyra\\model_coeffs"
-#else
-                                        "lyra/lyra/model_coeffs"
-#endif
-  );
+  auto path = boost::dll::program_location().parent_path() / "model_coeffs";
+  std::string dir = path.string();
+  auto env = std::getenv("SORA_LYRA_MODEL_COEFFS_PATH");
+  if (env != NULL) {
+    dir = env;
+  }
+  dec_state_ =
+      dyn::lyra_decoder_create(sample_rate_hz_, channels_, dir.c_str());
 }
 
 int AudioDecoderLyraImpl::PacketDuration(const uint8_t* encoded,
