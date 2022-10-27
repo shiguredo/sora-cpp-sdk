@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		DD76254E290AFDE100BFE6D8 /* libboost_filesystem.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DD76254D290AFDC600BFE6D8 /* libboost_filesystem.a */; };
 		DDBC4B932820E3770099E1F0 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = DDBC4B922820E3770099E1F0 /* AppDelegate.m */; };
 		DDBC4B962820E3770099E1F0 /* SceneDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = DDBC4B952820E3770099E1F0 /* SceneDelegate.m */; };
 		DDBC4B992820E3770099E1F0 /* ViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = DDBC4B982820E3770099E1F0 /* ViewController.mm */; };
@@ -28,6 +29,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		DD76254D290AFDC600BFE6D8 /* libboost_filesystem.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libboost_filesystem.a; path = ../../_install/ios/release/boost/lib/libboost_filesystem.a; sourceTree = "<group>"; };
 		DDBC4B8E2820E3770099E1F0 /* hello.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = hello.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DDBC4B912820E3770099E1F0 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		DDBC4B922820E3770099E1F0 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -69,6 +71,7 @@
 				DDBC4BBF2820F4F80099E1F0 /* AudioToolbox.framework in Frameworks */,
 				DDBC4BB92820F4490099E1F0 /* CoreAudio.framework in Frameworks */,
 				DDBC4BC7282216890099E1F0 /* GLKit.framework in Frameworks */,
+				DD76254E290AFDE100BFE6D8 /* libboost_filesystem.a in Frameworks */,
 				DDBC4BB52820F4090099E1F0 /* libsora.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -115,6 +118,7 @@
 		DDBC4BAA2820E9C30099E1F0 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				DD76254D290AFDC600BFE6D8 /* libboost_filesystem.a */,
 				DDBC4BC6282216890099E1F0 /* GLKit.framework */,
 				DDBC4BC42822166B0099E1F0 /* OpenGLES.framework */,
 				DDBC4BC2282216340099E1F0 /* Network.framework */,
