@@ -78,7 +78,7 @@ jobs:
     runs-on: macos-12
     steps:
       - uses: actions/checkout@v3
-      - run: pip install numpy
+      - run: pip3 install numpy
       - run: python3 run.py --test --package ${{ matrix.name }}
       - name: Get package name
         run: |
