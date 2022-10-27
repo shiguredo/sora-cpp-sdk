@@ -1390,6 +1390,20 @@ def main():
             shutil.copyfile(os.path.join(sora_build_dir, 'bundled', 'libsora.a'),
                             os.path.join(install_dir, 'sora', 'lib', 'libsora.a'))
 
+        # Lyra の共有ライブラリとモデル係数ファイルをインストールする
+        if platform.target.os in ('windows',):
+            mkdir_p(os.path.join(install_dir, 'sora', 'share', 'lyra'))
+            if platform.target.os in ('windows',):
+                lyra_dll_src = os.path.join(BASE_DIR, 'third_party', 'lyra', 'bazel-bin', 'lyra.dll')
+                lyra_dll_dst = os.path.join(install_dir, 'sora', 'share', 'lyra', 'lyra.dll')
+                model_dst = os.path.join(install_dir, 'sora', 'share', 'lyra', 'model_coeffs')
+            rm_rf(model_dst)
+            shutil.copyfile(lyra_dll_src, lyra_dll_dst)
+            with cd(os.path.join(BASE_DIR, 'third_party', 'lyra')):
+                output_base = cmdcap(['bazel', 'info', 'output_base'])
+            model_src = os.path.join(output_base, 'external', 'lyra', 'model_coeffs')
+            shutil.copytree(model_src, model_dst)
+
     if args.test:
         if platform.target.os == 'ios':
             # iOS の場合は事前に用意したプロジェクトをビルドする
@@ -1471,6 +1485,21 @@ def main():
 
                 cmd(['cmake', os.path.join(BASE_DIR, 'test')] + cmake_args)
                 cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])
+
+                # Lyra テストのビルド先のディレクトリに
+                # Lyra の共有ライブラリとモデル係数ファイルをコピーする
+                if platform.target.os in ('windows',):
+                    if platform.target.os in ('windows',):
+                        lyra_dll_src = os.path.join(BASE_DIR, 'third_party', 'lyra', 'bazel-bin', 'lyra.dll')
+                        lyra_dll_dst = os.path.join(test_build_dir, configuration, 'lyra.dll')
+                        model_dst = os.path.join(test_build_dir, configuration, 'model_coeffs')
+                    rm_rf(model_dst)
+                    shutil.copyfile(lyra_dll_src, lyra_dll_dst)
+                    with cd(os.path.join(BASE_DIR, 'third_party', 'lyra')):
+                        output_base = cmdcap(['bazel', 'info', 'output_base'])
+                    model_src = os.path.join(output_base, 'external', 'lyra', 'model_coeffs')
+                    shutil.copytree(model_src, model_dst)
+
                 if args.run:
                     if platform.target.os == 'windows':
                         cmd([os.path.join(test_build_dir, configuration, 'hello.exe'),
