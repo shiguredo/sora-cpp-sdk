@@ -1190,7 +1190,8 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             with open(os.path.join(install_dir, 'webrtc.ldflags'), 'w') as f:
                 f.write('\n'.join(ldflags))
 
-        if platform.target.os in ('windows', 'macos'):
+        if platform.target.package_name in ('windows_x86_64', 'macos_x86_64', 'macos_arm64',
+                                            'ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64'):
             with cd(os.path.join('third_party', 'lyra')):
                 if platform.target.os == 'windows':
                     # ローカルの bash を使うとビルドに失敗してしまったので、
@@ -1392,13 +1393,14 @@ def main():
                             os.path.join(install_dir, 'sora', 'lib', 'libsora.a'))
 
         # Lyra の共有ライブラリとモデル係数ファイルをインストールする
-        if platform.target.os in ('windows', 'macos'):
+        if platform.target.package_name in ('windows_x86_64', 'macos_x86_64', 'macos_arm64',
+                                            'ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64'):
             mkdir_p(os.path.join(install_dir, 'sora', 'share', 'lyra'))
-            if platform.target.os in ('windows',):
+            if platform.target.package_name == 'windows_x86_64':
                 lyra_dll_src = os.path.join(BASE_DIR, 'third_party', 'lyra', 'bazel-bin', 'lyra.dll')
                 lyra_dll_dst = os.path.join(install_dir, 'sora', 'share', 'lyra', 'lyra.dll')
                 model_dst = os.path.join(install_dir, 'sora', 'share', 'lyra', 'model_coeffs')
-            if platform.target.os in ('macos',):
+            else:
                 lyra_dll_src = os.path.join(BASE_DIR, 'third_party', 'lyra', 'bazel-bin', 'liblyra.so')
                 lyra_dll_dst = os.path.join(install_dir, 'sora', 'share', 'lyra', 'liblyra.so')
                 model_dst = os.path.join(install_dir, 'sora', 'share', 'lyra', 'model_coeffs')
@@ -1485,7 +1487,8 @@ def main():
                 if platform.target.os in ('windows', 'macos', 'ubuntu'):
                     cmake_args.append("-DTEST_CONNECT_DISCONNECT=ON")
                     cmake_args.append("-DTEST_DATACHANNEL=ON")
-                if platform.target.os in ('windows', 'macos'):
+                if platform.target.package_name in ('windows_x86_64', 'macos_x86_64', 'macos_arm64',
+                                                    'ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64'):
                     cmake_args.append("-DTEST_LYRA=ON")
 
                 cmd(['cmake', os.path.join(BASE_DIR, 'test')] + cmake_args)
@@ -1493,12 +1496,13 @@ def main():
 
                 # Lyra テストのビルド先のディレクトリに
                 # Lyra の共有ライブラリとモデル係数ファイルをコピーする
-                if platform.target.os in ('windows', 'macos'):
-                    if platform.target.os in ('windows',):
+                if platform.target.package_name in ('windows_x86_64', 'macos_x86_64', 'macos_arm64',
+                                                    'ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64'):
+                    if platform.target.package_name == 'windows_x86_64':
                         lyra_dll_src = os.path.join(BASE_DIR, 'third_party', 'lyra', 'bazel-bin', 'lyra.dll')
                         lyra_dll_dst = os.path.join(test_build_dir, configuration, 'lyra.dll')
                         model_dst = os.path.join(test_build_dir, configuration, 'model_coeffs')
-                    if platform.target.os in ('macos',):
+                    else:
                         lyra_dll_src = os.path.join(BASE_DIR, 'third_party', 'lyra', 'bazel-bin', 'liblyra.so')
                         lyra_dll_dst = os.path.join(test_build_dir, 'liblyra.so')
                         model_dst = os.path.join(test_build_dir, 'model_coeffs')

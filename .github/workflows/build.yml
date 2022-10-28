@@ -140,6 +140,7 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2.0.8
         if: matrix.name == 'android'
+      - run: pip3 install numpy
       - run: python3 run.py --test --package ${{ matrix.name }}
       - name: Get package name
         run: |
