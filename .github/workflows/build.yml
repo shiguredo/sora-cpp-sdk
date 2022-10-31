@@ -187,6 +187,7 @@ jobs:
           sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
           sudo apt-get update
           DEBIAN_FRONTEND=noninteractive sudo apt-get -y install cuda=$CUDA_VERSION clang-12 libva-dev libdrm-dev
+      - run: pip3 install numpy
       - run: python3 run.py --test --package ${{ matrix.name }}
       - name: Get package name
         run: |
