@@ -173,6 +173,14 @@ Windows 以外の場合
 $ ./momo_sample --signaling-url wss://sora.example.com/signaling --role sendrecv --channel-id sora --multistream true --use-sdl
 ```
 
+#### Momo Sample 実行に関するオプション
+
+- `--log-level` : 実行時にターミナルに出力するログのレベル
+    - `verbose->0,info->1,warning->2,error->3,none->4` の値が指定可能です
+- `--resolution` : 映像配信する際の解像度
+    - 解像度は `QVGA, VGA, HD, FHD, 4K, or [WIDTH]x[HEIGHT]` の値が指定可能です
+    - 未指定の場合は `HD` が設定されます
+
 #### Sora に関するオプション
 
 設定内容については [Sora のドキュメント](https://sora-doc.shiguredo.jp/SIGNALING) も参考にしてください。
