@@ -2,6 +2,8 @@
 #include <sora/camera_device_capturer.h>
 #include <sora/sora_default_client.h>
 
+#include <regex>
+
 // CLI11
 #include <CLI/CLI.hpp>
 
@@ -245,6 +247,24 @@ int main(int argc, char* argv[]) {
 
   MomoSampleConfig config;
 
+  auto is_valid_resolution = CLI::Validator(
+      [](std::string input) -> std::string {
+        if (input == "QVGA" || input == "VGA" || input == "HD" ||
+            input == "FHD" || input == "4K") {
+          return std::string();
+        }
+
+        // 数値x数値、というフォーマットになっているか確認する
+        std::regex re("^[1-9][0-9]*x[1-9][0-9]*$");
+        if (std::regex_match(input, re)) {
+          return std::string();
+        }
+
+        return "Must be one of QVGA, VGA, HD, FHD, 4K, or "
+               "[WIDTH]x[HEIGHT].";
+      },
+      "");
+
   auto is_json = CLI::Validator(
       [](std::string input) -> std::string {
         boost::json::error_code ec;
@@ -265,7 +285,8 @@ int main(int argc, char* argv[]) {
       ->transform(CLI::CheckedTransformer(log_level_map, CLI::ignore_case));
   app.add_option("--resolution", config.resolution,
                  "Video resolution (one of QVGA, VGA, HD, FHD, 4K, or "
-                 "[WIDTH]x[HEIGHT])");
+                 "[WIDTH]x[HEIGHT])")
+      ->check(is_valid_resolution);
 
   // Sora に関するオプション
   app.add_option("--signaling-url", config.signaling_url, "Signaling URL")
