@@ -33,7 +33,9 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
 
 ## ライブラリのバイナリ提供について
 
-以下からダウンロードが可能です。
+以下からダウンロードが可能です。 
+
+*hololens2 は無視してください*
 
 https://github.com/shiguredo/sora-cpp-sdk/releases
 

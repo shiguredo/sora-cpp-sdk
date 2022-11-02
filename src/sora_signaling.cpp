@@ -291,8 +291,7 @@ void SoraSignaling::DoSendConnect(bool redirect) {
   if (!config_.audio) {
     m["audio"] = false;
   } else if (config_.audio && config_.audio_codec_type.empty() &&
-             config_.audio_bit_rate == 0 &&
-             config_.audio_opus_params_clock_rate == 0) {
+             config_.audio_bit_rate == 0) {
     m["audio"] = true;
   } else {
     m["audio"] = boost::json::object();
@@ -301,11 +300,6 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     }
     if (config_.audio_bit_rate != 0) {
       m["audio"].as_object()["bit_rate"] = config_.audio_bit_rate;
-    }
-    if (config_.audio_opus_params_clock_rate != 0) {
-      m["audio"].as_object()["opus_params"] = boost::json::object();
-      m["audio"].as_object()["opus_params"].as_object()["clock_rate"] =
-          config_.audio_opus_params_clock_rate;
     }
   }
 

@@ -27,7 +27,7 @@ jobs:
             $var = $_.Split('=')
             New-Variable -Name $var[0] -Value $var[1] -Force
           }
-          echo "::set-output name=cuda_version::${CUDA_VERSION}"
+          echo "cuda_version=${CUDA_VERSION}" >> ${Env:GITHUB_OUTPUT}
         id: versions
       # CUDA のインストールバイナリのダウンロードは 3GB ぐらいあって、
       # ビルドの度に取得するのはつらいのでキャッシュする
@@ -48,8 +48,8 @@ jobs:
             $var = $_.Split('=')
             New-Variable -Name $var[0] -Value $var[1] -Force
           }
-          echo "::set-output name=name::${PACKAGE_NAME}"
-          echo "::set-output name=boost_name::${BOOST_PACKAGE_NAME}"
+          echo "name=${PACKAGE_NAME}" >> ${Env:GITHUB_OUTPUT}
+          echo "boost_name=${BOOST_PACKAGE_NAME}" >> ${Env:GITHUB_OUTPUT}
         id: package_name
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
@@ -81,8 +81,8 @@ jobs:
       - name: Get package name
         run: |
           source _package/${{ matrix.name }}/release/sora.env
-          echo "::set-output name=name::${PACKAGE_NAME}"
-          echo "::set-output name=boost_name::${BOOST_PACKAGE_NAME}"
+          echo "name=${PACKAGE_NAME}" >> $GITHUB_OUTPUT
+          echo "boost_name=${BOOST_PACKAGE_NAME}" >> $GITHUB_OUTPUT
         id: package_name
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
@@ -142,8 +142,8 @@ jobs:
       - name: Get package name
         run: |
           source _package/${{ matrix.name }}/release/sora.env
-          echo "::set-output name=name::${PACKAGE_NAME}"
-          echo "::set-output name=boost_name::${BOOST_PACKAGE_NAME}"
+          echo "name=${PACKAGE_NAME}" >> $GITHUB_OUTPUT
+          echo "boost_name=${BOOST_PACKAGE_NAME}" >> $GITHUB_OUTPUT
         id: package_name
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
@@ -188,8 +188,8 @@ jobs:
       - name: Get package name
         run: |
           source _package/${{ matrix.name }}/release/sora.env
-          echo "::set-output name=name::${PACKAGE_NAME}"
-          echo "::set-output name=boost_name::${BOOST_PACKAGE_NAME}"
+          echo "name=${PACKAGE_NAME}" >> $GITHUB_OUTPUT
+          echo "boost_name=${BOOST_PACKAGE_NAME}" >> $GITHUB_OUTPUT
         id: package_name
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
@@ -262,12 +262,14 @@ jobs:
       - name: Env to output
         shell: bash
         run: |
+          sed -i 's/\r//g' ${{ matrix.name }}.env/${{ matrix.name }}.env
+          sed -i 's/\r//g' create-release.env/create-release.env
           source ${{ matrix.name }}.env/sora.env
           source create-release.env/create-release.env
-          echo "::set-output name=package_name::$PACKAGE_NAME"
-          echo "::set-output name=boost_package_name::$BOOST_PACKAGE_NAME"
-          echo "::set-output name=content_type::$CONTENT_TYPE"
-          echo "::set-output name=upload_url::$UPLOAD_URL"
+          echo "package_name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
+          echo "boost_package_name=$BOOST_PACKAGE_NAME" >> $GITHUB_OUTPUT
+          echo "content_type=$CONTENT_TYPE" >> $GITHUB_OUTPUT
+          echo "upload_url=$UPLOAD_URL" >> $GITHUB_OUTPUT
         id: env
       - uses: actions/download-artifact@v3
         with:
