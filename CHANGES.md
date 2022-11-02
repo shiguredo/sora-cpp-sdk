@@ -11,12 +11,19 @@
 
 ## develop
 
+## 2022.15.1 (2022-11-02)
+
+- [FIX] CI で .env ファイル名の誤りを修正する
+    - @miosakuma
+
 ## 2022.15.0 (2022-11-02)
 
 - [UPDATE] libwebrtc を `M107.5304@{#4}` に上げる
     - @torikizi
 - [FIX] 廃止になった `audio_opus_params_clock_rate` を削除する
     - @torikizi
+- [FIX] CI で Windows の場合 $GITHUB_OUTPUT に "\r" が混入するのを除去する
+    - @miosakuma
 
 ## 2022.14.0 (2022-10-05)
 
