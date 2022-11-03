@@ -117,7 +117,7 @@ jobs:
         if: matrix.name == 'ubuntu-20.04_x86_64'
         run: |
           source VERSION
-          # clang-12 と CUDA と libva-dev, libdrm-dev を入れる
+          # clang-12 と CUDA を入れる
           sudo apt-get update
           sudo apt-get install -y software-properties-common
           # CUDA 10 なので ubuntu1804 で正しい
@@ -126,13 +126,17 @@ jobs:
           sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
           sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
           sudo apt-get update
-          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install cuda=$CUDA_VERSION clang-12 libva-dev libdrm-dev
+          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install cuda=$CUDA_VERSION clang-12
+          # Intel Media SDK のために libva-dev, libdrm-dev を入れる
+          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install libva-dev libdrm-dev
       - name: Install deps for Jetson series
         if: matrix.name == 'ubuntu-20.04_armv8_jetson'
         run: |
           sudo apt install multistrap binutils-aarch64-linux-gnu
           # multistrap に insecure なリポジトリからの取得を許可する設定を入れる
           sudo sed -e 's/Apt::Get::AllowUnauthenticated=true/Apt::Get::AllowUnauthenticated=true";\n$config_str .= " -o Acquire::AllowInsecureRepositories=true/' -i /usr/sbin/multistrap
+          # Lyra ビルドのためにクロスコンパイル環境一式を入れる
+          sudo apt-get -y install g++-multilib libstdc++-9-dev-arm64-cross g++-aarch64-linux-gnu
       - name: Install deps for Android
         if: matrix.name == 'android'
         run: |
@@ -177,7 +181,7 @@ jobs:
         if: matrix.name == 'ubuntu-22.04_x86_64'
         run: |
           source VERSION
-          # clang-12 と CUDA と libva-dev, libdrm-dev を入れる
+          # clang-12 と CUDA を入れる
           sudo apt-get update
           sudo apt-get install -y software-properties-common
           # CUDA 10 なので ubuntu1804 で正しい
@@ -186,7 +190,9 @@ jobs:
           sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
           sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
           sudo apt-get update
-          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install cuda=$CUDA_VERSION clang-12 libva-dev libdrm-dev
+          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install cuda=$CUDA_VERSION clang-12
+          # Intel Media SDK のために libva-dev, libdrm-dev を入れる
+          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install libva-dev libdrm-dev
       - run: pip3 install numpy
       - run: python3 run.py --test --package ${{ matrix.name }}
       - name: Get package name

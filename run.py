@@ -1191,7 +1191,8 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                 f.write('\n'.join(ldflags))
 
         if platform.target.package_name in ('windows_x86_64', 'macos_x86_64', 'macos_arm64',
-                                            'ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64'):
+                                            'ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64',
+                                            'ubuntu-20.04_armv8_jetson'):
             with cd(os.path.join('third_party', 'lyra')):
                 if platform.target.os == 'windows':
                     # ローカルの bash を使うとビルドに失敗してしまったので、
@@ -1204,7 +1205,12 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                                 os.environ['BAZEL_SH'] = 'git-bash'
                             if os.path.exists(git_bash_path):
                                 os.environ['BAZEL_SH'] = git_bash_path
-                cmd(['bazel', 'build', *([] if debug else ['-c', 'opt']), ':lyra'])
+                opts = []
+                if not debug:
+                    opts += ['-c', 'opt']
+                if platform.target.package_name == 'ubuntu-20.04_armv8_jetson':
+                    opts += ['--config', 'jetson']
+                cmd(['bazel', 'build', *opts, ':lyra'])
 
 
 AVAILABLE_TARGETS = ['windows_x86_64', 'macos_x86_64', 'macos_arm64', 'ubuntu-20.04_x86_64',
@@ -1394,7 +1400,8 @@ def main():
 
         # Lyra の共有ライブラリとモデル係数ファイルをインストールする
         if platform.target.package_name in ('windows_x86_64', 'macos_x86_64', 'macos_arm64',
-                                            'ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64'):
+                                            'ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64',
+                                            'ubuntu-20.04_armv8_jetson'):
             mkdir_p(os.path.join(install_dir, 'sora', 'share', 'lyra'))
             if platform.target.package_name == 'windows_x86_64':
                 lyra_dll_src = os.path.join(BASE_DIR, 'third_party', 'lyra', 'bazel-bin', 'lyra.dll')
@@ -1465,7 +1472,7 @@ def main():
                         f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}")
                 if platform.target.os == 'jetson':
                     sysroot = os.path.join(install_dir, 'rootfs')
-                    cmake_args.append('-DHELLO_JETSON=ON')
+                    cmake_args.append('-DJETSON=ON')
                     cmake_args.append('-DCMAKE_SYSTEM_NAME=Linux')
                     cmake_args.append('-DCMAKE_SYSTEM_PROCESSOR=aarch64')
                     cmake_args.append(f'-DCMAKE_SYSROOT={sysroot}')
@@ -1488,7 +1495,8 @@ def main():
                     cmake_args.append("-DTEST_CONNECT_DISCONNECT=ON")
                     cmake_args.append("-DTEST_DATACHANNEL=ON")
                 if platform.target.package_name in ('windows_x86_64', 'macos_x86_64', 'macos_arm64',
-                                                    'ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64'):
+                                                    'ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64',
+                                                    'ubuntu-20.04_armv8_jetson'):
                     cmake_args.append("-DTEST_LYRA=ON")
 
                 cmd(['cmake', os.path.join(BASE_DIR, 'test')] + cmake_args)
@@ -1497,7 +1505,8 @@ def main():
                 # Lyra テストのビルド先のディレクトリに
                 # Lyra の共有ライブラリとモデル係数ファイルをコピーする
                 if platform.target.package_name in ('windows_x86_64', 'macos_x86_64', 'macos_arm64',
-                                                    'ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64'):
+                                                    'ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64',
+                                                    'ubuntu-20.04_armv8_jetson'):
                     if platform.target.package_name == 'windows_x86_64':
                         lyra_dll_src = os.path.join(BASE_DIR, 'third_party', 'lyra', 'bazel-bin', 'lyra.dll')
                         lyra_dll_dst = os.path.join(test_build_dir, configuration, 'lyra.dll')

@@ -140,6 +140,21 @@ void AudioEncoderLyraImpl::AppendSupportedEncoders(
     RTC_LOG(LS_WARNING) << "Lyra is not supported";
     return;
   }
+  auto path = boost::dll::program_location().parent_path() / "model_coeffs";
+  std::string dir = path.string();
+  auto env = std::getenv("SORA_LYRA_MODEL_COEFFS_PATH");
+  if (env != NULL) {
+    dir = env;
+  }
+  auto encoder = dyn::lyra_encoder_create(
+      48000, 1, sora::AudioEncoderLyraConfig::kMinBitrateBps, false,
+      dir.c_str());
+  if (encoder == nullptr) {
+    RTC_LOG(LS_WARNING) << "Failed to Create Lyra encoder: model_path=" << dir;
+    return;
+  }
+  dyn::lyra_encoder_destroy(encoder);
+
   const SdpAudioFormat fmt = {"lyra", kRtpTimestampRateHz, 1, {}};
   const AudioCodecInfo info = QueryAudioEncoder(*SdpToConfig(fmt));
   specs->push_back({fmt, info});

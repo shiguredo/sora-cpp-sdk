@@ -61,7 +61,11 @@ function (init_target target)
     )
   elseif (APPLE)
     set_target_properties(${target} PROPERTIES CXX_VISIBILITY_PRESET hidden)
+  elseif (JETSON)
+    target_compile_definitions(${target} PRIVATE JETSON)
+    target_link_directories(${target} PRIVATE ${CMAKE_SYSROOT}/usr/lib/aarch64-linux-gnu/tegra)
   endif()
+
 endfunction()
 
 # hello.exe を作る
@@ -69,11 +73,6 @@ endfunction()
 add_executable(hello)
 target_sources(hello PRIVATE hello.cpp)
 init_target(hello)
-
-if (HELLO_JETSON)
-  target_compile_definitions(hello PRIVATE HELLO_JETSON)
-  target_link_directories(hello PRIVATE ${CMAKE_SYSROOT}/usr/lib/aarch64-linux-gnu/tegra)
-endif()
 
 if (TEST_CONNECT_DISCONNECT)
   add_executable(connect_disconnect)

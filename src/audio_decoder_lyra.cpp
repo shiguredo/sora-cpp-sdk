@@ -208,6 +208,19 @@ void AudioDecoderLyra::AppendSupportedDecoders(
     RTC_LOG(LS_WARNING) << "Lyra is not supported";
     return;
   }
+  auto path = boost::dll::program_location().parent_path() / "model_coeffs";
+  std::string dir = path.string();
+  auto env = std::getenv("SORA_LYRA_MODEL_COEFFS_PATH");
+  if (env != NULL) {
+    dir = env;
+  }
+  auto decoder = dyn::lyra_decoder_create(48000, 1, dir.c_str());
+  if (decoder == nullptr) {
+    RTC_LOG(LS_WARNING) << "Failed to Create Lyra decoder: model_path=" << dir;
+    return;
+  }
+  dyn::lyra_decoder_destroy(decoder);
+
   webrtc::AudioCodecInfo lyra_info{16000, 1, 3200, 3200, 9200};
   lyra_info.allow_comfort_noise = false;
   lyra_info.supports_network_adaption = false;

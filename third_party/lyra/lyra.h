@@ -30,7 +30,8 @@ struct lyra_vector_u8;
 struct lyra_vector_s16;
 
 DLL_INTERFACE lyra_encoder* lyra_encoder_create(int sample_rate_hz,
-                                                int num_channels, int bitrate,
+                                                int num_channels,
+                                                int bitrate,
                                                 bool enable_dtx,
                                                 const char* model_path);
 DLL_INTERFACE lyra_vector_u8* lyra_encoder_encode(lyra_encoder* encoder,
@@ -45,7 +46,8 @@ DLL_INTERFACE bool lyra_decoder_set_encoded_packet(lyra_decoder* decoder,
                                                    const uint8_t* encoded,
                                                    size_t length);
 DLL_INTERFACE lyra_vector_s16* lyra_decoder_decode_samples(
-    lyra_decoder* decoder, int num_samples);
+    lyra_decoder* decoder,
+    int num_samples);
 DLL_INTERFACE void lyra_decoder_destroy(lyra_decoder* decoder);
 
 DLL_INTERFACE size_t lyra_vector_u8_get_size(lyra_vector_u8* v);

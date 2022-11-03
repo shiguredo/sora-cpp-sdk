@@ -145,3 +145,8 @@ build:windows --host_linkopt=/OPT:ICF
 # in MSVC
 build:windows --host_copt=-D__PRETTY_FUNCTION__=__FUNCSIG__
 build:windows --copt=-D__PRETTY_FUNCTION__=__FUNCSIG__
+
+build:jetson --cpu=aarch64
+build:jetson --crosstool_top=//toolchain/jetson:toolchain
+build:jetson --host_crosstool_top=@bazel_tools//tools/cpp:toolchain
+build:jetson --copt=-fPIC
