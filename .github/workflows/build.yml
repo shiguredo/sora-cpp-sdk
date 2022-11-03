@@ -132,15 +132,16 @@ jobs:
       - name: Install deps for Jetson series
         if: matrix.name == 'ubuntu-20.04_armv8_jetson'
         run: |
-          sudo apt install multistrap binutils-aarch64-linux-gnu
+          sudo apt-get update
+          sudo apt-get -y install multistrap binutils-aarch64-linux-gnu
           # multistrap に insecure なリポジトリからの取得を許可する設定を入れる
           sudo sed -e 's/Apt::Get::AllowUnauthenticated=true/Apt::Get::AllowUnauthenticated=true";\n$config_str .= " -o Acquire::AllowInsecureRepositories=true/' -i /usr/sbin/multistrap
           # Lyra ビルドのためにクロスコンパイル環境一式を入れる
-          sudo apt-get -y install g++-multilib libstdc++-9-dev-arm64-cross g++-aarch64-linux-gnu
+          sudo apt-get -y install g++-multilib libstdc++-9-dev-arm64-cross gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
       - name: Install deps for Android
         if: matrix.name == 'android'
         run: |
-          sudo apt install ninja-build
+          sudo apt-get -y install ninja-build
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2.0.8
         if: matrix.name == 'android'
