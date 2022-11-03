@@ -133,6 +133,8 @@ jobs:
         if: matrix.name == 'ubuntu-20.04_armv8_jetson'
         run: |
           sudo apt-get update
+          sudo apt-get upgrade -y
+          sudo apt-get install -y --fix-broken
           sudo apt-get -y install multistrap binutils-aarch64-linux-gnu
           # multistrap に insecure なリポジトリからの取得を許可する設定を入れる
           sudo sed -e 's/Apt::Get::AllowUnauthenticated=true/Apt::Get::AllowUnauthenticated=true";\n$config_str .= " -o Acquire::AllowInsecureRepositories=true/' -i /usr/sbin/multistrap
