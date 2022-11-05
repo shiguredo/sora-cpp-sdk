@@ -1,13 +1,14 @@
 #ifndef DYN_DYN_H_
 #define DYN_DYN_H_
 
+#include <iostream>
 #include <map>
 #include <memory>
 #include <string>
 
 #if defined(_WIN32)
 #include <windows.h>
-#elif defined(__linux__)
+#else
 // Linux
 #include <dlfcn.h>
 #endif
@@ -27,7 +28,7 @@ class DynModule {
   typedef void* module_ptr_t;
 #endif
 
-  bool IsLoadable(const char* name) {
+  static bool IsLoadable(const char* name) {
 #if defined(_WIN32)
     module_ptr_t module = LoadLibraryA(name);
     if (module == nullptr) {
@@ -35,15 +36,13 @@ class DynModule {
     }
     FreeLibrary(module);
     return true;
-#elif defined(__linux__)
+#else
     module_ptr_t module = dlopen(name, RTLD_LAZY);
     if (module == nullptr) {
       return false;
     }
     dlclose(module);
     return true;
-#else
-    return false;
 #endif
   }
 
@@ -54,10 +53,8 @@ class DynModule {
     }
 #if defined(_WIN32)
     module_ptr_t module = LoadLibraryA(name);
-#elif defined(__linux__)
-    module_ptr_t module = dlopen(name, RTLD_LAZY);
 #else
-    module_ptr_t module = nullptr;
+    module_ptr_t module = dlopen(name, RTLD_LAZY);
 #endif
     if (module == nullptr) {
       return nullptr;
@@ -74,10 +71,8 @@ class DynModule {
     }
 #if defined(_WIN32)
     return ::GetProcAddress(module, name);
-#elif defined(__linux__)
-    return dlsym(module, name);
 #else
-    return nullptr;
+    return dlsym(module, name);
 #endif
   }
 
@@ -87,9 +82,8 @@ class DynModule {
       if (p != nullptr) {
 #if defined(_WIN32)
         FreeLibrary(p);
-#elif defined(__linux__)
-        ::dlclose(p);
 #else
+        ::dlclose(p);
 #endif
       }
     }
@@ -117,6 +111,8 @@ class DynModule {
     auto f =                                                                   \
         (func_type)DynModule::Instance().GetFunc(soname, DYN_STRINGIZE(func)); \
     if (f == nullptr) {                                                        \
+      std::cerr << "Failed to GetFunc: " << DYN_STRINGIZE(func)                \
+                << " soname=" << soname << std::endl;                          \
       exit(1);                                                                 \
     }                                                                          \
     return f(args...);                                                         \

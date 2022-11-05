@@ -1,8 +1,6 @@
 #include "sora/sora_default_client.h"
 
 // WebRTC
-#include <api/audio_codecs/builtin_audio_decoder_factory.h>
-#include <api/audio_codecs/builtin_audio_encoder_factory.h>
 #include <api/create_peerconnection_factory.h>
 #include <api/rtc_event_log/rtc_event_log_factory.h>
 #include <api/task_queue/default_task_queue_factory.h>
@@ -23,6 +21,8 @@
 #include "sora/audio_device_module.h"
 #include "sora/camera_device_capturer.h"
 #include "sora/java_context.h"
+#include "sora/sora_audio_decoder_factory.h"
+#include "sora/sora_audio_encoder_factory.h"
 #include "sora/sora_peer_connection_factory.h"
 #include "sora/sora_video_decoder_factory.h"
 #include "sora/sora_video_encoder_factory.h"
@@ -72,9 +72,9 @@ bool SoraDefaultClient::Configure() {
           });
 
   media_dependencies.audio_encoder_factory =
-      webrtc::CreateBuiltinAudioEncoderFactory();
+      sora::CreateBuiltinAudioEncoderFactory();
   media_dependencies.audio_decoder_factory =
-      webrtc::CreateBuiltinAudioDecoderFactory();
+      sora::CreateBuiltinAudioDecoderFactory();
 
   auto cuda_context = sora::CudaContext::Create();
   {

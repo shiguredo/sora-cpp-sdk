@@ -11,6 +11,11 @@
 
 ## develop
 
+- [CHANGE] Boost.Filesystem への依存を追加
+    - @melpon
+- [ADD] オーディオコーデック Lyra に対応
+    - @melpon
+
 ## 2022.15.1 (2022-11-02)
 
 - [FIX] CI で .env ファイル名の誤りを修正する
