@@ -1,3 +1,4 @@
+// Based: https://source.chromium.org/chromium/_/webrtc/src.git/+/f88487c5c94e19fa984ce52965598c24ac3706c7:modules/audio_coding/codecs/opus/audio_decoder_opus.cc
 #include "sora/audio_decoder_lyra.h"
 
 #include <cstdlib>

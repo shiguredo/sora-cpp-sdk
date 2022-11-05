@@ -1,3 +1,4 @@
+// Based: https://source.chromium.org/chromium/_/webrtc/src.git/+/f88487c5c94e19fa984ce52965598c24ac3706c7:modules/audio_coding/codecs/opus/audio_encoder_opus.cc
 #include "sora/audio_encoder_lyra.h"
 
 #include <cstdlib>
@@ -130,10 +131,6 @@ class AudioEncoderLyraImpl final : public AudioEncoder {
   friend struct sora::AudioEncoderLyra;
 };
 
-static int GetBitrateBps(const sora::AudioEncoderLyraConfig& config) {
-  return *config.bitrate_bps;
-}
-
 void AudioEncoderLyraImpl::AppendSupportedEncoders(
     std::vector<AudioCodecSpec>* specs) {
   if (!dyn::DynModule::IsLoadable(dyn::LYRA_SO)) {
@@ -164,7 +161,7 @@ AudioCodecInfo AudioEncoderLyraImpl::QueryAudioEncoder(
     const sora::AudioEncoderLyraConfig& config) {
   RTC_DCHECK(config.IsOk());
   AudioCodecInfo info(config.sample_rate_hz, config.num_channels,
-                      *config.bitrate_bps,
+                      config.bitrate_bps,
                       sora::AudioEncoderLyraConfig::kMinBitrateBps,
                       sora::AudioEncoderLyraConfig::kMaxBitrateBps);
   info.allow_comfort_noise = false;
@@ -194,7 +191,7 @@ absl::optional<sora::AudioEncoderLyraConfig> AudioEncoderLyraImpl::SdpToConfig(
   config.dtx_enabled = false;  //GetFormatParameter(format, "usedtx") == "1";
   auto bitrate = GetFormatParameter(format, "bitrate");
   if (bitrate) {
-    config.bitrate_bps = rtc::StringToNumber<int>(*bitrate);
+    config.bitrate_bps = *rtc::StringToNumber<int>(*bitrate);
   }
 
   if (!config.IsOk()) {
@@ -226,11 +223,6 @@ AudioEncoderLyraImpl::AudioEncoderLyraImpl(
       audio_network_adaptor_creator_(audio_network_adaptor_creator),
       consecutive_dtx_frames_(0) {
   RTC_DCHECK(0 <= payload_type && payload_type <= 127);
-
-  // Sanity check of the redundant payload type field that we want to get rid
-  // of. See https://bugs.chromium.org/p/webrtc/issues/detail?id=7847
-  // RTC_CHECK(config.payload_type == -1 || config.payload_type == payload_type);
-
   RTC_CHECK(RecreateEncoderInstance(config));
 }
 AudioEncoderLyraImpl::~AudioEncoderLyraImpl() {
@@ -259,7 +251,7 @@ size_t AudioEncoderLyraImpl::Max10MsFramesInAPacket() const {
 }
 
 int AudioEncoderLyraImpl::GetTargetBitrate() const {
-  return GetBitrateBps(config_);
+  return config_.bitrate_bps;
 }
 
 void AudioEncoderLyraImpl::Reset() {
@@ -416,7 +408,7 @@ size_t AudioEncoderLyraImpl::SufficientOutputBufferSize() const {
   // Calculate the number of bytes we expect the encoder to produce,
   // then multiply by two to give a wide margin for error.
   const size_t bytes_per_millisecond =
-      static_cast<size_t>(GetBitrateBps(config_) / (1000 * 8) + 1);
+      static_cast<size_t>(config_.bitrate_bps / (1000 * 8) + 1);
   const size_t approx_encoded_bytes =
       Num10msFramesPerPacket() * 10 * bytes_per_millisecond;
   return 2 * approx_encoded_bytes;
@@ -434,7 +426,7 @@ bool AudioEncoderLyraImpl::RecreateEncoderInstance(
     dyn::lyra_encoder_destroy(inst_);
   input_buffer_.clear();
   input_buffer_.reserve(Num10msFramesPerPacket() * SamplesPer10msFrame());
-  const int bitrate = GetBitrateBps(config);
+  const int bitrate = config.bitrate_bps;
   auto path = boost::dll::program_location().parent_path() / "model_coeffs";
   std::string dir = path.string();
   auto env = std::getenv("SORA_LYRA_MODEL_COEFFS_PATH");
@@ -513,7 +505,7 @@ bool AudioEncoderLyraConfig::IsOk() const {
   RTC_LOG(LS_INFO) << "AudioEncoderLyraConfig: frame_size_ms=" << frame_size_ms
                    << " sample_rate_hz=" << sample_rate_hz
                    << " num_channels=" << num_channels
-                   << " bitrate_bps=" << *bitrate_bps
+                   << " bitrate_bps=" << bitrate_bps
                    << " dtx_enabled=" << dtx_enabled;
   if (frame_size_ms != 20)
     return false;
@@ -526,9 +518,7 @@ bool AudioEncoderLyraConfig::IsOk() const {
   if (num_channels != 1) {
     return false;
   }
-  if (!bitrate_bps)
-    return false;
-  if (*bitrate_bps < kMinBitrateBps || *bitrate_bps > kMaxBitrateBps)
+  if (bitrate_bps < kMinBitrateBps || bitrate_bps > kMaxBitrateBps)
     return false;
   return true;
 }

@@ -24,9 +24,7 @@ struct AudioEncoderLyraConfig {
   int sample_rate_hz;
   size_t num_channels;
 
-  // NOTE: This member must always be set.
-  // TODO(kwiberg): Turn it into just an int.
-  absl::optional<int> bitrate_bps = 3200;
+  int bitrate_bps = 3200;
 
   bool dtx_enabled;
   std::vector<int> supported_frame_lengths_ms;
