@@ -1192,7 +1192,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
 
         if platform.target.package_name in ('windows_x86_64', 'macos_x86_64', 'macos_arm64',
                                             'ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64',
-                                            'ubuntu-20.04_armv8_jetson'):
+                                            'ubuntu-20.04_armv8_jetson', 'android'):
             with cd(os.path.join('third_party', 'lyra')):
                 if platform.target.os == 'windows':
                     # ローカルの bash を使うとビルドに失敗してしまったので、
@@ -1210,7 +1210,25 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                     opts += ['-c', 'opt']
                 if platform.target.package_name == 'ubuntu-20.04_armv8_jetson':
                     opts += ['--config', 'jetson']
+                if platform.target.package_name == 'android':
+                    opts += ['--config', 'android_arm64']
+                    set_android_home = False
+                    set_android_ndk_home = False
+                    if 'ANDROID_HOME' not in os.environ:
+                        os.environ['ANDROID_HOME'] = os.path.join(install_dir, 'android-sdk-cmdline-tools')
+                        set_android_home = True
+                    if 'ANDROID_NDK_HOME' not in os.environ:
+                        os.environ['ANDROID_NDK_HOME'] = os.path.join(
+                            install_dir, 'android-sdk-cmdline-tools', 'ndk', '21.4.7075529')
+                        set_android_ndk_home = True
+
                 cmd(['bazel', 'build', *opts, ':lyra'])
+
+                if platform.target.package_name == 'android':
+                    if set_android_home:
+                        del os.environ['ANDROID_HOME']
+                    if set_android_ndk_home:
+                        del os.environ['ANDROID_NDK_HOME']
 
 
 AVAILABLE_TARGETS = ['windows_x86_64', 'macos_x86_64', 'macos_arm64', 'ubuntu-20.04_x86_64',
@@ -1401,7 +1419,7 @@ def main():
         # Lyra の共有ライブラリとモデル係数ファイルをインストールする
         if platform.target.package_name in ('windows_x86_64', 'macos_x86_64', 'macos_arm64',
                                             'ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64',
-                                            'ubuntu-20.04_armv8_jetson'):
+                                            'ubuntu-20.04_armv8_jetson', 'android'):
             mkdir_p(os.path.join(install_dir, 'sora', 'share', 'lyra'))
             if platform.target.package_name == 'windows_x86_64':
                 lyra_dll_src = os.path.join(BASE_DIR, 'third_party', 'lyra', 'bazel-bin', 'lyra.dll')
@@ -1438,6 +1456,20 @@ def main():
             # Android の場合は事前に用意したプロジェクトをビルドする
             with cd(os.path.join(BASE_DIR, 'test', 'android')):
                 cmd(['./gradlew', '--no-daemon', 'assemble'])
+
+                # Lyra テストのビルド先のディレクトリに
+                # Lyra の共有ライブラリとモデル係数ファイルをコピーする
+                lyra_dll_src = os.path.join(BASE_DIR, 'third_party', 'lyra', 'bazel-bin', 'liblyra.so')
+                lyra_dll_dst = os.path.join('app', 'src', 'main', 'jniLibs', 'arm64-v8a', 'liblyra.so')
+                model_dst = os.path.join('app', 'src', 'main', 'assets')
+                rm_rf(model_dst)
+                mkdir_p(os.path.dirname(model_dst))
+                mkdir_p(os.path.dirname(lyra_dll_dst))
+                shutil.copyfile(lyra_dll_src, lyra_dll_dst)
+                with cd(os.path.join(BASE_DIR, 'third_party', 'lyra')):
+                    output_base = cmdcap(['bazel', 'info', 'output_base'])
+                model_src = os.path.join(output_base, 'external', 'lyra', 'model_coeffs')
+                shutil.copytree(model_src, model_dst)
         else:
             # 普通のプロジェクトは CMake でビルドする
             test_build_dir = os.path.join(build_dir, 'test')
@@ -1506,7 +1538,7 @@ def main():
                 # Lyra の共有ライブラリとモデル係数ファイルをコピーする
                 if platform.target.package_name in ('windows_x86_64', 'macos_x86_64', 'macos_arm64',
                                                     'ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64',
-                                                    'ubuntu-20.04_armv8_jetson'):
+                                                    'ubuntu-20.04_armv8_jetson', 'android'):
                     if platform.target.package_name == 'windows_x86_64':
                         lyra_dll_src = os.path.join(BASE_DIR, 'third_party', 'lyra', 'bazel-bin', 'lyra.dll')
                         lyra_dll_dst = os.path.join(test_build_dir, configuration, 'lyra.dll')
@@ -1516,6 +1548,8 @@ def main():
                         lyra_dll_dst = os.path.join(test_build_dir, 'liblyra.so')
                         model_dst = os.path.join(test_build_dir, 'model_coeffs')
                     rm_rf(model_dst)
+                    mkdir_p(os.path.dirname(model_dst))
+                    mkdir_p(os.path.dirname(lyra_dll_dst))
                     shutil.copyfile(lyra_dll_src, lyra_dll_dst)
                     with cd(os.path.join(BASE_DIR, 'third_party', 'lyra')):
                         output_base = cmdcap(['bazel', 'info', 'output_base'])

@@ -5,5 +5,7 @@
 /third_party/lyra/bazel-*
 /test/*.json
 /test/hello/build/
+/test/android/app/src/main/assets
+/test/android/app/src/main/jniLibs
 
 xcuserdata/

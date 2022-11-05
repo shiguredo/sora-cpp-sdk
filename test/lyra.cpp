@@ -15,14 +15,6 @@
 #include "sora/sora_video_decoder_factory.h"
 #include "sora/sora_video_encoder_factory.h"
 
-#if defined(LYRA_ANDROID)
-void* GetAndroidApplicationContext(void* env);
-#else
-void* GetAndroidApplicationContext(void* env) {
-  return nullptr;
-}
-#endif
-
 struct SoraClientConfig : sora::SoraDefaultClientConfig {
   std::vector<std::string> signaling_urls;
   std::string channel_id;
@@ -38,13 +30,11 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
     RTC_LOG(LS_INFO) << "SoraClient dtor";
     ioc_.reset();
     audio_track_ = nullptr;
-    video_source_ = nullptr;
   }
 
   void Run() {
     void* env = sora::GetJNIEnv();
     std::string audio_track_id = rtc::CreateRandomString(16);
-    std::string video_track_id = rtc::CreateRandomString(16);
     audio_track_ = factory()->CreateAudioTrack(
         audio_track_id,
         factory()->CreateAudioSource(cricket::AudioOptions()).get());
@@ -59,7 +49,7 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
     config.channel_id = config_.channel_id;
     config.sora_client = "Testing SoraClient for Lyra";
     config.role = config_.role;
-    config.video_codec_type = "VP9";
+    config.video = false;
     config.audio_codec_type = "LYRA";
     config.multistream = true;
     conn_ = sora::SoraSignaling::Create(config);
@@ -75,9 +65,6 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
     ioc_->run();
   }
 
-  void* GetAndroidApplicationContext(void* env) override {
-    return ::GetAndroidApplicationContext(env);
-  }
   void OnSetOffer(std::string offer) override {
     std::string stream_id = rtc::CreateRandomString(16);
     webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpSenderInterface>>
@@ -92,17 +79,10 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
 
  private:
   SoraClientConfig config_;
-  rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source_;
   rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track_;
   std::shared_ptr<sora::SoraSignaling> conn_;
   std::unique_ptr<boost::asio::io_context> ioc_;
 };
-
-#if defined(LYRA_ANDROID) || (defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE)
-
-// iOS, Android は main を使わない
-
-#else
 
 int main(int argc, char* argv[]) {
   if (argc < 2) {
@@ -141,5 +121,3 @@ int main(int argc, char* argv[]) {
   auto client = sora::CreateSoraClient<SoraClient>(config);
   client->Run();
 }
-
-#endif

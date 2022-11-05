@@ -7,6 +7,11 @@ struct HelloSoraConfig : sora::SoraDefaultClientConfig {
   std::vector<std::string> signaling_urls;
   std::string channel_id;
   std::string role;
+  enum class Mode {
+    Hello,
+    Lyra,
+  };
+  Mode mode = Mode::Hello;
 };
 
 class HelloSora : public std::enable_shared_from_this<HelloSora>,

@@ -20,6 +20,19 @@ git_repository(
     branch = "android_linking_fix"
 )
 
+load("//:android_configure.bzl", "android_configure")
+android_configure(name = "local_config_android")
+
+load("@local_config_android//:android_configure.bzl", "android_workspace")
+android_workspace()
+
+http_archive(
+    name = "rules_android",
+    sha256 = "cd06d15dd8bb59926e4d65f9003bfc20f9da4b2519985c27e190cddc8b7a7806",
+    strip_prefix = "rules_android-0.1.1",
+    urls = ["https://github.com/bazelbuild/rules_android/archive/v0.1.1.zip"],
+)
+
 # proto_library, cc_proto_library, and java_proto_library rules implicitly
 # depend on @com_google_protobuf for protoc and proto runtimes.
 # This statement defines the @com_google_protobuf repo.
