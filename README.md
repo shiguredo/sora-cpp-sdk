@@ -30,6 +30,8 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
         - VP8 / VP9 / H.264
     - [Intel oneVPL](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onevpl.html) (Intel Media SDK の後継)
         - VP9 / AV1 / H.264
+- [google/lyra: A Very Low\-Bitrate Codec for Speech Compression](https://github.com/google/lyra) 対応
+    - iOS 以外のプラットフォームで利用可能です
 
 ## ライブラリのバイナリ提供について
 
