@@ -459,7 +459,7 @@ def install_android_ndk(version, install_dir, source_dir):
 
 
 @versioned
-def install_android_sdk_cmdline_tools(version, install_dir, source_dir):
+def install_android_sdk_cmdline_tools(version, install_dir, source_dir, ndk_version):
     archive = download(
         f'https://dl.google.com/android/repository/commandlinetools-linux-{version}_latest.zip',
         source_dir)
@@ -470,7 +470,7 @@ def install_android_sdk_cmdline_tools(version, install_dir, source_dir):
     # ライセンスを許諾する
     cmd(['/bin/bash', '-c', f'yes | {sdkmanager} --sdk_root={tools_dir} --licenses'])
     # SDK Manager を使って NDK をインストールする
-    cmd([sdkmanager, f'--sdk_root={tools_dir}', '--install', 'ndk;21.4.7075529'])
+    cmd([sdkmanager, f'--sdk_root={tools_dir}', '--install', f'ndk;{ndk_version}'])
 
 
 @versioned
@@ -848,6 +848,7 @@ class Platform(object):
 
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+NDK_VERSION = '21.4.7075529'
 
 
 def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
@@ -882,13 +883,16 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
         if platform.target.os == 'android':
             if 'ANDROID_SDK_ROOT' in os.environ and os.path.exists(os.environ['ANDROID_SDK_ROOT']):
                 # 既に Android SDK が設定されている場合はインストールしない
-                pass
+
+                # SDK Manager を使って NDK をインストールする
+                cmd(['sdkmanager', f'--sdk_root={os.environ["ANDROID_SDK_ROOT"]}', '--install', f'ndk;{NDK_VERSION}'])
             else:
                 install_android_sdk_cmdline_tools_args = {
                     'version': version['ANDROID_SDK_CMDLINE_TOOLS_VERSION'],
                     'version_file': os.path.join(install_dir, 'android-sdk-cmdline-tools.version'),
                     'source_dir': source_dir,
                     'install_dir': install_dir,
+                    'ndk_version': NDK_VERSION,
                 }
                 install_android_sdk_cmdline_tools(**install_android_sdk_cmdline_tools_args)
                 add_path(os.path.join(install_dir, 'android-sdk-cmdline-tools', 'cmdline-tools', 'bin'))
@@ -1221,7 +1225,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                         set_android_home = True
                     if 'ANDROID_NDK_HOME' not in os.environ:
                         os.environ['ANDROID_NDK_HOME'] = os.path.join(
-                            install_dir, 'android-sdk-cmdline-tools', 'ndk', '21.4.7075529')
+                            install_dir, 'android-sdk-cmdline-tools', 'ndk', NDK_VERSION)
                         set_android_ndk_home = True
 
                 cmd(['bazel', 'build', *opts, ':lyra'])
