@@ -466,9 +466,11 @@ def install_android_sdk_cmdline_tools(version, install_dir, source_dir):
     tools_dir = os.path.join(install_dir, "android-sdk-cmdline-tools")
     rm_rf(tools_dir)
     extract(archive, output_dir=tools_dir, output_dirname='cmdline-tools')
+    sdkmanager = os.path.join(tools_dir, "cmdline-tools", "bin", "sdkmanager")
     # ライセンスを許諾する
-    cmd(['/bin/bash', '-c',
-        f'yes | {os.path.join(tools_dir, "cmdline-tools", "bin", "sdkmanager")} --sdk_root={tools_dir} --licenses'])
+    cmd(['/bin/bash', '-c', f'yes | {sdkmanager} --sdk_root={tools_dir} --licenses'])
+    # SDK Manager を使って NDK をインストールする
+    cmd([sdkmanager, f'--sdk_root={tools_dir}', '--install', 'ndk;21.4.7075529'])
 
 
 @versioned
