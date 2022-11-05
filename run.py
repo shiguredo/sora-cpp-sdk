@@ -1220,13 +1220,19 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                     opts += ['--config', 'android_arm64']
                     set_android_home = False
                     set_android_ndk_home = False
+                    if 'ANDROID_SDK_ROOT' in os.environ:
+                        android_sdk_root = os.environ['ANDROID_SDK_ROOT']
+                    else:
+                        android_sdk_root = os.path.join(install_dir, 'android-sdk-cmdline-tools')
                     if 'ANDROID_HOME' not in os.environ:
-                        os.environ['ANDROID_HOME'] = os.path.join(install_dir, 'android-sdk-cmdline-tools')
+                        os.environ['ANDROID_HOME'] = android_sdk_root
                         set_android_home = True
                     if 'ANDROID_NDK_HOME' not in os.environ:
-                        os.environ['ANDROID_NDK_HOME'] = os.path.join(
-                            install_dir, 'android-sdk-cmdline-tools', 'ndk', NDK_VERSION)
+                        os.environ['ANDROID_NDK_HOME'] = os.path.join(android_sdk_root, 'ndk', NDK_VERSION)
                         set_android_ndk_home = True
+                    print(f'ANDROID_HOME={os.environ["ANDROID_HOME"]}')
+                    print(f'ANDROID_NDK_HOME={os.environ["ANDROID_NDK_HOME"]}')
+                    cmd(['ls', '-lha', os.path.join(android_sdk_root, 'ndk', NDK_VERSION, 'toolchains')])
 
                 cmd(['bazel', 'build', *opts, ':lyra'])
 
