@@ -1218,29 +1218,30 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                     opts += ['--config', 'jetson']
                 if platform.target.package_name == 'android':
                     opts += ['--config', 'android_arm64']
-                    set_android_home = False
-                    set_android_ndk_home = False
                     if 'ANDROID_SDK_ROOT' in os.environ:
                         android_sdk_root = os.environ['ANDROID_SDK_ROOT']
                     else:
                         android_sdk_root = os.path.join(install_dir, 'android-sdk-cmdline-tools')
+
+                    set_android_home = False
                     if 'ANDROID_HOME' not in os.environ:
                         os.environ['ANDROID_HOME'] = android_sdk_root
                         set_android_home = True
-                    if 'ANDROID_NDK_HOME' not in os.environ:
-                        os.environ['ANDROID_NDK_HOME'] = os.path.join(android_sdk_root, 'ndk', NDK_VERSION)
-                        set_android_ndk_home = True
-                    print(f'ANDROID_HOME={os.environ["ANDROID_HOME"]}')
-                    print(f'ANDROID_NDK_HOME={os.environ["ANDROID_NDK_HOME"]}')
-                    cmd(['ls', '-lha', os.path.join(android_sdk_root, 'ndk', NDK_VERSION, 'toolchains')])
+
+                    old_android_ndk_home = os.environ.get('ANDROID_NDK_HOME')
+                    os.environ['ANDROID_NDK_HOME'] = os.path.join(android_sdk_root, 'ndk', NDK_VERSION)
+
+                    logging.info(f'ANDROID_HOME={os.environ["ANDROID_HOME"]}')
+                    logging.info(f'ANDROID_NDK_HOME={os.environ["ANDROID_NDK_HOME"]}')
 
                 cmd(['bazel', 'build', *opts, ':lyra'])
 
                 if platform.target.package_name == 'android':
                     if set_android_home:
                         del os.environ['ANDROID_HOME']
-                    if set_android_ndk_home:
-                        del os.environ['ANDROID_NDK_HOME']
+                    del os.environ['ANDROID_NDK_HOME']
+                    if old_android_ndk_home is not None:
+                        os.environ['ANDROID_NDK_HOME'] = old_android_ndk_home
 
 
 AVAILABLE_TARGETS = ['windows_x86_64', 'macos_x86_64', 'macos_arm64', 'ubuntu-20.04_x86_64',
