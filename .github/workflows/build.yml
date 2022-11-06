@@ -91,8 +91,8 @@ jobs:
       - name: Bazel cache
         uses: actions/cache@v3
         with:
-          path: "~/.cache/bazel"
-          key: bazel-${{ matrix.name }}-v1
+          path: "/private/var/tmp"
+          key: bazel-${{ matrix.name }}-v2
       - run: pip3 install numpy
       - run: python3 run.py --test --package ${{ matrix.name }}
       - name: Get package name
