@@ -20,11 +20,16 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: microsoft/setup-msbuild@v1.1
+      - name: Env to output
+        run: |
+          echo "userprofile=${Env:USERPROFILE}" >> ${Env:GITHUB_OUTPUT}
+          echo "username=${Env:USERNAME}" >> ${Env:GITHUB_OUTPUT}
+        id: env
       - name: Bazel cache
         uses: actions/cache@v3
         with:
-          path: "${{ env.USERPROFILE }}\_bazel_${{ env.USERNAME }}"
-          key: bazel-${{ matrix.name }}-v1
+          path: "${{ steps.env.outputs.userprofile }}/_bazel_${{ steps.env.outputs.username }}"
+          key: bazel-${{ matrix.name }}-v2
       - name: Get Versions
         run: |
           Get-Content "VERSION" | Foreach-Object {
