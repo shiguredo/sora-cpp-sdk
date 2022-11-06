@@ -1200,6 +1200,8 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                                             'ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64',
                                             'ubuntu-20.04_armv8_jetson', 'android'):
             with cd(os.path.join('third_party', 'lyra')):
+                output_base = cmdcap(['bazel', 'info', 'output_base'])
+                print(f'bazel info output_base => {output_base}')
                 if platform.target.os == 'windows':
                     # ローカルの bash を使うとビルドに失敗してしまったので、
                     # git-bash を利用して lyra をビルドする
@@ -1619,6 +1621,9 @@ def main():
                     f.write("CONTENT_TYPE=application/gzip\n")
                     f.write(f'PACKAGE_NAME={archive_name}\n')
                     f.write(f'BOOST_PACKAGE_NAME={boost_archive_name}\n')
+
+    with cd(os.path.join(BASE_DIR, 'third_party', 'lyra')):
+        cmd(['bazel', 'shutdown'])
 
 
 if __name__ == '__main__':
