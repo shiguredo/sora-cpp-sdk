@@ -20,6 +20,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: microsoft/setup-msbuild@v1.1
+      - name: Bazel cache
+        uses: actions/cache@v3
+        with:
+          path: "${{ env.USERPROFILE }}\_bazel_${{ env.USERNAME }}"
+          key: bazel-${{ matrix.name }}-v1
       - name: Get Versions
         run: |
           Get-Content "VERSION" | Foreach-Object {
@@ -78,6 +83,11 @@ jobs:
     runs-on: macos-12
     steps:
       - uses: actions/checkout@v3
+      - name: Bazel cache
+        uses: actions/cache@v3
+        with:
+          path: "~/.cache/bazel"
+          key: bazel-${{ matrix.name }}-v1
       - run: pip3 install numpy
       - run: python3 run.py --test --package ${{ matrix.name }}
       - name: Get package name
@@ -113,6 +123,11 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
+      - name: Bazel cache
+        uses: actions/cache@v3
+        with:
+          path: "~/.cache/bazel"
+          key: bazel-${{ matrix.name }}-v1
       - name: Install deps for Ubuntu 20.04 x86_64
         if: matrix.name == 'ubuntu-20.04_x86_64'
         run: |
@@ -178,6 +193,11 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
+      - name: Bazel cache
+        uses: actions/cache@v3
+        with:
+          path: "~/.cache/bazel"
+          key: bazel-${{ matrix.name }}-v1
       - name: Install deps for Ubuntu 22.04 x86_64
         if: matrix.name == 'ubuntu-22.04_x86_64'
         run: |
