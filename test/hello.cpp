@@ -71,7 +71,7 @@ void HelloSora::Run() {
   if (config_.mode == HelloSoraConfig::Mode::Lyra) {
     config.video = false;
     config.sora_client = "Hello Sora with Lyra";
-    config.video_codec_type = "LYRA";
+    config.audio_codec_type = "LYRA";
   }
   conn_ = sora::SoraSignaling::Create(config);
 
