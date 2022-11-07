@@ -25,6 +25,9 @@ jobs:
           echo "userprofile=${Env:USERPROFILE}" >> ${Env:GITHUB_OUTPUT}
           echo "username=${Env:USERNAME}" >> ${Env:GITHUB_OUTPUT}
         id: env
+      # Bazel キャッシュのために GNU tar を使うようにする
+      # ref: https://qiita.com/homuler/items/12745a02a2663bc956fd
+      - run: echo "C:\msys64\usr\bin" >> $env:GITHUB_PATH
       - name: Bazel cache
         uses: actions/cache@v3
         with:
