@@ -77,6 +77,9 @@ jobs:
         with:
           name: ${{ matrix.name }}.env
           path: _package/${{ matrix.name }}/release/sora.env
+      # Bazel の symlink があるディレクトリを削除
+      - run:
+          (Get-Item "${{ steps.env.outputs.userprofile }}\_bazel_${{ steps.env.outputs.username }}\install").Delete()
   build-macos:
     strategy:
       fail-fast: false
@@ -88,10 +91,14 @@ jobs:
     runs-on: macos-12
     steps:
       - uses: actions/checkout@v3
+      - name: Env to output
+        run: |
+          echo "user=`users`" >> ${Env:GITHUB_OUTPUT}
+        id: env
       - name: Bazel cache
         uses: actions/cache@v3
         with:
-          path: "/private/var/tmp"
+          path: "/private/var/tmp/_bazel_${{ steps.env.outputs.user }}"
           key: bazel-${{ matrix.name }}-v2
       - run: pip3 install numpy
       - run: python3 run.py --test --package ${{ matrix.name }}
