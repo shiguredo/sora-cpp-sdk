@@ -79,7 +79,7 @@ jobs:
           path: _package/${{ matrix.name }}/release/sora.env
       # Bazel の symlink があるディレクトリを削除
       - run:
-          (Get-Item "${{ steps.env.outputs.userprofile }}\_bazel_${{ steps.env.outputs.username }}\install").Delete()
+          (Get-Item "${{ steps.env.outputs.userprofile }}\_bazel_${{ steps.env.outputs.username }}\*\install").Delete()
   build-macos:
     strategy:
       fail-fast: false
