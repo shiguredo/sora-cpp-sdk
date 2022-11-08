@@ -65,6 +65,7 @@ struct SoraSignalingConfig {
   bool audio = true;
   std::string video_codec_type = "";
   std::string audio_codec_type = "";
+  boost::json::value audio_codec_lyra_params;
   int video_bit_rate = 0;
   int audio_bit_rate = 0;
   boost::json::value metadata;
