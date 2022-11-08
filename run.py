@@ -459,7 +459,7 @@ def install_android_ndk(version, install_dir, source_dir):
 
 
 @versioned
-def install_android_sdk_cmdline_tools(version, install_dir, source_dir, ndk_version):
+def install_android_sdk_cmdline_tools(version, install_dir, source_dir, ndk_version, android_version):
     archive = download(
         f'https://dl.google.com/android/repository/commandlinetools-linux-{version}_latest.zip',
         source_dir)
@@ -471,6 +471,7 @@ def install_android_sdk_cmdline_tools(version, install_dir, source_dir, ndk_vers
     cmd(['/bin/bash', '-c', f'yes | {sdkmanager} --sdk_root={tools_dir} --licenses'])
     # SDK Manager を使って NDK をインストールする
     cmd([sdkmanager, f'--sdk_root={tools_dir}', '--install', f'ndk;{ndk_version}'])
+    cmd([sdkmanager, f'--sdk_root={tools_dir}', '--install', f'platforms;android-{android_version}'])
 
 
 @versioned
@@ -849,6 +850,7 @@ class Platform(object):
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 NDK_VERSION = '21.4.7075529'
+ANDROID_VERSION = '32'
 
 
 def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
@@ -893,6 +895,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                     'source_dir': source_dir,
                     'install_dir': install_dir,
                     'ndk_version': NDK_VERSION,
+                    'android_version': ANDROID_VERSION,
                 }
                 install_android_sdk_cmdline_tools(**install_android_sdk_cmdline_tools_args)
                 add_path(os.path.join(install_dir, 'android-sdk-cmdline-tools', 'cmdline-tools', 'bin'))
