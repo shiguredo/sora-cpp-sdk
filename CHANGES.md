@@ -11,6 +11,9 @@
 
 ## develop
 
+- [ADD] Lyra パラメータを指定可能にする
+    - @melpon
+
 ## 2022.16.0 (2022-11-08)
 
 - [CHANGE] Boost.Filesystem への依存を追加
