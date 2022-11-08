@@ -11,6 +11,8 @@
 
 ## develop
 
+## 2022.16.0 (2022-11-08)
+
 - [CHANGE] Boost.Filesystem への依存を追加
     - @melpon
 - [ADD] オーディオコーデック Lyra に対応
