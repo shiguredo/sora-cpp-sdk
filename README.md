@@ -81,6 +81,7 @@ https://github.com/shiguredo/sora-cpp-sdk-samples
 - Raspberry Pi OS 対応
 - Windows arm64 対応
 - AMD 系 HWA 対応
+- Lyra iOS 対応
 
 ## サポートについて
 
