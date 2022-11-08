@@ -459,16 +459,19 @@ def install_android_ndk(version, install_dir, source_dir):
 
 
 @versioned
-def install_android_sdk_cmdline_tools(version, install_dir, source_dir):
+def install_android_sdk_cmdline_tools(version, install_dir, source_dir, ndk_version, android_version):
     archive = download(
         f'https://dl.google.com/android/repository/commandlinetools-linux-{version}_latest.zip',
         source_dir)
     tools_dir = os.path.join(install_dir, "android-sdk-cmdline-tools")
     rm_rf(tools_dir)
     extract(archive, output_dir=tools_dir, output_dirname='cmdline-tools')
+    sdkmanager = os.path.join(tools_dir, "cmdline-tools", "bin", "sdkmanager")
     # ライセンスを許諾する
-    cmd(['/bin/bash', '-c',
-        f'yes | {os.path.join(tools_dir, "cmdline-tools", "bin", "sdkmanager")} --sdk_root={tools_dir} --licenses'])
+    cmd(['/bin/bash', '-c', f'yes | {sdkmanager} --sdk_root={tools_dir} --licenses'])
+    # SDK Manager を使って NDK をインストールする
+    cmd([sdkmanager, f'--sdk_root={tools_dir}', '--install', f'ndk;{ndk_version}'])
+    cmd([sdkmanager, f'--sdk_root={tools_dir}', '--install', f'platforms;android-{android_version}'])
 
 
 @versioned
@@ -643,6 +646,20 @@ def install_cmake(version, source_dir, install_dir, platform: str, ext):
     if platform.startswith('linux'):
         with cd(os.path.join(install_dir, 'cmake', 'bin')):
             cmd(['ln', '-s', '/usr/bin/ninja', 'ninja'])
+
+
+@versioned
+def install_bazel(version, source_dir, install_dir, platform: str):
+    rm_rf(os.path.join(install_dir, 'bazel'))
+    is_windows = platform.startswith('windows')
+    exe = '.exe' if is_windows else ''
+    url = f'https://github.com/bazelbuild/bazel/releases/download/{version}/bazel-{version}-{platform}{exe}'
+    src_path = download(url, source_dir)
+    dst_path = os.path.join(install_dir, 'bazel', f'bazel{exe}')
+    mkdir_p(os.path.join(install_dir, 'bazel'))
+    os.rename(src_path, dst_path)
+    if not is_windows:
+        cmd(['chmod', '+x', dst_path])
 
 
 @versioned
@@ -832,6 +849,8 @@ class Platform(object):
 
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+NDK_VERSION = '21.4.7075529'
+ANDROID_VERSION = '32'
 
 
 def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
@@ -866,13 +885,17 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
         if platform.target.os == 'android':
             if 'ANDROID_SDK_ROOT' in os.environ and os.path.exists(os.environ['ANDROID_SDK_ROOT']):
                 # 既に Android SDK が設定されている場合はインストールしない
-                pass
+
+                # SDK Manager を使って NDK をインストールする
+                cmd(['sdkmanager', f'--sdk_root={os.environ["ANDROID_SDK_ROOT"]}', '--install', f'ndk;{NDK_VERSION}'])
             else:
                 install_android_sdk_cmdline_tools_args = {
                     'version': version['ANDROID_SDK_CMDLINE_TOOLS_VERSION'],
                     'version_file': os.path.join(install_dir, 'android-sdk-cmdline-tools.version'),
                     'source_dir': source_dir,
                     'install_dir': install_dir,
+                    'ndk_version': NDK_VERSION,
+                    'android_version': ANDROID_VERSION,
                 }
                 install_android_sdk_cmdline_tools(**install_android_sdk_cmdline_tools_args)
                 add_path(os.path.join(install_dir, 'android-sdk-cmdline-tools', 'cmdline-tools', 'bin'))
@@ -969,7 +992,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
         }
         if platform.target.os == 'windows':
             install_boost_args['cxxflags'] = [
-                '-D_HAS_ITERATOR_DEBUGGING=0'
+                '-D_ITERATOR_DEBUG_LEVEL=0'
             ]
             install_boost_args['toolset'] = 'msvc'
             install_boost_args['target_os'] = 'windows'
@@ -1089,6 +1112,29 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
         else:
             add_path(os.path.join(install_dir, 'cmake', 'bin'))
 
+        # Bazel
+        install_bazel_args = {
+            'version': version['BAZEL_VERSION'],
+            'version_file': os.path.join(install_dir, 'bazel.version'),
+            'source_dir': source_dir,
+            'install_dir': install_dir,
+            'platform': '',
+        }
+        if platform.build.os == 'windows' and platform.build.arch == 'x86_64':
+            install_bazel_args['platform'] = 'windows-x86_64'
+        elif platform.build.os == 'macos' and platform.build.arch == 'x86_64':
+            install_bazel_args['platform'] = 'darwin-x86_64'
+        elif platform.build.os == 'macos' and platform.build.arch == 'arm64':
+            install_bazel_args['platform'] = 'darwin-arm64'
+        elif platform.build.os == 'ubuntu' and platform.build.arch == 'x86_64':
+            install_bazel_args['platform'] = 'linux-x86_64'
+        elif platform.build.os == 'ubuntu' and platform.build.arch == 'arm64':
+            install_bazel_args['platform'] = 'linux-arm64'
+        else:
+            raise Exception('Failed to install Bazel')
+        install_bazel(**install_bazel_args)
+        add_path(os.path.join(install_dir, 'bazel'))
+
         # CUDA
         if platform.target.os == 'windows':
             install_cuda_args = {
@@ -1111,6 +1157,12 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                 'install_dir': install_dir,
                 'cmake_args': [],
             }
+            if platform.target.os == 'windows':
+                cxxflags = [
+                    '/DWIN32', '/D_WINDOWS', '/W3', '/GR', '/EHsc',
+                    '/D_ITERATOR_DEBUG_LEVEL=0',
+                ]
+                install_vpl_args['cmake_args'].append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
             if platform.target.os == 'ubuntu':
                 cmake_args = []
                 cmake_args.append("-DCMAKE_C_COMPILER=clang-12")
@@ -1122,7 +1174,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                     '-D_LIBCPP_DISABLE_AVAILABILITY', '-D_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS',
                     '-D_LIBCXXABI_DISABLE_VISIBILITY_ANNOTATIONS', '-D_LIBCPP_ENABLE_NODISCARD']
                 cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(flags)}")
-                install_vpl_args['cmake_args'] = cmake_args
+                install_vpl_args['cmake_args'] += cmake_args
             install_vpl(**install_vpl_args)
 
         if platform.target.os == 'android':
@@ -1146,6 +1198,55 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                 ldflags.append(f'-Wl,--undefined={func}')
             with open(os.path.join(install_dir, 'webrtc.ldflags'), 'w') as f:
                 f.write('\n'.join(ldflags))
+
+        if platform.target.package_name in ('windows_x86_64', 'macos_x86_64', 'macos_arm64',
+                                            'ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64',
+                                            'ubuntu-20.04_armv8_jetson', 'android'):
+            with cd(os.path.join('third_party', 'lyra')):
+                output_base = cmdcap(['bazel', 'info', 'output_base'])
+                print(f'bazel info output_base => {output_base}')
+                if platform.target.os == 'windows':
+                    # ローカルの bash を使うとビルドに失敗してしまったので、
+                    # git-bash を利用して lyra をビルドする
+                    if 'BAZEL_SH' not in os.environ:
+                        # CI では git-bash を使うと逆に失敗してしまう
+                        if os.environ.get('GITHUB_ACTIONS') != 'true':
+                            git_bash_path = 'C:\\Program Files\\Git\\git-bash.exe'
+                            if shutil.which('git-bash') is not None:
+                                os.environ['BAZEL_SH'] = 'git-bash'
+                            if os.path.exists(git_bash_path):
+                                os.environ['BAZEL_SH'] = git_bash_path
+                opts = []
+                if not debug:
+                    opts += ['-c', 'opt']
+                if platform.target.package_name == 'ubuntu-20.04_armv8_jetson':
+                    opts += ['--config', 'jetson']
+                if platform.target.package_name == 'android':
+                    opts += ['--config', 'android_arm64']
+                    if 'ANDROID_SDK_ROOT' in os.environ:
+                        android_sdk_root = os.environ['ANDROID_SDK_ROOT']
+                    else:
+                        android_sdk_root = os.path.join(install_dir, 'android-sdk-cmdline-tools')
+
+                    set_android_home = False
+                    if 'ANDROID_HOME' not in os.environ:
+                        os.environ['ANDROID_HOME'] = android_sdk_root
+                        set_android_home = True
+
+                    old_android_ndk_home = os.environ.get('ANDROID_NDK_HOME')
+                    os.environ['ANDROID_NDK_HOME'] = os.path.join(android_sdk_root, 'ndk', NDK_VERSION)
+
+                    logging.info(f'ANDROID_HOME={os.environ["ANDROID_HOME"]}')
+                    logging.info(f'ANDROID_NDK_HOME={os.environ["ANDROID_NDK_HOME"]}')
+
+                cmd(['bazel', 'build', *opts, ':lyra'])
+
+                if platform.target.package_name == 'android':
+                    if set_android_home:
+                        del os.environ['ANDROID_HOME']
+                    del os.environ['ANDROID_NDK_HOME']
+                    if old_android_ndk_home is not None:
+                        os.environ['ANDROID_NDK_HOME'] = old_android_ndk_home
 
 
 AVAILABLE_TARGETS = ['windows_x86_64', 'macos_x86_64', 'macos_arm64', 'ubuntu-20.04_x86_64',
@@ -1303,6 +1404,11 @@ def main():
             cmake_args.append('-DUSE_VPL_ENCODER=ON')
             cmake_args.append(f"-DVPL_ROOT_DIR={cmake_path(os.path.join(install_dir, 'vpl'))}")
 
+        # バンドルされたライブラリを消しておく
+        # （CMake でうまく依存関係を解消できなくて更新されないため）
+        rm_rf(os.path.join(sora_build_dir, 'bundled'))
+        rm_rf(os.path.join(sora_build_dir, 'libsora.a'))
+
         cmd(['cmake', BASE_DIR] + cmake_args)
         if platform.target.os == 'ios':
             cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration,
@@ -1328,6 +1434,26 @@ def main():
             shutil.copyfile(os.path.join(sora_build_dir, 'bundled', 'libsora.a'),
                             os.path.join(install_dir, 'sora', 'lib', 'libsora.a'))
 
+        # Lyra の共有ライブラリとモデル係数ファイルをインストールする
+        if platform.target.package_name in ('windows_x86_64', 'macos_x86_64', 'macos_arm64',
+                                            'ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64',
+                                            'ubuntu-20.04_armv8_jetson', 'android'):
+            mkdir_p(os.path.join(install_dir, 'sora', 'share', 'lyra'))
+            if platform.target.package_name == 'windows_x86_64':
+                lyra_dll_src = os.path.join(BASE_DIR, 'third_party', 'lyra', 'bazel-bin', 'lyra.dll')
+                lyra_dll_dst = os.path.join(install_dir, 'sora', 'share', 'lyra', 'lyra.dll')
+                model_dst = os.path.join(install_dir, 'sora', 'share', 'lyra', 'model_coeffs')
+            else:
+                lyra_dll_src = os.path.join(BASE_DIR, 'third_party', 'lyra', 'bazel-bin', 'liblyra.so')
+                lyra_dll_dst = os.path.join(install_dir, 'sora', 'share', 'lyra', 'liblyra.so')
+                model_dst = os.path.join(install_dir, 'sora', 'share', 'lyra', 'model_coeffs')
+            rm_rf(model_dst)
+            shutil.copyfile(lyra_dll_src, lyra_dll_dst)
+            with cd(os.path.join(BASE_DIR, 'third_party', 'lyra')):
+                output_base = cmdcap(['bazel', 'info', 'output_base'])
+            model_src = os.path.join(output_base, 'external', 'lyra', 'model_coeffs')
+            shutil.copytree(model_src, model_dst)
+
     if args.test:
         if platform.target.os == 'ios':
             # iOS の場合は事前に用意したプロジェクトをビルドする
@@ -1348,6 +1474,20 @@ def main():
             # Android の場合は事前に用意したプロジェクトをビルドする
             with cd(os.path.join(BASE_DIR, 'test', 'android')):
                 cmd(['./gradlew', '--no-daemon', 'assemble'])
+
+                # Lyra テストのビルド先のディレクトリに
+                # Lyra の共有ライブラリとモデル係数ファイルをコピーする
+                lyra_dll_src = os.path.join(BASE_DIR, 'third_party', 'lyra', 'bazel-bin', 'liblyra.so')
+                lyra_dll_dst = os.path.join('app', 'src', 'main', 'jniLibs', 'arm64-v8a', 'liblyra.so')
+                model_dst = os.path.join('app', 'src', 'main', 'assets')
+                rm_rf(model_dst)
+                mkdir_p(os.path.dirname(model_dst))
+                mkdir_p(os.path.dirname(lyra_dll_dst))
+                shutil.copyfile(lyra_dll_src, lyra_dll_dst)
+                with cd(os.path.join(BASE_DIR, 'third_party', 'lyra')):
+                    output_base = cmdcap(['bazel', 'info', 'output_base'])
+                model_src = os.path.join(output_base, 'external', 'lyra', 'model_coeffs')
+                shutil.copytree(model_src, model_dst)
         else:
             # 普通のプロジェクトは CMake でビルドする
             test_build_dir = os.path.join(build_dir, 'test')
@@ -1382,7 +1522,7 @@ def main():
                         f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}")
                 if platform.target.os == 'jetson':
                     sysroot = os.path.join(install_dir, 'rootfs')
-                    cmake_args.append('-DHELLO_JETSON=ON')
+                    cmake_args.append('-DJETSON=ON')
                     cmake_args.append('-DCMAKE_SYSTEM_NAME=Linux')
                     cmake_args.append('-DCMAKE_SYSTEM_PROCESSOR=aarch64')
                     cmake_args.append(f'-DCMAKE_SYSROOT={sysroot}')
@@ -1404,9 +1544,36 @@ def main():
                 if platform.target.os in ('windows', 'macos', 'ubuntu'):
                     cmake_args.append("-DTEST_CONNECT_DISCONNECT=ON")
                     cmake_args.append("-DTEST_DATACHANNEL=ON")
+                if platform.target.package_name in ('windows_x86_64', 'macos_x86_64', 'macos_arm64',
+                                                    'ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64',
+                                                    'ubuntu-20.04_armv8_jetson'):
+                    cmake_args.append("-DTEST_LYRA=ON")
 
                 cmd(['cmake', os.path.join(BASE_DIR, 'test')] + cmake_args)
                 cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])
+
+                # Lyra テストのビルド先のディレクトリに
+                # Lyra の共有ライブラリとモデル係数ファイルをコピーする
+                if platform.target.package_name in ('windows_x86_64', 'macos_x86_64', 'macos_arm64',
+                                                    'ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64',
+                                                    'ubuntu-20.04_armv8_jetson', 'android'):
+                    if platform.target.package_name == 'windows_x86_64':
+                        lyra_dll_src = os.path.join(BASE_DIR, 'third_party', 'lyra', 'bazel-bin', 'lyra.dll')
+                        lyra_dll_dst = os.path.join(test_build_dir, configuration, 'lyra.dll')
+                        model_dst = os.path.join(test_build_dir, configuration, 'model_coeffs')
+                    else:
+                        lyra_dll_src = os.path.join(BASE_DIR, 'third_party', 'lyra', 'bazel-bin', 'liblyra.so')
+                        lyra_dll_dst = os.path.join(test_build_dir, 'liblyra.so')
+                        model_dst = os.path.join(test_build_dir, 'model_coeffs')
+                    rm_rf(model_dst)
+                    mkdir_p(os.path.dirname(model_dst))
+                    mkdir_p(os.path.dirname(lyra_dll_dst))
+                    shutil.copyfile(lyra_dll_src, lyra_dll_dst)
+                    with cd(os.path.join(BASE_DIR, 'third_party', 'lyra')):
+                        output_base = cmdcap(['bazel', 'info', 'output_base'])
+                    model_src = os.path.join(output_base, 'external', 'lyra', 'model_coeffs')
+                    shutil.copytree(model_src, model_dst)
+
                 if args.run:
                     if platform.target.os == 'windows':
                         cmd([os.path.join(test_build_dir, configuration, 'hello.exe'),
@@ -1457,6 +1624,9 @@ def main():
                     f.write("CONTENT_TYPE=application/gzip\n")
                     f.write(f'PACKAGE_NAME={archive_name}\n')
                     f.write(f'BOOST_PACKAGE_NAME={boost_archive_name}\n')
+
+    with cd(os.path.join(BASE_DIR, 'third_party', 'lyra')):
+        cmd(['bazel', 'shutdown'])
 
 
 if __name__ == '__main__':

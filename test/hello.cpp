@@ -38,21 +38,23 @@ HelloSora::~HelloSora() {
 void HelloSora::Run() {
   void* env = sora::GetJNIEnv();
 
-  sora::CameraDeviceCapturerConfig cam_config;
-  cam_config.width = 640;
-  cam_config.height = 480;
-  cam_config.fps = 30;
-  cam_config.jni_env = env;
-  cam_config.application_context = GetAndroidApplicationContext(env);
-  video_source_ = sora::CreateCameraDeviceCapturer(cam_config);
-
   std::string audio_track_id = rtc::CreateRandomString(16);
-  std::string video_track_id = rtc::CreateRandomString(16);
   audio_track_ = factory()->CreateAudioTrack(
       audio_track_id,
       factory()->CreateAudioSource(cricket::AudioOptions()).get());
-  video_track_ =
-      factory()->CreateVideoTrack(video_track_id, video_source_.get());
+
+  if (config_.mode == HelloSoraConfig::Mode::Hello) {
+    sora::CameraDeviceCapturerConfig cam_config;
+    cam_config.width = 640;
+    cam_config.height = 480;
+    cam_config.fps = 30;
+    cam_config.jni_env = env;
+    cam_config.application_context = GetAndroidApplicationContext(env);
+    video_source_ = sora::CreateCameraDeviceCapturer(cam_config);
+    std::string video_track_id = rtc::CreateRandomString(16);
+    video_track_ =
+        factory()->CreateVideoTrack(video_track_id, video_source_.get());
+  }
 
   ioc_.reset(new boost::asio::io_context(1));
 
@@ -66,6 +68,11 @@ void HelloSora::Run() {
   config.role = config_.role;
   config.video_codec_type = "H264";
   config.multistream = true;
+  if (config_.mode == HelloSoraConfig::Mode::Lyra) {
+    config.video = false;
+    config.sora_client = "Hello Sora with Lyra";
+    config.audio_codec_type = "LYRA";
+  }
   conn_ = sora::SoraSignaling::Create(config);
 
   boost::asio::executor_work_guard<boost::asio::io_context::executor_type>
@@ -88,9 +95,11 @@ void HelloSora::OnSetOffer(std::string offer) {
   webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpSenderInterface>>
       audio_result =
           conn_->GetPeerConnection()->AddTrack(audio_track_, {stream_id});
-  webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpSenderInterface>>
-      video_result =
-          conn_->GetPeerConnection()->AddTrack(video_track_, {stream_id});
+  if (video_track_ != nullptr) {
+    webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpSenderInterface>>
+        video_result =
+            conn_->GetPeerConnection()->AddTrack(video_track_, {stream_id});
+  }
 }
 void HelloSora::OnDisconnect(sora::SoraSignalingErrorCode ec,
                              std::string message) {
@@ -98,7 +107,7 @@ void HelloSora::OnDisconnect(sora::SoraSignalingErrorCode ec,
   ioc_->stop();
 }
 
-#if defined(HELLO_ANDROID) || (defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE)
+#if defined(__ANDROID__) || (defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE)
 
 // iOS, Android は main を使わない
 

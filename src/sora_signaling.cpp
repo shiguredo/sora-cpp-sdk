@@ -301,6 +301,10 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     if (config_.audio_bit_rate != 0) {
       m["audio"].as_object()["bit_rate"] = config_.audio_bit_rate;
     }
+    if (config_.audio_codec_type == "LYRA") {
+      m["audio"].as_object()["lyra_params"] = boost::json::object();
+      m["audio"].as_object()["lyra_params"].as_object()["version"] = "1.2.0";
+    }
   }
 
   if (config_.data_channel_signaling) {
@@ -336,6 +340,7 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     m["data_channels"] = ar;
   }
 
+  RTC_LOG(LS_INFO) << "Send type=connect: " << boost::json::serialize(m);
   ws_->WriteText(
       boost::json::serialize(m),
       [self = shared_from_this()](boost::system::error_code, size_t) {});

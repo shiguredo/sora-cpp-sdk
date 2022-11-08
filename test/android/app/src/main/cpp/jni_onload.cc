@@ -22,7 +22,7 @@ namespace webrtc {
 namespace jni {
 
 extern "C" jint JNIEXPORT JNICALL JNI_OnLoad(JavaVM* jvm, void* reserved) {
-  // rtc::LogMessage::LogToDebug(rtc::LS_VERBOSE);
+  // rtc::LogMessage::LogToDebug(rtc::LS_INFO);
   // rtc::LogMessage::LogTimestamps();
   // rtc::LogMessage::LogThreads();
 

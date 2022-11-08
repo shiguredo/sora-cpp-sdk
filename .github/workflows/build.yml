@@ -20,6 +20,21 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: microsoft/setup-msbuild@v1.1
+      - name: Env to output
+        run: |
+          echo "userprofile=${Env:USERPROFILE}" >> ${Env:GITHUB_OUTPUT}
+          echo "username=${Env:USERNAME}" >> ${Env:GITHUB_OUTPUT}
+        id: env
+      - name: Bazel cache (cache)
+        uses: actions/cache@v3
+        with:
+          path: "${{ steps.env.outputs.userprofile }}/_bazel_${{ steps.env.outputs.username }}/cache"
+          key: bazel-cache-${{ matrix.name }}-v1
+      - name: Bazel cache (install)
+        uses: actions/cache@v3
+        with:
+          path: "${{ steps.env.outputs.userprofile }}/_bazel_${{ steps.env.outputs.username }}/install"
+          key: bazel-install-${{ matrix.name }}-v1
       - name: Get Versions
         run: |
           Get-Content "VERSION" | Foreach-Object {
@@ -40,6 +55,7 @@ jobs:
           key: windows-cuda-${{ steps.versions.outputs.cuda_version }}.v1
       - run: echo "${CUDA_VERSION}" > _install\windows_x86_64\release\cuda.version
         if: steps.cache-cuda.outputs.cache-hit == 'true'
+      - run: pip install numpy
       - run: python3 run.py --test --package ${{ matrix.name }}
       - name: Get package name
         run: |
@@ -77,6 +93,16 @@ jobs:
     runs-on: macos-12
     steps:
       - uses: actions/checkout@v3
+      - name: Env to output
+        run: |
+          echo "user=`users`" >> $GITHUB_OUTPUT
+        id: env
+      - name: Bazel cache
+        uses: actions/cache@v3
+        with:
+          path: "/private/var/tmp/_bazel_${{ steps.env.outputs.user }}"
+          key: bazel-${{ matrix.name }}-v2
+      - run: pip3 install numpy
       - run: python3 run.py --test --package ${{ matrix.name }}
       - name: Get package name
         run: |
@@ -111,11 +137,16 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
+      - name: Bazel cache
+        uses: actions/cache@v3
+        with:
+          path: "~/.cache/bazel"
+          key: bazel-${{ matrix.name }}-v1
       - name: Install deps for Ubuntu 20.04 x86_64
         if: matrix.name == 'ubuntu-20.04_x86_64'
         run: |
           source VERSION
-          # clang-12 と CUDA と libva-dev, libdrm-dev を入れる
+          # clang-12 と CUDA を入れる
           sudo apt-get update
           sudo apt-get install -y software-properties-common
           # CUDA 10 なので ubuntu1804 で正しい
@@ -124,20 +155,26 @@ jobs:
           sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
           sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
           sudo apt-get update
-          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install cuda=$CUDA_VERSION clang-12 libva-dev libdrm-dev
+          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install cuda=$CUDA_VERSION clang-12
+          # Intel Media SDK のために libva-dev, libdrm-dev を入れる
+          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install libva-dev libdrm-dev
       - name: Install deps for Jetson series
         if: matrix.name == 'ubuntu-20.04_armv8_jetson'
         run: |
-          sudo apt install multistrap binutils-aarch64-linux-gnu
+          sudo apt-get update
+          sudo apt-get -y install multistrap binutils-aarch64-linux-gnu
           # multistrap に insecure なリポジトリからの取得を許可する設定を入れる
           sudo sed -e 's/Apt::Get::AllowUnauthenticated=true/Apt::Get::AllowUnauthenticated=true";\n$config_str .= " -o Acquire::AllowInsecureRepositories=true/' -i /usr/sbin/multistrap
+          # Lyra ビルドのためにクロスコンパイル環境一式を入れる
+          sudo apt-get -y install libstdc++-9-dev-arm64-cross gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
       - name: Install deps for Android
         if: matrix.name == 'android'
         run: |
-          sudo apt install ninja-build
+          sudo apt-get -y install ninja-build
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2.0.8
         if: matrix.name == 'android'
+      - run: pip3 install numpy
       - run: python3 run.py --test --package ${{ matrix.name }}
       - name: Get package name
         run: |
@@ -170,11 +207,16 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
+      - name: Bazel cache
+        uses: actions/cache@v3
+        with:
+          path: "~/.cache/bazel"
+          key: bazel-${{ matrix.name }}-v1
       - name: Install deps for Ubuntu 22.04 x86_64
         if: matrix.name == 'ubuntu-22.04_x86_64'
         run: |
           source VERSION
-          # clang-12 と CUDA と libva-dev, libdrm-dev を入れる
+          # clang-12 と CUDA を入れる
           sudo apt-get update
           sudo apt-get install -y software-properties-common
           # CUDA 10 なので ubuntu1804 で正しい
@@ -183,7 +225,10 @@ jobs:
           sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
           sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
           sudo apt-get update
-          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install cuda=$CUDA_VERSION clang-12 libva-dev libdrm-dev
+          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install cuda=$CUDA_VERSION clang-12
+          # Intel Media SDK のために libva-dev, libdrm-dev を入れる
+          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install libva-dev libdrm-dev
+      - run: pip3 install numpy
       - run: python3 run.py --test --package ${{ matrix.name }}
       - name: Get package name
         run: |
