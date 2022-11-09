@@ -146,6 +146,8 @@ build:windows --host_linkopt=/OPT:ICF
 build:windows --host_copt=-D__PRETTY_FUNCTION__=__FUNCSIG__
 build:windows --copt=-D__PRETTY_FUNCTION__=__FUNCSIG__
 
+build:macos_arm64 --cpu=darwin_arm64
+
 build:jetson --cpu=aarch64
 build:jetson --crosstool_top=//toolchain/jetson:toolchain
 build:jetson --host_crosstool_top=@bazel_tools//tools/cpp:toolchain

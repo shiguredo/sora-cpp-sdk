@@ -1221,6 +1221,8 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                     opts += ['-c', 'opt']
                 if platform.target.package_name == 'ubuntu-20.04_armv8_jetson':
                     opts += ['--config', 'jetson']
+                if platform.target.package_name == 'macos_arm64':
+                    opts += ['--config', 'macos_arm64']
                 if platform.target.package_name == 'android':
                     opts += ['--config', 'android_arm64']
                     if 'ANDROID_SDK_ROOT' in os.environ:
