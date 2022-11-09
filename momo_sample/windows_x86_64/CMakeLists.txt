@@ -21,7 +21,7 @@ list(APPEND CMAKE_MODULE_PATH ${SORA_DIR}/share/cmake)
 set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_STATIC_RUNTIME ON)
 
-find_package(Boost REQUIRED COMPONENTS json)
+find_package(Boost REQUIRED COMPONENTS json filesystem)
 find_package(WebRTC REQUIRED)
 find_package(Sora REQUIRED)
 find_package(SDL2 REQUIRED)

@@ -19,6 +19,8 @@ struct SDLSampleConfig : sora::SoraDefaultClientConfig {
   std::string channel_id;
   std::string role;
   std::string video_codec_type;
+  std::string audio_codec_type;
+  boost::json::value audio_codec_lyra_params;
   boost::optional<bool> multistream;
   int width = 640;
   int height = 480;
@@ -66,6 +68,8 @@ class SDLSample : public std::enable_shared_from_this<SDLSample>,
     config.multistream = config_.multistream;
     config.role = config_.role;
     config.video_codec_type = config_.video_codec_type;
+    config.audio_codec_type = config_.audio_codec_type;
+    config.audio_codec_lyra_params = config_.audio_codec_lyra_params;
     conn_ = sora::SoraSignaling::Create(config);
 
     boost::asio::executor_work_guard<boost::asio::io_context::executor_type>
@@ -162,6 +166,17 @@ int main(int argc, char* argv[]) {
   }
 #endif
 
+  auto is_json = CLI::Validator(
+      [](std::string input) -> std::string {
+        boost::json::error_code ec;
+        boost::json::parse(input, ec);
+        if (ec) {
+          return "Value " + input + " is not JSON Value";
+        }
+        return std::string();
+      },
+      "JSON Value");
+
   SDLSampleConfig config;
 
   CLI::App app("SDL Sample for Sora C++ SDK");
@@ -184,6 +199,13 @@ int main(int argc, char* argv[]) {
   app.add_option("--video-codec-type", config.video_codec_type,
                  "Video codec for send")
       ->check(CLI::IsMember({"", "VP8", "VP9", "AV1", "H264"}));
+  app.add_option("--audio-codec-type", config.audio_codec_type,
+                 "Audio codec for send")
+      ->check(CLI::IsMember({"", "OPUS", "LYRA"}));
+  std::string audio_codec_lyra_params;
+  app.add_option("--audio-codec-lyra-params", audio_codec_lyra_params,
+                 "Signaling metadata used in connect message")
+      ->check(is_json);
   add_optional_bool(app, "--multistream", config.multistream,
                     "Use multistream (default: none)");
 
@@ -205,6 +227,10 @@ int main(int argc, char* argv[]) {
     rtc::LogMessage::LogThreads();
   }
 
+  if (!audio_codec_lyra_params.empty()) {
+    config.audio_codec_lyra_params =
+        boost::json::parse(audio_codec_lyra_params);
+  }
   auto sdlsample = sora::CreateSoraClient<SDLSample>(config);
   sdlsample->Run();
 
