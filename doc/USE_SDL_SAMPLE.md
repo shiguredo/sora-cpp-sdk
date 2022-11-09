@@ -178,15 +178,22 @@ Windows 以外の場合
 $ ./sdl_sample --signaling-url wss://sora.example.com/signaling --role sendrecv --channel-id sora --multistream true
 ```
 
+#### 必須オプション
+
+- `--signaling-url` : Sora サーバのシグナリング URL (必須)
+- `--channel-id` : [channel_id](https://sora-doc.shiguredo.jp/SIGNALING#ee30e9) (必須)
+- `--role` : [role](https://sora-doc.shiguredo.jp/SIGNALING#6d21b9) (必須)
+    - sendrecv / sendonly / recvonly のいずれかを指定
+
+#### SDL サンプル実行に関するオプション
+
+- `--log-level` : 実行時にターミナルに出力するログのレベル
+    - `verbose->0,info->1,warning->2,error->3,none->4` の値が指定可能です
+
 #### Sora に関するオプション
 
 設定内容については [Sora のドキュメント](https://sora-doc.shiguredo.jp/SIGNALING) も参考にしてください。
 
-- `--signaling-url` : Sora サーバのシグナリング URL (必須)
-- `--channel-id` : channel_id (必須)
-    - 任意のチャンネル ID
-- `--role` : role (必須)
-    - sendrecv / sendonly / recvonly のいずれかを指定
 - `--video-codec-type` : ビデオコーデック指定
     - VP8 / VP9 / AV1 / H264 が指定可能ですが利用可能なコーデックはプラットフォームに依存します
     - 未指定の場合は Sora のデフォルトである VP9 が利用されます
