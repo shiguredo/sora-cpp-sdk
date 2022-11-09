@@ -29,6 +29,8 @@ jobs:
           cp _build\${{ matrix.name }}\release\sdl_sample\Release\sdl_sample.exe ${{ matrix.name }}
           cp _build\${{ matrix.name }}\release\momo_sample\Release\momo_sample.exe ${{ matrix.name }}
           cp _build\${{ matrix.name }}\release\messaging_recvonly_sample\Release\messaging_recvonly_sample.exe ${{ matrix.name }}
+          cp _install\${{ matrix.name }}\release\sora\share\lyra\lyra.dll ${{ matrix.name }}\
+          cp -Recurse _install\${{ matrix.name }}\release\sora\share\lyra\model_coeffs ${{ matrix.name }}\model_coeffs
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
@@ -53,6 +55,8 @@ jobs:
           cp _build/${{ matrix.name }}/release/sdl_sample/sdl_sample ${{ matrix.name }}
           cp _build/${{ matrix.name }}/release/momo_sample/momo_sample ${{ matrix.name }}
           cp _build/${{ matrix.name }}/release/messaging_recvonly_sample/messaging_recvonly_sample ${{ matrix.name }}
+          cp _install/${{ matrix.name }}/release/sora/share/lyra/liblyra.so ${{ matrix.name }}/
+          cp -r _install/${{ matrix.name }}/release/sora/share/lyra/model_coeffs ${{ matrix.name }}/model_coeffs
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
@@ -90,6 +94,8 @@ jobs:
           cp _build/${{ matrix.name }}/release/sdl_sample/sdl_sample ${{ matrix.name }}
           cp _build/${{ matrix.name }}/release/momo_sample/momo_sample ${{ matrix.name }}
           cp _build/${{ matrix.name }}/release/messaging_recvonly_sample/messaging_recvonly_sample ${{ matrix.name }}
+          cp _install/${{ matrix.name }}/release/sora/share/lyra/liblyra.so ${{ matrix.name }}/
+          cp -r _install/${{ matrix.name }}/release/sora/share/lyra/model_coeffs ${{ matrix.name }}/model_coeffs
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
@@ -119,6 +125,8 @@ jobs:
           cp _build/${{ matrix.name }}/release/sdl_sample/sdl_sample ${{ matrix.name }}
           cp _build/${{ matrix.name }}/release/momo_sample/momo_sample ${{ matrix.name }}
           cp _build/${{ matrix.name }}/release/messaging_recvonly_sample/messaging_recvonly_sample ${{ matrix.name }}
+          cp _install/${{ matrix.name }}/release/sora/share/lyra/liblyra.so ${{ matrix.name }}/
+          cp -r _install/${{ matrix.name }}/release/sora/share/lyra/model_coeffs ${{ matrix.name }}/model_coeffs
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
