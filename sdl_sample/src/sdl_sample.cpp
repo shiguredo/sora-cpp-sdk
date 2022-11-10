@@ -17,6 +17,8 @@
 struct SDLSampleConfig : sora::SoraDefaultClientConfig {
   std::string signaling_url;
   std::string channel_id;
+  bool video = true;
+  bool audio = true;
   std::string role;
   std::string video_codec_type;
   std::string audio_codec_type;
@@ -38,23 +40,25 @@ class SDLSample : public std::enable_shared_from_this<SDLSample>,
     renderer_.reset(
         new SDLRenderer(config_.width, config_.height, config_.fullscreen));
 
-    if (config_.role != "recvonly") {
+    if (config_.video && config_.role != "recvonly") {
       sora::CameraDeviceCapturerConfig cam_config;
       cam_config.width = 640;
       cam_config.height = 480;
       cam_config.fps = 30;
       auto video_source = sora::CreateCameraDeviceCapturer(cam_config);
 
-      std::string audio_track_id = rtc::CreateRandomString(16);
       std::string video_track_id = rtc::CreateRandomString(16);
-      audio_track_ = factory()->CreateAudioTrack(
-          audio_track_id,
-          factory()->CreateAudioSource(cricket::AudioOptions()).get());
       video_track_ =
           factory()->CreateVideoTrack(video_track_id, video_source.get());
       if (config_.show_me) {
         renderer_->AddTrack(video_track_.get());
       }
+    }
+    if (config_.audio && config_.role != "recvonly") {
+      std::string audio_track_id = rtc::CreateRandomString(16);
+      audio_track_ = factory()->CreateAudioTrack(
+          audio_track_id,
+          factory()->CreateAudioSource(cricket::AudioOptions()).get());
     }
 
     ioc_.reset(new boost::asio::io_context(1));
@@ -66,6 +70,8 @@ class SDLSample : public std::enable_shared_from_this<SDLSample>,
     config.signaling_urls.push_back(config_.signaling_url);
     config.channel_id = config_.channel_id;
     config.multistream = config_.multistream;
+    config.video = config_.video;
+    config.audio = config_.audio;
     config.role = config_.role;
     config.video_codec_type = config_.video_codec_type;
     config.audio_codec_type = config_.audio_codec_type;
@@ -196,6 +202,8 @@ int main(int argc, char* argv[]) {
   app.add_option("--role", config.role, "Role")
       ->check(CLI::IsMember({"sendonly", "recvonly", "sendrecv"}))
       ->required();
+  app.add_option("--video", config.video, "Send video to sora (default: true)");
+  app.add_option("--audio", config.audio, "Send audio to sora (default: true)");
   app.add_option("--video-codec-type", config.video_codec_type,
                  "Video codec for send")
       ->check(CLI::IsMember({"", "VP8", "VP9", "AV1", "H264"}));
