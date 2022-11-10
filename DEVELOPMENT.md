@@ -53,7 +53,7 @@ sudo apt-get -y install cuda=10.2.89-1
 
 macOS で Lyra を利用するには、liblyra.so をカレントディレクトリに配置するか、`DYLD_LIBRARY_PATH` を指定して実行する必要がある。
 
-Ubuntu で Lyra を利用するには、liblyra.so をカレントディレクトリに配置するか、`LD_LIBRARY_PATH` を指定して実行する必要がある。
+Ubuntu で Lyra を利用するには、liblyra.so のあるディレクトリに `LD_LIBRARY_PATH` を指定して実行する必要がある。
 
 ## Lyra の開発環境切り替え
 
