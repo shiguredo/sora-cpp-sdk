@@ -26,6 +26,7 @@ struct SDLSampleConfig : sora::SoraDefaultClientConfig {
   boost::optional<bool> multistream;
   int width = 640;
   int height = 480;
+  boost::json::value metadata;
   bool show_me = false;
   bool fullscreen = false;
 };
@@ -76,6 +77,7 @@ class SDLSample : public std::enable_shared_from_this<SDLSample>,
     config.video_codec_type = config_.video_codec_type;
     config.audio_codec_type = config_.audio_codec_type;
     config.audio_codec_lyra_params = config_.audio_codec_lyra_params;
+    config.metadata = config_.metadata;
     conn_ = sora::SoraSignaling::Create(config);
 
     boost::asio::executor_work_guard<boost::asio::io_context::executor_type>
@@ -212,6 +214,10 @@ int main(int argc, char* argv[]) {
       ->check(CLI::IsMember({"", "OPUS", "LYRA"}));
   std::string audio_codec_lyra_params;
   app.add_option("--audio-codec-lyra-params", audio_codec_lyra_params,
+                 "Parameters used in the audio codec Lyra")
+      ->check(is_json);
+  std::string metadata;
+  app.add_option("--metadata", metadata,
                  "Signaling metadata used in connect message")
       ->check(is_json);
   add_optional_bool(app, "--multistream", config.multistream,
@@ -227,6 +233,11 @@ int main(int argc, char* argv[]) {
     app.parse(argc, argv);
   } catch (const CLI::ParseError& e) {
     exit(app.exit(e));
+  }
+
+  // メタデータのパース
+  if (!metadata.empty()) {
+    config.metadata = boost::json::parse(metadata);
   }
 
   if (log_level != rtc::LS_NONE) {
