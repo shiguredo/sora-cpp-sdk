@@ -214,7 +214,7 @@ int main(int argc, char* argv[]) {
       ->check(CLI::IsMember({"", "OPUS", "LYRA"}));
   std::string audio_codec_lyra_params;
   app.add_option("--audio-codec-lyra-params", audio_codec_lyra_params,
-                 "Signaling metadata used in connect message")
+                 "Parameters used in the audio codec Lyra")
       ->check(is_json);
   std::string metadata;
   app.add_option("--metadata", metadata,
