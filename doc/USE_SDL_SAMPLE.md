@@ -207,6 +207,8 @@ $ ./sdl_sample --signaling-url wss://sora.example.com/signaling --role sendrecv 
     - 未指定の場合は true が設定されます
 - `--audio` : 音声の利用 (true/false)
     - 未指定の場合は true が設定されます
+- `--metadata` : [メタデータ](https://sora-doc.shiguredo.jp/SIGNALING#414142)
+    - JSON 形式の文字列を指定してください
 
 #### SDL に関するオプション
 
