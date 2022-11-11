@@ -83,6 +83,8 @@ _build/macos_arm64/release/sdl_sample
 必要なパッケージをインストールしてください。
 
 ```shell
+$ sudo apt install libxext-dev
+$ sudo apt install libx11-dev
 $ sudo apt install libdrm-dev
 $ sudo apt install libva-dev
 $ sudo apt install pkg-config
@@ -109,6 +111,8 @@ _build/ubuntu-20.04_x86_64/release/sdl_sample/
 必要なパッケージをインストールしてください。
 
 ```shell
+$ sudo apt install libxext-dev
+$ sudo apt install libx11-dev
 $ sudo apt install libdrm-dev
 $ sudo apt install libva-dev
 $ sudo apt install pkg-config
