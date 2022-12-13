@@ -83,6 +83,8 @@ string(SUBSTRING "${WEBRTC_COMMIT}" 0 8 WEBRTC_COMMIT_SHORT)
 configure_file(src/version.gen.h.template ${CMAKE_CURRENT_BINARY_DIR}/version.gen.h)
 target_include_directories(sora PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_include_directories(sora PRIVATE ${CMAKE_SOURCE_DIR}/third_party/lyra)
+target_link_directories(sora PRIVATE ${CMAKE_SOURCE_DIR}/third_party/lyra/bazel-bin)
+
 
 target_sources(sora
   PRIVATE
@@ -134,6 +136,7 @@ target_link_libraries(sora
     WebRTC::webrtc
     Boost::json
     Boost::filesystem
+    lyra.lib
 )
 
 if (USE_LIBCXX)

@@ -32,6 +32,8 @@ function (init_target target)
   set_target_properties(${target} PROPERTIES CXX_STANDARD 17 C_STANDARD 17)
   set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE ON)
   target_link_libraries(${target} PRIVATE Sora::sora)
+  target_link_directories(${target} PRIVATE ${CMAKE_SOURCE_DIR}/../third_party/lyra/bazel-bin)
+  target_link_options(${target} PRIVATE /FORCE:MULTIPLE)
 
   if (USE_LIBCXX)
     target_compile_options(${target}

@@ -4,23 +4,25 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#if defined(LYRA_EXPORTS)
+//#if defined(LYRA_EXPORTS)
+//
+//#if defined(_WIN32)
+//#define DLL_INTERFACE __declspec(dllexport)
+//#else
+//#define DLL_INTERFACE
+//#endif
+//
+//#else
+//
+//#if defined(_WIN32)
+//#define DLL_INTERFACE __declspec(dllimport)
+//#else
+//#define DLL_INTERFACE
+//#endif
+//
+//#endif
 
-#if defined(_WIN32)
-#define DLL_INTERFACE __declspec(dllexport)
-#else
 #define DLL_INTERFACE
-#endif
-
-#else
-
-#if defined(_WIN32)
-#define DLL_INTERFACE __declspec(dllimport)
-#else
-#define DLL_INTERFACE
-#endif
-
-#endif
 
 extern "C" {
 

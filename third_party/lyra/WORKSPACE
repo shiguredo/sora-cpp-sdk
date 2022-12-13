@@ -39,7 +39,7 @@ http_archive(
 git_repository(
     name = "com_google_protobuf",
     remote = "https://github.com/protocolbuffers/protobuf.git",
-    tag = "v3.15.4",
+    tag = "v3.20.0-rc2",
 )
 
 load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
