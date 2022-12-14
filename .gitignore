@@ -4,7 +4,8 @@
 /_package
 /third_party/lyra/bazel-*
 /test/*.json
-/test/hello/build/
+/test/ios/build/
+/test/ios/hello/model_coeffs/
 /test/android/app/src/main/assets
 /test/android/app/src/main/jniLibs
 

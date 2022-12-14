@@ -1201,7 +1201,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
 
         if platform.target.package_name in ('windows_x86_64', 'macos_x86_64', 'macos_arm64',
                                             'ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64',
-                                            'ubuntu-20.04_armv8_jetson', 'android'):
+                                            'ubuntu-20.04_armv8_jetson', 'android', 'ios'):
             with cd(os.path.join('third_party', 'lyra')):
                 output_base = cmdcap(['bazel', 'info', 'output_base'])
                 print(f'bazel info output_base => {output_base}')
@@ -1243,7 +1243,16 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                     logging.info(f'ANDROID_HOME={os.environ["ANDROID_HOME"]}')
                     logging.info(f'ANDROID_NDK_HOME={os.environ["ANDROID_NDK_HOME"]}')
 
-                cmd(['bazel', 'build', *opts, ':lyra'])
+                if platform.target.package_name == 'ios':
+                    # iOS の場合は2回ビルドしてlipoで固める
+                    cmd(['bazel', 'build', *opts, '--config', 'ios_device', ':lyra'])
+                    cmd(['bazel', 'build', *opts, '--config', 'ios_simulator', ':lyra'])
+                    cfg = 'dbg' if debug else 'opt'
+                    cmd(['lipo', '-create', '-output', os.path.join('bazel-bin', 'liblyra.a'),
+                        os.path.join('bazel-out', f'ios_arm64-{cfg}', 'bin', 'liblyra.a'),
+                        os.path.join('bazel-out', f'ios_x86_64-{cfg}', 'bin', 'liblyra.a')])
+                else:
+                    cmd(['bazel', 'build', *opts, ':lyra'])
 
                 if platform.target.package_name == 'android':
                     if set_android_home:
@@ -1441,15 +1450,15 @@ def main():
         # Lyra の共有ライブラリとモデル係数ファイルをインストールする
         if platform.target.package_name in ('windows_x86_64', 'macos_x86_64', 'macos_arm64',
                                             'ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64',
-                                            'ubuntu-20.04_armv8_jetson', 'android'):
+                                            'ubuntu-20.04_armv8_jetson', 'android', 'ios'):
             mkdir_p(os.path.join(install_dir, 'sora', 'share', 'lyra'))
             if platform.target.package_name == 'windows_x86_64':
                 lyra_dll_src = os.path.join(BASE_DIR, 'third_party', 'lyra', 'bazel-bin', 'lyra.dll')
                 lyra_dll_dst = os.path.join(install_dir, 'sora', 'share', 'lyra', 'lyra.dll')
                 model_dst = os.path.join(install_dir, 'sora', 'share', 'lyra', 'model_coeffs')
             else:
-                lyra_dll_src = os.path.join(BASE_DIR, 'third_party', 'lyra', 'bazel-bin', 'liblyra.so')
-                lyra_dll_dst = os.path.join(install_dir, 'sora', 'share', 'lyra', 'liblyra.so')
+                lyra_dll_src = os.path.join(BASE_DIR, 'third_party', 'lyra', 'bazel-bin', 'liblyra.a')
+                lyra_dll_dst = os.path.join(install_dir, 'sora', 'share', 'lyra', 'liblyra.a')
                 model_dst = os.path.join(install_dir, 'sora', 'share', 'lyra', 'model_coeffs')
             rm_rf(model_dst)
             shutil.copyfile(lyra_dll_src, lyra_dll_dst)
@@ -1474,6 +1483,15 @@ def main():
             #      '-arch', 'arm64',
             #      '-sdk', 'iphoneos',
             #      '-configuration', 'Release'])
+
+            # Lyra テストのビルド先のディレクトリに
+            # Lyra のモデル係数ファイルをコピーする
+            with cd(os.path.join(BASE_DIR, 'third_party', 'lyra')):
+                output_base = cmdcap(['bazel', 'info', 'output_base'])
+            model_src = os.path.join(output_base, 'external', 'lyra', 'model_coeffs')
+            model_dst = os.path.join(BASE_DIR, 'test', 'ios', 'hello', 'model_coeffs')
+            rm_rf(model_dst)
+            shutil.copytree(model_src, model_dst)
         elif platform.target.os == 'android':
             # Android の場合は事前に用意したプロジェクトをビルドする
             with cd(os.path.join(BASE_DIR, 'test', 'android')):

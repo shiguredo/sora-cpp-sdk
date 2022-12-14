@@ -3,6 +3,7 @@ load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain", "use_c
 def _cc_static_library_impl(ctx):
     cc_toolchain = find_cpp_toolchain(ctx)
     windows_constraint = ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]
+    macos_constraint = ctx.attr._macos_constraint[platform_common.ConstraintValueInfo]
 
     if ctx.target_platform_has_constraint(windows_constraint):
         output = ctx.actions.declare_file("{}.lib".format(ctx.attr.name))
@@ -33,6 +34,8 @@ def _cc_static_library_impl(ctx):
 
     if ctx.target_platform_has_constraint(windows_constraint):
         command = "\"{0}\" /OUT:{1} {2}".format(ar_path, output.path, " ".join(lib_paths))
+    elif ctx.target_platform_has_constraint(macos_constraint):
+        command = '"{0}" -static -o {1} {2}'.format('libtool', output.path, " ".join(lib_paths))
     else:
         command = 'echo "CREATE {1}\n{2}\nSAVE\nEND\n" | "{0}" -M'.format(ar_path, output.path, "\n".join(["ADDLIB " + path for path in lib_paths]))
 
@@ -57,6 +60,7 @@ cc_static_library = rule(
             default = "@bazel_tools//tools/cpp:current_cc_toolchain",
         ),
         '_windows_constraint': attr.label(default = "@platforms//os:windows"),
+        '_macos_constraint': attr.label(default = "@platforms//os:macos"),
     },
     toolchains = use_cpp_toolchain(),
     incompatible_use_toolchain_transition = True,
