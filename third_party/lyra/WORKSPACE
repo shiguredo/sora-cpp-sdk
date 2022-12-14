@@ -5,6 +5,12 @@ git_repository(
     name = "lyra",
     remote = "https://github.com/google/lyra.git",
     tag = "v1.3.0",
+    patches = [
+        "@//:lyra.patch"
+    ],
+    patch_args = [
+        "-p1",
+    ]
 )
 
 # Google logging
@@ -36,12 +42,10 @@ http_archive(
 # proto_library, cc_proto_library, and java_proto_library rules implicitly
 # depend on @com_google_protobuf for protoc and proto runtimes.
 # This statement defines the @com_google_protobuf repo.
-git_repository(
+local_repository(
     name = "com_google_protobuf",
-    remote = "https://github.com/protocolbuffers/protobuf.git",
-    tag = "v3.20.0-rc2",
+    path = "third_party/protobuf",
 )
-
 load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 protobuf_deps()
 

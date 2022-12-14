@@ -3,6 +3,7 @@
 /_source
 /_package
 /third_party/lyra/bazel-*
+/third_party/lyra/third_party/
 /test/*.json
 /test/ios/build/
 /test/ios/hello/model_coeffs/

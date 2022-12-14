@@ -28,7 +28,7 @@ def _cc_static_library_impl(ctx):
     lib_paths = [lib.path for lib in libs]
 
     # WebRTC とコンフリクトしてるやつは除ける（WebRTC 側を優先する）
-    #lib_paths = [path for path in lib_paths if 'protobuf.lib' not in path]
+    lib_paths = [path for path in lib_paths if 'com_google_protobuf' not in path]
 
     ar_path = cc_toolchain.ar_executable
 

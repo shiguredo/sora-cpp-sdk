@@ -60,6 +60,25 @@ def cmdcap(args, **kwargs):
     return cmd(args, **kwargs).stdout.strip()
 
 
+# https://stackoverflow.com/a/2656405
+def onerror(func, path, exc_info):
+    """
+    Error handler for ``shutil.rmtree``.
+    If the error is due to an access error (read only file)
+    it attempts to add write permission and then retries.
+    If the error is for another reason it re-raises the error.
+
+    Usage : ``shutil.rmtree(path, onerror=onerror)``
+    """
+    import stat
+    # Is the error an access error?
+    if not os.access(path, os.W_OK):
+        os.chmod(path, stat.S_IWUSR)
+        func(path)
+    else:
+        raise
+
+
 def rm_rf(path: str):
     if not os.path.exists(path):
         logging.debug(f'rm -rf {path} => path not found')
@@ -68,7 +87,7 @@ def rm_rf(path: str):
         os.remove(path)
         logging.debug(f'rm -rf {path} => file removed')
     if os.path.isdir(path):
-        shutil.rmtree(path)
+        shutil.rmtree(path, onerror=onerror)
         logging.debug(f'rm -rf {path} => directory removed')
 
 
@@ -1205,6 +1224,14 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             with cd(os.path.join('third_party', 'lyra')):
                 output_base = cmdcap(['bazel', 'info', 'output_base'])
                 print(f'bazel info output_base => {output_base}')
+
+                # protobuf のバージョンを揃えるために、WebRTC の third_party を利用する
+                if (not os.path.exists('third_party')):
+                    git_clone_shallow(
+                        webrtc_version['WEBRTC_SRC_THIRD_PARTY_URL'],
+                        webrtc_version['WEBRTC_SRC_THIRD_PARTY_COMMIT'],
+                        'third_party')
+
                 if platform.target.os == 'windows':
                     # ローカルの bash を使うとビルドに失敗してしまったので、
                     # git-bash を利用して lyra をビルドする
@@ -1453,15 +1480,10 @@ def main():
                                             'ubuntu-20.04_armv8_jetson', 'android', 'ios'):
             mkdir_p(os.path.join(install_dir, 'sora', 'share', 'lyra'))
             if platform.target.package_name == 'windows_x86_64':
-                lyra_dll_src = os.path.join(BASE_DIR, 'third_party', 'lyra', 'bazel-bin', 'lyra.dll')
-                lyra_dll_dst = os.path.join(install_dir, 'sora', 'share', 'lyra', 'lyra.dll')
                 model_dst = os.path.join(install_dir, 'sora', 'share', 'lyra', 'model_coeffs')
             else:
-                lyra_dll_src = os.path.join(BASE_DIR, 'third_party', 'lyra', 'bazel-bin', 'liblyra.a')
-                lyra_dll_dst = os.path.join(install_dir, 'sora', 'share', 'lyra', 'liblyra.a')
                 model_dst = os.path.join(install_dir, 'sora', 'share', 'lyra', 'model_coeffs')
             rm_rf(model_dst)
-            shutil.copyfile(lyra_dll_src, lyra_dll_dst)
             with cd(os.path.join(BASE_DIR, 'third_party', 'lyra')):
                 output_base = cmdcap(['bazel', 'info', 'output_base'])
             model_src = os.path.join(output_base, 'external', 'lyra', 'model_coeffs')
@@ -1498,14 +1520,10 @@ def main():
                 cmd(['./gradlew', '--no-daemon', 'assemble'])
 
                 # Lyra テストのビルド先のディレクトリに
-                # Lyra の共有ライブラリとモデル係数ファイルをコピーする
-                lyra_dll_src = os.path.join(BASE_DIR, 'third_party', 'lyra', 'bazel-bin', 'liblyra.so')
-                lyra_dll_dst = os.path.join('app', 'src', 'main', 'jniLibs', 'arm64-v8a', 'liblyra.so')
+                # Lyra のモデル係数ファイルをコピーする
                 model_dst = os.path.join('app', 'src', 'main', 'assets')
                 rm_rf(model_dst)
                 mkdir_p(os.path.dirname(model_dst))
-                mkdir_p(os.path.dirname(lyra_dll_dst))
-                shutil.copyfile(lyra_dll_src, lyra_dll_dst)
                 with cd(os.path.join(BASE_DIR, 'third_party', 'lyra')):
                     output_base = cmdcap(['bazel', 'info', 'output_base'])
                 model_src = os.path.join(output_base, 'external', 'lyra', 'model_coeffs')
@@ -1575,22 +1593,16 @@ def main():
                 cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])
 
                 # Lyra テストのビルド先のディレクトリに
-                # Lyra の共有ライブラリとモデル係数ファイルをコピーする
+                # Lyra のモデル係数ファイルをコピーする
                 if platform.target.package_name in ('windows_x86_64', 'macos_x86_64', 'macos_arm64',
                                                     'ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64',
                                                     'ubuntu-20.04_armv8_jetson', 'android'):
                     if platform.target.package_name == 'windows_x86_64':
-                        lyra_dll_src = os.path.join(BASE_DIR, 'third_party', 'lyra', 'bazel-bin', 'lyra.dll')
-                        lyra_dll_dst = os.path.join(test_build_dir, configuration, 'lyra.dll')
                         model_dst = os.path.join(test_build_dir, configuration, 'model_coeffs')
                     else:
-                        lyra_dll_src = os.path.join(BASE_DIR, 'third_party', 'lyra', 'bazel-bin', 'liblyra.so')
-                        lyra_dll_dst = os.path.join(test_build_dir, 'liblyra.so')
                         model_dst = os.path.join(test_build_dir, 'model_coeffs')
                     rm_rf(model_dst)
                     mkdir_p(os.path.dirname(model_dst))
-                    mkdir_p(os.path.dirname(lyra_dll_dst))
-                    shutil.copyfile(lyra_dll_src, lyra_dll_dst)
                     with cd(os.path.join(BASE_DIR, 'third_party', 'lyra')):
                         output_base = cmdcap(['bazel', 'info', 'output_base'])
                     model_src = os.path.join(output_base, 'external', 'lyra', 'model_coeffs')
