@@ -1255,6 +1255,10 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                     os.environ['BAZEL_WEBRTC_LIBRARY_DIR'] = webrtc_info.webrtc_library_dir
                 if platform.target.package_name == 'ubuntu-20.04_armv8_jetson':
                     opts += ['--config', 'jetson']
+                    os.environ['BAZEL_SYSROOT'] = os.path.join(install_dir, 'rootfs')
+                    os.environ['BAZEL_LLVM_DIR'] = os.path.join(install_dir, 'llvm')
+                    os.environ['BAZEL_WEBRTC_INCLUDE_DIR'] = webrtc_info.webrtc_include_dir
+                    os.environ['BAZEL_WEBRTC_LIBRARY_DIR'] = webrtc_info.webrtc_library_dir
                 if platform.target.package_name == 'macos_arm64':
                     opts += ['--config', 'macos_arm64']
                 if platform.target.package_name == 'android':

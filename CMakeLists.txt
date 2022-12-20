@@ -133,7 +133,7 @@ endif()
 
 target_link_libraries(sora
   PUBLIC
-    lyra.lib
+    liblyra.a
     WebRTC::webrtc
     Boost::json
     Boost::filesystem
