@@ -135,3 +135,6 @@ workspace()
 
 load("@org_tensorflow//tensorflow:workspace2.bzl", workspace2 = "workspace")
 workspace2()
+
+load("//:toolchain/linux_x86_64/webrtc_clang_toolchain_configure.bzl", "webrtc_clang_toolchain_configure")
+webrtc_clang_toolchain_configure(name = "webrtc_clang_toolchain", src = "@//:toolchain/linux_x86_64/BUILD.tpl")
