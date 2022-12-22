@@ -20,7 +20,7 @@ cc_toolchain_config(
     abi_version = "local",
     abi_libc_version = "local",
     cxx_builtin_include_directories = [
-        "%{llvm_dir}/clang/lib/clang/16.0.0/include",
+        "%{llvm_dir}/clang/lib/clang/%{clang_version}/include",
         "/usr/include/x86_64-linux-gnu",
         "/usr/include",
         "%{llvm_dir}/libcxx/include",
@@ -138,7 +138,7 @@ cc_toolchain_config(
     abi_version = "local",
     abi_libc_version = "local",
     cxx_builtin_include_directories = [
-        "%{llvm_dir}/clang/lib/clang/16.0.0/include",
+        "%{llvm_dir}/clang/lib/clang/%{clang_version}/include",
         "%{sysroot}/usr/include/aarch64-linux-gnu",
         "%{sysroot}/usr/include",
         "/usr/include/aarch64-linux-gnu",

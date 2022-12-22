@@ -801,6 +801,32 @@ def get_build_platform() -> PlatformTarget:
     return PlatformTarget(os, osver, arch)
 
 
+def get_clang_version(clang):
+    version_str = cmdcap([clang, '--version'])
+
+    # version_str は以下のような文字列になっているので、ここからバージョンを取る
+    #
+    # clang version 16.0.0 (...)
+    # Target: x86_64-unknown-linux-gnu
+    # Thread model: posix
+    # InstalledDir: /path/to/clang/bin
+    #
+    # Android 版だと以下のような文字列になっている
+    #
+    # Android (8490178, based on r450784d) clang version 14.0.6 (...)
+    # Target: aarch64-unknown-linux-android29
+    # Thread model: posix
+    # InstalledDir: /path/to/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/bin
+
+    # clang version の次の文字列を取る
+    xs = version_str.split('\n')[0].split(' ')
+    for i in range(2, len(xs)):
+        if xs[i - 2] == 'clang' and xs[i - 1] == 'version':
+            return xs[i]
+
+    raise Exception('Failed to get clang version')
+
+
 SUPPORTED_BUILD_OS = [
     'windows',
     'macos',
@@ -1250,11 +1276,15 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                     opts += ['--features', 'static_link_msvcrt']
                 if platform.target.package_name in ('ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64'):
                     opts += ['--config', 'linux_x86_64']
+                    os.environ['CLANG_VERSION'] = get_clang_version(
+                        os.path.join(install_dir, 'llvm', 'clang', 'bin', 'clang'))
                     os.environ['BAZEL_LLVM_DIR'] = os.path.join(install_dir, 'llvm')
                     os.environ['BAZEL_WEBRTC_INCLUDE_DIR'] = webrtc_info.webrtc_include_dir
                     os.environ['BAZEL_WEBRTC_LIBRARY_DIR'] = webrtc_info.webrtc_library_dir
                 if platform.target.package_name == 'ubuntu-20.04_armv8_jetson':
                     opts += ['--config', 'jetson']
+                    os.environ['CLANG_VERSION'] = get_clang_version(
+                        os.path.join(install_dir, 'llvm', 'clang', 'bin', 'clang'))
                     os.environ['BAZEL_SYSROOT'] = os.path.join(install_dir, 'rootfs')
                     os.environ['BAZEL_LLVM_DIR'] = os.path.join(install_dir, 'llvm')
                     os.environ['BAZEL_WEBRTC_INCLUDE_DIR'] = webrtc_info.webrtc_include_dir
@@ -1263,20 +1293,15 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                     opts += ['--config', 'macos_arm64']
                 if platform.target.package_name == 'android':
                     opts += ['--config', 'android_arm64']
-                    if 'ANDROID_SDK_ROOT' in os.environ:
-                        android_sdk_root = os.environ['ANDROID_SDK_ROOT']
-                    else:
-                        android_sdk_root = os.path.join(install_dir, 'android-sdk-cmdline-tools')
 
-                    set_android_home = False
-                    if 'ANDROID_HOME' not in os.environ:
-                        os.environ['ANDROID_HOME'] = android_sdk_root
-                        set_android_home = True
+                    os.environ['ANDROID_NDK_HOME'] = os.path.join(install_dir, 'android-ndk')
+                    os.environ['ANDROID_API'] = version['ANDROID_NATIVE_API_LEVEL']
+                    os.environ['CLANG_VERSION'] = get_clang_version(os.path.join(
+                        install_dir, 'android-ndk', 'toolchains', 'llvm', 'prebuilt', 'linux-x86_64', 'bin', 'clang'))
+                    os.environ['BAZEL_LLVM_DIR'] = os.path.join(install_dir, 'llvm')
+                    os.environ['BAZEL_WEBRTC_INCLUDE_DIR'] = webrtc_info.webrtc_include_dir
+                    os.environ['BAZEL_WEBRTC_LIBRARY_DIR'] = webrtc_info.webrtc_library_dir
 
-                    old_android_ndk_home = os.environ.get('ANDROID_NDK_HOME')
-                    os.environ['ANDROID_NDK_HOME'] = os.path.join(android_sdk_root, 'ndk', NDK_VERSION)
-
-                    logging.info(f'ANDROID_HOME={os.environ["ANDROID_HOME"]}')
                     logging.info(f'ANDROID_NDK_HOME={os.environ["ANDROID_NDK_HOME"]}')
 
                 if platform.target.package_name == 'ios':
@@ -1289,13 +1314,6 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                         os.path.join('bazel-out', f'ios_x86_64-{cfg}', 'bin', 'liblyra.a')])
                 else:
                     cmd(['bazel', 'build', *opts, ':lyra'])
-
-                if platform.target.package_name == 'android':
-                    if set_android_home:
-                        del os.environ['ANDROID_HOME']
-                    del os.environ['ANDROID_NDK_HOME']
-                    if old_android_ndk_home is not None:
-                        os.environ['ANDROID_NDK_HOME'] = old_android_ndk_home
 
 
 AVAILABLE_TARGETS = ['windows_x86_64', 'macos_x86_64', 'macos_arm64', 'ubuntu-20.04_x86_64',
