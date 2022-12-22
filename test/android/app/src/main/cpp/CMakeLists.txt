@@ -25,6 +25,7 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE NEVER)
 find_package(Boost REQUIRED COMPONENTS json filesystem)
 find_package(WebRTC REQUIRED)
 find_package(Sora REQUIRED)
+find_package(Lyra REQUIRED)
 find_package(Threads REQUIRED)
 
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
@@ -38,7 +39,6 @@ add_library(hello
     ../../../../../hello.cpp
 )
 
-target_link_directories(hello PRIVATE ${CMAKE_SOURCE_DIR}/../../../../../../third_party/lyra/bazel-bin)
 target_link_libraries(hello PRIVATE Sora::sora)
 
 target_compile_options(hello

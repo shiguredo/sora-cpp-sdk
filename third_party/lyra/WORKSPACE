@@ -1,16 +1,9 @@
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository", "new_git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-git_repository(
+local_repository(
     name = "lyra",
-    remote = "https://github.com/google/lyra.git",
-    tag = "v1.3.0",
-    patches = [
-        "@//:lyra.patch"
-    ],
-    patch_args = [
-        "-p1",
-    ]
+    path = "lyra",
 )
 
 # Google logging
@@ -25,12 +18,6 @@ git_repository(
     remote = "https://github.com/mchinen/gflags.git",
     branch = "android_linking_fix"
 )
-
-load("//:android_configure.bzl", "android_configure")
-android_configure(name = "local_config_android")
-
-load("@local_config_android//:android_configure.bzl", "android_workspace")
-android_workspace()
 
 http_archive(
     name = "rules_android",
@@ -114,7 +101,7 @@ git_repository(
     # Below is reproducible and equivalent to `tag = "v2.9.0"`
     commit = "8a20d54a3c1bfa38c03ea99a2ad3c1b0a45dfa95",
     shallow_since = "1652465115 -0700",
-    patches = ["//:android_tensorflow.patch"],
+    patches = ["//:patches/android_tensorflow.patch"],
     patch_args = ["-p1"]
 )
 
@@ -140,16 +127,16 @@ tf_http_archive(
     sha256 = "7e9ad45391e5158fd00e816022bda21d54a6180788af7c455c864a78cee252c6",
     strip_prefix = "XNNPACK-11b2812d64e49bab9b6c489f79067fc94e69db9f",
     urls = tf_mirror_urls("https://github.com/google/XNNPACK/archive/11b2812d64e49bab9b6c489f79067fc94e69db9f.zip"),
-    patch_file = ["@//:android_xnnpack.patch"]
+    patch_file = ["@//:patches/android_xnnpack.patch"]
 )
 
-load("@org_tensorflow//tensorflow:workspace3.bzl", "workspace")
-workspace()
+load("@org_tensorflow//tensorflow:workspace3.bzl", workspace3 = "workspace")
+workspace3()
 
 load("@org_tensorflow//tensorflow:workspace2.bzl", workspace2 = "workspace")
 workspace2()
 
-load("//:toolchain/linux_x86_64/webrtc_clang_toolchain_configure.bzl", "webrtc_clang_toolchain_configure")
+load("//:toolchain/linux_x86_64/toolchain_configure.bzl", "webrtc_clang_toolchain_configure")
 webrtc_clang_toolchain_configure(name = "webrtc_clang_toolchain", src = "@//:toolchain/linux_x86_64/BUILD.tpl")
 
 load("//:toolchain/android/toolchain_configure.bzl", "android_toolchain_configure")

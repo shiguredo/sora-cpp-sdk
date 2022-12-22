@@ -1,6 +1,7 @@
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain", "use_cpp_toolchain")
 
-def _cc_static_library_impl(ctx):
+# 依存するオブジェクトファイルを集めて静的ライブラリを作る
+def _impl(ctx):
     cc_toolchain = find_cpp_toolchain(ctx)
     windows_constraint = ctx.attr._windows_constraint[platform_common.ConstraintValueInfo]
     macos_constraint = ctx.attr._macos_constraint[platform_common.ConstraintValueInfo]
@@ -53,7 +54,7 @@ def _cc_static_library_impl(ctx):
     ]
 
 cc_static_library = rule(
-    implementation = _cc_static_library_impl,
+    implementation = _impl,
     attrs = {
         "deps": attr.label_list(),
         "_cc_toolchain": attr.label(
