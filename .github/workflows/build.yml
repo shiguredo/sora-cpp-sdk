@@ -57,7 +57,8 @@ jobs:
         if: steps.cache-cuda.outputs.cache-hit == 'true'
       - run: pip install numpy
       - run: python3 run.py --test --package ${{ matrix.name }}
-        env: SORA_CPP_SDK_TEMP_DIR=C:\
+        env:
+          SORA_CPP_SDK_TEMP_DIR: C:\
       - name: Get package name
         run: |
           Get-Content "_package\${{ matrix.name }}\release\sora.env" | Foreach-Object {
