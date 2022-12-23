@@ -19,43 +19,31 @@ jobs:
     runs-on: windows-2019
     steps:
       - uses: actions/checkout@v3
-      - name: Disk Cleanup
-        run: |
-          Get-PSDrive
-          # Cache 済み Docker Image の削除
-          docker rmi $(docker images -q -a)
-          # Android SDK の削除
-          if ($Env:ANDROID_HOME) {
-            Remove-Item -Recurse -Force $Env:ANDROID_HOME -ErrorAction Ignore
-          }
-          if ($Env:ANDROID_NDK_HOME) {
-            Remove-Item -Recurse -Force $Env:ANDROID_NDK_HOME -ErrorAction Ignore
-          }
-          # JVM の削除
-          if ($Env:JAVA_HOME_11_X64) {
-            Remove-Item -Recurse -Force $Env:JAVA_HOME_11_X64 -ErrorAction Ignore
-          }
-          if ($Env:JAVA_HOME_8_X64) {
-            Remove-Item -Recurse -Force $Env:JAVA_HOME_8_X64 -ErrorAction Ignore
-          }
-          Get-PSDrive
+      # D:\ の容量が足りないので C:\ にコピーしてそこで作業する
+      - name: Copy working directory
+        run: Copy-Item -Recurse ..\sora-cpp-sdk C:\sora-cpp-sdk
       - uses: microsoft/setup-msbuild@v1.1
+        working-directory: C:\sora-cpp-sdk
       - name: Env to output
+        working-directory: C:\sora-cpp-sdk
         run: |
           echo "userprofile=${Env:USERPROFILE}" >> ${Env:GITHUB_OUTPUT}
           echo "username=${Env:USERNAME}" >> ${Env:GITHUB_OUTPUT}
         id: env
       - name: Bazel cache (cache)
+        working-directory: C:\sora-cpp-sdk
         uses: actions/cache@v3
         with:
           path: "${{ steps.env.outputs.userprofile }}/_bazel_${{ steps.env.outputs.username }}/cache"
           key: bazel-cache-${{ matrix.name }}-v1
       - name: Bazel cache (install)
+        working-directory: C:\sora-cpp-sdk
         uses: actions/cache@v3
         with:
           path: "${{ steps.env.outputs.userprofile }}/_bazel_${{ steps.env.outputs.username }}/install"
           key: bazel-install-${{ matrix.name }}-v1
       - name: Get Versions
+        working-directory: C:\sora-cpp-sdk
         run: |
           Get-Content "VERSION" | Foreach-Object {
             if (!$_) { continue }
@@ -68,6 +56,7 @@ jobs:
       # ビルドの度に取得するのはつらいのでキャッシュする
       # （インストールする nvcc は解凍後で 100MB 程度なのでキャッシュ可能）
       - name: Cache NVCC ${{ steps.versions.outputs.cuda_version }}
+        working-directory: C:\sora-cpp-sdk
         id: cache-cuda
         uses: actions/cache@v3
         with:
@@ -75,9 +64,13 @@ jobs:
           key: windows-cuda-${{ steps.versions.outputs.cuda_version }}.v1
       - run: echo "${CUDA_VERSION}" > _install\windows_x86_64\release\cuda.version
         if: steps.cache-cuda.outputs.cache-hit == 'true'
+        working-directory: C:\sora-cpp-sdk
       - run: pip install numpy
+        working-directory: C:\sora-cpp-sdk
       - run: python3 run.py --test --package ${{ matrix.name }}
+        working-directory: C:\sora-cpp-sdk
       - name: Get package name
+        working-directory: C:\sora-cpp-sdk
         run: |
           Get-Content "_package\${{ matrix.name }}\release\sora.env" | Foreach-Object {
             if (!$_) { continue }
@@ -89,21 +82,25 @@ jobs:
           echo "lyra_name=${LYRA_PACKAGE_NAME}" >> ${Env:GITHUB_OUTPUT}
         id: package_name
       - name: Upload Artifact
+        working-directory: C:\sora-cpp-sdk
         uses: actions/upload-artifact@v3
         with:
           name: ${{ steps.package_name.outputs.name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.name }}
       - name: Upload Boost Artifact
+        working-directory: C:\sora-cpp-sdk
         uses: actions/upload-artifact@v3
         with:
           name: ${{ steps.package_name.outputs.boost_name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.boost_name }}
       - name: Upload Lyra Artifact
+        working-directory: C:\sora-cpp-sdk
         uses: actions/upload-artifact@v3
         with:
           name: ${{ steps.package_name.outputs.lyra_name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.lyra_name }}
       - name: Upload Environment
+        working-directory: C:\sora-cpp-sdk
         uses: actions/upload-artifact@v3
         with:
           name: ${{ matrix.name }}.env
