@@ -770,7 +770,7 @@ def install_lyra(version, install_dir, base_dir, debug, target, webrtc_version, 
                         'third_party')
                     shutil.copytree(
                         os.path.join(temp_dir, 'third_party', 'protobuf'),
-                        os.path.join(base_dir, 'third_party', 'protobuf'))
+                        os.path.join(base_dir, 'third_party', 'lyra', 'third_party', 'protobuf'))
 
         # Lyra のバージョンを WORKSPACE で指定するのが難しいので、ここで clone してやる
         if not os.path.exists('lyra'):
