@@ -745,20 +745,32 @@ def install_vpl(version, configuration, source_dir, build_dir, install_dir, cmak
 
 
 @versioned
-def install_lyra(version, install_dir, debug, target, webrtc_version, webrtc_info, api_level):
+def install_lyra(version, install_dir, base_dir, debug, target, webrtc_version, webrtc_info, api_level, temp_dir):
     lyra_install_dir = os.path.join(install_dir, 'lyra')
     rm_rf(lyra_install_dir)
 
-    with cd(os.path.join('third_party', 'lyra')):
+    with cd(os.path.join(base_dir, 'third_party', 'lyra')):
         output_base = cmdcap(['bazel', 'info', 'output_base'])
         print(f'bazel info output_base => {output_base}')
 
         # protobuf のバージョンを揃えるために、WebRTC の third_party を利用する
         if not os.path.exists('third_party'):
-            git_clone_shallow(
-                webrtc_version['WEBRTC_SRC_THIRD_PARTY_URL'],
-                webrtc_version['WEBRTC_SRC_THIRD_PARTY_COMMIT'],
-                'third_party')
+            if temp_dir is None:
+                git_clone_shallow(
+                    webrtc_version['WEBRTC_SRC_THIRD_PARTY_URL'],
+                    webrtc_version['WEBRTC_SRC_THIRD_PARTY_COMMIT'],
+                    'third_party')
+            else:
+                # temp_dir が指定されている場合は、そこに clone してから必要な部分だけコピーする
+                mkdir_p('third_party')
+                with cd(temp_dir):
+                    git_clone_shallow(
+                        webrtc_version['WEBRTC_SRC_THIRD_PARTY_URL'],
+                        webrtc_version['WEBRTC_SRC_THIRD_PARTY_COMMIT'],
+                        'third_party')
+                    shutil.copytree(
+                        os.path.join(temp_dir, 'third_party', 'protobuf'),
+                        os.path.join(base_dir, 'third_party', 'protobuf'))
 
         # Lyra のバージョンを WORKSPACE で指定するのが難しいので、ここで clone してやる
         if not os.path.exists('lyra'):
@@ -1350,11 +1362,14 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             'version': version['LYRA_VERSION'],
             'version_file': os.path.join(install_dir, 'lyra.version'),
             'install_dir': install_dir,
+            'base_dir': BASE_DIR,
             'debug': debug,
             'target': platform.target.package_name,
             'webrtc_version': webrtc_version,
             'webrtc_info': webrtc_info,
-            'api_level': version['ANDROID_NATIVE_API_LEVEL']
+            'api_level': version['ANDROID_NATIVE_API_LEVEL'],
+            # run.py の引数から拾ってくるのが面倒なので環境変数を使う
+            'temp_dir': os.environ.get('SORA_CPP_SDK_TEMP_DIR'),
         }
         install_lyra(**install_lyra_args)
 
