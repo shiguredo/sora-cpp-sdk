@@ -1562,6 +1562,13 @@ def main():
 
     if args.test:
         if platform.target.os == 'ios':
+            # Lyra テストのディレクトリに
+            # Lyra のモデル係数ファイルをコピーする
+            model_src = os.path.join(install_dir, 'lyra', 'share', 'model_coeffs')
+            model_dst = os.path.join(BASE_DIR, 'test', 'ios', 'hello', 'model_coeffs')
+            rm_rf(model_dst)
+            shutil.copytree(model_src, model_dst)
+
             # iOS の場合は事前に用意したプロジェクトをビルドする
             cmd(['xcodebuild', 'build',
                 '-project', 'test/ios/hello.xcodeproj',
@@ -1576,13 +1583,6 @@ def main():
             #      '-arch', 'arm64',
             #      '-sdk', 'iphoneos',
             #      '-configuration', 'Release'])
-
-            # Lyra テストのビルド先のディレクトリに
-            # Lyra のモデル係数ファイルをコピーする
-            model_src = os.path.join(install_dir, 'lyra', 'share', 'model_coeffs')
-            model_dst = os.path.join(BASE_DIR, 'test', 'ios', 'hello', 'model_coeffs')
-            rm_rf(model_dst)
-            shutil.copytree(model_src, model_dst)
         elif platform.target.os == 'android':
             # Android の場合は事前に用意したプロジェクトをビルドする
             with cd(os.path.join(BASE_DIR, 'test', 'android')):
