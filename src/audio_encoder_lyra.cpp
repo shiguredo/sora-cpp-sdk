@@ -14,7 +14,8 @@
 #include <modules/audio_coding/audio_network_adaptor/controller_manager.h>
 #include <rtc_base/logging.h>
 
-#include "sora/dyn/lyra.h"
+// Lyra
+#include <lyra.h>
 
 struct lyra_encoder;
 
@@ -133,24 +134,20 @@ class AudioEncoderLyraImpl final : public AudioEncoder {
 
 void AudioEncoderLyraImpl::AppendSupportedEncoders(
     std::vector<AudioCodecSpec>* specs) {
-  if (!dyn::DynModule::IsLoadable(dyn::LYRA_SO)) {
-    RTC_LOG(LS_WARNING) << "Lyra is not supported";
-    return;
-  }
   auto path = boost::dll::program_location().parent_path() / "model_coeffs";
   std::string dir = path.string();
   auto env = std::getenv("SORA_LYRA_MODEL_COEFFS_PATH");
   if (env != NULL) {
     dir = env;
   }
-  auto encoder = dyn::lyra_encoder_create(
+  auto encoder = lyra_encoder_create(
       48000, 1, sora::AudioEncoderLyraConfig::kMinBitrateBps, false,
       dir.c_str());
   if (encoder == nullptr) {
     RTC_LOG(LS_WARNING) << "Failed to Create Lyra encoder: model_path=" << dir;
     return;
   }
-  dyn::lyra_encoder_destroy(encoder);
+  lyra_encoder_destroy(encoder);
 
   const SdpAudioFormat fmt = {"lyra", kRtpTimestampRateHz, 1, {}};
   const AudioCodecInfo info = QueryAudioEncoder(*SdpToConfig(fmt));
@@ -227,7 +224,7 @@ AudioEncoderLyraImpl::AudioEncoderLyraImpl(
 }
 AudioEncoderLyraImpl::~AudioEncoderLyraImpl() {
   if (inst_)
-    dyn::lyra_encoder_destroy(inst_);
+    lyra_encoder_destroy(inst_);
 }
 
 int AudioEncoderLyraImpl::SampleRateHz() const {
@@ -364,13 +361,13 @@ AudioEncoder::EncodedInfo AudioEncoderLyraImpl::EncodeImpl(
   EncodedInfo info;
   info.encoded_bytes = encoded->AppendData(
       max_encoded_bytes, [&](rtc::ArrayView<uint8_t> encoded) {
-        auto v = dyn::lyra_encoder_encode(
+        auto v = lyra_encoder_encode(
             inst_, &input_buffer_[0],
             rtc::CheckedDivExact(input_buffer_.size(), config_.num_channels));
-        auto size = dyn::lyra_vector_u8_get_size(v);
-        auto p = dyn::lyra_vector_u8_get_data(v);
+        auto size = lyra_vector_u8_get_size(v);
+        auto p = lyra_vector_u8_get_data(v);
         std::memcpy(encoded.data(), p, size);
-        dyn::lyra_vector_u8_destroy(v);
+        lyra_vector_u8_destroy(v);
         return size;
       });
   input_buffer_.clear();
@@ -423,7 +420,7 @@ bool AudioEncoderLyraImpl::RecreateEncoderInstance(
     return false;
   config_ = config;
   if (inst_)
-    dyn::lyra_encoder_destroy(inst_);
+    lyra_encoder_destroy(inst_);
   input_buffer_.clear();
   input_buffer_.reserve(Num10msFramesPerPacket() * SamplesPer10msFrame());
   const int bitrate = config.bitrate_bps;
@@ -433,8 +430,8 @@ bool AudioEncoderLyraImpl::RecreateEncoderInstance(
   if (env != NULL) {
     dir = env;
   }
-  inst_ = dyn::lyra_encoder_create(config.sample_rate_hz, config.num_channels,
-                                   bitrate, config.dtx_enabled, dir.c_str());
+  inst_ = lyra_encoder_create(config.sample_rate_hz, config.num_channels,
+                              bitrate, config.dtx_enabled, dir.c_str());
   RTC_LOG(LS_INFO) << "Created Lyra encoder: sample_rate_hz="
                    << config.sample_rate_hz
                    << " num_channels=" << config.num_channels

@@ -23,6 +23,7 @@ endif()
 
 find_package(Boost REQUIRED COMPONENTS json filesystem)
 find_package(WebRTC REQUIRED)
+find_package(Lyra REQUIRED)
 find_package(Sora REQUIRED)
 find_package(Threads REQUIRED)
 find_package(Libdrm)
