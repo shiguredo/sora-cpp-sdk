@@ -185,7 +185,7 @@ absl::optional<sora::AudioEncoderLyraConfig> AudioEncoderLyraImpl::SdpToConfig(
   sora::AudioEncoderLyraConfig config;
   config.num_channels = format.num_channels;
   config.frame_size_ms = 20;
-  config.dtx_enabled = false;  //GetFormatParameter(format, "usedtx") == "1";
+  config.dtx_enabled = GetFormatParameter(format, "usedtx") == "1";
   auto bitrate = GetFormatParameter(format, "bitrate");
   if (bitrate) {
     config.bitrate_bps = *rtc::StringToNumber<int>(*bitrate);
@@ -387,7 +387,7 @@ AudioEncoder::EncodedInfo AudioEncoderLyraImpl::EncodeImpl(
   info.encoder_type = CodecType::kOther;
 
   // Increase or reset DTX counter.
-  consecutive_dtx_frames_ = (dtx_frame) ? (consecutive_dtx_frames_ + 1) : (0);
+  consecutive_dtx_frames_ = dtx_frame ? (consecutive_dtx_frames_ + 1) : 0;
 
   return info;
 }
