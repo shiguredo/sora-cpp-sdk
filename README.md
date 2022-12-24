@@ -31,7 +31,6 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
     - [Intel oneVPL](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onevpl.html) (Intel Media SDK の後継)
         - VP9 / AV1 / H.264
 - [google/lyra: A Very Low\-Bitrate Codec for Speech Compression](https://github.com/google/lyra) 対応
-    - iOS 以外のプラットフォームで利用可能です
 
 ## ライブラリのバイナリ提供について
 
@@ -81,7 +80,6 @@ https://github.com/shiguredo/sora-cpp-sdk-samples
 - Raspberry Pi OS 対応
 - Windows arm64 対応
 - AMD 系 HWA 対応
-- Lyra iOS 対応
 
 ## サポートについて
 

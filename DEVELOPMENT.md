@@ -47,17 +47,9 @@ sudo apt-get -y install cuda=10.2.89-1
 
 ただし `SORA_LYRA_MODEL_COEFFS_PATH` 環境変数が設定されている場合は、この環境変数に指定されているディレクトリを検索する。
 
-## Lyra の実行
-
-警告以上のログを表示している時に `Lyra is not supported` という文字列が出てきたら、Lyra の共有ライブラリが適切に配置されていない可能性が高い。
-
-macOS で Lyra を利用するには、liblyra.so をカレントディレクトリに配置するか、`DYLD_LIBRARY_PATH` を指定して実行する必要がある。
-
-Ubuntu で Lyra を利用するには、liblyra.so のあるディレクトリに `LD_LIBRARY_PATH` を指定して実行する必要がある。
-
 ## Lyra の開発環境切り替え
 
-Android とそれ以外のビルドでは利用するワークスペースが異なるため、Android でビルドした後に Ubuntu でビルドする、あるいはその逆をしたりすると Lyra のビルドでエラーが発生する。
+Lyra では各環境でワークスペースが異なるため、Android でビルドした後に Ubuntu でビルドする、みたいなことをすると Lyra のビルドでエラーが発生する。
 
 この問題が起きた場合は、以下のように Lyra のビルド環境を一度リセットする必要がある。
 

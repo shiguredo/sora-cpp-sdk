@@ -67,6 +67,7 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE NEVER)
 
 find_package(WebRTC REQUIRED)
 find_package(Boost REQUIRED COMPONENTS json filesystem)
+find_package(Lyra REQUIRED)
 find_package(Threads REQUIRED)
 
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
@@ -82,7 +83,7 @@ string(SUBSTRING "${SORA_CPP_SDK_COMMIT}" 0 8 SORA_CPP_SDK_COMMIT_SHORT)
 string(SUBSTRING "${WEBRTC_COMMIT}" 0 8 WEBRTC_COMMIT_SHORT)
 configure_file(src/version.gen.h.template ${CMAKE_CURRENT_BINARY_DIR}/version.gen.h)
 target_include_directories(sora PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-target_include_directories(sora PRIVATE ${CMAKE_SOURCE_DIR}/third_party/lyra)
+
 
 target_sources(sora
   PRIVATE
@@ -131,6 +132,7 @@ endif()
 
 target_link_libraries(sora
   PUBLIC
+    Lyra::lyra
     WebRTC::webrtc
     Boost::json
     Boost::filesystem
@@ -582,10 +584,12 @@ install(EXPORT sora-config
   DESTINATION ${CMAKE_INSTALL_DATADIR}/sora
   NAMESPACE Sora::
 )
-install(FILES cmake/FindWebRTC.cmake cmake/FindLibdrm.cmake
-  DESTINATION ${CMAKE_INSTALL_DATADIR}/cmake
-)
-install(FILES cmake/FindWebRTC.cmake cmake/FindLibva.cmake
+install(
+  FILES
+    cmake/FindWebRTC.cmake
+    cmake/FindLibdrm.cmake
+    cmake/FindLibva.cmake
+    cmake/FindLyra.cmake
   DESTINATION ${CMAKE_INSTALL_DATADIR}/cmake
 )
 install(FILES LICENSE NOTICE.md

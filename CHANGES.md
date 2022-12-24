@@ -11,6 +11,13 @@
 
 ## develop
 
+## 2022.18.0 (2022-12-25)
+
+- [CHANGE] Lyra を静的ライブラリ化
+    - @melpon
+- [ADD] iOS を Lyra に対応
+    - @melpon
+
 ## 2022.18.0 (2022-11-11)
 
 - [UPDATE] Lyra を `1.3.0` に上げる

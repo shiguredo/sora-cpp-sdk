@@ -19,6 +19,7 @@ struct SoraClientConfig : sora::SoraDefaultClientConfig {
   std::vector<std::string> signaling_urls;
   std::string channel_id;
   std::string role;
+  std::string access_token;
 };
 
 class SoraClient : public std::enable_shared_from_this<SoraClient>,
@@ -51,7 +52,11 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
     config.role = config_.role;
     config.video = false;
     config.audio_codec_type = "LYRA";
+    config.audio_codec_lyra_params = {{"version", "1.3.0"}, {"usedtx", true}};
     config.multistream = true;
+    if (!config_.access_token.empty()) {
+      config.metadata = {{"access_token", config_.access_token}};
+    }
     conn_ = sora::SoraSignaling::Create(config);
 
     boost::asio::executor_work_guard<boost::asio::io_context::executor_type>
@@ -117,6 +122,9 @@ int main(int argc, char* argv[]) {
   }
   config.channel_id = v.as_object().at("channel_id").as_string().c_str();
   config.role = "sendrecv";
+  if (auto it = v.as_object().find("access_token"); it != v.as_object().end()) {
+    config.access_token = it->value().as_string().c_str();
+  }
 
   auto client = sora::CreateSoraClient<SoraClient>(config);
   client->Run();

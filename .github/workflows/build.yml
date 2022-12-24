@@ -57,6 +57,8 @@ jobs:
         if: steps.cache-cuda.outputs.cache-hit == 'true'
       - run: pip install numpy
       - run: python3 run.py --test --package ${{ matrix.name }}
+        env:
+          SORA_CPP_SDK_TEMP_DIR: C:\
       - name: Get package name
         run: |
           Get-Content "_package\${{ matrix.name }}\release\sora.env" | Foreach-Object {
@@ -66,6 +68,7 @@ jobs:
           }
           echo "name=${PACKAGE_NAME}" >> ${Env:GITHUB_OUTPUT}
           echo "boost_name=${BOOST_PACKAGE_NAME}" >> ${Env:GITHUB_OUTPUT}
+          echo "lyra_name=${LYRA_PACKAGE_NAME}" >> ${Env:GITHUB_OUTPUT}
         id: package_name
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
@@ -77,6 +80,11 @@ jobs:
         with:
           name: ${{ steps.package_name.outputs.boost_name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.boost_name }}
+      - name: Upload Lyra Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.package_name.outputs.lyra_name }}
+          path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.lyra_name }}
       - name: Upload Environment
         uses: actions/upload-artifact@v3
         with:
@@ -109,6 +117,7 @@ jobs:
           source _package/${{ matrix.name }}/release/sora.env
           echo "name=${PACKAGE_NAME}" >> $GITHUB_OUTPUT
           echo "boost_name=${BOOST_PACKAGE_NAME}" >> $GITHUB_OUTPUT
+          echo "lyra_name=${LYRA_PACKAGE_NAME}" >> $GITHUB_OUTPUT
         id: package_name
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
@@ -120,6 +129,11 @@ jobs:
         with:
           name: ${{ steps.package_name.outputs.boost_name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.boost_name }}
+      - name: Upload Lyra Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.package_name.outputs.lyra_name }}
+          path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.lyra_name }}
       - name: Upload Environment
         uses: actions/upload-artifact@v3
         with:
@@ -181,6 +195,7 @@ jobs:
           source _package/${{ matrix.name }}/release/sora.env
           echo "name=${PACKAGE_NAME}" >> $GITHUB_OUTPUT
           echo "boost_name=${BOOST_PACKAGE_NAME}" >> $GITHUB_OUTPUT
+          echo "lyra_name=${LYRA_PACKAGE_NAME}" >> $GITHUB_OUTPUT
         id: package_name
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
@@ -192,6 +207,11 @@ jobs:
         with:
           name: ${{ steps.package_name.outputs.boost_name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.boost_name }}
+      - name: Upload Lyra Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.package_name.outputs.lyra_name }}
+          path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.lyra_name }}
       - name: Upload Environment
         uses: actions/upload-artifact@v3
         with:
@@ -235,6 +255,7 @@ jobs:
           source _package/${{ matrix.name }}/release/sora.env
           echo "name=${PACKAGE_NAME}" >> $GITHUB_OUTPUT
           echo "boost_name=${BOOST_PACKAGE_NAME}" >> $GITHUB_OUTPUT
+          echo "lyra_name=${LYRA_PACKAGE_NAME}" >> $GITHUB_OUTPUT
         id: package_name
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
@@ -246,6 +267,11 @@ jobs:
         with:
           name: ${{ steps.package_name.outputs.boost_name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.boost_name }}
+      - name: Upload Lyra Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.package_name.outputs.lyra_name }}
+          path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.lyra_name }}
       - name: Upload Environment
         uses: actions/upload-artifact@v3
         with:
@@ -313,6 +339,7 @@ jobs:
           source create-release.env/create-release.env
           echo "package_name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
           echo "boost_package_name=$BOOST_PACKAGE_NAME" >> $GITHUB_OUTPUT
+          echo "lyra_package_name=$LYRA_PACKAGE_NAME" >> $GITHUB_OUTPUT
           echo "content_type=$CONTENT_TYPE" >> $GITHUB_OUTPUT
           echo "upload_url=$UPLOAD_URL" >> $GITHUB_OUTPUT
         id: env
@@ -324,6 +351,10 @@ jobs:
         with:
           name: ${{ steps.env.outputs.boost_package_name }}
           path: ${{ steps.env.outputs.boost_package_name }}
+      - uses: actions/download-artifact@v3
+        with:
+          name: ${{ steps.env.outputs.lyra_package_name }}
+          path: ${{ steps.env.outputs.lyra_package_name }}
       - name: Upload ${{ matrix.name }} Release Asset
         uses: actions/upload-release-asset@v1.0.2
         env:
@@ -341,6 +372,15 @@ jobs:
           upload_url: ${{ steps.env.outputs.upload_url }}
           asset_path: ${{ steps.env.outputs.boost_package_name }}/${{ steps.env.outputs.boost_package_name }}
           asset_name: ${{ steps.env.outputs.boost_package_name }}
+          asset_content_type: ${{ steps.env.outputs.content_type }}
+      - name: Upload ${{ matrix.name }} Release Asset
+        uses: actions/upload-release-asset@v1.0.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.env.outputs.upload_url }}
+          asset_path: ${{ steps.env.outputs.lyra_package_name }}/${{ steps.env.outputs.lyra_package_name }}
+          asset_name: ${{ steps.env.outputs.lyra_package_name }}
           asset_content_type: ${{ steps.env.outputs.content_type }}
   #notification:
   #  name: Slack Notification

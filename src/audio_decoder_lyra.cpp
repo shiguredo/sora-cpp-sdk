@@ -10,7 +10,8 @@
 #include <absl/strings/match.h>
 #include <rtc_base/logging.h>
 
-#include "sora/dyn/lyra.h"
+// Lyra
+#include <lyra.h>
 
 struct lyra_decoder;
 
@@ -111,7 +112,7 @@ AudioDecoderLyraImpl::AudioDecoderLyraImpl(size_t num_channels,
 }
 
 AudioDecoderLyraImpl::~AudioDecoderLyraImpl() {
-  dyn::lyra_decoder_destroy(dec_state_);
+  lyra_decoder_destroy(dec_state_);
 }
 
 std::vector<AudioDecoder::ParseResult> AudioDecoderLyraImpl::ParsePayload(
@@ -131,19 +132,18 @@ int AudioDecoderLyraImpl::DecodeInternal(const uint8_t* encoded,
                                          int16_t* decoded,
                                          SpeechType* speech_type) {
   RTC_DCHECK_EQ(sample_rate_hz, sample_rate_hz_);
-  auto r =
-      dyn::lyra_decoder_set_encoded_packet(dec_state_, encoded, encoded_len);
+  auto r = lyra_decoder_set_encoded_packet(dec_state_, encoded, encoded_len);
   if (!r) {
     return -1;
   }
-  auto v = dyn::lyra_decoder_decode_samples(dec_state_, sample_rate_hz_ / 50);
+  auto v = lyra_decoder_decode_samples(dec_state_, sample_rate_hz_ / 50);
   if (v == nullptr) {
     return -1;
   }
-  auto samples = dyn::lyra_vector_s16_get_size(v);
-  auto p = dyn::lyra_vector_s16_get_data(v);
+  auto samples = lyra_vector_s16_get_size(v);
+  auto p = lyra_vector_s16_get_data(v);
   std::memcpy(decoded, p, samples * 2);
-  dyn::lyra_vector_s16_destroy(v);
+  lyra_vector_s16_destroy(v);
   return samples;
 }
 
@@ -158,15 +158,14 @@ int AudioDecoderLyraImpl::DecodeRedundantInternal(const uint8_t* encoded,
 
 void AudioDecoderLyraImpl::Reset() {
   if (dec_state_)
-    dyn::lyra_decoder_destroy(dec_state_);
+    lyra_decoder_destroy(dec_state_);
   auto path = boost::dll::program_location().parent_path() / "model_coeffs";
   std::string dir = path.string();
   auto env = std::getenv("SORA_LYRA_MODEL_COEFFS_PATH");
   if (env != NULL) {
     dir = env;
   }
-  dec_state_ =
-      dyn::lyra_decoder_create(sample_rate_hz_, channels_, dir.c_str());
+  dec_state_ = lyra_decoder_create(sample_rate_hz_, channels_, dir.c_str());
 }
 
 int AudioDecoderLyraImpl::PacketDuration(const uint8_t* encoded,
@@ -205,22 +204,18 @@ absl::optional<AudioDecoderLyra::Config> AudioDecoderLyra::SdpToConfig(
 }
 void AudioDecoderLyra::AppendSupportedDecoders(
     std::vector<webrtc::AudioCodecSpec>* specs) {
-  if (!dyn::DynModule::IsLoadable(dyn::LYRA_SO)) {
-    RTC_LOG(LS_WARNING) << "Lyra is not supported";
-    return;
-  }
   auto path = boost::dll::program_location().parent_path() / "model_coeffs";
   std::string dir = path.string();
   auto env = std::getenv("SORA_LYRA_MODEL_COEFFS_PATH");
   if (env != NULL) {
     dir = env;
   }
-  auto decoder = dyn::lyra_decoder_create(48000, 1, dir.c_str());
+  auto decoder = lyra_decoder_create(48000, 1, dir.c_str());
   if (decoder == nullptr) {
     RTC_LOG(LS_WARNING) << "Failed to Create Lyra decoder: model_path=" << dir;
     return;
   }
-  dyn::lyra_decoder_destroy(decoder);
+  lyra_decoder_destroy(decoder);
 
   webrtc::AudioCodecInfo lyra_info{16000, 1, 3200, 3200, 9200};
   lyra_info.allow_comfort_noise = false;

@@ -1,10 +1,9 @@
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository", "new_git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
-git_repository(
+local_repository(
     name = "lyra",
-    remote = "https://github.com/google/lyra.git",
-    tag = "v1.3.0",
+    path = "lyra",
 )
 
 # Google logging
@@ -20,12 +19,6 @@ git_repository(
     branch = "android_linking_fix"
 )
 
-load("//:android_configure.bzl", "android_configure")
-android_configure(name = "local_config_android")
-
-load("@local_config_android//:android_configure.bzl", "android_workspace")
-android_workspace()
-
 http_archive(
     name = "rules_android",
     sha256 = "cd06d15dd8bb59926e4d65f9003bfc20f9da4b2519985c27e190cddc8b7a7806",
@@ -36,12 +29,10 @@ http_archive(
 # proto_library, cc_proto_library, and java_proto_library rules implicitly
 # depend on @com_google_protobuf for protoc and proto runtimes.
 # This statement defines the @com_google_protobuf repo.
-git_repository(
+local_repository(
     name = "com_google_protobuf",
-    remote = "https://github.com/protocolbuffers/protobuf.git",
-    tag = "v3.15.4",
+    path = "third_party/protobuf",
 )
-
 load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 protobuf_deps()
 
@@ -109,7 +100,9 @@ git_repository(
     remote = "https://github.com/tensorflow/tensorflow.git",
     # Below is reproducible and equivalent to `tag = "v2.9.0"`
     commit = "8a20d54a3c1bfa38c03ea99a2ad3c1b0a45dfa95",
-    shallow_since = "1652465115 -0700"
+    shallow_since = "1652465115 -0700",
+    patches = ["//:patches/android_tensorflow.patch"],
+    patch_args = ["-p1"]
 )
 
 # Check bazel version requirement, which is stricter than TensorFlow's.
@@ -126,8 +119,25 @@ check_bazel_version_at_least("3.7.2")
 # TF's loading is very complicated, and we only need a subset for TFLite.
 # If we use the full TF loading sequence, we also run into conflicts and errors on some platforms.
 
-load("@org_tensorflow//tensorflow:workspace3.bzl", "workspace")
-workspace()
+# Android 用のパッチを当てるために別途でリポジトリを取得しておく
+load("@org_tensorflow//third_party:repo.bzl", "tf_http_archive", "tf_mirror_urls")
+
+tf_http_archive(
+    name = "XNNPACK",
+    sha256 = "7e9ad45391e5158fd00e816022bda21d54a6180788af7c455c864a78cee252c6",
+    strip_prefix = "XNNPACK-11b2812d64e49bab9b6c489f79067fc94e69db9f",
+    urls = tf_mirror_urls("https://github.com/google/XNNPACK/archive/11b2812d64e49bab9b6c489f79067fc94e69db9f.zip"),
+    patch_file = ["@//:patches/android_xnnpack.patch"]
+)
+
+load("@org_tensorflow//tensorflow:workspace3.bzl", workspace3 = "workspace")
+workspace3()
 
 load("@org_tensorflow//tensorflow:workspace2.bzl", workspace2 = "workspace")
 workspace2()
+
+load("//:toolchain/linux_x86_64/toolchain_configure.bzl", "webrtc_clang_toolchain_configure")
+webrtc_clang_toolchain_configure(name = "webrtc_clang_toolchain", src = "@//:toolchain/linux_x86_64/BUILD.tpl")
+
+load("//:toolchain/android/toolchain_configure.bzl", "android_toolchain_configure")
+android_toolchain_configure(name = "android_toolchain", src = "@//:toolchain/android/BUILD.tpl")

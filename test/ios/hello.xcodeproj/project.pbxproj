@@ -26,6 +26,8 @@
 		DDBC4BC12820FEB90099E1F0 /* VideoToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DDBC4BC02820FEB90099E1F0 /* VideoToolbox.framework */; };
 		DDBC4BC3282216350099E1F0 /* Network.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DDBC4BC2282216340099E1F0 /* Network.framework */; };
 		DDBC4BC7282216890099E1F0 /* GLKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DDBC4BC6282216890099E1F0 /* GLKit.framework */; };
+		DDD4A08E294952DC009EFDB5 /* model_coeffs in Resources */ = {isa = PBXBuildFile; fileRef = DDD4A08D294952DC009EFDB5 /* model_coeffs */; };
+		DDE728F929553B4F0089D76D /* liblyra.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DDE728F829553B390089D76D /* liblyra.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -55,6 +57,9 @@
 		DDBC4BC2282216340099E1F0 /* Network.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Network.framework; path = System/Library/Frameworks/Network.framework; sourceTree = SDKROOT; };
 		DDBC4BC42822166B0099E1F0 /* OpenGLES.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGLES.framework; path = System/Library/Frameworks/OpenGLES.framework; sourceTree = SDKROOT; };
 		DDBC4BC6282216890099E1F0 /* GLKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLKit.framework; path = System/Library/Frameworks/GLKit.framework; sourceTree = SDKROOT; };
+		DDD4A08A2949500A009EFDB5 /* liblyra.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblyra.a; path = "../../../../../../var/tmp/_bazel_melpon/e11c62260e615113c5a61c74800877bc/execroot/__main__/bazel-out/ios_x86_64-opt/bin/liblyra.a"; sourceTree = "<group>"; };
+		DDD4A08D294952DC009EFDB5 /* model_coeffs */ = {isa = PBXFileReference; lastKnownFileType = folder; name = model_coeffs; path = hello/model_coeffs; sourceTree = "<group>"; };
+		DDE728F829553B390089D76D /* liblyra.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblyra.a; path = ../../_install/ios/release/lyra/lib/liblyra.a; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -73,6 +78,7 @@
 				DDBC4BC7282216890099E1F0 /* GLKit.framework in Frameworks */,
 				DD76254E290AFDE100BFE6D8 /* libboost_filesystem.a in Frameworks */,
 				DDBC4BB52820F4090099E1F0 /* libsora.a in Frameworks */,
+				DDE728F929553B4F0089D76D /* liblyra.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -82,6 +88,7 @@
 		DDBC4B852820E3770099E1F0 = {
 			isa = PBXGroup;
 			children = (
+				DDD4A08D294952DC009EFDB5 /* model_coeffs */,
 				DDBC4B902820E3770099E1F0 /* hello */,
 				DDBC4B8F2820E3770099E1F0 /* Products */,
 				DDBC4BAA2820E9C30099E1F0 /* Frameworks */,
@@ -118,6 +125,8 @@
 		DDBC4BAA2820E9C30099E1F0 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				DDD4A08A2949500A009EFDB5 /* liblyra.a */,
+				DDE728F829553B390089D76D /* liblyra.a */,
 				DD76254D290AFDC600BFE6D8 /* libboost_filesystem.a */,
 				DDBC4BC6282216890099E1F0 /* GLKit.framework */,
 				DDBC4BC42822166B0099E1F0 /* OpenGLES.framework */,
@@ -194,6 +203,7 @@
 			files = (
 				DDBC4BA12820E3790099E1F0 /* LaunchScreen.storyboard in Resources */,
 				DDBC4B9E2820E3790099E1F0 /* Assets.xcassets in Resources */,
+				DDD4A08E294952DC009EFDB5 /* model_coeffs in Resources */,
 				DDBC4B9C2820E3770099E1F0 /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -352,7 +362,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 85GXXZX8RJ;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					WEBRTC_IOS,
 					WEBRTC_MAC,
@@ -376,6 +386,7 @@
 					../../_install/ios/release/sora/lib/,
 					../../_install/ios/release/boost/lib/,
 					../../_install/ios/release/webrtc/lib/,
+					../../_install/ios/release/lyra/lib/,
 				);
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = "-ObjC";
@@ -391,6 +402,7 @@
 					"$(SRCROOT)/../../_install/ios/release/webrtc/include/third_party/libyuv/include/",
 					"$(SRCROOT)/../../_install/ios/release/webrtc/include/third_party/zlib/",
 					"$(SRCROOT)/../../_install/ios/release/webrtc/include/sdk/objc/",
+					"$(SRCROOT)/../../_install/ios/release/webrtc/include/sdk/objc/base/",
 				);
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -403,7 +415,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 85GXXZX8RJ;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					WEBRTC_IOS,
 					WEBRTC_MAC,
@@ -426,6 +438,7 @@
 					../../_install/ios/release/sora/lib/,
 					../../_install/ios/release/boost/lib/,
 					../../_install/ios/release/webrtc/lib/,
+					../../_install/ios/release/lyra/lib/,
 				);
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = "-ObjC";
@@ -441,6 +454,7 @@
 					"$(SRCROOT)/../../_install/ios/release/webrtc/include/third_party/libyuv/include/",
 					"$(SRCROOT)/../../_install/ios/release/webrtc/include/third_party/zlib/",
 					"$(SRCROOT)/../../_install/ios/release/webrtc/include/sdk/objc/",
+					"$(SRCROOT)/../../_install/ios/release/webrtc/include/sdk/objc/base/",
 				);
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
