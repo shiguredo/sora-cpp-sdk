@@ -21,6 +21,7 @@ list(APPEND CMAKE_MODULE_PATH ${SORA_DIR}/share/cmake)
 set(Boost_USE_STATIC_LIBS ON)
 
 find_package(Boost REQUIRED COMPONENTS json filesystem)
+find_package(Lyra REQUIRED)
 find_package(WebRTC REQUIRED)
 find_package(Sora REQUIRED)
 find_package(SDL2 REQUIRED)
@@ -40,3 +41,17 @@ target_include_directories(momo_sample PRIVATE ${CLI11_DIR}/include)
 target_link_libraries(momo_sample PRIVATE Sora::sora SDL2::SDL2 SDL2::SDL2main)
 target_link_directories(momo_sample PRIVATE ${CMAKE_SYSROOT}/usr/lib/aarch64-linux-gnu/tegra)
 target_compile_definitions(momo_sample PRIVATE CLI11_HAS_FILESYSTEM=0)
+
+# Lyra ファイルのコピー
+add_custom_command(
+  TARGET momo_sample POST_BUILD
+  COMMAND
+    ${CMAKE_COMMAND} -E copy_directory
+    ${LYRA_DIR}/share/model_coeffs/
+    ${CMAKE_CURRENT_BINARY_DIR}/model_coeffs/
+  DEPENDS
+    ${LYRA_DIR}/share/model_coeffs/lyra_config.binarypb
+    ${LYRA_DIR}/share/model_coeffs/lyragan.tflite
+    ${LYRA_DIR}/share/model_coeffs/quantizer.tflite
+    ${LYRA_DIR}/share/model_coeffs/soundstream_encoder.tflite
+)

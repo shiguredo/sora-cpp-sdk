@@ -432,6 +432,18 @@ def install_boost(version, source_dir, install_dir, sora_version, platform: str)
     extract(archive, output_dir=install_dir, output_dirname='boost')
 
 
+@versioned
+def install_lyra(version, source_dir, install_dir, sora_version, platform: str):
+    win = platform.startswith("windows_")
+    filename = f'lyra-{version}_sora-cpp-sdk-{sora_version}_{platform}.{"zip" if win else "tar.gz"}'
+    rm_rf(os.path.join(source_dir, filename))
+    archive = download(
+        f'https://github.com/shiguredo/sora-cpp-sdk/releases/download/{sora_version}/{filename}',
+        output_dir=source_dir)
+    rm_rf(os.path.join(install_dir, 'lyra'))
+    extract(archive, output_dir=install_dir, output_dirname='lyra')
+
+
 def cmake_path(path: str) -> str:
     return path.replace('\\', '/')
 

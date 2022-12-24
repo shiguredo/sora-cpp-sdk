@@ -18,6 +18,7 @@ from base import (  # noqa
     install_webrtc,
     install_llvm,
     install_boost,
+    install_lyra,
     install_cmake,
     install_sdl2,
     install_sora,
@@ -75,6 +76,17 @@ def install_deps(source_dir, build_dir, install_dir, debug):
             'platform': 'ubuntu-22.04_x86_64',
         }
         install_boost(**install_boost_args)
+
+        # Lyra
+        install_lyra_args = {
+            'version': version['LYRA_VERSION'],
+            'version_file': os.path.join(install_dir, 'lyra.version'),
+            'source_dir': source_dir,
+            'install_dir': install_dir,
+            'sora_version': version['SORA_CPP_SDK_VERSION'],
+            'platform': 'ubuntu-22.04_x86_64',
+        }
+        install_lyra(**install_lyra_args)
 
         # CMake
         install_cmake_args = {
@@ -150,6 +162,7 @@ def main():
         cmake_args = []
         cmake_args.append(f'-DCMAKE_BUILD_TYPE={configuration}')
         cmake_args.append(f"-DBOOST_ROOT={cmake_path(os.path.join(install_dir, 'boost'))}")
+        cmake_args.append(f"-DLYRA_DIR={cmake_path(os.path.join(install_dir, 'lyra'))}")
         cmake_args.append(f"-DWEBRTC_INCLUDE_DIR={cmake_path(webrtc_info.webrtc_include_dir)}")
         cmake_args.append(f"-DWEBRTC_LIBRARY_DIR={cmake_path(webrtc_info.webrtc_library_dir)}")
         cmake_args.append(f"-DSORA_DIR={cmake_path(os.path.join(install_dir, 'sora'))}")

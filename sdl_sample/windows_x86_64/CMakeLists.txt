@@ -22,6 +22,7 @@ set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_STATIC_RUNTIME ON)
 
 find_package(Boost REQUIRED COMPONENTS json filesystem)
+find_package(Lyra REQUIRED)
 find_package(WebRTC REQUIRED)
 find_package(Sora REQUIRED)
 find_package(SDL2 REQUIRED)
@@ -46,23 +47,14 @@ set_target_properties(sdl_sample
 add_custom_command(
   TARGET sdl_sample POST_BUILD
   COMMAND
-    ${CMAKE_COMMAND} -E copy
-    ${SORA_DIR}/share/lyra/lyra.dll
-    ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/lyra.dll
-  DEPENDS
-    ${SORA_DIR}/share/lyra/lyra.dll
-)
-add_custom_command(
-  TARGET sdl_sample POST_BUILD
-  COMMAND
     ${CMAKE_COMMAND} -E copy_directory
-    ${SORA_DIR}/share/lyra/model_coeffs/
+    ${LYRA_DIR}/share/model_coeffs/
     ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/model_coeffs/
   DEPENDS
-    ${SORA_DIR}/share/lyra/model_coeffs/lyra_config.binarypb
-    ${SORA_DIR}/share/lyra/model_coeffs/lyragan.tflite
-    ${SORA_DIR}/share/lyra/model_coeffs/quantizer.tflite
-    ${SORA_DIR}/share/lyra/model_coeffs/soundstream_encoder.tflite
+    ${LYRA_DIR}/share/model_coeffs/lyra_config.binarypb
+    ${LYRA_DIR}/share/model_coeffs/lyragan.tflite
+    ${LYRA_DIR}/share/model_coeffs/quantizer.tflite
+    ${LYRA_DIR}/share/model_coeffs/soundstream_encoder.tflite
 )
 
 target_compile_definitions(sdl_sample
