@@ -42,18 +42,17 @@ CreateModularPeerConnectionFactoryWithContext(
   using result_type =
       std::pair<rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>,
                 rtc::scoped_refptr<webrtc::ConnectionContext>>;
-  auto p = dependencies.signaling_thread->Invoke<result_type>(
-      RTC_FROM_HERE, [&dependencies]() {
-        auto factory =
-            PeerConnectionFactoryWithContext::Create(std::move(dependencies));
-        if (factory == nullptr) {
-          return result_type(nullptr, nullptr);
-        }
-        auto context = factory->GetContext();
-        auto proxy = webrtc::PeerConnectionFactoryProxy::Create(
-            factory->signaling_thread(), factory->worker_thread(), factory);
-        return result_type(proxy, context);
-      });
+  auto p = dependencies.signaling_thread->BlockingCall([&dependencies]() {
+    auto factory =
+        PeerConnectionFactoryWithContext::Create(std::move(dependencies));
+    if (factory == nullptr) {
+      return result_type(nullptr, nullptr);
+    }
+    auto context = factory->GetContext();
+    auto proxy = webrtc::PeerConnectionFactoryProxy::Create(
+        factory->signaling_thread(), factory->worker_thread(), factory);
+    return result_type(proxy, context);
+  });
   context = p.second;
   return p.first;
 }

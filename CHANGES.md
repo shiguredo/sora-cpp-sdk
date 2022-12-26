@@ -11,6 +11,8 @@
 
 ## develop
 
+- [UPDATE] WebRTC を m109.5414.2.0 に上げる
+    - @melpon
 - [UPDATE] Boost を 1.81.0 に上げる
     - @melpon
 
