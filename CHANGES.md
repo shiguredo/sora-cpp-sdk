@@ -15,6 +15,8 @@
     - @melpon
 - [UPDATE] Boost を 1.81.0 に上げる
     - @melpon
+- [UPDATE] oneVPL を v2023.1.1 に上げる
+    - @melpon
 
 ## 2022.19.0 (2022-12-25)
 
