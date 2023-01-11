@@ -605,7 +605,8 @@ def install_boost(
                 sysroot = os.path.join(android_ndk, 'toolchains', 'llvm', 'prebuilt', 'linux-x86_64', 'sysroot')
                 f.write(f"using clang \
                     : android \
-                    : {os.path.join(bin, f'aarch64-linux-android{native_api_level}-clang++')} \
+                    : {os.path.join(bin, f'clang++')} \
+                      --target=aarch64-none-linux-android{native_api_level} \
                       --sysroot={sysroot} \
                     : <archiver>{os.path.join(bin, 'llvm-ar')} \
                       <ranlib>{os.path.join(bin, 'llvm-ranlib')} \
@@ -1502,6 +1503,7 @@ def main():
             # r23b には ANDROID_CPP_FEATURES=exceptions でも例外が設定されない問題がある
             # https://github.com/android/ndk/issues/1618
             cmake_args.append('-DCMAKE_ANDROID_EXCEPTIONS=ON')
+            cmake_args.append('-DANDROID_NDK=OFF')
             cmake_args.append(f"-DSORA_WEBRTC_LDFLAGS={os.path.join(install_dir, 'webrtc.ldflags')}")
         if platform.target.os == 'jetson':
             sysroot = os.path.join(install_dir, 'rootfs')
