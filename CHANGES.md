@@ -11,6 +11,8 @@
 
 ## develop
 
+- [ADD] SoraSignalingConfig に audio_streaming_language_code を追加
+    - @melpon
 - [UPDATE] WebRTC を m109.5414.2.0 に上げる
     - @melpon
 - [UPDATE] Boost を 1.81.0 に上げる

@@ -307,6 +307,10 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     }
   }
 
+  if (!config_.audio_streaming_language_code.empty()) {
+    m["audio_streaming_language_code"] = config_.audio_streaming_language_code;
+  }
+
   if (config_.data_channel_signaling) {
     m["data_channel_signaling"] = *config_.data_channel_signaling;
   }

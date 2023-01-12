@@ -68,6 +68,7 @@ struct SoraSignalingConfig {
   boost::json::value audio_codec_lyra_params;
   int video_bit_rate = 0;
   int audio_bit_rate = 0;
+  std::string audio_streaming_language_code;
   boost::json::value metadata;
   boost::json::value signaling_notify_metadata;
   std::string role = "sendonly";
