@@ -57,19 +57,16 @@ bool SoraDefaultClient::Configure() {
   // media_dependencies
   cricket::MediaEngineDependencies media_dependencies;
   media_dependencies.task_queue_factory = dependencies.task_queue_factory.get();
-  media_dependencies.adm =
-      worker_thread_->Invoke<rtc::scoped_refptr<webrtc::AudioDeviceModule>>(
-          RTC_FROM_HERE, [&] {
-            sora::AudioDeviceModuleConfig config;
-            if (!config_.use_audio_device) {
-              config.audio_layer = webrtc::AudioDeviceModule::kDummyAudio;
-            }
-            config.task_queue_factory = dependencies.task_queue_factory.get();
-            config.jni_env = sora::GetJNIEnv();
-            config.application_context =
-                GetAndroidApplicationContext(config.jni_env);
-            return sora::CreateAudioDeviceModule(config);
-          });
+  media_dependencies.adm = worker_thread_->BlockingCall([&] {
+    sora::AudioDeviceModuleConfig config;
+    if (!config_.use_audio_device) {
+      config.audio_layer = webrtc::AudioDeviceModule::kDummyAudio;
+    }
+    config.task_queue_factory = dependencies.task_queue_factory.get();
+    config.jni_env = sora::GetJNIEnv();
+    config.application_context = GetAndroidApplicationContext(config.jni_env);
+    return sora::CreateAudioDeviceModule(config);
+  });
 
   media_dependencies.audio_encoder_factory =
       sora::CreateBuiltinAudioEncoderFactory();

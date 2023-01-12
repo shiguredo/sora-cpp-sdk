@@ -26,8 +26,8 @@ cc_toolchain_config(
     ],
     tool_paths = {
         "ar": '%{android_ndk}/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar',
-        "cpp": '%{android_ndk}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android%{android_api}-clang++',
-        "gcc": '%{android_ndk}/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android%{android_api}-clang',
+        "cpp": '%{android_ndk}/toolchains/llvm/prebuilt/linux-x86_64/bin/clang++',
+        "gcc": '%{android_ndk}/toolchains/llvm/prebuilt/linux-x86_64/bin/clang',
         "ld": '%{android_ndk}/toolchains/llvm/prebuilt/linux-x86_64/bin/lld',
         "nm": '%{android_ndk}/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-nm',
         "strip": '%{android_ndk}/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip',
@@ -54,7 +54,7 @@ cc_toolchain_config(
         # Keep stack frames for debugging, even in opt mode.
         "-fno-omit-frame-pointer",
 
-        "--target=aarch64-linux-android",
+        "--target=aarch64-none-linux-android%{android_api}",
         "-D__ANDROID_API__=%{android_api}",
     ],
     dbg_compile_flags = [
@@ -83,6 +83,7 @@ cc_toolchain_config(
         # size in some cases?).
         "-ffunction-sections",
         "-fdata-sections",
+        "-fexperimental-relative-c++-abi-vtables",
     ],
     # conly_flags = [],
     cxx_flags = [
@@ -99,7 +100,7 @@ cc_toolchain_config(
         "-Wl,-z,relro,-z,now",
         "-B", "%{llvm_dir}/clang/bin/",
         "-L", "%{webrtc_library_dir}",
-        "--target=aarch64-linux-android",
+        "--target=aarch64-none-linux-android%{android_api}",
     ],
     # archive_flags = [],
     link_libs = [

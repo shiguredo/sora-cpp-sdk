@@ -11,7 +11,18 @@
 
 ## develop
 
-## 2022.18.0 (2022-12-25)
+## 2023.1.0 (2023-01-12)
+
+- [ADD] SoraSignalingConfig に audio_streaming_language_code を追加
+    - @melpon
+- [UPDATE] WebRTC を m109.5414.2.0 に上げる
+    - @melpon
+- [UPDATE] Boost を 1.81.0 に上げる
+    - @melpon
+- [UPDATE] oneVPL を v2023.1.1 に上げる
+    - @melpon
+
+## 2022.19.0 (2022-12-25)
 
 - [CHANGE] Lyra を静的ライブラリ化
     - @melpon
