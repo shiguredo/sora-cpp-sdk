@@ -42,7 +42,7 @@ https://github.com/shiguredo/sora-cpp-sdk/releases
 
 ## 対応 Sora
 
-- WebRTC SFU Sora 2022.1.0 以降
+- WebRTC SFU Sora 2022.2.0 以降
 
 ## 動作環境
 
@@ -102,8 +102,8 @@ Discord へお願いします。
 Apache License 2.0
 
 ```
-Copyright 2021-2022, Wandbox LLC (Original Author)
-Copyright 2021-2022, Shiguredo Inc.
+Copyright 2021-2023, Wandbox LLC (Original Author)
+Copyright 2021-2023, Shiguredo Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
