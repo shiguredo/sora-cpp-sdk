@@ -27,7 +27,7 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
 
 ## 対応 WebRTC SFU Sora
 
-- WebRTC SFU Sora 2022.1.1 以降
+- WebRTC SFU Sora 2022.2.0 以降
 
 ## サンプルの紹介
 
@@ -51,8 +51,8 @@ WebRTC SFU Sora の [メッセージング機能](https://sora-doc.shiguredo.jp/
 Apache License 2.0
 
 ```
-Copyright 2022-2022, Wandbox LLC (Original Author)
-Copyright 2022-2022, Shiguredo Inc.
+Copyright 2022-2023, Wandbox LLC (Original Author)
+Copyright 2022-2023, Shiguredo Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
