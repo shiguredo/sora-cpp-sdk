@@ -136,6 +136,8 @@ void NvEncoder::LoadNvEncApi() {
         NV_ENC_ERR_NO_ENCODE_DEVICE);
   }
 
+  m_hModule = hModule;
+
   typedef NVENCSTATUS(NVENCAPI *
                       NvEncodeAPIGetMaxSupportedVersion_Type)(uint32_t*);
 #if defined(_WIN32)
@@ -185,6 +187,15 @@ void NvEncoder::LoadNvEncApi() {
 
 NvEncoder::~NvEncoder() {
   DestroyHWEncoder();
+
+  if (m_hModule) {
+#if defined(_WIN32)
+    FreeLibrary((HMODULE)m_hModule);
+#else
+    dlclose(m_hModule);
+#endif
+    m_hModule = nullptr;
+  }
 }
 
 void NvEncoder::CreateDefaultEncoderParams(
