@@ -3,6 +3,7 @@
 #include <NvDecoder/NvDecoder.h>
 
 #include "../cuda_context_cuda.h"
+#include "sora/dyn/cuda.h"
 
 namespace sora {
 

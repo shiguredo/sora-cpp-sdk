@@ -11,6 +11,9 @@
 
 ## develop
 
+- [UPDATE] NVIDIA Video Codec SDK を 12.0 に上げる
+    - @melpon
+
 ## 2023.1.0 (2023-01-12)
 
 - [ADD] SoraSignalingConfig に audio_streaming_language_code を追加

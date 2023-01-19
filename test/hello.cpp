@@ -129,9 +129,9 @@ int main(int argc, char* argv[]) {
   }
 #endif
 
-  //rtc::LogMessage::LogToDebug(rtc::LS_VERBOSE);
-  //rtc::LogMessage::LogTimestamps();
-  //rtc::LogMessage::LogThreads();
+  rtc::LogMessage::LogToDebug(rtc::LS_WARNING);
+  rtc::LogMessage::LogTimestamps();
+  rtc::LogMessage::LogThreads();
 
   boost::json::value v;
   {
