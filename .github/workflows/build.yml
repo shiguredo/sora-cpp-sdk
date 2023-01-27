@@ -139,16 +139,17 @@ jobs:
         with:
           name: ${{ matrix.name }}.env
           path: _package/${{ matrix.name }}/release/sora.env
-  build-ubuntu-2004:
+  build-ubuntu:
     strategy:
       fail-fast: false
       matrix:
         name:
           - ubuntu-20.04_x86_64
+          - ubuntu-22.04_x86_64
           - ubuntu-20.04_armv8_jetson
           - android
     name: Build sora-cpp-sdk for ${{ matrix.name }}
-    runs-on: ubuntu-20.04
+    runs-on: ${{ matrix.name == 'ubuntu-22.04_x86_64' && 'ubuntu-22.04' || 'ubuntu-20.04' }}
     steps:
       - uses: actions/checkout@v3
       - name: Bazel cache
@@ -156,8 +157,8 @@ jobs:
         with:
           path: "~/.cache/bazel"
           key: bazel-${{ matrix.name }}-v1
-      - name: Install deps for Ubuntu 20.04 x86_64
-        if: matrix.name == 'ubuntu-20.04_x86_64'
+      - name: Install deps for ${{ matrix.name }}
+        if: matrix.name == 'ubuntu-20.04_x86_64' || matrix.name == 'ubuntu-22.04_x86_64'
         run: |
           source VERSION
           # clang-12 と CUDA を入れる
@@ -217,74 +218,13 @@ jobs:
         with:
           name: ${{ matrix.name }}.env
           path: _package/${{ matrix.name }}/release/sora.env
-  build-ubuntu-2204:
-    strategy:
-      fail-fast: false
-      matrix:
-        name:
-          - ubuntu-22.04_x86_64
-    name: Build sora-cpp-sdk for ${{ matrix.name }}
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v3
-      - name: Bazel cache
-        uses: actions/cache@v3
-        with:
-          path: "~/.cache/bazel"
-          key: bazel-${{ matrix.name }}-v1
-      - name: Install deps for Ubuntu 22.04 x86_64
-        if: matrix.name == 'ubuntu-22.04_x86_64'
-        run: |
-          source VERSION
-          # clang-12 と CUDA を入れる
-          sudo apt-get update
-          sudo apt-get install -y software-properties-common
-          # CUDA 10 なので ubuntu1804 で正しい
-          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin
-          sudo mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600
-          sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
-          sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
-          sudo apt-get update
-          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install cuda=$CUDA_VERSION clang-12
-          # Intel Media SDK のために libva-dev, libdrm-dev を入れる
-          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install libva-dev libdrm-dev
-      - run: pip3 install numpy
-      - run: python3 run.py --test --package ${{ matrix.name }}
-      - name: Get package name
-        run: |
-          source _package/${{ matrix.name }}/release/sora.env
-          echo "name=${PACKAGE_NAME}" >> $GITHUB_OUTPUT
-          echo "boost_name=${BOOST_PACKAGE_NAME}" >> $GITHUB_OUTPUT
-          echo "lyra_name=${LYRA_PACKAGE_NAME}" >> $GITHUB_OUTPUT
-        id: package_name
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ steps.package_name.outputs.name }}
-          path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.name }}
-      - name: Upload Boost Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ steps.package_name.outputs.boost_name }}
-          path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.boost_name }}
-      - name: Upload Lyra Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ steps.package_name.outputs.lyra_name }}
-          path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.lyra_name }}
-      - name: Upload Environment
-        uses: actions/upload-artifact@v3
-        with:
-          name: ${{ matrix.name }}.env
-          path: _package/${{ matrix.name }}/release/sora.env
   create-release:
     name: Create Release
     if: contains(github.ref, 'tags/202')
     needs:
       - build-windows
       - build-macos
-      - build-ubuntu-2004
-      - build-ubuntu-2204
+      - build-ubuntu
     runs-on: ubuntu-latest
     steps:
       - name: Create Release
@@ -382,29 +322,3 @@ jobs:
           asset_path: ${{ steps.env.outputs.lyra_package_name }}/${{ steps.env.outputs.lyra_package_name }}
           asset_name: ${{ steps.env.outputs.lyra_package_name }}
           asset_content_type: ${{ steps.env.outputs.content_type }}
-  #notification:
-  #  name: Slack Notification
-  #  runs-on: ubuntu-latest
-  #  needs:
-  #    - build-windows
-  #    - build-macos
-  #    - build-ubuntu-1804
-  #    - build-ubuntu-2004
-  #    - create-release
-  #    - upload-assets
-  #  if: always()
-  #  steps:
-  #    - uses: actions/checkout@v3
-  #    - uses: rtCamp/action-slack-notify@v2
-  #      if: |
-  #        needs.build-windows.result == 'failure' ||
-  #        needs.build-macos.result == 'failure' ||
-  #        needs.build-ubuntu-1804.result == 'failure' ||
-  #        needs.build-ubuntu-2004.result == 'failure' ||
-  #        needs.create-release.result == 'failure' ||
-  #        needs.upload-assets.result == 'failure'
-  #      env:
-  #        SLACK_CHANNEL: open-momo
-  #        SLACK_COLOR: danger
-  #        SLACK_TITLE: Failure build
-  #        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
