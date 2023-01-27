@@ -13,6 +13,8 @@
 
 - [UPDATE] NVIDIA Video Codec SDK を 12.0 に上げる
     - @melpon
+- [UPDATE] deprecated になった actions/create-release と actions/upload-release の利用をやめて softprops/action-gh-release を利用する
+    - @melpon
 - [FIX] WebSocket 接続時に即エラーになると正常に OnDisconnect が呼ばれないのを修正
     - @melpon
 
