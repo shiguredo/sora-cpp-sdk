@@ -23,6 +23,8 @@ runs:
         echo "boost_package_name=$BOOST_PACKAGE_NAME" >> $GITHUB_OUTPUT
         echo "lyra_package_name=$LYRA_PACKAGE_NAME" >> $GITHUB_OUTPUT
         echo "$PACKAGE_NAME/$PACKAGE_NAME" >> package_paths.env
+        echo "$BOOST_PACKAGE_NAME/$BOOST_PACKAGE_NAME" >> package_paths.env
+        echo "$LYRA_PACKAGE_NAME/$LYRA_PACKAGE_NAME" >> package_paths.env
       id: env
     - uses: actions/download-artifact@v3
       with:
