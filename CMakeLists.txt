@@ -383,6 +383,11 @@ elseif (SORA_TARGET_OS STREQUAL "android")
       src/android/android_capturer.cpp
   )
 
+  target_compile_options(sora
+    PUBLIC
+      -fexperimental-relative-c++-abi-vtables
+  )
+
   target_compile_definitions(sora
     PUBLIC
       WEBRTC_POSIX
