@@ -214,6 +214,19 @@ int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
       std::this_thread::sleep_for(std::chrono::milliseconds(1));
       continue;
     }
+    if (sts == MFX_WRN_VIDEO_PARAM_CHANGED) {
+      mfxVideoParam param;
+      memset(&param, 0, sizeof(param));
+      sts = decoder_->GetVideoParam(&param);
+      if (sts != MFX_ERR_NONE) {
+        return WEBRTC_VIDEO_CODEC_ERROR;
+      }
+
+      width_ = param.mfx.FrameInfo.CropW;
+      height_ = param.mfx.FrameInfo.CropH;
+      continue;
+    }
+
     break;
   }
   //RTC_LOG(LS_ERROR) << "after DataOffset=" << bitstream_.DataOffset
@@ -223,6 +236,8 @@ int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
     return WEBRTC_VIDEO_CODEC_OK;
   }
   if (!syncp) {
+    RTC_LOG(LS_WARNING) << "Failed to DecodeFrameAsync: syncp is null, sts="
+                        << (int)sts;
     return WEBRTC_VIDEO_CODEC_OK;
   }
   VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
@@ -267,7 +282,7 @@ const char* VplVideoDecoderImpl::ImplementationName() const {
 }
 
 bool VplVideoDecoderImpl::InitVpl() {
-  decoder_ = CreateDecoder(session_, codec_, width_, height_, true);
+  decoder_ = CreateDecoder(session_, codec_, 4096, 4096, true);
 
   mfxStatus sts = MFX_ERR_NONE;
 

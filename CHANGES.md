@@ -17,6 +17,8 @@
     - @melpon
 - [FIX] WebSocket 接続時に即エラーになると正常に OnDisconnect が呼ばれないのを修正
     - @melpon
+- [UPDATE] oneVPL のデコードでリサイズに対応してなかったのを修正
+    - @melpon
 
 ## 2023.1.0 (2023-01-12)
 
