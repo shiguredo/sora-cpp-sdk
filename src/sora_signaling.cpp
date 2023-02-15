@@ -3,6 +3,7 @@
 // WebRTC
 #include <p2p/client/basic_port_allocator.h>
 #include <pc/rtp_media_utils.h>
+#include <pc/session_description.h>
 
 #include "sora/data_channel.h"
 #include "sora/rtc_ssl_verifier.h"
@@ -35,6 +36,10 @@ SoraSignaling::GetPeerConnection() const {
 
 std::string SoraSignaling::GetVideoMid() const {
   return video_mid_;
+}
+
+std::string SoraSignaling::GetAudioMid() const {
+  return audio_mid_;
 }
 
 std::string SoraSignaling::GetConnectionID() const {
@@ -95,6 +100,66 @@ bool SoraSignaling::ParseURL(const std::string& url,
   } else {
     return false;
   }
+}
+
+bool SoraSignaling::CheckSdp(const std::string& sdp) {
+  // 現在は Lyra の場合のみのチェック
+  if (config_.audio_codec_type != "LYRA") {
+    return true;
+  }
+
+  // SDP のパース
+  webrtc::SdpParseError sdp_error;
+  std::unique_ptr<webrtc::SessionDescriptionInterface> session_description =
+      webrtc::CreateSessionDescription(webrtc::SdpType::kOffer, sdp,
+                                       &sdp_error);
+  if (!session_description) {
+    RTC_LOG(LS_ERROR) << "Failed to create session description: "
+                      << sdp_error.description.c_str()
+                      << "\nline: " << sdp_error.line.c_str();
+    webrtc::RTCError rtc_error(webrtc::RTCErrorType::SYNTAX_ERROR,
+                               sdp_error.description);
+    DoInternalDisconnect(SoraSignalingErrorCode::INTERNAL_ERROR,
+                         "INTERNAL-ERROR",
+                         "Failed to create session description: error=" +
+                             std::string(rtc_error.message()));
+    return false;
+  }
+
+  const cricket::SessionDescription* desc = session_description->description();
+  for (const auto& content : desc->contents()) {
+    auto md = content.media_description();
+    if (md->type() != cricket::MEDIA_TYPE_AUDIO) {
+      continue;
+    }
+    for (const auto& codec : md->as_audio()->codecs()) {
+      if (codec.name != "lyra") {
+        continue;
+      }
+
+      // 全員の Lyra バージョンが Version::GetLyraCompatibleVersion() と一致してるかを調べる
+      std::string version;
+      if (!codec.GetParam("version", &version)) {
+        RTC_LOG(LS_ERROR) << "Missing Lyra version: mid=" << content.mid();
+        DoInternalDisconnect(SoraSignalingErrorCode::INTERNAL_ERROR,
+                             "INTERNAL-ERROR",
+                             "Missing Lyra version: mid=" + content.mid());
+        return false;
+      }
+
+      if (version != Version::GetLyraCompatibleVersion()) {
+        std::string str = "Incompatible Lyra version: mid=" + content.mid() +
+                          " version=" + version + " expected_version=" +
+                          Version::GetLyraCompatibleVersion();
+        RTC_LOG(LS_ERROR) << str;
+        DoInternalDisconnect(SoraSignalingErrorCode::LYRA_VERSION_INCOMPATIBLE,
+                             "INTERNAL-ERROR", str);
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 void SoraSignaling::Redirect(std::string url) {
@@ -292,7 +357,8 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     m["audio"] = false;
   } else if (config_.audio && config_.audio_codec_type.empty() &&
              config_.audio_bit_rate == 0 &&
-             config_.audio_codec_lyra_params.is_null()) {
+             config_.audio_codec_lyra_bitrate == 0 &&
+             !config_.audio_codec_lyra_usedtx) {
     m["audio"] = true;
   } else {
     m["audio"] = boost::json::object();
@@ -302,8 +368,16 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     if (config_.audio_bit_rate != 0) {
       m["audio"].as_object()["bit_rate"] = config_.audio_bit_rate;
     }
-    if (!config_.audio_codec_lyra_params.is_null()) {
-      m["audio"].as_object()["lyra_params"] = config_.audio_codec_lyra_params;
+    if (config_.audio_codec_type == "LYRA") {
+      boost::json::object p = {
+          {"version", Version::GetLyraCompatibleVersion()}};
+      if (config_.audio_codec_lyra_bitrate != 0) {
+        p["bitrate"] = config_.audio_codec_lyra_bitrate;
+      }
+      if (config_.audio_codec_lyra_usedtx) {
+        p["usedtx"] = *config_.audio_codec_lyra_usedtx;
+      }
+      m["audio"].as_object()["lyra_params"] = p;
     }
   }
 
@@ -789,6 +863,33 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
     // Redirect の中で次の Read をしているのでここで return する
     return;
   } else if (type == "offer") {
+    const std::string sdp = m.at("sdp").as_string().c_str();
+
+    std::string video_mid;
+    std::string audio_mid;
+    {
+      auto it = m.as_object().find("mid");
+      if (it != m.as_object().end()) {
+        const auto& midobj = it->value().as_object();
+        auto mit = midobj.find("video");
+        if (mit != midobj.end()) {
+          video_mid = mit->value().as_string().c_str();
+        }
+        mit = midobj.find("audio");
+        if (mit != midobj.end()) {
+          audio_mid = mit->value().as_string().c_str();
+        }
+      }
+    }
+    RTC_LOG(LS_INFO) << "video mid: " << video_mid;
+    RTC_LOG(LS_INFO) << "audio mid: " << audio_mid;
+    video_mid_ = video_mid;
+    audio_mid_ = audio_mid;
+
+    if (!CheckSdp(sdp)) {
+      return;
+    }
+
     {
       boost::json::object::iterator it;
       it = m.as_object().find("multistream");
@@ -822,7 +923,6 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
     connection_id_ = m.at("connection_id").as_string().c_str();
 
     pc_ = CreatePeerConnection(m.at("config"));
-    const std::string sdp = m.at("sdp").as_string().c_str();
 
     SessionDescription::SetOffer(
         pc_.get(), sdp,
@@ -831,20 +931,6 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
             if (self->state_ != State::Connected) {
               return;
             }
-
-            std::string mid;
-            {
-              auto it = m.as_object().find("mid");
-              if (it != m.as_object().end()) {
-                const auto& midobj = it->value().as_object();
-                it = midobj.find("video");
-                if (it != midobj.end()) {
-                  mid = it->value().as_string().c_str();
-                }
-              }
-            }
-            RTC_LOG(LS_INFO) << "mid: " << mid;
-            self->video_mid_ = mid;
 
             // simulcast では offer の setRemoteDescription が終わった後に
             // トラックを追加する必要があるため、ここで初期化する

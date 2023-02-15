@@ -52,7 +52,7 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
     config.role = config_.role;
     config.video = false;
     config.audio_codec_type = "LYRA";
-    config.audio_codec_lyra_params = {{"version", "1.3.0"}, {"usedtx", true}};
+    config.audio_codec_lyra_usedtx = true;
     config.multistream = true;
     if (!config_.access_token.empty()) {
       config.metadata = {{"access_token", config_.access_token}};
