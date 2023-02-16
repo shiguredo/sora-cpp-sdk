@@ -107,6 +107,10 @@ bool SoraSignaling::CheckSdp(const std::string& sdp) {
   if (config_.audio_codec_type != "LYRA") {
     return true;
   }
+  // Lyra バージョンをチェックしない設定になっている
+  if (config_.disable_check_lyra_version) {
+    return true;
+  }
 
   // SDP のパース
   webrtc::SdpParseError sdp_error;

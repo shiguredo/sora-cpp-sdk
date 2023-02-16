@@ -111,6 +111,7 @@ struct SoraSignalingConfig {
   rtc::PacketSocketFactory* socket_factory = nullptr;
 
   bool disable_signaling_url_randomization = false;
+  bool disable_check_lyra_version = false;
 };
 
 class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
