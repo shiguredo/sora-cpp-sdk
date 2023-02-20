@@ -19,7 +19,7 @@ jobs:
     runs-on: windows-2019
     steps:
       - uses: actions/checkout@v3
-      - uses: microsoft/setup-msbuild@v1.1
+      - uses: microsoft/setup-msbuild@v1.3
       - name: Env to output
         run: |
           echo "userprofile=${Env:USERPROFILE}" >> ${Env:GITHUB_OUTPUT}
