@@ -790,7 +790,9 @@ def install_lyra(version, install_dir, base_dir, debug, target, webrtc_version, 
                     if os.path.exists(git_bash_path):
                         os.environ['BAZEL_SH'] = git_bash_path
         opts = []
-        if not debug:
+        if debug:
+            opts += ['-c', 'dbg']
+        else:
             opts += ['-c', 'opt']
         if target == 'windows_x86_64':
             opts += ['--features', 'static_link_msvcrt']
