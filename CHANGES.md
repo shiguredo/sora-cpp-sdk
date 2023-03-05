@@ -11,6 +11,8 @@
 
 ## develop
 
+## 2023.2.0 (2023-03-05)
+
 - [UPDATE] NVIDIA Video Codec SDK を 12.0 に上げる
     - @melpon
 - [UPDATE] deprecated になった actions/create-release と actions/upload-release の利用をやめて softprops/action-gh-release を利用する
