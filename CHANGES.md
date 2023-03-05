@@ -11,6 +11,19 @@
 
 ## develop
 
+## 2023.2.0 (2023-03-05)
+
+- [UPDATE] NVIDIA Video Codec SDK を 12.0 に上げる
+    - @melpon
+- [UPDATE] deprecated になった actions/create-release と actions/upload-release の利用をやめて softprops/action-gh-release を利用する
+    - @melpon
+- [FIX] WebSocket 接続時に即エラーになると正常に OnDisconnect が呼ばれないのを修正
+    - @melpon
+- [UPDATE] oneVPL のデコードでリサイズに対応してなかったのを修正
+    - @melpon
+- [UPDATE] WebRTC を m111.5563.4.2 に上げる
+    - @melpon @miosakuma
+
 ## 2023.1.0 (2023-01-12)
 
 - [ADD] SoraSignalingConfig に audio_streaming_language_code を追加

@@ -656,12 +656,17 @@ void SoraSignaling::OnConnect(boost::system::error_code ec,
   }
 
   if (ec) {
-    RTC_LOG(LS_WARNING) << "Failed Websocket handshake: " << ec;
+    RTC_LOG(LS_WARNING) << "Failed Websocket handshake: " << ec
+                        << " url=" << url << " state=" << (int)state_
+                        << " wss_len=" << connecting_wss_.size();
     // すべての接続がうまくいかなかったら終了する
     if (state_ == State::Connecting && connecting_wss_.empty()) {
-      SendOnDisconnect(SoraSignalingErrorCode::WEBSOCKET_HANDSHAKE_FAILED,
-                       "Failed Websocket handshake: last_ec=" + ec.message() +
-                           " last_url=" + url);
+      SendOnDisconnect(
+          SoraSignalingErrorCode::WEBSOCKET_HANDSHAKE_FAILED,
+          "Failed Websocket handshake: last_ec=" + ec.message() +
+              " last_url=" + url +
+              (config_.proxy_url.empty() ? ""
+                                         : " proxy_url=" + config_.proxy_url));
     }
     return;
   }
@@ -1044,6 +1049,8 @@ void SoraSignaling::DoConnect() {
     std::shuffle(signaling_urls.begin(), signaling_urls.end(), engine);
   }
 
+  state_ = State::Connecting;
+
   std::string error_messages;
   for (const auto& url : signaling_urls) {
     URLParts parts;
@@ -1077,8 +1084,6 @@ void SoraSignaling::DoConnect() {
     SendOnDisconnect(SoraSignalingErrorCode::INVALID_PARAMETER, error_messages);
     return;
   }
-
-  state_ = State::Connecting;
 }
 
 void SoraSignaling::SetEncodingParameters(
