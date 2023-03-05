@@ -19,7 +19,7 @@
     - @melpon
 - [UPDATE] oneVPL のデコードでリサイズに対応してなかったのを修正
     - @melpon
-- [UPDATE] WebRTC を m111.5563.2.0 に上げる
+- [UPDATE] WebRTC を m111.5563.4.2 に上げる
     - @melpon @miosakuma
 
 ## 2023.1.0 (2023-01-12)
