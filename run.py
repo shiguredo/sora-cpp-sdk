@@ -790,21 +790,25 @@ def install_lyra(version, install_dir, base_dir, debug, target, webrtc_version, 
                     if os.path.exists(git_bash_path):
                         os.environ['BAZEL_SH'] = git_bash_path
         opts = []
-        if not debug:
+        if debug:
+            opts += ['-c', 'dbg']
+        else:
             opts += ['-c', 'opt']
         if target == 'windows_x86_64':
             opts += ['--features', 'static_link_msvcrt']
         if target in ('ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64'):
             opts += ['--config', 'linux_x86_64']
-            os.environ['CLANG_VERSION'] = get_clang_version(
-                os.path.join(install_dir, 'llvm', 'clang', 'bin', 'clang'))
+            clang_version = get_clang_version(os.path.join(install_dir, 'llvm', 'clang', 'bin', 'clang'))
+            clang_version = fix_clang_version(os.path.join(install_dir, 'llvm', 'clang'), clang_version)
+            os.environ['CLANG_VERSION'] = clang_version
             os.environ['BAZEL_LLVM_DIR'] = os.path.join(install_dir, 'llvm')
             os.environ['BAZEL_WEBRTC_INCLUDE_DIR'] = webrtc_info.webrtc_include_dir
             os.environ['BAZEL_WEBRTC_LIBRARY_DIR'] = webrtc_info.webrtc_library_dir
         if target == 'ubuntu-20.04_armv8_jetson':
             opts += ['--config', 'jetson']
-            os.environ['CLANG_VERSION'] = get_clang_version(
-                os.path.join(install_dir, 'llvm', 'clang', 'bin', 'clang'))
+            clang_version = get_clang_version(os.path.join(install_dir, 'llvm', 'clang', 'bin', 'clang'))
+            clang_version = fix_clang_version(os.path.join(install_dir, 'llvm', 'clang'), clang_version)
+            os.environ['CLANG_VERSION'] = clang_version
             os.environ['BAZEL_SYSROOT'] = os.path.join(install_dir, 'rootfs')
             os.environ['BAZEL_LLVM_DIR'] = os.path.join(install_dir, 'llvm')
             os.environ['BAZEL_WEBRTC_INCLUDE_DIR'] = webrtc_info.webrtc_include_dir
@@ -816,8 +820,12 @@ def install_lyra(version, install_dir, base_dir, debug, target, webrtc_version, 
 
             os.environ['ANDROID_NDK_HOME'] = os.path.join(install_dir, 'android-ndk')
             os.environ['ANDROID_API'] = api_level
-            os.environ['CLANG_VERSION'] = get_clang_version(os.path.join(
-                install_dir, 'android-ndk', 'toolchains', 'llvm', 'prebuilt', 'linux-x86_64', 'bin', 'clang'))
+            clang_version = get_clang_version(os.path.join(
+                install_dir, 'android-ndk', 'toolchains', 'llvm', 'prebuilt',
+                'linux-x86_64', 'bin', 'clang'))
+            clang_version = fix_clang_version(os.path.join(install_dir, 'android-ndk',
+                                              'toolchains', 'llvm', 'prebuilt', 'linux-x86_64'), clang_version)
+            os.environ['CLANG_VERSION'] = clang_version
             os.environ['BAZEL_LLVM_DIR'] = os.path.join(install_dir, 'llvm')
             os.environ['BAZEL_WEBRTC_INCLUDE_DIR'] = webrtc_info.webrtc_include_dir
             os.environ['BAZEL_WEBRTC_LIBRARY_DIR'] = webrtc_info.webrtc_library_dir
@@ -945,6 +953,26 @@ def get_clang_version(clang):
             return xs[i]
 
     raise Exception('Failed to get clang version')
+
+
+def fix_clang_version(clang_dir, clang_version):
+    # <clang_dir>/lib/clang/<clang_version>/include または
+    # <clang_dir>/lib64/clang/<clang_version>/include が存在するか調べて、
+    # 存在しない場合は clang_version を調節して、存在するバージョンに変換する
+    #
+    # <clang_dir>/lib/clang/16.0.0/include になっている場合と
+    # <clang_dir>/lib/clang/16/include になっている場合があるため
+    paths = [os.path.join(clang_dir, 'lib', 'clang'), os.path.join(clang_dir, 'lib64', 'clang')]
+    exists = any(map(lambda x: os.path.exists(os.path.join(x, clang_version, 'include')), paths))
+    if exists:
+        return clang_version
+
+    fixed_clang_version = clang_version.split('.')[0]
+    exists = any(map(lambda x: os.path.exists(os.path.join(x, fixed_clang_version, 'include')), paths))
+    if exists:
+        return fixed_clang_version
+
+    raise Exception(f'Failed to fix clang version: clang_dir={clang_dir} clang_version={clang_version}')
 
 
 SUPPORTED_BUILD_OS = [

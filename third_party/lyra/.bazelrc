@@ -115,6 +115,7 @@ build:windows --enable_runfiles
 build:windows --copt=/D_USE_MATH_DEFINES
 build:windows --host_copt=/D_USE_MATH_DEFINES
 build:windows --cxxopt=-D_HAS_DEPRECATED_RESULT_OF=1
+build:windows --cxxopt=/D_ITERATOR_DEBUG_LEVEL=0
 
 build:windows --cxxopt=/Zc:__cplusplus
 # c++20 needed in MSVC for designated initializers (llvm libc++
