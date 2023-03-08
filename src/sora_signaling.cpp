@@ -103,10 +103,6 @@ bool SoraSignaling::ParseURL(const std::string& url,
 }
 
 bool SoraSignaling::CheckSdp(const std::string& sdp) {
-  // 現在は Lyra の場合のみのチェック
-  if (config_.audio_codec_type != "LYRA") {
-    return true;
-  }
   // Lyra バージョンをチェックしない設定になっている
   if (config_.disable_check_lyra_version) {
     return true;
@@ -1019,6 +1015,10 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
     }
     std::string answer_type = type == "update" ? "update" : "re-answer";
     const std::string sdp = m.at("sdp").as_string().c_str();
+    if (!CheckSdp(sdp)) {
+      return;
+    }
+
     SessionDescription::SetOffer(
         pc_.get(), sdp,
         [self = shared_from_this(), type, answer_type]() {
@@ -1527,6 +1527,10 @@ void SoraSignaling::OnMessage(
     const std::string type = json.at("type").as_string().c_str();
     if (type == "re-offer") {
       const std::string sdp = json.at("sdp").as_string().c_str();
+      if (!CheckSdp(sdp)) {
+        return;
+      }
+
       SessionDescription::SetOffer(
           pc_.get(), sdp,
           [self = shared_from_this()]() {
