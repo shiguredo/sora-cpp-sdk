@@ -104,7 +104,7 @@ bool SoraSignaling::ParseURL(const std::string& url,
 
 bool SoraSignaling::CheckSdp(const std::string& sdp) {
   // Lyra バージョンをチェックしない設定になっている
-  if (config_.disable_check_lyra_version) {
+  if (!config_.check_lyra_version) {
     return true;
   }
 
@@ -130,6 +130,10 @@ bool SoraSignaling::CheckSdp(const std::string& sdp) {
   for (const auto& content : desc->contents()) {
     auto md = content.media_description();
     if (md->type() != cricket::MEDIA_TYPE_AUDIO) {
+      continue;
+    }
+    if (md->direction() == webrtc::RtpTransceiverDirection::kInactive ||
+        md->direction() == webrtc::RtpTransceiverDirection::kStopped) {
       continue;
     }
     for (const auto& codec : md->as_audio()->codecs()) {
