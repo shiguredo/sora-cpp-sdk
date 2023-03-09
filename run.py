@@ -1482,6 +1482,7 @@ def main():
             sora_cpp_sdk_version = version['SORA_CPP_SDK_VERSION']
             sora_cpp_sdk_commit = cmdcap(['git', 'rev-parse', 'HEAD'])
             android_native_api_level = version['ANDROID_NATIVE_API_LEVEL']
+            lyra_compatible_version = version['LYRA_COMPATIBLE_VERSION']
         cmake_args.append(f"-DWEBRTC_INCLUDE_DIR={cmake_path(webrtc_info.webrtc_include_dir)}")
         cmake_args.append(f"-DWEBRTC_LIBRARY_DIR={cmake_path(webrtc_info.webrtc_library_dir)}")
         cmake_args.append(f"-DSORA_CPP_SDK_VERSION={sora_cpp_sdk_version}")
@@ -1490,6 +1491,7 @@ def main():
         cmake_args.append(f"-DWEBRTC_BUILD_VERSION={webrtc_version['WEBRTC_BUILD_VERSION']}")
         cmake_args.append(f"-DWEBRTC_READABLE_VERSION={webrtc_version['WEBRTC_READABLE_VERSION']}")
         cmake_args.append(f"-DWEBRTC_COMMIT={webrtc_version['WEBRTC_COMMIT']}")
+        cmake_args.append(f"-DLYRA_COMPATIBLE_VERSION={lyra_compatible_version}")
         if platform.target.os == 'ubuntu':
             if platform.target.package_name in ('ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64'):
                 cmake_args.append("-DCMAKE_C_COMPILER=clang-12")
