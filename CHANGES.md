@@ -15,6 +15,10 @@
     - @melpon
 - [CHANGE] SoraSignalingConfig から audio_codec_lyra_params を削除して、代わりに audio_codec_lyra_bitrate と audio_codec_lyra_usedtx を追加
     - @melpon
+- [ADD] 2022.11.0 で無効にしていた Jetson の HW MJPEG デコーダを有効にする
+    - @tnoho @melpon
+- [UPDATE] JetPack 5.1 に対応する
+    - @tnoho @melpon
 
 ## 2023.2.0 (2023-03-05)
 

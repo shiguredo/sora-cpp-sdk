@@ -533,6 +533,7 @@ elseif (SORA_TARGET_OS STREQUAL "jetson")
         src/hwenc_jetson/jetson_v4l2_capturer.cpp
         src/hwenc_jetson/jetson_video_encoder.cpp
         src/hwenc_jetson/jetson_video_decoder.cpp
+        ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvBufSurface.cpp
         ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvBuffer.cpp
         ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvElement.cpp
         ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvElementProfiler.cpp
@@ -541,8 +542,8 @@ elseif (SORA_TARGET_OS STREQUAL "jetson")
         ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvLogging.cpp
         ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvV4l2Element.cpp
         ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvV4l2ElementPlane.cpp
-        ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvVideoEncoder.cpp
         ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvVideoDecoder.cpp
+        ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvVideoEncoder.cpp
     )
 
     target_include_directories(sora PRIVATE ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/include)
@@ -564,6 +565,7 @@ elseif (SORA_TARGET_OS STREQUAL "jetson")
         #nvddk_2d_v2
         nvjpeg
         nvbufsurface
+        nvbufsurftransform
         #nvos
     )
   endif(USE_JETSON_ENCODER)

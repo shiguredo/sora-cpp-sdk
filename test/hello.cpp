@@ -45,8 +45,8 @@ void HelloSora::Run() {
 
   if (config_.mode == HelloSoraConfig::Mode::Hello) {
     sora::CameraDeviceCapturerConfig cam_config;
-    cam_config.width = 640;
-    cam_config.height = 480;
+    cam_config.width = 1024;
+    cam_config.height = 768;
     cam_config.fps = 30;
     cam_config.jni_env = env;
     cam_config.application_context = GetAndroidApplicationContext(env);
