@@ -17,6 +17,8 @@
     - @melpon
 - [UPDATE] oneVPL を v2023.1.3 に上げる
     - @voluntas
+- [UPDATE] CMake を 3.25.3 に上げる
+    - @melpon
 
 ## 2023.2.0 (2023-03-05)
 
