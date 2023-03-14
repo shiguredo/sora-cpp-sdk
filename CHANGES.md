@@ -15,6 +15,8 @@
     - @melpon
 - [CHANGE] SoraSignalingConfig から audio_codec_lyra_params を削除して、代わりに audio_codec_lyra_bitrate と audio_codec_lyra_usedtx を追加
     - @melpon
+- [UPDATE] CMake を 3.25.3 に上げる
+    - @melpon
 
 ## 2023.2.0 (2023-03-05)
 
