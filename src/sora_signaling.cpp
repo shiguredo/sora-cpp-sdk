@@ -497,14 +497,14 @@ void SoraSignaling::DoInternalDisconnect(
         [self = shared_from_this(), on_close, force_error_code,
          message](boost::system::error_code ec1) {
           self->closing_timeout_timer_.expires_from_now(
-              boost::posix_time::seconds(3));
+              boost::posix_time::seconds(
+                  self->config_.websocket_close_timeout));
           self->closing_timeout_timer_.async_wait(
               [self](boost::system::error_code ec) {
                 if (ec) {
                   return;
                 }
-                self->on_ws_close_(boost::system::errc::make_error_code(
-                    boost::system::errc::timed_out));
+                self->ws_->Cancel();
               });
           self->on_ws_close_ = [self, ec1,
                                 on_close](boost::system::error_code ec2) {
@@ -577,8 +577,7 @@ void SoraSignaling::DoInternalDisconnect(
                 if (ec) {
                   return;
                 }
-                self->on_ws_close_(boost::system::errc::make_error_code(
-                    boost::system::errc::timed_out));
+                self->ws_->Cancel();
               });
           self->on_ws_close_ = [self, on_close](boost::system::error_code ec) {
             self->closing_timeout_timer_.cancel();

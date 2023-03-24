@@ -491,41 +491,43 @@ void Websocket::Close(close_callback_t on_close, int timeout_seconds) {
 
 void Websocket::DoClose(close_callback_t on_close, int timeout_seconds) {
   if (IsSSL()) {
-    wss_->async_close(boost::beast::websocket::close_code::normal,
-                      std::bind(&Websocket::OnClose, this, std::move(on_close),
-                                std::placeholders::_1));
+    wss_->async_close(
+        boost::beast::websocket::close_code::normal,
+        std::bind(&Websocket::OnClose, this, on_close, std::placeholders::_1));
   } else {
-    ws_->async_close(boost::beast::websocket::close_code::normal,
-                     std::bind(&Websocket::OnClose, this, std::move(on_close),
-                               std::placeholders::_1));
+    ws_->async_close(
+        boost::beast::websocket::close_code::normal,
+        std::bind(&Websocket::OnClose, this, on_close, std::placeholders::_1));
   }
 
   close_timeout_timer_.expires_from_now(
       boost::posix_time::seconds(timeout_seconds));
-  close_timeout_timer_.async_wait([on_close, timeout_seconds,
-                                   this](boost::system::error_code ec) {
-    if (ec) {
-      return;
-    }
-    RTC_LOG(LS_INFO) << "Websocket::Close timeout this=" << (void*)this
-                     << " timeout_seconds=" << timeout_seconds;
-    closed_ = true;
-    on_close(
-        boost::system::errc::make_error_code(boost::system::errc::timed_out));
-  });
+  close_timeout_timer_.async_wait(
+      [on_close, timeout_seconds, this](boost::system::error_code ec) {
+        if (ec) {
+          return;
+        }
+        RTC_LOG(LS_INFO) << "Websocket::Close timeout this=" << (void*)this
+                         << " timeout_seconds=" << timeout_seconds;
+        Cancel();
+      });
 }
 
 void Websocket::OnClose(close_callback_t on_close,
                         boost::system::error_code ec) {
-  if (closed_) {
-    return;
-  }
-
   RTC_LOG(LS_INFO) << "Websocket::OnClose this=" << (void*)this
                    << " ec=" << ec.message() << " code=" << reason().code
                    << " reason=" << reason().reason;
   close_timeout_timer_.cancel();
   on_close(ec);
+}
+
+void Websocket::Cancel() {
+  if (IsSSL()) {
+    wss_->next_layer().next_layer().cancel();
+  } else {
+    ws_->next_layer().cancel();
+  }
 }
 
 const boost::beast::websocket::close_reason& Websocket::reason() const {
