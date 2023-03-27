@@ -56,6 +56,7 @@ cc_toolchain_config(
 
         "--target=aarch64-none-linux-android%{android_api}",
         "-D__ANDROID_API__=%{android_api}",
+        "-fexperimental-relative-c++-abi-vtables",
     ],
     dbg_compile_flags = [
         "-g",
@@ -83,7 +84,6 @@ cc_toolchain_config(
         # size in some cases?).
         "-ffunction-sections",
         "-fdata-sections",
-        "-fexperimental-relative-c++-abi-vtables",
     ],
     # conly_flags = [],
     cxx_flags = [
