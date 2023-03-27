@@ -19,6 +19,12 @@
     - @tnoho @melpon
 - [UPDATE] JetPack 5.1 に対応する
     - @tnoho @melpon
+- [UPDATE] oneVPL を v2023.1.3 に上げる
+    - @voluntas
+- [UPDATE] CMake を 3.25.3 に上げる
+    - @melpon
+- [FIX] WS 切断時のタイムアウトが起きた際に無効な関数オブジェクトを呼んでいたのを修正
+    - @melpon
 
 ## 2023.2.0 (2023-03-05)
 
