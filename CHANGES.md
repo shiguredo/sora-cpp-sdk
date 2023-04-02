@@ -11,6 +11,27 @@
 
 ## develop
 
+## 2023.3.0 (2023-04-02)
+
+- [CHANGE] SoraSignalingConfig から audio_codec_lyra_params を削除して、代わりに audio_codec_lyra_bitrate と audio_codec_lyra_usedtx を追加
+    - @melpon
+- [UPDATE] Lyra で接続する時に、チャンネル全体で同じバージョンの Lyra を使っているかをチェックする
+    - @melpon
+- [UPDATE] JetPack 5.1 に対応する
+    - @tnoho @melpon
+- [UPDATE] oneVPL を v2023.1.3 に上げる
+    - @voluntas
+- [UPDATE] CMake を 3.25.3 に上げる
+    - @melpon
+- [UPDATE] 例外が有効になっていなかった一部の依存ライブラリも例外を有効にする
+    - @melpon
+- [UPDATE] WebRTC を m111.5563.4.4 に上げる
+    - @melpon
+- [ADD] 2022.11.0 で無効にしていた Jetson の HW MJPEG デコーダを有効にする
+    - @tnoho @melpon
+- [FIX] WS 切断時のタイムアウトが起きた際に無効な関数オブジェクトを呼んでいたのを修正
+    - @melpon
+
 ## 2023.2.0 (2023-03-05)
 
 - [UPDATE] NVIDIA Video Codec SDK を 12.0 に上げる

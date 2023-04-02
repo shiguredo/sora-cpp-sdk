@@ -30,6 +30,7 @@ enum class SoraSignalingErrorCode {
   WEBSOCKET_ONERROR,
   PEER_CONNECTION_STATE_FAILED,
   ICE_FAILED,
+  LYRA_VERSION_INCOMPATIBLE,
 };
 
 class SoraSignalingObserver {
@@ -65,7 +66,8 @@ struct SoraSignalingConfig {
   bool audio = true;
   std::string video_codec_type = "";
   std::string audio_codec_type = "";
-  boost::json::value audio_codec_lyra_params;
+  int audio_codec_lyra_bitrate = 0;
+  boost::optional<bool> audio_codec_lyra_usedtx;
   int video_bit_rate = 0;
   int audio_bit_rate = 0;
   std::string audio_streaming_language_code;
@@ -109,6 +111,7 @@ struct SoraSignalingConfig {
   rtc::PacketSocketFactory* socket_factory = nullptr;
 
   bool disable_signaling_url_randomization = false;
+  bool check_lyra_version = false;
 };
 
 class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
@@ -122,6 +125,7 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
       const SoraSignalingConfig& config);
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> GetPeerConnection() const;
   std::string GetVideoMid() const;
+  std::string GetAudioMid() const;
 
   void Connect();
   void Disconnect();
@@ -139,6 +143,8 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
   void OnRedirect(boost::system::error_code ec,
                   std::string url,
                   std::shared_ptr<Websocket> ws);
+
+  bool CheckSdp(const std::string& sdp);
 
   void DoRead();
   void DoSendConnect(bool redirect);
@@ -238,6 +244,7 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> pc_;
   std::vector<webrtc::RtpEncodingParameters> encodings_;
   std::string video_mid_;
+  std::string audio_mid_;
 
   boost::asio::deadline_timer connection_timeout_timer_;
   boost::asio::deadline_timer closing_timeout_timer_;

@@ -83,7 +83,6 @@ cc_toolchain_config(
         # size in some cases?).
         "-ffunction-sections",
         "-fdata-sections",
-        "-fexperimental-relative-c++-abi-vtables",
     ],
     # conly_flags = [],
     cxx_flags = [
@@ -94,6 +93,8 @@ cc_toolchain_config(
         "-D_LIBCPP_ABI_NAMESPACE=Cr",
         "-D_LIBCPP_ABI_VERSION=2",
         "-D_LIBCPP_DISABLE_AVAILABILITY",
+        "-fexperimental-relative-c++-abi-vtables",
+        "-fexceptions",
     ],
     link_flags = [
         "-Wl,-no-as-needed",

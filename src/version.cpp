@@ -219,4 +219,8 @@ std::string Version::GetEnvironmentName() {
   return environment;
 }
 
+std::string Version::GetLyraCompatibleVersion() {
+  return LYRA_COMPATIBLE_VERSION;
+}
+
 }  // namespace sora

@@ -45,8 +45,8 @@ void HelloSora::Run() {
 
   if (config_.mode == HelloSoraConfig::Mode::Hello) {
     sora::CameraDeviceCapturerConfig cam_config;
-    cam_config.width = 640;
-    cam_config.height = 480;
+    cam_config.width = 1024;
+    cam_config.height = 768;
     cam_config.fps = 30;
     cam_config.jni_env = env;
     cam_config.application_context = GetAndroidApplicationContext(env);
@@ -72,7 +72,7 @@ void HelloSora::Run() {
     config.video = false;
     config.sora_client = "Hello Sora with Lyra";
     config.audio_codec_type = "LYRA";
-    config.audio_codec_lyra_params = {{"version", "1.3.0"}};
+    config.check_lyra_version = true;
   }
   conn_ = sora::SoraSignaling::Create(config);
 
@@ -147,6 +147,14 @@ int main(int argc, char* argv[]) {
   }
   config.channel_id = v.as_object().at("channel_id").as_string().c_str();
   config.role = "sendonly";
+  if (auto it = v.as_object().find("role"); it != v.as_object().end()) {
+    config.role = it->value().as_string();
+  }
+  if (auto it = v.as_object().find("mode"); it != v.as_object().end()) {
+    if (it->value().as_string() == "lyra") {
+      config.mode = HelloSoraConfig::Mode::Lyra;
+    }
+  }
 
   auto hello = sora::CreateSoraClient<HelloSora>(config);
   hello->Run();

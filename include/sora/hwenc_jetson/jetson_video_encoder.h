@@ -33,7 +33,6 @@
 
 class NvBuffer;
 class NvV4l2Element;
-//class NvVideoConverter;
 class NvVideoEncoder;
 struct v4l2_ctrl_videoenc_outputbuf_metadata_;
 
@@ -94,21 +93,7 @@ class JetsonVideoEncoder : public webrtc::VideoEncoder {
 
   int32_t JetsonConfigure();
   void JetsonRelease();
-  void SendEOS(NvV4l2Element* element);
-  static bool ConvertFinishedCallbackFunction(struct v4l2_buffer* v4l2_buf,
-                                              NvBuffer* buffer,
-                                              NvBuffer* shared_buffer,
-                                              void* data);
-  bool ConvertFinishedCallback(struct v4l2_buffer* v4l2_buf,
-                               NvBuffer* buffer,
-                               NvBuffer* shared_buffer);
-  static bool EncodeOutputCallbackFunction(struct v4l2_buffer* v4l2_buf,
-                                           NvBuffer* buffer,
-                                           NvBuffer* shared_buffer,
-                                           void* data);
-  bool EncodeOutputCallback(struct v4l2_buffer* v4l2_buf,
-                            NvBuffer* buffer,
-                            NvBuffer* shared_buffer);
+  void SendEOS();
   static bool EncodeFinishedCallbackFunction(struct v4l2_buffer* v4l2_buf,
                                              NvBuffer* buffer,
                                              NvBuffer* shared_buffer,
@@ -125,7 +110,6 @@ class JetsonVideoEncoder : public webrtc::VideoEncoder {
 
   webrtc::VideoCodec codec_;
   webrtc::EncodedImageCallback* callback_;
-  //NvVideoConverter* converter_;
   NvVideoEncoder* encoder_;
   std::unique_ptr<webrtc::BitrateAdjuster> bitrate_adjuster_;
   uint32_t framerate_;
@@ -139,7 +123,6 @@ class JetsonVideoEncoder : public webrtc::VideoEncoder {
   int32_t width_;
   int32_t height_;
   bool use_native_;
-  NvV4l2Element* native_input_elem_;
   bool use_dmabuff_;
   int dmabuff_fd_[CONVERTER_CAPTURE_NUM];
 
@@ -153,6 +136,7 @@ class JetsonVideoEncoder : public webrtc::VideoEncoder {
   std::mutex enc0_buffer_mtx_;
   std::condition_variable enc0_buffer_cond_;
   std::queue<NvBuffer*>* enc0_buffer_queue_;
+  int output_plane_fd_[32];
   webrtc::EncodedImage encoded_image_;
 };
 
