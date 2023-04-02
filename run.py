@@ -1225,6 +1225,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                 '-nostdinc++',
                 '-std=gnu++17',
                 f"-isystem{os.path.join(webrtc_info.libcxx_dir, 'include')}",
+                '-fexperimental-relative-c++-abi-vtables',
             ]
             install_boost_args['toolset'] = 'clang'
             install_boost_args['android_ndk'] = os.path.join(install_dir, 'android-ndk')

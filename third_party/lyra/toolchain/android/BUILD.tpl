@@ -56,7 +56,6 @@ cc_toolchain_config(
 
         "--target=aarch64-none-linux-android%{android_api}",
         "-D__ANDROID_API__=%{android_api}",
-        "-fexperimental-relative-c++-abi-vtables",
     ],
     dbg_compile_flags = [
         "-g",
@@ -94,6 +93,8 @@ cc_toolchain_config(
         "-D_LIBCPP_ABI_NAMESPACE=Cr",
         "-D_LIBCPP_ABI_VERSION=2",
         "-D_LIBCPP_DISABLE_AVAILABILITY",
+        "-fexperimental-relative-c++-abi-vtables",
+        "-fexceptions",
     ],
     link_flags = [
         "-Wl,-no-as-needed",

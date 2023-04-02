@@ -101,7 +101,7 @@ git_repository(
     # Below is reproducible and equivalent to `tag = "v2.9.0"`
     commit = "8a20d54a3c1bfa38c03ea99a2ad3c1b0a45dfa95",
     shallow_since = "1652465115 -0700",
-    patches = ["//:patches/android_tensorflow.patch"],
+    patches = ["//:patches/android_tensorflow.patch", "//:patches/use_exceptions_tensorflow.patch"],
     patch_args = ["-p1"]
 )
 
