@@ -12,21 +12,22 @@
 #include "sora/audio_device_module.h"
 #include "sora/camera_device_capturer.h"
 #include "sora/java_context.h"
-#include "sora/sora_default_client.h"
+#include "sora/sora_client_factory.h"
 #include "sora/sora_video_decoder_factory.h"
 #include "sora/sora_video_encoder_factory.h"
 
-struct SoraClientConfig : sora::SoraDefaultClientConfig {
+struct SoraClientConfig {
   std::vector<std::string> signaling_urls;
   std::string channel_id;
   std::string role;
 };
 
 class SoraClient : public std::enable_shared_from_this<SoraClient>,
-                   public sora::SoraDefaultClient {
+                   public sora::SoraSignalingObserver {
  public:
-  SoraClient(SoraClientConfig config)
-      : sora::SoraDefaultClient(config), config_(config) {}
+  SoraClient(std::shared_ptr<sora::SoraClientFactory> factory,
+             SoraClientConfig config)
+      : factory_(factory), config_(config) {}
   ~SoraClient() {
     RTC_LOG(LS_INFO) << "SoraClient dtor";
     timer_.reset();
@@ -37,7 +38,7 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
     ioc_.reset(new boost::asio::io_context(1));
 
     sora::SoraSignalingConfig config;
-    config.pc_factory = factory();
+    config.pc_factory = pc_factory();
     config.io_context = ioc_.get();
     config.observer = shared_from_this();
     config.signaling_urls = config_.signaling_urls;
@@ -86,6 +87,7 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
     ioc_->run();
   }
 
+  void OnSetOffer(std::string offer) override {}
   void OnDisconnect(sora::SoraSignalingErrorCode ec,
                     std::string message) override {
     RTC_LOG(LS_INFO) << "OnDisconnect: " << message;
@@ -95,6 +97,14 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
     }
     ioc_->stop();
   }
+  void OnNotify(std::string text) override {}
+  void OnPush(std::string text) override {}
+  void OnMessage(std::string label, std::string data) override {}
+
+  void OnTrack(rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
+      override {}
+  void OnRemoveTrack(
+      rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override {}
 
   void OnDataChannel(std::string label) override {
     bool result = conn_->SendDataChannel(label, label);
@@ -112,6 +122,12 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
   }
 
  private:
+  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> pc_factory() {
+    return factory_->peer_connection_factory();
+  }
+
+ private:
+  std::shared_ptr<sora::SoraClientFactory> factory_;
   SoraClientConfig config_;
   std::shared_ptr<sora::SoraSignaling> conn_;
   std::unique_ptr<boost::asio::io_context> ioc_;
@@ -139,6 +155,11 @@ int main(int argc, char* argv[]) {
   rtc::LogMessage::LogTimestamps();
   rtc::LogMessage::LogThreads();
 
+  sora::SoraClientFactoryConfig factory_config;
+  factory_config.use_audio_device = false;
+  factory_config.use_hardware_encoder = false;
+  auto factory = sora::SoraClientFactory::Create(factory_config);
+
   boost::json::value v;
   {
     std::ifstream ifs(argv[1]);
@@ -148,8 +169,6 @@ int main(int argc, char* argv[]) {
     v = boost::json::parse(js);
   }
   SoraClientConfig config;
-  config.use_audio_device = false;
-  config.use_hardware_encoder = false;
   for (auto&& x : v.as_object().at("signaling_urls").as_array()) {
     config.signaling_urls.push_back(x.as_string().c_str());
   }
@@ -157,7 +176,7 @@ int main(int argc, char* argv[]) {
   config.role = "sendrecv";
 
   for (int i = 0; i < 10; i++) {
-    auto client = sora::CreateSoraClient<SoraClient>(config);
+    auto client = std::make_shared<SoraClient>(factory, config);
     client->Run();
   }
 }

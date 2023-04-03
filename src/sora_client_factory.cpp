@@ -1,4 +1,4 @@
-#include "sora/sora_default_client.h"
+#include "sora/sora_client_factory.h"
 
 // WebRTC
 #include <api/create_peerconnection_factory.h>
@@ -14,10 +14,6 @@
 #include <rtc_base/logging.h>
 #include <rtc_base/ssl_adapter.h>
 
-#ifdef _WIN32
-#include <rtc_base/win/scoped_com_initializer.h>
-#endif
-
 #include "sora/audio_device_module.h"
 #include "sora/camera_device_capturer.h"
 #include "sora/java_context.h"
@@ -29,23 +25,22 @@
 
 namespace sora {
 
-SoraDefaultClient::SoraDefaultClient(SoraDefaultClientConfig config)
-    : config_(config) {}
+std::shared_ptr<SoraClientFactory> SoraClientFactory::Create(
+    const SoraClientFactoryConfig& config) {
+  std::shared_ptr<SoraClientFactory> f = std::make_shared<SoraClientFactory>();
 
-bool SoraDefaultClient::Configure() {
-  rtc::InitializeSSL();
-
-  network_thread_ = rtc::Thread::CreateWithSocketServer();
-  network_thread_->Start();
-  worker_thread_ = rtc::Thread::Create();
-  worker_thread_->Start();
-  signaling_thread_ = rtc::Thread::Create();
-  signaling_thread_->Start();
+  f->config_ = config;
+  f->network_thread_ = rtc::Thread::CreateWithSocketServer();
+  f->network_thread_->Start();
+  f->worker_thread_ = rtc::Thread::Create();
+  f->worker_thread_->Start();
+  f->signaling_thread_ = rtc::Thread::Create();
+  f->signaling_thread_->Start();
 
   webrtc::PeerConnectionFactoryDependencies dependencies;
-  dependencies.network_thread = network_thread_.get();
-  dependencies.worker_thread = worker_thread_.get();
-  dependencies.signaling_thread = signaling_thread_.get();
+  dependencies.network_thread = f->network_thread_.get();
+  dependencies.worker_thread = f->worker_thread_.get();
+  dependencies.signaling_thread = f->signaling_thread_.get();
   dependencies.task_queue_factory = webrtc::CreateDefaultTaskQueueFactory();
   dependencies.call_factory = webrtc::CreateCallFactory();
   dependencies.event_log_factory =
@@ -57,14 +52,17 @@ bool SoraDefaultClient::Configure() {
   // media_dependencies
   cricket::MediaEngineDependencies media_dependencies;
   media_dependencies.task_queue_factory = dependencies.task_queue_factory.get();
-  media_dependencies.adm = worker_thread_->BlockingCall([&] {
+  media_dependencies.adm = f->worker_thread_->BlockingCall([&] {
     sora::AudioDeviceModuleConfig config;
-    if (!config_.use_audio_device) {
+    if (!f->config_.use_audio_device) {
       config.audio_layer = webrtc::AudioDeviceModule::kDummyAudio;
     }
     config.task_queue_factory = dependencies.task_queue_factory.get();
     config.jni_env = sora::GetJNIEnv();
-    config.application_context = GetAndroidApplicationContext(config.jni_env);
+    if (f->config_.get_android_application_context) {
+      config.application_context =
+          f->config_.get_android_application_context(config.jni_env);
+    }
     return sora::CreateAudioDeviceModule(config);
   });
 
@@ -76,7 +74,7 @@ bool SoraDefaultClient::Configure() {
   auto cuda_context = sora::CudaContext::Create();
   {
     auto config =
-        config_.use_hardware_encoder
+        f->config_.use_hardware_encoder
             ? sora::GetDefaultVideoEncoderFactoryConfig(cuda_context, env)
             : sora::GetSoftwareOnlyVideoEncoderFactoryConfig();
     config.use_simulcast_adapter = true;
@@ -85,7 +83,7 @@ bool SoraDefaultClient::Configure() {
   }
   {
     auto config =
-        config_.use_hardware_encoder
+        f->config_.use_hardware_encoder
             ? sora::GetDefaultVideoDecoderFactoryConfig(cuda_context, env)
             : sora::GetSoftwareOnlyVideoDecoderFactoryConfig();
     media_dependencies.video_decoder_factory =
@@ -96,28 +94,32 @@ bool SoraDefaultClient::Configure() {
   media_dependencies.audio_processing =
       webrtc::AudioProcessingBuilder().Create();
 
+  if (f->config_.configure_media_dependencies) {
+    f->config_.configure_media_dependencies(media_dependencies);
+  }
+
   dependencies.media_engine =
       cricket::CreateMediaEngine(std::move(media_dependencies));
 
-  ConfigureDependencies(dependencies);
+  if (f->config_.configure_dependencies) {
+    f->config_.configure_dependencies(dependencies);
+  }
 
-  factory_ = sora::CreateModularPeerConnectionFactoryWithContext(
-      std::move(dependencies), connection_context_);
+  f->factory_ = sora::CreateModularPeerConnectionFactoryWithContext(
+      std::move(dependencies), f->connection_context_);
 
-  if (factory_ == nullptr) {
+  if (f->factory_ == nullptr) {
     RTC_LOG(LS_ERROR) << "Failed to create PeerConnectionFactory";
-    return false;
+    return nullptr;
   }
 
   webrtc::PeerConnectionFactoryInterface::Options factory_options;
   factory_options.disable_encryption = false;
   factory_options.ssl_max_version = rtc::SSL_PROTOCOL_DTLS_12;
   factory_options.crypto_options.srtp.enable_gcm_crypto_suites = true;
-  factory_->SetOptions(factory_options);
+  f->factory_->SetOptions(factory_options);
 
-  OnConfigured();
-
-  return true;
+  return f;
 }
 
 }  // namespace sora
