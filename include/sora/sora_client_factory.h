@@ -38,6 +38,19 @@ struct SoraClientFactoryConfig {
 // Sora 向けクライアントを生成するためのクラス
 //
 // 必要なスレッドの実行や、PeerConnectionFactory の生成を行う。
+//
+// 使い方：
+//   sora::SoraClientFactoryConfig factory_config;
+//   // 必要なら factory_config をカスタマイズする
+//   factory_config.configure_media_dependencies = [](cricket::MediaEngineDependencies& dep){ ... };
+//   factory_config.configure_dependencies = [](webrtc::PeerConnectionFactoryDependencies& dep){ ... };
+//   // Android に対応する場合は get_android_application_context を設定する
+//   factory_config.get_android_application_context = [](void* env){ ... };
+//
+//   auto factory = sora::SoraClientFactory::Create(factory_config);
+//
+//   // factory を使って Sora のクライアントを生成する
+//   auto client = std::make_shared<MyClient>(factory);
 class SoraClientFactory {
  public:
   static std::shared_ptr<SoraClientFactory> Create(
@@ -54,6 +67,11 @@ class SoraClientFactory {
     return connection_context_;
   }
   const SoraClientFactoryConfig& config() const { return config_; }
+  void* android_application_context(void* env) const {
+    return config_.get_android_application_context
+               ? config_.get_android_application_context(env)
+               : nullptr;
+  }
 
  private:
   SoraClientFactoryConfig config_;
