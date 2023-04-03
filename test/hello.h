@@ -1,7 +1,7 @@
 #ifndef TEST_HELLO_H_
 #define TEST_HELLO_H_
 
-#include "sora/sora_client_factory.h"
+#include "sora/sora_client_context.h"
 
 struct HelloSoraConfig {
   std::vector<std::string> signaling_urls;
@@ -17,7 +17,7 @@ struct HelloSoraConfig {
 class HelloSora : public std::enable_shared_from_this<HelloSora>,
                   public sora::SoraSignalingObserver {
  public:
-  HelloSora(std::shared_ptr<sora::SoraClientFactory> factory,
+  HelloSora(std::shared_ptr<sora::SoraClientContext> context,
             HelloSoraConfig config);
   ~HelloSora();
 
@@ -40,11 +40,11 @@ class HelloSora : public std::enable_shared_from_this<HelloSora>,
 
  private:
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> pc_factory() {
-    return factory_->peer_connection_factory();
+    return context_->peer_connection_factory();
   }
 
  private:
-  std::shared_ptr<sora::SoraClientFactory> factory_;
+  std::shared_ptr<sora::SoraClientContext> context_;
   HelloSoraConfig config_;
   rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source_;
   rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track_;

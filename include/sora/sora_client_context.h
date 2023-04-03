@@ -1,5 +1,5 @@
-#ifndef SORA_SORA_CLIENT_FACTORY_H_
-#define SORA_SORA_CLIENT_FACTORY_H_
+#ifndef SORA_SORA_CLIENT_CONTEXT_H_
+#define SORA_SORA_CLIENT_CONTEXT_H_
 
 // WebRTC
 #include <api/peer_connection_interface.h>
@@ -10,7 +10,7 @@
 
 namespace sora {
 
-struct SoraClientFactoryConfig {
+struct SoraClientContextConfig {
   // オーディオデバイスを利用するかどうか
   // false にすると一切オーディオデバイスを掴まなくなる
   bool use_audio_device = true;
@@ -35,26 +35,26 @@ struct SoraClientFactoryConfig {
   std::function<void*(void*)> get_android_application_context;
 };
 
-// Sora 向けクライアントを生成するためのクラス
+// Sora 向けクライアントを生成するためのデータを保持するクラス
 //
 // 必要なスレッドの実行や、PeerConnectionFactory の生成を行う。
 //
 // 使い方：
-//   sora::SoraClientFactoryConfig factory_config;
-//   // 必要なら factory_config をカスタマイズする
-//   factory_config.configure_media_dependencies = [](cricket::MediaEngineDependencies& dep){ ... };
-//   factory_config.configure_dependencies = [](webrtc::PeerConnectionFactoryDependencies& dep){ ... };
+//   sora::SoraClientContextConfig context_config;
+//   // 必要なら context_config をカスタマイズする
+//   context_config.configure_media_dependencies = [](cricket::MediaEngineDependencies& dep){ ... };
+//   context_config.configure_dependencies = [](webrtc::PeerConnectionFactoryDependencies& dep){ ... };
 //   // Android に対応する場合は get_android_application_context を設定する
-//   factory_config.get_android_application_context = [](void* env){ ... };
+//   context_config.get_android_application_context = [](void* env){ ... };
 //
-//   auto factory = sora::SoraClientFactory::Create(factory_config);
+//   auto context = sora::SoraClientContext::Create(context_config);
 //
-//   // factory を使って Sora のクライアントを生成する
-//   auto client = std::make_shared<MyClient>(factory);
-class SoraClientFactory {
+//   // context を使って Sora のクライアントを生成する
+//   auto client = std::make_shared<MyClient>(context);
+class SoraClientContext {
  public:
-  static std::shared_ptr<SoraClientFactory> Create(
-      const SoraClientFactoryConfig& config);
+  static std::shared_ptr<SoraClientContext> Create(
+      const SoraClientContextConfig& config);
 
   rtc::Thread* network_thread() const { return network_thread_.get(); }
   rtc::Thread* worker_thread() const { return worker_thread_.get(); }
@@ -66,7 +66,7 @@ class SoraClientFactory {
   rtc::scoped_refptr<webrtc::ConnectionContext> connection_context() const {
     return connection_context_;
   }
-  const SoraClientFactoryConfig& config() const { return config_; }
+  const SoraClientContextConfig& config() const { return config_; }
   void* android_application_context(void* env) const {
     return config_.get_android_application_context
                ? config_.get_android_application_context(env)
@@ -74,7 +74,7 @@ class SoraClientFactory {
   }
 
  private:
-  SoraClientFactoryConfig config_;
+  SoraClientContextConfig config_;
   std::unique_ptr<rtc::Thread> network_thread_;
   std::unique_ptr<rtc::Thread> worker_thread_;
   std::unique_ptr<rtc::Thread> signaling_thread_;

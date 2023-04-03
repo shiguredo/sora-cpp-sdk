@@ -12,7 +12,7 @@
 #include "sora/audio_device_module.h"
 #include "sora/camera_device_capturer.h"
 #include "sora/java_context.h"
-#include "sora/sora_client_factory.h"
+#include "sora/sora_client_context.h"
 #include "sora/sora_video_decoder_factory.h"
 #include "sora/sora_video_encoder_factory.h"
 
@@ -25,9 +25,9 @@ struct SoraClientConfig {
 class SoraClient : public std::enable_shared_from_this<SoraClient>,
                    public sora::SoraSignalingObserver {
  public:
-  SoraClient(std::shared_ptr<sora::SoraClientFactory> factory,
+  SoraClient(std::shared_ptr<sora::SoraClientContext> context,
              SoraClientConfig config)
-      : factory_(factory), config_(config) {}
+      : context_(context), config_(config) {}
   ~SoraClient() {
     RTC_LOG(LS_INFO) << "SoraClient dtor";
     timer_.reset();
@@ -113,11 +113,11 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
 
  private:
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> pc_factory() {
-    return factory_->peer_connection_factory();
+    return context_->peer_connection_factory();
   }
 
  private:
-  std::shared_ptr<sora::SoraClientFactory> factory_;
+  std::shared_ptr<sora::SoraClientContext> context_;
   SoraClientConfig config_;
   rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source_;
   rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track_;
@@ -146,8 +146,8 @@ int main(int argc, char* argv[]) {
   //rtc::LogMessage::LogTimestamps();
   //rtc::LogMessage::LogThreads();
 
-  auto factory =
-      sora::SoraClientFactory::Create(sora::SoraClientFactoryConfig());
+  auto context =
+      sora::SoraClientContext::Create(sora::SoraClientContextConfig());
 
   boost::json::value v;
   {
@@ -165,7 +165,7 @@ int main(int argc, char* argv[]) {
   config.role = "sendrecv";
 
   for (int i = 0; i < 10; i++) {
-    auto client = std::make_shared<SoraClient>(factory, config);
+    auto client = std::make_shared<SoraClient>(context, config);
     client->Run();
   }
 }

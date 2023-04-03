@@ -11,7 +11,7 @@
 
 ## develop
 
-- [CHANGE] SoraDefaultClient を削除して SoraClientFactory を追加
+- [CHANGE] SoraDefaultClient を削除して SoraClientContext を追加
     - @melpon
 
 ## 2023.3.0 (2023-04-02)

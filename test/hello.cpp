@@ -24,9 +24,9 @@ void* GetAndroidApplicationContext(void* env) {
 }
 #endif
 
-HelloSora::HelloSora(std::shared_ptr<sora::SoraClientFactory> factory,
+HelloSora::HelloSora(std::shared_ptr<sora::SoraClientContext> context,
                      HelloSoraConfig config)
-    : factory_(factory), config_(config) {}
+    : context_(context), config_(config) {}
 
 HelloSora::~HelloSora() {
   RTC_LOG(LS_INFO) << "HelloSora dtor";
@@ -130,9 +130,9 @@ int main(int argc, char* argv[]) {
   rtc::LogMessage::LogTimestamps();
   rtc::LogMessage::LogThreads();
 
-  sora::SoraClientFactoryConfig factory_config;
-  factory_config.get_android_application_context = GetAndroidApplicationContext;
-  auto factory = sora::SoraClientFactory::Create(factory_config);
+  sora::SoraClientContextConfig context_config;
+  context_config.get_android_application_context = GetAndroidApplicationContext;
+  auto context = sora::SoraClientContext::Create(context_config);
 
   boost::json::value v;
   {
@@ -157,7 +157,7 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  auto hello = std::make_shared<HelloSora>(factory, config);
+  auto hello = std::make_shared<HelloSora>(context, config);
   hello->Run();
 }
 

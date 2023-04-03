@@ -12,7 +12,7 @@
 #include "sora/audio_device_module.h"
 #include "sora/camera_device_capturer.h"
 #include "sora/java_context.h"
-#include "sora/sora_client_factory.h"
+#include "sora/sora_client_context.h"
 #include "sora/sora_video_decoder_factory.h"
 #include "sora/sora_video_encoder_factory.h"
 
@@ -25,9 +25,9 @@ struct SoraClientConfig {
 class SoraClient : public std::enable_shared_from_this<SoraClient>,
                    public sora::SoraSignalingObserver {
  public:
-  SoraClient(std::shared_ptr<sora::SoraClientFactory> factory,
+  SoraClient(std::shared_ptr<sora::SoraClientContext> context,
              SoraClientConfig config)
-      : factory_(factory), config_(config) {}
+      : context_(context), config_(config) {}
   ~SoraClient() {
     RTC_LOG(LS_INFO) << "SoraClient dtor";
     timer_.reset();
@@ -123,11 +123,11 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
 
  private:
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> pc_factory() {
-    return factory_->peer_connection_factory();
+    return context_->peer_connection_factory();
   }
 
  private:
-  std::shared_ptr<sora::SoraClientFactory> factory_;
+  std::shared_ptr<sora::SoraClientContext> context_;
   SoraClientConfig config_;
   std::shared_ptr<sora::SoraSignaling> conn_;
   std::unique_ptr<boost::asio::io_context> ioc_;
@@ -155,10 +155,10 @@ int main(int argc, char* argv[]) {
   rtc::LogMessage::LogTimestamps();
   rtc::LogMessage::LogThreads();
 
-  sora::SoraClientFactoryConfig factory_config;
-  factory_config.use_audio_device = false;
-  factory_config.use_hardware_encoder = false;
-  auto factory = sora::SoraClientFactory::Create(factory_config);
+  sora::SoraClientContextConfig context_config;
+  context_config.use_audio_device = false;
+  context_config.use_hardware_encoder = false;
+  auto context = sora::SoraClientContext::Create(context_config);
 
   boost::json::value v;
   {
@@ -176,7 +176,7 @@ int main(int argc, char* argv[]) {
   config.role = "sendrecv";
 
   for (int i = 0; i < 10; i++) {
-    auto client = std::make_shared<SoraClient>(factory, config);
+    auto client = std::make_shared<SoraClient>(context, config);
     client->Run();
   }
 }

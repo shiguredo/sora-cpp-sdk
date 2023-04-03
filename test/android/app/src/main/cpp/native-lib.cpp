@@ -36,16 +36,16 @@ Java_jp_shiguredo_hello_MainActivity_run(JNIEnv* env,
   setenv("SORA_LYRA_MODEL_COEFFS_PATH", dir, 1);
   env->ReleaseStringUTFChars((jstring)weights_dir, dir);
   g_th.reset(new std::thread([]() {
-    sora::SoraClientFactoryConfig factory_config;
-    factory_config.get_android_application_context =
+    sora::SoraClientContextConfig context_config;
+    context_config.get_android_application_context =
         GetAndroidApplicationContext;
-    auto factory = sora::SoraClientFactory::Create(factory_config);
+    auto context = sora::SoraClientContext::Create(context_config);
     HelloSoraConfig config;
     config.signaling_urls.push_back("シグナリングURL");
     config.channel_id = "チャンネルID";
     config.role = "sendonly";
     // config.mode = HelloSoraConfig::Mode::Lyra;
-    auto hello = std::make_shared<HelloSora>(factory, config);
+    auto hello = std::make_shared<HelloSora>(context, config);
     hello->Run();
     RTC_LOG(LS_INFO) << "Finished io_context thread";
   }));
