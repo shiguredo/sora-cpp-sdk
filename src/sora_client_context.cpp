@@ -95,7 +95,7 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
       webrtc::AudioProcessingBuilder().Create();
 
   if (c->config_.configure_media_dependencies) {
-    c->config_.configure_media_dependencies(media_dependencies);
+    c->config_.configure_media_dependencies(dependencies, media_dependencies);
   }
 
   dependencies.media_engine =
