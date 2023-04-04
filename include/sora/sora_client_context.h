@@ -59,6 +59,8 @@ class SoraClientContext {
   static std::shared_ptr<SoraClientContext> Create(
       const SoraClientContextConfig& config);
 
+  ~SoraClientContext();
+
   rtc::Thread* network_thread() const { return network_thread_.get(); }
   rtc::Thread* worker_thread() const { return worker_thread_.get(); }
   rtc::Thread* signaling_thread() const { return signaling_thread_.get(); }

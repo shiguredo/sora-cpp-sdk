@@ -25,8 +25,21 @@
 
 namespace sora {
 
+SoraClientContext::~SoraClientContext() {
+  config_ = SoraClientContextConfig();
+  connection_context_ = nullptr;
+  factory_ = nullptr;
+  network_thread_->Stop();
+  worker_thread_->Stop();
+  signaling_thread_->Stop();
+
+  //rtc::CleanupSSL();
+}
+
 std::shared_ptr<SoraClientContext> SoraClientContext::Create(
     const SoraClientContextConfig& config) {
+  rtc::InitializeSSL();
+
   std::shared_ptr<SoraClientContext> c = std::make_shared<SoraClientContext>();
 
   c->config_ = config;
