@@ -1685,6 +1685,7 @@ def main():
                 if platform.target.os in ('windows', 'macos', 'ubuntu'):
                     cmake_args.append("-DTEST_CONNECT_DISCONNECT=ON")
                     cmake_args.append("-DTEST_DATACHANNEL=ON")
+                    cmake_args.append("-DTEST_DEVICE_LIST=ON")
                 if platform.target.package_name in ('windows_x86_64', 'macos_x86_64', 'macos_arm64',
                                                     'ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64',
                                                     'ubuntu-20.04_armv8_jetson'):
