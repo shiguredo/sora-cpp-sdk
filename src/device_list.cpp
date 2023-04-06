@@ -17,6 +17,7 @@
 #include "sora/mac/mac_capturer.h"
 #elif defined(SORA_CPP_SDK_ANDROID)
 #include "sora/android/android_capturer.h"
+#include "sora/java_context.h"
 #endif
 
 namespace sora {
@@ -30,6 +31,7 @@ bool DeviceList::EnumVideoCapturer(
 
 #elif defined(SORA_CPP_SDK_ANDROID)
 
+  auto env = (JNIEnv*)sora::GetJNIEnv();
   return sora::AndroidCapturer::EnumVideoDevice(
       env, (jobject)android_application_context, f);
 
