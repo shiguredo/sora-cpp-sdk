@@ -94,6 +94,7 @@ target_sources(sora
     src/camera_device_capturer.cpp
     src/data_channel.cpp
     src/default_video_formats.cpp
+    src/device_list.cpp
     src/device_video_capturer.cpp
     src/i420_encoder_adapter.cpp
     src/java_context.cpp
