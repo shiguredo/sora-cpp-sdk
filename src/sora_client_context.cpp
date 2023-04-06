@@ -84,7 +84,11 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
   media_dependencies.audio_decoder_factory =
       sora::CreateBuiltinAudioDecoderFactory();
 
-  auto cuda_context = sora::CudaContext::Create();
+  std::shared_ptr<sora::CudaContext> cuda_context;
+  if (c->config_.use_hardware_encoder) {
+    cuda_context = sora::CudaContext::Create();
+  }
+
   {
     auto config =
         c->config_.use_hardware_encoder
