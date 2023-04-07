@@ -44,8 +44,7 @@ class V4L2VideoCapturer : public ScalableVideoTrackSource {
   V4L2VideoCapturer(const V4L2VideoCapturerConfig& config);
   ~V4L2VideoCapturer();
 
-  int32_t Init(const char* deviceUniqueId,
-               const std::string& specifiedVideoDevice);
+  int32_t Init(const char* deviceUniqueId);
   virtual int32_t StartCapture(const V4L2VideoCapturerConfig& config);
 
  protected:
