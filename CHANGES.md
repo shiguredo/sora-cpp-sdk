@@ -13,6 +13,8 @@
 
 - [CHANGE] SoraDefaultClient を削除して SoraClientContext を追加
     - @melpon
+- [ADD] デバイス一覧を取得する機能を追加
+    - @melpon
 
 ## 2023.3.0 (2023-04-02)
 
