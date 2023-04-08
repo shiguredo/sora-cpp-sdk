@@ -94,6 +94,7 @@ target_sources(sora
     src/camera_device_capturer.cpp
     src/data_channel.cpp
     src/default_video_formats.cpp
+    src/device_list.cpp
     src/device_video_capturer.cpp
     src/i420_encoder_adapter.cpp
     src/java_context.cpp
@@ -103,7 +104,7 @@ target_sources(sora
     src/session_description.cpp
     src/sora_audio_decoder_factory.cpp
     src/sora_audio_encoder_factory.cpp
-    src/sora_default_client.cpp
+    src/sora_client_context.cpp
     src/sora_peer_connection_factory.cpp
     src/sora_signaling.cpp
     src/sora_video_decoder_factory.cpp

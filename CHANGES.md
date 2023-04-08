@@ -11,6 +11,15 @@
 
 ## develop
 
+## 2023.4.0 (2023-04-08)
+
+- [CHANGE] SoraDefaultClient を削除して SoraClientContext を追加
+    - @melpon
+- [ADD] デバイス一覧を取得する機能を追加
+    - @melpon
+- [FIX] CUDA 未対応時に HWA を利用しない設定にしてもクラッシュしてしまうのを修正
+    - @melpon
+
 ## 2023.3.0 (2023-04-02)
 
 - [CHANGE] SoraSignalingConfig から audio_codec_lyra_params を削除して、代わりに audio_codec_lyra_bitrate と audio_codec_lyra_usedtx を追加

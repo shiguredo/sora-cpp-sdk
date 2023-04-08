@@ -12,21 +12,22 @@
 #include "sora/audio_device_module.h"
 #include "sora/camera_device_capturer.h"
 #include "sora/java_context.h"
-#include "sora/sora_default_client.h"
+#include "sora/sora_client_context.h"
 #include "sora/sora_video_decoder_factory.h"
 #include "sora/sora_video_encoder_factory.h"
 
-struct SoraClientConfig : sora::SoraDefaultClientConfig {
+struct SoraClientConfig {
   std::vector<std::string> signaling_urls;
   std::string channel_id;
   std::string role;
 };
 
 class SoraClient : public std::enable_shared_from_this<SoraClient>,
-                   public sora::SoraDefaultClient {
+                   public sora::SoraSignalingObserver {
  public:
-  SoraClient(SoraClientConfig config)
-      : sora::SoraDefaultClient(config), config_(config) {}
+  SoraClient(std::shared_ptr<sora::SoraClientContext> context,
+             SoraClientConfig config)
+      : context_(context), config_(config) {}
   ~SoraClient() {
     RTC_LOG(LS_INFO) << "SoraClient dtor";
     timer_.reset();
@@ -37,28 +38,24 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
   }
 
   void Run() {
-    void* env = sora::GetJNIEnv();
-
     sora::CameraDeviceCapturerConfig cam_config;
     cam_config.width = 640;
     cam_config.height = 480;
     cam_config.fps = 30;
-    cam_config.jni_env = env;
-    cam_config.application_context = GetAndroidApplicationContext(env);
     video_source_ = sora::CreateCameraDeviceCapturer(cam_config);
 
     std::string audio_track_id = rtc::CreateRandomString(16);
     std::string video_track_id = rtc::CreateRandomString(16);
-    audio_track_ = factory()->CreateAudioTrack(
+    audio_track_ = pc_factory()->CreateAudioTrack(
         audio_track_id,
-        factory()->CreateAudioSource(cricket::AudioOptions()).get());
+        pc_factory()->CreateAudioSource(cricket::AudioOptions()).get());
     video_track_ =
-        factory()->CreateVideoTrack(video_track_id, video_source_.get());
+        pc_factory()->CreateVideoTrack(video_track_id, video_source_.get());
 
     ioc_.reset(new boost::asio::io_context(1));
 
     sora::SoraSignalingConfig config;
-    config.pc_factory = factory();
+    config.pc_factory = pc_factory();
     config.io_context = ioc_.get();
     config.observer = shared_from_this();
     config.signaling_urls = config_.signaling_urls;
@@ -103,8 +100,24 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
     RTC_LOG(LS_INFO) << "OnDisconnect: " << message;
     ioc_->stop();
   }
+  void OnNotify(std::string text) override {}
+  void OnPush(std::string text) override {}
+  void OnMessage(std::string label, std::string data) override {}
+
+  void OnTrack(rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
+      override {}
+  void OnRemoveTrack(
+      rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override {}
+
+  void OnDataChannel(std::string label) override {}
 
  private:
+  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> pc_factory() {
+    return context_->peer_connection_factory();
+  }
+
+ private:
+  std::shared_ptr<sora::SoraClientContext> context_;
   SoraClientConfig config_;
   rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source_;
   rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track_;
@@ -133,6 +146,9 @@ int main(int argc, char* argv[]) {
   //rtc::LogMessage::LogTimestamps();
   //rtc::LogMessage::LogThreads();
 
+  auto context =
+      sora::SoraClientContext::Create(sora::SoraClientContextConfig());
+
   boost::json::value v;
   {
     std::ifstream ifs(argv[1]);
@@ -149,7 +165,7 @@ int main(int argc, char* argv[]) {
   config.role = "sendrecv";
 
   for (int i = 0; i < 10; i++) {
-    auto client = sora::CreateSoraClient<SoraClient>(config);
+    auto client = std::make_shared<SoraClient>(context, config);
     client->Run();
   }
 }
