@@ -1,6 +1,6 @@
 // Sora
 #include <sora/camera_device_capturer.h>
-#include <sora/sora_default_client.h>
+#include <sora/sora_client_context.h>
 
 // CLI11
 #include <CLI/CLI.hpp>
@@ -14,7 +14,7 @@
 #include <rtc_base/win/scoped_com_initializer.h>
 #endif
 
-struct SDLSampleConfig : sora::SoraDefaultClientConfig {
+struct SDLSampleConfig {
   std::string signaling_url;
   std::string channel_id;
   bool video = true;
@@ -22,7 +22,8 @@ struct SDLSampleConfig : sora::SoraDefaultClientConfig {
   std::string role;
   std::string video_codec_type;
   std::string audio_codec_type;
-  boost::json::value audio_codec_lyra_params;
+  int audio_codec_lyra_bitrate;
+  boost::optional<bool> audio_codec_lyra_usedtx;
   boost::optional<bool> multistream;
   int width = 640;
   int height = 480;
@@ -32,10 +33,11 @@ struct SDLSampleConfig : sora::SoraDefaultClientConfig {
 };
 
 class SDLSample : public std::enable_shared_from_this<SDLSample>,
-                  public sora::SoraDefaultClient {
+                  public sora::SoraSignalingObserver {
  public:
-  SDLSample(SDLSampleConfig config)
-      : sora::SoraDefaultClient(config), config_(config) {}
+  SDLSample(std::shared_ptr<sora::SoraClientContext> context,
+            SDLSampleConfig config)
+      : context_(context), config_(config) {}
 
   void Run() {
     renderer_.reset(
@@ -49,23 +51,24 @@ class SDLSample : public std::enable_shared_from_this<SDLSample>,
       auto video_source = sora::CreateCameraDeviceCapturer(cam_config);
 
       std::string video_track_id = rtc::CreateRandomString(16);
-      video_track_ =
-          factory()->CreateVideoTrack(video_track_id, video_source.get());
+      video_track_ = context_->peer_connection_factory()->CreateVideoTrack(
+          video_track_id, video_source.get());
       if (config_.show_me) {
         renderer_->AddTrack(video_track_.get());
       }
     }
     if (config_.audio && config_.role != "recvonly") {
       std::string audio_track_id = rtc::CreateRandomString(16);
-      audio_track_ = factory()->CreateAudioTrack(
-          audio_track_id,
-          factory()->CreateAudioSource(cricket::AudioOptions()).get());
+      audio_track_ = context_->peer_connection_factory()->CreateAudioTrack(
+          audio_track_id, context_->peer_connection_factory()
+                              ->CreateAudioSource(cricket::AudioOptions())
+                              .get());
     }
 
     ioc_.reset(new boost::asio::io_context(1));
 
     sora::SoraSignalingConfig config;
-    config.pc_factory = factory();
+    config.pc_factory = context_->peer_connection_factory();
     config.io_context = ioc_.get();
     config.observer = shared_from_this();
     config.signaling_urls.push_back(config_.signaling_url);
@@ -76,7 +79,8 @@ class SDLSample : public std::enable_shared_from_this<SDLSample>,
     config.role = config_.role;
     config.video_codec_type = config_.video_codec_type;
     config.audio_codec_type = config_.audio_codec_type;
-    config.audio_codec_lyra_params = config_.audio_codec_lyra_params;
+    config.audio_codec_lyra_bitrate = config_.audio_codec_lyra_bitrate;
+    config.audio_codec_lyra_usedtx = config_.audio_codec_lyra_usedtx;
     config.metadata = config_.metadata;
     conn_ = sora::SoraSignaling::Create(config);
 
@@ -117,6 +121,9 @@ class SDLSample : public std::enable_shared_from_this<SDLSample>,
     renderer_.reset();
     ioc_->stop();
   }
+  void OnNotify(std::string text) override {}
+  void OnPush(std::string text) override {}
+  void OnMessage(std::string label, std::string data) override {}
 
   void OnTrack(rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
       override {
@@ -135,7 +142,10 @@ class SDLSample : public std::enable_shared_from_this<SDLSample>,
     }
   }
 
+  void OnDataChannel(std::string label) override {}
+
  private:
+  std::shared_ptr<sora::SoraClientContext> context_;
   SDLSampleConfig config_;
   rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track_;
   rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track_;
@@ -212,10 +222,11 @@ int main(int argc, char* argv[]) {
   app.add_option("--audio-codec-type", config.audio_codec_type,
                  "Audio codec for send")
       ->check(CLI::IsMember({"", "OPUS", "LYRA"}));
-  std::string audio_codec_lyra_params;
-  app.add_option("--audio-codec-lyra-params", audio_codec_lyra_params,
-                 "Parameters used in the audio codec Lyra")
-      ->check(is_json);
+  app.add_option("--audio-codec-lyra-bitrate", config.audio_codec_lyra_bitrate,
+                 "Bitrate used in the audio codec Lyra");
+  add_optional_bool(app, "--audio-codec-lyra-usedtx",
+                    config.audio_codec_lyra_usedtx,
+                    "Use DTX used in the audio codec Lyra (default: none)");
   std::string metadata;
   app.add_option("--metadata", metadata,
                  "Signaling metadata used in connect message")
@@ -246,11 +257,8 @@ int main(int argc, char* argv[]) {
     rtc::LogMessage::LogThreads();
   }
 
-  if (!audio_codec_lyra_params.empty()) {
-    config.audio_codec_lyra_params =
-        boost::json::parse(audio_codec_lyra_params);
-  }
-  auto sdlsample = sora::CreateSoraClient<SDLSample>(config);
+  auto context = sora::SoraClientContext::Create(sora::SoraClientContextConfig());
+  auto sdlsample = std::make_shared<SDLSample>(context, config);
   sdlsample->Run();
 
   return 0;

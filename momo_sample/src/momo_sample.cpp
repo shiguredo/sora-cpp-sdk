@@ -1,6 +1,6 @@
 // Sora
 #include <sora/camera_device_capturer.h>
-#include <sora/sora_default_client.h>
+#include <sora/sora_client_context.h>
 
 #include <regex>
 
@@ -16,7 +16,7 @@
 #include <rtc_base/win/scoped_com_initializer.h>
 #endif
 
-struct MomoSampleConfig : sora::SoraDefaultClientConfig {
+struct MomoSampleConfig {
   std::string signaling_url;
   std::string channel_id;
   std::string role;
@@ -76,10 +76,11 @@ struct MomoSampleConfig : sora::SoraDefaultClientConfig {
 };
 
 class MomoSample : public std::enable_shared_from_this<MomoSample>,
-                   public sora::SoraDefaultClient {
+                   public sora::SoraSignalingObserver {
  public:
-  MomoSample(MomoSampleConfig config)
-      : sora::SoraDefaultClient(config), config_(config) {}
+  MomoSample(std::shared_ptr<sora::SoraClientContext> context,
+             MomoSampleConfig config)
+      : context_(context), config_(config) {}
 
   void Run() {
     if (config_.use_sdl) {
@@ -101,11 +102,12 @@ class MomoSample : public std::enable_shared_from_this<MomoSample>,
 
       std::string audio_track_id = rtc::CreateRandomString(16);
       std::string video_track_id = rtc::CreateRandomString(16);
-      audio_track_ = factory()->CreateAudioTrack(
-          audio_track_id,
-          factory()->CreateAudioSource(cricket::AudioOptions()).get());
-      video_track_ =
-          factory()->CreateVideoTrack(video_track_id, video_source.get());
+      audio_track_ = context_->peer_connection_factory()->CreateAudioTrack(
+          audio_track_id, context_->peer_connection_factory()
+                              ->CreateAudioSource(cricket::AudioOptions())
+                              .get());
+      video_track_ = context_->peer_connection_factory()->CreateVideoTrack(
+          video_track_id, video_source.get());
       if (config_.use_sdl && config_.show_me) {
         renderer_->AddTrack(video_track_.get());
       }
@@ -114,7 +116,7 @@ class MomoSample : public std::enable_shared_from_this<MomoSample>,
     ioc_.reset(new boost::asio::io_context(1));
 
     sora::SoraSignalingConfig config;
-    config.pc_factory = factory();
+    config.pc_factory = context_->peer_connection_factory();
     config.io_context = ioc_.get();
     config.observer = shared_from_this();
     config.signaling_urls.push_back(config_.signaling_url);
@@ -139,8 +141,10 @@ class MomoSample : public std::enable_shared_from_this<MomoSample>,
     config.proxy_url = config_.proxy_url;
     config.proxy_username = config_.proxy_username;
     config.proxy_password = config_.proxy_password;
-    config.network_manager = connection_context()->default_network_manager();
-    config.socket_factory = connection_context()->default_socket_factory();
+    config.network_manager =
+        context_->connection_context()->default_network_manager();
+    config.socket_factory =
+        context_->connection_context()->default_socket_factory();
     conn_ = sora::SoraSignaling::Create(config);
 
     boost::asio::executor_work_guard<boost::asio::io_context::executor_type>
@@ -182,6 +186,9 @@ class MomoSample : public std::enable_shared_from_this<MomoSample>,
     renderer_.reset();
     ioc_->stop();
   }
+  void OnNotify(std::string text) override {}
+  void OnPush(std::string text) override {}
+  void OnMessage(std::string label, std::string data) override {}
 
   void OnTrack(rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
       override {
@@ -206,7 +213,10 @@ class MomoSample : public std::enable_shared_from_this<MomoSample>,
     }
   }
 
+  void OnDataChannel(std::string label) override {}
+
  private:
+  std::shared_ptr<sora::SoraClientContext> context_;
   MomoSampleConfig config_;
   rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track_;
   rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track_;
@@ -358,7 +368,9 @@ int main(int argc, char* argv[]) {
     rtc::LogMessage::LogThreads();
   }
 
-  auto momosample = sora::CreateSoraClient<MomoSample>(config);
+  auto context =
+      sora::SoraClientContext::Create(sora::SoraClientContextConfig());
+  auto momosample = std::make_shared<MomoSample>(context, config);
   momosample->Run();
 
   return 0;
