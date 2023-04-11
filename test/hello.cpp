@@ -24,8 +24,9 @@ void* GetAndroidApplicationContext(void* env) {
 }
 #endif
 
-HelloSora::HelloSora(HelloSoraConfig config)
-    : sora::SoraDefaultClient(config), config_(config) {}
+HelloSora::HelloSora(std::shared_ptr<sora::SoraClientContext> context,
+                     HelloSoraConfig config)
+    : context_(context), config_(config) {}
 
 HelloSora::~HelloSora() {
   RTC_LOG(LS_INFO) << "HelloSora dtor";
@@ -39,9 +40,9 @@ void HelloSora::Run() {
   void* env = sora::GetJNIEnv();
 
   std::string audio_track_id = rtc::CreateRandomString(16);
-  audio_track_ = factory()->CreateAudioTrack(
+  audio_track_ = pc_factory()->CreateAudioTrack(
       audio_track_id,
-      factory()->CreateAudioSource(cricket::AudioOptions()).get());
+      pc_factory()->CreateAudioSource(cricket::AudioOptions()).get());
 
   if (config_.mode == HelloSoraConfig::Mode::Hello) {
     sora::CameraDeviceCapturerConfig cam_config;
@@ -53,13 +54,13 @@ void HelloSora::Run() {
     video_source_ = sora::CreateCameraDeviceCapturer(cam_config);
     std::string video_track_id = rtc::CreateRandomString(16);
     video_track_ =
-        factory()->CreateVideoTrack(video_track_id, video_source_.get());
+        pc_factory()->CreateVideoTrack(video_track_id, video_source_.get());
   }
 
   ioc_.reset(new boost::asio::io_context(1));
 
   sora::SoraSignalingConfig config;
-  config.pc_factory = factory();
+  config.pc_factory = pc_factory();
   config.io_context = ioc_.get();
   config.observer = shared_from_this();
   config.signaling_urls = config_.signaling_urls;
@@ -85,10 +86,6 @@ void HelloSora::Run() {
 
   conn_->Connect();
   ioc_->run();
-}
-
-void* HelloSora::GetAndroidApplicationContext(void* env) {
-  return ::GetAndroidApplicationContext(env);
 }
 
 void HelloSora::OnSetOffer(std::string offer) {
@@ -133,6 +130,10 @@ int main(int argc, char* argv[]) {
   rtc::LogMessage::LogTimestamps();
   rtc::LogMessage::LogThreads();
 
+  sora::SoraClientContextConfig context_config;
+  context_config.get_android_application_context = GetAndroidApplicationContext;
+  auto context = sora::SoraClientContext::Create(context_config);
+
   boost::json::value v;
   {
     std::ifstream ifs(argv[1]);
@@ -156,7 +157,7 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  auto hello = sora::CreateSoraClient<HelloSora>(config);
+  auto hello = std::make_shared<HelloSora>(context, config);
   hello->Run();
 }
 

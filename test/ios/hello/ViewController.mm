@@ -40,12 +40,13 @@ void Run() {
     NSString* path2 = [path stringByAppendingPathComponent:@"model_coeffs"];
     NSLog(@"SORA_LYRA_MODEL_COEFFS_PATH=%@", path2);
     setenv("SORA_LYRA_MODEL_COEFFS_PATH", [path2 UTF8String], 1);
+    auto context = sora::SoraClientContext::Create(sora::SoraClientContextConfig());
     HelloSoraConfig config;
     config.signaling_urls.push_back("シグナリングURL");
     config.channel_id = "チャンネルID";
     config.role = "sendonly";
     // config.mode = HelloSoraConfig::Mode::Lyra;
-    auto hello = sora::CreateSoraClient<HelloSora>(config);
+    auto hello = std::make_shared<HelloSora>(context, config);
     hello->Run();
 }
 

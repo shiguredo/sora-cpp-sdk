@@ -50,6 +50,11 @@ rtc::scoped_refptr<V4L2VideoCapturer> NvCodecV4L2Capturer::Create(
     RTC_LOG(LS_WARNING) << "Failed to GetDeviceName";
     return nullptr;
   }
+  // config.video_device が指定されている場合は、デバイス名かユニーク名と一致する必要がある
+  if (!(config.video_device.empty() || config.video_device == device_name ||
+        config.video_device == unique_name)) {
+    return nullptr;
+  }
 
   rtc::scoped_refptr<NvCodecV4L2Capturer> v4l2_capturer =
       rtc::make_ref_counted<NvCodecV4L2Capturer>(config);
@@ -57,7 +62,7 @@ rtc::scoped_refptr<V4L2VideoCapturer> NvCodecV4L2Capturer::Create(
   v4l2_capturer->decoder_.reset(
       new NvCodecDecoderCuda(config.cuda_context, CudaVideoCodec::JPEG));
 
-  if (v4l2_capturer->Init((const char*)&unique_name, config.video_device) < 0) {
+  if (v4l2_capturer->Init((const char*)&unique_name) < 0) {
     RTC_LOG(LS_WARNING) << "Failed to create NvCodecV4L2Capturer("
                         << unique_name << ")";
     return nullptr;
