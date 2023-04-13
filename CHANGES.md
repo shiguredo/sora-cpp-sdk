@@ -11,6 +11,9 @@
 
 ## develop
 
+- [ADD] Sora の Forwarding Filter 機能を使えるようにする
+    - @melpon
+
 ## 2023.4.0 (2023-04-08)
 
 - [CHANGE] SoraDefaultClient を削除して SoraClientContext を追加
