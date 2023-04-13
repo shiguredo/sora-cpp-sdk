@@ -20,6 +20,14 @@
 
 namespace sora {
 
+extern const char kActionBlock[];
+extern const char kActionAllow[];
+extern const char kFieldConnectionId[];
+extern const char kFieldClientId[];
+extern const char kFieldKind[];
+extern const char kOperatorIsIn[];
+extern const char kOperatorIsNotIn[];
+
 enum class SoraSignalingErrorCode {
   CLOSE_SUCCEEDED,
   CLOSE_FAILED,
@@ -95,6 +103,17 @@ struct SoraSignalingConfig {
     boost::optional<bool> compress;
   };
   std::vector<DataChannel> data_channels;
+
+  struct ForwardingFilter {
+    std::string action;
+    struct Rule {
+      std::string field;
+      std::string op;
+      std::vector<std::string> values;
+    };
+    std::vector<std::vector<Rule>> rules;
+  };
+  boost::optional<ForwardingFilter> forwarding_filter;
 
   std::string client_cert;
   std::string client_key;

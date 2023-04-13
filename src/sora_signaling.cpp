@@ -15,6 +15,14 @@
 
 namespace sora {
 
+const char kActionBlock[] = "block";
+const char kActionAllow[] = "allow";
+const char kFieldConnectionId[] = "connection_id";
+const char kFieldClientId[] = "client_id";
+const char kFieldKind[] = "kind";
+const char kOperatorIsIn[] = "is_in";
+const char kOperatorIsNotIn[] = "is_not_in";
+
 SoraSignaling::SoraSignaling(const SoraSignalingConfig& config)
     : config_(config),
       connection_timeout_timer_(*config_.io_context),
@@ -420,6 +428,28 @@ void SoraSignaling::DoSendConnect(bool redirect) {
       ar.push_back(obj);
     }
     m["data_channels"] = ar;
+  }
+
+  if (config_.forwarding_filter) {
+    boost::json::object obj;
+    auto& f = *config_.forwarding_filter;
+    obj["action"] = f.action;
+    obj["rules"] = boost::json::array();
+    for (const auto& rules : f.rules) {
+      boost::json::array ar;
+      for (const auto& r : rules) {
+        boost::json::object rule;
+        rule["field"] = r.field;
+        rule["operator"] = r.op;
+        rule["values"] = boost::json::array();
+        for (const auto& v : r.values) {
+          rule["values"].as_array().push_back(boost::json::value(v));
+        }
+        ar.push_back(rule);
+      }
+      obj["rules"].as_array().push_back(ar);
+    }
+    m["forwarding_filter"] = obj;
   }
 
   RTC_LOG(LS_INFO) << "Send type=connect: " << boost::json::serialize(m);
