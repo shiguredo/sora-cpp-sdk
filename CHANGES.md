@@ -11,6 +11,10 @@
 
 ## develop
 
+- [UPDATE] WebRTC を m114.5735.0.1 に上げる
+    - @melpon
+- [UPDATE] Boost を 1.82.0 に上げる
+    - @melpon
 - [ADD] Sora の Forwarding Filter 機能を使えるようにする
     - @melpon
 
