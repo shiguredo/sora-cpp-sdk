@@ -19,8 +19,4 @@ NVIDIA VIDEO CODEC SDK のハードウェアデコーダでは width height の�
 
 ## Windows の Chrome で Jetson の H.264 映像を受信すると色が緑色になります
 
-Chrome のハードウェアアクセラレーションによって、 Windows 環境でのみ Jetson の H.264 映像を受信すると映像の色が緑色になってしまうことを確認しています。解決策として Chrome の ハードウェアアクセラレーションを無効にすることで、映像の色が緑色になるのを回避できます。設定方法を以下に記載します。
-
-`Chrome の設定 -> システム -> ハードウェア アクセラレーションが使用可能な場合は使用する` の順で Chrome の設定ページを開き、スクリーンショットの赤枠の部分をOFF に切り替えて Chrome を再起動してください。
-
-[![Image from Gyazo](https://i.gyazo.com/15fd370b7b21c4e0990e9516a8981840.png)](https://gyazo.com/15fd370b7b21c4e0990e9516a8981840)
+Windows 環境でのみ Jetson の H.264 映像を受信すると映像の色が緑色になってしまうことを確認しています。こちらの事象は NVIDIA Jetson の JetPack を 5.1.1 にすることで解決します。

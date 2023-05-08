@@ -11,6 +11,17 @@
 
 ## develop
 
+## 2023.5.0 (2023-05-08)
+
+- [UPDATE] WebRTC を m114.5735.0.1 に上げる
+    - @melpon
+- [UPDATE] Boost を 1.82.0 に上げる
+    - @melpon
+- [ADD] Sora の Forwarding Filter 機能を使えるようにする
+    - @melpon
+- [FIX] 接続エラー時に Websocket::OnWrite でクラッシュすることがあるのを修正
+    - @melpon
+
 ## 2023.4.0 (2023-04-08)
 
 - [CHANGE] SoraDefaultClient を削除して SoraClientContext を追加

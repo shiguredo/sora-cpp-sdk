@@ -1406,6 +1406,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
 
 AVAILABLE_TARGETS = ['windows_x86_64', 'macos_x86_64', 'macos_arm64', 'ubuntu-20.04_x86_64',
                      'ubuntu-22.04_x86_64', 'ubuntu-20.04_armv8_jetson', 'ios', 'android']
+WINDOWS_SDK_VERSION = '10.0.20348.0'
 
 
 def main():
@@ -1493,6 +1494,8 @@ def main():
         cmake_args.append(f"-DWEBRTC_READABLE_VERSION={webrtc_version['WEBRTC_READABLE_VERSION']}")
         cmake_args.append(f"-DWEBRTC_COMMIT={webrtc_version['WEBRTC_COMMIT']}")
         cmake_args.append(f"-DLYRA_COMPATIBLE_VERSION={lyra_compatible_version}")
+        if platform.target.os == 'windows':
+            cmake_args.append(f'-DCMAKE_SYSTEM_VERSION={WINDOWS_SDK_VERSION}')
         if platform.target.os == 'ubuntu':
             if platform.target.package_name in ('ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64'):
                 cmake_args.append("-DCMAKE_C_COMPILER=clang-12")
