@@ -17,6 +17,8 @@
     - @melpon
 - [ADD] Sora の Forwarding Filter 機能を使えるようにする
     - @melpon
+- [FIX] 接続エラー時に Websocket::OnWrite でクラッシュすることがあるのを修正
+    - @melpon
 
 ## 2023.4.0 (2023-04-08)
 
