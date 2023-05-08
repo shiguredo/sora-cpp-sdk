@@ -472,6 +472,10 @@ void Websocket::OnWrite(boost::system::error_code ec,
     RTC_LOG(LS_ERROR) << __FUNCTION__ << ": " << ec.message();
   }
 
+  if (ec == boost::asio::error::operation_aborted) {
+    return;
+  }
+
   auto& data = write_data_.front();
   if (data->callback) {
     std::move(data->callback)(ec, bytes_transferred);
