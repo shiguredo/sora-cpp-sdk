@@ -460,7 +460,7 @@ AudioEncoderLyraImpl::DefaultAudioNetworkAdaptorCreator(
   return std::unique_ptr<AudioNetworkAdaptor>(new AudioNetworkAdaptorImpl(
       config,
       ControllerManagerImpl::Create(
-          config_string, NumChannels(), supported_frame_lengths_ms(),
+          (std::string)config_string, NumChannels(), supported_frame_lengths_ms(),
           sora::AudioEncoderLyraConfig::kMinBitrateBps, num_channels_to_encode_,
           next_frame_length_ms_, GetTargetBitrate(), false, GetDtx())));
 }
@@ -535,8 +535,7 @@ webrtc::AudioCodecInfo AudioEncoderLyra::QueryAudioEncoder(
 std::unique_ptr<webrtc::AudioEncoder> AudioEncoderLyra::MakeAudioEncoder(
     const AudioEncoderLyraConfig& config,
     int payload_type,
-    absl::optional<webrtc::AudioCodecPairId> codec_pair_id,
-    const webrtc::FieldTrialsView* field_trials) {
+    absl::optional<webrtc::AudioCodecPairId> codec_pair_id) {
   if (!config.IsOk()) {
     RTC_DCHECK_NOTREACHED();
     return nullptr;

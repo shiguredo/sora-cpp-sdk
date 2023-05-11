@@ -65,7 +65,7 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
   // media_dependencies
   cricket::MediaEngineDependencies media_dependencies;
   media_dependencies.task_queue_factory = dependencies.task_queue_factory.get();
-  media_dependencies.adm = c->worker_thread_->BlockingCall([&] {
+  media_dependencies.adm = c->worker_thread_->Invoke<rtc::scoped_refptr<webrtc::AudioDeviceModule>>(RTC_FROM_HERE, [&] {
     sora::AudioDeviceModuleConfig config;
     if (!c->config_.use_audio_device) {
       config.audio_layer = webrtc::AudioDeviceModule::kDummyAudio;

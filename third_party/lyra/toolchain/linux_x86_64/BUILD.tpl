@@ -86,8 +86,7 @@ cc_toolchain_config(
         "-isystem%{webrtc_include_dir}/buildtools/third_party/libc++abi/trunk/include",
         "-std=c++17",
         "-nostdinc++",
-        "-D_LIBCPP_ABI_NAMESPACE=Cr",
-        "-D_LIBCPP_ABI_VERSION=2",
+        "-D_LIBCPP_ABI_UNSTABLE",
         "-D_LIBCPP_DISABLE_AVAILABILITY",
     ],
     link_flags = [
@@ -208,8 +207,7 @@ cc_toolchain_config(
         "-isystem%{webrtc_include_dir}/buildtools/third_party/libc++abi/trunk/include",
         "-std=c++17",
         "-nostdinc++",
-        "-D_LIBCPP_ABI_NAMESPACE=Cr",
-        "-D_LIBCPP_ABI_VERSION=2",
+        "-D_LIBCPP_ABI_UNSTABLE",
         "-D_LIBCPP_DISABLE_AVAILABILITY",
     ],
     link_flags = [

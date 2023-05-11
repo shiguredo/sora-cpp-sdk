@@ -43,7 +43,7 @@ CreateBuiltinAudioDecoderFactory() {
       webrtc::AudioDecoderOpus,
       NotAdvertised<webrtc::AudioDecoderMultiChannelOpus>,
       webrtc::AudioDecoderG722, webrtc::AudioDecoderG711,
-      NotAdvertised<webrtc::AudioDecoderL16>, sora::AudioDecoderLyra>();
+      NotAdvertised<webrtc::AudioDecoderL16>/*, sora::AudioDecoderLyra*/>();
 }
 
 }  // namespace sora

@@ -34,10 +34,8 @@ struct NotAdvertised {
   static std::unique_ptr<webrtc::AudioEncoder> MakeAudioEncoder(
       const Config& config,
       int payload_type,
-      absl::optional<webrtc::AudioCodecPairId> codec_pair_id = absl::nullopt,
-      const webrtc::FieldTrialsView* field_trials = nullptr) {
-    return T::MakeAudioEncoder(config, payload_type, codec_pair_id,
-                               field_trials);
+      absl::optional<webrtc::AudioCodecPairId> codec_pair_id = absl::nullopt) {
+    return T::MakeAudioEncoder(config, payload_type, codec_pair_id);
   }
 };
 
@@ -49,7 +47,7 @@ CreateBuiltinAudioEncoderFactory() {
       webrtc::AudioEncoderOpus,
       NotAdvertised<webrtc::AudioEncoderMultiChannelOpus>,
       webrtc::AudioEncoderG722, webrtc::AudioEncoderG711,
-      NotAdvertised<webrtc::AudioEncoderL16>, sora::AudioEncoderLyra>();
+      NotAdvertised<webrtc::AudioEncoderL16>/*, sora::AudioEncoderLyra*/>();
 }
 
 }  // namespace sora

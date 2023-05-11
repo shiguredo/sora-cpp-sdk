@@ -1219,8 +1219,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             ]
             install_boost_args['cxxflags'] = [
                 '-fPIC',
-                '-D_LIBCPP_ABI_NAMESPACE=Cr',
-                '-D_LIBCPP_ABI_VERSION=2',
+                '-D_LIBCPP_ABI_UNSTABLE',
                 '-D_LIBCPP_DISABLE_AVAILABILITY',
                 '-nostdinc++',
                 '-std=gnu++17',
@@ -1245,8 +1244,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                 '--target=aarch64-linux-gnu',
                 f"--sysroot={sysroot}",
                 f"-I{os.path.join(sysroot, 'usr', 'include', 'aarch64-linux-gnu')}",
-                '-D_LIBCPP_ABI_NAMESPACE=Cr',
-                '-D_LIBCPP_ABI_VERSION=2',
+                '-D_LIBCPP_ABI_UNSTABLE',
                 '-D_LIBCPP_DISABLE_AVAILABILITY',
                 '-nostdinc++',
                 '-std=gnu++17',
@@ -1262,8 +1260,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             install_boost_args['target_os'] = 'linux'
             install_boost_args['cxx'] = os.path.join(webrtc_info.clang_dir, 'bin', 'clang++')
             install_boost_args['cxxflags'] = [
-                '-D_LIBCPP_ABI_NAMESPACE=Cr',
-                '-D_LIBCPP_ABI_VERSION=2',
+                '-D_LIBCPP_ABI_UNSTABLE',
                 '-D_LIBCPP_DISABLE_AVAILABILITY',
                 '-nostdinc++',
                 f"-isystem{os.path.join(webrtc_info.libcxx_dir, 'include')}",
@@ -1358,7 +1355,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                 path = cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))
                 cmake_args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
                 flags = [
-                    '-nostdinc++', '-D_LIBCPP_ABI_NAMESPACE=Cr', '-D_LIBCPP_ABI_VERSION=2',
+                    '-nostdinc++', '-D_LIBCPP_ABI_UNSTABLE',
                     '-D_LIBCPP_DISABLE_AVAILABILITY', '-D_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS',
                     '-D_LIBCXXABI_DISABLE_VISIBILITY_ANNOTATIONS', '-D_LIBCPP_ENABLE_NODISCARD']
                 cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(flags)}")
@@ -1388,20 +1385,20 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                 f.write('\n'.join(ldflags))
 
         # Lyra
-        install_lyra_args = {
-            'version': version['LYRA_VERSION'],
-            'version_file': os.path.join(install_dir, 'lyra.version'),
-            'install_dir': install_dir,
-            'base_dir': BASE_DIR,
-            'debug': debug,
-            'target': platform.target.package_name,
-            'webrtc_version': webrtc_version,
-            'webrtc_info': webrtc_info,
-            'api_level': version['ANDROID_NATIVE_API_LEVEL'],
-            # run.py の引数から拾ってくるのが面倒なので環境変数を使う
-            'temp_dir': os.environ.get('SORA_CPP_SDK_TEMP_DIR'),
-        }
-        install_lyra(**install_lyra_args)
+        #install_lyra_args = {
+        #    'version': version['LYRA_VERSION'],
+        #    'version_file': os.path.join(install_dir, 'lyra.version'),
+        #    'install_dir': install_dir,
+        #    'base_dir': BASE_DIR,
+        #    'debug': debug,
+        #    'target': platform.target.package_name,
+        #    'webrtc_version': webrtc_version,
+        #    'webrtc_info': webrtc_info,
+        #    'api_level': version['ANDROID_NATIVE_API_LEVEL'],
+        #    # run.py の引数から拾ってくるのが面倒なので環境変数を使う
+        #    'temp_dir': os.environ.get('SORA_CPP_SDK_TEMP_DIR'),
+        #}
+        #install_lyra(**install_lyra_args)
 
 
 AVAILABLE_TARGETS = ['windows_x86_64', 'macos_x86_64', 'macos_arm64', 'ubuntu-20.04_x86_64',

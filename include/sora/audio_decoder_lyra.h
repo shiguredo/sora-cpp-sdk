@@ -6,7 +6,6 @@
 #include <api/audio_codecs/audio_codec_pair_id.h>
 #include <api/audio_codecs/audio_decoder.h>
 #include <api/audio_codecs/audio_format.h>
-#include <api/field_trials_view.h>
 
 namespace sora {
 
@@ -23,8 +22,7 @@ struct AudioDecoderLyra {
 
   static std::unique_ptr<webrtc::AudioDecoder> MakeAudioDecoder(
       Config config,
-      absl::optional<webrtc::AudioCodecPairId> codec_pair_id = absl::nullopt,
-      const webrtc::FieldTrialsView* field_trials = nullptr);
+      absl::optional<webrtc::AudioCodecPairId> codec_pair_id = absl::nullopt);
 };
 
 }  // namespace sora

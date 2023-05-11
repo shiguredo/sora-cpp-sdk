@@ -17,14 +17,11 @@ std::vector<webrtc::SdpVideoFormat> GetDefaultVideoFormats(
   if (codec == webrtc::kVideoCodecVP8) {
     r.push_back(webrtc::SdpVideoFormat(cricket::kVp8CodecName));
   } else if (codec == webrtc::kVideoCodecVP9) {
-    for (const webrtc::SdpVideoFormat& format :
-         webrtc::SupportedVP9Codecs(true)) {
+    for (const webrtc::SdpVideoFormat& format : webrtc::SupportedVP9Codecs()) {
       r.push_back(format);
     }
   } else if (codec == webrtc::kVideoCodecAV1) {
-    r.push_back(webrtc::SdpVideoFormat(
-        cricket::kAv1CodecName, webrtc::SdpVideoFormat::Parameters(),
-        webrtc::LibaomAv1EncoderSupportedScalabilityModes()));
+    r.push_back(webrtc::SdpVideoFormat(cricket::kAv1CodecName));
   } else if (codec == webrtc::kVideoCodecH264) {
     r.push_back(CreateH264Format(webrtc::H264Profile::kProfileBaseline,
                                  webrtc::H264Level::kLevel3_1, "1"));

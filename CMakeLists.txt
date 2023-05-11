@@ -67,7 +67,7 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE NEVER)
 
 find_package(WebRTC REQUIRED)
 find_package(Boost REQUIRED COMPONENTS json filesystem)
-find_package(Lyra REQUIRED)
+# find_package(Lyra REQUIRED)
 find_package(Threads REQUIRED)
 
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
@@ -88,9 +88,9 @@ target_include_directories(sora PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_sources(sora
   PRIVATE
     src/aligned_encoder_adapter.cpp
-    src/audio_decoder_lyra.cpp
+    # src/audio_decoder_lyra.cpp
     src/audio_device_module.cpp
-    src/audio_encoder_lyra.cpp
+    # src/audio_encoder_lyra.cpp
     src/camera_device_capturer.cpp
     src/data_channel.cpp
     src/default_video_formats.cpp
@@ -133,7 +133,7 @@ endif()
 
 target_link_libraries(sora
   PUBLIC
-    Lyra::lyra
+    # Lyra::lyra
     WebRTC::webrtc
     Boost::json
     Boost::filesystem
@@ -394,8 +394,7 @@ elseif (SORA_TARGET_OS STREQUAL "android")
       WEBRTC_POSIX
       WEBRTC_LINUX
       WEBRTC_ANDROID
-      _LIBCPP_ABI_NAMESPACE=Cr
-      _LIBCPP_ABI_VERSION=2
+      _LIBCPP_ABI_UNSTABLE
       _LIBCPP_DISABLE_AVAILABILITY
       _LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS
       _LIBCXXABI_DISABLE_VISIBILITY_ANNOTATIONS
@@ -411,8 +410,7 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
     PUBLIC
       WEBRTC_POSIX
       WEBRTC_LINUX
-      _LIBCPP_ABI_NAMESPACE=Cr
-      _LIBCPP_ABI_VERSION=2
+      _LIBCPP_ABI_UNSTABLE
       _LIBCPP_DISABLE_AVAILABILITY
       # https://github.com/boostorg/container_hash/issues/22 と同じ問題が clang-15 でも起きるので、これを手動で定義して回避する
       BOOST_NO_CXX98_FUNCTION_BASE
@@ -498,8 +496,7 @@ elseif (SORA_TARGET_OS STREQUAL "jetson")
     PUBLIC
       WEBRTC_POSIX
       WEBRTC_LINUX
-      _LIBCPP_ABI_NAMESPACE=Cr
-      _LIBCPP_ABI_VERSION=2
+      _LIBCPP_ABI_UNSTABLE
       _LIBCPP_DISABLE_AVAILABILITY
       # https://github.com/boostorg/container_hash/issues/22 と同じ問題が clang-15 でも起きるので、これを手動で定義して回避する
       BOOST_NO_CXX98_FUNCTION_BASE

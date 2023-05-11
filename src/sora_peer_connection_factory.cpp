@@ -42,7 +42,7 @@ CreateModularPeerConnectionFactoryWithContext(
   using result_type =
       std::pair<rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>,
                 rtc::scoped_refptr<webrtc::ConnectionContext>>;
-  auto p = dependencies.signaling_thread->BlockingCall([&dependencies]() {
+  auto p = dependencies.signaling_thread->Invoke<result_type>(RTC_FROM_HERE, [&dependencies]() {
     auto factory =
         PeerConnectionFactoryWithContext::Create(std::move(dependencies));
     if (factory == nullptr) {

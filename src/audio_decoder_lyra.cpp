@@ -226,8 +226,7 @@ void AudioDecoderLyra::AppendSupportedDecoders(
 
 std::unique_ptr<webrtc::AudioDecoder> AudioDecoderLyra::MakeAudioDecoder(
     Config config,
-    absl::optional<webrtc::AudioCodecPairId> codec_pair_id,
-    const webrtc::FieldTrialsView* field_trials) {
+    absl::optional<webrtc::AudioCodecPairId> codec_pair_id) {
   return std::make_unique<webrtc::AudioDecoderLyraImpl>(config.num_channels,
                                                         config.sample_rate_hz);
 }

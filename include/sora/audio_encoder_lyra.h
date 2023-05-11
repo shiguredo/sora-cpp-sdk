@@ -6,7 +6,6 @@
 #include <api/audio_codecs/audio_codec_pair_id.h>
 #include <api/audio_codecs/audio_encoder.h>
 #include <api/audio_codecs/audio_format.h>
-#include <api/field_trials_view.h>
 
 namespace sora {
 
@@ -41,8 +40,7 @@ struct AudioEncoderLyra {
   static std::unique_ptr<webrtc::AudioEncoder> MakeAudioEncoder(
       const AudioEncoderLyraConfig& config,
       int payload_type,
-      absl::optional<webrtc::AudioCodecPairId> codec_pair_id = absl::nullopt,
-      const webrtc::FieldTrialsView* field_trials = nullptr);
+      absl::optional<webrtc::AudioCodecPairId> codec_pair_id = absl::nullopt);
 };
 
 }  // namespace sora
