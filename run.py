@@ -1099,7 +1099,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             webrtc_platform = 'android'
         elif platform.target.os == 'ubuntu':
             if platform.target.package_name == 'ubuntu-22.04_x86_64':
-                webrtc_platform = f'ubuntu-20.04_x86_64'
+                webrtc_platform = 'ubuntu-20.04_x86_64'
             else:
                 webrtc_platform = f'ubuntu-{platform.target.osver}_{platform.target.arch}'
         elif platform.target.os == 'raspberry-pi-os':
