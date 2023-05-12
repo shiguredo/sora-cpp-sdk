@@ -1098,7 +1098,10 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
         elif platform.target.os == 'android':
             webrtc_platform = 'android'
         elif platform.target.os == 'ubuntu':
-            webrtc_platform = f'ubuntu-{platform.target.osver}_{platform.target.arch}'
+            if platform.target.package_name == 'ubuntu-22.04_x86_64':
+                webrtc_platform = f'ubuntu-20.04_x86_64'
+            else:
+                webrtc_platform = f'ubuntu-{platform.target.osver}_{platform.target.arch}'
         elif platform.target.os == 'raspberry-pi-os':
             webrtc_platform = f'raspberry-pi-os_{platform.target.arch}'
         elif platform.target.os == 'jetson':
@@ -1385,7 +1388,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                 f.write('\n'.join(ldflags))
 
         # Lyra
-        #install_lyra_args = {
+        # install_lyra_args = {
         #    'version': version['LYRA_VERSION'],
         #    'version_file': os.path.join(install_dir, 'lyra.version'),
         #    'install_dir': install_dir,
@@ -1397,8 +1400,8 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
         #    'api_level': version['ANDROID_NATIVE_API_LEVEL'],
         #    # run.py の引数から拾ってくるのが面倒なので環境変数を使う
         #    'temp_dir': os.environ.get('SORA_CPP_SDK_TEMP_DIR'),
-        #}
-        #install_lyra(**install_lyra_args)
+        # }
+        # install_lyra(**install_lyra_args)
 
 
 AVAILABLE_TARGETS = ['windows_x86_64', 'macos_x86_64', 'macos_arm64', 'ubuntu-20.04_x86_64',
