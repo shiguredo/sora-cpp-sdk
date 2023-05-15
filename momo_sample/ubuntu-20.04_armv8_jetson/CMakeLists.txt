@@ -28,7 +28,7 @@ find_package(SDL2 REQUIRED)
 find_package(Threads REQUIRED)
 
 add_executable(momo_sample)
-set_target_properties(momo_sample PROPERTIES CXX_STANDARD 17 C_STANDARD 17)
+set_target_properties(momo_sample PROPERTIES CXX_STANDARD 20 C_STANDARD 20)
 set_target_properties(momo_sample PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_sources(momo_sample PRIVATE ../src/momo_sample.cpp ../src/sdl_renderer.cpp)
 
