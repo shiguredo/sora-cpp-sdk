@@ -28,7 +28,7 @@ find_package(Libva REQUIRED)
 find_package(Libdrm REQUIRED)
 
 add_executable(messaging_recvonly_sample)
-set_target_properties(messaging_recvonly_sample PROPERTIES CXX_STANDARD 17 C_STANDARD 17)
+set_target_properties(messaging_recvonly_sample PROPERTIES CXX_STANDARD 20 C_STANDARD 20)
 set_target_properties(messaging_recvonly_sample PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_sources(messaging_recvonly_sample PRIVATE ../src/messaging_recvonly_sample.cpp)
 
