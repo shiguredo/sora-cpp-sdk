@@ -266,7 +266,8 @@ void SoraSignaling::OnRedirect(boost::system::error_code ec,
     return;
   }
 
-  connection_timeout_timer_.cancel();
+  boost::system::error_code tec;
+  connection_timeout_timer_.cancel(tec);
 
   state_ = State::Connected;
   ws_ = ws;
@@ -642,7 +643,8 @@ void SoraSignaling::DoInternalDisconnect(
               });
           self->on_ws_close_ = [self, ec1,
                                 on_close](boost::system::error_code ec2) {
-            self->closing_timeout_timer_.cancel();
+            boost::system::error_code tec;
+            self->closing_timeout_timer_.cancel(tec);
             auto ws_reason = self->ws_->reason();
             std::string ws_reason_str =
                 " wscode=" + std::to_string(ws_reason.code) +
@@ -714,7 +716,8 @@ void SoraSignaling::DoInternalDisconnect(
                 self->ws_->Cancel();
               });
           self->on_ws_close_ = [self, on_close](boost::system::error_code ec) {
-            self->closing_timeout_timer_.cancel();
+            boost::system::error_code tec;
+            self->closing_timeout_timer_.cancel(tec);
             bool ec_error = ec != boost::beast::websocket::error::closed;
             if (ec_error) {
               auto reason = self->ws_->reason();
@@ -785,7 +788,8 @@ void SoraSignaling::OnConnect(boost::system::error_code ec,
     return;
   }
 
-  connection_timeout_timer_.cancel();
+  boost::system::error_code tec;
+  connection_timeout_timer_.cancel(tec);
 
   RTC_LOG(LS_INFO) << "Signaling Websocket is connected: url=" << url;
   state_ = State::Connected;
@@ -1359,8 +1363,9 @@ bool SoraSignaling::SendDataChannel(const std::string& label,
 }
 
 void SoraSignaling::Clear() {
-  connection_timeout_timer_.cancel();
-  closing_timeout_timer_.cancel();
+  boost::system::error_code tec;
+  connection_timeout_timer_.cancel(tec);
+  closing_timeout_timer_.cancel(tec);
   connecting_wss_.clear();
   connected_signaling_url_.clear();
   pc_ = nullptr;
