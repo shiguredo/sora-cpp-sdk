@@ -522,15 +522,17 @@ void Websocket::OnClose(close_callback_t on_close,
   RTC_LOG(LS_INFO) << "Websocket::OnClose this=" << (void*)this
                    << " ec=" << ec.message() << " code=" << reason().code
                    << " reason=" << reason().reason;
-  close_timeout_timer_.cancel();
+  boost::system::error_code tec;
+  close_timeout_timer_.cancel(tec);
   on_close(ec);
 }
 
 void Websocket::Cancel() {
+  boost::system::error_code ec;
   if (IsSSL()) {
-    wss_->next_layer().next_layer().cancel();
+    wss_->next_layer().next_layer().cancel(ec);
   } else {
-    ws_->next_layer().cancel();
+    ws_->next_layer().cancel(ec);
   }
 }
 
