@@ -110,6 +110,7 @@ def install_deps(source_dir, build_dir, install_dir, debug):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", action='store_true')
+    parser.add_argument("--relwithdebinfo", action='store_true')
 
     args = parser.parse_args()
 
@@ -124,7 +125,11 @@ def main():
 
     install_deps(source_dir, build_dir, install_dir, args.debug)
 
-    configuration = 'Debug' if args.debug else 'Release'
+    configuration = 'Release'
+    if args.debug:
+        configuration = 'Debug'
+    if args.relwithdebinfo:
+        configuration = 'RelWithDebInfo'
 
     sample_build_dir = os.path.join(build_dir, 'momo_sample')
     mkdir_p(sample_build_dir)
