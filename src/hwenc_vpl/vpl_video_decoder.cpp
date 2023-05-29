@@ -156,7 +156,9 @@ std::unique_ptr<MFXVideoDECODE> VplVideoDecoderImpl::CreateDecoderInternal(
   //                      << sts;
   //}
 
-  if (init) {
+  // Query した上で Init しても MFX_ERR_UNSUPPORTED になることがあるので
+  // 本来 Init が不要な時も常に呼ぶようにして確認する
+  /*if (init)*/ {
     // Initialize the oneVPL encoder
     sts = decoder->Init(&param);
     if (sts != MFX_ERR_NONE) {
