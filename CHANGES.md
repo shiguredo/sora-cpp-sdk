@@ -11,6 +11,8 @@
 
 ## develop
 
+## 2023.6.0 (2023-05-30)
+
 - [UPDATE] WebRTC を m114.5735.2.0 に上げる
     - @miosakuma
 - [FIX] 一部の Windows で VP8 の受信時にクラッシュする問題を修正する
