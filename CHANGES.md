@@ -13,6 +13,9 @@
 
 - [UPDATE] WebRTC を m114.5735.2.0 に上げる
     - @miosakuma
+- [FIX] 一部の Windows で VP8 の受信時にクラッシュする問題を修正する
+    - Query した上で Init しても MFX_ERR_UNSUPPORTED になるため VPL の場合は毎回 Init を呼ぶようにする
+    - @melpon
 
 ## 2023.5.1 (2023-05-16)
 
