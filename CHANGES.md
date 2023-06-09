@@ -11,6 +11,9 @@
 
 ## develop
 
+- [UPDATE] CMake を 3.26.4 に上げる
+    - @torikizi
+
 ## 2023.6.0 (2023-05-30)
 
 - [UPDATE] WebRTC を m114.5735.2.0 に上げる
