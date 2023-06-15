@@ -364,6 +364,15 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     if (config_.video_bit_rate != 0) {
       m["video"].as_object()["bit_rate"] = config_.video_bit_rate;
     }
+    if (!config_.video_vp9_params.is_null()) {
+      m["video"].as_object()["vp9_params"] = config_.video_vp9_params;
+    }
+    if (!config_.video_av1_params.is_null()) {
+      m["video"].as_object()["av1_params"] = config_.video_av1_params;
+    }
+    if (!config_.video_h264_params.is_null()) {
+      m["video"].as_object()["h264_params"] = config_.video_h264_params;
+    }
   }
 
   if (!config_.audio) {
