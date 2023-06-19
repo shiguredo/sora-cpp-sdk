@@ -351,12 +351,8 @@ void SoraSignaling::DoSendConnect(bool redirect) {
   if (!config_.video) {
     // video: false の場合はそのまま設定
     m["video"] = false;
-  } else if (config_.video && config_.video_codec_type.empty() &&
-             config_.video_bit_rate == 0) {
-    // video: true の場合、その他のオプションの設定が行われてなければ true を設定
-    m["video"] = true;
   } else {
-    // それ以外はちゃんとオプションを設定する
+    // video: true の場合は、ちゃんとオプションを設定する
     m["video"] = boost::json::object();
     if (!config_.video_codec_type.empty()) {
       m["video"].as_object()["codec_type"] = config_.video_codec_type;
@@ -372,6 +368,11 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     }
     if (!config_.video_h264_params.is_null()) {
       m["video"].as_object()["h264_params"] = config_.video_h264_params;
+    }
+
+    // オプションの設定が行われてなければ単に true を設定
+    if (m["video"].as_object().empty()) {
+      m["video"] = true;
     }
   }
 
