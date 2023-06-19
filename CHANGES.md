@@ -11,6 +11,13 @@
 
 ## develop
 
+- [ADD] 映像コーデックパラメータを指定可能にする
+    - `SoraSignalingConfig` に以下のフィールドを追加する:
+        - `video_vp9_params`
+        - `video_av1_params`
+        - `video_h264_params`
+    - 値は単なる JSON 値で C++ SDK は中身のバリーデーションなどは行わない
+    - @sile
 - [UPDATE] CMake を 3.26.4 に上げる
     - @torikizi
 

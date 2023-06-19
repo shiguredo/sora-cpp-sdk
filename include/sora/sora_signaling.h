@@ -78,6 +78,9 @@ struct SoraSignalingConfig {
   boost::optional<bool> audio_codec_lyra_usedtx;
   int video_bit_rate = 0;
   int audio_bit_rate = 0;
+  boost::json::value video_vp9_params;
+  boost::json::value video_av1_params;
+  boost::json::value video_h264_params;
   std::string audio_streaming_language_code;
   boost::json::value metadata;
   boost::json::value signaling_notify_metadata;
