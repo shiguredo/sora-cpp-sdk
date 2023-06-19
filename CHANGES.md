@@ -11,6 +11,18 @@
 
 ## develop
 
+## 2023.7.0 (2023-06-19)
+
+- [ADD] 映像コーデックパラメータを指定可能にする
+    - `SoraSignalingConfig` に以下のフィールドを追加する:
+        - `video_vp9_params`
+        - `video_av1_params`
+        - `video_h264_params`
+    - 値は単なる JSON 値で C++ SDK は中身のバリーデーションなどは行わない
+    - @sile
+- [UPDATE] CMake を 3.26.4 に上げる
+    - @torikizi
+
 ## 2023.6.0 (2023-05-30)
 
 - [UPDATE] WebRTC を m114.5735.2.0 に上げる
