@@ -11,6 +11,8 @@
 
 ## develop
 
+## 2023.7.0 (2023-06-19)
+
 - [ADD] 映像コーデックパラメータを指定可能にする
     - `SoraSignalingConfig` に以下のフィールドを追加する:
         - `video_vp9_params`
