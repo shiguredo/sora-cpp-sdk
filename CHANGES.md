@@ -11,6 +11,13 @@
 
 ## develop
 
+## sora-cpp-sdk-2023.7.0
+
+- [UPDATE] VERSIONS のライブラリをアップデートする
+    - SORA_CPP_SDK_VERSION を 2023.7.0 にあげる
+    - CMAKE_VERSION を 3.26.4 にあげる
+    - @torikizi
+
 ## sora-cpp-sdk-2023.6.0
 
 - [UPDATE] Sora CPP SDK を 2023.6.0 にあげる
