@@ -11,6 +11,8 @@
 
 ## develop
 
+## 2023.7.1 (2023-06-26)
+
 - [FIX] Connect 直後に Disconnect すると OnDisconnect コールバックが呼ばれないことがあるのを修正
     - @melpon
 
