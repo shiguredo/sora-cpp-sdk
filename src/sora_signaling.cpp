@@ -890,6 +890,7 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
   }
 
   if (state_ != State::Connected) {
+    DoRead();
     return;
   }
 

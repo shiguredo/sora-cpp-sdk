@@ -11,6 +11,9 @@
 
 ## develop
 
+- [FIX] Connect 直後に Disconnect すると OnDisconnect コールバックが呼ばれないことがあるのを修正
+    - @melpon
+
 ## 2023.7.0 (2023-06-19)
 
 - [ADD] 映像コーデックパラメータを指定可能にする
