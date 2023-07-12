@@ -11,6 +11,9 @@
 
 ## develop
 
+- [FIX] 特定のタイミングで切断が発生すると Closing 状態で止まってしまうのを修正
+    - @melpon
+
 ## 2023.7.1 (2023-06-26)
 
 - [FIX] Connect 直後に Disconnect すると OnDisconnect コールバックが呼ばれないことがあるのを修正
