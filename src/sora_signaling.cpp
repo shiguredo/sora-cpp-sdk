@@ -631,6 +631,24 @@ void SoraSignaling::DoInternalDisconnect(
     }
   };
 
+  // Close 処理中に、意図しない場所で WS Close が呼ばれた場合の対策。
+  // 例えば dc_->Close()→送信完了して on_ws_close_ に値を設定して切断を待つ、
+  // となるまでの間に WS Close された場合、on_ws_close_ に値が設定されていなくて
+  // 永遠に終了できなくなってしまう。
+  if (ws_connected_) {
+    on_ws_close_ = [self = shared_from_this(),
+                    on_close](boost::system::error_code ec) {
+      boost::system::error_code tec;
+      self->closing_timeout_timer_.cancel(tec);
+      auto ws_reason = self->ws_->reason();
+      std::string message =
+          "Unintended disconnect WebSocket during Disconnect process: ec=" +
+          ec.message() + " wscode=" + std::to_string(ws_reason.code) +
+          " wsreason=" + ws_reason.reason.c_str();
+      on_close(false, SoraSignalingErrorCode::CLOSE_FAILED, message);
+    };
+  }
+
   if (using_datachannel_ && ws_connected_) {
     webrtc::DataBuffer disconnect = ConvertToDataBuffer(
         "signaling",
@@ -828,7 +846,10 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
       if (on_ws_close_) {
         // Close で切断されて呼ばれたコールバックなので、on_ws_close_ を呼んで続きを処理してもらう
         on_ws_close_(ec);
+        return;
       }
+      // ここに来ることは無いはず
+      RTC_LOG(LS_ERROR) << "OnRead: state is Closing but on_ws_close_ is null";
       return;
     }
     if (state_ == State::Connected && !using_datachannel_) {
