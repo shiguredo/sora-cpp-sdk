@@ -37,6 +37,7 @@ cc_toolchain_config(
         "objdump": "objdump",
     },
     compile_flags = [
+        "-no-canonical-prefixes",
         "-fstack-protector",
         # All warnings are enabled.
         "-Wall",
@@ -157,6 +158,7 @@ cc_toolchain_config(
         "objdump": "objdump",
     },
     compile_flags = [
+        "-no-canonical-prefixes",
         "-fstack-protector",
         # All warnings are enabled.
         "-Wall",
