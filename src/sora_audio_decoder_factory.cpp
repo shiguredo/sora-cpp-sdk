@@ -10,7 +10,7 @@
 #include <api/audio_codecs/opus/audio_decoder_multi_channel_opus.h>
 #include <api/audio_codecs/opus/audio_decoder_opus.h>
 
-#include "sora/audio_decoder_lyra.h"
+// #include "sora/audio_decoder_lyra.h"
 
 namespace sora {
 
@@ -43,7 +43,7 @@ CreateBuiltinAudioDecoderFactory() {
       webrtc::AudioDecoderOpus,
       NotAdvertised<webrtc::AudioDecoderMultiChannelOpus>,
       webrtc::AudioDecoderG722, webrtc::AudioDecoderG711,
-      NotAdvertised<webrtc::AudioDecoderL16>, sora::AudioDecoderLyra>();
+      NotAdvertised<webrtc::AudioDecoderL16>>();
 }
 
 }  // namespace sora

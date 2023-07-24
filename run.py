@@ -1405,7 +1405,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             # run.py の引数から拾ってくるのが面倒なので環境変数を使う
             'temp_dir': os.environ.get('SORA_CPP_SDK_TEMP_DIR'),
         }
-        install_lyra(**install_lyra_args)
+        # install_lyra(**install_lyra_args)
 
 
 AVAILABLE_TARGETS = ['windows_x86_64', 'windows_hololens2', 'macos_x86_64', 'macos_arm64', 'ubuntu-20.04_x86_64',
@@ -1716,14 +1716,14 @@ def main():
 
                 # Lyra テストのビルド先のディレクトリに
                 # Lyra のモデル係数ファイルをコピーする
-                model_src = os.path.join(install_dir, 'lyra', 'share', 'model_coeffs')
-                if platform.target.os == 'windows':
-                    model_dst = os.path.join(test_build_dir, configuration, 'model_coeffs')
-                else:
-                    model_dst = os.path.join(test_build_dir, 'model_coeffs')
-                rm_rf(model_dst)
-                mkdir_p(os.path.dirname(model_dst))
-                shutil.copytree(model_src, model_dst)
+                # model_src = os.path.join(install_dir, 'lyra', 'share', 'model_coeffs')
+                # if platform.target.os == 'windows':
+                #     model_dst = os.path.join(test_build_dir, configuration, 'model_coeffs')
+                # else:
+                #     model_dst = os.path.join(test_build_dir, 'model_coeffs')
+                # rm_rf(model_dst)
+                # mkdir_p(os.path.dirname(model_dst))
+                # shutil.copytree(model_src, model_dst)
 
                 if args.run:
                     if platform.target.os == 'windows':

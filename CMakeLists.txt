@@ -71,7 +71,7 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE NEVER)
 
 find_package(WebRTC REQUIRED)
 find_package(Boost REQUIRED COMPONENTS json filesystem)
-find_package(Lyra REQUIRED)
+# find_package(Lyra REQUIRED)
 find_package(Threads REQUIRED)
 
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
@@ -92,9 +92,9 @@ target_include_directories(sora PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_sources(sora
   PRIVATE
     src/aligned_encoder_adapter.cpp
-    src/audio_decoder_lyra.cpp
+    # src/audio_decoder_lyra.cpp
     src/audio_device_module.cpp
-    src/audio_encoder_lyra.cpp
+    # src/audio_encoder_lyra.cpp
     src/camera_device_capturer.cpp
     src/data_channel.cpp
     src/default_video_formats.cpp
@@ -137,7 +137,7 @@ endif()
 
 target_link_libraries(sora
   PUBLIC
-    Lyra::lyra
+    # Lyra::lyra
     WebRTC::webrtc
     Boost::json
     Boost::filesystem
@@ -259,6 +259,7 @@ if (SORA_TARGET_OS STREQUAL "windows")
     PUBLIC
       WEBRTC_WIN
       _ITERATOR_DEBUG_LEVEL=0
+      _ALLOW_COROUTINE_ABI_MISMATCH
   )
 
   if (SORA_TARGET_ARCH STREQUAL "hololens2")
@@ -624,7 +625,7 @@ install(
     cmake/FindWebRTC.cmake
     cmake/FindLibdrm.cmake
     cmake/FindLibva.cmake
-    cmake/FindLyra.cmake
+    # cmake/FindLyra.cmake
   DESTINATION ${CMAKE_INSTALL_DATADIR}/cmake
 )
 install(FILES LICENSE NOTICE.md
