@@ -3,6 +3,7 @@
 // WebRTC
 #include <p2p/client/basic_port_allocator.h>
 #include <pc/rtp_media_utils.h>
+#include <pc/session_description.h>
 
 #include "sora/data_channel.h"
 #include "sora/rtc_ssl_verifier.h"
@@ -13,6 +14,14 @@
 #include "sora/zlib_helper.h"
 
 namespace sora {
+
+const char kActionBlock[] = "block";
+const char kActionAllow[] = "allow";
+const char kFieldConnectionId[] = "connection_id";
+const char kFieldClientId[] = "client_id";
+const char kFieldKind[] = "kind";
+const char kOperatorIsIn[] = "is_in";
+const char kOperatorIsNotIn[] = "is_not_in";
 
 SoraSignaling::SoraSignaling(const SoraSignalingConfig& config)
     : config_(config),
@@ -35,6 +44,23 @@ SoraSignaling::GetPeerConnection() const {
 
 std::string SoraSignaling::GetVideoMid() const {
   return video_mid_;
+}
+
+std::string SoraSignaling::GetAudioMid() const {
+  return audio_mid_;
+}
+
+std::string SoraSignaling::GetConnectionID() const {
+  return connection_id_;
+}
+std::string SoraSignaling::GetConnectedSignalingURL() const {
+  return connected_signaling_url_;
+}
+bool SoraSignaling::IsConnectedDataChannel() const {
+  return dc_ && using_datachannel_;
+}
+bool SoraSignaling::IsConnectedWebsocket() const {
+  return ws_connected_;
 }
 
 void SoraSignaling::Connect() {
@@ -82,6 +108,70 @@ bool SoraSignaling::ParseURL(const std::string& url,
   } else {
     return false;
   }
+}
+
+bool SoraSignaling::CheckSdp(const std::string& sdp) {
+  // Lyra バージョンをチェックしない設定になっている
+  if (!config_.check_lyra_version) {
+    return true;
+  }
+
+  // SDP のパース
+  webrtc::SdpParseError sdp_error;
+  std::unique_ptr<webrtc::SessionDescriptionInterface> session_description =
+      webrtc::CreateSessionDescription(webrtc::SdpType::kOffer, sdp,
+                                       &sdp_error);
+  if (!session_description) {
+    RTC_LOG(LS_ERROR) << "Failed to create session description: "
+                      << sdp_error.description.c_str()
+                      << "\nline: " << sdp_error.line.c_str();
+    webrtc::RTCError rtc_error(webrtc::RTCErrorType::SYNTAX_ERROR,
+                               sdp_error.description);
+    DoInternalDisconnect(SoraSignalingErrorCode::INTERNAL_ERROR,
+                         "INTERNAL-ERROR",
+                         "Failed to create session description: error=" +
+                             std::string(rtc_error.message()));
+    return false;
+  }
+
+  const cricket::SessionDescription* desc = session_description->description();
+  for (const auto& content : desc->contents()) {
+    auto md = content.media_description();
+    if (md->type() != cricket::MEDIA_TYPE_AUDIO) {
+      continue;
+    }
+    if (md->direction() == webrtc::RtpTransceiverDirection::kInactive ||
+        md->direction() == webrtc::RtpTransceiverDirection::kStopped) {
+      continue;
+    }
+    for (const auto& codec : md->as_audio()->codecs()) {
+      if (codec.name != "lyra") {
+        continue;
+      }
+
+      // 全員の Lyra バージョンが Version::GetLyraCompatibleVersion() と一致してるかを調べる
+      std::string version;
+      if (!codec.GetParam("version", &version)) {
+        RTC_LOG(LS_ERROR) << "Missing Lyra version: mid=" << content.mid();
+        DoInternalDisconnect(SoraSignalingErrorCode::INTERNAL_ERROR,
+                             "INTERNAL-ERROR",
+                             "Missing Lyra version: mid=" + content.mid());
+        return false;
+      }
+
+      if (version != Version::GetLyraCompatibleVersion()) {
+        std::string str = "Incompatible Lyra version: mid=" + content.mid() +
+                          " version=" + version + " expected_version=" +
+                          Version::GetLyraCompatibleVersion();
+        RTC_LOG(LS_ERROR) << str;
+        DoInternalDisconnect(SoraSignalingErrorCode::LYRA_VERSION_INCOMPATIBLE,
+                             "INTERNAL-ERROR", str);
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 void SoraSignaling::Redirect(std::string url) {
@@ -176,7 +266,8 @@ void SoraSignaling::OnRedirect(boost::system::error_code ec,
     return;
   }
 
-  connection_timeout_timer_.cancel();
+  boost::system::error_code tec;
+  connection_timeout_timer_.cancel(tec);
 
   state_ = State::Connected;
   ws_ = ws;
@@ -253,15 +344,15 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     m["metadata"] = config_.metadata;
   }
 
+  if (!config_.signaling_notify_metadata.is_null()) {
+    m["signaling_notify_metadata"] = config_.signaling_notify_metadata;
+  }
+
   if (!config_.video) {
     // video: false の場合はそのまま設定
     m["video"] = false;
-  } else if (config_.video && config_.video_codec_type.empty() &&
-             config_.video_bit_rate == 0) {
-    // video: true の場合、その他のオプションの設定が行われてなければ true を設定
-    m["video"] = true;
   } else {
-    // それ以外はちゃんとオプションを設定する
+    // video: true の場合は、ちゃんとオプションを設定する
     m["video"] = boost::json::object();
     if (!config_.video_codec_type.empty()) {
       m["video"].as_object()["codec_type"] = config_.video_codec_type;
@@ -269,12 +360,28 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     if (config_.video_bit_rate != 0) {
       m["video"].as_object()["bit_rate"] = config_.video_bit_rate;
     }
+    if (!config_.video_vp9_params.is_null()) {
+      m["video"].as_object()["vp9_params"] = config_.video_vp9_params;
+    }
+    if (!config_.video_av1_params.is_null()) {
+      m["video"].as_object()["av1_params"] = config_.video_av1_params;
+    }
+    if (!config_.video_h264_params.is_null()) {
+      m["video"].as_object()["h264_params"] = config_.video_h264_params;
+    }
+
+    // オプションの設定が行われてなければ単に true を設定
+    if (m["video"].as_object().empty()) {
+      m["video"] = true;
+    }
   }
 
   if (!config_.audio) {
     m["audio"] = false;
   } else if (config_.audio && config_.audio_codec_type.empty() &&
-             config_.audio_bit_rate == 0) {
+             config_.audio_bit_rate == 0 &&
+             config_.audio_codec_lyra_bitrate == 0 &&
+             !config_.audio_codec_lyra_usedtx) {
     m["audio"] = true;
   } else {
     m["audio"] = boost::json::object();
@@ -284,6 +391,21 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     if (config_.audio_bit_rate != 0) {
       m["audio"].as_object()["bit_rate"] = config_.audio_bit_rate;
     }
+    if (config_.audio_codec_type == "LYRA") {
+      boost::json::object p = {
+          {"version", Version::GetLyraCompatibleVersion()}};
+      if (config_.audio_codec_lyra_bitrate != 0) {
+        p["bitrate"] = config_.audio_codec_lyra_bitrate;
+      }
+      if (config_.audio_codec_lyra_usedtx) {
+        p["usedtx"] = *config_.audio_codec_lyra_usedtx;
+      }
+      m["audio"].as_object()["lyra_params"] = p;
+    }
+  }
+
+  if (!config_.audio_streaming_language_code.empty()) {
+    m["audio_streaming_language_code"] = config_.audio_streaming_language_code;
   }
 
   if (config_.data_channel_signaling) {
@@ -319,6 +441,29 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     m["data_channels"] = ar;
   }
 
+  if (config_.forwarding_filter) {
+    boost::json::object obj;
+    auto& f = *config_.forwarding_filter;
+    obj["action"] = f.action;
+    obj["rules"] = boost::json::array();
+    for (const auto& rules : f.rules) {
+      boost::json::array ar;
+      for (const auto& r : rules) {
+        boost::json::object rule;
+        rule["field"] = r.field;
+        rule["operator"] = r.op;
+        rule["values"] = boost::json::array();
+        for (const auto& v : r.values) {
+          rule["values"].as_array().push_back(boost::json::value(v));
+        }
+        ar.push_back(rule);
+      }
+      obj["rules"].as_array().push_back(ar);
+    }
+    m["forwarding_filter"] = obj;
+  }
+
+  RTC_LOG(LS_INFO) << "Send type=connect: " << boost::json::serialize(m);
   ws_->WriteText(
       boost::json::serialize(m),
       [self = shared_from_this()](boost::system::error_code, size_t) {});
@@ -486,6 +631,24 @@ void SoraSignaling::DoInternalDisconnect(
     }
   };
 
+  // Close 処理中に、意図しない場所で WS Close が呼ばれた場合の対策。
+  // 例えば dc_->Close()→送信完了して on_ws_close_ に値を設定して切断を待つ、
+  // となるまでの間に WS Close された場合、on_ws_close_ に値が設定されていなくて
+  // 永遠に終了できなくなってしまう。
+  if (ws_connected_) {
+    on_ws_close_ = [self = shared_from_this(),
+                    on_close](boost::system::error_code ec) {
+      boost::system::error_code tec;
+      self->closing_timeout_timer_.cancel(tec);
+      auto ws_reason = self->ws_->reason();
+      std::string message =
+          "Unintended disconnect WebSocket during Disconnect process: ec=" +
+          ec.message() + " wscode=" + std::to_string(ws_reason.code) +
+          " wsreason=" + ws_reason.reason.c_str();
+      on_close(false, SoraSignalingErrorCode::CLOSE_FAILED, message);
+    };
+  }
+
   if (using_datachannel_ && ws_connected_) {
     webrtc::DataBuffer disconnect = ConvertToDataBuffer(
         "signaling",
@@ -497,18 +660,19 @@ void SoraSignaling::DoInternalDisconnect(
         [self = shared_from_this(), on_close, force_error_code,
          message](boost::system::error_code ec1) {
           self->closing_timeout_timer_.expires_from_now(
-              boost::posix_time::seconds(3));
+              boost::posix_time::seconds(
+                  self->config_.websocket_close_timeout));
           self->closing_timeout_timer_.async_wait(
               [self](boost::system::error_code ec) {
                 if (ec) {
                   return;
                 }
-                self->on_ws_close_(boost::system::errc::make_error_code(
-                    boost::system::errc::timed_out));
+                self->ws_->Cancel();
               });
           self->on_ws_close_ = [self, ec1,
                                 on_close](boost::system::error_code ec2) {
-            self->closing_timeout_timer_.cancel();
+            boost::system::error_code tec;
+            self->closing_timeout_timer_.cancel(tec);
             auto ws_reason = self->ws_->reason();
             std::string ws_reason_str =
                 " wscode=" + std::to_string(ws_reason.code) +
@@ -577,11 +741,11 @@ void SoraSignaling::DoInternalDisconnect(
                 if (ec) {
                   return;
                 }
-                self->on_ws_close_(boost::system::errc::make_error_code(
-                    boost::system::errc::timed_out));
+                self->ws_->Cancel();
               });
           self->on_ws_close_ = [self, on_close](boost::system::error_code ec) {
-            self->closing_timeout_timer_.cancel();
+            boost::system::error_code tec;
+            self->closing_timeout_timer_.cancel(tec);
             bool ec_error = ec != boost::beast::websocket::error::closed;
             if (ec_error) {
               auto reason = self->ws_->reason();
@@ -630,12 +794,17 @@ void SoraSignaling::OnConnect(boost::system::error_code ec,
   }
 
   if (ec) {
-    RTC_LOG(LS_WARNING) << "Failed Websocket handshake: " << ec;
+    RTC_LOG(LS_WARNING) << "Failed Websocket handshake: " << ec
+                        << " url=" << url << " state=" << (int)state_
+                        << " wss_len=" << connecting_wss_.size();
     // すべての接続がうまくいかなかったら終了する
     if (state_ == State::Connecting && connecting_wss_.empty()) {
-      SendOnDisconnect(SoraSignalingErrorCode::WEBSOCKET_HANDSHAKE_FAILED,
-                       "Failed Websocket handshake: last_ec=" + ec.message() +
-                           " last_url=" + url);
+      SendOnDisconnect(
+          SoraSignalingErrorCode::WEBSOCKET_HANDSHAKE_FAILED,
+          "Failed Websocket handshake: last_ec=" + ec.message() +
+              " last_url=" + url +
+              (config_.proxy_url.empty() ? ""
+                                         : " proxy_url=" + config_.proxy_url));
     }
     return;
   }
@@ -647,7 +816,8 @@ void SoraSignaling::OnConnect(boost::system::error_code ec,
     return;
   }
 
-  connection_timeout_timer_.cancel();
+  boost::system::error_code tec;
+  connection_timeout_timer_.cancel(tec);
 
   RTC_LOG(LS_INFO) << "Signaling Websocket is connected: url=" << url;
   state_ = State::Connected;
@@ -676,7 +846,10 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
       if (on_ws_close_) {
         // Close で切断されて呼ばれたコールバックなので、on_ws_close_ を呼んで続きを処理してもらう
         on_ws_close_(ec);
+        return;
       }
+      // ここに来ることは無いはず
+      RTC_LOG(LS_ERROR) << "OnRead: state is Closing but on_ws_close_ is null";
       return;
     }
     if (state_ == State::Connected && !using_datachannel_) {
@@ -738,6 +911,7 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
   }
 
   if (state_ != State::Connected) {
+    DoRead();
     return;
   }
 
@@ -758,6 +932,33 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
     // Redirect の中で次の Read をしているのでここで return する
     return;
   } else if (type == "offer") {
+    const std::string sdp = m.at("sdp").as_string().c_str();
+
+    std::string video_mid;
+    std::string audio_mid;
+    {
+      auto it = m.as_object().find("mid");
+      if (it != m.as_object().end()) {
+        const auto& midobj = it->value().as_object();
+        auto mit = midobj.find("video");
+        if (mit != midobj.end()) {
+          video_mid = mit->value().as_string().c_str();
+        }
+        mit = midobj.find("audio");
+        if (mit != midobj.end()) {
+          audio_mid = mit->value().as_string().c_str();
+        }
+      }
+    }
+    RTC_LOG(LS_INFO) << "video mid: " << video_mid;
+    RTC_LOG(LS_INFO) << "audio mid: " << audio_mid;
+    video_mid_ = video_mid;
+    audio_mid_ = audio_mid;
+
+    if (!CheckSdp(sdp)) {
+      return;
+    }
+
     {
       boost::json::object::iterator it;
       it = m.as_object().find("multistream");
@@ -788,8 +989,9 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
       }
     }
 
+    connection_id_ = m.at("connection_id").as_string().c_str();
+
     pc_ = CreatePeerConnection(m.at("config"));
-    const std::string sdp = m.at("sdp").as_string().c_str();
 
     SessionDescription::SetOffer(
         pc_.get(), sdp,
@@ -798,20 +1000,6 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
             if (self->state_ != State::Connected) {
               return;
             }
-
-            std::string mid;
-            {
-              auto it = m.as_object().find("mid");
-              if (it != m.as_object().end()) {
-                const auto& midobj = it->value().as_object();
-                it = midobj.find("video");
-                if (it != midobj.end()) {
-                  mid = it->value().as_string().c_str();
-                }
-              }
-            }
-            RTC_LOG(LS_INFO) << "mid: " << mid;
-            self->video_mid_ = mid;
 
             // simulcast では offer の setRemoteDescription が終わった後に
             // トラックを追加する必要があるため、ここで初期化する
@@ -861,6 +1049,10 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
                 if (p.count("adaptivePtime") != 0) {
                   params.adaptive_ptime = p["adaptivePtime"].as_bool();
                 }
+                if (p.count("scalabilityMode") != 0) {
+                  params.scalability_mode =
+                      p["scalabilityMode"].as_string().c_str();
+                }
                 encoding_parameters.push_back(params);
               }
 
@@ -896,6 +1088,10 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
     }
     std::string answer_type = type == "update" ? "update" : "re-answer";
     const std::string sdp = m.at("sdp").as_string().c_str();
+    if (!CheckSdp(sdp)) {
+      return;
+    }
+
     SessionDescription::SetOffer(
         pc_.get(), sdp,
         [self = shared_from_this(), type, answer_type]() {
@@ -1008,8 +1204,18 @@ void SoraSignaling::DoConnect() {
                                "Connection timeout");
       });
 
+  auto signaling_urls = config_.signaling_urls;
+  if (!config_.disable_signaling_url_randomization) {
+    // ランダムに並び替える
+    std::random_device seed_gen;
+    std::mt19937 engine(seed_gen());
+    std::shuffle(signaling_urls.begin(), signaling_urls.end(), engine);
+  }
+
+  state_ = State::Connecting;
+
   std::string error_messages;
-  for (const auto& url : config_.signaling_urls) {
+  for (const auto& url : signaling_urls) {
     URLParts parts;
     bool ssl;
     if (!ParseURL(url, parts, ssl)) {
@@ -1041,8 +1247,6 @@ void SoraSignaling::DoConnect() {
     SendOnDisconnect(SoraSignalingErrorCode::INVALID_PARAMETER, error_messages);
     return;
   }
-
-  state_ = State::Connecting;
 }
 
 void SoraSignaling::SetEncodingParameters(
@@ -1191,8 +1395,9 @@ bool SoraSignaling::SendDataChannel(const std::string& label,
 }
 
 void SoraSignaling::Clear() {
-  connection_timeout_timer_.cancel();
-  closing_timeout_timer_.cancel();
+  boost::system::error_code tec;
+  connection_timeout_timer_.cancel(tec);
+  closing_timeout_timer_.cancel(tec);
   connecting_wss_.clear();
   connected_signaling_url_.clear();
   pc_ = nullptr;
@@ -1396,6 +1601,10 @@ void SoraSignaling::OnMessage(
     const std::string type = json.at("type").as_string().c_str();
     if (type == "re-offer") {
       const std::string sdp = json.at("sdp").as_string().c_str();
+      if (!CheckSdp(sdp)) {
+        return;
+      }
+
       SessionDescription::SetOffer(
           pc_.get(), sdp,
           [self = shared_from_this()]() {

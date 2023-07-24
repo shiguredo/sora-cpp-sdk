@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>マイクを取得するには許可が必要です</string>
 	<key>NSCameraUsageDescription</key>
 	<string>カメラ映像を取得するには許可が必要です</string>
 	<key>UIApplicationSceneManifest</key>

@@ -28,6 +28,7 @@ DYN_REGISTER(CUDA_SO, cuMemcpy2D);
 DYN_REGISTER(CUDA_SO, cuMemcpy2DAsync);
 DYN_REGISTER(CUDA_SO, cuMemcpy2DUnaligned);
 DYN_REGISTER(CUDA_SO, cuStreamSynchronize);
+DYN_REGISTER(CUDA_SO, cuStreamCreate);
 
 }  // namespace dyn
 

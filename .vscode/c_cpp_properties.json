@@ -13,8 +13,9 @@
                 "${workspaceFolder}/_install/ubuntu-20.04_x86_64/release/libva/include",
                 "${workspaceFolder}/_install/ubuntu-20.04_x86_64/release/vpl/include",
                 "${workspaceFolder}/_build/ubuntu-20.04_x86_64/release/sora",
-                "${workspaceFolder}/NvCodec/include",
-                "${workspaceFolder}/NvCodec/NvCodec",
+                "${workspaceFolder}/third_party/NvCodec/include",
+                "${workspaceFolder}/third_party/NvCodec/NvCodec",
+                "${workspaceFolder}/third_party/lyra",
                 "${workspaceFolder}/include",
                 "/usr/local/cuda/include"
             ],
@@ -127,8 +128,9 @@
                 "${workspaceFolder}/_install/windows_x86_64/release/webrtc/include/third_party/libyuv/include",
                 "${workspaceFolder}/_install/windows_x86_64/release/webrtc/include/third_party/zlib",
                 "${workspaceFolder}/_build/windows_x86_64/release/sora",
-                "${workspaceFolder}/NvCodec/include",
-                "${workspaceFolder}/NvCodec/NvCodec",
+                "${workspaceFolder}/third_party/NvCodec/include",
+                "${workspaceFolder}/third_party/NvCodec/NvCodec",
+                "${workspaceFolder}/third_party/lyra",
                 "${workspaceFolder}/include"
             ],
             "defines": [
@@ -152,8 +154,9 @@
                 "${workspaceFolder}/_source/windows_x86_64/debug/webrtc/src/third_party/libyuv/include",
                 "${workspaceFolder}/_source/windows_x86_64/debug/webrtc/src/third_party/zlib",
                 "${workspaceFolder}/_build/windows_x86_64/debug/sora",
-                "${workspaceFolder}/NvCodec/include",
-                "${workspaceFolder}/NvCodec/NvCodec",
+                "${workspaceFolder}/third_party/NvCodec/include",
+                "${workspaceFolder}/third_party/NvCodec/NvCodec",
+                "${workspaceFolder}/third_party/lyra",
                 "${workspaceFolder}/include"
             ],
             "defines": [

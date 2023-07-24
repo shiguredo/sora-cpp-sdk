@@ -11,6 +11,171 @@
 
 ## develop
 
+## 2023.7.2 (2023-07-12)
+
+- [FIX] 特定のタイミングで切断が発生すると Closing 状態で止まってしまうのを修正
+    - @melpon
+
+## 2023.7.1 (2023-06-26)
+
+- [FIX] Connect 直後に Disconnect すると OnDisconnect コールバックが呼ばれないことがあるのを修正
+    - @melpon
+
+## 2023.7.0 (2023-06-19)
+
+- [ADD] 映像コーデックパラメータを指定可能にする
+    - `SoraSignalingConfig` に以下のフィールドを追加する:
+        - `video_vp9_params`
+        - `video_av1_params`
+        - `video_h264_params`
+    - 値は単なる JSON 値で C++ SDK は中身のバリーデーションなどは行わない
+    - @sile
+- [UPDATE] CMake を 3.26.4 に上げる
+    - @torikizi
+
+## 2023.6.0 (2023-05-30)
+
+- [UPDATE] WebRTC を m114.5735.2.0 に上げる
+    - @miosakuma
+- [FIX] 一部の Windows で VP8 の受信時にクラッシュする問題を修正する
+    - Query した上で Init しても MFX_ERR_UNSUPPORTED になるため VPL の場合は毎回 Init を呼ぶようにする
+    - @melpon
+
+## 2023.5.1 (2023-05-16)
+
+- [FIX] ソケット切断時にクラッシュすることがあるのを修正
+    - @melpon
+
+## 2023.5.0 (2023-05-08)
+
+- [UPDATE] WebRTC を m114.5735.0.1 に上げる
+    - @melpon
+- [UPDATE] Boost を 1.82.0 に上げる
+    - @melpon
+- [ADD] Sora の Forwarding Filter 機能を使えるようにする
+    - @melpon
+- [FIX] 接続エラー時に Websocket::OnWrite でクラッシュすることがあるのを修正
+    - @melpon
+
+## 2023.4.0 (2023-04-08)
+
+- [CHANGE] SoraDefaultClient を削除して SoraClientContext を追加
+    - @melpon
+- [ADD] デバイス一覧を取得する機能を追加
+    - @melpon
+- [FIX] CUDA 未対応時に HWA を利用しない設定にしてもクラッシュしてしまうのを修正
+    - @melpon
+
+## 2023.3.0 (2023-04-02)
+
+- [CHANGE] SoraSignalingConfig から audio_codec_lyra_params を削除して、代わりに audio_codec_lyra_bitrate と audio_codec_lyra_usedtx を追加
+    - @melpon
+- [UPDATE] Lyra で接続する時に、チャンネル全体で同じバージョンの Lyra を使っているかをチェックする
+    - @melpon
+- [UPDATE] JetPack 5.1 に対応する
+    - @tnoho @melpon
+- [UPDATE] oneVPL を v2023.1.3 に上げる
+    - @voluntas
+- [UPDATE] CMake を 3.25.3 に上げる
+    - @melpon
+- [UPDATE] 例外が有効になっていなかった一部の依存ライブラリも例外を有効にする
+    - @melpon
+- [UPDATE] WebRTC を m111.5563.4.4 に上げる
+    - @melpon
+- [ADD] 2022.11.0 で無効にしていた Jetson の HW MJPEG デコーダを有効にする
+    - @tnoho @melpon
+- [FIX] WS 切断時のタイムアウトが起きた際に無効な関数オブジェクトを呼んでいたのを修正
+    - @melpon
+
+## 2023.2.0 (2023-03-05)
+
+- [UPDATE] NVIDIA Video Codec SDK を 12.0 に上げる
+    - @melpon
+- [UPDATE] deprecated になった actions/create-release と actions/upload-release の利用をやめて softprops/action-gh-release を利用する
+    - @melpon
+- [FIX] WebSocket 接続時に即エラーになると正常に OnDisconnect が呼ばれないのを修正
+    - @melpon
+- [UPDATE] oneVPL のデコードでリサイズに対応してなかったのを修正
+    - @melpon
+- [UPDATE] WebRTC を m111.5563.4.2 に上げる
+    - @melpon @miosakuma
+
+## 2023.1.0 (2023-01-12)
+
+- [ADD] SoraSignalingConfig に audio_streaming_language_code を追加
+    - @melpon
+- [UPDATE] WebRTC を m109.5414.2.0 に上げる
+    - @melpon
+- [UPDATE] Boost を 1.81.0 に上げる
+    - @melpon
+- [UPDATE] oneVPL を v2023.1.1 に上げる
+    - @melpon
+
+## 2022.19.0 (2022-12-25)
+
+- [CHANGE] Lyra を静的ライブラリ化
+    - @melpon
+- [ADD] iOS を Lyra に対応
+    - @melpon
+
+## 2022.18.0 (2022-11-11)
+
+- [UPDATE] Lyra を `1.3.0` に上げる
+    - @melpon
+
+## 2022.17.1 (2022-11-10)
+
+- [FIX] macOS 用 Lyra のターゲットがローカルのアーキテクチャに依存していたのを修正
+    - @melpon
+
+## 2022.17.0 (2022-11-08)
+
+- [ADD] Lyra パラメータを指定可能にする
+    - @melpon
+
+## 2022.16.0 (2022-11-08)
+
+- [CHANGE] Boost.Filesystem への依存を追加
+    - @melpon
+- [ADD] オーディオコーデック Lyra に対応
+    - @melpon
+
+## 2022.15.1 (2022-11-02)
+
+- [FIX] CI で .env ファイル名の誤りを修正する
+    - @miosakuma
+
+## 2022.15.0 (2022-11-02)
+
+- [UPDATE] libwebrtc を `M107.5304@{#4}` に上げる
+    - @torikizi
+- [FIX] 廃止になった `audio_opus_params_clock_rate` を削除する
+    - @torikizi
+- [FIX] CI で Windows の場合 $GITHUB_OUTPUT に "\r" が混入するのを除去する
+    - @miosakuma
+
+## 2022.14.0 (2022-10-05)
+
+- [ADD] SoraSignaling に `GetConnectionID`, `GetConnectedSignalingURL`, `IsConnectedDataChannel`, `IsConnectedWebsocket` 関数を追加
+    - @melpon
+
+## 2022.13.0 (2022-10-05)
+
+- [CHANGE] `ScalableVideoTrackSource::OnCapturedFrame` の戻り値を void から bool にする
+    - @melpon
+- [ADD] SoraSignalingConfig に `audio_opus_params_clock_rate`, `signaling_notify_metadata`, `disable_signaling_url_randomization` を追加
+    - @melpon
+
+## 2022.12.3 (2022-10-03)
+
+- [UPDATE] Boost のビルド済みバイナリに Filesystem を追加
+    - @melpon
+
+## 2022.12.2 (2022-10-02)
+
+- [UPDATE] iOS の IPHONE_DEPLOYMENT_TARGET を 10.0 から 13.0 に上げる
+    - @melpon
+
 ## 2022.12.1 (2022-09-24)
 
 - [FIX] ログが毎フレーム出力されてしまっていたのを修正

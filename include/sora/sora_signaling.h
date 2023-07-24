@@ -20,6 +20,14 @@
 
 namespace sora {
 
+extern const char kActionBlock[];
+extern const char kActionAllow[];
+extern const char kFieldConnectionId[];
+extern const char kFieldClientId[];
+extern const char kFieldKind[];
+extern const char kOperatorIsIn[];
+extern const char kOperatorIsNotIn[];
+
 enum class SoraSignalingErrorCode {
   CLOSE_SUCCEEDED,
   CLOSE_FAILED,
@@ -30,6 +38,7 @@ enum class SoraSignalingErrorCode {
   WEBSOCKET_ONERROR,
   PEER_CONNECTION_STATE_FAILED,
   ICE_FAILED,
+  LYRA_VERSION_INCOMPATIBLE,
 };
 
 class SoraSignalingObserver {
@@ -65,9 +74,16 @@ struct SoraSignalingConfig {
   bool audio = true;
   std::string video_codec_type = "";
   std::string audio_codec_type = "";
+  int audio_codec_lyra_bitrate = 0;
+  boost::optional<bool> audio_codec_lyra_usedtx;
   int video_bit_rate = 0;
   int audio_bit_rate = 0;
+  boost::json::value video_vp9_params;
+  boost::json::value video_av1_params;
+  boost::json::value video_h264_params;
+  std::string audio_streaming_language_code;
   boost::json::value metadata;
+  boost::json::value signaling_notify_metadata;
   std::string role = "sendonly";
   boost::optional<bool> multistream;
   boost::optional<bool> spotlight;
@@ -91,6 +107,17 @@ struct SoraSignalingConfig {
   };
   std::vector<DataChannel> data_channels;
 
+  struct ForwardingFilter {
+    std::string action;
+    struct Rule {
+      std::string field;
+      std::string op;
+      std::vector<std::string> values;
+    };
+    std::vector<std::vector<Rule>> rules;
+  };
+  boost::optional<ForwardingFilter> forwarding_filter;
+
   std::string client_cert;
   std::string client_key;
 
@@ -104,6 +131,9 @@ struct SoraSignalingConfig {
   // proxy を設定する場合は必須
   rtc::NetworkManager* network_manager = nullptr;
   rtc::PacketSocketFactory* socket_factory = nullptr;
+
+  bool disable_signaling_url_randomization = false;
+  bool check_lyra_version = false;
 };
 
 class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
@@ -117,10 +147,16 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
       const SoraSignalingConfig& config);
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> GetPeerConnection() const;
   std::string GetVideoMid() const;
+  std::string GetAudioMid() const;
 
   void Connect();
   void Disconnect();
   bool SendDataChannel(const std::string& label, const std::string& data);
+
+  std::string GetConnectionID() const;
+  std::string GetConnectedSignalingURL() const;
+  bool IsConnectedDataChannel() const;
+  bool IsConnectedWebsocket() const;
 
  private:
   static bool ParseURL(const std::string& url, URLParts& parts, bool& ssl);
@@ -129,6 +165,8 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
   void OnRedirect(boost::system::error_code ec,
                   std::string url,
                   std::shared_ptr<Websocket> ws);
+
+  bool CheckSdp(const std::string& sdp);
 
   void DoRead();
   void DoSendConnect(bool redirect);
@@ -212,6 +250,7 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
   };
   OfferConfig offer_config_;
 
+  std::string connection_id_;
   std::vector<std::shared_ptr<Websocket>> connecting_wss_;
   std::string connected_signaling_url_;
   std::shared_ptr<Websocket> ws_;
@@ -227,6 +266,7 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
   rtc::scoped_refptr<webrtc::PeerConnectionInterface> pc_;
   std::vector<webrtc::RtpEncodingParameters> encodings_;
   std::string video_mid_;
+  std::string audio_mid_;
 
   boost::asio::deadline_timer connection_timeout_timer_;
   boost::asio::deadline_timer closing_timeout_timer_;

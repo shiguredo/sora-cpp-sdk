@@ -24,8 +24,9 @@ void* GetAndroidApplicationContext(void* env) {
 }
 #endif
 
-HelloSora::HelloSora(HelloSoraConfig config)
-    : sora::SoraDefaultClient(config), config_(config) {}
+HelloSora::HelloSora(std::shared_ptr<sora::SoraClientContext> context,
+                     HelloSoraConfig config)
+    : context_(context), config_(config) {}
 
 HelloSora::~HelloSora() {
   RTC_LOG(LS_INFO) << "HelloSora dtor";
@@ -38,26 +39,28 @@ HelloSora::~HelloSora() {
 void HelloSora::Run() {
   void* env = sora::GetJNIEnv();
 
-  sora::CameraDeviceCapturerConfig cam_config;
-  cam_config.width = 640;
-  cam_config.height = 480;
-  cam_config.fps = 30;
-  cam_config.jni_env = env;
-  cam_config.application_context = GetAndroidApplicationContext(env);
-  video_source_ = sora::CreateCameraDeviceCapturer(cam_config);
-
   std::string audio_track_id = rtc::CreateRandomString(16);
-  std::string video_track_id = rtc::CreateRandomString(16);
-  audio_track_ = factory()->CreateAudioTrack(
+  audio_track_ = pc_factory()->CreateAudioTrack(
       audio_track_id,
-      factory()->CreateAudioSource(cricket::AudioOptions()).get());
-  video_track_ =
-      factory()->CreateVideoTrack(video_track_id, video_source_.get());
+      pc_factory()->CreateAudioSource(cricket::AudioOptions()).get());
+
+  if (config_.mode == HelloSoraConfig::Mode::Hello) {
+    sora::CameraDeviceCapturerConfig cam_config;
+    cam_config.width = 1024;
+    cam_config.height = 768;
+    cam_config.fps = 30;
+    cam_config.jni_env = env;
+    cam_config.application_context = GetAndroidApplicationContext(env);
+    video_source_ = sora::CreateCameraDeviceCapturer(cam_config);
+    std::string video_track_id = rtc::CreateRandomString(16);
+    video_track_ =
+        pc_factory()->CreateVideoTrack(video_track_id, video_source_.get());
+  }
 
   ioc_.reset(new boost::asio::io_context(1));
 
   sora::SoraSignalingConfig config;
-  config.pc_factory = factory();
+  config.pc_factory = pc_factory();
   config.io_context = ioc_.get();
   config.observer = shared_from_this();
   config.signaling_urls = config_.signaling_urls;
@@ -66,6 +69,12 @@ void HelloSora::Run() {
   config.role = config_.role;
   config.video_codec_type = "H264";
   config.multistream = true;
+  if (config_.mode == HelloSoraConfig::Mode::Lyra) {
+    config.video = false;
+    config.sora_client = "Hello Sora with Lyra";
+    config.audio_codec_type = "LYRA";
+    config.check_lyra_version = true;
+  }
   conn_ = sora::SoraSignaling::Create(config);
 
   boost::asio::executor_work_guard<boost::asio::io_context::executor_type>
@@ -79,18 +88,16 @@ void HelloSora::Run() {
   ioc_->run();
 }
 
-void* HelloSora::GetAndroidApplicationContext(void* env) {
-  return ::GetAndroidApplicationContext(env);
-}
-
 void HelloSora::OnSetOffer(std::string offer) {
   std::string stream_id = rtc::CreateRandomString(16);
   webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpSenderInterface>>
       audio_result =
           conn_->GetPeerConnection()->AddTrack(audio_track_, {stream_id});
-  webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpSenderInterface>>
-      video_result =
-          conn_->GetPeerConnection()->AddTrack(video_track_, {stream_id});
+  if (video_track_ != nullptr) {
+    webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpSenderInterface>>
+        video_result =
+            conn_->GetPeerConnection()->AddTrack(video_track_, {stream_id});
+  }
 }
 void HelloSora::OnDisconnect(sora::SoraSignalingErrorCode ec,
                              std::string message) {
@@ -98,7 +105,7 @@ void HelloSora::OnDisconnect(sora::SoraSignalingErrorCode ec,
   ioc_->stop();
 }
 
-#if defined(HELLO_ANDROID) || (defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE)
+#if defined(__ANDROID__) || (defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE)
 
 // iOS, Android は main を使わない
 
@@ -119,9 +126,13 @@ int main(int argc, char* argv[]) {
   }
 #endif
 
-  //rtc::LogMessage::LogToDebug(rtc::LS_VERBOSE);
-  //rtc::LogMessage::LogTimestamps();
-  //rtc::LogMessage::LogThreads();
+  rtc::LogMessage::LogToDebug(rtc::LS_WARNING);
+  rtc::LogMessage::LogTimestamps();
+  rtc::LogMessage::LogThreads();
+
+  sora::SoraClientContextConfig context_config;
+  context_config.get_android_application_context = GetAndroidApplicationContext;
+  auto context = sora::SoraClientContext::Create(context_config);
 
   boost::json::value v;
   {
@@ -137,8 +148,16 @@ int main(int argc, char* argv[]) {
   }
   config.channel_id = v.as_object().at("channel_id").as_string().c_str();
   config.role = "sendonly";
+  if (auto it = v.as_object().find("role"); it != v.as_object().end()) {
+    config.role = it->value().as_string();
+  }
+  if (auto it = v.as_object().find("mode"); it != v.as_object().end()) {
+    if (it->value().as_string() == "lyra") {
+      config.mode = HelloSoraConfig::Mode::Lyra;
+    }
+  }
 
-  auto hello = sora::CreateSoraClient<HelloSora>(config);
+  auto hello = std::make_shared<HelloSora>(context, config);
   hello->Run();
 }
 

@@ -3,6 +3,7 @@
 #include <NvDecoder/NvDecoder.h>
 
 #include "../cuda_context_cuda.h"
+#include "sora/dyn/cuda.h"
 
 namespace sora {
 
@@ -35,6 +36,7 @@ NvCodecDecoderCuda::NvCodecDecoderCuda(std::shared_ptr<CudaContext> ctx,
                           true,
                           nullptr,
                           nullptr,
+                          false,
                           3840,
                           3840,
                           1000,

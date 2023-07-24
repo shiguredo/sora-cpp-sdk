@@ -12,7 +12,7 @@
 #include <rtc_base/logging.h>
 
 #if !defined(__arm__) || defined(__aarch64__) || defined(__ARM_NEON__)
-#include <modules/video_coding/codecs/av1/libaom_av1_decoder.h>
+#include <modules/video_coding/codecs/av1/dav1d_decoder.h>
 #endif
 
 #if defined(__APPLE__)
@@ -264,7 +264,7 @@ SoraVideoDecoderFactoryConfig GetSoftwareOnlyVideoDecoderFactoryConfig() {
     !defined(SORA_CPP_SDK_HOLOLENS2)
   config.decoders.push_back(VideoDecoderConfig(
       webrtc::kVideoCodecAV1,
-      [](auto format) { return webrtc::CreateLibaomAv1Decoder(); }));
+      [](auto format) { return webrtc::CreateDav1dDecoder(); }));
 #endif
   return config;
 }

@@ -10,6 +10,7 @@ class Version {
   static std::string GetClientName();
   static std::string GetLibwebrtcName();
   static std::string GetEnvironmentName();
+  static std::string GetLyraCompatibleVersion();
 };
 
 }  // namespace sora

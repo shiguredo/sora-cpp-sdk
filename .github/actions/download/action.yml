@@ -1,0 +1,40 @@
+name: download-artifact
+
+description: Download Artifact
+
+inputs:
+  platform:
+    description: Platform
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/download-artifact@v3
+      with:
+        name: ${{ inputs.platform }}.env
+        path: ${{ inputs.platform }}.env
+    - name: Env to output
+      shell: bash
+      run: |
+        sed -i 's/\r//g' ${{ inputs.platform }}.env/sora.env
+        source ${{ inputs.platform }}.env/sora.env
+        echo "package_name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
+        echo "boost_package_name=$BOOST_PACKAGE_NAME" >> $GITHUB_OUTPUT
+        echo "lyra_package_name=$LYRA_PACKAGE_NAME" >> $GITHUB_OUTPUT
+        echo "$PACKAGE_NAME/$PACKAGE_NAME" >> package_paths.env
+        echo "$BOOST_PACKAGE_NAME/$BOOST_PACKAGE_NAME" >> package_paths.env
+        echo "$LYRA_PACKAGE_NAME/$LYRA_PACKAGE_NAME" >> package_paths.env
+      id: env
+    - uses: actions/download-artifact@v3
+      with:
+        name: ${{ steps.env.outputs.package_name }}
+        path: ${{ steps.env.outputs.package_name }}
+    - uses: actions/download-artifact@v3
+      with:
+        name: ${{ steps.env.outputs.boost_package_name }}
+        path: ${{ steps.env.outputs.boost_package_name }}
+    - uses: actions/download-artifact@v3
+      with:
+        name: ${{ steps.env.outputs.lyra_package_name }}
+        path: ${{ steps.env.outputs.lyra_package_name }}

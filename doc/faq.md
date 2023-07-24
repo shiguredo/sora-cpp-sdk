@@ -9,10 +9,14 @@ GitHub Actions でビルドを行い確認していますので、まずは GitH
 GitHub Actions のビルドが失敗していたり、
 ビルド済みバイナリがうまく動作しない場合は Discord へご連絡ください。
 
-### NVIDIA Jetson Orin (Ubuntu 20.04 arm64) でビルドできません
+## NVIDIA Jetson Orin (Ubuntu 20.04 arm64) でビルドできません
 
 Ubuntu 20.04 x86_64 でクロスコンパイルしたバイナリを利用するようにしてください。
 
 ## NVIDIA 搭載の Windows で width height のいずれかが 128 未満のサイズの VP9 の映像を受信できません
 
 NVIDIA VIDEO CODEC SDK のハードウェアデコーダでは width height のいずれかが 128 未満である場合 VP9 の映像をデコードできません。 width height のいずれかが 128 未満のサイズの映像を受信したい場合は VP9 以外のコーデックを利用するようにしてください。
+
+## Windows の Chrome で Jetson の H.264 映像を受信すると色が緑色になります
+
+Windows 環境でのみ Jetson の H.264 映像を受信すると映像の色が緑色になってしまうことを確認しています。こちらの事象は NVIDIA Jetson の JetPack を 5.1.1 にすることで解決します。

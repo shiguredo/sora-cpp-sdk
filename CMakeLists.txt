@@ -70,7 +70,8 @@ set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE NEVER)
 
 find_package(WebRTC REQUIRED)
-find_package(Boost REQUIRED COMPONENTS json)
+find_package(Boost REQUIRED COMPONENTS json filesystem)
+find_package(Lyra REQUIRED)
 find_package(Threads REQUIRED)
 
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
@@ -80,20 +81,24 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 # libsora.a を作る
 
 add_library(sora STATIC)
-set_target_properties(sora PROPERTIES CXX_STANDARD 17 C_STANDARD 17)
+set_target_properties(sora PROPERTIES CXX_STANDARD 20 C_STANDARD 20)
 
 string(SUBSTRING "${SORA_CPP_SDK_COMMIT}" 0 8 SORA_CPP_SDK_COMMIT_SHORT)
 string(SUBSTRING "${WEBRTC_COMMIT}" 0 8 WEBRTC_COMMIT_SHORT)
 configure_file(src/version.gen.h.template ${CMAKE_CURRENT_BINARY_DIR}/version.gen.h)
 target_include_directories(sora PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
+
 target_sources(sora
   PRIVATE
     src/aligned_encoder_adapter.cpp
+    src/audio_decoder_lyra.cpp
     src/audio_device_module.cpp
+    src/audio_encoder_lyra.cpp
     src/camera_device_capturer.cpp
     src/data_channel.cpp
     src/default_video_formats.cpp
+    src/device_list.cpp
     src/device_video_capturer.cpp
     src/i420_encoder_adapter.cpp
     src/java_context.cpp
@@ -101,7 +106,9 @@ target_sources(sora
     src/rtc_stats.cpp
     src/scalable_track_source.cpp
     src/session_description.cpp
-    src/sora_default_client.cpp
+    src/sora_audio_decoder_factory.cpp
+    src/sora_audio_encoder_factory.cpp
+    src/sora_client_context.cpp
     src/sora_peer_connection_factory.cpp
     src/sora_signaling.cpp
     src/sora_video_decoder_factory.cpp
@@ -130,8 +137,10 @@ endif()
 
 target_link_libraries(sora
   PUBLIC
+    Lyra::lyra
     WebRTC::webrtc
     Boost::json
+    Boost::filesystem
 )
 
 if (USE_LIBCXX)
@@ -249,7 +258,7 @@ if (SORA_TARGET_OS STREQUAL "windows")
   target_compile_definitions(sora
     PUBLIC
       WEBRTC_WIN
-      _HAS_ITERATOR_DEBUGGING=0
+      _ITERATOR_DEBUG_LEVEL=0
   )
 
   if (SORA_TARGET_ARCH STREQUAL "hololens2")
@@ -272,13 +281,13 @@ if (SORA_TARGET_OS STREQUAL "windows")
     target_sources(sora
       PRIVATE
         src/hwenc_nvcodec/nvcodec_h264_encoder.cpp
-        NvCodec/NvCodec/NvEncoder/NvEncoder.cpp
-        NvCodec/NvCodec/NvEncoder/NvEncoderD3D11.cpp
+        third_party/NvCodec/NvCodec/NvEncoder/NvEncoder.cpp
+        third_party/NvCodec/NvCodec/NvEncoder/NvEncoderD3D11.cpp
         src/hwenc_nvcodec/nvcodec_video_decoder.cpp)
     target_include_directories(sora
       PRIVATE
-        NvCodec/include
-        NvCodec/NvCodec)
+        third_party/NvCodec/include
+        third_party/NvCodec/NvCodec)
     target_link_libraries(sora
       PRIVATE
         DXGI.lib
@@ -294,19 +303,19 @@ if (SORA_TARGET_OS STREQUAL "windows")
 
     set_source_files_properties(
         src/cuda_context_cuda.cpp
-        NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
+        third_party/NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
         src/hwenc_nvcodec/nvcodec_decoder_cuda.cpp
       PROPERTIES
         CUDA_SOURCE_PROPERTY_FORMAT OBJ
     )
     cuda_compile(CUDA_FILES
         src/cuda_context_cuda.cpp
-        NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
+        third_party/NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
         src/hwenc_nvcodec/nvcodec_decoder_cuda.cpp
       OPTIONS
         -Xcompiler /utf-8
-        -Xcompiler /I${CMAKE_CURRENT_SOURCE_DIR}/NvCodec/include
-        -Xcompiler /I${CMAKE_CURRENT_SOURCE_DIR}/NvCodec/NvCodec
+        -Xcompiler /I${CMAKE_CURRENT_SOURCE_DIR}/third_party/NvCodec/include
+        -Xcompiler /I${CMAKE_CURRENT_SOURCE_DIR}/third_party/NvCodec/NvCodec
         -Xcompiler /I${CMAKE_CURRENT_SOURCE_DIR}/include
         -Xcompiler "/MT$<$<CONFIG:Debug>:d>"
         -Xcompiler /D_HAS_ITERATOR_DEBUGGING=0
@@ -328,7 +337,7 @@ if (SORA_TARGET_OS STREQUAL "windows")
     )
     target_link_libraries(sora PRIVATE "$<BUILD_INTERFACE:VPL::dispatcher>")
     # vpl を要求したくないので sora.lib に含める
-    list(APPEND BUNDLE_STATIC_LIBS ${VPL_ROOT_DIR}/lib/vpl.lib)
+    list(APPEND BUNDLE_STATIC_LIBS ${VPL_ROOT_DIR}/lib/vpl$<$<CONFIG:Debug>:d>.lib)
   endif()
 
 elseif (SORA_TARGET_OS STREQUAL "macos")
@@ -402,6 +411,11 @@ elseif (SORA_TARGET_OS STREQUAL "android")
       src/android/android_capturer.cpp
   )
 
+  target_compile_options(sora
+    PUBLIC
+      -fexperimental-relative-c++-abi-vtables
+  )
+
   target_compile_definitions(sora
     PUBLIC
       WEBRTC_POSIX
@@ -460,13 +474,13 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
         src/hwenc_nvcodec/nvcodec_h264_encoder_cuda.cpp
         src/hwenc_nvcodec/nvcodec_decoder_cuda.cpp
         src/hwenc_nvcodec/nvcodec_video_decoder.cpp
-        NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
-        NvCodec/NvCodec/NvEncoder/NvEncoder.cpp
-        NvCodec/NvCodec/NvEncoder/NvEncoderCuda.cpp)
+        third_party/NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
+        third_party/NvCodec/NvCodec/NvEncoder/NvEncoder.cpp
+        third_party/NvCodec/NvCodec/NvEncoder/NvEncoderCuda.cpp)
     target_include_directories(sora
       PRIVATE
-        NvCodec/include
-        NvCodec/NvCodec
+        third_party/NvCodec/include
+        third_party/NvCodec/NvCodec
         /usr/local/cuda/include)
 
     # これらのソースは CUDA としてコンパイルする
@@ -474,8 +488,8 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
         src/cuda_context_cuda.cpp
         src/hwenc_nvcodec/nvcodec_h264_encoder_cuda.cpp
         src/hwenc_nvcodec/nvcodec_decoder_cuda.cpp
-        NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
-        NvCodec/NvCodec/NvEncoder/NvEncoderCuda.cpp
+        third_party/NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
+        third_party/NvCodec/NvCodec/NvEncoder/NvEncoderCuda.cpp
       PROPERTIES
         COMPILE_OPTIONS "-xcuda;--cuda-gpu-arch=sm_35;-std=gnu++17"
     )
@@ -547,6 +561,7 @@ elseif (SORA_TARGET_OS STREQUAL "jetson")
         src/hwenc_jetson/jetson_v4l2_capturer.cpp
         src/hwenc_jetson/jetson_video_encoder.cpp
         src/hwenc_jetson/jetson_video_decoder.cpp
+        ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvBufSurface.cpp
         ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvBuffer.cpp
         ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvElement.cpp
         ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvElementProfiler.cpp
@@ -555,8 +570,8 @@ elseif (SORA_TARGET_OS STREQUAL "jetson")
         ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvLogging.cpp
         ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvV4l2Element.cpp
         ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvV4l2ElementPlane.cpp
-        ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvVideoEncoder.cpp
         ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvVideoDecoder.cpp
+        ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvVideoEncoder.cpp
     )
 
     target_include_directories(sora PRIVATE ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/include)
@@ -578,6 +593,7 @@ elseif (SORA_TARGET_OS STREQUAL "jetson")
         #nvddk_2d_v2
         nvjpeg
         nvbufsurface
+        nvbufsurftransform
         #nvos
     )
   endif(USE_JETSON_ENCODER)
@@ -603,10 +619,12 @@ install(EXPORT sora-config
   DESTINATION ${CMAKE_INSTALL_DATADIR}/sora
   NAMESPACE Sora::
 )
-install(FILES cmake/FindWebRTC.cmake cmake/FindLibdrm.cmake
-  DESTINATION ${CMAKE_INSTALL_DATADIR}/cmake
-)
-install(FILES cmake/FindWebRTC.cmake cmake/FindLibva.cmake
+install(
+  FILES
+    cmake/FindWebRTC.cmake
+    cmake/FindLibdrm.cmake
+    cmake/FindLibva.cmake
+    cmake/FindLyra.cmake
   DESTINATION ${CMAKE_INSTALL_DATADIR}/cmake
 )
 install(FILES LICENSE NOTICE.md

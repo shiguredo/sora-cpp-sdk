@@ -1,0 +1,143 @@
+load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository", "new_git_repository")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+local_repository(
+    name = "lyra",
+    path = "lyra",
+)
+
+# Google logging
+git_repository(
+    name = "com_google_glog",
+    remote = "https://github.com/google/glog.git",
+    branch = "master"
+)
+# Dependency for glog
+git_repository(
+    name = "com_github_gflags_gflags",
+    remote = "https://github.com/mchinen/gflags.git",
+    branch = "android_linking_fix"
+)
+
+http_archive(
+    name = "rules_android",
+    sha256 = "cd06d15dd8bb59926e4d65f9003bfc20f9da4b2519985c27e190cddc8b7a7806",
+    strip_prefix = "rules_android-0.1.1",
+    urls = ["https://github.com/bazelbuild/rules_android/archive/v0.1.1.zip"],
+)
+
+# proto_library, cc_proto_library, and java_proto_library rules implicitly
+# depend on @com_google_protobuf for protoc and proto runtimes.
+# This statement defines the @com_google_protobuf repo.
+local_repository(
+    name = "com_google_protobuf",
+    path = "third_party/protobuf",
+)
+load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
+protobuf_deps()
+
+# Filesystem
+# The new_* prefix is used because it is not a bazel project and there is
+# no BUILD file in that repo.
+FILESYSTEM_BUILD = """
+cc_library(
+  name = "filesystem",
+  hdrs = glob(["include/ghc/*"]),
+  visibility = ["//visibility:public"],
+)
+"""
+
+new_git_repository(
+    name = "gulrak_filesystem",
+    remote = "https://github.com/gulrak/filesystem.git",
+    tag = "v1.3.6",
+    build_file_content = FILESYSTEM_BUILD
+)
+
+# Google Abseil Libs
+git_repository(
+    name = "com_google_absl",
+    remote = "https://github.com/abseil/abseil-cpp.git",
+    tag = "20211102.0",
+    # Remove after https://github.com/abseil/abseil-cpp/issues/326 is solved.
+    #patches = [
+    #    "@lyra//third_party:com_google_absl_f863b622fe13612433fdf43f76547d5edda0c93001.diff"
+    #],
+    #patch_args = [
+    #    "-p1",
+    #]
+)
+
+# Audio DSP
+git_repository(
+    name = "com_google_audio_dsp",
+    # TODO(b/231448719) use main google repo after merging PR for TF eigen compatibility.
+    remote = "https://github.com/mchinen/multichannel-audio-tools.git",
+    # There are no tags for this repo, we are synced to bleeding edge.
+    commit = "14a45c5a7c965e5ef01fe537bd816ce10a247813",
+    repo_mapping = {
+        "@com_github_glog_glog" : "@com_google_glog",
+        "@eigen3": "@eigen_archive"
+    }
+)
+
+# Transitive dependencies of Audio DSP.
+# Note: eigen is used by Audio DSP, but provided through tensorflow workspace functions.
+
+http_archive(
+    name = "fft2d",
+    build_file = "fft2d.BUILD",
+    sha256 = "ada7e99087c4ed477bfdf11413f2ba8db8a840ba9bbf8ac94f4f3972e2a7cec9",
+    urls = [
+        "http://www.kurims.kyoto-u.ac.jp/~ooura/fft2d.tgz",
+    ],
+)
+
+# Begin Tensorflow WORKSPACE subset required for TFLite
+
+git_repository(
+    name = "org_tensorflow",
+    remote = "https://github.com/tensorflow/tensorflow.git",
+    # Below is reproducible and equivalent to `tag = "v2.9.0"`
+    commit = "8a20d54a3c1bfa38c03ea99a2ad3c1b0a45dfa95",
+    shallow_since = "1652465115 -0700",
+    patches = ["//:patches/android_tensorflow.patch", "//:patches/use_exceptions_tensorflow.patch"],
+    patch_args = ["-p1"]
+)
+
+# Check bazel version requirement, which is stricter than TensorFlow's.
+load(
+    "@org_tensorflow//tensorflow:version_check.bzl",
+    "check_bazel_version_at_least",
+)
+
+check_bazel_version_at_least("3.7.2")
+
+# TF WORKSPACE Loading functions
+# This section uses a subset of the tensorflow WORKSPACE loading by reusing its contents.
+# There are four workspace() functions create repos for the dependencies.
+# TF's loading is very complicated, and we only need a subset for TFLite.
+# If we use the full TF loading sequence, we also run into conflicts and errors on some platforms.
+
+# Android 用のパッチを当てるために別途でリポジトリを取得しておく
+load("@org_tensorflow//third_party:repo.bzl", "tf_http_archive", "tf_mirror_urls")
+
+tf_http_archive(
+    name = "XNNPACK",
+    sha256 = "7e9ad45391e5158fd00e816022bda21d54a6180788af7c455c864a78cee252c6",
+    strip_prefix = "XNNPACK-11b2812d64e49bab9b6c489f79067fc94e69db9f",
+    urls = tf_mirror_urls("https://github.com/google/XNNPACK/archive/11b2812d64e49bab9b6c489f79067fc94e69db9f.zip"),
+    patch_file = ["@//:patches/android_xnnpack.patch"]
+)
+
+load("@org_tensorflow//tensorflow:workspace3.bzl", workspace3 = "workspace")
+workspace3()
+
+load("@org_tensorflow//tensorflow:workspace2.bzl", workspace2 = "workspace")
+workspace2()
+
+load("//:toolchain/linux_x86_64/toolchain_configure.bzl", "webrtc_clang_toolchain_configure")
+webrtc_clang_toolchain_configure(name = "webrtc_clang_toolchain", src = "@//:toolchain/linux_x86_64/BUILD.tpl")
+
+load("//:toolchain/android/toolchain_configure.bzl", "android_toolchain_configure")
+android_toolchain_configure(name = "android_toolchain", src = "@//:toolchain/android/BUILD.tpl")

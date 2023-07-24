@@ -26,6 +26,7 @@ android {
                 //    "-DLIBCXX_INCLUDE_DIR=$projectDir/../../../_source/android/debug/webrtc/src/buildtools/third_party/libc++/trunk/include",
                 arguments "-DCMAKE_TOOLCHAIN_FILE=$projectDir/../../../_install/android/release/android-ndk/build/cmake/android.toolchain.cmake",
                     "-DSORA_DIR=$projectDir/../../../_install/android/release/sora",
+                    "-DLYRA_DIR=$projectDir/../../../_install/android/release/lyra",
                     "-DCMAKE_BUILD_TYPE=Release",
                     "-DBOOST_ROOT=$projectDir/../../../_install/android/release/boost",
                     "-DWEBRTC_INCLUDE_DIR=$projectDir/../../../_install/android/release/webrtc/include",
@@ -61,7 +62,7 @@ android {
     externalNativeBuild {
         cmake {
             path file('src/main/cpp/CMakeLists.txt')
-            version '3.23.1'
+            version '3.26.4'
         }
     }
     buildFeatures {

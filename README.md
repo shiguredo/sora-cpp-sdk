@@ -30,29 +30,32 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
         - VP8 / VP9 / H.264
     - [Intel oneVPL](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onevpl.html) (Intel Media SDK の後継)
         - VP9 / AV1 / H.264
+- 各プラットフォームへの [google/lyra: A Very Low\-Bitrate Codec for Speech Compression](https://github.com/google/lyra) 対応
 
 ## ライブラリのバイナリ提供について
 
-以下からダウンロードが可能です。
+以下からダウンロードが可能です。 
+
+*hololens2 は無視してください*
 
 https://github.com/shiguredo/sora-cpp-sdk/releases
 
 ## 対応 Sora
 
-- WebRTC SFU Sora 2022.1.0 以降
+- WebRTC SFU Sora 2022.2.0 以降
 
 ## 動作環境
 
-- windows_x86_64
-- macos_arm64
-- ubuntu-20.04_armv8
+- Windows 10.1809 x86_64 以降
+- macOS 13.3 arm64 以降
+- Ubuntu 20.04 ARMv8 Jetson (Jetpack 5.0 以降)
     - Jetson AGX Orin
     - Jetson AGX Xavier
     - Jetson Xavier NX
-- ubuntu-22.04_x86_64
-- ubuntu-20.04_x86_64
-- android_arm64
-- ios_arm64
+- Ubuntu 20.04 x86_64
+- Ubuntu 22.04 x86_64
+- Android 7 arm64 以降
+- iOS 13 arm64 以降
 
 ## サンプル集
 
@@ -99,8 +102,8 @@ Discord へお願いします。
 Apache License 2.0
 
 ```
-Copyright 2021-2022, Wandbox LLC (Original Author)
-Copyright 2021-2022, Shiguredo Inc.
+Copyright 2021-2023, Wandbox LLC (Original Author)
+Copyright 2021-2023, Shiguredo Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

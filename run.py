@@ -60,6 +60,25 @@ def cmdcap(args, **kwargs):
     return cmd(args, **kwargs).stdout.strip()
 
 
+# https://stackoverflow.com/a/2656405
+def onerror(func, path, exc_info):
+    """
+    Error handler for ``shutil.rmtree``.
+    If the error is due to an access error (read only file)
+    it attempts to add write permission and then retries.
+    If the error is for another reason it re-raises the error.
+
+    Usage : ``shutil.rmtree(path, onerror=onerror)``
+    """
+    import stat
+    # Is the error an access error?
+    if not os.access(path, os.W_OK):
+        os.chmod(path, stat.S_IWUSR)
+        func(path)
+    else:
+        raise
+
+
 def rm_rf(path: str):
     if not os.path.exists(path):
         logging.debug(f'rm -rf {path} => path not found')
@@ -68,7 +87,7 @@ def rm_rf(path: str):
         os.remove(path)
         logging.debug(f'rm -rf {path} => file removed')
     if os.path.isdir(path):
-        shutil.rmtree(path)
+        shutil.rmtree(path, onerror=onerror)
         logging.debug(f'rm -rf {path} => directory removed')
 
 
@@ -321,6 +340,18 @@ def git_clone_shallow(url, hash, dir):
         cmd(['git', 'reset', '--hard', 'FETCH_HEAD'])
 
 
+def apply_patch(patch, dir, depth):
+    with cd(dir):
+        logging.info(f'patch -p{depth} < {patch}')
+        if platform.system() == 'Windows':
+            cmd(['git', 'apply', f'-p{depth}',
+                '--ignore-space-change', '--ignore-whitespace', '--whitespace=nowarn',
+                 patch])
+        else:
+            with open(patch) as stdin:
+                cmd(['patch', f'-p{depth}'], stdin=stdin)
+
+
 @versioned
 def install_webrtc(version, source_dir, install_dir, platform: str):
     win = platform.startswith("windows_")
@@ -466,9 +497,9 @@ def install_android_sdk_cmdline_tools(version, install_dir, source_dir):
     tools_dir = os.path.join(install_dir, "android-sdk-cmdline-tools")
     rm_rf(tools_dir)
     extract(archive, output_dir=tools_dir, output_dirname='cmdline-tools')
+    sdkmanager = os.path.join(tools_dir, "cmdline-tools", "bin", "sdkmanager")
     # ライセンスを許諾する
-    cmd(['/bin/bash', '-c',
-        f'yes | {os.path.join(tools_dir, "cmdline-tools", "bin", "sdkmanager")} --sdk_root={tools_dir} --licenses'])
+    cmd(['/bin/bash', '-c', f'yes | {sdkmanager} --sdk_root={tools_dir} --licenses'])
 
 
 @versioned
@@ -541,6 +572,7 @@ def install_boost(
                     f'--build-dir={os.path.join(build_dir, "boost", f"build-{arch}-{sdk}")}',
                     f'--prefix={os.path.join(build_dir, "boost", f"install-{arch}-{sdk}")}',
                     '--with-json',
+                    '--with-filesystem',
                     '--layout=system',
                     '--ignore-site-config',
                     f'variant={"debug" if debug else "release"}',
@@ -573,7 +605,8 @@ def install_boost(
                 sysroot = os.path.join(android_ndk, 'toolchains', 'llvm', 'prebuilt', 'linux-x86_64', 'sysroot')
                 f.write(f"using clang \
                     : android \
-                    : {os.path.join(bin, f'aarch64-linux-android{native_api_level}-clang++')} \
+                    : {os.path.join(bin, f'clang++')} \
+                      --target=aarch64-none-linux-android{native_api_level} \
                       --sysroot={sysroot} \
                     : <archiver>{os.path.join(bin, 'llvm-ar')} \
                       <ranlib>{os.path.join(bin, 'llvm-ranlib')} \
@@ -585,6 +618,7 @@ def install_boost(
                 '-d+0',
                 f'--prefix={os.path.join(install_dir, "boost")}',
                 '--with-json',
+                '--with-filesystem',
                 '--layout=system',
                 '--ignore-site-config',
                 f'variant={"debug" if debug else "release"}',
@@ -610,6 +644,7 @@ def install_boost(
                 '-d+0',
                 f'--prefix={os.path.join(install_dir, "boost")}',
                 '--with-json',
+                '--with-filesystem',
                 '--layout=system',
                 '--ignore-site-config',
                 f'variant={"debug" if debug else "release"}',
@@ -640,6 +675,20 @@ def install_cmake(version, source_dir, install_dir, platform: str, ext):
     if platform.startswith('linux'):
         with cd(os.path.join(install_dir, 'cmake', 'bin')):
             cmd(['ln', '-s', '/usr/bin/ninja', 'ninja'])
+
+
+@versioned
+def install_bazel(version, source_dir, install_dir, platform: str):
+    rm_rf(os.path.join(install_dir, 'bazel'))
+    is_windows = platform.startswith('windows')
+    exe = '.exe' if is_windows else ''
+    url = f'https://github.com/bazelbuild/bazel/releases/download/{version}/bazel-{version}-{platform}{exe}'
+    src_path = download(url, source_dir)
+    dst_path = os.path.join(install_dir, 'bazel', f'bazel{exe}')
+    mkdir_p(os.path.join(install_dir, 'bazel'))
+    os.rename(src_path, dst_path)
+    if not is_windows:
+        cmd(['chmod', '+x', dst_path])
 
 
 @versioned
@@ -694,6 +743,124 @@ def install_vpl(version, configuration, source_dir, build_dir, install_dir, cmak
 
         cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])
         cmd(['cmake', '--install', '.', '--config', configuration])
+
+
+@versioned
+def install_lyra(version, install_dir, base_dir, debug, target, webrtc_version, webrtc_info, api_level, temp_dir):
+    lyra_install_dir = os.path.join(install_dir, 'lyra')
+    rm_rf(lyra_install_dir)
+
+    with cd(os.path.join(base_dir, 'third_party', 'lyra')):
+        output_base = cmdcap(['bazel', 'info', 'output_base'])
+        print(f'bazel info output_base => {output_base}')
+
+        # protobuf のバージョンを揃えるために、WebRTC の third_party を利用する
+        if not os.path.exists('third_party'):
+            if temp_dir is None:
+                git_clone_shallow(
+                    webrtc_version['WEBRTC_SRC_THIRD_PARTY_URL'],
+                    webrtc_version['WEBRTC_SRC_THIRD_PARTY_COMMIT'],
+                    'third_party')
+            else:
+                # temp_dir が指定されている場合は、そこに clone してから必要な部分だけコピーする
+                mkdir_p('third_party')
+                with cd(temp_dir):
+                    git_clone_shallow(
+                        webrtc_version['WEBRTC_SRC_THIRD_PARTY_URL'],
+                        webrtc_version['WEBRTC_SRC_THIRD_PARTY_COMMIT'],
+                        'third_party')
+                    shutil.copytree(
+                        os.path.join(temp_dir, 'third_party', 'protobuf'),
+                        os.path.join(base_dir, 'third_party', 'lyra', 'third_party', 'protobuf'))
+
+        # Lyra のバージョンを WORKSPACE で指定するのが難しいので、ここで clone してやる
+        if not os.path.exists('lyra'):
+            git_clone_shallow('https://github.com/google/lyra.git', f'v{version}', 'lyra')
+            apply_patch(os.path.abspath(os.path.join('patches', 'lyra.patch')), 'lyra', 1)
+
+        if target == 'windows_x86_64':
+            # ローカルの bash を使うとビルドに失敗してしまったので、
+            # git-bash を利用して lyra をビルドする
+            if 'BAZEL_SH' not in os.environ:
+                # CI では git-bash を使うと逆に失敗してしまう
+                if os.environ.get('GITHUB_ACTIONS') != 'true':
+                    git_bash_path = 'C:\\Program Files\\Git\\git-bash.exe'
+                    if shutil.which('git-bash') is not None:
+                        os.environ['BAZEL_SH'] = 'git-bash'
+                    if os.path.exists(git_bash_path):
+                        os.environ['BAZEL_SH'] = git_bash_path
+        opts = []
+        if debug:
+            opts += ['-c', 'dbg']
+        else:
+            opts += ['-c', 'opt']
+        if target == 'windows_x86_64':
+            opts += ['--features', 'static_link_msvcrt']
+        if target in ('ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64'):
+            opts += ['--config', 'linux_x86_64']
+            clang_version = get_clang_version(os.path.join(install_dir, 'llvm', 'clang', 'bin', 'clang'))
+            clang_version = fix_clang_version(os.path.join(install_dir, 'llvm', 'clang'), clang_version)
+            os.environ['CLANG_VERSION'] = clang_version
+            os.environ['BAZEL_LLVM_DIR'] = os.path.join(install_dir, 'llvm')
+            os.environ['BAZEL_WEBRTC_INCLUDE_DIR'] = webrtc_info.webrtc_include_dir
+            os.environ['BAZEL_WEBRTC_LIBRARY_DIR'] = webrtc_info.webrtc_library_dir
+        if target == 'ubuntu-20.04_armv8_jetson':
+            opts += ['--config', 'jetson']
+            clang_version = get_clang_version(os.path.join(install_dir, 'llvm', 'clang', 'bin', 'clang'))
+            clang_version = fix_clang_version(os.path.join(install_dir, 'llvm', 'clang'), clang_version)
+            os.environ['CLANG_VERSION'] = clang_version
+            os.environ['BAZEL_SYSROOT'] = os.path.join(install_dir, 'rootfs')
+            os.environ['BAZEL_LLVM_DIR'] = os.path.join(install_dir, 'llvm')
+            os.environ['BAZEL_WEBRTC_INCLUDE_DIR'] = webrtc_info.webrtc_include_dir
+            os.environ['BAZEL_WEBRTC_LIBRARY_DIR'] = webrtc_info.webrtc_library_dir
+        if target == 'macos_arm64':
+            opts += ['--config', 'macos_arm64']
+        if target == 'android':
+            opts += ['--config', 'android_arm64']
+
+            os.environ['ANDROID_NDK_HOME'] = os.path.join(install_dir, 'android-ndk')
+            os.environ['ANDROID_API'] = api_level
+            clang_version = get_clang_version(os.path.join(
+                install_dir, 'android-ndk', 'toolchains', 'llvm', 'prebuilt',
+                'linux-x86_64', 'bin', 'clang'))
+            clang_version = fix_clang_version(os.path.join(install_dir, 'android-ndk',
+                                              'toolchains', 'llvm', 'prebuilt', 'linux-x86_64'), clang_version)
+            os.environ['CLANG_VERSION'] = clang_version
+            os.environ['BAZEL_LLVM_DIR'] = os.path.join(install_dir, 'llvm')
+            os.environ['BAZEL_WEBRTC_INCLUDE_DIR'] = webrtc_info.webrtc_include_dir
+            os.environ['BAZEL_WEBRTC_LIBRARY_DIR'] = webrtc_info.webrtc_library_dir
+
+            logging.info(f'ANDROID_NDK_HOME={os.environ["ANDROID_NDK_HOME"]}')
+
+        if target == 'ios':
+            # iOS の場合は2回ビルドしてlipoで固める
+            cmd(['bazel', 'build', *opts, '--config', 'ios_device', ':lyra'])
+            cmd(['bazel', 'build', *opts, '--config', 'ios_simulator', ':lyra'])
+            cfg = 'dbg' if debug else 'opt'
+            cmd(['lipo', '-create', '-output', os.path.join('bazel-bin', 'liblyra.a'),
+                os.path.join('bazel-out', f'ios_arm64-{cfg}', 'bin', 'liblyra.a'),
+                 os.path.join('bazel-out', f'ios_x86_64-{cfg}', 'bin', 'liblyra.a')])
+        else:
+            cmd(['bazel', 'build', *opts, ':lyra'])
+
+        # Lyra をインストールする
+        if target == 'windows_x86_64':
+            lib_src = os.path.join('bazel-bin', 'lyra.lib')
+            lib_dst = os.path.join(lyra_install_dir, 'lib', 'lyra.lib')
+        else:
+            lib_src = os.path.join('bazel-bin', 'liblyra.a')
+            lib_dst = os.path.join(lyra_install_dir, 'lib', 'liblyra.a')
+        model_src = os.path.join(output_base, 'external', 'lyra', 'model_coeffs')
+        model_dst = os.path.join(lyra_install_dir, 'share', 'model_coeffs')
+        include_src = 'lyra.h'
+        include_dst = os.path.join(lyra_install_dir, 'include', 'lyra.h')
+        rm_rf(lyra_install_dir)
+        mkdir_p(os.path.join(lyra_install_dir, 'lib'))
+        mkdir_p(os.path.join(lyra_install_dir, 'share'))
+        mkdir_p(os.path.join(lyra_install_dir, 'include'))
+        shutil.copyfile(lib_src, lib_dst)
+        shutil.copytree(model_src, model_dst)
+        shutil.copyfile(include_src, include_dst)
 
 
 class PlatformTarget(object):
@@ -760,6 +927,52 @@ def get_build_platform() -> PlatformTarget:
         raise Exception(f'Arch {arch} not supported')
 
     return PlatformTarget(os, osver, arch)
+
+
+def get_clang_version(clang):
+    version_str = cmdcap([clang, '--version'])
+
+    # version_str は以下のような文字列になっているので、ここからバージョンを取る
+    #
+    # clang version 16.0.0 (...)
+    # Target: x86_64-unknown-linux-gnu
+    # Thread model: posix
+    # InstalledDir: /path/to/clang/bin
+    #
+    # Android 版だと以下のような文字列になっている
+    #
+    # Android (8490178, based on r450784d) clang version 14.0.6 (...)
+    # Target: aarch64-unknown-linux-android29
+    # Thread model: posix
+    # InstalledDir: /path/to/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/bin
+
+    # clang version の次の文字列を取る
+    xs = version_str.split('\n')[0].split(' ')
+    for i in range(2, len(xs)):
+        if xs[i - 2] == 'clang' and xs[i - 1] == 'version':
+            return xs[i]
+
+    raise Exception('Failed to get clang version')
+
+
+def fix_clang_version(clang_dir, clang_version):
+    # <clang_dir>/lib/clang/<clang_version>/include または
+    # <clang_dir>/lib64/clang/<clang_version>/include が存在するか調べて、
+    # 存在しない場合は clang_version を調節して、存在するバージョンに変換する
+    #
+    # <clang_dir>/lib/clang/16.0.0/include になっている場合と
+    # <clang_dir>/lib/clang/16/include になっている場合があるため
+    paths = [os.path.join(clang_dir, 'lib', 'clang'), os.path.join(clang_dir, 'lib64', 'clang')]
+    exists = any(map(lambda x: os.path.exists(os.path.join(x, clang_version, 'include')), paths))
+    if exists:
+        return clang_version
+
+    fixed_clang_version = clang_version.split('.')[0]
+    exists = any(map(lambda x: os.path.exists(os.path.join(x, fixed_clang_version, 'include')), paths))
+    if exists:
+        return fixed_clang_version
+
+    raise Exception(f'Failed to fix clang version: clang_dir={clang_dir} clang_version={clang_version}')
 
 
 SUPPORTED_BUILD_OS = [
@@ -966,7 +1179,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
         }
         if platform.target.os == 'windows':
             install_boost_args['cxxflags'] = [
-                '-D_HAS_ITERATOR_DEBUGGING=0'
+                '-D_ITERATOR_DEBUG_LEVEL=0'
             ]
             install_boost_args['toolset'] = 'msvc'
             install_boost_args['target_os'] = 'windows'
@@ -1002,6 +1215,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             install_boost_args['cxxflags'] = [
                 '-std=gnu++17'
             ]
+            install_boost_args['visibility'] = 'hidden'
         elif platform.target.os == 'android':
             install_boost_args['target_os'] = 'android'
             install_boost_args['cflags'] = [
@@ -1015,6 +1229,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                 '-nostdinc++',
                 '-std=gnu++17',
                 f"-isystem{os.path.join(webrtc_info.libcxx_dir, 'include')}",
+                '-fexperimental-relative-c++-abi-vtables',
             ]
             install_boost_args['toolset'] = 'clang'
             install_boost_args['android_ndk'] = os.path.join(install_dir, 'android-ndk')
@@ -1089,6 +1304,29 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
         else:
             add_path(os.path.join(install_dir, 'cmake', 'bin'))
 
+        # Bazel
+        install_bazel_args = {
+            'version': version['BAZEL_VERSION'],
+            'version_file': os.path.join(install_dir, 'bazel.version'),
+            'source_dir': source_dir,
+            'install_dir': install_dir,
+            'platform': '',
+        }
+        if platform.build.os == 'windows' and platform.build.arch == 'x86_64':
+            install_bazel_args['platform'] = 'windows-x86_64'
+        elif platform.build.os == 'macos' and platform.build.arch == 'x86_64':
+            install_bazel_args['platform'] = 'darwin-x86_64'
+        elif platform.build.os == 'macos' and platform.build.arch == 'arm64':
+            install_bazel_args['platform'] = 'darwin-arm64'
+        elif platform.build.os == 'ubuntu' and platform.build.arch == 'x86_64':
+            install_bazel_args['platform'] = 'linux-x86_64'
+        elif platform.build.os == 'ubuntu' and platform.build.arch == 'arm64':
+            install_bazel_args['platform'] = 'linux-arm64'
+        else:
+            raise Exception('Failed to install Bazel')
+        install_bazel(**install_bazel_args)
+        add_path(os.path.join(install_dir, 'bazel'))
+
         # CUDA
         if platform.target.os == 'windows':
             install_cuda_args = {
@@ -1111,6 +1349,12 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                 'install_dir': install_dir,
                 'cmake_args': [],
             }
+            if platform.target.os == 'windows':
+                cxxflags = [
+                    '/DWIN32', '/D_WINDOWS', '/W3', '/GR', '/EHsc',
+                    '/D_ITERATOR_DEBUG_LEVEL=0',
+                ]
+                install_vpl_args['cmake_args'].append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
             if platform.target.os == 'ubuntu':
                 cmake_args = []
                 cmake_args.append("-DCMAKE_C_COMPILER=clang-12")
@@ -1122,7 +1366,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                     '-D_LIBCPP_DISABLE_AVAILABILITY', '-D_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS',
                     '-D_LIBCXXABI_DISABLE_VISIBILITY_ANNOTATIONS', '-D_LIBCPP_ENABLE_NODISCARD']
                 cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(flags)}")
-                install_vpl_args['cmake_args'] = cmake_args
+                install_vpl_args['cmake_args'] += cmake_args
             install_vpl(**install_vpl_args)
 
         if platform.target.os == 'android':
@@ -1147,9 +1391,26 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             with open(os.path.join(install_dir, 'webrtc.ldflags'), 'w') as f:
                 f.write('\n'.join(ldflags))
 
+        # Lyra
+        install_lyra_args = {
+            'version': version['LYRA_VERSION'],
+            'version_file': os.path.join(install_dir, 'lyra.version'),
+            'install_dir': install_dir,
+            'base_dir': BASE_DIR,
+            'debug': debug,
+            'target': platform.target.package_name,
+            'webrtc_version': webrtc_version,
+            'webrtc_info': webrtc_info,
+            'api_level': version['ANDROID_NATIVE_API_LEVEL'],
+            # run.py の引数から拾ってくるのが面倒なので環境変数を使う
+            'temp_dir': os.environ.get('SORA_CPP_SDK_TEMP_DIR'),
+        }
+        install_lyra(**install_lyra_args)
+
 
 AVAILABLE_TARGETS = ['windows_x86_64', 'windows_hololens2', 'macos_x86_64', 'macos_arm64', 'ubuntu-20.04_x86_64',
                      'ubuntu-22.04_x86_64', 'ubuntu-20.04_armv8_jetson', 'ios', 'android']
+WINDOWS_SDK_VERSION = '10.0.20348.0'
 
 
 def main():
@@ -1221,6 +1482,7 @@ def main():
         cmake_args.append(f'-DCMAKE_BUILD_TYPE={configuration}')
         cmake_args.append(f"-DCMAKE_INSTALL_PREFIX={cmake_path(os.path.join(install_dir, 'sora'))}")
         cmake_args.append(f"-DBOOST_ROOT={cmake_path(os.path.join(install_dir, 'boost'))}")
+        cmake_args.append(f"-DLYRA_DIR={cmake_path(os.path.join(install_dir, 'lyra'))}")
         webrtc_info = get_webrtc_info(args.webrtcbuild, source_dir, build_dir, install_dir)
         webrtc_version = read_version_file(webrtc_info.version_file)
         with cd(BASE_DIR):
@@ -1228,6 +1490,7 @@ def main():
             sora_cpp_sdk_version = version['SORA_CPP_SDK_VERSION']
             sora_cpp_sdk_commit = cmdcap(['git', 'rev-parse', 'HEAD'])
             android_native_api_level = version['ANDROID_NATIVE_API_LEVEL']
+            lyra_compatible_version = version['LYRA_COMPATIBLE_VERSION']
         cmake_args.append(f"-DWEBRTC_INCLUDE_DIR={cmake_path(webrtc_info.webrtc_include_dir)}")
         cmake_args.append(f"-DWEBRTC_LIBRARY_DIR={cmake_path(webrtc_info.webrtc_library_dir)}")
         cmake_args.append(f"-DSORA_CPP_SDK_VERSION={sora_cpp_sdk_version}")
@@ -1236,11 +1499,14 @@ def main():
         cmake_args.append(f"-DWEBRTC_BUILD_VERSION={webrtc_version['WEBRTC_BUILD_VERSION']}")
         cmake_args.append(f"-DWEBRTC_READABLE_VERSION={webrtc_version['WEBRTC_READABLE_VERSION']}")
         cmake_args.append(f"-DWEBRTC_COMMIT={webrtc_version['WEBRTC_COMMIT']}")
+        cmake_args.append(f"-DLYRA_COMPATIBLE_VERSION={lyra_compatible_version}")
         if platform.target.os == 'windows':
             if platform.target.arch == 'hololens2':
                 cmake_args.append('-DCMAKE_SYSTEM_NAME=WindowsStore')
                 cmake_args.append('-DCMAKE_SYSTEM_VERSION=10.0')
                 cmake_args += ['-A', 'ARM64']
+            else:
+                cmake_args.append(f'-DCMAKE_SYSTEM_VERSION={WINDOWS_SDK_VERSION}')
         if platform.target.os == 'ubuntu':
             if platform.target.package_name in ('ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64'):
                 cmake_args.append("-DCMAKE_C_COMPILER=clang-12")
@@ -1266,7 +1532,7 @@ def main():
             cmake_args += ['-G', 'Xcode']
             cmake_args.append("-DCMAKE_SYSTEM_NAME=iOS")
             cmake_args.append("-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64")
-            cmake_args.append("-DCMAKE_OSX_DEPLOYMENT_TARGET=10.0")
+            cmake_args.append("-DCMAKE_OSX_DEPLOYMENT_TARGET=13.0")
             cmake_args.append("-DCMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH=NO")
         if platform.target.os == 'android':
             toolchain_file = os.path.join(install_dir, 'android-ndk', 'build', 'cmake', 'android.toolchain.cmake')
@@ -1282,6 +1548,7 @@ def main():
             # r23b には ANDROID_CPP_FEATURES=exceptions でも例外が設定されない問題がある
             # https://github.com/android/ndk/issues/1618
             cmake_args.append('-DCMAKE_ANDROID_EXCEPTIONS=ON')
+            cmake_args.append('-DANDROID_NDK=OFF')
             cmake_args.append(f"-DSORA_WEBRTC_LDFLAGS={os.path.join(install_dir, 'webrtc.ldflags')}")
         if platform.target.os == 'jetson':
             sysroot = os.path.join(install_dir, 'rootfs')
@@ -1310,6 +1577,11 @@ def main():
             cmake_args.append('-DUSE_VPL_ENCODER=ON')
             cmake_args.append(f"-DVPL_ROOT_DIR={cmake_path(os.path.join(install_dir, 'vpl'))}")
 
+        # バンドルされたライブラリを消しておく
+        # （CMake でうまく依存関係を解消できなくて更新されないため）
+        rm_rf(os.path.join(sora_build_dir, 'bundled'))
+        rm_rf(os.path.join(sora_build_dir, 'libsora.a'))
+
         cmd(['cmake', BASE_DIR] + cmake_args)
         if platform.target.os == 'ios':
             cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration,
@@ -1337,6 +1609,13 @@ def main():
 
     if args.test:
         if platform.target.os == 'ios':
+            # Lyra テストのディレクトリに
+            # Lyra のモデル係数ファイルをコピーする
+            model_src = os.path.join(install_dir, 'lyra', 'share', 'model_coeffs')
+            model_dst = os.path.join(BASE_DIR, 'test', 'ios', 'hello', 'model_coeffs')
+            rm_rf(model_dst)
+            shutil.copytree(model_src, model_dst)
+
             # iOS の場合は事前に用意したプロジェクトをビルドする
             cmd(['xcodebuild', 'build',
                 '-project', 'test/ios/hello.xcodeproj',
@@ -1355,6 +1634,14 @@ def main():
             # Android の場合は事前に用意したプロジェクトをビルドする
             with cd(os.path.join(BASE_DIR, 'test', 'android')):
                 cmd(['./gradlew', '--no-daemon', 'assemble'])
+
+                # Lyra テストのビルド先のディレクトリに
+                # Lyra のモデル係数ファイルをコピーする
+                model_src = os.path.join(install_dir, 'lyra', 'share', 'model_coeffs')
+                model_dst = os.path.join('app', 'src', 'main', 'assets')
+                rm_rf(model_dst)
+                mkdir_p(os.path.dirname(model_dst))
+                shutil.copytree(model_src, model_dst)
         else:
             # 普通のプロジェクトは CMake でビルドする
             test_build_dir = os.path.join(build_dir, 'test')
@@ -1366,6 +1653,7 @@ def main():
                 cmake_args.append(f"-DWEBRTC_INCLUDE_DIR={cmake_path(webrtc_info.webrtc_include_dir)}")
                 cmake_args.append(f"-DWEBRTC_LIBRARY_DIR={cmake_path(webrtc_info.webrtc_library_dir)}")
                 cmake_args.append(f"-DSORA_DIR={cmake_path(os.path.join(install_dir, 'sora'))}")
+                cmake_args.append(f"-DLYRA_DIR={cmake_path(os.path.join(install_dir, 'lyra'))}")
                 if platform.target.os == 'windows':
                     if platform.target.arch == 'hololens2':
                         cmake_args.append('-DCMAKE_SYSTEM_NAME=WindowsStore')
@@ -1395,7 +1683,7 @@ def main():
                         f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}")
                 if platform.target.os == 'jetson':
                     sysroot = os.path.join(install_dir, 'rootfs')
-                    cmake_args.append('-DHELLO_JETSON=ON')
+                    cmake_args.append('-DJETSON=ON')
                     cmake_args.append('-DCMAKE_SYSTEM_NAME=Linux')
                     cmake_args.append('-DCMAKE_SYSTEM_PROCESSOR=aarch64')
                     cmake_args.append(f'-DCMAKE_SYSROOT={sysroot}')
@@ -1417,9 +1705,26 @@ def main():
                 if platform.target.os in ('windows', 'macos', 'ubuntu'):
                     cmake_args.append("-DTEST_CONNECT_DISCONNECT=ON")
                     cmake_args.append("-DTEST_DATACHANNEL=ON")
+                    cmake_args.append("-DTEST_DEVICE_LIST=ON")
+                if platform.target.package_name in ('windows_x86_64', 'macos_x86_64', 'macos_arm64',
+                                                    'ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64',
+                                                    'ubuntu-20.04_armv8_jetson'):
+                    cmake_args.append("-DTEST_LYRA=ON")
 
                 cmd(['cmake', os.path.join(BASE_DIR, 'test')] + cmake_args)
                 cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])
+
+                # Lyra テストのビルド先のディレクトリに
+                # Lyra のモデル係数ファイルをコピーする
+                model_src = os.path.join(install_dir, 'lyra', 'share', 'model_coeffs')
+                if platform.target.os == 'windows':
+                    model_dst = os.path.join(test_build_dir, configuration, 'model_coeffs')
+                else:
+                    model_dst = os.path.join(test_build_dir, 'model_coeffs')
+                rm_rf(model_dst)
+                mkdir_p(os.path.dirname(model_dst))
+                shutil.copytree(model_src, model_dst)
+
                 if args.run:
                     if platform.target.os == 'windows':
                         cmd([os.path.join(test_build_dir, configuration, 'hello.exe'),
@@ -1436,40 +1741,45 @@ def main():
             version = read_version_file('VERSION')
             sora_cpp_sdk_version = version['SORA_CPP_SDK_VERSION']
             boost_version = version['BOOST_VERSION']
+            lyra_version = version['LYRA_VERSION']
+
+        def archive(archive_path, files, is_windows):
+            if is_windows:
+                with zipfile.ZipFile(archive_path, 'w') as f:
+                    for file in files:
+                        f.write(filename=file, arcname=file)
+            else:
+                with tarfile.open(archive_path, 'w:gz') as f:
+                    for file in files:
+                        f.add(name=file, arcname=file)
+
+        ext = 'zip' if platform.target.os == 'windows' else 'tar.gz'
+        is_windows = platform.target.os == 'windows'
+        content_type = 'application/zip' if platform.target.os == 'windows' else 'application/gzip'
 
         with cd(install_dir):
-            if platform.target.os == 'windows':
-                archive_name = f'sora-cpp-sdk-{sora_cpp_sdk_version}_{platform.target.package_name}.zip'
-                archive_path = os.path.join(package_dir, archive_name)
-                with zipfile.ZipFile(archive_path, 'w') as f:
-                    for file in enum_all_files('sora', '.'):
-                        f.write(filename=file, arcname=file)
-                boost_archive_name = \
-                    f'boost-{boost_version}_sora-cpp-sdk-{sora_cpp_sdk_version}_{platform.target.package_name}.zip'
-                boost_archive_path = os.path.join(package_dir, boost_archive_name)
-                with zipfile.ZipFile(boost_archive_path, 'w') as f:
-                    for file in enum_all_files('boost', '.'):
-                        f.write(filename=file, arcname=file)
-                with open(os.path.join(package_dir, 'sora.env'), 'w') as f:
-                    f.write('CONTENT_TYPE=application/zip\n')
-                    f.write(f'PACKAGE_NAME={archive_name}\n')
-                    f.write(f'BOOST_PACKAGE_NAME={boost_archive_name}\n')
-            else:
-                archive_name = f'sora-cpp-sdk-{sora_cpp_sdk_version}_{platform.target.package_name}.tar.gz'
-                archive_path = os.path.join(package_dir, archive_name)
-                with tarfile.open(archive_path, 'w:gz') as f:
-                    for file in enum_all_files('sora', '.'):
-                        f.add(name=file, arcname=file)
-                boost_archive_name = \
-                    f'boost-{boost_version}_sora-cpp-sdk-{sora_cpp_sdk_version}_{platform.target.package_name}.tar.gz'
-                boost_archive_path = os.path.join(package_dir, boost_archive_name)
-                with tarfile.open(boost_archive_path, 'w:gz') as f:
-                    for file in enum_all_files('boost', '.'):
-                        f.add(name=file, arcname=file)
-                with open(os.path.join(package_dir, 'sora.env'), 'w') as f:
-                    f.write("CONTENT_TYPE=application/gzip\n")
-                    f.write(f'PACKAGE_NAME={archive_name}\n')
-                    f.write(f'BOOST_PACKAGE_NAME={boost_archive_name}\n')
+            archive_name = f'sora-cpp-sdk-{sora_cpp_sdk_version}_{platform.target.package_name}.{ext}'
+            archive_path = os.path.join(package_dir, archive_name)
+            archive(archive_path, enum_all_files('sora', '.'), is_windows)
+
+            boost_archive_name = \
+                f'boost-{boost_version}_sora-cpp-sdk-{sora_cpp_sdk_version}_{platform.target.package_name}.{ext}'
+            boost_archive_path = os.path.join(package_dir, boost_archive_name)
+            archive(boost_archive_path, enum_all_files('boost', '.'), is_windows)
+
+            lyra_archive_name = \
+                f'lyra-{lyra_version}_sora-cpp-sdk-{sora_cpp_sdk_version}_{platform.target.package_name}.{ext}'
+            lyra_archive_path = os.path.join(package_dir, lyra_archive_name)
+            archive(lyra_archive_path, enum_all_files('lyra', '.'), is_windows)
+
+            with open(os.path.join(package_dir, 'sora.env'), 'w') as f:
+                f.write(f'CONTENT_TYPE={content_type}\n')
+                f.write(f'PACKAGE_NAME={archive_name}\n')
+                f.write(f'BOOST_PACKAGE_NAME={boost_archive_name}\n')
+                f.write(f'LYRA_PACKAGE_NAME={lyra_archive_name}\n')
+
+    with cd(os.path.join(BASE_DIR, 'third_party', 'lyra')):
+        cmd(['bazel', 'shutdown'])
 
 
 if __name__ == '__main__':

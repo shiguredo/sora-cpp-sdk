@@ -40,3 +40,22 @@ sudo apt-get -y install cuda=10.2.89-1
   - libdrm2
   - （もし内部実装が Intel Media SDK の oneVPL を有効にしたいなら）libmfx1
   - （もし内部実装が oneVPL GPU の oneVPL を有効にしたいなら）libmfx-gen1.2 （Ubuntu 22.04 のみ利用可）
+
+## Lyra モデル係数データのディレクトリ
+
+デフォルトでは実行ファイルのディレクトリ下にある `model_coeffs` ディレクトリを検索する。
+
+ただし `SORA_LYRA_MODEL_COEFFS_PATH` 環境変数が設定されている場合は、この環境変数に指定されているディレクトリを検索する。
+
+## Lyra の開発環境切り替え
+
+Lyra では各環境でワークスペースが異なるため、Android でビルドした後に Ubuntu でビルドする、みたいなことをすると Lyra のビルドでエラーが発生する。
+
+この問題が起きた場合は、以下のように Lyra のビルド環境を一度リセットする必要がある。
+
+```bash
+cd third_party/lyra
+bazel clean --expunge
+```
+
+`bazel` コマンドがグローバルに存在しない場合、`_install/<target>/release/bazel/bazel` を利用すると良い。

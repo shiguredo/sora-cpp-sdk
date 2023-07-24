@@ -17,6 +17,18 @@
             //"preLaunchTask": "C/C++: cl.exe アクティブなファイルのビルド"
         },
         {
+            "name": "[hello] Windows RelWithDebInfo ビルドのデバッグ",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}\\_build\\windows_x86_64\\release\\test\\RelWithDebInfo\\hello.exe",
+            "args": ["${workspaceFolder}\\test\\.testparam.json"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "console": "externalTerminal",
+            //"preLaunchTask": "C/C++: cl.exe アクティブなファイルのビルド"
+        },
+        {
             "name": "[connect_disconnect] Windows Debug ビルドのデバッグ",
             "type": "cppvsdbg",
             "request": "launch",
