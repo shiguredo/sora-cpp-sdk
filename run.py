@@ -1611,10 +1611,10 @@ def main():
         if platform.target.os == 'ios':
             # Lyra テストのディレクトリに
             # Lyra のモデル係数ファイルをコピーする
-            model_src = os.path.join(install_dir, 'lyra', 'share', 'model_coeffs')
-            model_dst = os.path.join(BASE_DIR, 'test', 'ios', 'hello', 'model_coeffs')
-            rm_rf(model_dst)
-            shutil.copytree(model_src, model_dst)
+            # model_src = os.path.join(install_dir, 'lyra', 'share', 'model_coeffs')
+            # model_dst = os.path.join(BASE_DIR, 'test', 'ios', 'hello', 'model_coeffs')
+            # rm_rf(model_dst)
+            # shutil.copytree(model_src, model_dst)
 
             # iOS の場合は事前に用意したプロジェクトをビルドする
             cmd(['xcodebuild', 'build',
@@ -1637,11 +1637,11 @@ def main():
 
                 # Lyra テストのビルド先のディレクトリに
                 # Lyra のモデル係数ファイルをコピーする
-                model_src = os.path.join(install_dir, 'lyra', 'share', 'model_coeffs')
-                model_dst = os.path.join('app', 'src', 'main', 'assets')
-                rm_rf(model_dst)
-                mkdir_p(os.path.dirname(model_dst))
-                shutil.copytree(model_src, model_dst)
+                # model_src = os.path.join(install_dir, 'lyra', 'share', 'model_coeffs')
+                # model_dst = os.path.join('app', 'src', 'main', 'assets')
+                # rm_rf(model_dst)
+                # mkdir_p(os.path.dirname(model_dst))
+                # shutil.copytree(model_src, model_dst)
         else:
             # 普通のプロジェクトは CMake でビルドする
             test_build_dir = os.path.join(build_dir, 'test')
