@@ -11,7 +11,7 @@
 
 ## develop
 
-- [UPDATE] WebRTC を m115.5790.6.0 に上げる
+- [UPDATE] WebRTC を m115.5790.7.0 に上げる
     - @miosakuma
 
 ## 2023.7.2 (2023-07-12)
