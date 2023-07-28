@@ -14,7 +14,7 @@
 ## 2023.8.0 (2023-07-28)
 
 - [UPDATE] WebRTC を m115.5790.7.0 に上げる
-    - @miosakuma
+    - @melpon @miosakuma
 
 ## 2023.7.2 (2023-07-12)
 
