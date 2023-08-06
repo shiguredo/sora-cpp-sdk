@@ -105,6 +105,11 @@ bool ScalableVideoTrackSource::OnCapturedFrame(
     return false;
   }
 
+  RTC_LOG(LS_INFO)
+      << "[hololens2-debug] ScalableVideoTrackSource::OnCapturedFrame: "
+         "webrtc::VideoFrameBuffer::Type="
+      << (int)frame.video_frame_buffer()->type();
+
   if (config_.on_frame) {
     config_.on_frame(frame);
   }
