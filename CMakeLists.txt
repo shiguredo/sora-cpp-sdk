@@ -139,18 +139,18 @@ if (NOT USE_NVCODEC_ENCODER)
   target_sources(sora PRIVATE src/cuda_context_cuda.cpp)
 endif()
 
-target_link_libraries(sora
-  PUBLIC
-    WebRTC::webrtc
-    Boost::json
-    Boost::filesystem
-)
 if (USE_LYRA)
   target_link_libraries(sora
     PUBLIC
       Lyra::lyra
   )
 endif()
+target_link_libraries(sora
+  PUBLIC
+    WebRTC::webrtc
+    Boost::json
+    Boost::filesystem
+)
 
 if (USE_LIBCXX)
   target_compile_options(sora
