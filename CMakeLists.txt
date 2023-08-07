@@ -12,6 +12,7 @@ set(WEBRTC_LIBRARY_NAME "webrtc" CACHE STRING "WebRTC のライブラリ名")
 set(USE_LIBCXX OFF CACHE BOOL "libstdc++ の代わりに libc++ を使うかどうか")
 set(LIBCXX_INCLUDE_DIR "" CACHE PATH "libc++ を使う場合の libc++ のインクルードディレクトリ\n空文字だった場合はデフォルト検索パスの libc++ を利用する")
 set(USE_NVCODEC_ENCODER OFF CACHE BOOL "NVIDIA Video Codec SDK によるハードウェアエンコーダを利用するかどうか")
+set(USE_LYRA OFF CACHE BOOL "Lyra を利用するかどうか")
 
 project(sora-cpp-sdk C CXX)
 
@@ -67,8 +68,10 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE NEVER)
 
 find_package(WebRTC REQUIRED)
 find_package(Boost REQUIRED COMPONENTS json filesystem)
-find_package(Lyra REQUIRED)
 find_package(Threads REQUIRED)
+if (USE_LYRA)
+  find_package(Lyra REQUIRED)
+endif()
 
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
@@ -88,9 +91,7 @@ target_include_directories(sora PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_sources(sora
   PRIVATE
     src/aligned_encoder_adapter.cpp
-    src/audio_decoder_lyra.cpp
     src/audio_device_module.cpp
-    src/audio_encoder_lyra.cpp
     src/camera_device_capturer.cpp
     src/data_channel.cpp
     src/default_video_formats.cpp
@@ -115,6 +116,13 @@ target_sources(sora
     src/websocket.cpp
     src/zlib_helper.cpp
 )
+if (USE_LYRA)
+  target_sources(sora
+    PRIVATE
+      src/audio_decoder_lyra.cpp
+      src/audio_encoder_lyra.cpp
+  )
+endif()
 
 target_compile_definitions(sora PRIVATE ${SORA_TARGET_DEF})
 
@@ -133,11 +141,16 @@ endif()
 
 target_link_libraries(sora
   PUBLIC
-    Lyra::lyra
     WebRTC::webrtc
     Boost::json
     Boost::filesystem
 )
+if (USE_LYRA)
+  target_link_libraries(sora
+    PUBLIC
+      Lyra::lyra
+  )
+endif()
 
 if (USE_LIBCXX)
   target_compile_options(sora
@@ -154,6 +167,7 @@ target_compile_definitions(sora
     USE_NVCODEC_ENCODER=$<BOOL:${USE_NVCODEC_ENCODER}>
     USE_JETSON_ENCODER=$<BOOL:${USE_JETSON_ENCODER}>
     USE_VPL_ENCODER=$<BOOL:${USE_VPL_ENCODER}>
+    USE_LYRA=$<BOOL:${USE_LYRA}>
 )
 
 # 指定したライブラリを自身の静的ライブラリにバンドルする

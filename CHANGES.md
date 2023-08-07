@@ -11,6 +11,9 @@
 
 ## develop
 
+- [ADD] Lyra 抜きでビルドする --no-lyra オプションを追加
+    - @melpon
+
 ## 2023.8.0 (2023-07-28)
 
 - [UPDATE] WebRTC を m115.5790.7.0 に上げる
