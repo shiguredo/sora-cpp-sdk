@@ -1045,7 +1045,7 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
-                 webrtcbuild: bool, webrtc_config: WebrtcConfig):
+                 webrtcbuild: bool, webrtc_config: WebrtcConfig, no_lyra: bool):
     with cd(BASE_DIR):
         version = read_version_file('VERSION')
 
@@ -1387,21 +1387,22 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             with open(os.path.join(install_dir, 'webrtc.ldflags'), 'w') as f:
                 f.write('\n'.join(ldflags))
 
-        # Lyra
-        install_lyra_args = {
-            'version': version['LYRA_VERSION'],
-            'version_file': os.path.join(install_dir, 'lyra.version'),
-            'install_dir': install_dir,
-            'base_dir': BASE_DIR,
-            'debug': debug,
-            'target': platform.target.package_name,
-            'webrtc_version': webrtc_version,
-            'webrtc_info': webrtc_info,
-            'api_level': version['ANDROID_NATIVE_API_LEVEL'],
-            # run.py の引数から拾ってくるのが面倒なので環境変数を使う
-            'temp_dir': os.environ.get('SORA_CPP_SDK_TEMP_DIR'),
-        }
-        install_lyra(**install_lyra_args)
+        if not no_lyra:
+            # Lyra
+            install_lyra_args = {
+                'version': version['LYRA_VERSION'],
+                'version_file': os.path.join(install_dir, 'lyra.version'),
+                'install_dir': install_dir,
+                'base_dir': BASE_DIR,
+                'debug': debug,
+                'target': platform.target.package_name,
+                'webrtc_version': webrtc_version,
+                'webrtc_info': webrtc_info,
+                'api_level': version['ANDROID_NATIVE_API_LEVEL'],
+                # run.py の引数から拾ってくるのが面倒なので環境変数を使う
+                'temp_dir': os.environ.get('SORA_CPP_SDK_TEMP_DIR'),
+            }
+            install_lyra(**install_lyra_args)
 
 
 AVAILABLE_TARGETS = ['windows_x86_64', 'macos_x86_64', 'macos_arm64', 'ubuntu-20.04_x86_64',
@@ -1414,6 +1415,7 @@ def main():
     parser.add_argument("target", choices=AVAILABLE_TARGETS)
     parser.add_argument("--debug", action='store_true')
     parser.add_argument("--relwithdebinfo", action='store_true')
+    parser.add_argument("--no-lyra", action='store_true')
     parser.add_argument("--webrtcbuild", action='store_true')
     parser.add_argument("--webrtcbuild-fetch", action='store_true')
     parser.add_argument("--webrtcbuild-fetch-force", action='store_true')
@@ -1461,7 +1463,7 @@ def main():
     mkdir_p(install_dir)
 
     install_deps(platform, source_dir, build_dir, install_dir, args.debug,
-                 webrtcbuild=args.webrtcbuild, webrtc_config=args)
+                 webrtcbuild=args.webrtcbuild, webrtc_config=args, no_lyra=args.no_lyra)
 
     configuration = 'Release'
     if args.debug:
@@ -1476,7 +1478,9 @@ def main():
         cmake_args.append(f'-DCMAKE_BUILD_TYPE={configuration}')
         cmake_args.append(f"-DCMAKE_INSTALL_PREFIX={cmake_path(os.path.join(install_dir, 'sora'))}")
         cmake_args.append(f"-DBOOST_ROOT={cmake_path(os.path.join(install_dir, 'boost'))}")
-        cmake_args.append(f"-DLYRA_DIR={cmake_path(os.path.join(install_dir, 'lyra'))}")
+        if not args.no_lyra:
+            cmake_args.append(f"-DLYRA_DIR={cmake_path(os.path.join(install_dir, 'lyra'))}")
+        cmake_args.append(f"-DUSE_LYRA={'ON' if not args.no_lyra else 'OFF'}")
         webrtc_info = get_webrtc_info(args.webrtcbuild, source_dir, build_dir, install_dir)
         webrtc_version = read_version_file(webrtc_info.version_file)
         with cd(BASE_DIR):
@@ -1493,7 +1497,8 @@ def main():
         cmake_args.append(f"-DWEBRTC_BUILD_VERSION={webrtc_version['WEBRTC_BUILD_VERSION']}")
         cmake_args.append(f"-DWEBRTC_READABLE_VERSION={webrtc_version['WEBRTC_READABLE_VERSION']}")
         cmake_args.append(f"-DWEBRTC_COMMIT={webrtc_version['WEBRTC_COMMIT']}")
-        cmake_args.append(f"-DLYRA_COMPATIBLE_VERSION={lyra_compatible_version}")
+        if not args.no_lyra:
+            cmake_args.append(f"-DLYRA_COMPATIBLE_VERSION={lyra_compatible_version}")
         if platform.target.os == 'windows':
             cmake_args.append(f'-DCMAKE_SYSTEM_VERSION={WINDOWS_SDK_VERSION}')
         if platform.target.os == 'ubuntu':
@@ -1598,12 +1603,13 @@ def main():
 
     if args.test:
         if platform.target.os == 'ios':
-            # Lyra テストのディレクトリに
-            # Lyra のモデル係数ファイルをコピーする
-            model_src = os.path.join(install_dir, 'lyra', 'share', 'model_coeffs')
-            model_dst = os.path.join(BASE_DIR, 'test', 'ios', 'hello', 'model_coeffs')
-            rm_rf(model_dst)
-            shutil.copytree(model_src, model_dst)
+            if not args.no_lyra:
+                # Lyra テストのディレクトリに
+                # Lyra のモデル係数ファイルをコピーする
+                model_src = os.path.join(install_dir, 'lyra', 'share', 'model_coeffs')
+                model_dst = os.path.join(BASE_DIR, 'test', 'ios', 'hello', 'model_coeffs')
+                rm_rf(model_dst)
+                shutil.copytree(model_src, model_dst)
 
             # iOS の場合は事前に用意したプロジェクトをビルドする
             cmd(['xcodebuild', 'build',
@@ -1624,13 +1630,14 @@ def main():
             with cd(os.path.join(BASE_DIR, 'test', 'android')):
                 cmd(['./gradlew', '--no-daemon', 'assemble'])
 
-                # Lyra テストのビルド先のディレクトリに
-                # Lyra のモデル係数ファイルをコピーする
-                model_src = os.path.join(install_dir, 'lyra', 'share', 'model_coeffs')
-                model_dst = os.path.join('app', 'src', 'main', 'assets')
-                rm_rf(model_dst)
-                mkdir_p(os.path.dirname(model_dst))
-                shutil.copytree(model_src, model_dst)
+                if not args.no_lyra:
+                    # Lyra テストのビルド先のディレクトリに
+                    # Lyra のモデル係数ファイルをコピーする
+                    model_src = os.path.join(install_dir, 'lyra', 'share', 'model_coeffs')
+                    model_dst = os.path.join('app', 'src', 'main', 'assets')
+                    rm_rf(model_dst)
+                    mkdir_p(os.path.dirname(model_dst))
+                    shutil.copytree(model_src, model_dst)
         else:
             # 普通のプロジェクトは CMake でビルドする
             test_build_dir = os.path.join(build_dir, 'test')
@@ -1642,7 +1649,9 @@ def main():
                 cmake_args.append(f"-DWEBRTC_INCLUDE_DIR={cmake_path(webrtc_info.webrtc_include_dir)}")
                 cmake_args.append(f"-DWEBRTC_LIBRARY_DIR={cmake_path(webrtc_info.webrtc_library_dir)}")
                 cmake_args.append(f"-DSORA_DIR={cmake_path(os.path.join(install_dir, 'sora'))}")
-                cmake_args.append(f"-DLYRA_DIR={cmake_path(os.path.join(install_dir, 'lyra'))}")
+                if not args.no_lyra:
+                    cmake_args.append(f"-DLYRA_DIR={cmake_path(os.path.join(install_dir, 'lyra'))}")
+                cmake_args.append(f"-DUSE_LYRA={'ON' if not args.no_lyra else 'OFF'}")
                 if platform.target.os == 'macos':
                     sysroot = cmdcap(['xcrun', '--sdk', 'macosx', '--show-sdk-path'])
                     target = 'x86_64-apple-darwin' if platform.target.arch == 'x86_64' else 'aarch64-apple-darwin'
@@ -1692,21 +1701,23 @@ def main():
                 if platform.target.package_name in ('windows_x86_64', 'macos_x86_64', 'macos_arm64',
                                                     'ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64',
                                                     'ubuntu-20.04_armv8_jetson'):
-                    cmake_args.append("-DTEST_LYRA=ON")
+                    if not args.no_lyra:
+                        cmake_args.append("-DTEST_LYRA=ON")
 
                 cmd(['cmake', os.path.join(BASE_DIR, 'test')] + cmake_args)
                 cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])
 
-                # Lyra テストのビルド先のディレクトリに
-                # Lyra のモデル係数ファイルをコピーする
-                model_src = os.path.join(install_dir, 'lyra', 'share', 'model_coeffs')
-                if platform.target.os == 'windows':
-                    model_dst = os.path.join(test_build_dir, configuration, 'model_coeffs')
-                else:
-                    model_dst = os.path.join(test_build_dir, 'model_coeffs')
-                rm_rf(model_dst)
-                mkdir_p(os.path.dirname(model_dst))
-                shutil.copytree(model_src, model_dst)
+                if not args.no_lyra:
+                    # Lyra テストのビルド先のディレクトリに
+                    # Lyra のモデル係数ファイルをコピーする
+                    model_src = os.path.join(install_dir, 'lyra', 'share', 'model_coeffs')
+                    if platform.target.os == 'windows':
+                        model_dst = os.path.join(test_build_dir, configuration, 'model_coeffs')
+                    else:
+                        model_dst = os.path.join(test_build_dir, 'model_coeffs')
+                    rm_rf(model_dst)
+                    mkdir_p(os.path.dirname(model_dst))
+                    shutil.copytree(model_src, model_dst)
 
                 if args.run:
                     if platform.target.os == 'windows':
@@ -1750,19 +1761,22 @@ def main():
             boost_archive_path = os.path.join(package_dir, boost_archive_name)
             archive(boost_archive_path, enum_all_files('boost', '.'), is_windows)
 
-            lyra_archive_name = \
-                f'lyra-{lyra_version}_sora-cpp-sdk-{sora_cpp_sdk_version}_{platform.target.package_name}.{ext}'
-            lyra_archive_path = os.path.join(package_dir, lyra_archive_name)
-            archive(lyra_archive_path, enum_all_files('lyra', '.'), is_windows)
+            if not args.no_lyra:
+                lyra_archive_name = \
+                    f'lyra-{lyra_version}_sora-cpp-sdk-{sora_cpp_sdk_version}_{platform.target.package_name}.{ext}'
+                lyra_archive_path = os.path.join(package_dir, lyra_archive_name)
+                archive(lyra_archive_path, enum_all_files('lyra', '.'), is_windows)
 
             with open(os.path.join(package_dir, 'sora.env'), 'w') as f:
                 f.write(f'CONTENT_TYPE={content_type}\n')
                 f.write(f'PACKAGE_NAME={archive_name}\n')
                 f.write(f'BOOST_PACKAGE_NAME={boost_archive_name}\n')
-                f.write(f'LYRA_PACKAGE_NAME={lyra_archive_name}\n')
+                if not args.no_lyra:
+                    f.write(f'LYRA_PACKAGE_NAME={lyra_archive_name}\n')
 
-    with cd(os.path.join(BASE_DIR, 'third_party', 'lyra')):
-        cmd(['bazel', 'shutdown'])
+    if not args.no_lyra:
+        with cd(os.path.join(BASE_DIR, 'third_party', 'lyra')):
+            cmd(['bazel', 'shutdown'])
 
 
 if __name__ == '__main__':

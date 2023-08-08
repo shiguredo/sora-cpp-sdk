@@ -10,6 +10,7 @@ set(WEBRTC_LIBRARY_DIR "" CACHE PATH "WebRTC のライブラリディレクト�
 set(WEBRTC_LIBRARY_NAME "webrtc" CACHE STRING "WebRTC のライブラリ名")
 set(LIBCXX_INCLUDE_DIR "" CACHE PATH "libc++ を使う場合の libc++ のインクルードディレクトリ\n空文字だった場合はデフォルト検索パスの libc++ を利用する")
 set(SORA_DIR "" CACHE PATH "Sora のルートディレクトリ")
+set(USE_LYRA OFF CACHE BOOL "Lyra を利用するかどうか")
 
 project(sora-test C CXX)
 
@@ -23,11 +24,13 @@ endif()
 
 find_package(Boost REQUIRED COMPONENTS json filesystem)
 find_package(WebRTC REQUIRED)
-find_package(Lyra REQUIRED)
 find_package(Sora REQUIRED)
 find_package(Threads REQUIRED)
 find_package(Libdrm)
 find_package(Libva)
+if (USE_LYRA)
+  find_package(Lyra REQUIRED)
+endif()
 
 function (init_target target)
   set_target_properties(${target} PROPERTIES CXX_STANDARD 20 C_STANDARD 20)

@@ -10,7 +10,9 @@
 #include <api/audio_codecs/opus/audio_encoder_multi_channel_opus.h>
 #include <api/audio_codecs/opus/audio_encoder_opus.h>
 
+#if USE_LYRA
 #include "sora/audio_encoder_lyra.h"
+#endif
 
 namespace sora {
 
@@ -49,7 +51,12 @@ CreateBuiltinAudioEncoderFactory() {
       webrtc::AudioEncoderOpus,
       NotAdvertised<webrtc::AudioEncoderMultiChannelOpus>,
       webrtc::AudioEncoderG722, webrtc::AudioEncoderG711,
-      NotAdvertised<webrtc::AudioEncoderL16>, sora::AudioEncoderLyra>();
+      NotAdvertised<webrtc::AudioEncoderL16>
+#if USE_LYRA
+      ,
+      sora::AudioEncoderLyra
+#endif
+      >();
 }
 
 }  // namespace sora
