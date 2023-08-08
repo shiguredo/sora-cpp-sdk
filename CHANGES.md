@@ -11,6 +11,14 @@
 
 ## develop
 
+## sora-cpp-sdk-2023.9.0
+
+- [UPDATE] Sora C++ SDK を 2023.9.0 にあげる
+    - @voluntas @miosakuma
+
+- [UPDATE] SDL2_VERSION を 2.28.1 にあげる
+    - @voluntas
+
 ## sora-cpp-sdk-2023.7.0
 
 - [UPDATE] VERSIONS のライブラリをアップデートする
@@ -20,7 +28,7 @@
 
 ## sora-cpp-sdk-2023.6.0
 
-- [UPDATE] Sora CPP SDK を 2023.6.0 にあげる
+- [UPDATE] Sora C++ SDK を 2023.6.0 にあげる
     - @miosakuma
 - [UPDATE] WEBRTC_BUILD_VERSION を m114.5735.2.0 にあげる
     - @miosakuma
@@ -29,7 +37,7 @@
 
 ## sora-cpp-sdk-2023.5.1
 
-- [UPDATE] Sora CPP SDK を 2023.5.1 にあげる
+- [UPDATE] Sora C++ SDK を 2023.5.1 にあげる
     - @miosakuma
 
 ## sora-cpp-sdk-2023.5.0
@@ -53,10 +61,10 @@
 
 ## sora-cpp-sdk-2023.2.0
 
-- [UPDATE] Sora CPP SDK を 2023.2.0 にあげる
+- [UPDATE] Sora C++ SDK を 2023.2.0 にあげる
     - @miosakuma
 
 ## sora-cpp-sdk-2023.1.0
 
-- [UPDATE] Sora CPP SDK を 2023.1.0 にあげる
+- [UPDATE] Sora C++ SDK を 2023.1.0 にあげる
     - @torikizi
