@@ -11,6 +11,8 @@
 
 ## develop
 
+- [UPDATE] VPL のバージョンを v2023.3.1 に上げる
+    - @torikizi
 - [FIX] macOS, iOS のキャプチャラの破棄時にクラッシュすることがあるのを修正
     - @melpon
 
