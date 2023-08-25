@@ -161,7 +161,11 @@ AVCaptureDevice* MacCapturer::FindVideoDevice(
 }
 
 void MacCapturer::Destroy() {
-  [capturer_ stopCapture];
+  dispatch_semaphore_t stopSemaphore = dispatch_semaphore_create(0);
+  [capturer_ stopCaptureWithCompletionHandler:^{
+    dispatch_semaphore_signal(stopSemaphore);
+  }];
+  dispatch_semaphore_wait(stopSemaphore, dispatch_time(DISPATCH_TIME_NOW, 10 * NSEC_PER_SEC));
 }
 
 MacCapturer::~MacCapturer() {
