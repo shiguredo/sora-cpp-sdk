@@ -11,6 +11,9 @@
 
 ## develop
 
+- [UPDATE] WebRTC を m114.5735.0.1 に上げる
+    - @torikizi
+
 ## 2023.10.0 (2023-08-26)
 
 - [UPDATE] VPL のバージョンを v2023.3.1 に上げる
