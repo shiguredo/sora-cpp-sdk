@@ -181,7 +181,7 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
                                [cuda_context = cuda_context](auto format)
                                    -> std::unique_ptr<webrtc::VideoEncoder> {
                                  return NvCodecH264Encoder::Create(
-                                     cricket::VideoCodec(format), cuda_context);
+                                     cricket::CreateVideoCodec(format), cuda_context);
                                },
                                16));
   }
@@ -243,7 +243,7 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
                                [](auto format) {
                                  return std::unique_ptr<webrtc::VideoEncoder>(
                                      absl::make_unique<JetsonVideoEncoder>(
-                                         cricket::VideoCodec(format)));
+                                         cricket::CreateVideoCodec(format)));
                                },
                                16));
   }
@@ -254,7 +254,7 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
                                [](auto format) {
                                  return std::unique_ptr<webrtc::VideoEncoder>(
                                      absl::make_unique<JetsonVideoEncoder>(
-                                         cricket::VideoCodec(format)));
+                                         cricket::CreateVideoCodec(format)));
                                },
                                16));
   }
@@ -265,7 +265,7 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
                                [](auto format) {
                                  return std::unique_ptr<webrtc::VideoEncoder>(
                                      absl::make_unique<JetsonVideoEncoder>(
-                                         cricket::VideoCodec(format)));
+                                         cricket::CreateVideoCodec(format)));
                                },
                                16));
   }
@@ -275,7 +275,7 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
                              [](auto format) {
                                return std::unique_ptr<webrtc::VideoEncoder>(
                                    absl::make_unique<JetsonVideoEncoder>(
-                                       cricket::VideoCodec(format)));
+                                       cricket::CreateVideoCodec(format)));
                              },
                              16));
 #endif
@@ -290,7 +290,7 @@ SoraVideoEncoderFactoryConfig GetSoftwareOnlyVideoEncoderFactoryConfig() {
       [](auto format) { return webrtc::VP8Encoder::Create(); }));
   config.encoders.push_back(
       VideoEncoderConfig(webrtc::kVideoCodecVP9, [](auto format) {
-        return webrtc::VP9Encoder::Create(cricket::VideoCodec(format));
+        return webrtc::VP9Encoder::Create(cricket::CreateVideoCodec(format));
       }));
 #if !defined(__arm__) || defined(__aarch64__) || defined(__ARM_NEON__)
   config.encoders.push_back(VideoEncoderConfig(
