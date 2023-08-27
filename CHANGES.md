@@ -11,7 +11,9 @@
 
 ## develop
 
-- [UPDATE] WebRTC を m114.5735.0.1 に上げる
+- [UPDATE] WebRTC を m116.5845.6.1 に上げる
+    - @torikizi
+- [UPDATE] m116 で `cricket::Codec` は protected になったため `cricket::CreateVideoCodec` を利用するように修正
     - @torikizi
 
 ## 2023.10.0 (2023-08-26)
