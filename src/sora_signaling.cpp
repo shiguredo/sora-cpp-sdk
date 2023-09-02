@@ -53,8 +53,11 @@ std::string SoraSignaling::GetAudioMid() const {
 std::string SoraSignaling::GetConnectionID() const {
   return connection_id_;
 }
-std::string SoraSignaling::GetConnectedSignalingURL() const {
-  return connected_signaling_url_;
+std::string SoraSignaling::GetConnectedURL() const {
+  return connected_url_.load();
+}
+std::string SoraSignaling::GetContactURL() const {
+  return contact_url_.load();
 }
 bool SoraSignaling::IsConnectedDataChannel() const {
   return dc_ && using_datachannel_;
@@ -272,8 +275,8 @@ void SoraSignaling::OnRedirect(boost::system::error_code ec,
   state_ = State::Connected;
   ws_ = ws;
   ws_connected_ = true;
-  connected_signaling_url_ = url;
-  RTC_LOG(LS_INFO) << "redirected: url=" << url;
+  connected_url_.store(url);
+  RTC_LOG(LS_INFO) << "Redirected: url=" << url;
 
   DoRead();
   DoSendConnect(true);
@@ -823,8 +826,9 @@ void SoraSignaling::OnConnect(boost::system::error_code ec,
   state_ = State::Connected;
   ws_ = ws;
   ws_connected_ = true;
-  connected_signaling_url_ = url;
-  RTC_LOG(LS_INFO) << "connected: url=" << url;
+  contact_url_.store(url);
+  connected_url_.store(url);
+  RTC_LOG(LS_INFO) << "Connected: url=" << url;
 
   DoRead();
   DoSendConnect(false);
@@ -1399,7 +1403,8 @@ void SoraSignaling::Clear() {
   connection_timeout_timer_.cancel(tec);
   closing_timeout_timer_.cancel(tec);
   connecting_wss_.clear();
-  connected_signaling_url_.clear();
+  connected_url_.store("");
+  contact_url_.store("");
   pc_ = nullptr;
   ws_connected_ = false;
   ws_ = nullptr;

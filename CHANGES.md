@@ -11,10 +11,14 @@
 
 ## develop
 
+- [CHANGE] `SoraSignaling::GetConnectedSignalingURL()` を `SoraSignaling::GetConnectedURL()` にリネーム
+    - @melpon
 - [UPDATE] WebRTC を m116.5845.6.1 に上げる
     - @torikizi
 - [UPDATE] m116 で `cricket::Codec` は protected になったため `cricket::CreateVideoCodec` を利用するように修正
     - @torikizi
+- [ADD] `SoraSignaling::GetContactURL()` 関数を追加
+    - @melpon
 
 ## 2023.10.0 (2023-08-26)
 

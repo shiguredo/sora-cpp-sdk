@@ -154,7 +154,8 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
   bool SendDataChannel(const std::string& label, const std::string& data);
 
   std::string GetConnectionID() const;
-  std::string GetConnectedSignalingURL() const;
+  std::string GetConnectedURL() const;
+  std::string GetContactURL() const;
   bool IsConnectedDataChannel() const;
   bool IsConnectedWebsocket() const;
 
@@ -252,7 +253,21 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
 
   std::string connection_id_;
   std::vector<std::shared_ptr<Websocket>> connecting_wss_;
-  std::string connected_signaling_url_;
+  struct atomic_string {
+    std::string load() const {
+      std::lock_guard<std::mutex> lock(m);
+      return s;
+    }
+    void store(std::string s) {
+      std::lock_guard<std::mutex> lock(m);
+      this->s = s;
+    }
+   private:
+    std::string s;
+    mutable std::mutex m;
+  };
+  atomic_string connected_url_;
+  atomic_string contact_url_;
   std::shared_ptr<Websocket> ws_;
   std::shared_ptr<DataChannel> dc_;
   bool using_datachannel_ = false;
