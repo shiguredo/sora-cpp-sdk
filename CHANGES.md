@@ -11,6 +11,15 @@
 
 ## develop
 
+## 2023.11.0 (2023-09-06)
+
+- [UPDATE] WebRTC を m116.5845.6.1 に上げる
+    - @torikizi
+- [UPDATE] m116 で `cricket::Codec` は protected になったため `cricket::CreateVideoCodec` を利用するように修正
+    - @torikizi
+- [ADD] `SoraSignaling::GetSelectedSignalingURL()` 関数を追加
+    - @melpon
+
 ## 2023.10.0 (2023-08-26)
 
 - [UPDATE] VPL のバージョンを v2023.3.1 に上げる
