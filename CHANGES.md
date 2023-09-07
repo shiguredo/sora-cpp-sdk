@@ -11,6 +11,8 @@
 
 ## develop
 
+## 2023.12.0 (2023-09-08)
+
 - [CHANGE] MacCapturer の解放前に明示的に Stop() 関数を呼ぶ必要があるようになる
     - @melpon
 - [FIX] iOS で MacCapturer の解放時に10秒間固まることがあるのを修正
