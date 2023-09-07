@@ -45,12 +45,11 @@ class MacCapturer : public ScalableVideoTrackSource {
   virtual ~MacCapturer();
 
   void OnFrame(const webrtc::VideoFrame& frame);
+  void Stop();
 
   static bool EnumVideoDevice(std::function<void(std::string, std::string)> f);
 
  private:
-  void Destroy();
-
   static AVCaptureDevice* FindVideoDevice(
       const std::string& specifiedVideoDevice);
 
