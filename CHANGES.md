@@ -11,6 +11,9 @@
 
 ## develop
 
+- [ADD] iOS 向けに音声出力先変更機能として `AudioOutputHelper` を追加
+    - @tnoho
+
 ## 2023.11.0 (2023-09-06)
 
 - [UPDATE] WebRTC を m116.5845.6.1 に上げる

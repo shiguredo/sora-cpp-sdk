@@ -28,6 +28,7 @@
 		DDBC4BC7282216890099E1F0 /* GLKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DDBC4BC6282216890099E1F0 /* GLKit.framework */; };
 		DDD4A08E294952DC009EFDB5 /* model_coeffs in Resources */ = {isa = PBXBuildFile; fileRef = DDD4A08D294952DC009EFDB5 /* model_coeffs */; };
 		DDE728F929553B4F0089D76D /* liblyra.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DDE728F829553B390089D76D /* liblyra.a */; };
+		E97B0C172AA9DD2600FB45B9 /* AudioOutputHelperWrapper.mm in Sources */ = {isa = PBXBuildFile; fileRef = E97B0C162AA9DD2600FB45B9 /* AudioOutputHelperWrapper.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -60,6 +61,8 @@
 		DDD4A08A2949500A009EFDB5 /* liblyra.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblyra.a; path = "../../../../../../var/tmp/_bazel_melpon/e11c62260e615113c5a61c74800877bc/execroot/__main__/bazel-out/ios_x86_64-opt/bin/liblyra.a"; sourceTree = "<group>"; };
 		DDD4A08D294952DC009EFDB5 /* model_coeffs */ = {isa = PBXFileReference; lastKnownFileType = folder; name = model_coeffs; path = hello/model_coeffs; sourceTree = "<group>"; };
 		DDE728F829553B390089D76D /* liblyra.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblyra.a; path = ../../_install/ios/release/lyra/lib/liblyra.a; sourceTree = "<group>"; };
+		E97B0C152AA9D44F00FB45B9 /* AudioOutputHelperWrapper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AudioOutputHelperWrapper.h; sourceTree = "<group>"; };
+		E97B0C162AA9DD2600FB45B9 /* AudioOutputHelperWrapper.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = AudioOutputHelperWrapper.mm; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -114,8 +117,10 @@
 				DDBC4B972820E3770099E1F0 /* ViewController.h */,
 				DDBC4B982820E3770099E1F0 /* ViewController.mm */,
 				DDBC4B9A2820E3770099E1F0 /* Main.storyboard */,
+				E97B0C162AA9DD2600FB45B9 /* AudioOutputHelperWrapper.mm */,
 				DDBC4B9D2820E3790099E1F0 /* Assets.xcassets */,
 				DDBC4B9F2820E3790099E1F0 /* LaunchScreen.storyboard */,
+				E97B0C152AA9D44F00FB45B9 /* AudioOutputHelperWrapper.h */,
 				DDBC4BA22820E3790099E1F0 /* Info.plist */,
 				DDBC4BA32820E3790099E1F0 /* main.m */,
 			);
@@ -220,6 +225,7 @@
 				DDBC4B932820E3770099E1F0 /* AppDelegate.m in Sources */,
 				DDBC4BA42820E3790099E1F0 /* main.m in Sources */,
 				DDBC4B962820E3770099E1F0 /* SceneDelegate.m in Sources */,
+				E97B0C172AA9DD2600FB45B9 /* AudioOutputHelperWrapper.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
