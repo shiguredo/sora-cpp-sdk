@@ -14,6 +14,15 @@
 - [ADD] iOS 向けに音声出力先変更機能として `AudioOutputHelper` を追加
     - @tnoho
 
+## 2023.12.0 (2023-09-08)
+
+- [CHANGE] MacCapturer の解放前に明示的に Stop() 関数を呼ぶ必要があるようになる
+    - @melpon
+- [FIX] iOS で MacCapturer の解放時に10秒間固まることがあるのを修正
+    - @melpon
+- [FIX] Android キャプチャラのエラーハンドリングを厳密にする
+    - @melpon
+
 ## 2023.11.0 (2023-09-06)
 
 - [UPDATE] WebRTC を m116.5845.6.1 に上げる

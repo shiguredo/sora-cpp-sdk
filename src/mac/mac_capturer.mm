@@ -160,16 +160,18 @@ AVCaptureDevice* MacCapturer::FindVideoDevice(
   return nullptr;
 }
 
-void MacCapturer::Destroy() {
-  dispatch_semaphore_t stopSemaphore = dispatch_semaphore_create(0);
+void MacCapturer::Stop() {
+  rtc::scoped_refptr<MacCapturer> self(this);
+  RTC_LOG(LS_INFO) << "MacCapturer::Stop()";
   [capturer_ stopCaptureWithCompletionHandler:^{
-    dispatch_semaphore_signal(stopSemaphore);
+    // self を参照することで、stopCaptureWithCompletionHandler が完了するまで
+    // オブジェクトが破棄されないようにする
+    RTC_LOG(LS_INFO) << "MacCapturer::Destroy() completed: self=" << (void*)self.get();
   }];
-  dispatch_semaphore_wait(stopSemaphore, dispatch_time(DISPATCH_TIME_NOW, 10 * NSEC_PER_SEC));
 }
 
 MacCapturer::~MacCapturer() {
-  Destroy();
+  RTC_LOG(LS_INFO) << "MacCapturer::~MacCapturer()";
 }
 
 void MacCapturer::OnFrame(const webrtc::VideoFrame& frame) {
