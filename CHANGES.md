@@ -11,6 +11,9 @@
 
 ## develop
 
+- [FIX] V4L2VideoCapturer でデバイス名の指定が無視されていたのを修正
+    - @melpon
+
 ## 2023.12.0 (2023-09-08)
 
 - [CHANGE] MacCapturer の解放前に明示的に Stop() 関数を呼ぶ必要があるようになる
