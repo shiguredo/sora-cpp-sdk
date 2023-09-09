@@ -52,7 +52,7 @@ class AndroidCapturer : public webrtc::jni::AndroidVideoTrackSource {
                            int height,
                            int target_fps);
   static void stopCapture(JNIEnv* env, jobject capturer);
-  static void dispose(JNIEnv* env, jobject capturer);
+  static void dispose(JNIEnv* env, jobject capturer, jobject helper);
 
   bool Init(JNIEnv* env,
             jobject context,
@@ -69,6 +69,7 @@ class AndroidCapturer : public webrtc::jni::AndroidVideoTrackSource {
   std::unique_ptr<webrtc::ScopedJavaGlobalRef<jobject>>
       native_capturer_observer_;
   std::unique_ptr<webrtc::ScopedJavaGlobalRef<jobject>> video_capturer_;
+  std::unique_ptr<webrtc::ScopedJavaGlobalRef<jobject>> helper_;
 };
 
 }  // namespace sora
