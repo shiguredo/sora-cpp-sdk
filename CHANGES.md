@@ -11,6 +11,8 @@
 
 ## develop
 
+## 2023.12.1 (2023-09-10)
+
 - [FIX] V4L2VideoCapturer でデバイス名の指定が無視されていたのを修正
     - @melpon
 - [FIX] Android で動かすために必要な libwebrtc の初期化処理を追加
