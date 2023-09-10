@@ -11,6 +11,13 @@
 
 ## develop
 
+## 2023.12.1 (2023-09-10)
+
+- [FIX] V4L2VideoCapturer でデバイス名の指定が無視されていたのを修正
+    - @melpon
+- [FIX] Android で動かすために必要な libwebrtc の初期化処理を追加
+    - @melpon
+
 ## 2023.12.0 (2023-09-08)
 
 - [CHANGE] MacCapturer の解放前に明示的に Stop() 関数を呼ぶ必要があるようになる
