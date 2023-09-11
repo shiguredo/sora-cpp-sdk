@@ -26,7 +26,7 @@ std::unique_ptr<AudioOutputHelperInterface> CreateAudioOutputHelper(
 #if defined(__APPLE__)
   return std::make_unique<MacAudioOutputHelper>(observer);
 #else
-  return std::make_unique<DummyAudioOutputHelper>());
+  return std::make_unique<DummyAudioOutputHelper>();
 #endif
 }
 
