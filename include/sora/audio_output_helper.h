@@ -19,16 +19,8 @@ class AudioOutputHelperInterface {
   virtual void SetHandsfree(bool enable) = 0;
 };
 
-class AudioOutputHelper {
- public:
-  AudioOutputHelper(AudioChangeRouteObserver* observer);
-
-  bool IsHandsfree();
-  void SetHandsfree(bool enable);
-
- private:
-  std::unique_ptr<AudioOutputHelperInterface> impl_;
-};
+std::unique_ptr<AudioOutputHelperInterface> CreateAudioOutputHelper(
+    AudioChangeRouteObserver* observer);
 
 }  // namespace sora
 

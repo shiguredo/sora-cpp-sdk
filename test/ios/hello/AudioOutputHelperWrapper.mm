@@ -9,11 +9,14 @@
 
 #include "sora/audio_output_helper.h"
 
-class AudioOutputHelperWrapperImpl : public sora::AudioOutputHelper, public sora::AudioChangeRouteObserver {
+#include <memory>
+
+class AudioChangeRouteObserverWrapper : public sora::AudioChangeRouteObserver {
 private:
     __weak id<AudioChangeRouteDelegate> delegate_;
 public:
-    AudioOutputHelperWrapperImpl(id<AudioChangeRouteDelegate> delegate) : sora::AudioOutputHelper(this), delegate_(delegate) {}
+    AudioChangeRouteObserverWrapper(id<AudioChangeRouteDelegate> delegate) : delegate_(delegate) {
+    }
     
     void OnChangeRoute() override {
         if (delegate_) {
@@ -23,27 +26,30 @@ public:
 };
 
 @implementation AudioOutputHelperWrapper {
-    AudioOutputHelperWrapperImpl* audioHelper_;
+    std::unique_ptr<sora::AudioOutputHelperInterface> audio_output_helper_;
+    AudioChangeRouteObserverWrapper* observer_;
 }
 
 - (instancetype)initWithDelegate:(id<AudioChangeRouteDelegate>)delegate {
     self = [super init];
     if (self) {
-        audioHelper_ = new AudioOutputHelperWrapperImpl(delegate);
+        observer_ = new AudioChangeRouteObserverWrapper(delegate);
+        audio_output_helper_ = CreateAudioOutputHelper(observer_);
     }
     return self;
 }
 
 - (void)dealloc {
-    delete audioHelper_;
+    audio_output_helper_.reset();
+    delete observer_;
 }
 
 - (BOOL)isHandsfree {
-    return audioHelper_->IsHandsfree();
+    return audio_output_helper_->IsHandsfree();
 }
 
 - (void)setHandsfree:(BOOL)enable {
-    audioHelper_->SetHandsfree(enable);
+    audio_output_helper_->SetHandsfree(enable);
 }
 
 @end

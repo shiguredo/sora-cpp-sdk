@@ -9,26 +9,25 @@
 
 namespace sora {
 
-AudioOutputHelper::AudioOutputHelper(AudioChangeRouteObserver* observer) {
-#if defined(__APPLE__)
-  impl_.reset(new MacAudioOutputHelper(observer));
-#endif
-}
-
-bool AudioOutputHelper::IsHandsfree() {
-  if (!impl_) {
+class DummyAudioOutputHelper : public AudioOutputHelperInterface {
+ public:
+  bool IsHandsfree() override {
     RTC_LOG(LS_ERROR) << "AudioOutputHelper not availabe in this platform.";
     return false;
   }
-  return impl_->IsHandsfree();
-}
-
-void AudioOutputHelper::SetHandsfree(bool enable) {
-  if (!impl_) {
+  void SetHandsfree(bool enable) override {
     RTC_LOG(LS_ERROR) << "AudioOutputHelper not availabe in this platform.";
     return;
   }
-  impl_->SetHandsfree(enable);
+};
+
+std::unique_ptr<AudioOutputHelperInterface> CreateAudioOutputHelper(
+    AudioChangeRouteObserver* observer) {
+#if defined(__APPLE__)
+  return std::make_unique<MacAudioOutputHelper>(observer);
+#else
+  return std::make_unique<DummyAudioOutputHelper>());
+#endif
 }
 
 }  // namespace sora
