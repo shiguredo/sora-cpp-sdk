@@ -63,7 +63,7 @@ NS_ASSUME_NONNULL_END
     case AVAudioSessionRouteChangeReasonOverride:
     case AVAudioSessionRouteChangeReasonWakeFromSleep:
     case AVAudioSessionRouteChangeReasonNoSuitableRouteForCategory:
-      _observer->OnDidChangeRoute();
+      _observer->OnChangeRoute();
       break;
     case AVAudioSessionRouteChangeReasonRouteConfigurationChange:
       // The set of input and output ports has not changed, but their

@@ -15,7 +15,7 @@ private:
 public:
     AudioOutputHelperWrapperImpl(id<AudioChangeRouteDelegate> delegate) : sora::AudioOutputHelper(this), delegate_(delegate) {}
     
-    void OnDidChangeRoute() override {
+    void OnChangeRoute() override {
         if (delegate_) {
             [delegate_ didChangeRoute];
         }

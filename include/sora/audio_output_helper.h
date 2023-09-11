@@ -8,7 +8,7 @@ namespace sora {
 class AudioChangeRouteObserver {
  public:
   virtual ~AudioChangeRouteObserver() {}
-  virtual void OnDidChangeRoute() = 0;
+  virtual void OnChangeRoute() = 0;
 };
 
 class AudioOutputHelperInterface {
