@@ -51,6 +51,7 @@ NS_ASSUME_NONNULL_END
 - (void)audioSessionDidChangeRoute:(RTC_OBJC_TYPE(RTCAudioSession) *)session
                             reason:(AVAudioSessionRouteChangeReason)reason
                      previousRoute:(AVAudioSessionRouteDescription *)previousRoute {
+  // WebRTC の内部で RouteChange とみなされる reason をそのまま拾うこととした
   switch (reason) {
     case AVAudioSessionRouteChangeReasonUnknown:
     case AVAudioSessionRouteChangeReasonNewDeviceAvailable:
@@ -115,15 +116,21 @@ MacAudioOutputHelper::~MacAudioOutputHelper() {
 
 bool MacAudioOutputHelper::IsHandsfree() {
   RTC_OBJC_TYPE(RTCAudioSession)* session = [RTC_OBJC_TYPE(RTCAudioSession) sharedInstance];
+  // 現在の Output, Input ルートが 2 つ以上ある状態にはならないため、 1 つ目のみ検証する
   AVAudioSessionPortDescription *output = session.currentRoute.outputs.firstObject;
   AVAudioSessionPortDescription *input = session.currentRoute.inputs.firstObject;
+  // AVAudioSessionPortOverrideSpeaker を設定した状態かを確認する
   return [output.portType isEqualToString:AVAudioSessionPortBuiltInSpeaker] &&
          [input.portType isEqualToString:AVAudioSessionPortBuiltInMic];
 }
 
 void MacAudioOutputHelper::SetHandsfree(bool enable) {
+  // オーバーライドしない
+  // ヘッドセットなどがつながっていない場合は内蔵の受話用スピーカーに切り替わる
   AVAudioSessionPortOverride portOverride = AVAudioSessionPortOverrideNone;
   if (enable) {
+    // 内蔵のハンズフリー通話やアラーム、動画再生に使っているスピーカーに切り替える
+    // OverrideSpeaker と書いてあるがマイクも内蔵マイクに切り替える
     portOverride = AVAudioSessionPortOverrideSpeaker;
   }
   [RTC_OBJC_TYPE(RTCDispatcher) dispatchAsyncOnType:RTCDispatcherTypeAudioSession

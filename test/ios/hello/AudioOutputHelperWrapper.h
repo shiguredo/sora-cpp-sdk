@@ -10,10 +10,11 @@
 
 #import <Foundation/Foundation.h>
 
+// iOS の他の Objective-C API と遜色なく使えるようラッピングする
+
 @protocol AudioChangeRouteDelegate <NSObject>
 - (void)didChangeRoute;
 @end
-
 
 @interface AudioOutputHelperWrapper : NSObject
 - (instancetype)initWithDelegate:(id<AudioChangeRouteDelegate>)delegate;
