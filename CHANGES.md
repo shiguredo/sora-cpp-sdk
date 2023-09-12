@@ -19,13 +19,9 @@
 ## sora-cpp-sdk-2023.9.0
 
 - [UPDATE] Sora C++ SDK を 2023.9.0 にあげる
-
   - @voluntas @miosakuma
-
 - [UPDATE] WEBRTC_BUILD_VERSION を m115.5790.7.0 にあげる
-
   - @miosakuma
-
 - [UPDATE] SDL2_VERSION を 2.28.1 にあげる
   - @voluntas
 
