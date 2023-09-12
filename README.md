@@ -47,7 +47,7 @@ https://github.com/shiguredo/sora-cpp-sdk/releases
 ## 動作環境
 
 - Windows 10.1809 x86_64 以降
-- macOS 13.3 arm64 以降
+- macOS 13.5 arm64 以降
 - Ubuntu 20.04 ARMv8 Jetson (Jetpack 5.0 以降)
     - Jetson AGX Orin
     - Jetson AGX Xavier
