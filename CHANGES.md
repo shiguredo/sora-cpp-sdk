@@ -13,7 +13,7 @@
 
 ## 2023.13.1 (2023-09-12)
 
-- [ADD] macOS で `AudioOutputHelper` を使おうとするとリンクエラーになっていたのを修正
+- [FIX] macOS で `AudioOutputHelper` を使おうとするとリンクエラーになっていたのを修正
   - @melpon
 
 ## 2023.13.0 (2023-09-12)
