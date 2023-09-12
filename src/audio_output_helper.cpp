@@ -3,7 +3,7 @@
 // WebRTC
 #include <rtc_base/logging.h>
 
-#if defined(__APPLE__)
+#if defined(SORA_CPP_SDK_IOS)
 #include "sora/mac/mac_audio_output_helper.h"
 #endif
 
@@ -23,7 +23,7 @@ class DummyAudioOutputHelper : public AudioOutputHelperInterface {
 
 std::unique_ptr<AudioOutputHelperInterface> CreateAudioOutputHelper(
     AudioChangeRouteObserver* observer) {
-#if defined(__APPLE__)
+#if defined(SORA_CPP_SDK_IOS)
   return std::make_unique<MacAudioOutputHelper>(observer);
 #else
   return std::make_unique<DummyAudioOutputHelper>();
