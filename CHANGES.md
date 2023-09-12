@@ -11,6 +11,8 @@
 
 ## develop
 
+## 2023.13.0 (2023-09-12)
+
 - [ADD] iOS 向けに音声出力先変更機能として `AudioOutputHelper` を追加
   - @tnoho
 
