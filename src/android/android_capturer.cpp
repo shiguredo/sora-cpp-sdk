@@ -25,9 +25,10 @@ void AndroidCapturer::Stop() {
   if (video_capturer_ != nullptr) {
     RTC_LOG(LS_INFO) << "AndroidCapturer::stopCapture";
     stopCapture(env_, video_capturer_->obj());
-    dispose(env_, video_capturer_->obj());
+    dispose(env_, video_capturer_->obj(), helper_->obj());
     video_capturer_.reset();
     native_capturer_observer_.reset();
+    helper_.reset();
   }
 }
 
@@ -200,11 +201,16 @@ void AndroidCapturer::stopCapture(JNIEnv* env, jobject capturer) {
   jmethodID stopid = env->GetMethodID(capcls.obj(), "stopCapture", "()V");
   env->CallVoidMethod(capturer, stopid);
 }
-void AndroidCapturer::dispose(JNIEnv* env, jobject capturer) {
+void AndroidCapturer::dispose(JNIEnv* env, jobject capturer, jobject helper) {
   // videoCapturer.dispose();
+  // surfaceTextureHelper.dispose();
   webrtc::ScopedJavaLocalRef<jclass> capcls(env, env->GetObjectClass(capturer));
-  jmethodID disposeid = env->GetMethodID(capcls.obj(), "dispose", "()V");
-  env->CallVoidMethod(capturer, disposeid);
+  jmethodID capdisposeid = env->GetMethodID(capcls.obj(), "dispose", "()V");
+  env->CallVoidMethod(capturer, capdisposeid);
+
+  webrtc::ScopedJavaLocalRef<jclass> helpcls(env, env->GetObjectClass(helper));
+  jmethodID helpdisposeid = env->GetMethodID(helpcls.obj(), "dispose", "()V");
+  env->CallVoidMethod(helper, helpdisposeid);
 }
 
 bool AndroidCapturer::Init(JNIEnv* env,
@@ -294,6 +300,7 @@ bool AndroidCapturer::Init(JNIEnv* env,
   video_capturer_.reset(
       new webrtc::ScopedJavaGlobalRef<jobject>(env, capturer));
   native_capturer_observer_ = std::move(native_capturer_observer);
+  helper_.reset(new webrtc::ScopedJavaGlobalRef<jobject>(env, helper));
 
   return true;
 }

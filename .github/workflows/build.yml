@@ -18,7 +18,7 @@ jobs:
     name: Build sora-cpp-sdk for ${{ matrix.name }}
     runs-on: windows-2019
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: microsoft/setup-msbuild@v1.3
       - name: Env to output
         run: |
@@ -100,7 +100,7 @@ jobs:
     name: Build sora-cpp-sdk for ${{ matrix.name }}
     runs-on: macos-12
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Env to output
         run: |
           echo "user=`users`" >> $GITHUB_OUTPUT
@@ -151,7 +151,7 @@ jobs:
     name: Build sora-cpp-sdk for ${{ matrix.name }}
     runs-on: ${{ matrix.name == 'ubuntu-22.04_x86_64' && 'ubuntu-22.04' || 'ubuntu-20.04' }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Bazel cache
         uses: actions/cache@v3
         with:
@@ -227,7 +227,7 @@ jobs:
       - build-ubuntu
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/download
         with:
           platform: windows_x86_64
