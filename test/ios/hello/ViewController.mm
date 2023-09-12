@@ -7,6 +7,7 @@
 
 #import <thread>
 #import <memory>
+#import "AudioOutputHelperWrapper.h"
 #import "ViewController.h"
 #import "../../hello.h"
 
@@ -44,7 +45,7 @@ void Run() {
     HelloSoraConfig config;
     config.signaling_urls.push_back("シグナリングURL");
     config.channel_id = "チャンネルID";
-    config.role = "sendonly";
+    config.role = "sendrecv";
     // config.mode = HelloSoraConfig::Mode::Lyra;
     auto hello = std::make_shared<HelloSora>(context, config);
     hello->Run();
@@ -52,17 +53,42 @@ void Run() {
 
 std::shared_ptr<std::thread> th;
 
-@interface ViewController ()
+@interface ViewController () <AudioChangeRouteDelegate>
+
+- (IBAction)setHandsfree:(UIButton *)sender;
+@property (weak, nonatomic) IBOutlet UIButton *handsfreeButton;
 
 @end
 
-@implementation ViewController
+@implementation ViewController {
+    AudioOutputHelperWrapper* audioHelperWrapper_;
+}
+
+- (void)setHandsfreeButtonText {
+    BOOL isHandsfree = [audioHelperWrapper_ isHandsfree];
+    if (isHandsfree) {
+        self.handsfreeButton.titleLabel.text = @"Set Default";
+    } else {
+        self.handsfreeButton.titleLabel.text = @"Set Handsfree";
+    }
+}
 
 - (void)viewDidLoad {
     th.reset(new std::thread(&Run));
     [super viewDidLoad];
     // Do any additional setup after loading the view.
+    audioHelperWrapper_ = [[AudioOutputHelperWrapper alloc] initWithDelegate:self];
+    [self setHandsfreeButtonText];
 }
 
+
+- (IBAction)setHandsfree:(UIButton *)sender {
+    BOOL isHandsfree = [audioHelperWrapper_ isHandsfree];
+    [audioHelperWrapper_ setHandsfree:!isHandsfree];
+}
+
+- (void)didChangeRoute {
+    [self setHandsfreeButtonText];
+}
 
 @end
