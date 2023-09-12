@@ -92,6 +92,7 @@ target_sources(sora
   PRIVATE
     src/aligned_encoder_adapter.cpp
     src/audio_device_module.cpp
+    src/audio_output_helper.cpp
     src/camera_device_capturer.cpp
     src/data_channel.cpp
     src/default_video_formats.cpp
@@ -373,6 +374,7 @@ elseif (SORA_TARGET_OS STREQUAL "ios")
 
   target_sources(sora
     PRIVATE
+      src/mac/mac_audio_output_helper.mm
       src/mac/mac_capturer.mm
       src/mac/mac_version.mm
       src/mac/mac_video_factory.mm
