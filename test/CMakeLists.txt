@@ -33,7 +33,11 @@ if (USE_LYRA)
 endif()
 
 function (init_target target)
-  set_target_properties(${target} PROPERTIES CXX_STANDARD 20 C_STANDARD 20)
+  if (WIN32)
+    set_target_properties(${target} PROPERTIES CXX_STANDARD 20 C_STANDARD 20)
+  else()
+    set_target_properties(${target} PROPERTIES CXX_STANDARD 17 C_STANDARD 17)
+  endif()
   set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE ON)
   target_link_libraries(${target} PRIVATE Sora::sora)
 
