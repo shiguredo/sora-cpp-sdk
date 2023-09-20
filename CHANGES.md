@@ -12,7 +12,7 @@
 ## develop
 
 - [UPDATE] WebRTC を m117.5938.2.0 に上げる
-  - @miosakuma
+  - @melpon @miosakuma
 
 ## 2023.13.1 (2023-09-12)
 
