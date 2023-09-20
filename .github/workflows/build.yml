@@ -18,7 +18,7 @@ jobs:
     name: Build sora-cpp-sdk-samples for ${{ matrix.name }}
     runs-on: windows-2019
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: microsoft/setup-msbuild@v1.1
       - run: python3 sdl_sample/${{ matrix.name }}/run.py
       - run: python3 momo_sample/${{ matrix.name }}/run.py
@@ -44,7 +44,7 @@ jobs:
     name: Build sora-cpp-sdk-samples for ${{ matrix.name }}
     runs-on: macos-12
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: python3 sdl_sample/${{ matrix.name }}/run.py
       - run: python3 momo_sample/${{ matrix.name }}/run.py
       - run: python3 messaging_recvonly_sample/${{ matrix.name }}/run.py
@@ -70,7 +70,7 @@ jobs:
     name: Build sora-cpp-sdk-samples for ${{ matrix.name }}
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install deps for Jetson series
         if: matrix.name == 'ubuntu-20.04_armv8_jetson'
         run: |
@@ -107,7 +107,7 @@ jobs:
     name: Build sora-cpp-sdk-samples for ${{ matrix.name }}
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install deps for Ubuntu x86_64
         if: matrix.name == 'ubuntu-22.04_x86_64'
         run: |
@@ -158,7 +158,7 @@ jobs:
       - build-ubuntu-2204
     if: always()
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: rtCamp/action-slack-notify@v2
         if: |
           needs.build-windows.result == 'failure' ||
