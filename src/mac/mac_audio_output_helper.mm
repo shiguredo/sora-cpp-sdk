@@ -108,9 +108,9 @@ MacAudioOutputHelper::MacAudioOutputHelper(AudioChangeRouteObserver* observer) {
 }
 
 MacAudioOutputHelper::~MacAudioOutputHelper() {
-  // あった方が良いと思ったが、 libwebrtc のサンプルにないので消しておく
-  // RTC_OBJC_TYPE(RTCAudioSession)* session = [RTC_OBJC_TYPE(RTCAudioSession) sharedInstance];
-  // [session removeDelegate:adapter_];
+  // libwebrtc のサンプルにないが、あった方が良いのでここで removeDelegate を呼ぶ
+  RTC_OBJC_TYPE(RTCAudioSession)* session = [RTC_OBJC_TYPE(RTCAudioSession) sharedInstance];
+  [session removeDelegate:adapter_];
   adapter_ = nil;
 }
 
