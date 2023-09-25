@@ -15,8 +15,8 @@
   - @voluntas
 - [UPDATE] Boost を 1.83.0 に上げる
   - @voluntas
-- [UPDATE] WebRTC を m117.5938.2.0 に上げる
-  - @melpon @miosakuma
+- [UPDATE] WebRTC を m118.5993.2.0 に上げる
+  - @melpon @miosakuma @voluntas
 
 ## 2023.13.1 (2023-09-12)
 
