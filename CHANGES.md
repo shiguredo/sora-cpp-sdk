@@ -11,8 +11,6 @@
 
 ## develop
 
-- [UPDATE] GitHub Actions の macOS を 13 に上げる
-  - @voluntas
 - [UPDATE] Boost を 1.83.0 に上げる
   - @voluntas
 - [UPDATE] WebRTC を m117.5938.2.0 に上げる
