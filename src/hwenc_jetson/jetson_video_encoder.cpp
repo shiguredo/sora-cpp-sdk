@@ -28,7 +28,7 @@
 // L4T Multimedia API
 #include <NvBufSurface.h>
 #include <NvVideoEncoder.h>
-#include <nvbuf_utils.h>
+#include <nvbufsurface.h>
 
 #include "sora/hwenc_jetson/jetson_buffer.h"
 
@@ -748,11 +748,20 @@ int32_t JetsonVideoEncoder::Encode(
         input_frame.timestamp_us() % rtc::kNumMicrosecsPerSec;
 
     for (int i = 0; i < MAX_PLANES; i++) {
-      if (NvBufferMemSyncForDevice(buffer->planes[i].fd, i,
-                                   (void**)&buffer->planes[i].data) < 0) {
-        RTC_LOG(LS_ERROR) << "Failed to NvBufferMemSyncForDevice";
+      // JetPack 5.2.1 対応で NvBufferMemSyncForDevice を NvBufSurfaceSyncForDevice に置き換える際に、
+      // fd から NvBufSurface を作成する必要があった
+      NvBufSurface* surface = NULL;
+      if (-1 == NvBufSurfaceFromFd(buffer->planes[i].fd, (void**)(&surface))) {
+        RTC_LOG(LS_ERROR) << __FUNCTION__ << "Failed to NvBufSurfaceFromFd";
         return WEBRTC_VIDEO_CODEC_ERROR;
       }
+
+      if (NvBufSurfaceSyncForDevice(surface, 0, i) < 0) {
+        RTC_LOG(LS_ERROR) << "Failed to NvBufSurfaceSyncForDevice";
+        return WEBRTC_VIDEO_CODEC_ERROR;
+      }
+
+      NvBufSurfaceDestroy(surface);
     }
 
     if (encoder_->output_plane.qBuffer(v4l2_buf, nullptr) < 0) {

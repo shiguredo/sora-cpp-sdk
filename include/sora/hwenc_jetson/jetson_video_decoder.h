@@ -17,6 +17,8 @@
 #include <common_video/include/video_frame_buffer_pool.h>
 #include <rtc_base/platform_thread.h>
 
+#include <nvbufsurface.h>
+
 struct v4l2_crop;
 class NvV4l2Element;
 class NvVideoDecoder;
@@ -59,7 +61,7 @@ class JetsonVideoDecoder : public webrtc::VideoDecoder {
   rtc::PlatformThread capture_loop_;
   std::atomic<bool> eos_;
   std::atomic<bool> got_error_;
-  int dst_dma_fd_;
+  NvBufSurface* dst_surface_;
   std::shared_ptr<v4l2_crop> capture_crop_;
 };
 
