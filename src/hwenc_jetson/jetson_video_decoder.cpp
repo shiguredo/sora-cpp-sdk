@@ -220,6 +220,7 @@ bool JetsonVideoDecoder::JetsonRelease() {
   }
   if (dst_surface_ != nullptr) {
     NvBufSurfaceDestroy(dst_surface_);
+    dst_surface_ = nullptr;
   }
   return true;
 }
@@ -419,6 +420,7 @@ int JetsonVideoDecoder::SetCapture() {
 
   if (dst_surface_ != nullptr) {
     NvBufSurfaceDestroy(dst_surface_);
+    dst_surface_ = nullptr;
   }
 
   NvBufSurfaceAllocateParams input_params = {0};
@@ -426,14 +428,10 @@ int JetsonVideoDecoder::SetCapture() {
   input_params.params.height = capture_crop_->c.height;
   input_params.params.layout = NVBUF_LAYOUT_PITCH;
   input_params.params.colorFormat = NVBUF_COLOR_FORMAT_YUV420;
+  input_params.params.memType = NVBUF_MEM_SURFACE_ARRAY;
   input_params.memtag = NvBufSurfaceTag_VIDEO_DEC;
 
-  dst_surface_ = new NvBufSurface;
-  dst_surface_->memType = NVBUF_MEM_SURFACE_ARRAY;
-
-  NvBufSurface* dst_surfaces[] = {dst_surface_};
-
-  ret = NvBufSurfaceAllocate(dst_surfaces, 1, &input_params);
+  ret = NvBufSurfaceAllocate(&dst_surface_, 1, &input_params);
   INIT_ERROR(ret == -1, "failed to NvBufSurfaceAllocate");
 
   decoder_->capture_plane.deinitPlane();
