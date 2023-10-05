@@ -68,22 +68,20 @@ rtc::scoped_refptr<webrtc::I420BufferInterface> JetsonBuffer::ToI420() {
     input_params.params.height = buffer_height;
     input_params.params.layout = NVBUF_LAYOUT_PITCH;
     input_params.params.colorFormat = NVBUF_COLOR_FORMAT_YUV420;
+    input_params.params.memType = NVBUF_MEM_SURFACE_ARRAY;
     input_params.memtag = NvBufSurfaceTag_NONE;
 
-    NvBufSurface* dst_surface = new NvBufSurface;
-    dst_surface->memType = NVBUF_MEM_SURFACE_ARRAY;
-
-    NvBufSurface* dst_surfaces[] = {dst_surface};
+    NvBufSurface* dst_surface = 0;
 
     if (-1 ==
         NvBufSurfaceAllocate(
-            dst_surfaces,
+            &dst_surface,
             1, /* NvUtils では複数のバッファーを同時に初期化できるようになったため、バッファーの数を指定する */
             &input_params)) {
       RTC_LOG(LS_ERROR) << __FUNCTION__ << " Failed to NvBufSurfaceAllocate";
       return scaled_buffer;
     }
-    NvBufSurfaceParams params = dst_surfaces[0]->surfaceList[0];
+    NvBufSurfaceParams params = dst_surface->surfaceList[0];
 
     NvBufSurfTransformRect src_rect, dest_rect;
     src_rect.top = 0;
@@ -120,13 +118,13 @@ rtc::scoped_refptr<webrtc::I420BufferInterface> JetsonBuffer::ToI420() {
     int ret;
     void* data_addr;
     uint8_t* dest_addr;
-    int num_planes = dst_surface->surfaceList[0].planeParams.num_planes;
+    int num_planes = dst_surface->surfaceList->planeParams.num_planes;
     int index = 0;
     for (int plane = 0; plane < num_planes; plane++) {
       ret = NvBufSurfaceMap(dst_surface, index, plane, NVBUF_MAP_READ);
       if (ret == 0) {
         NvBufSurfaceSyncForCpu(dst_surface, index, plane);
-        data_addr = dst_surface->surfaceList->mappedAddr.addr;
+        data_addr = dst_surface->surfaceList->mappedAddr.addr[plane];
         int height, width;
         if (plane == 0) {
           dest_addr = scaled_buffer.get()->MutableDataY();

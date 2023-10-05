@@ -750,7 +750,7 @@ int32_t JetsonVideoEncoder::Encode(
     for (int i = 0; i < MAX_PLANES; i++) {
       // JetPack 5.2.1 対応で NvBufferMemSyncForDevice を NvBufSurfaceSyncForDevice に置き換える際に、
       // fd から NvBufSurface を作成する必要があった
-      NvBufSurface* surface = NULL;
+      NvBufSurface* surface = 0;
       if (-1 == NvBufSurfaceFromFd(buffer->planes[i].fd, (void**)(&surface))) {
         RTC_LOG(LS_ERROR) << __FUNCTION__ << "Failed to NvBufSurfaceFromFd";
         return WEBRTC_VIDEO_CODEC_ERROR;
