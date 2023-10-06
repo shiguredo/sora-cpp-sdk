@@ -139,7 +139,7 @@ rtc::scoped_refptr<webrtc::I420BufferInterface> JetsonBuffer::ToI420() {
         for (int i = 0; i < height; i++) {
           memcpy(dest_addr + width * i,
                  (uint8_t*)data_addr +
-                     dst_surf->surfaceList->planeParams.pitch[i] * i,
+                     dst_surf->surfaceList->planeParams.pitch[plane] * i,
                  width);
         }
       }
