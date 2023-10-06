@@ -71,17 +71,16 @@ rtc::scoped_refptr<webrtc::I420BufferInterface> JetsonBuffer::ToI420() {
     input_params.params.memType = NVBUF_MEM_SURFACE_ARRAY;
     input_params.memtag = NvBufSurfaceTag_NONE;
 
-    NvBufSurface* dst_surface = 0;
+    NvBufSurface* dst_surf = 0;
 
-    if (-1 ==
-        NvBufSurfaceAllocate(
-            &dst_surface,
-            1, /* NvUtils では複数のバッファーを同時に初期化できるようになったため、バッファーの数を指定する */
-            &input_params)) {
+    if (NvBufSurfaceAllocate(
+            &dst_surf,
+            1, /* NvUtils では複数のバッファーを同時に初期化できるため、バッファーの数を指定する */
+            &input_params) == -1) {
       RTC_LOG(LS_ERROR) << __FUNCTION__ << " Failed to NvBufSurfaceAllocate";
       return scaled_buffer;
     }
-    NvBufSurfaceParams params = dst_surface->surfaceList[0];
+    NvBufSurfaceParams params = dst_surf->surfaceList[0];
 
     NvBufSurfTransformRect src_rect, dest_rect;
     src_rect.top = 0;
@@ -101,15 +100,13 @@ rtc::scoped_refptr<webrtc::I420BufferInterface> JetsonBuffer::ToI420() {
     trans_params.src_rect = &src_rect;
     trans_params.dst_rect = &dest_rect;
 
-    // NvBufSurfaceFromFd で fd_ を NvBufSurface に変換する
-    // 参照:_install/ubuntu-20.04_armv8_jetson/release/rootfs/usr/src/jetson_multimedia_api/samples/12_v4l2_camera_cuda/camera_v4l2_cuda.cpp
-    NvBufSurface* src_surface = NULL;
-    if (-1 == NvBufSurfaceFromFd(fd_, (void**)(&src_surface))) {
-      RTC_LOG(LS_ERROR) << __FUNCTION__ << "Failed to get NvBufSurface from FD";
+    NvBufSurface* src_surf = 0;
+    if (NvBufSurfaceFromFd(fd_, (void**)(&src_surf)) == -1) {
+      RTC_LOG(LS_ERROR) << __FUNCTION__ << " Failed to NvBufSurfaceFromFd";
       return scaled_buffer;
     }
 
-    if (NvBufSurfTransform(src_surface, dst_surface, &trans_params) !=
+    if (NvBufSurfTransform(src_surf, dst_surf, &trans_params) !=
         NvBufSurfTransformError_Success) {
       RTC_LOG(LS_ERROR) << __FUNCTION__ << " Failed to NvBufSurfTransform";
       return scaled_buffer;
@@ -118,13 +115,13 @@ rtc::scoped_refptr<webrtc::I420BufferInterface> JetsonBuffer::ToI420() {
     int ret;
     void* data_addr;
     uint8_t* dest_addr;
-    int num_planes = dst_surface->surfaceList->planeParams.num_planes;
+    int num_planes = dst_surf->surfaceList->planeParams.num_planes;
     int index = 0;
     for (int plane = 0; plane < num_planes; plane++) {
-      ret = NvBufSurfaceMap(dst_surface, index, plane, NVBUF_MAP_READ);
+      ret = NvBufSurfaceMap(dst_surf, index, plane, NVBUF_MAP_READ);
       if (ret == 0) {
-        NvBufSurfaceSyncForCpu(dst_surface, index, plane);
-        data_addr = dst_surface->surfaceList->mappedAddr.addr[plane];
+        NvBufSurfaceSyncForCpu(dst_surf, index, plane);
+        data_addr = dst_surf->surfaceList->mappedAddr.addr[plane];
         int height, width;
         if (plane == 0) {
           dest_addr = scaled_buffer.get()->MutableDataY();
@@ -142,19 +139,19 @@ rtc::scoped_refptr<webrtc::I420BufferInterface> JetsonBuffer::ToI420() {
         for (int i = 0; i < height; i++) {
           memcpy(dest_addr + width * i,
                  (uint8_t*)data_addr +
-                     dst_surface->surfaceList->planeParams.pitch[i] * i,
+                     dst_surf->surfaceList->planeParams.pitch[i] * i,
                  width);
         }
       }
-      NvBufSurfaceUnMap(dst_surface, index, plane);
+      NvBufSurfaceUnMap(dst_surf, index, plane);
       if (ret == -1) {
         RTC_LOG(LS_ERROR) << __FUNCTION__
-                          << " Failed to NvBufSurfaceMap plane=" << plane;
+                          << " Failed to NvBufSurfaceUnMap plane=" << plane;
         return scaled_buffer;
       }
     }
 
-    NvBufSurfaceDestroy(dst_surface);
+    NvBufSurfaceDestroy(dst_surf);
 
     return scaled_buffer;
   } else {

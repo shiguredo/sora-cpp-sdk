@@ -368,23 +368,22 @@ void JetsonVideoDecoder::CaptureLoop() {
           break;
         }
 
-        NvBufSurface* dst_surface = 0;
-        if (-1 == NvBufSurfaceFromFd(dst_dma_fd_, (void**)(&dst_surface))) {
+        NvBufSurface* dst_surf = 0;
+        if (NvBufSurfaceFromFd(dst_dma_fd_, (void**)(&dst_surf)) == -1) {
           RTC_LOG(LS_ERROR) << __FUNCTION__ << "Failed to NvBufSurfaceFromFd";
           break;
         }
 
-        ret = NvBufSurfaceMap(dst_surface, 0, i, NVBUF_MAP_READ);
-        NvBufSurfaceSyncForCpu(dst_surface, 0, i);
-        src_data = dst_surface->surfaceList[0].mappedAddr.addr[i];
+        ret = NvBufSurfaceMap(dst_surf, 0, i, NVBUF_MAP_READ);
+        NvBufSurfaceSyncForCpu(dst_surf, 0, i);
+        src_data = dst_surf->surfaceList[0].mappedAddr.addr[i];
 
-        NvBufSurfacePlaneParams params =
-            dst_surface->surfaceList[0].planeParams;
+        NvBufSurfacePlaneParams params = dst_surf->surfaceList[0].planeParams;
         for (uint32_t j = 0; j < params.height[i]; j++) {
           memcpy(dst_data + j * dst_stride,
                  (char*)src_data + j * params.pitch[i], params.width[i]);
         }
-        NvBufSurfaceUnMap(dst_surface, 0, i);
+        NvBufSurfaceUnMap(dst_surf, 0, i);
       }
 
       webrtc::VideoFrame decoded_image =
