@@ -191,6 +191,9 @@ $ ./momo_sample --signaling-url wss://sora.example.com/signaling --role sendrecv
 - `--resolution` : 映像配信する際の解像度
     - 解像度は `QVGA, VGA, HD, FHD, 4K, or [WIDTH]x[HEIGHT]` の値が指定可能です
     - 未指定の場合は `VGA` が設定されます
+- `--hw-mjpeg-decoder` : HW MJPEG デコーダーの利用 (true/false)
+    - 未指定の場合は false が設定されます
+    - NVIDIA Jetson のみで利用できます
 
 #### Sora に関するオプション
 

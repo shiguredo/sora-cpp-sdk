@@ -45,6 +45,7 @@ struct MomoSampleConfig {
   int window_height = 480;
   bool show_me = false;
   bool fullscreen = false;
+  bool hw_mjpeg_decoder = false;
 
   struct Size {
     int width;
@@ -94,6 +95,7 @@ class MomoSample : public std::enable_shared_from_this<MomoSample>,
       cam_config.width = size.width;
       cam_config.height = size.height;
       cam_config.fps = 30;
+      cam_config.use_native = config_.hw_mjpeg_decoder;
       auto video_source = sora::CreateCameraDeviceCapturer(cam_config);
       if (video_source == nullptr) {
         RTC_LOG(LS_ERROR) << "Failed to create video source.";
@@ -350,6 +352,9 @@ int main(int argc, char* argv[]) {
   app.add_flag("--fullscreen", config.fullscreen,
                "Use fullscreen window for videos");
   app.add_flag("--show-me", config.show_me, "Show self video");
+  app.add_flag("--hw-mjpeg-decoder", config.hw_mjpeg_decoder,
+               "Perform MJPEG deoode and video resize by hardware acceleration "
+               "(only on supported devices)");
 
   try {
     app.parse(argc, argv);
