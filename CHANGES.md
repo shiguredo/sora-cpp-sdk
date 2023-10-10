@@ -16,7 +16,7 @@
   - WEBRTC_BUILD_VERSION を m117.5938.2.0 にあげる
   - @torikizi
 
-## sora-cpp-sdk-2023.１３.0
+## sora-cpp-sdk-2023.13.0
 
 - [UPDATE] VERSIONS のライブラリをアップデートする
   - SORA_CPP_SDK_VERSION を 2023.13.0 にあげる
