@@ -26,6 +26,7 @@ struct MomoSampleConfig {
   std::string video_codec_type;
   std::string audio_codec_type;
   std::string resolution = "VGA";
+  bool hw_mjpeg_decoder = false;
   int video_bit_rate = 0;
   int audio_bit_rate = 0;
   boost::json::value metadata;
@@ -94,6 +95,7 @@ class MomoSample : public std::enable_shared_from_this<MomoSample>,
       cam_config.width = size.width;
       cam_config.height = size.height;
       cam_config.fps = 30;
+      cam_config.use_native = config_.hw_mjpeg_decoder;
       auto video_source = sora::CreateCameraDeviceCapturer(cam_config);
       if (video_source == nullptr) {
         RTC_LOG(LS_ERROR) << "Failed to create video source.";
@@ -297,6 +299,9 @@ int main(int argc, char* argv[]) {
                  "Video resolution (one of QVGA, VGA, HD, FHD, 4K, or "
                  "[WIDTH]x[HEIGHT])")
       ->check(is_valid_resolution);
+  app.add_option("--hw-mjpeg-decoder", config.hw_mjpeg_decoder,
+                 "Perform MJPEG deoode and video resize by hardware "
+                 "acceleration only on supported devices (default: false)");
 
   // Sora に関するオプション
   app.add_option("--signaling-url", config.signaling_url, "Signaling URL")
