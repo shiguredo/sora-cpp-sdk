@@ -26,6 +26,7 @@ struct MomoSampleConfig {
   std::string video_codec_type;
   std::string audio_codec_type;
   std::string resolution = "VGA";
+  bool hw_mjpeg_decoder = false;
   int video_bit_rate = 0;
   int audio_bit_rate = 0;
   boost::json::value metadata;
@@ -45,7 +46,6 @@ struct MomoSampleConfig {
   int window_height = 480;
   bool show_me = false;
   bool fullscreen = false;
-  bool hw_mjpeg_decoder = false;
 
   struct Size {
     int width;
@@ -299,6 +299,10 @@ int main(int argc, char* argv[]) {
                  "Video resolution (one of QVGA, VGA, HD, FHD, 4K, or "
                  "[WIDTH]x[HEIGHT])")
       ->check(is_valid_resolution);
+  app.add_option(
+      "--hw-mjpeg-decoder", config.hw_mjpeg_decoder,
+      "Perform MJPEG deoode and video resize by hardware acceleration "
+      "(only on supported devices)");
 
   // Sora に関するオプション
   app.add_option("--signaling-url", config.signaling_url, "Signaling URL")
@@ -352,9 +356,6 @@ int main(int argc, char* argv[]) {
   app.add_flag("--fullscreen", config.fullscreen,
                "Use fullscreen window for videos");
   app.add_flag("--show-me", config.show_me, "Show self video");
-  app.add_flag("--hw-mjpeg-decoder", config.hw_mjpeg_decoder,
-               "Perform MJPEG deoode and video resize by hardware acceleration "
-               "(only on supported devices)");
 
   try {
     app.parse(argc, argv);
