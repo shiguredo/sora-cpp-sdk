@@ -299,10 +299,9 @@ int main(int argc, char* argv[]) {
                  "Video resolution (one of QVGA, VGA, HD, FHD, 4K, or "
                  "[WIDTH]x[HEIGHT])")
       ->check(is_valid_resolution);
-  app.add_option(
-      "--hw-mjpeg-decoder", config.hw_mjpeg_decoder,
-      "Perform MJPEG deoode and video resize by hardware acceleration "
-      "(only on supported devices)");
+  app.add_option("--hw-mjpeg-decoder", config.hw_mjpeg_decoder,
+                 "Perform MJPEG deoode and video resize by hardware "
+                 "acceleration only on supported devices (default: false)");
 
   // Sora に関するオプション
   app.add_option("--signaling-url", config.signaling_url, "Signaling URL")
