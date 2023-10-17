@@ -11,12 +11,16 @@
 
 ## develop
 
-- [UPDATE] GitHub Actions の macOS を 13 に上げる
-  - @voluntas
+## 2023.14.0 (2023-10-02)
+
 - [UPDATE] Boost を 1.83.0 に上げる
   - @voluntas
 - [UPDATE] WebRTC を m118.5993.2.0 に上げる
   - @melpon @miosakuma @voluntas
+- [FIX] `MacAudioOutputHelper` でコメントアウトしていた処理をコメントインする
+  - 当初 libwebrtc のサンプルにはない処理で、消していた処理を復活させる
+  - アプリの起動中に `MacAudioOutputHelper` を作成、削除を繰り返しても問題ないようにする
+  - @torikizi
 
 ## 2023.13.1 (2023-09-12)
 
@@ -31,15 +35,15 @@
 ## 2023.12.1 (2023-09-10)
 
 - [FIX] V4L2VideoCapturer でデバイス名の指定が無視されていたのを修正
-    - @melpon
+  - @melpon
 - [FIX] Android で動かすために必要な libwebrtc の初期化処理を追加
-    - @melpon
+  - @melpon
 
 ## 2023.12.0 (2023-09-08)
 
 - [CHANGE] MacCapturer の解放前に明示的に Stop() 関数を呼ぶ必要があるようになる
   - @melpon
-- [FIX] iOS で MacCapturer の解放時に10秒間固まることがあるのを修正
+- [FIX] iOS で MacCapturer の解放時に 10 秒間固まることがあるのを修正
   - @melpon
 - [FIX] Android キャプチャラのエラーハンドリングを厳密にする
   - @melpon
