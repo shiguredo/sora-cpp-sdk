@@ -11,12 +11,15 @@
 
 ## develop
 
+- [UPDATE] WebRTC を m118.5993.2.1 に上げる
+  - @voluntas @torikizi
+
 ## 2023.14.0 (2023-10-02)
 
 - [UPDATE] Boost を 1.83.0 に上げる
   - @voluntas
 - [UPDATE] WebRTC を m117.5938.2.0 に上げる
-  - @melpon @miosakuma
+  - @melpon @miosakuma @voluntas
 - [FIX] `MacAudioOutputHelper` でコメントアウトしていた処理をコメントインする
   - 当初 libwebrtc のサンプルにはない処理で、消していた処理を復活させる
   - アプリの起動中に `MacAudioOutputHelper` を作成、削除を繰り返しても問題ないようにする
