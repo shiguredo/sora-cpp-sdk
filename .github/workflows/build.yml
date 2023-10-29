@@ -161,7 +161,7 @@ jobs:
         if: matrix.name == 'ubuntu-20.04_x86_64' || matrix.name == 'ubuntu-22.04_x86_64'
         run: |
           source VERSION
-          # clang-12 と CUDA を入れる
+          # clang-15 と CUDA を入れる
           sudo apt-get update
           sudo apt-get install -y software-properties-common
           # CUDA 10 なので ubuntu1804 で正しい
@@ -169,9 +169,12 @@ jobs:
           sudo mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600
           sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
           sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
-          sudo add-apt-repository "deb http://apt.llvm.org/lunar/ llvm-toolchain-lunar-15 main"
-          sudo apt-get update
-          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install cuda=$CUDA_VERSION clang-12 clang-15
+          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install cuda=$CUDA_VERSION
+
+          wget https://apt.llvm.org/llvm.sh
+          chmod a+x llvm.sh
+          sudo ./llvm.sh 15
+
           # Intel Media SDK のために libva-dev, libdrm-dev を入れる
           DEBIAN_FRONTEND=noninteractive sudo apt-get -y install libva-dev libdrm-dev
       - name: Install deps for Jetson series
