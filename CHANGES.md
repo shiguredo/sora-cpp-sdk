@@ -11,8 +11,14 @@
 
 ## develop
 
-- [UPDATE] WebRTC を m118.5993.2.1 に上げる
-  - @voluntas @torikizi
+- [UPDATE] WebRTC を m119.6045.2.1 に上げる
+  - @voluntas @torikizi @melpon @enm10k
+- [UPDATE] WebRTC を m119 に上げたことで必要になった関連するライブラリもバージョンを上げる
+  - Ubuntu で使用する clang のバージョンを 15 にアップデート
+  - すべてのプラットフォームで set_target_properties の CXX_STANDARD と C_STANDARD を 20 にアップデート
+  - ANDROID_NDK_VERSION を r26b にアップデート
+  - CMAKE_VERSION を 3.27.7 にアップデート
+  - @melpon @enm10k @torikizi
 
 ## 2023.14.0 (2023-10-02)
 
