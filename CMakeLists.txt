@@ -80,11 +80,7 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 # libsora.a を作る
 
 add_library(sora STATIC)
-if (WIN32)
-  set_target_properties(sora PROPERTIES CXX_STANDARD 20 C_STANDARD 20)
-else()
-  set_target_properties(sora PROPERTIES CXX_STANDARD 17 C_STANDARD 17)
-endif()
+set_target_properties(sora PROPERTIES CXX_STANDARD 20 C_STANDARD 20)
 
 string(SUBSTRING "${SORA_CPP_SDK_COMMIT}" 0 8 SORA_CPP_SDK_COMMIT_SHORT)
 string(SUBSTRING "${WEBRTC_COMMIT}" 0 8 WEBRTC_COMMIT_SHORT)

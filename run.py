@@ -1353,8 +1353,8 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                 install_vpl_args['cmake_args'].append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
             if platform.target.os == 'ubuntu':
                 cmake_args = []
-                cmake_args.append("-DCMAKE_C_COMPILER=clang-12")
-                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-12")
+                cmake_args.append("-DCMAKE_C_COMPILER=clang-15")
+                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-15")
                 path = cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))
                 cmake_args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
                 flags = [
@@ -1503,8 +1503,8 @@ def main():
             cmake_args.append(f'-DCMAKE_SYSTEM_VERSION={WINDOWS_SDK_VERSION}')
         if platform.target.os == 'ubuntu':
             if platform.target.package_name in ('ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64'):
-                cmake_args.append("-DCMAKE_C_COMPILER=clang-12")
-                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-12")
+                cmake_args.append("-DCMAKE_C_COMPILER=clang-15")
+                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-15")
             else:
                 cmake_args.append(
                     f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}")
@@ -1663,8 +1663,8 @@ def main():
                     cmake_args.append(f'-DCMAKE_SYSROOT={sysroot}')
                 if platform.target.os == 'ubuntu':
                     if platform.target.package_name in ('ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64'):
-                        cmake_args.append("-DCMAKE_C_COMPILER=clang-12")
-                        cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-12")
+                        cmake_args.append("-DCMAKE_C_COMPILER=clang-15")
+                        cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-15")
                     else:
                         cmake_args.append(
                             f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}")
