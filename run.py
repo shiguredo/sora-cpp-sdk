@@ -408,10 +408,10 @@ def build_install_webrtc(version, source_dir, build_dir, install_dir, platform, 
 
     # インクルードディレクトリを増やしたくないので、
     # __config_site を libc++ のディレクトリにコピーしておく
-    libcxx_dir = os.path.join(source_dir, 'webrtc', 'src', 'buildtools', 'third_party', 'libc++')
-    if not os.path.exists(os.path.join(libcxx_dir, 'trunk', 'include', '__config_site')):
+    libcxx_dir = os.path.join(source_dir, 'webrtc', 'src', 'third_party', 'libc++')
+    if not os.path.exists(os.path.join(libcxx_dir, 'src', 'include', '__config_site')):
         shutil.copyfile(os.path.join(libcxx_dir, '__config_site'),
-                        os.path.join(libcxx_dir, 'trunk', 'include', '__config_site'))
+                        os.path.join(libcxx_dir, 'src', 'include', '__config_site'))
 
 
 class WebrtcInfo(NamedTuple):
@@ -434,7 +434,7 @@ def get_webrtc_info(webrtcbuild: bool, source_dir: str, build_dir: str, install_
             webrtc_library_dir=os.path.join(webrtc_build_dir, 'obj')
             if platform.system() == 'Windows' else webrtc_build_dir, clang_dir=os.path.join(
                 webrtc_source_dir, 'src', 'third_party', 'llvm-build', 'Release+Asserts'),
-            libcxx_dir=os.path.join(webrtc_source_dir, 'src', 'buildtools', 'third_party', 'libc++', 'trunk'),)
+            libcxx_dir=os.path.join(webrtc_source_dir, 'src', 'third_party', 'libc++', 'src'),)
     else:
         return WebrtcInfo(
             version_file=os.path.join(webrtc_install_dir, 'VERSIONS'),
@@ -1138,8 +1138,8 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             # LLVM
             tools_url = webrtc_version['WEBRTC_SRC_TOOLS_URL']
             tools_commit = webrtc_version['WEBRTC_SRC_TOOLS_COMMIT']
-            libcxx_url = webrtc_version['WEBRTC_SRC_BUILDTOOLS_THIRD_PARTY_LIBCXX_TRUNK_URL']
-            libcxx_commit = webrtc_version['WEBRTC_SRC_BUILDTOOLS_THIRD_PARTY_LIBCXX_TRUNK_COMMIT']
+            libcxx_url = webrtc_version['WEBRTC_SRC_THIRD_PARTY_LIBCXX_SRC_URL']
+            libcxx_commit = webrtc_version['WEBRTC_SRC_THIRD_PARTY_LIBCXX_SRC_COMMIT']
             buildtools_url = webrtc_version['WEBRTC_SRC_BUILDTOOLS_URL']
             buildtools_commit = webrtc_version['WEBRTC_SRC_BUILDTOOLS_COMMIT']
             install_llvm_args = {
@@ -1353,8 +1353,8 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                 install_vpl_args['cmake_args'].append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
             if platform.target.os == 'ubuntu':
                 cmake_args = []
-                cmake_args.append("-DCMAKE_C_COMPILER=clang-12")
-                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-12")
+                cmake_args.append("-DCMAKE_C_COMPILER=clang-15")
+                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-15")
                 path = cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))
                 cmake_args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
                 flags = [
@@ -1503,8 +1503,8 @@ def main():
             cmake_args.append(f'-DCMAKE_SYSTEM_VERSION={WINDOWS_SDK_VERSION}')
         if platform.target.os == 'ubuntu':
             if platform.target.package_name in ('ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64'):
-                cmake_args.append("-DCMAKE_C_COMPILER=clang-12")
-                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-12")
+                cmake_args.append("-DCMAKE_C_COMPILER=clang-15")
+                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-15")
             else:
                 cmake_args.append(
                     f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}")
@@ -1663,8 +1663,8 @@ def main():
                     cmake_args.append(f'-DCMAKE_SYSROOT={sysroot}')
                 if platform.target.os == 'ubuntu':
                     if platform.target.package_name in ('ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64'):
-                        cmake_args.append("-DCMAKE_C_COMPILER=clang-12")
-                        cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-12")
+                        cmake_args.append("-DCMAKE_C_COMPILER=clang-15")
+                        cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-15")
                     else:
                         cmake_args.append(
                             f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}")

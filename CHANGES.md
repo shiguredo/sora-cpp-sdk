@@ -11,12 +11,23 @@
 
 ## develop
 
+## 2023.15.0 (2023-10-31)
+
+- [UPDATE] WebRTC を m119.6045.2.1 に上げる
+  - @voluntas @torikizi @melpon @enm10k
+- [UPDATE] WebRTC を m119 に上げたことで必要になった関連するライブラリもバージョンを上げる
+  - Ubuntu で使用する clang のバージョンを 15 にアップデート
+  - すべてのプラットフォームで set_target_properties の CXX_STANDARD と C_STANDARD を 20 にアップデート
+  - ANDROID_NDK_VERSION を r26b にアップデート
+  - CMAKE_VERSION を 3.27.7 にアップデート
+  - @melpon @enm10k @torikizi
+
 ## 2023.14.0 (2023-10-02)
 
 - [UPDATE] Boost を 1.83.0 に上げる
   - @voluntas
 - [UPDATE] WebRTC を m117.5938.2.0 に上げる
-  - @melpon @miosakuma
+  - @melpon @miosakuma @voluntas
 - [FIX] `MacAudioOutputHelper` でコメントアウトしていた処理をコメントインする
   - 当初 libwebrtc のサンプルにはない処理で、消していた処理を復活させる
   - アプリの起動中に `MacAudioOutputHelper` を作成、削除を繰り返しても問題ないようにする
