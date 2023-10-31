@@ -11,6 +11,8 @@
 
 ## develop
 
+## 2023.15.0 (2023-10-31)
+
 - [UPDATE] WebRTC を m119.6045.2.1 に上げる
   - @voluntas @torikizi @melpon @enm10k
 - [UPDATE] WebRTC を m119 に上げたことで必要になった関連するライブラリもバージョンを上げる
