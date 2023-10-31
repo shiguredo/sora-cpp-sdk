@@ -384,7 +384,7 @@ def get_webrtc_info(webrtcbuild: bool, source_dir: str, build_dir: str, install_
             webrtc_library_dir=os.path.join(webrtc_build_dir, 'obj')
             if platform.system() == 'Windows' else webrtc_build_dir, clang_dir=os.path.join(
                 webrtc_source_dir, 'src', 'third_party', 'llvm-build', 'Release+Asserts'),
-            libcxx_dir=os.path.join(webrtc_source_dir, 'src', 'buildtools', 'third_party', 'libc++', 'trunk'),)
+            libcxx_dir=os.path.join(webrtc_source_dir, 'src', 'buildtools', 'third_party', 'libc++', 'src'),)
     else:
         return WebrtcInfo(
             version_file=os.path.join(webrtc_install_dir, 'VERSIONS'),
