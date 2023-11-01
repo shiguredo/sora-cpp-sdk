@@ -102,7 +102,11 @@ NSArray<AVCaptureDevice*>* captureDevices() {
   // return session.devices;
   return [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
 #else
-  return [RTCCameraVideoCapturer captureDevices];
+  AVCaptureDeviceDiscoverySession *session = [AVCaptureDeviceDiscoverySession
+    discoverySessionWithDeviceTypes:@[ AVCaptureDeviceTypeBuiltInWideAngleCamera ]
+                          mediaType:AVMediaTypeVideo
+                           position:AVCaptureDevicePositionUnspecified];
+  return session.devices;
 # endif
 }
 
