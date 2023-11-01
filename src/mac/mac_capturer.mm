@@ -94,11 +94,13 @@ rtc::scoped_refptr<MacCapturer> MacCapturer::Create(const MacCapturerConfig& con
 NSArray<AVCaptureDevice*>* captureDevices() {
 // macOS では USB で接続されたカメラも取得する
 #if defined(SORA_CPP_SDK_MACOS)
-  AVCaptureDeviceDiscoverySession *session = [AVCaptureDeviceDiscoverySession
-  discoverySessionWithDeviceTypes:@[ AVCaptureDeviceTypeBuiltInWideAngleCamera, AVCaptureDeviceTypeExternal ]
-                        mediaType:AVMediaTypeVideo
-                        position:AVCaptureDevicePositionUnspecified];
-   return session.devices;
+  // AVCaptureDeviceTypeExternal の利用には macOS 14 以上が必要だが、 GitHub Actions では macOS 14 が利用出来ないため一時的に古い API を使う
+  // AVCaptureDeviceDiscoverySession *session = [AVCaptureDeviceDiscoverySession
+  // discoverySessionWithDeviceTypes:@[ AVCaptureDeviceTypeBuiltInWideAngleCamera, AVCaptureDeviceTypeExternal ]
+  //                       mediaType:AVMediaTypeVideo
+  //                       position:AVCaptureDevicePositionUnspecified];
+  // return session.devices;
+  return [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
 #else
   return [RTCCameraVideoCapturer captureDevices];
 # endif
