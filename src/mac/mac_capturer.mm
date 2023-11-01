@@ -91,7 +91,7 @@ rtc::scoped_refptr<MacCapturer> MacCapturer::Create(const MacCapturerConfig& con
   return rtc::make_ref_counted<MacCapturer>(c);
 }
 
-NSArray<AVCaptureDevice*>* captureDevices() {
+static NSArray<AVCaptureDevice*>* captureDevices() {
 // macOS では USB で接続されたカメラも取得する
 #if defined(SORA_CPP_SDK_MACOS)
   // AVCaptureDeviceTypeExternal の利用には macOS 14 以上が必要だが、 GitHub Actions では macOS 14 が利用出来ないため一時的に古い API を使う
