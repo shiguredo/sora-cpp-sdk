@@ -45,8 +45,8 @@ def install_deps(source_dir, build_dir, install_dir, debug):
         # LLVM
         tools_url = webrtc_version['WEBRTC_SRC_TOOLS_URL']
         tools_commit = webrtc_version['WEBRTC_SRC_TOOLS_COMMIT']
-        libcxx_url = webrtc_version['WEBRTC_SRC_BUILDTOOLS_THIRD_PARTY_LIBCXX_TRUNK_URL']
-        libcxx_commit = webrtc_version['WEBRTC_SRC_BUILDTOOLS_THIRD_PARTY_LIBCXX_TRUNK_COMMIT']
+        libcxx_url = webrtc_version['WEBRTC_SRC_THIRD_PARTY_LIBCXX_SRC_URL']
+        libcxx_commit = webrtc_version['WEBRTC_SRC_THIRD_PARTY_LIBCXX_SRC_COMMIT']
         buildtools_url = webrtc_version['WEBRTC_SRC_BUILDTOOLS_URL']
         buildtools_commit = webrtc_version['WEBRTC_SRC_BUILDTOOLS_COMMIT']
         install_llvm_args = {

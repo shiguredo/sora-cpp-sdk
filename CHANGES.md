@@ -11,13 +11,23 @@
 
 ## develop
 
+## sora-cpp-sdk-2023.15.0
+
+- [UPDATE]
+  - momo_sample に --hw-mjpeg-decoder オプションを追加する
+  - @enm10k
+- [UPDATE] VERSIONS のライブラリをアップデートする
+  - SORA_CPP_SDK_VERSION を 2023.15.0 にあげる
+  - WEBRTC_BUILD_VERSION を m119.6045.2.1 にあげる
+  - CMake を 3.27.7 に上げる
+  - @miosakuma
+
+## sora-cpp-sdk-2023.14.0
+
 - [UPDATE] VERSIONS のライブラリをアップデートする
   - SORA_CPP_SDK_VERSION を 2023.14.0 にあげる
   - WEBRTC_BUILD_VERSION を m117.5938.2.0 にあげる
   - @torikizi
-- [UPDATE]
-  - momo_sample に --hw-mjpeg-decoder オプションを追加する
-  - @enm10k
 
 ## sora-cpp-sdk-2023.13.0
 
