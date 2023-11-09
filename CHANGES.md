@@ -17,7 +17,7 @@
   - momo_sample に --hw-mjpeg-decoder オプションを追加する
   - @enm10k
 - [UPDATE] VERSIONS のライブラリをアップデートする
-  - SORA_CPP_SDK_VERSION を 2023.15.0 にあげる
+  - SORA_CPP_SDK_VERSION を 2023.15.1 にあげる
   - WEBRTC_BUILD_VERSION を m119.6045.2.1 にあげる
   - CMake を 3.27.7 に上げる
   - @miosakuma
