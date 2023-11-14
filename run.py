@@ -408,10 +408,10 @@ def build_install_webrtc(version, source_dir, build_dir, install_dir, platform, 
 
     # インクルードディレクトリを増やしたくないので、
     # __config_site を libc++ のディレクトリにコピーしておく
-    libcxx_dir = os.path.join(source_dir, 'webrtc', 'src', 'third_party', 'libc++')
-    if not os.path.exists(os.path.join(libcxx_dir, 'src', 'include', '__config_site')):
-        shutil.copyfile(os.path.join(libcxx_dir, '__config_site'),
-                        os.path.join(libcxx_dir, 'src', 'include', '__config_site'))
+    src_config = os.path.join(source_dir, 'webrtc', 'src', 'buildtools', 'third_party', 'libc++', '__config_site')
+    dst_config = os.path.join(source_dir, 'webrtc', 'src', 'third_party', 'libc++', 'src', 'include', '__config_site')
+    if not os.path.exists(dst_config):
+        shutil.copyfile(src_config, dst_config)
 
 
 class WebrtcInfo(NamedTuple):
