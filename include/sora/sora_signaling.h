@@ -262,6 +262,7 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
       std::lock_guard<std::mutex> lock(m);
       this->s = s;
     }
+
    private:
     std::string s;
     mutable std::mutex m;
