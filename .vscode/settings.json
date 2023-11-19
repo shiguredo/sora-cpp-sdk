@@ -14,6 +14,8 @@
         "*.cs": "csharp",
         "CMakeLists.txt": "cmake",
         "VERSION": "shell",
-        "memory": "cpp"
+        "memory": "cpp",
+        "system_error": "cpp",
+        "string": "cpp"
     }
 }

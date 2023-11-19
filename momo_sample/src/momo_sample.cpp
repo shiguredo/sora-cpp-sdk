@@ -1,8 +1,11 @@
 // Sora
 #include <sora/camera_device_capturer.h>
 #include <sora/sora_client_context.h>
+#include <sora/srtp_keying_material_exporter.h>
 
+#include <fstream>
 #include <regex>
+#include <sstream>
 
 // CLI11
 #include <CLI/CLI.hpp>
@@ -46,6 +49,8 @@ struct MomoSampleConfig {
   int window_height = 480;
   bool show_me = false;
   bool fullscreen = false;
+
+  std::string srtp_key_log_file;
 
   struct Size {
     int width;
@@ -188,7 +193,38 @@ class MomoSample : public std::enable_shared_from_this<MomoSample>,
     renderer_.reset();
     ioc_->stop();
   }
-  void OnNotify(std::string text) override {}
+  void OnNotify(std::string text) override {
+    auto json = boost::json::parse(text);
+    if (json.at("event_type").as_string() == "connection.created") {
+      if (!config_.srtp_key_log_file.empty() && !key_exported_) {
+        auto km = sora::ExportKeyingMaterial(conn_->GetPeerConnection(),
+                                             conn_->GetVideoMid());
+        if (!km) {
+          RTC_LOG(LS_ERROR) << "Failed to ExportKeyingMaterial";
+          return;
+        }
+        auto to_hex = [](const std::vector<uint8_t>& buf) {
+          std::string str;
+          const char hex[] = "0123456789abcdef";
+          for (auto n : buf) {
+            str += hex[(n >> 3) & 0xf];
+            str += hex[n & 0xe];
+          }
+          return str;
+        };
+        std::stringstream ss;
+        ss << "SRTP_CLIENT_KEY " << to_hex(km->client_write_key) << "\n";
+        ss << "SRTP_CLIENT_SALT " << to_hex(km->client_write_salt) << "\n";
+        ss << "SRTP_SERVER_KEY " << to_hex(km->server_write_key) << "\n";
+        ss << "SRTP_SERVER_SALT " << to_hex(km->server_write_salt) << "\n";
+        std::ofstream ofs(config_.srtp_key_log_file, std::ios::app);
+        if (ofs) {
+          ofs.write(ss.str().c_str(), ss.str().size());
+        }
+        key_exported_ = true;
+      }
+    }
+  }
   void OnPush(std::string text) override {}
   void OnMessage(std::string label, std::string data) override {}
 
@@ -225,6 +261,7 @@ class MomoSample : public std::enable_shared_from_this<MomoSample>,
   std::shared_ptr<sora::SoraSignaling> conn_;
   std::unique_ptr<boost::asio::io_context> ioc_;
   std::unique_ptr<SDLRenderer> renderer_;
+  bool key_exported_ = false;
 };
 
 void add_optional_bool(CLI::App& app,
@@ -355,6 +392,10 @@ int main(int argc, char* argv[]) {
   app.add_flag("--fullscreen", config.fullscreen,
                "Use fullscreen window for videos");
   app.add_flag("--show-me", config.show_me, "Show self video");
+
+  // SRTP keying material の出力
+  app.add_option("--srtp-key-log-file", config.srtp_key_log_file,
+                 "SRTP keying material output file");
 
   try {
     app.parse(argc, argv);
