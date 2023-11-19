@@ -9,6 +9,7 @@
 #include "sora/rtc_ssl_verifier.h"
 #include "sora/rtc_stats.h"
 #include "sora/session_description.h"
+#include "sora/srtp_keying_material_exporter.h"
 #include "sora/url_parts.h"
 #include "sora/version.h"
 #include "sora/zlib_helper.h"
@@ -1469,6 +1470,30 @@ void SoraSignaling::OnConnectionChange(
           self->SendOnDisconnect(
               SoraSignalingErrorCode::PEER_CONNECTION_STATE_FAILED,
               "PeerConnectionState::kFailed");
+        }
+
+        if (new_state ==
+            webrtc::PeerConnectionInterface::PeerConnectionState::kConnected) {
+          auto km = ExportKeyingMaterial(self->pc_, self->video_mid_);
+          if (!km) {
+            RTC_LOG(LS_ERROR) << "Failed to ExportKeyingMaterial";
+          } else {
+            auto to_hex = [](const std::vector<uint8_t>& buf) {
+              std::string str;
+              const char hex[] = "0123456789abcdef";
+              for (auto n : buf) {
+                str += hex[(n >> 4) & 0xf];
+                str += hex[n & 0xf];
+              }
+              return str;
+            };
+            std::stringstream ss;
+            ss << "SRTP_CLIENT_KEY " << to_hex(km->client_write_key) << "\n";
+            ss << "SRTP_CLIENT_SALT " << to_hex(km->client_write_salt) << "\n";
+            ss << "SRTP_SERVER_KEY " << to_hex(km->server_write_key) << "\n";
+            ss << "SRTP_SERVER_SALT " << to_hex(km->server_write_salt) << "\n";
+            printf("%s", ss.str().c_str());
+          }
         }
       });
 }
