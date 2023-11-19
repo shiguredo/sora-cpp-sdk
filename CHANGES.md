@@ -11,6 +11,9 @@
 
 ## develop
 
+- [ADD] SRTP keying material を取得する機能を実装
+  - @melpon
+
 ## 2023.15.1 (2023-11-09)
 
 - [FIX] macOS で USB 接続されたカメラが利用できなくなっていた問題を修正する
