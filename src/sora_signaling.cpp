@@ -1646,7 +1646,7 @@ void SoraSignaling::OnMessage(
     return;
   }
 
-  if (label == "stats") {
+  if (label == "stats-req") {
     pc_->GetStats(
         RTCStatsCallback::Create(
             [self = shared_from_this()](
