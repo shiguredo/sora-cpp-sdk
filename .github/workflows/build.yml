@@ -191,7 +191,7 @@ jobs:
         run: |
           sudo apt-get -y install ninja-build
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v2.0.10
+        uses: android-actions/setup-android@v3.2.0
         if: matrix.name == 'android'
       - run: pip3 install numpy
       - run: python3 run.py --test --package ${{ matrix.name }}
