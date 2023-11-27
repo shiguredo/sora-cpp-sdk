@@ -101,6 +101,8 @@ jobs:
     runs-on: macos-13
     steps:
       - uses: actions/checkout@v4
+      - name: Select Xcode 14.3.1
+        run: sudo xcode-select --switch /Applications/Xcode_14.3.1.app/Contents/Developer
       - name: Env to output
         run: |
           echo "user=`users`" >> $GITHUB_OUTPUT
