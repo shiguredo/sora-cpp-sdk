@@ -11,6 +11,12 @@
 
 ## develop
 
+## 2023.16.1 (2023-12-02)
+
+- [FIX] WebRTC を m119.6045.2.2 に上げる
+  - iOS の非公開 API を利用していたため、App Store でリジェクトされてしまうのを修正
+  - @voluntas
+
 ## 2023.16.0 (2023-11-19)
 
 - [ADD] SRTP keying material を取得する機能を実装
