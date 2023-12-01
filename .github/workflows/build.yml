@@ -110,7 +110,7 @@ jobs:
         with:
           path: "/private/var/tmp/_bazel_${{ steps.env.outputs.user }}"
           key: bazel-${{ matrix.name }}-v2
-      - run: pip3 install numpy
+      - run: pip3 install numpy setuptools
       - run: python3 run.py --test --package ${{ matrix.name }}
       - name: Get package name
         run: |
