@@ -863,6 +863,48 @@ def install_lyra(version, install_dir, base_dir, debug, target, webrtc_version, 
         shutil.copyfile(include_src, include_dst)
 
 
+@versioned
+def install_blend2d(version, configuration, source_dir, build_dir, install_dir,
+                    blend2d_version, asmjit_version, ios, cmake_args):
+    rm_rf(os.path.join(source_dir, 'blend2d'))
+    rm_rf(os.path.join(build_dir, 'blend2d'))
+    rm_rf(os.path.join(install_dir, 'blend2d'))
+
+    git_clone_shallow('https://github.com/blend2d/blend2d',
+                      blend2d_version, os.path.join(source_dir, 'blend2d'))
+    mkdir_p(os.path.join(source_dir, 'blend2d', '3rdparty'))
+    git_clone_shallow('https://github.com/asmjit/asmjit', asmjit_version,
+                      os.path.join(source_dir, 'blend2d', '3rdparty', 'asmjit'))
+
+    mkdir_p(os.path.join(build_dir, 'blend2d'))
+    with cd(os.path.join(build_dir, 'blend2d')):
+        cmd(['cmake', os.path.join(source_dir, 'blend2d'),
+             f"-DCMAKE_BUILD_TYPE={configuration}",
+             f"-DCMAKE_INSTALL_PREFIX={cmake_path(os.path.join(install_dir, 'blend2d'))}",
+             '-DBLEND2D_STATIC=ON',
+             *cmake_args])
+        # 生成されたプロジェクトに対して静的ランタイムを使うように変更する
+        project_path = os.path.join(build_dir, 'blend2d', 'blend2d.vcxproj')
+        if os.path.exists(project_path):
+            s = open(project_path, 'r', encoding='utf-8').read()
+            s = s.replace('MultiThreadedDLL', 'MultiThreaded')
+            s = s.replace('MultiThreadedDebugDLL', 'MultiThreadedDebug')
+            open(project_path, 'w', encoding='utf-8').write(s)
+
+        if ios:
+            cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration,
+                '--target', 'blend2d', '--', '-arch', 'x86_64', '-sdk', 'iphonesimulator'])
+            cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration,
+                '--target', 'blend2d', '--', '-arch', 'arm64', '-sdk', 'iphoneos'])
+            cmd(['cmake', '--build', '.', '--target', 'install', '--config', configuration])
+            cmd(['lipo', '-create', '-output', os.path.join(install_dir, 'blend2d', 'lib', 'libblend2d.a'),
+                os.path.join(build_dir, 'blend2d', f'{configuration}-iphonesimulator', 'libblend2d.a'),
+                os.path.join(build_dir, 'blend2d', f'{configuration}-iphoneos', 'libblend2d.a')])
+        else:
+            cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])
+            cmd(['cmake', '--build', '.', '--target', 'install', '--config', configuration])
+
+
 class PlatformTarget(object):
     def __init__(self, os, osver, arch):
         self.os = os
@@ -1404,6 +1446,86 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             }
             install_lyra(**install_lyra_args)
 
+        # Blend2D
+        install_blend2d_args = {
+            'version': version['BLEND2D_VERSION'] + '-' + version['ASMJIT_VERSION'],
+            'version_file': os.path.join(install_dir, 'blend2d.version'),
+            'configuration': 'Debug' if debug else 'Release',
+            'source_dir': source_dir,
+            'build_dir': build_dir,
+            'install_dir': install_dir,
+            'blend2d_version': version['BLEND2D_VERSION'],
+            'asmjit_version': version['ASMJIT_VERSION'],
+            'ios': platform.target.package_name == 'ios',
+            'cmake_args': [],
+        }
+        cmake_args = []
+        if platform.target.os == 'macos':
+            sysroot = cmdcap(['xcrun', '--sdk', 'macosx', '--show-sdk-path'])
+            target = 'x86_64-apple-darwin' if platform.target.arch == 'x86_64' else 'aarch64-apple-darwin'
+            cmake_args.append(f'-DCMAKE_SYSTEM_PROCESSOR={platform.target.arch}')
+            cmake_args.append(f'-DCMAKE_OSX_ARCHITECTURES={platform.target.arch}')
+            cmake_args.append(f'-DCMAKE_C_COMPILER_TARGET={target}')
+            cmake_args.append(f'-DCMAKE_CXX_COMPILER_TARGET={target}')
+            cmake_args.append(f'-DCMAKE_OBJCXX_COMPILER_TARGET={target}')
+            cmake_args.append(f'-DCMAKE_SYSROOT={sysroot}')
+        if platform.target.os == 'ubuntu':
+            if platform.target.package_name in ('ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64'):
+                cmake_args.append("-DCMAKE_C_COMPILER=clang-15")
+                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-15")
+            else:
+                cmake_args.append(
+                    f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}")
+                cmake_args.append(
+                    f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}")
+            path = cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))
+            cmake_args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
+            cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(['-nostdinc++'])}")
+        if platform.target.os == 'jetson':
+            sysroot = os.path.join(install_dir, 'rootfs')
+            cmake_args.append('-DCMAKE_SYSTEM_NAME=Linux')
+            cmake_args.append('-DCMAKE_SYSTEM_PROCESSOR=aarch64')
+            cmake_args.append(f'-DCMAKE_SYSROOT={sysroot}')
+            cmake_args.append('-DCMAKE_C_COMPILER_TARGET=aarch64-linux-gnu')
+            cmake_args.append('-DCMAKE_CXX_COMPILER_TARGET=aarch64-linux-gnu')
+            cmake_args.append(
+                f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}")
+            cmake_args.append(
+                f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}")
+            cmake_args.append(f'-DCMAKE_FIND_ROOT_PATH={sysroot}')
+            cmake_args.append('-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER')
+            cmake_args.append('-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH')
+            cmake_args.append('-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH')
+            cmake_args.append('-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH')
+            path = cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))
+            cmake_args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
+            cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(['-nostdinc++'])}")
+        if platform.target.os == 'ios':
+            cmake_args += ['-G', 'Xcode']
+            cmake_args.append("-DCMAKE_SYSTEM_NAME=iOS")
+            cmake_args.append("-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64")
+            cmake_args.append("-DCMAKE_OSX_DEPLOYMENT_TARGET=13.0")
+            cmake_args.append("-DCMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH=NO")
+            cmake_args.append("-DBLEND2D_NO_JIT=ON")
+        if platform.target.os == 'android':
+            toolchain_file = os.path.join(install_dir, 'android-ndk', 'build', 'cmake', 'android.toolchain.cmake')
+            android_native_api_level = version['ANDROID_NATIVE_API_LEVEL']
+            cmake_args.append(f"-DCMAKE_TOOLCHAIN_FILE={toolchain_file}")
+            cmake_args.append(f"-DANDROID_NATIVE_API_LEVEL={android_native_api_level}")
+            cmake_args.append(f"-DANDROID_PLATFORM={android_native_api_level}")
+            cmake_args.append('-DANDROID_ABI=arm64-v8a')
+            cmake_args.append('-DANDROID_STL=none')
+            path = cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))
+            cmake_args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
+            cmake_args.append('-DANDROID_CPP_FEATURES=exceptions rtti')
+            # r23b には ANDROID_CPP_FEATURES=exceptions でも例外が設定されない問題がある
+            # https://github.com/android/ndk/issues/1618
+            cmake_args.append('-DCMAKE_ANDROID_EXCEPTIONS=ON')
+            cmake_args.append('-DANDROID_NDK=OFF')
+            cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(['-nostdinc++'])}")
+        install_blend2d_args['cmake_args'] = cmake_args
+        install_blend2d(**install_blend2d_args)
+
 
 AVAILABLE_TARGETS = ['windows_x86_64', 'macos_x86_64', 'macos_arm64', 'ubuntu-20.04_x86_64',
                      'ubuntu-22.04_x86_64', 'ubuntu-20.04_armv8_jetson', 'ios', 'android']
@@ -1649,6 +1771,7 @@ def main():
                 cmake_args.append(f"-DWEBRTC_INCLUDE_DIR={cmake_path(webrtc_info.webrtc_include_dir)}")
                 cmake_args.append(f"-DWEBRTC_LIBRARY_DIR={cmake_path(webrtc_info.webrtc_library_dir)}")
                 cmake_args.append(f"-DSORA_DIR={cmake_path(os.path.join(install_dir, 'sora'))}")
+                cmake_args.append(f"-DBLEND2D_ROOT_DIR={cmake_path(os.path.join(install_dir, 'blend2d'))}")
                 if not args.no_lyra:
                     cmake_args.append(f"-DLYRA_DIR={cmake_path(os.path.join(install_dir, 'lyra'))}")
                 cmake_args.append(f"-DUSE_LYRA={'ON' if not args.no_lyra else 'OFF'}")
