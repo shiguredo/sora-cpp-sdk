@@ -865,7 +865,7 @@ def install_lyra(version, install_dir, base_dir, debug, target, webrtc_version, 
 
 @versioned
 def install_blend2d(version, configuration, source_dir, build_dir, install_dir,
-                    blend2d_version, asmjit_version, cmake_args):
+                    blend2d_version, asmjit_version, ios, cmake_args):
     rm_rf(os.path.join(source_dir, 'blend2d'))
     rm_rf(os.path.join(build_dir, 'blend2d'))
     rm_rf(os.path.join(install_dir, 'blend2d'))
@@ -890,8 +890,19 @@ def install_blend2d(version, configuration, source_dir, build_dir, install_dir,
             s = s.replace('MultiThreadedDLL', 'MultiThreaded')
             s = s.replace('MultiThreadedDebugDLL', 'MultiThreadedDebug')
             open(project_path, 'w', encoding='utf-8').write(s)
-        cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])
-        cmd(['cmake', '--build', '.', '--target', 'install', '--config', configuration])
+
+        if ios:
+            cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration,
+                '--target', 'blend2d', '--', '-arch', 'x86_64', '-sdk', 'iphonesimulator'])
+            cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration,
+                '--target', 'blend2d', '--', '-arch', 'arm64', '-sdk', 'iphoneos'])
+            cmd(['cmake', '--build', '.', '--target', 'install', '--config', configuration])
+            cmd(['lipo', '-create', '-output', os.path.join(install_dir, 'blend2d', 'lib', 'libblend2d.a'),
+                os.path.join(build_dir, 'blend2d', f'{configuration}-iphonesimulator', 'libblend2d.a'),
+                os.path.join(build_dir, 'blend2d', f'{configuration}-iphoneos', 'libblend2d.a')])
+        else:
+            cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])
+            cmd(['cmake', '--build', '.', '--target', 'install', '--config', configuration])
 
 
 class PlatformTarget(object):
@@ -1445,6 +1456,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             'install_dir': install_dir,
             'blend2d_version': version['BLEND2D_VERSION'],
             'asmjit_version': version['ASMJIT_VERSION'],
+            'ios': platform.target.package_name == 'ios',
             'cmake_args': [],
         }
         cmake_args = []
