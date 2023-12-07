@@ -10,11 +10,14 @@
 #include <rtc_base/win/scoped_com_initializer.h>
 #endif
 
-#include "sora/audio_device_module.h"
-#include "sora/camera_device_capturer.h"
-#include "sora/java_context.h"
-#include "sora/sora_video_decoder_factory.h"
-#include "sora/sora_video_encoder_factory.h"
+// Sora C++ SDK
+#include <sora/audio_device_module.h>
+#include <sora/camera_device_capturer.h>
+#include <sora/java_context.h>
+#include <sora/sora_video_decoder_factory.h>
+#include <sora/sora_video_encoder_factory.h>
+
+#include "fake_video_capturer.h"
 
 #if defined(HELLO_ANDROID)
 void* GetAndroidApplicationContext(void* env);
@@ -44,18 +47,16 @@ void HelloSora::Run() {
       audio_track_id,
       pc_factory()->CreateAudioSource(cricket::AudioOptions()).get());
 
-  //if (config_.mode == HelloSoraConfig::Mode::Hello) {
-  //  sora::CameraDeviceCapturerConfig cam_config;
-  //  cam_config.width = 1024;
-  //  cam_config.height = 768;
-  //  cam_config.fps = 30;
-  //  cam_config.jni_env = env;
-  //  cam_config.application_context = GetAndroidApplicationContext(env);
-  //  video_source_ = sora::CreateCameraDeviceCapturer(cam_config);
-  //  std::string video_track_id = rtc::CreateRandomString(16);
-  //  video_track_ =
-  //      pc_factory()->CreateVideoTrack(video_track_id, video_source_.get());
-  //}
+  if (config_.mode == HelloSoraConfig::Mode::Hello) {
+    FakeVideoCapturerConfig fake_config;
+    fake_config.width = 1024;
+    fake_config.height = 768;
+    fake_config.fps = 30;
+    video_source_ = CreateFakeVideoCapturer(fake_config);
+    std::string video_track_id = rtc::CreateRandomString(16);
+    video_track_ =
+        pc_factory()->CreateVideoTrack(video_track_id, video_source_.get());
+  }
 
   ioc_.reset(new boost::asio::io_context(1));
 
