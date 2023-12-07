@@ -1488,11 +1488,17 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             cmake_args.append(f'-DCMAKE_SYSROOT={sysroot}')
             cmake_args.append('-DCMAKE_C_COMPILER_TARGET=aarch64-linux-gnu')
             cmake_args.append('-DCMAKE_CXX_COMPILER_TARGET=aarch64-linux-gnu')
+            cmake_args.append(
+                f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}")
+            cmake_args.append(
+                f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}")
             cmake_args.append(f'-DCMAKE_FIND_ROOT_PATH={sysroot}')
             cmake_args.append('-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER')
             cmake_args.append('-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH')
             cmake_args.append('-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH')
             cmake_args.append('-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH')
+            path = cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))
+            cmake_args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
             cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(['-nostdinc++'])}")
         if platform.target.os == 'ios':
             cmake_args += ['-G', 'Xcode']
