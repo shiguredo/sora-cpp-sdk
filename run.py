@@ -1518,6 +1518,7 @@ def main():
             target = 'x86_64-apple-darwin' if platform.target.arch == 'x86_64' else 'aarch64-apple-darwin'
             cmake_args.append(f'-DCMAKE_SYSTEM_PROCESSOR={platform.target.arch}')
             cmake_args.append(f'-DCMAKE_OSX_ARCHITECTURES={platform.target.arch}')
+            cmake_args.append("-DCMAKE_OSX_DEPLOYMENT_TARGET=10.11")
             cmake_args.append(f'-DCMAKE_C_COMPILER_TARGET={target}')
             cmake_args.append(f'-DCMAKE_CXX_COMPILER_TARGET={target}')
             cmake_args.append(f'-DCMAKE_OBJCXX_COMPILER_TARGET={target}')
@@ -1612,12 +1613,13 @@ def main():
                 shutil.copytree(model_src, model_dst)
 
             # iOS の場合は事前に用意したプロジェクトをビルドする
-            cmd(['xcodebuild', 'build',
-                '-project', 'test/ios/hello.xcodeproj',
-                 '-target', 'hello',
-                 '-arch', 'x86_64',
-                 '-sdk', 'iphonesimulator',
-                 '-configuration', 'Release'])
+            # → libwebrtc.a から x64 のビルドが無くなったのでとりあえずビルドを諦める
+            # cmd(['xcodebuild', 'build',
+            #     '-project', 'test/ios/hello.xcodeproj',
+            #      '-target', 'hello',
+            #      '-arch', 'x86_64',
+            #      '-sdk', 'iphonesimulator',
+            #      '-configuration', 'Release'])
             # こっちは signing が必要になるのでやらない
             # cmd(['xcodebuild', 'build',
             #      '-project', 'test/ios/hello.xcodeproj',
