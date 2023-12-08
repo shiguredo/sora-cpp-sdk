@@ -49,8 +49,8 @@ void HelloSora::Run() {
 
   if (config_.mode == HelloSoraConfig::Mode::Hello) {
     FakeVideoCapturerConfig fake_config;
-    fake_config.width = 1024;
-    fake_config.height = 768;
+    fake_config.width = config_.capture_width;
+    fake_config.height = config_.capture_height;
     fake_config.fps = 30;
     video_source_ = CreateFakeVideoCapturer(fake_config);
     std::string video_track_id = rtc::CreateRandomString(16);
@@ -68,8 +68,10 @@ void HelloSora::Run() {
   config.channel_id = config_.channel_id;
   config.sora_client = "Hello Sora";
   config.role = config_.role;
-  config.video_codec_type = "H264";
+  config.video_codec_type = config_.video_codec_type;
+  config.video_bit_rate = config_.video_bit_rate;
   config.multistream = true;
+  config.simulcast = config_.simulcast;
   if (config_.mode == HelloSoraConfig::Mode::Lyra) {
     config.video = false;
     config.sora_client = "Hello Sora with Lyra";
@@ -131,10 +133,6 @@ int main(int argc, char* argv[]) {
   rtc::LogMessage::LogTimestamps();
   rtc::LogMessage::LogThreads();
 
-  sora::SoraClientContextConfig context_config;
-  context_config.get_android_application_context = GetAndroidApplicationContext;
-  auto context = sora::SoraClientContext::Create(context_config);
-
   boost::json::value v;
   {
     std::ifstream ifs(argv[1]);
@@ -148,7 +146,6 @@ int main(int argc, char* argv[]) {
     config.signaling_urls.push_back(x.as_string().c_str());
   }
   config.channel_id = v.as_object().at("channel_id").as_string().c_str();
-  config.role = "sendonly";
   if (auto it = v.as_object().find("role"); it != v.as_object().end()) {
     config.role = it->value().as_string();
   }
@@ -157,6 +154,33 @@ int main(int argc, char* argv[]) {
       config.mode = HelloSoraConfig::Mode::Lyra;
     }
   }
+  if (auto it = v.as_object().find("capture_width");
+      it != v.as_object().end()) {
+    config.capture_width = boost::json::value_to<int>(it->value());
+  }
+  if (auto it = v.as_object().find("capture_height");
+      it != v.as_object().end()) {
+    config.capture_height = boost::json::value_to<int>(it->value());
+  }
+  if (auto it = v.as_object().find("video_bit_rate");
+      it != v.as_object().end()) {
+    config.video_bit_rate = boost::json::value_to<int>(it->value());
+  }
+  if (auto it = v.as_object().find("video_codec_type");
+      it != v.as_object().end()) {
+    config.video_codec_type = it->value().as_string();
+  }
+  if (auto it = v.as_object().find("simulcast"); it != v.as_object().end()) {
+    config.simulcast = it->value().as_bool();
+  }
+
+  sora::SoraClientContextConfig context_config;
+  context_config.get_android_application_context = GetAndroidApplicationContext;
+  if (auto it = v.as_object().find("use_hardware_encoder");
+      it != v.as_object().end()) {
+    context_config.use_hardware_encoder = it->value().as_bool();
+  }
+  auto context = sora::SoraClientContext::Create(context_config);
 
   auto hello = std::make_shared<HelloSora>(context, config);
   hello->Run();
