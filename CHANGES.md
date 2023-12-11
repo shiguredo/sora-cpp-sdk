@@ -11,6 +11,10 @@
 
 ## develop
 
+- [UPDATE] WebRTC を `m120.6099.1.1` に上げる
+  - `m120.6099.1.1` より x86 シミュレータビルドがなくなったため、CI で ios の test ビルドを行わなくした
+  - @melpon @enm10k @torikizi @miosakuma
+
 ## 2023.16.1 (2023-12-02)
 
 - [FIX] WebRTC を `m119.6045.2.2` に上げる
