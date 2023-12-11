@@ -93,7 +93,7 @@ int32_t NvCodecVideoDecoder::Decode(const webrtc::EncodedImage& input_image,
     output_info_ = true;
   }
 
-  uint32_t pts = input_image.Timestamp();
+  uint32_t pts = input_image.RtpTimestamp();
 
   for (int i = 0; i < frame_count; i++) {
     auto* frame = decoder_->GetLockedFrame();

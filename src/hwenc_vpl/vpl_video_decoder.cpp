@@ -223,7 +223,7 @@ int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
   }
 
   // これだとキューイングしたデータとずれるので、本当は surface と一緒に保存して利用するべき
-  uint64_t pts = input_image.Timestamp();
+  uint64_t pts = input_image.RtpTimestamp();
 
   mfxStatus sts;
   mfxSyncPoint syncp;
