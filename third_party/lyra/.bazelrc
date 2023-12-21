@@ -148,14 +148,11 @@ build:windows --host_copt=-D__PRETTY_FUNCTION__=__FUNCSIG__
 build:windows --copt=-D__PRETTY_FUNCTION__=__FUNCSIG__
 
 build:macos_arm64 --cpu=darwin_arm64
-build:macos_arm64 --macos_minimum_os=10.13
 
 build:ios_simulator --cpu=ios_x86_64
 build:ios_simulator --apple_platform_type=ios
-build:ios_simulator --ios_minimum_os=13.0
 build:ios_device --cpu=ios_arm64
 build:ios_device --apple_platform_type=ios
-build:ios_device --ios_minimum_os=13.0
 
 build:linux_x86_64 --crosstool_top=@webrtc_clang_toolchain//:toolchain
 build:linux_x86_64 --host_crosstool_top=@webrtc_clang_toolchain//:toolchain
