@@ -1232,11 +1232,13 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             install_boost_args['cxx'] = 'clang++'
             install_boost_args['cflags'] = [
                 f"--sysroot={sysroot}",
+                "-mmacosx-version-min=10.11",
             ]
             install_boost_args['cxxflags'] = [
                 '-fPIC',
                 f"--sysroot={sysroot}",
-                '-std=gnu++17'
+                '-std=gnu++17',
+                "-mmacosx-version-min=10.11",
             ]
             install_boost_args['visibility'] = 'hidden'
             if platform.target.arch == 'x86_64':
@@ -1465,6 +1467,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             target = 'x86_64-apple-darwin' if platform.target.arch == 'x86_64' else 'aarch64-apple-darwin'
             cmake_args.append(f'-DCMAKE_SYSTEM_PROCESSOR={platform.target.arch}')
             cmake_args.append(f'-DCMAKE_OSX_ARCHITECTURES={platform.target.arch}')
+            cmake_args.append("-DCMAKE_OSX_DEPLOYMENT_TARGET=10.11")
             cmake_args.append(f'-DCMAKE_C_COMPILER_TARGET={target}')
             cmake_args.append(f'-DCMAKE_CXX_COMPILER_TARGET={target}')
             cmake_args.append(f'-DCMAKE_OBJCXX_COMPILER_TARGET={target}')
@@ -1782,6 +1785,7 @@ def main():
                     target = 'x86_64-apple-darwin' if platform.target.arch == 'x86_64' else 'aarch64-apple-darwin'
                     cmake_args.append(f'-DCMAKE_SYSTEM_PROCESSOR={platform.target.arch}')
                     cmake_args.append(f'-DCMAKE_OSX_ARCHITECTURES={platform.target.arch}')
+                    cmake_args.append("-DCMAKE_OSX_DEPLOYMENT_TARGET=10.11")
                     cmake_args.append(f'-DCMAKE_C_COMPILER_TARGET={target}')
                     cmake_args.append(f'-DCMAKE_CXX_COMPILER_TARGET={target}')
                     cmake_args.append(f'-DCMAKE_OBJCXX_COMPILER_TARGET={target}')
