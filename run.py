@@ -842,11 +842,10 @@ def install_lyra(version, install_dir, base_dir, debug, target, webrtc_version, 
                  '--config', 'ios_device',
                  '--ios_minimum_os', webrtc_deps['IOS_DEPLOYMENT_TARGET'],
                  ':lyra'])
-            cfg = 'dbg' if debug else 'opt'
+            # cfg = 'dbg' if debug else 'opt'
             # cmd(['lipo', '-create', '-output', os.path.join('bazel-bin', 'liblyra.a'),
             #     os.path.join('bazel-out', f'ios_arm64-{cfg}', 'bin', 'liblyra.a'),
             #      os.path.join('bazel-out', f'ios_x86_64-{cfg}', 'bin', 'liblyra.a')])
-            shutil.copyfile(os.path.join('bazel-out', f'ios_arm64-{cfg}', 'bin', 'liblyra.a'), os.path.join('bazel-bin', 'liblyra.a'))
         else:
             cmd(['bazel', 'build', *opts, ':lyra'])
 
@@ -1259,7 +1258,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                 f"-miphoneos-version-min={webrtc_deps['IOS_DEPLOYMENT_TARGET']}",
             ]
             install_boost_args['cxxflags'] = [
-                '-std=gnu++17'
+                '-std=gnu++17',
                 f"-miphoneos-version-min={webrtc_deps['IOS_DEPLOYMENT_TARGET']}",
             ]
             install_boost_args['visibility'] = 'hidden'
