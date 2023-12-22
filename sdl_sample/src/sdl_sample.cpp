@@ -218,7 +218,7 @@ int main(int argc, char* argv[]) {
   app.add_option("--audio", config.audio, "Send audio to sora (default: true)");
   app.add_option("--video-codec-type", config.video_codec_type,
                  "Video codec for send")
-      ->check(CLI::IsMember({"", "VP8", "VP9", "AV1", "H264"}));
+      ->check(CLI::IsMember({"", "VP8", "VP9", "AV1", "H264", "H265"}));
   app.add_option("--audio-codec-type", config.audio_codec_type,
                  "Audio codec for send")
       ->check(CLI::IsMember({"", "OPUS", "LYRA"}));

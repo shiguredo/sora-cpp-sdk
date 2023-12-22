@@ -205,7 +205,7 @@ $ ./momo_sample --signaling-url wss://sora.example.com/signaling --role sendrecv
 - `--audio` : 音声の利用 (true/false)
     - 未指定の場合は true が設定されます
 - `--video-codec-type` : [ビデオコーデック指定](https://sora-doc.shiguredo.jp/SIGNALING#d47f4d)
-    - VP8 / VP9 / AV1 / H264 が指定可能ですが利用可能なコーデックはプラットフォームに依存します
+    - VP8 / VP9 / AV1 / H264 / H265 が指定可能ですが利用可能なコーデックはプラットフォームに依存します
     - 未指定の場合は Sora のデフォルトである VP9 が利用されます
 - `--audio-codec-type` : [オーディオコーデック指定](https://sora-doc.shiguredo.jp/SIGNALING#0fcf4e)
     - OPUS が指定可能です
