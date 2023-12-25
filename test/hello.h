@@ -6,12 +6,17 @@
 struct HelloSoraConfig {
   std::vector<std::string> signaling_urls;
   std::string channel_id;
-  std::string role;
+  std::string role = "sendonly";
   enum class Mode {
     Hello,
     Lyra,
   };
   Mode mode = Mode::Hello;
+  int capture_width = 1024;
+  int capture_height = 768;
+  int video_bit_rate = 0;
+  std::string video_codec_type = "H264";
+  bool simulcast = false;
 };
 
 class HelloSora : public std::enable_shared_from_this<HelloSora>,

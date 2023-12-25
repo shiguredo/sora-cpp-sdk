@@ -1647,17 +1647,20 @@ void SoraSignaling::OnMessage(
   }
 
   if (label == "stats") {
-    pc_->GetStats(
-        RTCStatsCallback::Create(
-            [self = shared_from_this()](
-                const rtc::scoped_refptr<const webrtc::RTCStatsReport>&
-                    report) {
-              if (self->state_ != State::Connected) {
-                return;
-              }
-              self->DoSendPong(report);
-            })
-            .get());
+    const std::string type = json.at("type").as_string().c_str();
+    if (type == "req-stats") {
+      pc_->GetStats(
+          RTCStatsCallback::Create(
+              [self = shared_from_this()](
+                  const rtc::scoped_refptr<const webrtc::RTCStatsReport>&
+                      report) {
+                if (self->state_ != State::Connected) {
+                  return;
+                }
+                self->DoSendPong(report);
+              })
+              .get());
+    }
     return;
   }
 

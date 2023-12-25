@@ -416,6 +416,7 @@ def build_install_webrtc(version, source_dir, build_dir, install_dir, platform, 
 
 class WebrtcInfo(NamedTuple):
     version_file: str
+    deps_file: str
     webrtc_include_dir: str
     webrtc_library_dir: str
     clang_dir: str
@@ -430,6 +431,7 @@ def get_webrtc_info(webrtcbuild: bool, source_dir: str, build_dir: str, install_
     if webrtcbuild:
         return WebrtcInfo(
             version_file=os.path.join(source_dir, 'webrtc-build', 'VERSION'),
+            deps_file=os.path.join(source_dir, 'webrtc-build', 'DEPS'),
             webrtc_include_dir=os.path.join(webrtc_source_dir, 'src'),
             webrtc_library_dir=os.path.join(webrtc_build_dir, 'obj')
             if platform.system() == 'Windows' else webrtc_build_dir, clang_dir=os.path.join(
@@ -438,6 +440,7 @@ def get_webrtc_info(webrtcbuild: bool, source_dir: str, build_dir: str, install_
     else:
         return WebrtcInfo(
             version_file=os.path.join(webrtc_install_dir, 'VERSIONS'),
+            deps_file=os.path.join(webrtc_install_dir, 'DEPS'),
             webrtc_include_dir=os.path.join(webrtc_install_dir, 'include'),
             webrtc_library_dir=os.path.join(install_dir, 'webrtc', 'lib'),
             clang_dir=os.path.join(install_dir, 'llvm', 'clang'),
@@ -548,9 +551,7 @@ def install_boost(
         cmd([bootstrap])
 
         if target_os == 'iphone':
-            # iOS の場合、シミュレータとデバイス用のライブラリを作って
-            # lipo で結合する
-            IOS_BUILD_TARGETS = [('x86_64', 'iphonesimulator'), ('arm64', 'iphoneos')]
+            IOS_BUILD_TARGETS = [('arm64', 'iphoneos')]
             for arch, sdk in IOS_BUILD_TARGETS:
                 clangpp = cmdcap(['xcodebuild', '-find', 'clang++'])
                 sysroot = cmdcap(['xcrun', '--sdk', sdk, '--show-sdk-path'])
@@ -597,7 +598,10 @@ def install_boost(
                     continue
                 files = [os.path.join(build_dir, 'boost', f'install-{arch}-{sdk}', 'lib', lib)
                          for arch, sdk in IOS_BUILD_TARGETS]
-                cmd(['lipo', '-create', '-output', os.path.join(install_dir, 'boost', 'lib', lib)] + files)
+                if len(files) == 1:
+                    shutil.copyfile(files[0], os.path.join(install_dir, 'boost', 'lib', lib))
+                else:
+                    cmd(['lipo', '-create', '-output', os.path.join(install_dir, 'boost', 'lib', lib)] + files)
         elif target_os == 'android':
             # Android の場合、android-ndk を使ってビルドする
             with open('project-config.jam', 'w') as f:
@@ -746,7 +750,7 @@ def install_vpl(version, configuration, source_dir, build_dir, install_dir, cmak
 
 
 @versioned
-def install_lyra(version, install_dir, base_dir, debug, target, webrtc_version, webrtc_info, api_level, temp_dir):
+def install_lyra(version, install_dir, base_dir, debug, target, webrtc_version, webrtc_info, webrtc_deps, api_level, temp_dir):
     lyra_install_dir = os.path.join(install_dir, 'lyra')
     rm_rf(lyra_install_dir)
 
@@ -814,7 +818,8 @@ def install_lyra(version, install_dir, base_dir, debug, target, webrtc_version, 
             os.environ['BAZEL_WEBRTC_INCLUDE_DIR'] = webrtc_info.webrtc_include_dir
             os.environ['BAZEL_WEBRTC_LIBRARY_DIR'] = webrtc_info.webrtc_library_dir
         if target == 'macos_arm64':
-            opts += ['--config', 'macos_arm64']
+            opts += ['--config', 'macos_arm64',
+                     '--macos_minimum_os', webrtc_deps['MACOS_DEPLOYMENT_TARGET']]
         if target == 'android':
             opts += ['--config', 'android_arm64']
 
@@ -833,13 +838,14 @@ def install_lyra(version, install_dir, base_dir, debug, target, webrtc_version, 
             logging.info(f'ANDROID_NDK_HOME={os.environ["ANDROID_NDK_HOME"]}')
 
         if target == 'ios':
-            # iOS の場合は2回ビルドしてlipoで固める
-            cmd(['bazel', 'build', *opts, '--config', 'ios_device', ':lyra'])
-            cmd(['bazel', 'build', *opts, '--config', 'ios_simulator', ':lyra'])
-            cfg = 'dbg' if debug else 'opt'
-            cmd(['lipo', '-create', '-output', os.path.join('bazel-bin', 'liblyra.a'),
-                os.path.join('bazel-out', f'ios_arm64-{cfg}', 'bin', 'liblyra.a'),
-                 os.path.join('bazel-out', f'ios_x86_64-{cfg}', 'bin', 'liblyra.a')])
+            cmd(['bazel', 'build', *opts,
+                 '--config', 'ios_device',
+                 '--ios_minimum_os', webrtc_deps['IOS_DEPLOYMENT_TARGET'],
+                 ':lyra'])
+            # cfg = 'dbg' if debug else 'opt'
+            # cmd(['lipo', '-create', '-output', os.path.join('bazel-bin', 'liblyra.a'),
+            #     os.path.join('bazel-out', f'ios_arm64-{cfg}', 'bin', 'liblyra.a'),
+            #      os.path.join('bazel-out', f'ios_x86_64-{cfg}', 'bin', 'liblyra.a')])
         else:
             cmd(['bazel', 'build', *opts, ':lyra'])
 
@@ -861,6 +867,43 @@ def install_lyra(version, install_dir, base_dir, debug, target, webrtc_version, 
         shutil.copyfile(lib_src, lib_dst)
         shutil.copytree(model_src, model_dst)
         shutil.copyfile(include_src, include_dst)
+
+
+@versioned
+def install_blend2d(version, configuration, source_dir, build_dir, install_dir,
+                    blend2d_version, asmjit_version, ios, cmake_args):
+    rm_rf(os.path.join(source_dir, 'blend2d'))
+    rm_rf(os.path.join(build_dir, 'blend2d'))
+    rm_rf(os.path.join(install_dir, 'blend2d'))
+
+    git_clone_shallow('https://github.com/blend2d/blend2d',
+                      blend2d_version, os.path.join(source_dir, 'blend2d'))
+    mkdir_p(os.path.join(source_dir, 'blend2d', '3rdparty'))
+    git_clone_shallow('https://github.com/asmjit/asmjit', asmjit_version,
+                      os.path.join(source_dir, 'blend2d', '3rdparty', 'asmjit'))
+
+    mkdir_p(os.path.join(build_dir, 'blend2d'))
+    with cd(os.path.join(build_dir, 'blend2d')):
+        cmd(['cmake', os.path.join(source_dir, 'blend2d'),
+             f"-DCMAKE_BUILD_TYPE={configuration}",
+             f"-DCMAKE_INSTALL_PREFIX={cmake_path(os.path.join(install_dir, 'blend2d'))}",
+             '-DBLEND2D_STATIC=ON',
+             *cmake_args])
+        # 生成されたプロジェクトに対して静的ランタイムを使うように変更する
+        project_path = os.path.join(build_dir, 'blend2d', 'blend2d.vcxproj')
+        if os.path.exists(project_path):
+            s = open(project_path, 'r', encoding='utf-8').read()
+            s = s.replace('MultiThreadedDLL', 'MultiThreaded')
+            s = s.replace('MultiThreadedDebugDLL', 'MultiThreadedDebug')
+            open(project_path, 'w', encoding='utf-8').write(s)
+
+        if ios:
+            cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration,
+                '--target', 'blend2d', '--', '-arch', 'arm64', '-sdk', 'iphoneos'])
+            cmd(['cmake', '--build', '.', '--target', 'install', '--config', configuration])
+        else:
+            cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])
+            cmd(['cmake', '--build', '.', '--target', 'install', '--config', configuration])
 
 
 class PlatformTarget(object):
@@ -1131,6 +1174,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
 
         webrtc_info = get_webrtc_info(webrtcbuild, source_dir, build_dir, install_dir)
         webrtc_version = read_version_file(webrtc_info.version_file)
+        webrtc_deps = read_version_file(webrtc_info.deps_file)
 
         # Windows は MSVC を使うので不要
         # macOS と iOS は Apple Clang を使うので不要
@@ -1190,11 +1234,13 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             install_boost_args['cxx'] = 'clang++'
             install_boost_args['cflags'] = [
                 f"--sysroot={sysroot}",
+                f"-mmacosx-version-min={webrtc_deps['MACOS_DEPLOYMENT_TARGET']}",
             ]
             install_boost_args['cxxflags'] = [
                 '-fPIC',
                 f"--sysroot={sysroot}",
-                '-std=gnu++17'
+                '-std=gnu++17',
+                f"-mmacosx-version-min={webrtc_deps['MACOS_DEPLOYMENT_TARGET']}",
             ]
             install_boost_args['visibility'] = 'hidden'
             if platform.target.arch == 'x86_64':
@@ -1208,8 +1254,12 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
         elif platform.target.os == 'ios':
             install_boost_args['target_os'] = 'iphone'
             install_boost_args['toolset'] = 'clang'
+            install_boost_args['cflags'] = [
+                f"-miphoneos-version-min={webrtc_deps['IOS_DEPLOYMENT_TARGET']}",
+            ]
             install_boost_args['cxxflags'] = [
-                '-std=gnu++17'
+                '-std=gnu++17',
+                f"-miphoneos-version-min={webrtc_deps['IOS_DEPLOYMENT_TARGET']}",
             ]
             install_boost_args['visibility'] = 'hidden'
         elif platform.target.os == 'android':
@@ -1397,12 +1447,94 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                 'debug': debug,
                 'target': platform.target.package_name,
                 'webrtc_version': webrtc_version,
+                'webrtc_deps': webrtc_deps,
                 'webrtc_info': webrtc_info,
                 'api_level': version['ANDROID_NATIVE_API_LEVEL'],
                 # run.py の引数から拾ってくるのが面倒なので環境変数を使う
                 'temp_dir': os.environ.get('SORA_CPP_SDK_TEMP_DIR'),
             }
             install_lyra(**install_lyra_args)
+
+        # Blend2D
+        install_blend2d_args = {
+            'version': version['BLEND2D_VERSION'] + '-' + version['ASMJIT_VERSION'],
+            'version_file': os.path.join(install_dir, 'blend2d.version'),
+            'configuration': 'Debug' if debug else 'Release',
+            'source_dir': source_dir,
+            'build_dir': build_dir,
+            'install_dir': install_dir,
+            'blend2d_version': version['BLEND2D_VERSION'],
+            'asmjit_version': version['ASMJIT_VERSION'],
+            'ios': platform.target.package_name == 'ios',
+            'cmake_args': [],
+        }
+        cmake_args = []
+        if platform.target.os == 'macos':
+            sysroot = cmdcap(['xcrun', '--sdk', 'macosx', '--show-sdk-path'])
+            target = 'x86_64-apple-darwin' if platform.target.arch == 'x86_64' else 'aarch64-apple-darwin'
+            cmake_args.append(f'-DCMAKE_SYSTEM_PROCESSOR={platform.target.arch}')
+            cmake_args.append(f'-DCMAKE_OSX_ARCHITECTURES={platform.target.arch}')
+            cmake_args.append(f"-DCMAKE_OSX_DEPLOYMENT_TARGET={webrtc_deps['MACOS_DEPLOYMENT_TARGET']}")
+            cmake_args.append(f'-DCMAKE_C_COMPILER_TARGET={target}')
+            cmake_args.append(f'-DCMAKE_CXX_COMPILER_TARGET={target}')
+            cmake_args.append(f'-DCMAKE_OBJCXX_COMPILER_TARGET={target}')
+            cmake_args.append(f'-DCMAKE_SYSROOT={sysroot}')
+        if platform.target.os == 'ubuntu':
+            if platform.target.package_name in ('ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64'):
+                cmake_args.append("-DCMAKE_C_COMPILER=clang-15")
+                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-15")
+            else:
+                cmake_args.append(
+                    f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}")
+                cmake_args.append(
+                    f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}")
+            path = cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))
+            cmake_args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
+            cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(['-nostdinc++'])}")
+        if platform.target.os == 'jetson':
+            sysroot = os.path.join(install_dir, 'rootfs')
+            cmake_args.append('-DCMAKE_SYSTEM_NAME=Linux')
+            cmake_args.append('-DCMAKE_SYSTEM_PROCESSOR=aarch64')
+            cmake_args.append(f'-DCMAKE_SYSROOT={sysroot}')
+            cmake_args.append('-DCMAKE_C_COMPILER_TARGET=aarch64-linux-gnu')
+            cmake_args.append('-DCMAKE_CXX_COMPILER_TARGET=aarch64-linux-gnu')
+            cmake_args.append(
+                f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}")
+            cmake_args.append(
+                f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}")
+            cmake_args.append(f'-DCMAKE_FIND_ROOT_PATH={sysroot}')
+            cmake_args.append('-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER')
+            cmake_args.append('-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH')
+            cmake_args.append('-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH')
+            cmake_args.append('-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH')
+            path = cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))
+            cmake_args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
+            cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(['-nostdinc++'])}")
+        if platform.target.os == 'ios':
+            cmake_args += ['-G', 'Xcode']
+            cmake_args.append("-DCMAKE_SYSTEM_NAME=iOS")
+            cmake_args.append("-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64")
+            cmake_args.append(f"-DCMAKE_OSX_DEPLOYMENT_TARGET={webrtc_deps['IOS_DEPLOYMENT_TARGET']}")
+            cmake_args.append("-DCMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH=NO")
+            cmake_args.append("-DBLEND2D_NO_JIT=ON")
+        if platform.target.os == 'android':
+            toolchain_file = os.path.join(install_dir, 'android-ndk', 'build', 'cmake', 'android.toolchain.cmake')
+            android_native_api_level = version['ANDROID_NATIVE_API_LEVEL']
+            cmake_args.append(f"-DCMAKE_TOOLCHAIN_FILE={toolchain_file}")
+            cmake_args.append(f"-DANDROID_NATIVE_API_LEVEL={android_native_api_level}")
+            cmake_args.append(f"-DANDROID_PLATFORM={android_native_api_level}")
+            cmake_args.append('-DANDROID_ABI=arm64-v8a')
+            cmake_args.append('-DANDROID_STL=none')
+            path = cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))
+            cmake_args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
+            cmake_args.append('-DANDROID_CPP_FEATURES=exceptions rtti')
+            # r23b には ANDROID_CPP_FEATURES=exceptions でも例外が設定されない問題がある
+            # https://github.com/android/ndk/issues/1618
+            cmake_args.append('-DCMAKE_ANDROID_EXCEPTIONS=ON')
+            cmake_args.append('-DANDROID_NDK=OFF')
+            cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(['-nostdinc++'])}")
+        install_blend2d_args['cmake_args'] = cmake_args
+        install_blend2d(**install_blend2d_args)
 
 
 AVAILABLE_TARGETS = ['windows_x86_64', 'macos_x86_64', 'macos_arm64', 'ubuntu-20.04_x86_64',
@@ -1483,6 +1615,7 @@ def main():
         cmake_args.append(f"-DUSE_LYRA={'ON' if not args.no_lyra else 'OFF'}")
         webrtc_info = get_webrtc_info(args.webrtcbuild, source_dir, build_dir, install_dir)
         webrtc_version = read_version_file(webrtc_info.version_file)
+        webrtc_deps = read_version_file(webrtc_info.deps_file)
         with cd(BASE_DIR):
             version = read_version_file('VERSION')
             sora_cpp_sdk_version = version['SORA_CPP_SDK_VERSION']
@@ -1518,6 +1651,7 @@ def main():
             target = 'x86_64-apple-darwin' if platform.target.arch == 'x86_64' else 'aarch64-apple-darwin'
             cmake_args.append(f'-DCMAKE_SYSTEM_PROCESSOR={platform.target.arch}')
             cmake_args.append(f'-DCMAKE_OSX_ARCHITECTURES={platform.target.arch}')
+            cmake_args.append(f"-DCMAKE_OSX_DEPLOYMENT_TARGET={webrtc_deps['MACOS_DEPLOYMENT_TARGET']}")
             cmake_args.append(f'-DCMAKE_C_COMPILER_TARGET={target}')
             cmake_args.append(f'-DCMAKE_CXX_COMPILER_TARGET={target}')
             cmake_args.append(f'-DCMAKE_OBJCXX_COMPILER_TARGET={target}')
@@ -1526,7 +1660,7 @@ def main():
             cmake_args += ['-G', 'Xcode']
             cmake_args.append("-DCMAKE_SYSTEM_NAME=iOS")
             cmake_args.append("-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64")
-            cmake_args.append("-DCMAKE_OSX_DEPLOYMENT_TARGET=13.0")
+            cmake_args.append(f"-DCMAKE_OSX_DEPLOYMENT_TARGET={webrtc_deps['IOS_DEPLOYMENT_TARGET']}")
             cmake_args.append("-DCMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH=NO")
         if platform.target.os == 'android':
             toolchain_file = os.path.join(install_dir, 'android-ndk', 'build', 'cmake', 'android.toolchain.cmake')
@@ -1579,16 +1713,8 @@ def main():
         cmd(['cmake', BASE_DIR] + cmake_args)
         if platform.target.os == 'ios':
             cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration,
-                '--target', 'sora', '--', '-arch', 'x86_64', '-sdk', 'iphonesimulator'])
-            cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration,
                 '--target', 'sora', '--', '-arch', 'arm64', '-sdk', 'iphoneos'])
-            # 後でライブラリは差し替えるけど、他のデータをコピーするためにとりあえず install は呼んでおく
             cmd(['cmake', '--install', '.'])
-            cmd(['lipo', '-create', '-output', os.path.join(build_dir, 'sora', 'libsora.a'),
-                os.path.join(build_dir, 'sora', f'{configuration}-iphonesimulator', 'libsora.a'),
-                os.path.join(build_dir, 'sora', f'{configuration}-iphoneos', 'libsora.a')])
-            shutil.copyfile(os.path.join(build_dir, 'sora', 'libsora.a'),
-                            os.path.join(install_dir, 'sora', 'lib', 'libsora.a'))
         else:
             cmd(['cmake', '--build', '.', f'-j{multiprocessing.cpu_count()}', '--config', configuration])
             cmd(['cmake', '--install', '.', '--config', configuration])
@@ -1612,12 +1738,13 @@ def main():
                 shutil.copytree(model_src, model_dst)
 
             # iOS の場合は事前に用意したプロジェクトをビルドする
-            cmd(['xcodebuild', 'build',
-                '-project', 'test/ios/hello.xcodeproj',
-                 '-target', 'hello',
-                 '-arch', 'x86_64',
-                 '-sdk', 'iphonesimulator',
-                 '-configuration', 'Release'])
+            # → libwebrtc.a から x64 のビルドが無くなったのでとりあえずビルドを諦める
+            # cmd(['xcodebuild', 'build',
+            #     '-project', 'test/ios/hello.xcodeproj',
+            #      '-target', 'hello',
+            #      '-arch', 'x86_64',
+            #      '-sdk', 'iphonesimulator',
+            #      '-configuration', 'Release'])
             # こっちは signing が必要になるのでやらない
             # cmd(['xcodebuild', 'build',
             #      '-project', 'test/ios/hello.xcodeproj',
@@ -1649,6 +1776,7 @@ def main():
                 cmake_args.append(f"-DWEBRTC_INCLUDE_DIR={cmake_path(webrtc_info.webrtc_include_dir)}")
                 cmake_args.append(f"-DWEBRTC_LIBRARY_DIR={cmake_path(webrtc_info.webrtc_library_dir)}")
                 cmake_args.append(f"-DSORA_DIR={cmake_path(os.path.join(install_dir, 'sora'))}")
+                cmake_args.append(f"-DBLEND2D_ROOT_DIR={cmake_path(os.path.join(install_dir, 'blend2d'))}")
                 if not args.no_lyra:
                     cmake_args.append(f"-DLYRA_DIR={cmake_path(os.path.join(install_dir, 'lyra'))}")
                 cmake_args.append(f"-DUSE_LYRA={'ON' if not args.no_lyra else 'OFF'}")
@@ -1657,6 +1785,7 @@ def main():
                     target = 'x86_64-apple-darwin' if platform.target.arch == 'x86_64' else 'aarch64-apple-darwin'
                     cmake_args.append(f'-DCMAKE_SYSTEM_PROCESSOR={platform.target.arch}')
                     cmake_args.append(f'-DCMAKE_OSX_ARCHITECTURES={platform.target.arch}')
+                    cmake_args.append(f"-DCMAKE_OSX_DEPLOYMENT_TARGET={webrtc_deps['MACOS_DEPLOYMENT_TARGET']}")
                     cmake_args.append(f'-DCMAKE_C_COMPILER_TARGET={target}')
                     cmake_args.append(f'-DCMAKE_CXX_COMPILER_TARGET={target}')
                     cmake_args.append(f'-DCMAKE_OBJCXX_COMPILER_TARGET={target}')

@@ -25,7 +25,7 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
     - NVIDIA Jetson Video HWA
         - VP9 / AV1 / H.264
     - Apple macOS / iOS Video Toolbox
-        - H.264
+        - H.264 / H.265
     - Google Android HWA
         - VP8 / VP9 / H.264
     - [Intel oneVPL](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onevpl.html) (Intel Media SDK の後継)
@@ -42,7 +42,7 @@ https://github.com/shiguredo/sora-cpp-sdk/releases
 
 ## 対応 Sora
 
-- WebRTC SFU Sora 2023.1.0 以降
+- WebRTC SFU Sora 2023.2.0 以降
 
 ## 動作環境
 
