@@ -11,6 +11,10 @@
 
 ## develop
 
+- [UPDATE]
+  - momo_sample と sdl_sample のビデオコーデックに H265 を指定可能にする
+  - @miosakuma
+
 ## sora-cpp-sdk-2023.15.0
 
 - [UPDATE]

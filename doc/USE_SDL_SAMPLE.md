@@ -199,7 +199,7 @@ $ ./sdl_sample --signaling-url wss://sora.example.com/signaling --role sendrecv 
 設定内容については [Sora のドキュメント](https://sora-doc.shiguredo.jp/SIGNALING) も参考にしてください。
 
 - `--video-codec-type` : [ビデオコーデック指定](https://sora-doc.shiguredo.jp/SIGNALING#d47f4d)
-    - VP8 / VP9 / AV1 / H264 が指定可能ですが利用可能なコーデックはプラットフォームに依存します
+    - VP8 / VP9 / AV1 / H264 / H265 が指定可能ですが利用可能なコーデックはプラットフォームに依存します
     - 未指定の場合は Sora のデフォルトである VP9 が利用されます
 - `--multistream` : [マルチストリーム](https://sora-doc.shiguredo.jp/SIGNALING#808bc2) 機能の利用 (true/false)
     - 未指定の場合は Sora の設定 (デフォルト: true) が設定されます
