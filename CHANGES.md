@@ -11,6 +11,8 @@
 
 ## develop
 
+## sora-cpp-sdk-2023.17.0
+
 - [UPDATE] VERSIONS のライブラリをアップデートする
   - SORA_CPP_SDK_VERSION を 2023.17.0 にあげる
   - WEBRTC_BUILD_VERSION を m120.6099.1.2 にあげる
