@@ -27,7 +27,7 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
 
 ## 対応 WebRTC SFU Sora
 
-- WebRTC SFU Sora 2022.2.0 以降
+- WebRTC SFU Sora 2023.2.0 以降
 
 ## サンプルの紹介
 
