@@ -42,7 +42,7 @@ https://github.com/shiguredo/sora-cpp-sdk/releases
 
 ## 対応 Sora
 
-- WebRTC SFU Sora 2023.1.0 以降
+- WebRTC SFU Sora 2023.2.0 以降
 
 ## 動作環境
 
