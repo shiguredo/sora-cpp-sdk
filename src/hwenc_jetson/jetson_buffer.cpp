@@ -146,7 +146,7 @@ rtc::scoped_refptr<webrtc::I420BufferInterface> JetsonBuffer::ToI420() {
       NvBufSurfaceUnMap(dst_surf, index, plane);
       if (ret == -1) {
         RTC_LOG(LS_ERROR) << __FUNCTION__
-                          << " Failed to NvBufSurfaceUnMap plane=" << plane;
+                          << " Failed to NvBufSurfaceMap plane=" << plane;
         return scaled_buffer;
       }
     }
