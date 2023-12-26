@@ -308,16 +308,6 @@ void JetsonVideoDecoder::CaptureLoop() {
       uint64_t pts = v4l2_buf.timestamp.tv_sec * rtc::kNumMicrosecsPerSec +
                      v4l2_buf.timestamp.tv_usec;
 
-      NvBufSurfTransformRect src_rect, dest_rect;
-      src_rect.top = capture_crop_->c.top;
-      src_rect.left = capture_crop_->c.left;
-      src_rect.width = capture_crop_->c.width;
-      src_rect.height = capture_crop_->c.height;
-      dest_rect.top = 0;
-      dest_rect.left = 0;
-      dest_rect.width = capture_crop_->c.width;
-      dest_rect.height = capture_crop_->c.height;
-
       NvBufSurf::NvCommonTransformParams transform_params;
       memset(&transform_params, 0, sizeof(transform_params));
       transform_params.src_top = capture_crop_->c.top;
