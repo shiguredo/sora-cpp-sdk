@@ -423,7 +423,7 @@ int JetsonVideoDecoder::SetCapture() {
   cParams.height = capture_crop_->c.height;
   cParams.layout = NVBUF_LAYOUT_PITCH;
   cParams.colorFormat = NVBUF_COLOR_FORMAT_YUV420;
-  cParams.memtag = NvBufSurfaceTag_VIDEO_ENC;
+  cParams.memtag = NvBufSurfaceTag_VIDEO_DEC;
   cParams.memType = NVBUF_MEM_SURFACE_ARRAY;
 
   ret = NvBufSurf::NvAllocate(&cParams, 1, &dst_dma_fd_);
