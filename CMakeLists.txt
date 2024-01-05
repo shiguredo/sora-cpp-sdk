@@ -577,13 +577,18 @@ elseif (SORA_TARGET_OS STREQUAL "jetson")
       PUBLIC
         nvv4l2
         nvv4lconvert
-        nvbuf_utils
         #nvbuf_fdmap
         #nvddk_vic
         #nvddk_2d_v2
         nvjpeg
         nvbufsurface
         nvbufsurftransform
+
+        # nvbuf_utils を NvUtils に移行した際、ドキュメントには libnvbuf_utils.so を参照するように記載があったが、
+        # そのような so ファイルは存在しないためリンクが失敗した
+        # nvbuf_fdmap を追加したらリンクが通った
+        # https://developer.nvidia.com/sites/default/files/akamai/embedded/nvbuf_utils_to_nvutils_migration_guide.pdf
+        nvbuf_fdmap
         #nvos
     )
   endif(USE_JETSON_ENCODER)
