@@ -115,6 +115,8 @@ struct SoraSignalingConfig {
       std::vector<std::string> values;
     };
     std::vector<std::vector<Rule>> rules;
+    boost::optional<std::string> version;
+    boost::optional<boost::json::value> metadata;
   };
   boost::optional<ForwardingFilter> forwarding_filter;
 
