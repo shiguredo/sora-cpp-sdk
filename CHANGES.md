@@ -11,6 +11,9 @@
 
 ## develop
 
+- [ADD] Forwarding Filter の項目に Version と metadata を追加
+  - @torikizi
+
 ## 2023.17.0 (2023-12-25)
 
 - [UPDATE] WebRTC を `m120.6099.1.2` に上げる
