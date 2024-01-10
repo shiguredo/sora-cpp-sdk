@@ -234,6 +234,12 @@ SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
         return std::unique_ptr<webrtc::VideoDecoder>(
             absl::make_unique<JetsonVideoDecoder>(webrtc::kVideoCodecH264));
       }));
+  config.decoders.insert(
+      config.decoders.begin(),
+      VideoDecoderConfig(webrtc::kVideoCodecH265, [](auto format) {
+        return std::unique_ptr<webrtc::VideoDecoder>(
+            absl::make_unique<JetsonVideoDecoder>(webrtc::kVideoCodecH265));
+      }));
 #endif
 
   return config;

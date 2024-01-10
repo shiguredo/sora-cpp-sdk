@@ -43,6 +43,7 @@ JetsonVideoDecoder::JetsonVideoDecoder(webrtc::VideoCodecType codec)
     : input_format_(codec == webrtc::kVideoCodecVP8    ? V4L2_PIX_FMT_VP8
                     : codec == webrtc::kVideoCodecVP9  ? V4L2_PIX_FMT_VP9
                     : codec == webrtc::kVideoCodecH264 ? V4L2_PIX_FMT_H264
+                    : codec == webrtc::kVideoCodecH265 ? V4L2_PIX_FMT_H265
                     : codec == webrtc::kVideoCodecAV1  ? V4L2_PIX_FMT_AV1
                                                        : 0),
       decoder_(nullptr),
@@ -136,7 +137,8 @@ int32_t JetsonVideoDecoder::Decode(const webrtc::EncodedImage& input_image,
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
-  RTC_LOG(LS_INFO) << __FUNCTION__ << " timestamp:" << input_image.RtpTimestamp()
+  RTC_LOG(LS_INFO) << __FUNCTION__
+                   << " timestamp:" << input_image.RtpTimestamp()
                    << " bytesused:" << buffer->planes[0].bytesused;
   return WEBRTC_VIDEO_CODEC_OK;
 }
