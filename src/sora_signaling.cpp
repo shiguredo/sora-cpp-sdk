@@ -449,13 +449,6 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     boost::json::object obj;
     auto& f = *config_.forwarding_filter;
     obj["action"] = f.action;
-    if (f.version) {
-      obj["version"] = *f.version;
-    }
-
-    if (f.metadata) {
-      obj["metadata"] = *f.metadata;
-    }
     obj["rules"] = boost::json::array();
     for (const auto& rules : f.rules) {
       boost::json::array ar;
@@ -470,6 +463,13 @@ void SoraSignaling::DoSendConnect(bool redirect) {
         ar.push_back(rule);
       }
       obj["rules"].as_array().push_back(ar);
+    }
+    if (f.version) {
+      obj["version"] = *f.version;
+    }
+
+    if (f.metadata) {
+      obj["metadata"] = *f.metadata;
     }
     m["forwarding_filter"] = obj;
   }
