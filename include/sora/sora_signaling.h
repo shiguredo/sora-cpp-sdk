@@ -108,7 +108,7 @@ struct SoraSignalingConfig {
   std::vector<DataChannel> data_channels;
 
   struct ForwardingFilter {
-    std::string action;
+    boost::optional<std::string> action;
     struct Rule {
       std::string field;
       std::string op;
