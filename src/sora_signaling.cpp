@@ -469,7 +469,6 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     if (f.version) {
       obj["version"] = *f.version;
     }
-
     if (f.metadata) {
       obj["metadata"] = *f.metadata;
     }
