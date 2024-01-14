@@ -11,9 +11,12 @@
 
 ## develop
 
+- [CHANGE] Forwarding Filter の Action をオプション項目にする
+  - 必須項目からオプション項目に変更となるため、破壊的変更となる
+  - オプション項目なので、値がない場合は項目を設定しない
+  - @torikizi
 - [ADD] Forwarding Filter の項目に Version と Metadata を追加
   - Version と Metadata はオプション項目として追加し、値がない場合は項目を設定しない
-  - 既存の Action も同様にオプション項目なので、値がない場合は項目を設定しないよう修正
   - @torikizi
 
 ## 2023.17.0 (2023-12-25)
