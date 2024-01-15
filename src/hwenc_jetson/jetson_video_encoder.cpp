@@ -236,6 +236,13 @@ int32_t JetsonVideoEncoder::JetsonConfigure() {
     // V4L2_MPEG_VIDEO_H265_PROFILE_MAIN or V4L2_MPEG_VIDEO_H265_PROFILE_MAIN10
     ret = encoder_->setProfile(V4L2_MPEG_VIDEO_H265_PROFILE_MAIN);
     INIT_ERROR(ret < 0, "Failed to setProfile");
+
+    // https://en.wikipedia.org/wiki/High_Efficiency_Video_Coding_tiers_and_levels#Levels
+    ret = encoder_->setLevel(V4L2_MPEG_VIDEO_H265_LEVEL_6_2_HIGH_TIER);
+    INIT_ERROR(ret < 0, "Failed to setLevel");
+
+    ret = encoder_->setHWPresetType(V4L2_ENC_HW_PRESET_ULTRAFAST);
+    INIT_ERROR(ret < 0, "Failed to setHWPresetType");
   } else if (codec_.codecType == webrtc::kVideoCodecVP8) {
     uint32_t qp_min =
         codec_.mode == webrtc::VideoCodecMode::kScreensharing ? 12 : 2;
