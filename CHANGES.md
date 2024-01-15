@@ -11,6 +11,8 @@
 
 ## develop
 
+- [UPDATE] JetPack 5.1.2 に対応する
+  - @enm10k
 - [FIX] DataChannel シグナリングが有効な場合、一部のシグナリングメッセージのコールバックが上がらないことがあるのを修正
   - @melpon
 
