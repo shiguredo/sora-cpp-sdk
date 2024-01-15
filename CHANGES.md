@@ -11,6 +11,10 @@
 
 ## develop
 
+- [CHANGE] JetPack 5.1.2 に対応
+  - JetPack 5.1.1, 5.1.2 で動作を確認
+  - JetPack 5.1 では、互換性の問題で JetsonJpegDecoder がエラーになることを確認
+  - @enm10k
 - [FIX] DataChannel シグナリングが有効な場合、一部のシグナリングメッセージのコールバックが上がらないことがあるのを修正
   - @melpon
 
