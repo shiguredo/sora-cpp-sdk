@@ -108,13 +108,15 @@ struct SoraSignalingConfig {
   std::vector<DataChannel> data_channels;
 
   struct ForwardingFilter {
-    std::string action;
+    boost::optional<std::string> action;
     struct Rule {
       std::string field;
       std::string op;
       std::vector<std::string> values;
     };
     std::vector<std::vector<Rule>> rules;
+    boost::optional<std::string> version;
+    boost::optional<boost::json::value> metadata;
   };
   boost::optional<ForwardingFilter> forwarding_filter;
 
