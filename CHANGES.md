@@ -11,9 +11,7 @@
 
 ## develop
 
-- [CHANGE] Forwarding Filter の Action をオプション項目にする
-  - 必須項目からオプション項目に変更となるため、破壊的変更となる
-  - オプション項目なので、値がない場合は項目を設定しない
+- [FIX] Forwarding Filter の Action 項目は本来オプション項目だったが、 action は `std::optional` 型になっていなかったため修正
   - @torikizi
 - [ADD] Forwarding Filter の項目に Version と Metadata を追加
   - Version と Metadata はオプション項目として追加し、値がない場合は項目を設定しない
