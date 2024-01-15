@@ -48,7 +48,7 @@ https://github.com/shiguredo/sora-cpp-sdk/releases
 
 - Windows 10.1809 x86_64 以降
 - macOS 13.5 arm64 以降
-- Ubuntu 20.04 ARMv8 Jetson (Jetpack 5.0 以降)
+- Ubuntu 20.04 ARMv8 Jetson (JetPack 5.1.1 以降)
     - Jetson AGX Orin
     - Jetson AGX Xavier
     - Jetson Xavier NX
@@ -77,8 +77,9 @@ https://github.com/shiguredo/sora-cpp-sdk-samples
 
 **詳細は Discord やメールなどでお気軽にお問い合わせください**
 
-- Windows arm64 対応
+- NVIDIA Jetson JetPack 6 対応
 - AMD 系 HWA 対応
+- Windows arm64 対応
 
 ## サポートについて
 

@@ -1172,17 +1172,6 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
     // Data Channel による通信の開始
     using_datachannel_ = true;
 
-    // 既に kOpen になっているチャンネルに通知を送る
-    auto ob = config_.observer.lock();
-    if (ob != nullptr) {
-      for (auto& kv : dc_labels_) {
-        if (kv.first[0] == '#' && !kv.second.notified &&
-            dc_->IsOpen(kv.first)) {
-          ob->OnDataChannel(kv.first);
-          kv.second.notified = true;
-        }
-      }
-    }
 
     // ignore_disconnect_websocket == true の場合は WS を切断する
     auto it = m.as_object().find("ignore_disconnect_websocket");
@@ -1398,7 +1387,7 @@ webrtc::DataBuffer SoraSignaling::ConvertToDataBuffer(
 
 bool SoraSignaling::SendDataChannel(const std::string& label,
                                     const std::string& input) {
-  if (dc_ == nullptr || !using_datachannel_) {
+  if (dc_ == nullptr) {
     return false;
   }
 
@@ -1555,11 +1544,7 @@ void SoraSignaling::OnRemoveTrack(
 
 void SoraSignaling::OnStateChange(
     rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) {
-  // switched が来てなければ何もしない
-  if (!using_datachannel_) {
-    return;
-  }
-  // switched 済みで、まだ通知してないチャンネルが開いてた場合は通知を送る
+  // まだ通知してないチャンネルが開いてた場合は通知を送る
   auto ob = config_.observer.lock();
   if (ob != nullptr) {
     for (auto& kv : dc_labels_) {
@@ -1573,7 +1558,7 @@ void SoraSignaling::OnStateChange(
 void SoraSignaling::OnMessage(
     rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel,
     const webrtc::DataBuffer& buffer) {
-  if (!using_datachannel_ || !dc_) {
+  if (!dc_) {
     return;
   }
 

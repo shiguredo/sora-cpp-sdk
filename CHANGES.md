@@ -11,10 +11,16 @@
 
 ## develop
 
-- [FIX] Forwarding Filter の Action 項目は本来オプション項目だったが、 action は `std::optional` 型になっていなかったため修正
-  - @torikizi
+- [CHANGE] JetPack 5.1.2 に対応
+  - JetPack 5.1.1, 5.1.2 で動作を確認
+  - JetPack 5.1 では、互換性の問題で JetsonJpegDecoder がエラーになることを確認
+  - @enm10k
 - [ADD] Forwarding Filter の項目に Version と Metadata を追加
   - Version と Metadata はオプション項目として追加し、値がない場合は項目を設定しない
+  - @torikizi
+- [FIX] DataChannel シグナリングが有効な場合、一部のシグナリングメッセージのコールバックが上がらないことがあるのを修正
+  - @melpon
+- [FIX] Forwarding Filter の Action 項目は本来オプション項目だったが、 action は `std::optional` 型になっていなかったため修正
   - @torikizi
 
 ## 2023.17.0 (2023-12-25)
