@@ -11,6 +11,10 @@
 
 ## develop
 
+- [UPDATE] VERSIONS のライブラリをアップデートする
+  - SORA_CPP_SDK_VERSION を 2024.1.0 にあげる
+  - @miosakuma
+
 ## sora-cpp-sdk-2023.17.0
 
 - [UPDATE] VERSIONS のライブラリをアップデートする
