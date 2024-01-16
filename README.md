@@ -27,7 +27,7 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
     - Apple macOS / iOS Video Toolbox
         - H.264 / H.265
     - Google Android HWA
-        - VP8 / VP9 / H.264
+        - VP8 / VP9 / H.264 / H.265
     - [Intel oneVPL](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onevpl.html) (Intel Media SDK の後継)
         - VP9 / AV1 / H.264
 - 各プラットフォームへの [google/lyra: A Very Low\-Bitrate Codec for Speech Compression](https://github.com/google/lyra) 対応
