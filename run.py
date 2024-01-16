@@ -1653,6 +1653,8 @@ def main():
             cmake_args.append("-DUSE_LIBCXX=ON")
             cmake_args.append(
                 f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}")
+            cxxflags = ['-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE']
+            cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
         if platform.target.os == 'macos':
             sysroot = cmdcap(['xcrun', '--sdk', 'macosx', '--show-sdk-path'])
             target = 'x86_64-apple-darwin' if platform.target.arch == 'x86_64' else 'aarch64-apple-darwin'
@@ -1685,6 +1687,8 @@ def main():
             cmake_args.append('-DCMAKE_ANDROID_EXCEPTIONS=ON')
             cmake_args.append('-DANDROID_NDK=OFF')
             cmake_args.append(f"-DSORA_WEBRTC_LDFLAGS={os.path.join(install_dir, 'webrtc.ldflags')}")
+            cxxflags = ['-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE']
+            cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
         if platform.target.os == 'jetson':
             sysroot = os.path.join(install_dir, 'rootfs')
             cmake_args.append('-DCMAKE_SYSTEM_NAME=Linux')
@@ -1701,6 +1705,8 @@ def main():
             cmake_args.append(
                 f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}")
             cmake_args.append('-DUSE_JETSON_ENCODER=ON')
+            cxxflags = ['-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE']
+            cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
 
         # NvCodec
         if platform.target.os in ('windows', 'ubuntu') and platform.target.arch == 'x86_64':
@@ -1762,6 +1768,7 @@ def main():
         elif platform.target.os == 'android':
             # Android の場合は事前に用意したプロジェクトをビルドする
             with cd(os.path.join(BASE_DIR, 'test', 'android')):
+                # TODO(enm10k): ここも _LIBCPP_HARDENING_MODE の指定が必要かもしれない
                 cmd(['./gradlew', '--no-daemon', 'assemble'])
 
                 if not args.no_lyra:
@@ -1809,6 +1816,8 @@ def main():
                     cmake_args.append("-DUSE_LIBCXX=ON")
                     cmake_args.append(
                         f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}")
+                    cxxflags = ['-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE']
+                    cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
                 if platform.target.os == 'jetson':
                     sysroot = os.path.join(install_dir, 'rootfs')
                     cmake_args.append('-DJETSON=ON')
@@ -1829,6 +1838,8 @@ def main():
                         f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}")
                     cmake_args.append(
                         f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}")
+                    cxxflags = ['-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE']
+                    cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
 
                 if platform.target.os in ('windows', 'macos', 'ubuntu'):
                     cmake_args.append("-DTEST_CONNECT_DISCONNECT=ON")
