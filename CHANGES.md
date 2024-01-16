@@ -12,7 +12,11 @@
 ## develop
 
 - [UPDATE] Boost を1.84.0 にあげる
+  - @enm10k
 - [UPDATE] CMake を3.28.1 にあげる
+  - @enm10k
+- [UPDATE] WebRTC を `m121.6167.3.0` に上げる
+  - @torikizi
 
 ## 2024.1.0 (2024-01-16)
 
