@@ -1494,7 +1494,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                     f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}")
             path = cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))
             cmake_args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
-            cxxflags = ['-nostdinc++', '_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE']
+            cxxflags = ['-nostdinc++', '-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE']
             cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
         if platform.target.os == 'jetson':
             sysroot = os.path.join(install_dir, 'rootfs')
@@ -1514,7 +1514,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             cmake_args.append('-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH')
             path = cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))
             cmake_args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
-            cxxflags = ['-nostdinc++', '_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE']
+            cxxflags = ['-nostdinc++', '-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE']
             cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
         if platform.target.os == 'ios':
             cmake_args += ['-G', 'Xcode']
@@ -1538,7 +1538,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             # https://github.com/android/ndk/issues/1618
             cmake_args.append('-DCMAKE_ANDROID_EXCEPTIONS=ON')
             cmake_args.append('-DANDROID_NDK=OFF')
-            cxxflags = ['-nostdinc++', '_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE']
+            cxxflags = ['-nostdinc++', '-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE']
             cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
         install_blend2d_args['cmake_args'] = cmake_args
         install_blend2d(**install_blend2d_args)
