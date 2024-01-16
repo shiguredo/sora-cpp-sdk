@@ -18,12 +18,6 @@ struct SoraClientContextConfig {
   // false にするとソフトウェアエンコーダ/デコーダのみになる（H.264 は利用できない）
   bool use_hardware_encoder = true;
 
-  // MediaEngineDependencies をカスタマイズするためのコールバック関数
-  // デフォルトの値が設定された上で、cricket::CreateMediaEngine を生成する直前に呼ばれる
-  std::function<void(const webrtc::PeerConnectionFactoryDependencies&,
-                     cricket::MediaEngineDependencies&)>
-      configure_media_dependencies;
-
   // PeerConnectionFactoryDependencies をカスタマイズするためのコールバック関数
   // デフォルトの値が設定された上で、PeerConnectionFactory を生成する直前に呼ばれる
   std::function<void(webrtc::PeerConnectionFactoryDependencies&)>
@@ -43,9 +37,6 @@ struct SoraClientContextConfig {
 // 使い方：
 //   sora::SoraClientContextConfig context_config;
 //   // 必要なら context_config をカスタマイズする
-//   context_config.configure_media_dependencies =
-//     [](const webrtc::PeerConnectionFactoryDependencies& dep,
-//        cricket::MediaEngineDependencies& mdep) { ... };
 //   context_config.configure_dependencies = [](webrtc::PeerConnectionFactoryDependencies& dep) { ... };
 //   // Android に対応する場合は get_android_application_context を設定する
 //   context_config.get_android_application_context = [](void* env) { ... };
