@@ -1768,7 +1768,6 @@ def main():
         elif platform.target.os == 'android':
             # Android の場合は事前に用意したプロジェクトをビルドする
             with cd(os.path.join(BASE_DIR, 'test', 'android')):
-                # TODO(enm10k): ここも _LIBCPP_HARDENING_MODE の指定が必要かもしれない
                 cmd(['./gradlew', '--no-daemon', 'assemble'])
 
                 if not args.no_lyra:
