@@ -9,6 +9,7 @@ import platform
 import argparse
 import multiprocessing
 import hashlib
+import glob
 from typing import Callable, NamedTuple, Optional, List, Union, Dict
 if platform.system() == 'Windows':
     import winreg
@@ -350,6 +351,18 @@ def apply_patch(patch, dir, depth):
         else:
             with open(patch) as stdin:
                 cmd(['patch', f'-p{depth}'], stdin=stdin)
+
+# NOTE(enm10k): shutil.copytree に Python 3.8 で追加された dirs_exist_ok=True を指定して使いたかったが、 GitHub Actions の Windows のランナー (widnwos-2019) にインストールされている Python のバージョンが古くて利用できなかった
+# actions/setup-python で Python 3.8 を設定してビルドしたところ、 Lyra のビルドがエラーになったためこの関数を自作した
+# Windows のランナーを更新した場合は、この関数は不要になる可能性が高い
+def copytree(src_dir, dst_dir):
+    for file_path in glob.glob(src_dir + '/**', recursive=True):
+        dest_path = os.path.join(dst_dir, os.path.relpath(file_path, src_dir))
+
+        if os.path.isdir(file_path):
+            os.makedirs(dest_path, exist_ok=True)
+        else:
+            shutil.copy2(file_path, dest_path)
 
 
 @versioned
@@ -709,7 +722,8 @@ def install_cuda_windows(version, source_dir, build_dir, install_dir):
     mkdir_p(os.path.join(install_dir, 'cuda'))
     with cd(os.path.join(build_dir, 'cuda')):
         cmd(['7z', 'x', file])
-    os.rename(os.path.join(build_dir, 'cuda', 'nvcc'), os.path.join(install_dir, 'cuda', 'nvcc'))
+    copytree(os.path.join(build_dir, 'cuda', 'cuda_nvcc', 'nvcc'), os.path.join(install_dir, 'cuda'))
+    copytree(os.path.join(build_dir, 'cuda', 'cuda_cudart', 'cudart'), os.path.join(install_dir, 'cuda'))
 
 
 @versioned
@@ -1712,7 +1726,7 @@ def main():
         if platform.target.os in ('windows', 'ubuntu') and platform.target.arch == 'x86_64':
             cmake_args.append('-DUSE_NVCODEC_ENCODER=ON')
             if platform.target.os == 'windows':
-                cmake_args.append(f"-DCUDA_TOOLKIT_ROOT_DIR={cmake_path(os.path.join(install_dir, 'cuda', 'nvcc'))}")
+                cmake_args.append(f"-DCUDA_TOOLKIT_ROOT_DIR={cmake_path(os.path.join(install_dir, 'cuda'))}")
 
         if platform.target.os in ('windows', 'ubuntu') and platform.target.arch == 'x86_64':
             cmake_args.append('-DUSE_VPL_ENCODER=ON')
