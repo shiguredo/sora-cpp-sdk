@@ -13,7 +13,11 @@
 
 #include <stdint.h>
 #include <string.h>
+
+// https://github.com/llvm/llvm-project-release-prs/pull/698/files
+#undef __noinline__
 #include <iostream>
+
 #include <mutex>
 #include <sstream>
 #include <string>

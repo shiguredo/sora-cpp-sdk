@@ -13,7 +13,11 @@
 
 #include <cuda.h>
 #include <stdint.h>
+
+// https://github.com/llvm/llvm-project-release-prs/pull/698/files
+#undef __noinline__
 #include <mutex>
+
 #include <vector>
 #include "NvEncoder.h"
 

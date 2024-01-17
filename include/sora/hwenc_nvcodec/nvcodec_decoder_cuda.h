@@ -2,6 +2,9 @@
 #define SORA_HWENC_NVCODEC_NVCODEC_DECODER_CUDA_H_
 
 #include <memory>
+
+// https://github.com/llvm/llvm-project-release-prs/pull/698/files
+#undef __noinline__
 #include <string>
 
 #include "sora/cuda_context.h"

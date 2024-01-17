@@ -14,7 +14,11 @@
 #include <assert.h>
 #include <stdint.h>
 #include <string.h>
+
+// https://github.com/llvm/llvm-project-release-prs/pull/698/files
+#undef __noinline__
 #include <iostream>
+
 #include <map>
 #include <mutex>
 #include <sstream>
