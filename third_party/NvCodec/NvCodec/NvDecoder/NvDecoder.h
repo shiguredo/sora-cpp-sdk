@@ -15,9 +15,10 @@
 #include <stdint.h>
 #include <string.h>
 
-// https://github.com/llvm/llvm-project-release-prs/pull/698/files
-#undef __noinline__
-#include <iostream>
+// clang-format off
+#include "sora/fix_cuda_noinline_macro_error.h"
+#include <string>
+// clang-format on
 
 #include <map>
 #include <mutex>

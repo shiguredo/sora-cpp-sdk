@@ -14,9 +14,10 @@
 #include <cuda.h>
 #include <stdint.h>
 
-// https://github.com/llvm/llvm-project-release-prs/pull/698/files
-#undef __noinline__
+// clang-format off
+#include "sora/fix_cuda_noinline_macro_error.h"
 #include <mutex>
+// clang-format on
 
 #include <vector>
 #include "NvEncoder.h"
