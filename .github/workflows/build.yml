@@ -26,12 +26,12 @@ jobs:
           echo "username=${Env:USERNAME}" >> ${Env:GITHUB_OUTPUT}
         id: env
       - name: Bazel cache (cache)
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: "${{ steps.env.outputs.userprofile }}/_bazel_${{ steps.env.outputs.username }}/cache"
           key: bazel-cache-${{ matrix.name }}-v1
       - name: Bazel cache (install)
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: "${{ steps.env.outputs.userprofile }}/_bazel_${{ steps.env.outputs.username }}/install"
           key: bazel-install-${{ matrix.name }}-v1
@@ -49,7 +49,7 @@ jobs:
       # （インストールする nvcc は解凍後で 100MB 程度なのでキャッシュ可能）
       - name: Cache NVCC ${{ steps.versions.outputs.cuda_version }}
         id: cache-cuda
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: _install\windows_x86_64\release\cuda\nvcc
           key: windows-cuda-${{ steps.versions.outputs.cuda_version }}.v1
@@ -108,7 +108,7 @@ jobs:
           echo "user=`users`" >> $GITHUB_OUTPUT
         id: env
       - name: Bazel cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: "/private/var/tmp/_bazel_${{ steps.env.outputs.user }}"
           key: bazel-${{ matrix.name }}-v2
@@ -155,7 +155,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Bazel cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: "~/.cache/bazel"
           key: bazel-${{ matrix.name }}-v1
