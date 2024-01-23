@@ -28,7 +28,7 @@
 // L4T Multimedia API
 #include <NvBufSurface.h>
 #include <NvVideoEncoder.h>
-#include <nvbuf_utils.h>
+#include <nvbufsurface.h>
 
 #include "sora/hwenc_jetson/jetson_buffer.h"
 
@@ -748,11 +748,20 @@ int32_t JetsonVideoEncoder::Encode(
         input_frame.timestamp_us() % rtc::kNumMicrosecsPerSec;
 
     for (int i = 0; i < MAX_PLANES; i++) {
-      if (NvBufferMemSyncForDevice(buffer->planes[i].fd, i,
-                                   (void**)&buffer->planes[i].data) < 0) {
-        RTC_LOG(LS_ERROR) << "Failed to NvBufferMemSyncForDevice";
+      NvBufSurface* surf = 0;
+      if (NvBufSurfaceFromFd(buffer->planes[i].fd, (void**)(&surf)) == -1) {
+        RTC_LOG(LS_ERROR) << __FUNCTION__ << "Failed to NvBufSurfaceFromFd";
         return WEBRTC_VIDEO_CODEC_ERROR;
       }
+
+      if (NvBufSurfaceSyncForDevice(surf, 0, i) == -1) {
+        RTC_LOG(LS_ERROR) << "Failed to NvBufSurfaceSyncForDevice";
+        return WEBRTC_VIDEO_CODEC_ERROR;
+      }
+
+      // ここで NvBufSurfaceDestroy が必要かなと思ったが、以下のサンプル・コードを確認したところ不要そうだった
+      // 参照: jetson_multimedia_api/samples/01_video_encode/video_encode_main.cpp
+      // NvBufSurfaceDestroy(surf);
     }
 
     if (encoder_->output_plane.qBuffer(v4l2_buf, nullptr) < 0) {
@@ -776,7 +785,7 @@ int32_t JetsonVideoEncoder::SendFrame(
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
 
-  encoded_image_.SetTimestamp(params->timestamp_rtp);
+  encoded_image_.SetRtpTimestamp(params->timestamp_rtp);
   encoded_image_.SetColorSpace(params->color_space);
   encoded_image_._encodedWidth = params->width;
   encoded_image_._encodedHeight = params->height;

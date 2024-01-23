@@ -10,7 +10,7 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: ${{ inputs.platform }}.env
         path: ${{ inputs.platform }}.env
@@ -26,15 +26,15 @@ runs:
         echo "$BOOST_PACKAGE_NAME/$BOOST_PACKAGE_NAME" >> package_paths.env
         echo "$LYRA_PACKAGE_NAME/$LYRA_PACKAGE_NAME" >> package_paths.env
       id: env
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: ${{ steps.env.outputs.package_name }}
         path: ${{ steps.env.outputs.package_name }}
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: ${{ steps.env.outputs.boost_package_name }}
         path: ${{ steps.env.outputs.boost_package_name }}
-    - uses: actions/download-artifact@v3
+    - uses: actions/download-artifact@v4
       with:
         name: ${{ steps.env.outputs.lyra_package_name }}
         path: ${{ steps.env.outputs.lyra_package_name }}

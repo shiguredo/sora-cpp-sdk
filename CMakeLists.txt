@@ -12,6 +12,7 @@ set(WEBRTC_LIBRARY_NAME "webrtc" CACHE STRING "WebRTC のライブラリ名")
 set(USE_LIBCXX OFF CACHE BOOL "libstdc++ の代わりに libc++ を使うかどうか")
 set(LIBCXX_INCLUDE_DIR "" CACHE PATH "libc++ を使う場合の libc++ のインクルードディレクトリ\n空文字だった場合はデフォルト検索パスの libc++ を利用する")
 set(USE_NVCODEC_ENCODER OFF CACHE BOOL "NVIDIA Video Codec SDK によるハードウェアエンコーダを利用するかどうか")
+set(USE_LYRA OFF CACHE BOOL "Lyra を利用するかどうか")
 
 project(sora-cpp-sdk C CXX)
 
@@ -71,8 +72,10 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE NEVER)
 
 find_package(WebRTC REQUIRED)
 find_package(Boost REQUIRED COMPONENTS json filesystem)
-# find_package(Lyra REQUIRED)
 find_package(Threads REQUIRED)
+if (USE_LYRA)
+  find_package(Lyra REQUIRED)
+endif()
 
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
@@ -92,9 +95,10 @@ target_include_directories(sora PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_sources(sora
   PRIVATE
     src/aligned_encoder_adapter.cpp
-    # src/audio_decoder_lyra.cpp
+    src/audio_decoder_lyra.cpp
     src/audio_device_module.cpp
-    # src/audio_encoder_lyra.cpp
+    src/audio_encoder_lyra.cpp
+    src/audio_output_helper.cpp
     src/camera_device_capturer.cpp
     src/data_channel.cpp
     src/default_video_formats.cpp
@@ -113,12 +117,20 @@ target_sources(sora
     src/sora_signaling.cpp
     src/sora_video_decoder_factory.cpp
     src/sora_video_encoder_factory.cpp
+    src/srtp_keying_material_exporter.cpp
     src/ssl_verifier.cpp
     src/url_parts.cpp
     src/version.cpp
     src/websocket.cpp
     src/zlib_helper.cpp
 )
+if (USE_LYRA)
+  target_sources(sora
+    PRIVATE
+      src/audio_decoder_lyra.cpp
+      src/audio_encoder_lyra.cpp
+  )
+endif()
 
 target_compile_definitions(sora PRIVATE ${SORA_TARGET_DEF})
 
@@ -135,9 +147,14 @@ if (NOT USE_NVCODEC_ENCODER)
   target_sources(sora PRIVATE src/cuda_context_cuda.cpp)
 endif()
 
+if (USE_LYRA)
+  target_link_libraries(sora
+    PUBLIC
+      Lyra::lyra
+  )
+endif()
 target_link_libraries(sora
   PUBLIC
-    # Lyra::lyra
     WebRTC::webrtc
     Boost::json
     Boost::filesystem
@@ -158,6 +175,7 @@ target_compile_definitions(sora
     USE_NVCODEC_ENCODER=$<BOOL:${USE_NVCODEC_ENCODER}>
     USE_JETSON_ENCODER=$<BOOL:${USE_JETSON_ENCODER}>
     USE_VPL_ENCODER=$<BOOL:${USE_VPL_ENCODER}>
+    USE_LYRA=$<BOOL:${USE_LYRA}>
 )
 
 # 指定したライブラリを自身の静的ライブラリにバンドルする
@@ -387,6 +405,7 @@ elseif (SORA_TARGET_OS STREQUAL "ios")
 
   target_sources(sora
     PRIVATE
+      src/mac/mac_audio_output_helper.mm
       src/mac/mac_capturer.mm
       src/mac/mac_version.mm
       src/mac/mac_video_factory.mm
@@ -588,13 +607,18 @@ elseif (SORA_TARGET_OS STREQUAL "jetson")
       PUBLIC
         nvv4l2
         nvv4lconvert
-        nvbuf_utils
         #nvbuf_fdmap
         #nvddk_vic
         #nvddk_2d_v2
         nvjpeg
         nvbufsurface
         nvbufsurftransform
+
+        # nvbuf_utils を NvUtils に移行した際、ドキュメントには libnvbuf_utils.so を参照するように記載があったが、
+        # そのような so ファイルは存在しないためリンクが失敗した
+        # nvbuf_fdmap を追加したらリンクが通った
+        # https://developer.nvidia.com/sites/default/files/akamai/embedded/nvbuf_utils_to_nvutils_migration_guide.pdf
+        nvbuf_fdmap
         #nvos
     )
   endif(USE_JETSON_ENCODER)

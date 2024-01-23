@@ -108,13 +108,15 @@ struct SoraSignalingConfig {
   std::vector<DataChannel> data_channels;
 
   struct ForwardingFilter {
-    std::string action;
+    boost::optional<std::string> action;
     struct Rule {
       std::string field;
       std::string op;
       std::vector<std::string> values;
     };
     std::vector<std::vector<Rule>> rules;
+    boost::optional<std::string> version;
+    boost::optional<boost::json::value> metadata;
   };
   boost::optional<ForwardingFilter> forwarding_filter;
 
@@ -154,6 +156,7 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
   bool SendDataChannel(const std::string& label, const std::string& data);
 
   std::string GetConnectionID() const;
+  std::string GetSelectedSignalingURL() const;
   std::string GetConnectedSignalingURL() const;
   bool IsConnectedDataChannel() const;
   bool IsConnectedWebsocket() const;
@@ -252,7 +255,22 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
 
   std::string connection_id_;
   std::vector<std::shared_ptr<Websocket>> connecting_wss_;
-  std::string connected_signaling_url_;
+  struct atomic_string {
+    std::string load() const {
+      std::lock_guard<std::mutex> lock(m);
+      return s;
+    }
+    void store(std::string s) {
+      std::lock_guard<std::mutex> lock(m);
+      this->s = s;
+    }
+
+   private:
+    std::string s;
+    mutable std::mutex m;
+  };
+  atomic_string selected_signaling_url_;
+  atomic_string connected_signaling_url_;
   std::shared_ptr<Websocket> ws_;
   std::shared_ptr<DataChannel> dc_;
   bool using_datachannel_ = false;

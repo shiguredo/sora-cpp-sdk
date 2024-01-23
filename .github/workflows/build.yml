@@ -3,10 +3,10 @@ name: build-workflow
 on:
   push:
     paths-ignore:
-    - 'doc/**'
-    - '**.md'
-    - 'LICENSE'
-    - 'NOTICE'
+      - "doc/**"
+      - "**.md"
+      - "LICENSE"
+      - "NOTICE"
 
 jobs:
   build-windows:
@@ -19,7 +19,7 @@ jobs:
     name: Build sora-cpp-sdk for ${{ matrix.name }}
     runs-on: windows-2019
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: microsoft/setup-msbuild@v1.3
       - name: Env to output
         run: |
@@ -72,22 +72,22 @@ jobs:
           echo "lyra_name=${LYRA_PACKAGE_NAME}" >> ${Env:GITHUB_OUTPUT}
         id: package_name
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.package_name.outputs.name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.name }}
       - name: Upload Boost Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.package_name.outputs.boost_name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.boost_name }}
       - name: Upload Lyra Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.package_name.outputs.lyra_name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.lyra_name }}
       - name: Upload Environment
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.name }}.env
           path: _package/${{ matrix.name }}/release/sora.env
@@ -99,9 +99,11 @@ jobs:
           - macos_arm64
           - ios
     name: Build sora-cpp-sdk for ${{ matrix.name }}
-    runs-on: macos-12
+    runs-on: macos-13
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - name: Select Xcode 14.3.1
+        run: sudo xcode-select --switch /Applications/Xcode_14.3.1.app/Contents/Developer
       - name: Env to output
         run: |
           echo "user=`users`" >> $GITHUB_OUTPUT
@@ -111,7 +113,7 @@ jobs:
         with:
           path: "/private/var/tmp/_bazel_${{ steps.env.outputs.user }}"
           key: bazel-${{ matrix.name }}-v2
-      - run: pip3 install numpy
+      - run: pip3 install numpy setuptools
       - run: python3 run.py --test --package ${{ matrix.name }}
       - name: Get package name
         run: |
@@ -121,22 +123,22 @@ jobs:
           echo "lyra_name=${LYRA_PACKAGE_NAME}" >> $GITHUB_OUTPUT
         id: package_name
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.package_name.outputs.name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.name }}
       - name: Upload Boost Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.package_name.outputs.boost_name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.boost_name }}
       - name: Upload Lyra Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.package_name.outputs.lyra_name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.lyra_name }}
       - name: Upload Environment
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.name }}.env
           path: _package/${{ matrix.name }}/release/sora.env
@@ -152,7 +154,7 @@ jobs:
     name: Build sora-cpp-sdk for ${{ matrix.name }}
     runs-on: ${{ matrix.name == 'ubuntu-22.04_x86_64' && 'ubuntu-22.04' || 'ubuntu-20.04' }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Bazel cache
         uses: actions/cache@v3
         with:
@@ -162,7 +164,7 @@ jobs:
         if: matrix.name == 'ubuntu-20.04_x86_64' || matrix.name == 'ubuntu-22.04_x86_64'
         run: |
           source VERSION
-          # clang-12 と CUDA を入れる
+          # clang-15 と CUDA を入れる
           sudo apt-get update
           sudo apt-get install -y software-properties-common
           # CUDA 10 なので ubuntu1804 で正しい
@@ -170,8 +172,12 @@ jobs:
           sudo mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600
           sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
           sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
-          sudo apt-get update
-          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install cuda=$CUDA_VERSION clang-12
+          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install cuda=$CUDA_VERSION
+
+          wget https://apt.llvm.org/llvm.sh
+          chmod a+x llvm.sh
+          sudo ./llvm.sh 15
+
           # Intel Media SDK のために libva-dev, libdrm-dev を入れる
           DEBIAN_FRONTEND=noninteractive sudo apt-get -y install libva-dev libdrm-dev
       - name: Install deps for Jetson series
@@ -200,22 +206,22 @@ jobs:
           echo "lyra_name=${LYRA_PACKAGE_NAME}" >> $GITHUB_OUTPUT
         id: package_name
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.package_name.outputs.name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.name }}
       - name: Upload Boost Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.package_name.outputs.boost_name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.boost_name }}
       - name: Upload Lyra Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.package_name.outputs.lyra_name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.lyra_name }}
       - name: Upload Environment
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.name }}.env
           path: _package/${{ matrix.name }}/release/sora.env
@@ -228,7 +234,7 @@ jobs:
       - build-ubuntu
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/download
         with:
           platform: windows_x86_64
@@ -262,5 +268,4 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          files:
-            ${{ steps.env.outputs.package_paths }}
+          files: ${{ steps.env.outputs.package_paths }}

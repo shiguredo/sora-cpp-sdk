@@ -18,10 +18,10 @@ cc_toolchain_config(
     abi_version = "local",
     abi_libc_version = "local",
     cxx_builtin_include_directories = [
-        '%{android_ndk}/toolchains/llvm/prebuilt/linux-x86_64/lib64/clang/%{clang_version}/include',
+        '%{android_ndk}/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/%{clang_version}/include',
         '%sysroot%/usr/include',
         '%sysroot%/usr/local/include',
-        "%{webrtc_include_dir}/buildtools/third_party/libc++abi/trunk/include",
+        "%{webrtc_include_dir}/third_party/libc++abi/src/include",
         "%{llvm_dir}/libcxx/include",
     ],
     tool_paths = {
@@ -87,7 +87,7 @@ cc_toolchain_config(
     # conly_flags = [],
     cxx_flags = [
         "-isystem%{llvm_dir}/libcxx/include",
-        "-isystem%{webrtc_include_dir}/buildtools/third_party/libc++abi/trunk/include",
+        "-isystem%{webrtc_include_dir}/third_party/libc++abi/src/include",
         "-std=c++17",
         "-nostdinc++",
         "-D_LIBCPP_ABI_NAMESPACE=Cr",

@@ -77,6 +77,7 @@ CreateCameraDeviceCapturer(const CameraDeviceCapturerConfig& config) {
 #elif defined(__linux__)
   sora::V4L2VideoCapturerConfig v4l2_config;
   v4l2_config.on_frame = config.on_frame;
+  v4l2_config.video_device = config.device_name;
   v4l2_config.width = config.width;
   v4l2_config.height = config.height;
   v4l2_config.framerate = config.fps;

@@ -10,6 +10,7 @@ set(WEBRTC_LIBRARY_DIR "" CACHE PATH "WebRTC のライブラリディレクト�
 set(WEBRTC_LIBRARY_NAME "webrtc" CACHE STRING "WebRTC のライブラリ名")
 set(LIBCXX_INCLUDE_DIR "" CACHE PATH "libc++ を使う場合の libc++ のインクルードディレクトリ\n空文字だった場合はデフォルト検索パスの libc++ を利用する")
 set(SORA_DIR "" CACHE PATH "Sora のルートディレクトリ")
+set(USE_LYRA OFF CACHE BOOL "Lyra を利用するかどうか")
 
 project(sora-test C CXX)
 
@@ -23,16 +24,27 @@ endif()
 
 find_package(Boost REQUIRED COMPONENTS json filesystem)
 find_package(WebRTC REQUIRED)
-# find_package(Lyra REQUIRED)
 find_package(Sora REQUIRED)
 find_package(Threads REQUIRED)
 find_package(Libdrm)
 find_package(Libva)
+if (USE_LYRA)
+  find_package(Lyra REQUIRED)
+endif()
+
+find_library(Blend2D_LIBRARY NAMES blend2d PATHS ${BLEND2D_ROOT_DIR}/lib)
 
 function (init_target target)
-  set_target_properties(${target} PROPERTIES CXX_STANDARD 20 C_STANDARD 20)
+  target_sources(${target} PRIVATE fake_video_capturer.cpp)
+  if (WIN32)
+    set_target_properties(${target} PROPERTIES CXX_STANDARD 20 C_STANDARD 20)
+  else()
+    set_target_properties(${target} PROPERTIES CXX_STANDARD 17 C_STANDARD 17)
+  endif()
   set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE ON)
-  target_link_libraries(${target} PRIVATE Sora::sora)
+  target_compile_definitions(${target} PRIVATE BL_STATIC=1)
+  target_include_directories(${target} PRIVATE ${BLEND2D_ROOT_DIR}/include)
+  target_link_libraries(${target} PRIVATE Sora::sora ${Blend2D_LIBRARY})
 
   if (USE_LIBCXX)
     target_compile_options(${target}

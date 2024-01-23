@@ -24,7 +24,7 @@ cc_toolchain_config(
         "/usr/include/x86_64-linux-gnu",
         "/usr/include",
         "%{llvm_dir}/libcxx/include",
-        "%{webrtc_include_dir}/buildtools/third_party/libc++abi/trunk/include",
+        "%{webrtc_include_dir}/third_party/libc++abi/src/include",
     ],
     tool_paths = {
         "ar": "%{llvm_dir}/clang/bin/llvm-ar",
@@ -37,6 +37,7 @@ cc_toolchain_config(
         "objdump": "objdump",
     },
     compile_flags = [
+        "-no-canonical-prefixes",
         "-fstack-protector",
         # All warnings are enabled.
         "-Wall",
@@ -83,7 +84,7 @@ cc_toolchain_config(
     # conly_flags = [],
     cxx_flags = [
         "-isystem%{llvm_dir}/libcxx/include",
-        "-isystem%{webrtc_include_dir}/buildtools/third_party/libc++abi/trunk/include",
+        "-isystem%{webrtc_include_dir}/third_party/libc++abi/src/include",
         "-std=c++17",
         "-nostdinc++",
         "-D_LIBCPP_ABI_NAMESPACE=Cr",
@@ -144,7 +145,7 @@ cc_toolchain_config(
         "/usr/include/aarch64-linux-gnu",
         "/usr/include",
         "%{llvm_dir}/libcxx/include",
-        "%{webrtc_include_dir}/buildtools/third_party/libc++abi/trunk/include",
+        "%{webrtc_include_dir}/third_party/libc++abi/src/include",
     ],
     tool_paths = {
         "ar": "%{llvm_dir}/clang/bin/llvm-ar",
@@ -157,6 +158,7 @@ cc_toolchain_config(
         "objdump": "objdump",
     },
     compile_flags = [
+        "-no-canonical-prefixes",
         "-fstack-protector",
         # All warnings are enabled.
         "-Wall",
@@ -205,7 +207,7 @@ cc_toolchain_config(
     # conly_flags = [],
     cxx_flags = [
         "-isystem%{llvm_dir}/libcxx/include",
-        "-isystem%{webrtc_include_dir}/buildtools/third_party/libc++abi/trunk/include",
+        "-isystem%{webrtc_include_dir}/third_party/libc++abi/src/include",
         "-std=c++17",
         "-nostdinc++",
         "-D_LIBCPP_ABI_NAMESPACE=Cr",

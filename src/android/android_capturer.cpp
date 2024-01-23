@@ -25,9 +25,10 @@ void AndroidCapturer::Stop() {
   if (video_capturer_ != nullptr) {
     RTC_LOG(LS_INFO) << "AndroidCapturer::stopCapture";
     stopCapture(env_, video_capturer_->obj());
-    dispose(env_, video_capturer_->obj());
+    dispose(env_, video_capturer_->obj(), helper_->obj());
     video_capturer_.reset();
     native_capturer_observer_.reset();
+    helper_.reset();
   }
 }
 
@@ -133,6 +134,11 @@ std::vector<std::string> AndroidCapturer::enumDevices(
   webrtc::ScopedJavaLocalRef<jobjectArray> devices(
       env, (jobjectArray)env->CallObjectMethod(camera_enumerator, devicesid));
 
+  if (devices.obj() == nullptr) {
+    RTC_LOG(LS_ERROR) << "Failed to enumerator.getDeviceNames()";
+    return {};
+  }
+
   std::vector<std::string> r;
   int count = env->GetArrayLength(devices.obj());
   for (int i = 0; i < count; i++) {
@@ -195,11 +201,16 @@ void AndroidCapturer::stopCapture(JNIEnv* env, jobject capturer) {
   jmethodID stopid = env->GetMethodID(capcls.obj(), "stopCapture", "()V");
   env->CallVoidMethod(capturer, stopid);
 }
-void AndroidCapturer::dispose(JNIEnv* env, jobject capturer) {
+void AndroidCapturer::dispose(JNIEnv* env, jobject capturer, jobject helper) {
   // videoCapturer.dispose();
+  // surfaceTextureHelper.dispose();
   webrtc::ScopedJavaLocalRef<jclass> capcls(env, env->GetObjectClass(capturer));
-  jmethodID disposeid = env->GetMethodID(capcls.obj(), "dispose", "()V");
-  env->CallVoidMethod(capturer, disposeid);
+  jmethodID capdisposeid = env->GetMethodID(capcls.obj(), "dispose", "()V");
+  env->CallVoidMethod(capturer, capdisposeid);
+
+  webrtc::ScopedJavaLocalRef<jclass> helpcls(env, env->GetObjectClass(helper));
+  jmethodID helpdisposeid = env->GetMethodID(helpcls.obj(), "dispose", "()V");
+  env->CallVoidMethod(helper, helpdisposeid);
 }
 
 bool AndroidCapturer::Init(JNIEnv* env,
@@ -223,10 +234,11 @@ bool AndroidCapturer::Init(JNIEnv* env,
   // ここで新しく this に対して scoped_refptr を構築して release() しているため、参照カウントが増えたままになっている。
   // Java 側からこの参照カウントを減らしたりはしていないようなので、このままだとリークしてしまう。
   // なので直後に this->Release() を呼んでカウントを調節する。
-  native_capturer_observer_.reset(new webrtc::ScopedJavaGlobalRef<jobject>(
-      webrtc::jni::CreateJavaNativeCapturerObserver(
-          env,
-          rtc::scoped_refptr<webrtc::jni::AndroidVideoTrackSource>(this))));
+  std::unique_ptr<webrtc::ScopedJavaGlobalRef<jobject>>
+      native_capturer_observer(new webrtc::ScopedJavaGlobalRef<jobject>(
+          webrtc::jni::CreateJavaNativeCapturerObserver(
+              env,
+              rtc::scoped_refptr<webrtc::jni::AndroidVideoTrackSource>(this))));
   this->Release();
 
   // 以下の Java コードを JNI 経由で呼んで何とか videoCapturer を作る
@@ -240,6 +252,10 @@ bool AndroidCapturer::Init(JNIEnv* env,
 
   //auto context = getApplicationContext(env);
   auto camera2enumerator = createCamera2Enumerator(env, context);
+  if (camera2enumerator.obj() == nullptr) {
+    RTC_LOG(LS_ERROR) << "Failed to camera2Enumerator";
+    return false;
+  }
   auto devices = enumDevices(env, camera2enumerator.obj());
   if (devices.empty()) {
     RTC_LOG(LS_ERROR) << "Camera device not found.";
@@ -268,13 +284,23 @@ bool AndroidCapturer::Init(JNIEnv* env,
   }
 
   auto capturer = createCapturer(env, camera2enumerator.obj(), devices[index]);
+  if (capturer.obj() == nullptr) {
+    RTC_LOG(LS_ERROR) << "Failed to createCapturer";
+    return false;
+  }
   auto helper = createSurfaceTextureHelper(env);
+  if (helper.obj() == nullptr) {
+    RTC_LOG(LS_ERROR) << "Failed to createSurfaceTextureHelper";
+    return false;
+  }
   initializeCapturer(env, capturer.obj(), helper.obj(), context,
-                     native_capturer_observer_->obj());
+                     native_capturer_observer->obj());
   startCapture(env, capturer.obj(), width, height, target_fps);
 
   video_capturer_.reset(
       new webrtc::ScopedJavaGlobalRef<jobject>(env, capturer));
+  native_capturer_observer_ = std::move(native_capturer_observer);
+  helper_.reset(new webrtc::ScopedJavaGlobalRef<jobject>(env, helper));
 
   return true;
 }

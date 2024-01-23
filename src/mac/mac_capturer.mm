@@ -91,9 +91,28 @@ rtc::scoped_refptr<MacCapturer> MacCapturer::Create(const MacCapturerConfig& con
   return rtc::make_ref_counted<MacCapturer>(c);
 }
 
+static NSArray<AVCaptureDevice*>* captureDevices() {
+// macOS では USB で接続されたカメラも取得する
+#if defined(SORA_CPP_SDK_MACOS)
+  // AVCaptureDeviceTypeExternal の利用には macOS 14 以上が必要だが、 GitHub Actions では macOS 14 が利用出来ないため一時的に古い API を使う
+  // AVCaptureDeviceDiscoverySession *session = [AVCaptureDeviceDiscoverySession
+  // discoverySessionWithDeviceTypes:@[ AVCaptureDeviceTypeBuiltInWideAngleCamera, AVCaptureDeviceTypeExternal ]
+  //                       mediaType:AVMediaTypeVideo
+  //                       position:AVCaptureDevicePositionUnspecified];
+  // return session.devices;
+  return [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
+#else
+  AVCaptureDeviceDiscoverySession *session = [AVCaptureDeviceDiscoverySession
+    discoverySessionWithDeviceTypes:@[ AVCaptureDeviceTypeBuiltInWideAngleCamera ]
+                          mediaType:AVMediaTypeVideo
+                           position:AVCaptureDevicePositionUnspecified];
+  return session.devices;
+# endif
+}
+
 bool MacCapturer::EnumVideoDevice(
     std::function<void(std::string, std::string)> f) {
-  NSArray<AVCaptureDevice*>* devices = [RTCCameraVideoCapturer captureDevices];
+  NSArray<AVCaptureDevice*>* devices = captureDevices();
   [devices enumerateObjectsUsingBlock:^(AVCaptureDevice* device, NSUInteger i,
                                         BOOL* stop) {
     f([device.localizedName UTF8String], [device.uniqueID UTF8String]);
@@ -107,7 +126,7 @@ AVCaptureDevice* MacCapturer::FindVideoDevice(
   // https://www.ffmpeg.org/ffmpeg-devices.html#avfoundation
 
   size_t capture_device_index = SIZE_T_MAX;
-  NSArray<AVCaptureDevice*>* devices = [RTCCameraVideoCapturer captureDevices];
+  NSArray<AVCaptureDevice*>* devices = captureDevices();
   [devices enumerateObjectsUsingBlock:^(AVCaptureDevice* device, NSUInteger i,
                                         BOOL* stop) {
     // 便利なのでデバイスの一覧をログに出力しておく
@@ -149,8 +168,7 @@ AVCaptureDevice* MacCapturer::FindVideoDevice(
   }
 
   if (capture_device_index != SIZE_T_MAX) {
-    AVCaptureDevice* device = [[RTCCameraVideoCapturer captureDevices]
-        objectAtIndex:capture_device_index];
+    AVCaptureDevice* device = [captureDevices() objectAtIndex:capture_device_index];
     RTC_LOG(LS_INFO) << "selected video device: [" << capture_device_index
                      << "] device_name=" << [device.localizedName UTF8String];
     return device;
@@ -160,12 +178,18 @@ AVCaptureDevice* MacCapturer::FindVideoDevice(
   return nullptr;
 }
 
-void MacCapturer::Destroy() {
-  [capturer_ stopCapture];
+void MacCapturer::Stop() {
+  rtc::scoped_refptr<MacCapturer> self(this);
+  RTC_LOG(LS_INFO) << "MacCapturer::Stop()";
+  [capturer_ stopCaptureWithCompletionHandler:^{
+    // self を参照することで、stopCaptureWithCompletionHandler が完了するまで
+    // オブジェクトが破棄されないようにする
+    RTC_LOG(LS_INFO) << "MacCapturer::Destroy() completed: self=" << (void*)self.get();
+  }];
 }
 
 MacCapturer::~MacCapturer() {
-  Destroy();
+  RTC_LOG(LS_INFO) << "MacCapturer::~MacCapturer()";
 }
 
 void MacCapturer::OnFrame(const webrtc::VideoFrame& frame) {

@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		DD76254E290AFDE100BFE6D8 /* libboost_filesystem.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DD76254D290AFDC600BFE6D8 /* libboost_filesystem.a */; };
+		DD7A98DD2B22021700B3BF0D /* libblend2d.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DD7A98DC2B22020000B3BF0D /* libblend2d.a */; };
+		DD7A98DF2B22026100B3BF0D /* fake_video_capturer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DD7A98DE2B22026100B3BF0D /* fake_video_capturer.cpp */; };
 		DDBC4B932820E3770099E1F0 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = DDBC4B922820E3770099E1F0 /* AppDelegate.m */; };
 		DDBC4B962820E3770099E1F0 /* SceneDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = DDBC4B952820E3770099E1F0 /* SceneDelegate.m */; };
 		DDBC4B992820E3770099E1F0 /* ViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = DDBC4B982820E3770099E1F0 /* ViewController.mm */; };
@@ -26,10 +28,15 @@
 		DDBC4BC12820FEB90099E1F0 /* VideoToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DDBC4BC02820FEB90099E1F0 /* VideoToolbox.framework */; };
 		DDBC4BC3282216350099E1F0 /* Network.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DDBC4BC2282216340099E1F0 /* Network.framework */; };
 		DDBC4BC7282216890099E1F0 /* GLKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DDBC4BC6282216890099E1F0 /* GLKit.framework */; };
+		DDD4A08E294952DC009EFDB5 /* model_coeffs in Resources */ = {isa = PBXBuildFile; fileRef = DDD4A08D294952DC009EFDB5 /* model_coeffs */; };
+		DDE728F929553B4F0089D76D /* liblyra.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DDE728F829553B390089D76D /* liblyra.a */; };
+		E97B0C172AA9DD2600FB45B9 /* AudioOutputHelperWrapper.mm in Sources */ = {isa = PBXBuildFile; fileRef = E97B0C162AA9DD2600FB45B9 /* AudioOutputHelperWrapper.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		DD76254D290AFDC600BFE6D8 /* libboost_filesystem.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libboost_filesystem.a; path = ../../_install/ios/release/boost/lib/libboost_filesystem.a; sourceTree = "<group>"; };
+		DD7A98DC2B22020000B3BF0D /* libblend2d.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libblend2d.a; path = ../../_install/ios/release/blend2d/lib/libblend2d.a; sourceTree = "<group>"; };
+		DD7A98DE2B22026100B3BF0D /* fake_video_capturer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = fake_video_capturer.cpp; path = ../../fake_video_capturer.cpp; sourceTree = "<group>"; };
 		DDBC4B8E2820E3770099E1F0 /* hello.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = hello.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DDBC4B912820E3770099E1F0 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		DDBC4B922820E3770099E1F0 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -55,6 +62,11 @@
 		DDBC4BC2282216340099E1F0 /* Network.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Network.framework; path = System/Library/Frameworks/Network.framework; sourceTree = SDKROOT; };
 		DDBC4BC42822166B0099E1F0 /* OpenGLES.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGLES.framework; path = System/Library/Frameworks/OpenGLES.framework; sourceTree = SDKROOT; };
 		DDBC4BC6282216890099E1F0 /* GLKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLKit.framework; path = System/Library/Frameworks/GLKit.framework; sourceTree = SDKROOT; };
+		DDD4A08A2949500A009EFDB5 /* liblyra.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblyra.a; path = "../../../../../../var/tmp/_bazel_melpon/e11c62260e615113c5a61c74800877bc/execroot/__main__/bazel-out/ios_x86_64-opt/bin/liblyra.a"; sourceTree = "<group>"; };
+		DDD4A08D294952DC009EFDB5 /* model_coeffs */ = {isa = PBXFileReference; lastKnownFileType = folder; name = model_coeffs; path = hello/model_coeffs; sourceTree = "<group>"; };
+		DDE728F829553B390089D76D /* liblyra.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = liblyra.a; path = ../../_install/ios/release/lyra/lib/liblyra.a; sourceTree = "<group>"; };
+		E97B0C152AA9D44F00FB45B9 /* AudioOutputHelperWrapper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AudioOutputHelperWrapper.h; sourceTree = "<group>"; };
+		E97B0C162AA9DD2600FB45B9 /* AudioOutputHelperWrapper.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = AudioOutputHelperWrapper.mm; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -70,6 +82,7 @@
 				DDBC4BB32820F3E90099E1F0 /* libboost_json.a in Frameworks */,
 				DDBC4BBF2820F4F80099E1F0 /* AudioToolbox.framework in Frameworks */,
 				DDBC4BB92820F4490099E1F0 /* CoreAudio.framework in Frameworks */,
+				DD7A98DD2B22021700B3BF0D /* libblend2d.a in Frameworks */,
 				DDBC4BC7282216890099E1F0 /* GLKit.framework in Frameworks */,
 				DD76254E290AFDE100BFE6D8 /* libboost_filesystem.a in Frameworks */,
 				DDBC4BB52820F4090099E1F0 /* libsora.a in Frameworks */,
@@ -99,6 +112,7 @@
 		DDBC4B902820E3770099E1F0 /* hello */ = {
 			isa = PBXGroup;
 			children = (
+				DD7A98DE2B22026100B3BF0D /* fake_video_capturer.cpp */,
 				DDBC4BAE2820EB4D0099E1F0 /* hello.cpp */,
 				DDBC4B912820E3770099E1F0 /* AppDelegate.h */,
 				DDBC4B922820E3770099E1F0 /* AppDelegate.m */,
@@ -107,8 +121,10 @@
 				DDBC4B972820E3770099E1F0 /* ViewController.h */,
 				DDBC4B982820E3770099E1F0 /* ViewController.mm */,
 				DDBC4B9A2820E3770099E1F0 /* Main.storyboard */,
+				E97B0C162AA9DD2600FB45B9 /* AudioOutputHelperWrapper.mm */,
 				DDBC4B9D2820E3790099E1F0 /* Assets.xcassets */,
 				DDBC4B9F2820E3790099E1F0 /* LaunchScreen.storyboard */,
+				E97B0C152AA9D44F00FB45B9 /* AudioOutputHelperWrapper.h */,
 				DDBC4BA22820E3790099E1F0 /* Info.plist */,
 				DDBC4BA32820E3790099E1F0 /* main.m */,
 			);
@@ -118,6 +134,9 @@
 		DDBC4BAA2820E9C30099E1F0 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				DD7A98DC2B22020000B3BF0D /* libblend2d.a */,
+				DDD4A08A2949500A009EFDB5 /* liblyra.a */,
+				DDE728F829553B390089D76D /* liblyra.a */,
 				DD76254D290AFDC600BFE6D8 /* libboost_filesystem.a */,
 				DDBC4BC6282216890099E1F0 /* GLKit.framework */,
 				DDBC4BC42822166B0099E1F0 /* OpenGLES.framework */,
@@ -210,6 +229,8 @@
 				DDBC4B932820E3770099E1F0 /* AppDelegate.m in Sources */,
 				DDBC4BA42820E3790099E1F0 /* main.m in Sources */,
 				DDBC4B962820E3770099E1F0 /* SceneDelegate.m in Sources */,
+				DD7A98DF2B22026100B3BF0D /* fake_video_capturer.cpp in Sources */,
+				E97B0C172AA9DD2600FB45B9 /* AudioOutputHelperWrapper.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -376,6 +397,8 @@
 					../../_install/ios/release/sora/lib/,
 					../../_install/ios/release/boost/lib/,
 					../../_install/ios/release/webrtc/lib/,
+					../../_install/ios/release/lyra/lib/,
+					../../_install/ios/release/blend2d/lib/,
 				);
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = "-ObjC";
@@ -392,6 +415,7 @@
 					"$(SRCROOT)/../../_install/ios/release/webrtc/include/third_party/zlib/",
 					"$(SRCROOT)/../../_install/ios/release/webrtc/include/sdk/objc/",
 					"$(SRCROOT)/../../_install/ios/release/webrtc/include/sdk/objc/base/",
+					"$(SRCROOT)/../../_install/ios/release/blend2d/include/",
 				);
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -410,6 +434,7 @@
 					WEBRTC_MAC,
 					WEBRTC_POSIX,
 					OPENSSL_IS_BORINGSSL,
+					NDEBUG,
 				);
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = "";
@@ -427,6 +452,8 @@
 					../../_install/ios/release/sora/lib/,
 					../../_install/ios/release/boost/lib/,
 					../../_install/ios/release/webrtc/lib/,
+					../../_install/ios/release/lyra/lib/,
+					../../_install/ios/release/blend2d/lib/,
 				);
 				MARKETING_VERSION = 1.0;
 				OTHER_LDFLAGS = "-ObjC";
@@ -443,6 +470,7 @@
 					"$(SRCROOT)/../../_install/ios/release/webrtc/include/third_party/zlib/",
 					"$(SRCROOT)/../../_install/ios/release/webrtc/include/sdk/objc/",
 					"$(SRCROOT)/../../_install/ios/release/webrtc/include/sdk/objc/base/",
+					"$(SRCROOT)/../../_install/ios/release/blend2d/include/",
 				);
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
