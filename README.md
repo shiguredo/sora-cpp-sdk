@@ -2,6 +2,7 @@
 
 [![GitHub tag (latest SemVer)](https://img.shields.io/github/tag/shiguredo/sora-cpp-sdk.svg)](https://github.com/shiguredo/sora-cpp-sdk)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Actions status](https://github.com/shiguredo/sora-cpp-sdk/workflows/build-workflow/badge.svg)](https://github.com/shiguredo/sora-cpp-sdk/actions)
 
 ## About Shiguredo's open source software
 
@@ -20,23 +21,23 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
 ## 特徴
 
 - 各プラットフォームで利用可能な HWA への対応
-    - NVIDIA VIDEO CODEC SDK (NVENC / NVDEC)
-        - VP9 / H.264
-    - NVIDIA Jetson Video HWA
-        - VP9 / AV1 / H.264
-    - Apple macOS / iOS Video Toolbox
-        - H.264 / H.265
-    - Google Android HWA
-        - VP8 / VP9 / H.264 / H.265
-    - [Intel oneVPL](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onevpl.html) (Intel Media SDK の後継)
-        - VP9 / AV1 / H.264
+  - NVIDIA VIDEO CODEC SDK (NVENC / NVDEC)
+    - VP9 / H.264
+  - NVIDIA Jetson Video HWA
+    - VP9 / AV1 / H.264
+  - Apple macOS / iOS Video Toolbox
+    - H.264 / H.265
+  - Google Android HWA
+    - VP8 / VP9 / H.264 / H.265
+  - [Intel oneVPL](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onevpl.html) (Intel Media SDK の後継)
+    - VP9 / AV1 / H.264
 - 各プラットフォームへの [google/lyra: A Very Low\-Bitrate Codec for Speech Compression](https://github.com/google/lyra) 対応
 
 ## ライブラリのバイナリ提供について
 
 以下からダウンロードが可能です。
 
-*hololens2 は無視してください*
+_hololens2 は無視してください_
 
 https://github.com/shiguredo/sora-cpp-sdk/releases
 
@@ -49,9 +50,9 @@ https://github.com/shiguredo/sora-cpp-sdk/releases
 - Windows 10.1809 x86_64 以降
 - macOS 13.5 arm64 以降
 - Ubuntu 20.04 ARMv8 Jetson (JetPack 5.1.1 以降)
-    - Jetson AGX Orin
-    - Jetson AGX Xavier
-    - Jetson Xavier NX
+  - Jetson AGX Orin
+  - Jetson AGX Xavier
+  - Jetson Xavier NX
 - Ubuntu 20.04 x86_64
 - Ubuntu 22.04 x86_64
 - Android 7 arm64 以降
