@@ -2,7 +2,7 @@
 
 [![GitHub tag (latest SemVer)](https://img.shields.io/github/tag/shiguredo/sora-cpp-sdk.svg)](https://github.com/shiguredo/sora-cpp-sdk)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Actions status](https://github.com/shiguredo/sora-cpp-sdk/workflows/build-workflow/badge.svg)](https://github.com/shiguredo/sora-cpp-sdk/actions)
+[![Actions status](https://github.com/shiguredo/sora-cpp-sdk/workflows/build.yaml/badge.svg)](https://github.com/shiguredo/sora-cpp-sdk/actions)
 
 ## About Shiguredo's open source software
 
