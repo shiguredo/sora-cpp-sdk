@@ -11,6 +11,9 @@
 
 ## develop
 
+- [UPDATE] Boost を1.84.0 にあげる
+- [UPDATE] CMake を3.28.1 にあげる
+
 ## 2024.1.0 (2024-01-16)
 
 - [CHANGE] JetPack 5.1.2 に対応
