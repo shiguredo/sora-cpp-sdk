@@ -77,7 +77,9 @@ https://github.com/shiguredo/sora-cpp-sdk-samples
 
 **詳細は Discord やメールなどでお気軽にお問い合わせください**
 
-- NVIDIA Jetson JetPack 6 対応
+- Ubuntu 24.04 x86_64
+- Ubuntu 22.04 arm64 対応
+  - NVIDIA Jetson JetPack 6 対応
 - AMD 系 HWA 対応
 - Windows arm64 対応
 
