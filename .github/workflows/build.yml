@@ -52,7 +52,7 @@ jobs:
         id: cache-cuda
         uses: actions/cache@v3
         with:
-          path: _install\windows_x86_64\release\cuda\nvcc
+          path: _install\windows_x86_64\release\cuda
           key: windows-cuda-${{ steps.versions.outputs.cuda_version }}.v1
       - run: echo "${CUDA_VERSION}" > _install\windows_x86_64\release\cuda.version
         if: steps.cache-cuda.outputs.cache-hit == 'true'
@@ -154,19 +154,18 @@ jobs:
         if: matrix.name == 'ubuntu-20.04_x86_64' || matrix.name == 'ubuntu-22.04_x86_64'
         run: |
           source VERSION
-          # clang-15 と CUDA を入れる
+          # clang-18 と CUDA を入れる
           sudo apt-get update
           sudo apt-get install -y software-properties-common
-          # CUDA 10 なので ubuntu1804 で正しい
-          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin
-          sudo mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600
-          sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
-          sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
-          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install cuda=$CUDA_VERSION
+
+          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb
+          sudo dpkg -i cuda-keyring_*all.deb
+          sudo apt-get update
+          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install cuda-toolkit-$CUDA_VERSION
 
           wget https://apt.llvm.org/llvm.sh
           chmod a+x llvm.sh
-          sudo ./llvm.sh 15
+          sudo ./llvm.sh 18
 
           # Intel Media SDK のために libva-dev, libdrm-dev を入れる
           DEBIAN_FRONTEND=noninteractive sudo apt-get -y install libva-dev libdrm-dev

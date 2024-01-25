@@ -9,6 +9,7 @@ import platform
 import argparse
 import multiprocessing
 import hashlib
+import glob
 from typing import Callable, NamedTuple, Optional, List, Union, Dict
 if platform.system() == 'Windows':
     import winreg
@@ -350,6 +351,18 @@ def apply_patch(patch, dir, depth):
         else:
             with open(patch) as stdin:
                 cmd(['patch', f'-p{depth}'], stdin=stdin)
+
+# NOTE(enm10k): shutil.copytree に Python 3.8 で追加された dirs_exist_ok=True を指定して使いたかったが、 GitHub Actions の Windows のランナー (widnwos-2019) にインストールされている Python のバージョンが古くて利用できなかった
+# actions/setup-python で Python 3.8 を設定してビルドしたところ、 Lyra のビルドがエラーになったためこの関数を自作した
+# Windows のランナーを更新した場合は、この関数は不要になる可能性が高い
+def copytree(src_dir, dst_dir):
+    for file_path in glob.glob(src_dir + '/**', recursive=True):
+        dest_path = os.path.join(dst_dir, os.path.relpath(file_path, src_dir))
+
+        if os.path.isdir(file_path):
+            os.makedirs(dest_path, exist_ok=True)
+        else:
+            shutil.copy2(file_path, dest_path)
 
 
 @versioned
@@ -704,6 +717,8 @@ def install_cuda_windows(version, source_dir, build_dir, install_dir):
     rm_rf(os.path.join(install_dir, 'cuda'))
     if version == '10.2.89-1':
         url = 'http://developer.download.nvidia.com/compute/cuda/10.2/Prod/local_installers/cuda_10.2.89_441.22_win10.exe'  # noqa: E501
+    elif version == '11.8':
+        url = 'https://developer.download.nvidia.com/compute/cuda/11.8.0/local_installers/cuda_11.8.0_522.06_windows.exe'  # noqa: E501
     else:
         raise f'Unknown CUDA version {version}'
     file = download(url, source_dir)
@@ -712,7 +727,8 @@ def install_cuda_windows(version, source_dir, build_dir, install_dir):
     mkdir_p(os.path.join(install_dir, 'cuda'))
     with cd(os.path.join(build_dir, 'cuda')):
         cmd(['7z', 'x', file])
-    os.rename(os.path.join(build_dir, 'cuda', 'nvcc'), os.path.join(install_dir, 'cuda', 'nvcc'))
+    copytree(os.path.join(build_dir, 'cuda', 'cuda_nvcc', 'nvcc'), os.path.join(install_dir, 'cuda'))
+    copytree(os.path.join(build_dir, 'cuda', 'cuda_cudart', 'cudart'), os.path.join(install_dir, 'cuda'))
 
 
 @versioned
@@ -1410,8 +1426,8 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                 install_vpl_args['cmake_args'].append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
             if platform.target.os == 'ubuntu':
                 cmake_args = []
-                cmake_args.append("-DCMAKE_C_COMPILER=clang-15")
-                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-15")
+                cmake_args.append("-DCMAKE_C_COMPILER=clang-18")
+                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-18")
                 path = cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))
                 cmake_args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
                 flags = [
@@ -1489,8 +1505,8 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             cmake_args.append(f'-DCMAKE_SYSROOT={sysroot}')
         if platform.target.os == 'ubuntu':
             if platform.target.package_name in ('ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64'):
-                cmake_args.append("-DCMAKE_C_COMPILER=clang-15")
-                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-15")
+                cmake_args.append("-DCMAKE_C_COMPILER=clang-18")
+                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-18")
             else:
                 cmake_args.append(
                     f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}")
@@ -1651,8 +1667,8 @@ def main():
                 cmake_args.append(f'-DCMAKE_SYSTEM_VERSION={WINDOWS_SDK_VERSION}')
         if platform.target.os == 'ubuntu':
             if platform.target.package_name in ('ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64'):
-                cmake_args.append("-DCMAKE_C_COMPILER=clang-15")
-                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-15")
+                cmake_args.append("-DCMAKE_C_COMPILER=clang-18")
+                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-18")
             else:
                 cmake_args.append(
                     f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}")
@@ -1714,7 +1730,7 @@ def main():
         if platform.target.os in ('windows', 'ubuntu') and platform.target.arch == 'x86_64':
             cmake_args.append('-DUSE_NVCODEC_ENCODER=ON')
             if platform.target.os == 'windows':
-                cmake_args.append(f"-DCUDA_TOOLKIT_ROOT_DIR={cmake_path(os.path.join(install_dir, 'cuda', 'nvcc'))}")
+                cmake_args.append(f"-DCUDA_TOOLKIT_ROOT_DIR={cmake_path(os.path.join(install_dir, 'cuda'))}")
 
         if platform.target.os in ('windows', 'ubuntu') and platform.target.arch == 'x86_64':
             cmake_args.append('-DUSE_VPL_ENCODER=ON')
@@ -1813,8 +1829,8 @@ def main():
                     cmake_args.append(f'-DCMAKE_SYSROOT={sysroot}')
                 if platform.target.os == 'ubuntu':
                     if platform.target.package_name in ('ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64'):
-                        cmake_args.append("-DCMAKE_C_COMPILER=clang-15")
-                        cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-15")
+                        cmake_args.append("-DCMAKE_C_COMPILER=clang-18")
+                        cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-18")
                     else:
                         cmake_args.append(
                             f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}")
