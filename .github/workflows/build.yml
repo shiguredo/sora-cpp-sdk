@@ -17,7 +17,7 @@ jobs:
           - windows_x86_64
           - windows_hololens2
     name: Build sora-cpp-sdk for ${{ matrix.name }}
-    runs-on: windows-2019
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
       - uses: microsoft/setup-msbuild@v1.3
@@ -81,11 +81,6 @@ jobs:
         with:
           name: ${{ steps.package_name.outputs.boost_name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.boost_name }}
-      - name: Upload Lyra Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.package_name.outputs.lyra_name }}
-          path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.lyra_name }}
       - name: Upload Environment
         uses: actions/upload-artifact@v4
         with:
@@ -132,11 +127,6 @@ jobs:
         with:
           name: ${{ steps.package_name.outputs.boost_name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.boost_name }}
-      - name: Upload Lyra Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.package_name.outputs.lyra_name }}
-          path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.lyra_name }}
       - name: Upload Environment
         uses: actions/upload-artifact@v4
         with:
@@ -215,11 +205,6 @@ jobs:
         with:
           name: ${{ steps.package_name.outputs.boost_name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.boost_name }}
-      - name: Upload Lyra Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.package_name.outputs.lyra_name }}
-          path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.lyra_name }}
       - name: Upload Environment
         uses: actions/upload-artifact@v4
         with:
