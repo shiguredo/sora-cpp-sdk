@@ -20,3 +20,8 @@ NVIDIA VIDEO CODEC SDK のハードウェアデコーダでは width height の�
 ## Windows の Chrome で Jetson の H.264 映像を受信すると色が緑色になります
 
 Windows 環境でのみ Jetson の H.264 映像を受信すると映像の色が緑色になってしまうことを確認しています。こちらの事象は NVIDIA Jetson の JetPack を 5.1.1 にすることで解決します。
+
+## iOS または macOS から H.264 の FHD で配信するにはどうすればいいですか？
+
+iOS または macOS から FHD で配信したい場合は Sora の H.264 のプロファイルレベル ID を 5.2 以上に設定してください。設定方法は [Sora のドキュメント](https://sora-doc.shiguredo.jp/SORA_CONF#1581db) をご確認ください。
+プロファイルレベル ID を変更しない場合は H.264 の HD 以下で配信するか、他のコーデックを使用して FHD 配信をしてください。
