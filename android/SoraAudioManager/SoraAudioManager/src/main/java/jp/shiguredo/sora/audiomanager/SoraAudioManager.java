@@ -23,11 +23,13 @@ import android.content.pm.PackageManager;
 import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -60,7 +62,7 @@ public class SoraAudioManager {
     private AudioDevice lastConnectedAudioDevice;
     private boolean isSetHandsfree;
     private boolean willOffHandsfree;
-    private AudioFocusRequest audioFocusRequest;
+    private Object audioFocus;
     @Nullable
     private AudioManagerEvents audioManagerEvents;
 
@@ -82,10 +84,13 @@ public class SoraAudioManager {
     }
 
     public static void requestPermissions(Activity activity) {
-        if (activity.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)
-                != PackageManager.PERMISSION_GRANTED) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            // 承認が必要なのは API レベル 31 からなのでこの分岐で良い
+            if (activity.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)
+                    != PackageManager.PERMISSION_GRANTED) {
 
-            activity.requestPermissions(new String[]{Manifest.permission.BLUETOOTH_CONNECT}, 1);
+                activity.requestPermissions(new String[]{Manifest.permission.BLUETOOTH_CONNECT}, 1);
+            }
         }
     }
 
@@ -132,14 +137,24 @@ public class SoraAudioManager {
 
         // オーディオフォーカスを取得する
         // 前のオーディオフォーカス保持者に再生の一時停止を期待する
-        audioFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
-                .setAudioAttributes(
-                        new AudioAttributes.Builder()
-                                .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
-                                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                                .build()
-                ).build();
-        int result = audioManager.requestAudioFocus(audioFocusRequest);
+        int result;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            audioFocus = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+                    .setAudioAttributes(
+                            new AudioAttributes.Builder()
+                                    .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION)
+                                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                                    .build()
+                    ).build();
+            result = audioManager.requestAudioFocus((AudioFocusRequest) audioFocus);
+        } else {
+            audioFocus = (AudioManager.OnAudioFocusChangeListener) focusChange -> {
+                // 取ったからといってその後何かするわけではないのでログだけ出す
+                Log.d(TAG, "onAudioFocusChange: " + focusChange);
+            };
+            result = audioManager.requestAudioFocus((AudioManager.OnAudioFocusChangeListener) audioFocus,
+                    AudioManager.STREAM_VOICE_CALL, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+        }
         if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
             Log.d(TAG, "Audio focus request granted for VOICE_CALL streams");
         } else {
@@ -189,8 +204,12 @@ public class SoraAudioManager {
         audioManager.setMode(savedAudioMode);
 
         // オーディオフォーカスを放棄する
-        audioManager.abandonAudioFocusRequest(audioFocusRequest);
-        audioFocusRequest = null;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            audioManager.abandonAudioFocusRequest((AudioFocusRequest) audioFocus);
+        } else {
+            audioManager.abandonAudioFocus((AudioManager.OnAudioFocusChangeListener) audioFocus);
+        }
+        audioFocus = null;
 
         // コールバックを破棄する
         audioManagerEvents = null;
