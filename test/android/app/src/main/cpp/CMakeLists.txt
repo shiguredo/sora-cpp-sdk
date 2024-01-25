@@ -28,7 +28,7 @@ find_package(Sora REQUIRED)
 # find_package(Lyra REQUIRED)
 find_package(Threads REQUIRED)
 
-find_library(Blend2D_LIBRARY NAMES blend2d PATHS ${BLEND2D_ROOT_DIR}/lib)
+# find_library(Blend2D_LIBRARY NAMES blend2d PATHS ${BLEND2D_ROOT_DIR}/lib)
 
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
@@ -42,9 +42,10 @@ add_library(hello
     ../../../../../fake_video_capturer.cpp
 )
 
-target_link_libraries(hello PRIVATE Sora::sora ${Blend2D_LIBRARY})
-target_compile_definitions(hello PRIVATE BL_STATIC=1)
-target_include_directories(hello PRIVATE ${BLEND2D_ROOT_DIR}/include)
+# target_link_libraries(hello PRIVATE Sora::sora ${Blend2D_LIBRARY})
+# target_compile_definitions(hello PRIVATE BL_STATIC=1)
+# target_include_directories(hello PRIVATE ${BLEND2D_ROOT_DIR}/include)
+target_link_libraries(hello PRIVATE Sora::sora)
 
 target_compile_options(hello
   PRIVATE
