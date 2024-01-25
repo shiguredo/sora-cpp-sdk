@@ -1,5 +1,6 @@
 #include "fake_video_capturer.h"
 
+#if 0
 #include <memory>
 #include <thread>
 
@@ -270,6 +271,20 @@ class FakeVideoCapturerImpl : public FakeVideoCapturer {
   BLFont bipbop_font_;
   BLFont stats_font_;
   uint32_t frame_;
+};
+
+#endif
+
+class FakeVideoCapturerImpl : public FakeVideoCapturer {
+ public:
+  FakeVideoCapturerImpl(FakeVideoCapturerConfig config)
+      : FakeVideoCapturer(config) {
+    StartCapture();
+  }
+  ~FakeVideoCapturerImpl() {}
+
+  void StartCapture() override {}
+  void StopCapture() override {}
 };
 
 rtc::scoped_refptr<FakeVideoCapturer> CreateFakeVideoCapturer(

@@ -32,7 +32,7 @@ if (USE_LYRA)
   find_package(Lyra REQUIRED)
 endif()
 
-find_library(Blend2D_LIBRARY NAMES blend2d PATHS ${BLEND2D_ROOT_DIR}/lib)
+# find_library(Blend2D_LIBRARY NAMES blend2d PATHS ${BLEND2D_ROOT_DIR}/lib)
 
 function (init_target target)
   target_sources(${target} PRIVATE fake_video_capturer.cpp)
@@ -42,9 +42,10 @@ function (init_target target)
     set_target_properties(${target} PROPERTIES CXX_STANDARD 17 C_STANDARD 17)
   endif()
   set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE ON)
-  target_compile_definitions(${target} PRIVATE BL_STATIC=1)
-  target_include_directories(${target} PRIVATE ${BLEND2D_ROOT_DIR}/include)
-  target_link_libraries(${target} PRIVATE Sora::sora ${Blend2D_LIBRARY})
+  # target_compile_definitions(${target} PRIVATE BL_STATIC=1)
+  # target_include_directories(${target} PRIVATE ${BLEND2D_ROOT_DIR}/include)
+  # target_link_libraries(${target} PRIVATE Sora::sora ${Blend2D_LIBRARY})
+  target_link_libraries(${target} PRIVATE Sora::sora)
 
   if (USE_LIBCXX)
     target_compile_options(${target}
@@ -56,7 +57,7 @@ function (init_target target)
 
   if (WIN32)
     # 文字コードを utf-8 として扱うのと、シンボルテーブル数を増やす
-    target_compile_options(${target} PRIVATE /utf-8 /bigobj)
+    target_compile_options(${target} PRIVATE /utf-8 /bigobj /w34996)
     if (HELLO_HOLOLENS2)
       set_target_properties(${target}
         PROPERTIES

@@ -642,6 +642,9 @@ def install_boost(
             if len(cxx) != 0:
                 with open('project-config.jam', 'w') as f:
                     f.write(f'using {toolset} : : {cxx} : ;')
+            # Boost 1.83.0 の今だけこのパッチが必要
+            # https://github.com/boostorg/json/pull/928
+            apply_patch(os.path.join(BASE_DIR, 'json.patch'), os.path.join(build_dir, 'boost'), 2)
             cmd([
                 b2,
                 'install',
@@ -1539,7 +1542,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             cmake_args.append('-DANDROID_NDK=OFF')
             cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(['-nostdinc++'])}")
         install_blend2d_args['cmake_args'] = cmake_args
-        install_blend2d(**install_blend2d_args)
+        # install_blend2d(**install_blend2d_args)
 
 
 AVAILABLE_TARGETS = ['windows_x86_64', 'windows_hololens2', 'macos_x86_64', 'macos_arm64', 'ubuntu-20.04_x86_64',

@@ -95,9 +95,7 @@ target_include_directories(sora PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_sources(sora
   PRIVATE
     src/aligned_encoder_adapter.cpp
-    src/audio_decoder_lyra.cpp
     src/audio_device_module.cpp
-    src/audio_encoder_lyra.cpp
     src/audio_output_helper.cpp
     src/camera_device_capturer.cpp
     src/data_channel.cpp
@@ -224,7 +222,7 @@ set(BUNDLE_STATIC_LIBS)
 
 if (SORA_TARGET_OS STREQUAL "windows")
   # 文字コードを utf-8 として扱うのと、シンボルテーブル数を増やす
-  target_compile_options(sora PRIVATE /utf-8 /bigobj)
+  target_compile_options(sora PRIVATE /utf-8 /bigobj /w34996)
   if (SORA_TARGET_ARCH STREQUAL "hololens2")
     set_target_properties(sora
       PROPERTIES
