@@ -170,7 +170,7 @@ jobs:
           wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb
           sudo dpkg -i cuda-keyring_*all.deb
           sudo apt-get update
-          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install cuda-toolkit-$CUDA_VERSION
+          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install cuda=$CUDA_VERSION
 
           wget https://apt.llvm.org/llvm.sh
           chmod a+x llvm.sh

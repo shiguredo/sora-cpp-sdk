@@ -712,7 +712,7 @@ def install_bazel(version, source_dir, install_dir, platform: str):
 def install_cuda_windows(version, source_dir, build_dir, install_dir):
     rm_rf(os.path.join(build_dir, 'cuda'))
     rm_rf(os.path.join(install_dir, 'cuda'))
-    if version == '11.8':
+    if version == '11.8.0-1':
         url = 'https://developer.download.nvidia.com/compute/cuda/11.8.0/local_installers/cuda_11.8.0_522.06_windows.exe'  # noqa: E501
     else:
         raise f'Unknown CUDA version {version}'
