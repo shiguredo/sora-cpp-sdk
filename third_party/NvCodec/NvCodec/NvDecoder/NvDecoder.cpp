@@ -12,11 +12,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
-
-// clang-format off
-#include "sora/fix_cuda_noinline_macro_error.h"
 #include <iostream>
-// clang-format on
 
 #include "NvDecoder/NvDecoder.h"
 #include "sora/dyn/cuda.h"
@@ -627,8 +623,8 @@ int NvDecoder::HandlePictureDisplay(CUVIDPARSERDISPINFO* pDispInfo) {
 
   CUVIDGETDECODESTATUS DecodeStatus;
   memset(&DecodeStatus, 0, sizeof(DecodeStatus));
-  CUresult result = dyn::cuvidGetDecodeStatus(
-      m_hDecoder, pDispInfo->picture_index, &DecodeStatus);
+  CUresult result =
+      dyn::cuvidGetDecodeStatus(m_hDecoder, pDispInfo->picture_index, &DecodeStatus);
   if (result == CUDA_SUCCESS &&
       (DecodeStatus.decodeStatus == cuvidDecodeStatus_Error ||
        DecodeStatus.decodeStatus == cuvidDecodeStatus_Error_Concealed)) {
@@ -649,8 +645,7 @@ int NvDecoder::HandlePictureDisplay(CUVIDPARSERDISPINFO* pDispInfo) {
               (CUdeviceptr*)&pFrame, &m_nDeviceFramePitch, GetWidth() * m_nBPP,
               m_nLumaHeight + (m_nChromaHeight * m_nNumChromaPlanes), 16));
         } else {
-          CUDA_DRVAPI_CALL(
-              dyn::cuMemAlloc((CUdeviceptr*)&pFrame, GetFrameSize()));
+          CUDA_DRVAPI_CALL(dyn::cuMemAlloc((CUdeviceptr*)&pFrame, GetFrameSize()));
         }
       } else {
         pFrame = new uint8_t[GetFrameSize()];
@@ -788,8 +783,7 @@ NvDecoder::NvDecoder(CUcontext cuContext,
   videoParserParameters.pfnGetOperatingPoint = HandleOperatingPointProc;
   videoParserParameters.pfnGetSEIMsg =
       m_bExtractSEIMessage ? HandleSEIMessagesProc : NULL;
-  NVDEC_API_CALL(
-      dyn::cuvidCreateVideoParser(&m_hParser, &videoParserParameters));
+  NVDEC_API_CALL(dyn::cuvidCreateVideoParser(&m_hParser, &videoParserParameters));
 }
 
 NvDecoder::~NvDecoder() {

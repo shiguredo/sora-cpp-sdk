@@ -14,12 +14,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <string.h>
-
-// clang-format off
-#include "sora/fix_cuda_noinline_macro_error.h"
-#include <string>
-// clang-format on
-
+#include <iostream>
 #include <map>
 #include <mutex>
 #include <sstream>

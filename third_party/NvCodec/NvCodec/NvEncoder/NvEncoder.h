@@ -13,12 +13,7 @@
 
 #include <stdint.h>
 #include <string.h>
-
-// clang-format off
-#include "sora/fix_cuda_noinline_macro_error.h"
 #include <iostream>
-// clang-format on
-
 #include <mutex>
 #include <sstream>
 #include <string>
