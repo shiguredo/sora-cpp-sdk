@@ -23,5 +23,9 @@ Windows 環境でのみ Jetson の H.264 映像を受信すると映像の色が
 
 ## iOS または macOS から H.264 の FHD で配信するにはどうすればいいですか？
 
-iOS または macOS から FHD で配信したい場合は Sora の H.264 のプロファイルレベル ID を 5.2 以上に設定してください。設定方法は `SoraSignalingConfig` に `video_h264_params` を設定するか、 [Sora のドキュメント](https://sora-doc.shiguredo.jp/SORA_CONF#1581db) をご確認ください。
-プロファイルレベル ID を変更しない場合は H.264 の HD 以下で配信するか、他のコーデックを使用して FHD 配信をしてください。
+iOS または macOS から FHD で配信したい場合は Sora の H.264 のプロファイルレベル ID を 5.2 以上に設定してください。設定は以下の方法で行うことができます。
+
+- `SoraSignalingConfig` に `video_h264_params` を設定する
+- Sora の設定を変更する
+
+Sora の設定については [Sora のドキュメント](https://sora-doc.shiguredo.jp/SORA_CONF#1581db) をご確認ください。
