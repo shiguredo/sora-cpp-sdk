@@ -1,5 +1,3 @@
-#include <iostream>
-
 #include "sora/sora_client_context.h"
 
 // WebRTC
