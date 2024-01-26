@@ -13,7 +13,6 @@
 
 - [CHANGE] WebRTC を `m121.6167.3.0` にあげる
   - libwebrtc から cricket::MediaEngineDependencies が削除されたため、 SoraClientContextConfig から configure_media_dependencies を削除した
-  - 同じく、 libwertc の更新に伴い webrtc::ConnectionContext のメソッド default_network_manager, default_socket_factory を signaling_thread 上で実行することが必須になった
   - @torikizi @enm10k
 - [UPDATE] Boost を1.84.0 にあげる
   - @enm10k
