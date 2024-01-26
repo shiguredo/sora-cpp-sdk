@@ -69,7 +69,6 @@ jobs:
           }
           echo "name=${PACKAGE_NAME}" >> ${Env:GITHUB_OUTPUT}
           echo "boost_name=${BOOST_PACKAGE_NAME}" >> ${Env:GITHUB_OUTPUT}
-          echo "lyra_name=${LYRA_PACKAGE_NAME}" >> ${Env:GITHUB_OUTPUT}
         id: package_name
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
@@ -115,7 +114,6 @@ jobs:
           source _package/${{ matrix.name }}/release/sora.env
           echo "name=${PACKAGE_NAME}" >> $GITHUB_OUTPUT
           echo "boost_name=${BOOST_PACKAGE_NAME}" >> $GITHUB_OUTPUT
-          echo "lyra_name=${LYRA_PACKAGE_NAME}" >> $GITHUB_OUTPUT
         id: package_name
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
@@ -192,7 +190,6 @@ jobs:
           source _package/${{ matrix.name }}/release/sora.env
           echo "name=${PACKAGE_NAME}" >> $GITHUB_OUTPUT
           echo "boost_name=${BOOST_PACKAGE_NAME}" >> $GITHUB_OUTPUT
-          echo "lyra_name=${LYRA_PACKAGE_NAME}" >> $GITHUB_OUTPUT
         id: package_name
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
