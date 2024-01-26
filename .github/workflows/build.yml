@@ -47,11 +47,11 @@ jobs:
       # CUDA のインストールバイナリのダウンロードは 3GB ぐらいあって、
       # ビルドの度に取得するのはつらいのでキャッシュする
       # （インストールする nvcc は解凍後で 100MB 程度なのでキャッシュ可能）
-      - name: Cache NVCC ${{ steps.versions.outputs.cuda_version }}
+      - name: Cache CUDA ${{ steps.versions.outputs.cuda_version }}
         id: cache-cuda
         uses: actions/cache@v4
         with:
-          path: _install\windows_x86_64\release\cuda\nvcc
+          path: _install\windows_x86_64\release\cuda
           key: windows-cuda-${{ steps.versions.outputs.cuda_version }}.v1
       - run: echo "${CUDA_VERSION}" > _install\windows_x86_64\release\cuda.version
         if: steps.cache-cuda.outputs.cache-hit == 'true'
