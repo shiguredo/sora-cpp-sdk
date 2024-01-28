@@ -166,7 +166,7 @@ public class SoraBluetoothManager {
             Context context,
             SoraAudioManager soraAudioManager,
             AudioManager audioManager) {
-        SoraAudioManager.checkIsOnMainThread();
+        SoraThreadUtils.checkIsOnMainThread();
         this.context = context;
         this.soraAudioManager = soraAudioManager;
         this.audioManager = audioManager;
@@ -177,11 +177,11 @@ public class SoraBluetoothManager {
     }
 
     public State getState() {
-        SoraAudioManager.checkIsOnMainThread();
+        SoraThreadUtils.checkIsOnMainThread();
         return bluetoothState;
     }
     public void start() {
-        SoraAudioManager.checkIsOnMainThread();
+        SoraThreadUtils.checkIsOnMainThread();
         if (bluetoothState != State.UNINITIALIZED) {
             Log.w(TAG, "Invalid BT state");
             return;
@@ -216,7 +216,7 @@ public class SoraBluetoothManager {
     }
 
     public void stop() {
-        SoraAudioManager.checkIsOnMainThread();
+        SoraThreadUtils.checkIsOnMainThread();
         if (bluetoothAdapter == null) {
             return;
         }
@@ -236,7 +236,7 @@ public class SoraBluetoothManager {
     }
 
     public boolean startScoAudio() {
-        SoraAudioManager.checkIsOnMainThread();
+        SoraThreadUtils.checkIsOnMainThread();
         if (scoConnectionAttempts >= MAX_SCO_CONNECTION_ATTEMPTS) {
             Log.e(TAG, "BT SCO connection fails - no more attempts");
             return false;
@@ -265,7 +265,7 @@ public class SoraBluetoothManager {
     }
 
     public void stopScoAudio() {
-        SoraAudioManager.checkIsOnMainThread();
+        SoraThreadUtils.checkIsOnMainThread();
         if (bluetoothState != State.SCO_CONNECTING && bluetoothState != State.SCO_CONNECTED) {
             return;
         }
@@ -292,23 +292,23 @@ public class SoraBluetoothManager {
     }
 
     private void updateAudioDeviceState() {
-        SoraAudioManager.checkIsOnMainThread();
+        SoraThreadUtils.checkIsOnMainThread();
         soraAudioManager.updateAudioDeviceState();
     }
 
     private void startTimer() {
-        SoraAudioManager.checkIsOnMainThread();
+        SoraThreadUtils.checkIsOnMainThread();
         handler.postDelayed(bluetoothTimeoutRunnable, BLUETOOTH_SCO_TIMEOUT_MS);
     }
 
     /** Cancels any outstanding timer tasks. */
     private void cancelTimer() {
-        SoraAudioManager.checkIsOnMainThread();
+        SoraThreadUtils.checkIsOnMainThread();
         handler.removeCallbacks(bluetoothTimeoutRunnable);
     }
 
     private void bluetoothTimeout() {
-        SoraAudioManager.checkIsOnMainThread();
+        SoraThreadUtils.checkIsOnMainThread();
         Log.d(TAG, "bluetoothTimeout: BT state=" + bluetoothState + ", "
                 + "attempts: " + scoConnectionAttempts + ", "
                 + "bluetoothHeadset: " + (bluetoothHeadset != null));

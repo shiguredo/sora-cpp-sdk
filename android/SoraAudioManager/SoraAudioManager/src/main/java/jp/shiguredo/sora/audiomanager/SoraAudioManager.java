@@ -41,13 +41,11 @@ public class SoraAudioManager {
 
     public enum AudioDevice { SPEAKER_PHONE, WIRED_HEADSET, EARPIECE, BLUETOOTH, NONE }
 
-    public interface AudioManagerEvents {
+    public interface OnChangeRouteObserver {
         // オーディオデバイスの変更を通知するコールバック
-        void onAudioDeviceChanged(
-                AudioDevice selectedAudioDevice, Set<AudioDevice> availableAudioDevices);
+        void OnChangeRoute();
     }
 
-    private final Handler handler;
     private final Context context;
     private final AudioManager audioManager;
     private final SoraBluetoothManager bluetoothManager;
@@ -64,12 +62,7 @@ public class SoraAudioManager {
     private boolean willOffHandsfree;
     private Object audioFocus;
     @Nullable
-    private AudioManagerEvents audioManagerEvents;
-
-    public static void checkIsOnMainThread() {
-        if (Thread.currentThread() != Looper.getMainLooper().getThread()) {
-        }
-    }
+    private OnChangeRouteObserver onChangeRouteObserver;
 
     // 有線ヘッドセットの接続を通知するレシーバー
     private class WiredHeadsetReceiver extends BroadcastReceiver {
@@ -99,8 +92,7 @@ public class SoraAudioManager {
     }
 
     private SoraAudioManager(Context context) {
-        checkIsOnMainThread();
-        handler = new Handler(Looper.getMainLooper());
+        SoraThreadUtils.checkIsOnMainThread();
         this.context = context;
         audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
         bluetoothManager = SoraBluetoothManager.create(context, this, audioManager);
@@ -123,12 +115,10 @@ public class SoraAudioManager {
      * - モード
      * - マイクミュート
      */
-    public void start() {
-        handler.post(SoraAudioManager.this::startInternal);
-    }
-
-    public void startInternal() {
-        checkIsOnMainThread();
+    public void start(OnChangeRouteObserver observer) {
+        SoraThreadUtils.checkIsOnMainThread();
+        // コールバックを設定する
+        onChangeRouteObserver = observer;
 
         // 停止時に設定に戻すため設定を保存する
         savedAudioMode = audioManager.getMode();
@@ -185,12 +175,9 @@ public class SoraAudioManager {
     }
 
     // オーディオの制御を終了する
-    public void stop() {
-        handler.post(SoraAudioManager.this::stopInternal);
-    }
     @SuppressLint("WrongConstant")
-    public void stopInternal() {
-        checkIsOnMainThread();
+    public void stop() {
+        SoraThreadUtils.checkIsOnMainThread();
 
         // 有線ヘッドセットの接続を通知するレシーバーを解除
         context.unregisterReceiver(wiredHeadsetReceiver);
@@ -212,18 +199,22 @@ public class SoraAudioManager {
         audioFocus = null;
 
         // コールバックを破棄する
-        audioManagerEvents = null;
+        onChangeRouteObserver = null;
+    }
+
+    // ハンズフリーかを確認する
+    public boolean isHandsfree() {
+        return audioManager.isSpeakerphoneOn();
     }
 
     // ハンズフリーに設定する
-    public boolean setHandsfree(boolean on) {
-        checkIsOnMainThread();
-        if (!on && !hasEarpiece()) {
-            return  false;
+    public void setHandsfree(boolean on) {
+        SoraThreadUtils.checkIsOnMainThread();
+        if (isSetHandsfree == on) {
+            return;
         }
         isSetHandsfree = on;
         updateAudioDeviceState();
-        return true;
     }
 
     // ハンズフリーの設定を変更する
@@ -251,7 +242,7 @@ public class SoraAudioManager {
 
     // 状態に基づいてデバイスを選択する
     public void updateAudioDeviceState() {
-        checkIsOnMainThread();
+        SoraThreadUtils.checkIsOnMainThread();
 
         if (bluetoothManager.getState() == SoraBluetoothManager.State.HEADSET_AVAILABLE
                 || bluetoothManager.getState() == SoraBluetoothManager.State.HEADSET_UNAVAILABLE
@@ -364,8 +355,8 @@ public class SoraAudioManager {
                     + "selected=" + newAudioDevice);
             setSpeakerphoneOn(newAudioDevice == AudioDevice.SPEAKER_PHONE);
             selectedAudioDevice = newAudioDevice;
-            if (audioManagerEvents != null) {
-                audioManagerEvents.onAudioDeviceChanged(selectedAudioDevice, audioDevices);
+            if (onChangeRouteObserver != null) {
+                onChangeRouteObserver.OnChangeRoute();
             }
         }
     }
