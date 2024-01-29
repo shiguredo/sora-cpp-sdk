@@ -11,8 +11,16 @@
 
 ## develop
 
+- [CHANGE] WebRTC を `m121.6167.3.0` にあげる
+  - libwebrtc から cricket::MediaEngineDependencies が削除されたため、 SoraClientContextConfig から configure_media_dependencies を削除した
+  - @torikizi @enm10k
 - [UPDATE] Boost を1.84.0 にあげる
+  - @enm10k
 - [UPDATE] CMake を3.28.1 にあげる
+  - @enm10k
+- [UPDATE] CUDA を 11.8 にあげる
+  - 更新時に発生したビルド・エラーを回避するために `include/sora/fix_cuda_noinline_macro_error.h` を追加した
+  - @enm10k
 
 ## 2024.1.0 (2024-01-16)
 

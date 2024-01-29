@@ -9,6 +9,8 @@
 *
 */
 
+#include "sora/fix_cuda_noinline_macro_error.h"
+
 #include "NvEncoder/NvEncoderCuda.h"
 #include "sora/dyn/cuda.h"
 

@@ -1,3 +1,5 @@
+#include "sora/fix_cuda_noinline_macro_error.h"
+
 #include "sora/cuda_context.h"
 
 #if !USE_NVCODEC_ENCODER

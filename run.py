@@ -9,6 +9,7 @@ import platform
 import argparse
 import multiprocessing
 import hashlib
+import glob
 from typing import Callable, NamedTuple, Optional, List, Union, Dict
 if platform.system() == 'Windows':
     import winreg
@@ -350,6 +351,18 @@ def apply_patch(patch, dir, depth):
         else:
             with open(patch) as stdin:
                 cmd(['patch', f'-p{depth}'], stdin=stdin)
+
+# NOTE(enm10k): shutil.copytree に Python 3.8 で追加された dirs_exist_ok=True を指定して使いたかったが、 GitHub Actions の Windows のランナー (widnwos-2019) にインストールされている Python のバージョンが古くて利用できなかった
+# actions/setup-python で Python 3.8 を設定してビルドしたところ、 Lyra のビルドがエラーになったためこの関数を自作した
+# Windows のランナーを更新した場合は、この関数は不要になる可能性が高い
+def copytree(src_dir, dst_dir):
+    for file_path in glob.glob(src_dir + '/**', recursive=True):
+        dest_path = os.path.join(dst_dir, os.path.relpath(file_path, src_dir))
+
+        if os.path.isdir(file_path):
+            os.makedirs(dest_path, exist_ok=True)
+        else:
+            shutil.copy2(file_path, dest_path)
 
 
 @versioned
@@ -701,6 +714,8 @@ def install_cuda_windows(version, source_dir, build_dir, install_dir):
     rm_rf(os.path.join(install_dir, 'cuda'))
     if version == '10.2.89-1':
         url = 'http://developer.download.nvidia.com/compute/cuda/10.2/Prod/local_installers/cuda_10.2.89_441.22_win10.exe'  # noqa: E501
+    elif version == '11.8.0-1':
+        url = 'https://developer.download.nvidia.com/compute/cuda/11.8.0/local_installers/cuda_11.8.0_522.06_windows.exe'  # noqa: E501
     else:
         raise f'Unknown CUDA version {version}'
     file = download(url, source_dir)
@@ -709,7 +724,8 @@ def install_cuda_windows(version, source_dir, build_dir, install_dir):
     mkdir_p(os.path.join(install_dir, 'cuda'))
     with cd(os.path.join(build_dir, 'cuda')):
         cmd(['7z', 'x', file])
-    os.rename(os.path.join(build_dir, 'cuda', 'nvcc'), os.path.join(install_dir, 'cuda', 'nvcc'))
+    copytree(os.path.join(build_dir, 'cuda', 'cuda_nvcc', 'nvcc'), os.path.join(install_dir, 'cuda'))
+    copytree(os.path.join(build_dir, 'cuda', 'cuda_cudart', 'cudart'), os.path.join(install_dir, 'cuda'))
 
 
 @versioned
@@ -1272,6 +1288,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                 '-D_LIBCPP_ABI_NAMESPACE=Cr',
                 '-D_LIBCPP_ABI_VERSION=2',
                 '-D_LIBCPP_DISABLE_AVAILABILITY',
+                '-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE',
                 '-nostdinc++',
                 '-std=gnu++17',
                 f"-isystem{os.path.join(webrtc_info.libcxx_dir, 'include')}",
@@ -1298,6 +1315,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                 '-D_LIBCPP_ABI_NAMESPACE=Cr',
                 '-D_LIBCPP_ABI_VERSION=2',
                 '-D_LIBCPP_DISABLE_AVAILABILITY',
+                '-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE',
                 '-nostdinc++',
                 '-std=gnu++17',
                 f"-isystem{os.path.join(webrtc_info.libcxx_dir, 'include')}",
@@ -1315,6 +1333,7 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                 '-D_LIBCPP_ABI_NAMESPACE=Cr',
                 '-D_LIBCPP_ABI_VERSION=2',
                 '-D_LIBCPP_DISABLE_AVAILABILITY',
+                '-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE',
                 '-nostdinc++',
                 f"-isystem{os.path.join(webrtc_info.libcxx_dir, 'include')}",
                 '-fPIC',
@@ -1403,14 +1422,15 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                 install_vpl_args['cmake_args'].append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
             if platform.target.os == 'ubuntu':
                 cmake_args = []
-                cmake_args.append("-DCMAKE_C_COMPILER=clang-15")
-                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-15")
+                cmake_args.append("-DCMAKE_C_COMPILER=clang-18")
+                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-18")
                 path = cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))
                 cmake_args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
                 flags = [
                     '-nostdinc++', '-D_LIBCPP_ABI_NAMESPACE=Cr', '-D_LIBCPP_ABI_VERSION=2',
                     '-D_LIBCPP_DISABLE_AVAILABILITY', '-D_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS',
-                    '-D_LIBCXXABI_DISABLE_VISIBILITY_ANNOTATIONS', '-D_LIBCPP_ENABLE_NODISCARD']
+                    '-D_LIBCXXABI_DISABLE_VISIBILITY_ANNOTATIONS', '-D_LIBCPP_ENABLE_NODISCARD',
+                    '-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE']
                 cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(flags)}")
                 install_vpl_args['cmake_args'] += cmake_args
             install_vpl(**install_vpl_args)
@@ -1481,8 +1501,8 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             cmake_args.append(f'-DCMAKE_SYSROOT={sysroot}')
         if platform.target.os == 'ubuntu':
             if platform.target.package_name in ('ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64'):
-                cmake_args.append("-DCMAKE_C_COMPILER=clang-15")
-                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-15")
+                cmake_args.append("-DCMAKE_C_COMPILER=clang-18")
+                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-18")
             else:
                 cmake_args.append(
                     f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}")
@@ -1490,7 +1510,8 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                     f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}")
             path = cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))
             cmake_args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
-            cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(['-nostdinc++'])}")
+            cxxflags = ['-nostdinc++', '-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE']
+            cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
         if platform.target.os == 'jetson':
             sysroot = os.path.join(install_dir, 'rootfs')
             cmake_args.append('-DCMAKE_SYSTEM_NAME=Linux')
@@ -1509,7 +1530,8 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             cmake_args.append('-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH')
             path = cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))
             cmake_args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
-            cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(['-nostdinc++'])}")
+            cxxflags = ['-nostdinc++', '-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE']
+            cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
         if platform.target.os == 'ios':
             cmake_args += ['-G', 'Xcode']
             cmake_args.append("-DCMAKE_SYSTEM_NAME=iOS")
@@ -1532,7 +1554,8 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             # https://github.com/android/ndk/issues/1618
             cmake_args.append('-DCMAKE_ANDROID_EXCEPTIONS=ON')
             cmake_args.append('-DANDROID_NDK=OFF')
-            cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(['-nostdinc++'])}")
+            cxxflags = ['-nostdinc++', '-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE']
+            cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
         install_blend2d_args['cmake_args'] = cmake_args
         install_blend2d(**install_blend2d_args)
 
@@ -1636,8 +1659,8 @@ def main():
             cmake_args.append(f'-DCMAKE_SYSTEM_VERSION={WINDOWS_SDK_VERSION}')
         if platform.target.os == 'ubuntu':
             if platform.target.package_name in ('ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64'):
-                cmake_args.append("-DCMAKE_C_COMPILER=clang-15")
-                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-15")
+                cmake_args.append("-DCMAKE_C_COMPILER=clang-18")
+                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-18")
             else:
                 cmake_args.append(
                     f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}")
@@ -1646,6 +1669,8 @@ def main():
             cmake_args.append("-DUSE_LIBCXX=ON")
             cmake_args.append(
                 f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}")
+            cxxflags = ['-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE']
+            cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
         if platform.target.os == 'macos':
             sysroot = cmdcap(['xcrun', '--sdk', 'macosx', '--show-sdk-path'])
             target = 'x86_64-apple-darwin' if platform.target.arch == 'x86_64' else 'aarch64-apple-darwin'
@@ -1678,6 +1703,8 @@ def main():
             cmake_args.append('-DCMAKE_ANDROID_EXCEPTIONS=ON')
             cmake_args.append('-DANDROID_NDK=OFF')
             cmake_args.append(f"-DSORA_WEBRTC_LDFLAGS={os.path.join(install_dir, 'webrtc.ldflags')}")
+            cxxflags = ['-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE']
+            cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
         if platform.target.os == 'jetson':
             sysroot = os.path.join(install_dir, 'rootfs')
             cmake_args.append('-DCMAKE_SYSTEM_NAME=Linux')
@@ -1694,12 +1721,14 @@ def main():
             cmake_args.append(
                 f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}")
             cmake_args.append('-DUSE_JETSON_ENCODER=ON')
+            cxxflags = ['-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE']
+            cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
 
         # NvCodec
         if platform.target.os in ('windows', 'ubuntu') and platform.target.arch == 'x86_64':
             cmake_args.append('-DUSE_NVCODEC_ENCODER=ON')
             if platform.target.os == 'windows':
-                cmake_args.append(f"-DCUDA_TOOLKIT_ROOT_DIR={cmake_path(os.path.join(install_dir, 'cuda', 'nvcc'))}")
+                cmake_args.append(f"-DCUDA_TOOLKIT_ROOT_DIR={cmake_path(os.path.join(install_dir, 'cuda'))}")
 
         if platform.target.os in ('windows', 'ubuntu') and platform.target.arch == 'x86_64':
             cmake_args.append('-DUSE_VPL_ENCODER=ON')
@@ -1792,8 +1821,8 @@ def main():
                     cmake_args.append(f'-DCMAKE_SYSROOT={sysroot}')
                 if platform.target.os == 'ubuntu':
                     if platform.target.package_name in ('ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64'):
-                        cmake_args.append("-DCMAKE_C_COMPILER=clang-15")
-                        cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-15")
+                        cmake_args.append("-DCMAKE_C_COMPILER=clang-18")
+                        cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-18")
                     else:
                         cmake_args.append(
                             f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}")
@@ -1802,6 +1831,8 @@ def main():
                     cmake_args.append("-DUSE_LIBCXX=ON")
                     cmake_args.append(
                         f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}")
+                    cxxflags = ['-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE']
+                    cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
                 if platform.target.os == 'jetson':
                     sysroot = os.path.join(install_dir, 'rootfs')
                     cmake_args.append('-DJETSON=ON')
@@ -1822,6 +1853,8 @@ def main():
                         f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}")
                     cmake_args.append(
                         f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}")
+                    cxxflags = ['-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE']
+                    cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
 
                 if platform.target.os in ('windows', 'macos', 'ubuntu'):
                     cmake_args.append("-DTEST_CONNECT_DISCONNECT=ON")

@@ -93,6 +93,7 @@ cc_toolchain_config(
         "-D_LIBCPP_ABI_NAMESPACE=Cr",
         "-D_LIBCPP_ABI_VERSION=2",
         "-D_LIBCPP_DISABLE_AVAILABILITY",
+        '-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE',
         "-fexperimental-relative-c++-abi-vtables",
         "-fexceptions",
     ],
