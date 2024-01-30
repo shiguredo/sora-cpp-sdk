@@ -18,6 +18,8 @@ struct SoraClientContextConfig {
   // false にするとソフトウェアエンコーダ/デコーダのみになる（H.264 は利用できない）
   bool use_hardware_encoder = true;
 
+  bool skip_i420_conv = false;
+
   // PeerConnectionFactoryDependencies をカスタマイズするためのコールバック関数
   // デフォルトの値が設定された上で、PeerConnectionFactory を生成する直前に呼ばれる
   std::function<void(webrtc::PeerConnectionFactoryDependencies&)>

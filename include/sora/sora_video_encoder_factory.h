@@ -54,6 +54,21 @@ struct SoraVideoEncoderFactoryConfig {
   // webrtc::SimulcastEncoderAdapter を噛ますかどうか
   bool use_simulcast_adapter = false;
 
+  /*
+  フレーム・バッファーを I420 に変換する処理をスキップするかどうか
+  有効にするとエンコーダの性能が向上するが、一部の環境でサイマルキャストが利用できなくなる
+  use_simulcast_adapter = true の場合のみ有効
+  
+  このフラグが必要になった背景は以下の通り
+  - 一部の kNative なフレーム・バッファーでは、バッファーを複数回読み込めないという制限があり、サイマルキャストで問題になった
+    - サイマルキャストは複数ストリームを送信するため、バッファーを複数回読みこむ必要がある
+  - フレーム・バッファーを I420 に変換することでバッファーが複数回読めるようになったが、変換処理が重く、エンコーダーの性能が低下した
+  - 当初はサイマルキャストを無効 (use_simulcast_adapter = false) にすることで、問題を回避できると考えていたが、一部のケースで問題があることがわかった
+    - Sora の type: offer でサイマルキャストの有効/無効を上書きして設定できるため、 use_simulcast_adapter = false を設定するとそのケースに対応できない
+  - そのため、 I420 への変換処理をスキップするフラグが必要になった
+  */
+  bool skip_i420_conv = false;
+
   // 内部用。触らないこと。
   bool is_internal = false;
 };

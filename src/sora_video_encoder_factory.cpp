@@ -127,7 +127,11 @@ SoraVideoEncoderFactory::CreateVideoEncoder(
     // サイマルキャストの場合はアダプタを噛ましつつ、無条件ですべてアライメントする
     auto encoder = std::make_shared<webrtc::SimulcastEncoderAdapter>(
         internal_encoder_factory_.get(), format);
-    // kNative を I420 に変換する
+
+    if (config_.skip_i420_conv) {
+      return absl::make_unique<AlignedEncoderAdapter>(encoder, 16, 16);
+    }
+
     auto adapted1 = std::make_shared<I420EncoderAdapter>(encoder);
     auto adapted2 = absl::make_unique<AlignedEncoderAdapter>(adapted1, 16, 16);
     return adapted2;
@@ -175,15 +179,16 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
 
 #if USE_NVCODEC_ENCODER
   if (NvCodecH264Encoder::IsSupported(cuda_context)) {
-    config.encoders.insert(config.encoders.begin(),
-                           VideoEncoderConfig(
-                               webrtc::kVideoCodecH264,
-                               [cuda_context = cuda_context](auto format)
-                                   -> std::unique_ptr<webrtc::VideoEncoder> {
-                                 return NvCodecH264Encoder::Create(
-                                     cricket::CreateVideoCodec(format), cuda_context);
-                               },
-                               16));
+    config.encoders.insert(
+        config.encoders.begin(),
+        VideoEncoderConfig(
+            webrtc::kVideoCodecH264,
+            [cuda_context = cuda_context](
+                auto format) -> std::unique_ptr<webrtc::VideoEncoder> {
+              return NvCodecH264Encoder::Create(
+                  cricket::CreateVideoCodec(format), cuda_context);
+            },
+            16));
   }
 #endif
 
