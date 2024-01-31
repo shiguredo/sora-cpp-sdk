@@ -25,8 +25,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
-import androidx.annotation.Nullable;
-
 import java.util.List;
 
 public class SoraBluetoothManager {
@@ -58,11 +56,8 @@ public class SoraBluetoothManager {
     private final BluetoothProfile.ServiceListener bluetoothServiceListener;
     private final BroadcastReceiver bluetoothHeadsetReceiver;
     private final Handler handler;
-    @Nullable
     private BluetoothAdapter bluetoothAdapter;
-    @Nullable
     private BluetoothHeadset bluetoothHeadset;
-    @Nullable
     private BluetoothDevice bluetoothDevice;
     int scoConnectionAttempts;
 

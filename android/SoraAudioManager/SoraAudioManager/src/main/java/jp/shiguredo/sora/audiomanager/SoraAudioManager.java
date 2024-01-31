@@ -24,12 +24,7 @@ import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.os.Build;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
-
-import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -61,7 +56,6 @@ public class SoraAudioManager {
     private boolean isSetHandsfree;
     private boolean willOffHandsfree;
     private Object audioFocus;
-    @Nullable
     private OnChangeRouteObserver onChangeRouteObserver;
 
     // 有線ヘッドセットの接続を通知するレシーバー
