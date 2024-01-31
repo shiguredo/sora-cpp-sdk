@@ -13,11 +13,19 @@
 package jp.shiguredo.sora.audiomanager;
 
 import android.os.Looper;
+import android.os.Handler;
 
 public class SoraThreadUtils {
     public static void checkIsOnMainThread() {
-        if (Thread.currentThread() != Looper.getMainLooper().getThread()) {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
             throw new IllegalStateException("Not on main thread!");
         }
+    }
+    public static boolean runOnMainThread(Runnable action) {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            new Handler(Looper.getMainLooper()).post(action);
+            return false;
+        }
+        return true;
     }
 }
