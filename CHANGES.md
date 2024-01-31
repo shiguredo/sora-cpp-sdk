@@ -21,6 +21,11 @@
 - [UPDATE] CUDA を 11.8 にあげる
   - 更新時に発生したビルド・エラーを回避するために `include/sora/fix_cuda_noinline_macro_error.h` を追加した
   - @enm10k
+- [UPDATE] SoraClientContextConfig, SoraVideoEncoderFactoryConfig に force_simulcast_i420_conversion を追加する
+  - use_simulcast_adapter が true の際に、エンコーダー内でフレーム・バッファーを I420 に変換しているが、この変換の有無をフラグで制御できるようになった
+  - デフォルトの値は true で、 I420 への変換を行う
+  - 変換を行わない場合、エンコードの性能が向上するが、一部の kNative なフレーム・バッファーでサイマルキャストが利用できなくなる
+  - @enm10k
 
 ## 2024.1.0 (2024-01-16)
 

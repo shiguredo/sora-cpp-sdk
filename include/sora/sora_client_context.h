@@ -17,7 +17,7 @@ struct SoraClientContextConfig {
   // ハードウェアエンコーダ/デコーダを利用するかどうか
   // false にするとソフトウェアエンコーダ/デコーダのみになる（H.264 は利用できない）
   bool use_hardware_encoder = true;
-
+  // サイマルキャスト利用時に、エンコーダー内でフレーム・バッファーを I420 に変換するかどうか
   bool force_simulcast_i420_conversion = true;
 
   // PeerConnectionFactoryDependencies をカスタマイズするためのコールバック関数
