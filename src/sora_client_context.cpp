@@ -93,7 +93,7 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
             ? sora::GetDefaultVideoEncoderFactoryConfig(cuda_context, env)
             : sora::GetSoftwareOnlyVideoEncoderFactoryConfig();
     config.use_simulcast_adapter = true;
-    config.force_simulcast_i420_conversion = c->config_.force_simulcast_i420_conversion;
+    config.force_i420_conversion_for_simulcast_adapter = c->config_.force_i420_conversion_for_simulcast_adapter;
     dependencies.video_encoder_factory =
         absl::make_unique<sora::SoraVideoEncoderFactory>(std::move(config));
   }

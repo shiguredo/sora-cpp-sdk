@@ -129,7 +129,7 @@ SoraVideoEncoderFactory::CreateVideoEncoder(
         std::make_shared<webrtc::SimulcastEncoderAdapter>(
             internal_encoder_factory_.get(), format);
 
-    if (config_.force_simulcast_i420_conversion) {
+    if (config_.force_i420_conversion_for_simulcast_adapter) {
       encoder = std::make_shared<I420EncoderAdapter>(encoder);
     }
 

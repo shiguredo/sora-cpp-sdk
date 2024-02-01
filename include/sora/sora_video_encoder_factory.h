@@ -68,7 +68,7 @@ struct SoraVideoEncoderFactoryConfig {
   - この I420 への変換は、Sora の設定も含めて利用者が非サイマルキャストだと保証できる場合、あるいはサイマルキャストであっても複数回読める kNative なバッファーを利用している場合には不要な処理になる
   - そのような場合に I420 への変換を無効にすることで十分なフレームレートを確保できるようにするために、このフラグが必要になった
   */
-  bool force_simulcast_i420_conversion = true;
+  bool force_i420_conversion_for_simulcast_adapter = true;
 
   // 内部用。触らないこと。
   bool is_internal = false;
