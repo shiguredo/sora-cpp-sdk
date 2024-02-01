@@ -55,7 +55,7 @@ struct SoraVideoEncoderFactoryConfig {
   bool use_simulcast_adapter = false;
 
   /*
-  サイマルキャスト利用時 (use_simulcast_adapter = true) に、エンコーダー内でビデオ・フレームのバッファーを I420 に変換するかどうか
+  use_simulcast_adapter = true の際に、エンコーダー内でビデオ・フレームのバッファーを I420 に変換するかどうか
   false に設定すると CPU への負荷が下がり、エンコードの性能が向上するが、バッファーの実装によってはサイマルキャストが利用できなくなる
 
   このフラグが必要になった背景は以下の通り
