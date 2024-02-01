@@ -133,7 +133,8 @@ SoraVideoEncoderFactory::CreateVideoEncoder(
       encoder = std::make_shared<I420EncoderAdapter>(encoder);
     }
 
-    return absl::make_unique<AlignedEncoderAdapter>(encoder, 16, 16);
+    encoder = absl::make_unique<AlignedEncoderAdapter>(encoder, 16, 16);
+    return encoder;
   }
 
   int alignment = 0;
