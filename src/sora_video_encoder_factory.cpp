@@ -125,15 +125,16 @@ SoraVideoEncoderFactory::CreateVideoEncoder(
     const webrtc::SdpVideoFormat& format) {
   if (internal_encoder_factory_ != nullptr) {
     // サイマルキャストの場合はアダプタを噛ましつつ、無条件ですべてアライメントする
-    std::shared_ptr<webrtc::VideoEncoder> encoder =
-        std::make_shared<webrtc::SimulcastEncoderAdapter>(
+    std::unique_ptr<webrtc::VideoEncoder> encoder =
+        std::make_unique<webrtc::SimulcastEncoderAdapter>(
             internal_encoder_factory_.get(), format);
 
     if (config_.force_i420_conversion_for_simulcast_adapter) {
-      encoder = std::make_shared<I420EncoderAdapter>(encoder);
+      encoder = std::make_unique<I420EncoderAdapter>(std::move(encoder));
     }
 
-    encoder = absl::make_unique<AlignedEncoderAdapter>(encoder, 16, 16);
+    encoder =
+        std::make_unique<AlignedEncoderAdapter>(std::move(encoder), 16, 16);
     return encoder;
   }
 
