@@ -17,6 +17,8 @@ struct SoraClientContextConfig {
   // ハードウェアエンコーダ/デコーダを利用するかどうか
   // false にするとソフトウェアエンコーダ/デコーダのみになる（H.264 は利用できない）
   bool use_hardware_encoder = true;
+  // SoraVideoEncoderFactoryConfig に定義されている同名の変数をアプリケーションから設定するための変数
+  bool force_i420_conversion_for_simulcast_adapter = true;
 
   // PeerConnectionFactoryDependencies をカスタマイズするためのコールバック関数
   // デフォルトの値が設定された上で、PeerConnectionFactory を生成する直前に呼ばれる
