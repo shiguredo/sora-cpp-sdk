@@ -112,6 +112,7 @@ public class SoraAudioManager {
      * - マイクミュート
      */
     public void start(OnChangeRouteObserver observer) {
+        Log.d(TAG, "start");
         SoraThreadUtils.checkIsOnMainThread();
         if (running) {
             Log.e(TAG, "SoraAudioManager is already active");
@@ -161,6 +162,7 @@ public class SoraAudioManager {
 
         // 初期化を行う
         selectedAudioDevice = AudioDevice.NONE;
+        isSetHandsfree = false;
         audioDevices.clear();
 
         // bluetooth の制御を開始する
@@ -179,6 +181,7 @@ public class SoraAudioManager {
     // オーディオの制御を終了する
     @SuppressLint("WrongConstant")
     public void stop() {
+        Log.d(TAG, "stop");
         SoraThreadUtils.checkIsOnMainThread();
         if (!running) {
             Log.e(TAG, "Trying to stop SoraAudioManager in not running");
@@ -211,7 +214,8 @@ public class SoraAudioManager {
 
     // ハンズフリーかを確認する
     public boolean isHandsfree() {
-        return audioManager.isSpeakerphoneOn();
+        // audioManager.isSpeakerphoneOn() は意図しない結果を返すのでこうした
+        return selectedAudioDevice == AudioDevice.SPEAKER_PHONE;
     }
 
     // ハンズフリーに設定する
