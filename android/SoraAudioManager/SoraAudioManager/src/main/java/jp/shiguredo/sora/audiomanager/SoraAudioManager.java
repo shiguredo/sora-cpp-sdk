@@ -46,6 +46,7 @@ public class SoraAudioManager {
     private final SoraBluetoothManager bluetoothManager;
     private Set<AudioDevice> audioDevices = new HashSet<>();
     private final BroadcastReceiver wiredHeadsetReceiver;
+    private boolean running;
     private int savedAudioMode = AudioManager.MODE_INVALID;
     private boolean savedIsSpeakerPhoneOn;
     private boolean savedIsMicrophoneMute;
@@ -91,6 +92,7 @@ public class SoraAudioManager {
         audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
         bluetoothManager = SoraBluetoothManager.create(context, this, audioManager);
         wiredHeadsetReceiver = new WiredHeadsetReceiver();
+        running = false;
 
         // デフォルトのデバイスを設定する
         // 受話用のスピーカーがある場合は受話用のスピーカーを使う
@@ -111,6 +113,12 @@ public class SoraAudioManager {
      */
     public void start(OnChangeRouteObserver observer) {
         SoraThreadUtils.checkIsOnMainThread();
+        if (running) {
+            Log.e(TAG, "SoraAudioManager is already active");
+            return;
+        }
+        running = true;
+
         // コールバックを設定する
         onChangeRouteObserver = observer;
 
@@ -172,6 +180,11 @@ public class SoraAudioManager {
     @SuppressLint("WrongConstant")
     public void stop() {
         SoraThreadUtils.checkIsOnMainThread();
+        if (!running) {
+            Log.e(TAG, "Trying to stop SoraAudioManager in not running");
+            return;
+        }
+        running = false;
 
         // 有線ヘッドセットの接続を通知するレシーバーを解除
         context.unregisterReceiver(wiredHeadsetReceiver);
