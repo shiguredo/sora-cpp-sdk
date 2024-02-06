@@ -340,7 +340,6 @@ public class SoraAudioManager {
             if (!bluetoothManager.startScoAudio()) {
                 // 失敗した場合はリストから BLUETOOTH を削除する
                 audioDevices.remove(AudioDevice.BLUETOOTH);
-                audioDeviceSetUpdated = true;
                 willOffHandsfree = false;
             }
         }
@@ -360,7 +359,7 @@ public class SoraAudioManager {
         } else {
             newAudioDevice = defaultAudioDevice;
         }
-        if (newAudioDevice != selectedAudioDevice || audioDeviceSetUpdated) {
+        if (newAudioDevice != selectedAudioDevice) {
             Log.d(TAG, "New device status: "
                     + "available=" + audioDevices + ", "
                     + "selected=" + newAudioDevice);
