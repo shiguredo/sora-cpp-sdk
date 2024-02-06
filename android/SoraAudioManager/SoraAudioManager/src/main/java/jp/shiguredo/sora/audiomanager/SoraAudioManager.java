@@ -254,6 +254,9 @@ public class SoraAudioManager {
     // 状態に基づいてデバイスを選択する
     public void updateAudioDeviceState() {
         SoraThreadUtils.checkIsOnMainThread();
+        if (!running) {
+            return;
+        }
 
         if (bluetoothManager.getState() == SoraBluetoothManager.State.HEADSET_AVAILABLE
                 || bluetoothManager.getState() == SoraBluetoothManager.State.HEADSET_UNAVAILABLE
