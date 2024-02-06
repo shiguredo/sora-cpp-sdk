@@ -12,6 +12,7 @@
 
 package jp.shiguredo.sora.audiomanager;
 
+import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHeadset;
@@ -20,7 +21,9 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.media.AudioManager;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -150,6 +153,12 @@ public class SoraBluetoothManager {
         }
     }
 
+    public static boolean checkHasPermission(Context context) {
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+                context.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)
+                == PackageManager.PERMISSION_GRANTED;
+    }
+
     static SoraBluetoothManager create(
             Context context,
             SoraAudioManager soraAudioManager,
@@ -177,6 +186,10 @@ public class SoraBluetoothManager {
     }
     public void start() {
         SoraThreadUtils.checkIsOnMainThread();
+        if (!checkHasPermission(this.context)) {
+            Log.w(TAG, "Process lacks BLUETOOTH permission");
+            return;
+        }
         if (bluetoothState != State.UNINITIALIZED) {
             Log.w(TAG, "Invalid BT state");
             return;
