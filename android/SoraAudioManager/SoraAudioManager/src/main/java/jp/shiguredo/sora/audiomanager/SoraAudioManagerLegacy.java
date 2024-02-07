@@ -22,7 +22,9 @@ import java.util.List;
 import java.util.Set;
 
 public class SoraAudioManagerLegacy extends SoraAudioManager {
-    private static final String TAG = "SoraAudioManager";
+    private static final String TAG = "SoraAudioManagerLegacy";
+    private enum AudioDevice { SPEAKER_PHONE, WIRED_HEADSET, EARPIECE, BLUETOOTH, NONE }
+    private final AudioDevice defaultAudioDevice;
     private final SoraBluetoothManager bluetoothManager;
     private Set<AudioDevice> audioDevices = new HashSet<>();
     private boolean running;
@@ -37,16 +39,21 @@ public class SoraAudioManagerLegacy extends SoraAudioManager {
 
     private SoraAudioManagerLegacy(Context context) {
         super(context);
+
         bluetoothManager = SoraBluetoothManager.create(context, this, audioManager);
+
+        // デフォルトのデバイスを設定する
+        // 受話用のスピーカーがある場合は受話用のスピーカーを使う
+        if (hasEarpiece()) {
+            defaultAudioDevice = AudioDevice.EARPIECE;
+        } else {
+            defaultAudioDevice = AudioDevice.SPEAKER_PHONE;
+        }
     }
 
     /*
      * オーディオの制御を開始する
      * Java は destructor がないので start - stop にする
-     * TODO(tnoho) 以下のパラメーターは start の段階で調整できてもいい気がする
-     * - オーディオフォーカス
-     * - モード
-     * - マイクミュート
      */
     @Override
     public void start(OnChangeRouteObserver observer) {

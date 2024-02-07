@@ -25,14 +25,10 @@ import android.os.Build;
 import android.util.Log;
 
 public class SoraAudioManager {
-    private static final String TAG = "SoraAudioManagerBase";
-
-    enum AudioDevice { SPEAKER_PHONE, WIRED_HEADSET, EARPIECE, BLUETOOTH, NONE }
-
+    private static final String TAG = "SoraAudioManager";
     protected final Context context;
     protected final AudioManager audioManager;
     protected final BroadcastReceiver wiredHeadsetReceiver;
-    protected final AudioDevice defaultAudioDevice;
     protected boolean running;
     private int savedAudioMode = AudioManager.MODE_INVALID;
     private boolean savedIsMicrophoneMute;
@@ -64,14 +60,6 @@ public class SoraAudioManager {
         audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
         wiredHeadsetReceiver = new WiredHeadsetReceiver();
         running = false;
-
-        // デフォルトのデバイスを設定する
-        // 受話用のスピーカーがある場合は受話用のスピーカーを使う
-        if (hasEarpiece()) {
-            defaultAudioDevice = AudioDevice.EARPIECE;
-        } else {
-            defaultAudioDevice = AudioDevice.SPEAKER_PHONE;
-        }
     }
 
     /*
