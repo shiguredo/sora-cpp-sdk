@@ -17,11 +17,11 @@ import android.os.Build;
 
 public class SoraAudioManagerFactory {
 
-    public static SoraAudioManagerBase create(Context context) {
+    public static SoraAudioManager create(Context context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             return SoraAudioManager2.create(context);
         } else {
-            return SoraAudioManager.create(context);
+            return SoraAudioManagerLegacy.create(context);
         }
     }
 }

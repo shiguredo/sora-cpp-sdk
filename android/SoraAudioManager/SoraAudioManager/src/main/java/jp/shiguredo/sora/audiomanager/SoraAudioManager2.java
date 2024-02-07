@@ -24,7 +24,7 @@ import android.util.Log;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SoraAudioManager2 extends SoraAudioManagerBase {
+public class SoraAudioManager2 extends SoraAudioManager {
     private static final String TAG = "SoraAudioManager2";
     private final BroadcastReceiver bluetoothHeadsetReceiver;
     private final List<AudioDeviceInfo> audioDevices = new ArrayList<>();
@@ -96,7 +96,7 @@ public class SoraAudioManager2 extends SoraAudioManagerBase {
      * - マイクミュート
      */
     @Override
-    public void start(SoraAudioManager.OnChangeRouteObserver observer) {
+    public void start(OnChangeRouteObserver observer) {
         Log.d(TAG, "start");
         SoraThreadUtils.checkIsOnMainThread();
         if (running) {

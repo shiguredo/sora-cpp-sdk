@@ -53,7 +53,7 @@ public class SoraBluetoothManager {
         SCO_CONNECTED
     }
     private final Context context;
-    private final SoraAudioManager soraAudioManager;
+    private final SoraAudioManagerLegacy soraAudioManagerLegacy;
     private final AudioManager audioManager;
     private State bluetoothState;
     private final BluetoothProfile.ServiceListener bluetoothServiceListener;
@@ -161,18 +161,18 @@ public class SoraBluetoothManager {
 
     static SoraBluetoothManager create(
             Context context,
-            SoraAudioManager soraAudioManager,
+            SoraAudioManagerLegacy soraAudioManagerLegacy,
             AudioManager audioManager) {
-        return new SoraBluetoothManager(context, soraAudioManager, audioManager);
+        return new SoraBluetoothManager(context, soraAudioManagerLegacy, audioManager);
     }
 
     protected  SoraBluetoothManager(
             Context context,
-            SoraAudioManager soraAudioManager,
+            SoraAudioManagerLegacy soraAudioManagerLegacy,
             AudioManager audioManager) {
         SoraThreadUtils.checkIsOnMainThread();
         this.context = context;
-        this.soraAudioManager = soraAudioManager;
+        this.soraAudioManagerLegacy = soraAudioManagerLegacy;
         this.audioManager = audioManager;
         bluetoothState = State.UNINITIALIZED;
         bluetoothServiceListener = new BluetoothServiceListener();
@@ -301,7 +301,7 @@ public class SoraBluetoothManager {
 
     private void updateAudioDeviceState() {
         SoraThreadUtils.checkIsOnMainThread();
-        soraAudioManager.updateAudioDeviceState();
+        soraAudioManagerLegacy.updateAudioDeviceState();
     }
 
     private void startTimer() {
