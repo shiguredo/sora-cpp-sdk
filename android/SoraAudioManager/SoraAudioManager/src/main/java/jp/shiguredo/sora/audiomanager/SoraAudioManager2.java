@@ -13,17 +13,20 @@
 package jp.shiguredo.sora.audiomanager;
 
 import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.bluetooth.BluetoothHeadset;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioDeviceInfo;
+import android.os.Build;
 import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@TargetApi(Build.VERSION_CODES.S)
 public class SoraAudioManager2 extends SoraAudioManager {
     private static final String TAG = "SoraAudioManager2";
     private final BroadcastReceiver bluetoothHeadsetReceiver;
@@ -90,10 +93,6 @@ public class SoraAudioManager2 extends SoraAudioManager {
     /*
      * オーディオの制御を開始する
      * Java は destructor がないので start - stop にする
-     * TODO(tnoho) 以下のパラメーターは start の段階で調整できてもいい気がする
-     * - オーディオフォーカス
-     * - モード
-     * - マイクミュート
      */
     @Override
     public void start(OnChangeRouteObserver observer) {
@@ -161,7 +160,7 @@ public class SoraAudioManager2 extends SoraAudioManager {
 
     // 状態に基づいてデバイスを選択する
     @Override
-    public void updateAudioDeviceState() {
+    void updateAudioDeviceState() {
         SoraThreadUtils.checkIsOnMainThread();
         if (!running) {
             return;
@@ -202,6 +201,9 @@ public class SoraAudioManager2 extends SoraAudioManager {
                 case AudioDeviceInfo.TYPE_BLE_HEADSET:
                     bluetoothHeadsetDevice = newDevice;
                     break;
+                default:
+                    Log.w(TAG, "Not supported audio device type: " + newDevice.getType());
+                    break;
             }
         }
 
@@ -224,6 +226,10 @@ public class SoraAudioManager2 extends SoraAudioManager {
             newAudioDevice = earpieceDevice;
         } else {
             newAudioDevice = speakerPhoneDevice;
+        }
+        if (newAudioDevice == null) {
+            Log.e(TAG, "No supported audio device was found");
+            return;
         }
         if (newAudioDevice != selectedAudioDevice) {
             Log.d(TAG, "New device status: "

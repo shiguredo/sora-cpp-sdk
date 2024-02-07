@@ -12,7 +12,6 @@
 
 package jp.shiguredo.sora.audiomanager;
 
-import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHeadset;
@@ -21,22 +20,20 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
 import android.media.AudioManager;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
 import java.util.List;
 
-public class SoraBluetoothManager {
+class SoraBluetoothManager {
     private static final String TAG = "SoraBluetoothManager";
     // Bluetooth SCO の開始/終了タイムアウト
     private static final int BLUETOOTH_SCO_TIMEOUT_MS = 4000;
     // SCO 接続試行上限
     private static final int MAX_SCO_CONNECTION_ATTEMPTS = 2;
-    public enum State {
+    enum State {
         // Bluetooth が存在しないか OFF になっている
         UNINITIALIZED,
         // Headset profile の Bluetooth proxy object は存在するが Bluetooth headset は接続されていない
@@ -153,12 +150,6 @@ public class SoraBluetoothManager {
         }
     }
 
-    public static boolean checkHasPermission(Context context) {
-        return Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
-                context.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)
-                == PackageManager.PERMISSION_GRANTED;
-    }
-
     static SoraBluetoothManager create(
             Context context,
             SoraAudioManagerLegacy soraAudioManagerLegacy,
@@ -180,16 +171,12 @@ public class SoraBluetoothManager {
         handler = new Handler(Looper.getMainLooper());
     }
 
-    public State getState() {
+    State getState() {
         SoraThreadUtils.checkIsOnMainThread();
         return bluetoothState;
     }
-    public void start() {
+    void start() {
         SoraThreadUtils.checkIsOnMainThread();
-        if (!checkHasPermission(this.context)) {
-            Log.w(TAG, "Process lacks BLUETOOTH permission");
-            return;
-        }
         if (bluetoothState != State.UNINITIALIZED) {
             Log.w(TAG, "Invalid BT state");
             return;
@@ -223,7 +210,7 @@ public class SoraBluetoothManager {
         bluetoothState = State.HEADSET_UNAVAILABLE;
     }
 
-    public void stop() {
+    void stop() {
         SoraThreadUtils.checkIsOnMainThread();
         if (bluetoothAdapter == null) {
             return;
@@ -243,7 +230,7 @@ public class SoraBluetoothManager {
         bluetoothState = State.UNINITIALIZED;
     }
 
-    public boolean startScoAudio() {
+    boolean startScoAudio() {
         SoraThreadUtils.checkIsOnMainThread();
         if (scoConnectionAttempts >= MAX_SCO_CONNECTION_ATTEMPTS) {
             Log.e(TAG, "BT SCO connection fails - no more attempts");
@@ -272,7 +259,7 @@ public class SoraBluetoothManager {
         return true;
     }
 
-    public void stopScoAudio() {
+    void stopScoAudio() {
         SoraThreadUtils.checkIsOnMainThread();
         if (bluetoothState != State.SCO_CONNECTING && bluetoothState != State.SCO_CONNECTED) {
             return;
@@ -285,7 +272,7 @@ public class SoraBluetoothManager {
         bluetoothState = State.SCO_DISCONNECTING;
     }
 
-    public void updateDevice() {
+    void updateDevice() {
         if (bluetoothState == State.UNINITIALIZED || bluetoothHeadset == null) {
             return;
         }
@@ -346,7 +333,7 @@ public class SoraBluetoothManager {
         updateAudioDeviceState();
     }
 
-    public static String stateToString(int state) {
+    static String stateToString(int state) {
         switch (state) {
             case BluetoothAdapter.STATE_DISCONNECTED:
                 return "DISCONNECTED";

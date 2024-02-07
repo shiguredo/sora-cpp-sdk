@@ -27,7 +27,7 @@ import android.util.Log;
 public class SoraAudioManager {
     private static final String TAG = "SoraAudioManagerBase";
 
-    public enum AudioDevice { SPEAKER_PHONE, WIRED_HEADSET, EARPIECE, BLUETOOTH, NONE }
+    enum AudioDevice { SPEAKER_PHONE, WIRED_HEADSET, EARPIECE, BLUETOOTH, NONE }
 
     protected final Context context;
     protected final AudioManager audioManager;
@@ -113,6 +113,7 @@ public class SoraAudioManager {
         }
 
         // VoIP 向けのモードに切り替え
+        // MODE_IN_CALL か MODE_IN_COMMUNICATION でなければ setSpeakerphoneOn が使えない
         audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
 
         // マイクのミュートは解除する
@@ -184,5 +185,5 @@ public class SoraAudioManager {
     }
 
     // 状態に基づいてデバイスを選択する
-    public void updateAudioDeviceState() {}
+    void updateAudioDeviceState() {}
 }

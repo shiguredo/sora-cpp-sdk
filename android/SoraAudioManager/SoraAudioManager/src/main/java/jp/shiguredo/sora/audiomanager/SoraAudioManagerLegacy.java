@@ -119,7 +119,7 @@ public class SoraAudioManagerLegacy extends SoraAudioManager {
 
     // 状態に基づいてデバイスを選択する
     @Override
-    public void updateAudioDeviceState() {
+    void updateAudioDeviceState() {
         SoraThreadUtils.checkIsOnMainThread();
         if (!running) {
             return;
