@@ -818,16 +818,16 @@ def install_lyra(version, install_dir, base_dir, debug, target, webrtc_version, 
             opts += ['--features', 'static_link_msvcrt']
         if target in ('ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64'):
             opts += ['--config', 'linux_x86_64']
-            clang_version = get_clang_version(os.path.join(install_dir, 'llvm', 'clang', 'bin', 'clang'))
-            clang_version = fix_clang_version(os.path.join(install_dir, 'llvm', 'clang'), clang_version)
+            clang_version = get_clang_version(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))
+            clang_version = fix_clang_version(webrtc_info.clang_dir, clang_version)
             os.environ['CLANG_VERSION'] = clang_version
             os.environ['BAZEL_LLVM_DIR'] = os.path.join(install_dir, 'llvm')
             os.environ['BAZEL_WEBRTC_INCLUDE_DIR'] = webrtc_info.webrtc_include_dir
             os.environ['BAZEL_WEBRTC_LIBRARY_DIR'] = webrtc_info.webrtc_library_dir
         if target == 'ubuntu-20.04_armv8_jetson':
             opts += ['--config', 'jetson']
-            clang_version = get_clang_version(os.path.join(install_dir, 'llvm', 'clang', 'bin', 'clang'))
-            clang_version = fix_clang_version(os.path.join(install_dir, 'llvm', 'clang'), clang_version)
+            clang_version = get_clang_version(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))
+            clang_version = fix_clang_version(webrtc_info.clang_dir, clang_version)
             os.environ['CLANG_VERSION'] = clang_version
             os.environ['BAZEL_SYSROOT'] = os.path.join(install_dir, 'rootfs')
             os.environ['BAZEL_LLVM_DIR'] = os.path.join(install_dir, 'llvm')
