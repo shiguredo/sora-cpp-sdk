@@ -346,7 +346,7 @@ public class SoraBluetoothManager {
         updateAudioDeviceState();
     }
 
-    private String stateToString(int state) {
+    public static String stateToString(int state) {
         switch (state) {
             case BluetoothAdapter.STATE_DISCONNECTED:
                 return "DISCONNECTED";
@@ -361,12 +361,8 @@ public class SoraBluetoothManager {
             case BluetoothAdapter.STATE_ON:
                 return "ON";
             case BluetoothAdapter.STATE_TURNING_OFF:
-                // Indicates the local Bluetooth adapter is turning off. Local clients should immediately
-                // attempt graceful disconnection of any remote links.
                 return "TURNING_OFF";
             case BluetoothAdapter.STATE_TURNING_ON:
-                // Indicates the local Bluetooth adapter is turning on. However local clients should wait
-                // for STATE_ON before attempting to use the adapter.
                 return  "TURNING_ON";
             default:
                 return "INVALID";
