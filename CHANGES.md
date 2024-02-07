@@ -17,7 +17,8 @@
   - @enm10k
 - [UPDATE] VERSIONS のライブラリをアップデートする
   - SORA_CPP_SDK_VERSION を 2024.1.0 にあげる
-  - @miosakuma
+  - CLI11 を v2.4.0 にあげる
+  - @miosakuma @enm10k
 
 ## sora-cpp-sdk-2023.17.0
 
