@@ -61,10 +61,6 @@ https://github.com/shiguredo/sora-cpp-sdk/releases
 
 https://github.com/shiguredo/sora-cpp-sdk-samples
 
-## 使ってみる
-
-準備中。
-
 ## FAQ
 
 [faq.md](doc/faq.md) をお読みください。
