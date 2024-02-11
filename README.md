@@ -20,7 +20,7 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
 ## 特徴
 
 - 各プラットフォームで利用可能な HWA への対応
-  - NVIDIA VIDEO CODEC SDK (NVENC / NVDEC)
+  - NVIDIA Video Codec SDK (NVENC / NVDEC)
     - VP9 / H.264
   - NVIDIA Jetson Video HWA
     - VP9 / AV1 / H.264
@@ -28,7 +28,7 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
     - H.264 / H.265
   - Google Android HWA
     - VP8 / VP9 / H.264 / H.265
-  - [Intel oneVPL](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onevpl.html) (Intel Media SDK の後継)
+  - [Intel VPL](https://github.com/intel/libvpl) (Intel Media SDK の後継)
     - VP9 / AV1 / H.264
 - 各プラットフォームへの [google/lyra: A Very Low\-Bitrate Codec for Speech Compression](https://github.com/google/lyra) 対応
 
