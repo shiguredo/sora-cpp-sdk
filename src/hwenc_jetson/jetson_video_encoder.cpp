@@ -260,6 +260,7 @@ int32_t JetsonVideoEncoder::JetsonConfigure() {
   SetBitrateBps(target_bitrate_bps_);
 
   ret = encoder_->setIDRInterval(key_frame_interval_);
+  // ret = encoder_->setIDRInterval(5);
   INIT_ERROR(ret < 0, "Failed to setIDRInterval");
 
   ret = encoder_->setIFrameInterval(0);
@@ -858,9 +859,6 @@ int32_t JetsonVideoEncoder::SendFrame(
       // v4l2_ctrl_videoenc_outputbuf_metadata.KeyFrame が効いていない
       // キーフレームの時には OBU_SEQUENCE_HEADER が入っているために 0x0a になるためこれを使う
       // キーフレームではない時には OBU_FRAME が入っていて 0x32 になっている
-      std::cout << "HOGE: 0x" << std::hex << std::setw(2) << std::setfill('0')
-                << static_cast<int>(buffer[2]);
-      std::cout << (enc_metadata->KeyFrame ? "t" : "f") << std::endl;
 
       std::vector<webrtc::ScalableVideoController::LayerFrameConfig>
           layer_frames =
@@ -868,13 +866,17 @@ int32_t JetsonVideoEncoder::SendFrame(
       codec_specific.end_of_picture = true;
       codec_specific.generic_frame_info =
           svc_controller_->OnEncodeDone(layer_frames[0]);
-      std::cout << "HOGE: a" << std::endl;
 
-      if (enc_metadata->KeyFrame && codec_specific.generic_frame_info) {
-        std::cout << "HOGE: b" << std::endl;
+      std::cout << "HOGE: 0x" << std::hex << std::setw(2) << std::setfill('0')
+                << static_cast<int>(buffer[2]);
+      std::cout << (enc_metadata->KeyFrame ? " t" : " f")
+                << (layer_frames[0].IsKeyframe() ? " t" : " f") << std::endl;
+
+      if (layer_frames[0].IsKeyframe() && codec_specific.generic_frame_info) {
         codec_specific.template_structure =
             svc_controller_->DependencyStructure();
         auto& resolutions = codec_specific.template_structure->resolutions;
+        std::cout << "HOGE: b" << std::endl;
         resolutions = {webrtc::RenderResolution(encoded_image_._encodedWidth,
                                                 encoded_image_._encodedHeight)};
       }
