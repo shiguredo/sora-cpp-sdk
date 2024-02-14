@@ -29,10 +29,6 @@
 
 ## 2024.1.0 (2024-01-16)
 
-- [CHANGE] JetPack 5.1.2 に対応
-  - JetPack 5.1.1, 5.1.2 で動作を確認
-  - JetPack 5.1 では、互換性の問題で JetsonJpegDecoder がエラーになることを確認
-  - @enm10k
 - [ADD] ForwardingFilter の項目に version と metadata を追加
   - version と metadata はオプション項目として追加し、値がない場合は項目を設定しない
   - @torikizi
