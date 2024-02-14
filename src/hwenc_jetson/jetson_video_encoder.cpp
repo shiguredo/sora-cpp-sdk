@@ -572,7 +572,6 @@ int32_t JetsonVideoEncoder::Encode(
     }
   }
 
-  bool force_key_frame = false;
   if (frame_types != nullptr) {
     RTC_DCHECK_EQ(frame_types->size(), static_cast<size_t>(1));
     if ((*frame_types)[0] == webrtc::VideoFrameType::kEmptyFrame) {
@@ -855,20 +854,24 @@ int32_t JetsonVideoEncoder::SendFrame(
         codec_specific.codecSpecific.VP9.gof.CopyGofInfoVP9(gof_);
       }
     } else if (codec_.codecType == webrtc::kVideoCodecAV1) {
-      bool is_key = buffer[2] == 0x0a;
+      // bool is_key = buffer[2] == 0x0a;
       // v4l2_ctrl_videoenc_outputbuf_metadata.KeyFrame が効いていない
       // キーフレームの時には OBU_SEQUENCE_HEADER が入っているために 0x0a になるためこれを使う
       // キーフレームではない時には OBU_FRAME が入っていて 0x32 になっている
-      if (is_key) {
-        encoded_image_._frameType = webrtc::VideoFrameType::kVideoFrameKey;
-      }
+      std::cout << "HOGE: 0x" << std::hex << std::setw(2) << std::setfill('0')
+                << static_cast<int>(buffer[2]);
+      std::cout << (enc_metadata->KeyFrame ? "t" : "f") << std::endl;
 
       std::vector<webrtc::ScalableVideoController::LayerFrameConfig>
-          layer_frames = svc_controller_->NextFrameConfig(is_key);
+          layer_frames =
+              svc_controller_->NextFrameConfig(enc_metadata->KeyFrame);
       codec_specific.end_of_picture = true;
       codec_specific.generic_frame_info =
           svc_controller_->OnEncodeDone(layer_frames[0]);
-      if (is_key && codec_specific.generic_frame_info) {
+      std::cout << "HOGE: a" << std::endl;
+
+      if (enc_metadata->KeyFrame && codec_specific.generic_frame_info) {
+        std::cout << "HOGE: b" << std::endl;
         codec_specific.template_structure =
             svc_controller_->DependencyStructure();
         auto& resolutions = codec_specific.template_structure->resolutions;
