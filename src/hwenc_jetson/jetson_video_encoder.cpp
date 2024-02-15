@@ -581,6 +581,8 @@ int32_t JetsonVideoEncoder::Encode(
     if ((*frame_types)[0] == webrtc::VideoFrameType::kVideoFrameKey) {
       if (encoder_->forceIDR() < 0) {
         RTC_LOG(LS_ERROR) << "Failed to forceIDR";
+      } else {
+        std::cout << "HOGE: forceIDR executed" << std::endl;
       }
     }
   }
@@ -819,6 +821,17 @@ int32_t JetsonVideoEncoder::SendFrame(
     }
     buffer += 12;
     size -= 12;
+
+    std::stringstream filename;
+    filename << "hoge_" << std::to_string(params->timestamp_rtp)
+             << (enc_metadata->KeyFrame ? "k" : "v");
+    std::ofstream file(filename.str(), std::ios::out | std::ios::binary);
+    if (!file) {
+      std::cerr << "HOGE: failed to create a dump file." << std::endl;
+    } else {
+      file.write(reinterpret_cast<const char*>(buffer), size);
+      file.close();
+    }
 
     auto encoded_image_buffer =
         webrtc::EncodedImageBuffer::Create(buffer, size);
