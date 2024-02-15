@@ -880,8 +880,13 @@ int32_t JetsonVideoEncoder::SendFrame(
       codec_specific.generic_frame_info =
           svc_controller_->OnEncodeDone(layer_frames[0]);
 
-      std::cout << "HOGE: 0x" << std::hex << std::setw(2) << std::setfill('0')
-                << static_cast<int>(buffer[2]);
+      std::cout << "HOGE:";
+      for (int i = 0; i < 3; i++) {
+        std::cout << " 0x" << std::hex << std::setw(2) << std::setfill('0')
+                  << static_cast<int>(buffer[i]);
+      }
+      std::cout << std::endl;
+
       std::cout << (enc_metadata->KeyFrame ? " t" : " f")
                 << (layer_frames[0].IsKeyframe() ? " t" : " f") << std::endl;
 
