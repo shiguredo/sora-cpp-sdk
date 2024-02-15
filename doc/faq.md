@@ -35,3 +35,10 @@ iOS または macOS から FHD で配信したい場合は Sora の H.264 のプ
 - Sora の設定を変更する
 
 Sora の設定については [Sora のドキュメント](https://sora-doc.shiguredo.jp/SORA_CONF#1581db) をご確認ください。
+
+## Jetson から AV1 の映像が配信できません
+
+Sora CPP SDK 2024.1.0 にて Jetson で AV1 の映像を配信した場合に、Jetson より後に接続したクライアントが Jetson の映像を受信できなくなる事象を確認しています。
+JetPack 5.1.2 対応の影響によるものであり、原因は現在調査中です。
+
+JetPack 5.1.2 に対応する前の Sora CPP SDK 2023.17.0 を利用することで、この事象を回避することができます。
