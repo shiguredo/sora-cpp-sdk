@@ -59,6 +59,7 @@ jobs:
       - run: python3 run.py --test --package ${{ matrix.name }}
         env:
           SORA_CPP_SDK_TEMP_DIR: C:\
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Get package name
         run: |
           Get-Content "_package\${{ matrix.name }}\release\sora.env" | Foreach-Object {
@@ -114,6 +115,8 @@ jobs:
           key: bazel-${{ matrix.name }}-v2
       - run: pip3 install numpy setuptools
       - run: python3 run.py --test --package ${{ matrix.name }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Get package name
         run: |
           source _package/${{ matrix.name }}/release/sora.env
@@ -212,6 +215,8 @@ jobs:
         if: matrix.name == 'android'
       - run: pip3 install numpy
       - run: python3 run.py --test --package ${{ matrix.name }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Get package name
         run: |
           source _package/${{ matrix.name }}/release/sora.env
