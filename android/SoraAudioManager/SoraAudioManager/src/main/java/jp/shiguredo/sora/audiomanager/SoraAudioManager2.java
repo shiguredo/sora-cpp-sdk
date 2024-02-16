@@ -14,12 +14,12 @@ package jp.shiguredo.sora.audiomanager;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
-import android.bluetooth.BluetoothHeadset;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioDeviceInfo;
+import android.media.AudioManager;
 import android.os.Build;
 import android.util.Log;
 
@@ -44,37 +44,19 @@ public class SoraAudioManager2 extends SoraAudioManager {
             if (action == null) {
                 return;
             }
-            /*
-             * ヘッドセットプロファイルの状態変化
-             * 他のオーディオデバイスを使用中に Bluetooth をオンにすると発火します
-             */
-            Log.d(TAG, "BluetoothHeadsetBroadcastReceiver.onReceive: "
-                    + "a=" + action);
-            if (action.equals(BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED)) {
+            if (action.equals(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED)) {
                 final int state =
-                        intent.getIntExtra(BluetoothHeadset.EXTRA_STATE, BluetoothHeadset.STATE_DISCONNECTED);
+                        intent.getIntExtra(AudioManager.EXTRA_SCO_AUDIO_STATE,
+                                AudioManager.SCO_AUDIO_STATE_DISCONNECTED);
                 Log.d(TAG, "BluetoothHeadsetBroadcastReceiver.onReceive: "
-                        + "a=ACTION_CONNECTION_STATE_CHANGED, "
-                        + "s=" + SoraBluetoothManager.stateToString(state) + ", "
+                        + "a=ACTION_SCO_AUDIO_STATE_UPDATED, "
+                        + "s=" + SoraAudioManager2.stateToString(state) + ", "
                         + "sb=" + isInitialStickyBroadcast());
-                if (state == BluetoothHeadset.STATE_CONNECTED) {
-                    // Bluetooth ヘッドセットとが接続された
+                if (state == AudioManager.SCO_AUDIO_STATE_CONNECTED) {
+                    // SCO 接続された
                     updateAudioDeviceState();
-                } else if (state == BluetoothHeadset.STATE_DISCONNECTED) {
-                    // おそらく Bluetooth が通話中に切られた
-                    updateAudioDeviceState();
-                }
-            } else if (action.equals(BluetoothHeadset.ACTION_AUDIO_STATE_CHANGED)) {
-                /* SCO の状態変化 */
-                final int state = intent.getIntExtra(
-                        BluetoothHeadset.EXTRA_STATE, BluetoothHeadset.STATE_AUDIO_DISCONNECTED);
-                Log.d(TAG, "BluetoothHeadsetBroadcastReceiver.onReceive: "
-                        + "a=ACTION_AUDIO_STATE_CHANGED, "
-                        + "s=" + SoraBluetoothManager.stateToString(state) + ", "
-                        + "sb=" + isInitialStickyBroadcast());
-                if (state == BluetoothHeadset.STATE_AUDIO_CONNECTED) {
-                    updateAudioDeviceState();
-                } else if (state == BluetoothHeadset.STATE_AUDIO_DISCONNECTED) {
+                } else if (state == AudioManager.SCO_AUDIO_STATE_DISCONNECTED) {
+                    // SCO が切られた
                     updateAudioDeviceState();
                 }
             }
@@ -115,10 +97,8 @@ public class SoraAudioManager2 extends SoraAudioManager {
 
         // HEADSET プロファイルの状態変化を bluetoothHeadsetReceiver で取れるようにする
         IntentFilter filter = new IntentFilter();
-        // bluetooth ヘッドセットの接続状態変化を取得する
-        filter.addAction(BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED);
-        // bluetooth ヘッドセットのオーディオの状態変化を取得する
-        filter.addAction(BluetoothHeadset.ACTION_AUDIO_STATE_CHANGED);
+        // bluetooth SCO の状態変化を取得する
+        filter.addAction(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED);
         context.registerReceiver(bluetoothHeadsetReceiver, filter);
 
         // 初期化を行った状態でデバイスの設定を行う
@@ -240,6 +220,21 @@ public class SoraAudioManager2 extends SoraAudioManager {
             if (onChangeRouteObserver != null) {
                 onChangeRouteObserver.OnChangeRoute();
             }
+        }
+    }
+
+    static String stateToString(int state) {
+        switch (state) {
+            case AudioManager.SCO_AUDIO_STATE_DISCONNECTED:
+                return "DISCONNECTED";
+            case AudioManager.SCO_AUDIO_STATE_CONNECTED:
+                return "CONNECTED";
+            case AudioManager.SCO_AUDIO_STATE_CONNECTING:
+                return "CONNECTING";
+            case AudioManager.SCO_AUDIO_STATE_ERROR:
+                return "ERROR";
+            default:
+                return "INVALID";
         }
     }
 }
