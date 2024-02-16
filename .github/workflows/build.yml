@@ -174,8 +174,6 @@ jobs:
           sudo rm -rf /usr/share/swift
           # 1.4G
           sudo rm -rf /usr/share/dotnet
-          # 13G
-          sudo rm -rf /usr/local/lib/android
           df -h
       - name: Install deps for ${{ matrix.name }}
         if: matrix.name == 'ubuntu-20.04_x86_64' || matrix.name == 'ubuntu-22.04_x86_64'
