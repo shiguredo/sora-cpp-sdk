@@ -872,7 +872,7 @@ def install_lyra(version, install_dir, base_dir, debug, target, webrtc_version, 
         else:
             lib_src = os.path.join('bazel-bin', 'liblyra.a')
             lib_dst = os.path.join(lyra_install_dir, 'lib', 'liblyra.a')
-        model_src = os.path.join(output_base, 'external', 'lyra', 'model_coeffs')
+        model_src = os.path.join(output_base, 'external', 'lyra', 'lyra', 'model_coeffs')
         model_dst = os.path.join(lyra_install_dir, 'share', 'model_coeffs')
         include_src = 'lyra.h'
         include_dst = os.path.join(lyra_install_dir, 'include', 'lyra.h')
