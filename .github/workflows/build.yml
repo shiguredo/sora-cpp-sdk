@@ -159,6 +159,24 @@ jobs:
         with:
           path: "~/.cache/bazel"
           key: bazel-${{ matrix.name }}-v1
+      - name: Disk cleanup
+        run: |
+          set -x
+          df -h
+          sudo du -h -d1 /usr/local
+          sudo du -h -d1 /usr/local/share
+          sudo du -h -d1 /usr/local/lib
+          sudo du -h -d1 /usr/share
+          docker rmi `docker images -q -a`
+          # 4.6G
+          sudo rm -rf /usr/local/.ghcup
+          # 1.7G
+          sudo rm -rf /usr/share/swift
+          # 1.4G
+          sudo rm -rf /usr/share/dotnet
+          # 13G
+          sudo rm -rf /usr/local/lib/android
+          df -h
       - name: Install deps for ${{ matrix.name }}
         if: matrix.name == 'ubuntu-20.04_x86_64' || matrix.name == 'ubuntu-22.04_x86_64'
         run: |
