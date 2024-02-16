@@ -127,15 +127,23 @@ versions.check("3.7.2")
 # TF's loading is very complicated, and we only need a subset for TFLite.
 # If we use the full TF loading sequence, we also run into conflicts and errors on some platforms.
 
-# Android 用のパッチを当てるために別途でリポジトリを取得しておく
 load("@org_tensorflow//third_party:repo.bzl", "tf_http_archive", "tf_mirror_urls")
 
+# Android 用のパッチを当てるために別途でリポジトリを取得しておく
 tf_http_archive(
     name = "XNNPACK",
     sha256 = "7a16ab0d767d9f8819973dbea1dc45e4e08236f89ab702d96f389fdc78c5855c",
     strip_prefix = "XNNPACK-e8f74a9763aa36559980a0c2f37f587794995622",
     urls = tf_mirror_urls("https://github.com/google/XNNPACK/archive/e8f74a9763aa36559980a0c2f37f587794995622.zip"),
     patch_file = ["@//:patches/android_xnnpack.patch"]
+)
+
+tf_http_archive(
+    name = "cpuinfo",
+    strip_prefix = "cpuinfo-5e63739504f0f8e18e941bd63b2d6d42536c7d90",
+    sha256 = "18eca9bc8d9c4ce5496d0d2be9f456d55cbbb5f0639a551ce9c8bac2e84d85fe",
+    urls = tf_mirror_urls("https://github.com/pytorch/cpuinfo/archive/5e63739504f0f8e18e941bd63b2d6d42536c7d90.tar.gz"),
+    patch_file = ["@//:patches/android_cpuinfo.patch"]
 )
 
 load("@org_tensorflow//tensorflow:workspace3.bzl", "workspace")
