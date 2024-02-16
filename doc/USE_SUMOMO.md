@@ -1,4 +1,4 @@
-# Momo サンプルを使ってみる
+# Sumomo を使ってみる
 
 ## 概要
 
@@ -25,7 +25,7 @@ $ git clone https://github.com/shiguredo/sora-cpp-sdk-samples.git
 $ cd sora-cpp-sdk-samples
 ```
 
-### Momo サンプルをビルドする
+### Sumomo をビルドする
 
 #### Windows x86_64 向けのビルドをする
 
@@ -40,14 +40,14 @@ $ cd sora-cpp-sdk-samples
 ##### ビルド
 
 ```powershell
-> python3 momo_sample\windows_x86_64\run.py
+> python3 sumomo\windows_x86_64\run.py
 ```
 
-成功した場合、`_build\windows_x86_64\release\momo_sample\Release` に `momo_sample.exe` が作成されます。
+成功した場合、`_build\windows_x86_64\release\sumomo\Release` に `sumomo.exe` が作成されます。
 
 ```
-\_BUILD\WINDOWS_X86_64\RELEASE\MOMO_SAMPLE\RELEASE
-    momo_sample.exe
+\_BUILD\WINDOWS_X86_64\RELEASE\sumomo\RELEASE
+    sumomo.exe
 ```
 
 #### macOS arm64 向けのビルドをする
@@ -61,14 +61,14 @@ $ cd sora-cpp-sdk-samples
 ##### ビルド
 
 ```shell
-$ python3 momo_sample/macos_arm64/run.py
+$ python3 sumomo/macos_arm64/run.py
 ```
 
-成功した場合、`_build/macos_arm64/release/momo_sample` に `momo_sample` が作成されます。
+成功した場合、`_build/macos_arm64/release/sumomo` に `sumomo` が作成されます。
 
 ```
-_build/macos_arm64/release/momo_sample
-└── momo_sample
+_build/macos_arm64/release/sumomo
+└── sumomo
 ```
 
 #### Ubuntu 20.04 x86_64 向けのビルドをする
@@ -89,14 +89,14 @@ $ sudo apt install python3
 ##### ビルド
 
 ```shell
-$ python3 momo_sample/ubuntu-20.04_x86_64/run.py
+$ python3 sumomo/ubuntu-20.04_x86_64/run.py
 ```
 
-成功した場合、`_build/ubuntu-20.04_x86_64/release/momo_sample` に `momo_sample` が作成されます。
+成功した場合、`_build/ubuntu-20.04_x86_64/release/sumomo` に `sumomo` が作成されます。
 
 ```
-_build/ubuntu-20.04_x86_64/release/momo_sample/
-└── momo_sample
+_build/ubuntu-20.04_x86_64/release/sumomo/
+└── sumomo
 ```
 
 #### Ubuntu 22.04 x86_64 向けのビルドをする
@@ -117,14 +117,14 @@ $ sudo apt install python3
 ##### ビルド
 
 ```shell
-$ python3 momo_sample/ubuntu-22.04_x86_64/run.py
+$ python3 sumomo/ubuntu-22.04_x86_64/run.py
 ```
 
-成功した場合、以下のファイルが作成されます。`_build/ubuntu-22.04_x86_64/release/momo_sample` に `momo_sample` が作成されます。
+成功した場合、以下のファイルが作成されます。`_build/ubuntu-22.04_x86_64/release/sumomo` に `sumomo` が作成されます。
 
 ```
-_build/ubuntu-22.04_x86_64/release/momo_sample/
-└── momo_sample
+_build/ubuntu-22.04_x86_64/release/sumomo/
+└── sumomo
 ```
 
 #### Ubuntu 20.04 x86_64 で Ubuntu 20.04 armv8 Jetson 向けのビルドをする
@@ -150,14 +150,14 @@ $ sudo sed -e 's/Apt::Get::AllowUnauthenticated=true/Apt::Get::AllowUnauthentica
 ##### ビルド
 
 ```shell
-$ python3 momo_sample/ubuntu-20.04_armv8_jetson/run.py
+$ python3 sumomo/ubuntu-20.04_armv8_jetson/run.py
 ```
 
-成功した場合、以下のファイルが作成されます。`_build/ubuntu-20.04_armv8_jetson/release/momo_sample` に `momo_sample` が作成されます。
+成功した場合、以下のファイルが作成されます。`_build/ubuntu-20.04_armv8_jetson/release/sumomo` に `sumomo` が作成されます。
 
 ```
-_build/ubuntu-20.04_armv8_jetson/release/momo_sample/
-└── momo_sample
+_build/ubuntu-20.04_armv8_jetson/release/sumomo/
+└── sumomo
 ```
 
 ## 実行する
@@ -169,12 +169,12 @@ _build/ubuntu-20.04_armv8_jetson/release/momo_sample/
 
 Windows の場合
 ```powershell
-> .\momo_sample.exe --signaling-url wss://sora.example.com/signaling --role sendrecv --channel-id sora --multistream true --use-sdl
+> .\sumomo.exe --signaling-url wss://sora.example.com/signaling --role sendrecv --channel-id sora --multistream true --use-sdl
 ```
 
 Windows 以外の場合
 ```shell
-$ ./momo_sample --signaling-url wss://sora.example.com/signaling --role sendrecv --channel-id sora --multistream true --use-sdl
+$ ./sumomo --signaling-url wss://sora.example.com/signaling --role sendrecv --channel-id sora --multistream true --use-sdl
 ```
 
 #### 必須オプション

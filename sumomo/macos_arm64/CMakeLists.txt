@@ -27,24 +27,19 @@ find_package(Sora REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(Threads REQUIRED)
 
-add_executable(momo_sample)
-set_target_properties(momo_sample PROPERTIES CXX_STANDARD 20 C_STANDARD 20)
-set_target_properties(momo_sample PROPERTIES POSITION_INDEPENDENT_CODE ON)
-target_sources(momo_sample PRIVATE ../src/momo_sample.cpp ../src/sdl_renderer.cpp)
+add_executable(sumomo)
+set_target_properties(sumomo PROPERTIES CXX_STANDARD 20 C_STANDARD 20)
+set_target_properties(sumomo PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(sumomo PROPERTIES CXX_VISIBILITY_PRESET hidden)
+target_sources(sumomo PRIVATE ../src/sumomo.cpp ../src/sdl_renderer.cpp)
 
-target_compile_options(momo_sample
-  PRIVATE
-    "$<$<COMPILE_LANGUAGE:CXX>:-nostdinc++>"
-    "$<$<COMPILE_LANGUAGE:CXX>:-isystem${LIBCXX_INCLUDE_DIR}>"
-)
-target_include_directories(momo_sample PRIVATE ${CLI11_DIR}/include)
-target_link_libraries(momo_sample PRIVATE Sora::sora SDL2::SDL2 SDL2::SDL2main)
-target_link_directories(momo_sample PRIVATE ${CMAKE_SYSROOT}/usr/lib/aarch64-linux-gnu/tegra)
-target_compile_definitions(momo_sample PRIVATE CLI11_HAS_FILESYSTEM=0)
+target_include_directories(sumomo PRIVATE ${CLI11_DIR}/include)
+target_link_libraries(sumomo PRIVATE Sora::sora SDL2::SDL2 SDL2::SDL2main)
+target_compile_definitions(sumomo PRIVATE CLI11_HAS_FILESYSTEM=0)
 
 # Lyra ファイルのコピー
 add_custom_command(
-  TARGET momo_sample POST_BUILD
+  TARGET sumomo POST_BUILD
   COMMAND
     ${CMAKE_COMMAND} -E copy_directory
     ${LYRA_DIR}/share/model_coeffs/

@@ -10,13 +10,13 @@ sys.path.insert(0, BASE_DIR)
 from base import (  # noqa
     cd,
     cmd,
-    cmdcap,
     mkdir_p,
     add_path,
     cmake_path,
     read_version_file,
     get_webrtc_info,
     install_webrtc,
+    install_llvm,
     install_boost,
     install_lyra,
     install_cmake,
@@ -36,11 +36,35 @@ def install_deps(source_dir, build_dir, install_dir, debug):
             'version_file': os.path.join(install_dir, 'webrtc.version'),
             'source_dir': source_dir,
             'install_dir': install_dir,
-            'platform': 'macos_arm64',
+            'platform': 'ubuntu-22.04_x86_64',
         }
         install_webrtc(**install_webrtc_args)
 
-        sysroot = cmdcap(['xcrun', '--sdk', 'macosx', '--show-sdk-path'])
+        webrtc_info = get_webrtc_info(False, source_dir, build_dir, install_dir)
+        webrtc_version = read_version_file(webrtc_info.version_file)
+
+        # LLVM
+        tools_url = webrtc_version['WEBRTC_SRC_TOOLS_URL']
+        tools_commit = webrtc_version['WEBRTC_SRC_TOOLS_COMMIT']
+        libcxx_url = webrtc_version['WEBRTC_SRC_THIRD_PARTY_LIBCXX_SRC_URL']
+        libcxx_commit = webrtc_version['WEBRTC_SRC_THIRD_PARTY_LIBCXX_SRC_COMMIT']
+        buildtools_url = webrtc_version['WEBRTC_SRC_BUILDTOOLS_URL']
+        buildtools_commit = webrtc_version['WEBRTC_SRC_BUILDTOOLS_COMMIT']
+        install_llvm_args = {
+            'version':
+                f'{tools_url}.{tools_commit}.'
+                f'{libcxx_url}.{libcxx_commit}.'
+                f'{buildtools_url}.{buildtools_commit}',
+            'version_file': os.path.join(install_dir, 'llvm.version'),
+            'install_dir': install_dir,
+            'tools_url': tools_url,
+            'tools_commit': tools_commit,
+            'libcxx_url': libcxx_url,
+            'libcxx_commit': libcxx_commit,
+            'buildtools_url': buildtools_url,
+            'buildtools_commit': buildtools_commit,
+        }
+        install_llvm(**install_llvm_args)
 
         # Boost
         install_boost_args = {
@@ -49,7 +73,7 @@ def install_deps(source_dir, build_dir, install_dir, debug):
             'source_dir': source_dir,
             'install_dir': install_dir,
             'sora_version': version['SORA_CPP_SDK_VERSION'],
-            'platform': 'macos_arm64',
+            'platform': 'ubuntu-22.04_x86_64',
         }
         install_boost(**install_boost_args)
 
@@ -60,7 +84,7 @@ def install_deps(source_dir, build_dir, install_dir, debug):
             'source_dir': source_dir,
             'install_dir': install_dir,
             'sora_version': version['SORA_CPP_SDK_VERSION'],
-            'platform': 'macos_arm64',
+            'platform': 'ubuntu-22.04_x86_64',
         }
         install_lyra(**install_lyra_args)
 
@@ -70,11 +94,11 @@ def install_deps(source_dir, build_dir, install_dir, debug):
             'version_file': os.path.join(install_dir, 'cmake.version'),
             'source_dir': source_dir,
             'install_dir': install_dir,
-            'platform': 'macos-universal',
+            'platform': 'linux-x86_64',
             'ext': 'tar.gz'
         }
         install_cmake(**install_cmake_args)
-        add_path(os.path.join(install_dir, 'cmake', 'CMake.app', 'Contents', 'bin'))
+        add_path(os.path.join(install_dir, 'cmake', 'bin'))
 
         # SDL2
         install_sdl2_args = {
@@ -84,15 +108,10 @@ def install_deps(source_dir, build_dir, install_dir, debug):
             'build_dir': build_dir,
             'install_dir': install_dir,
             'debug': debug,
-            'platform': 'macos',
+            'platform': 'linux',
             'cmake_args': [
-                '-DCMAKE_SYSTEM_PROCESSOR=arm64',
-                '-DCMAKE_OSX_ARCHITECTURES=arm64',
-                "-DCMAKE_C_COMPILER=clang",
-                '-DCMAKE_C_COMPILER_TARGET=aarch64-apple-darwin',
-                "-DCMAKE_CXX_COMPILER=clang++",
-                '-DCMAKE_CXX_COMPILER_TARGET=aarch64-apple-darwin',
-                f'-DCMAKE_SYSROOT={sysroot}',
+                f"-DCMAKE_C_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang')}",
+                f"-DCMAKE_CXX_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang++')}",
             ],
         }
         install_sdl2(**install_sdl2_args)
@@ -103,7 +122,7 @@ def install_deps(source_dir, build_dir, install_dir, debug):
             'version_file': os.path.join(install_dir, 'sora.version'),
             'source_dir': source_dir,
             'install_dir': install_dir,
-            'platform': 'macos_arm64',
+            'platform': 'ubuntu-22.04_x86_64',
         }
         install_sora(**install_sora_args)
 
@@ -123,7 +142,7 @@ def main():
     args = parser.parse_args()
 
     configuration_dir = 'debug' if args.debug else 'release'
-    dir = 'macos_arm64'
+    dir = 'ubuntu-22.04_x86_64'
     source_dir = os.path.join(BASE_DIR, '_source', dir, configuration_dir)
     build_dir = os.path.join(BASE_DIR, '_build', dir, configuration_dir)
     install_dir = os.path.join(BASE_DIR, '_install', dir, configuration_dir)
@@ -135,7 +154,7 @@ def main():
 
     configuration = 'Debug' if args.debug else 'Release'
 
-    sample_build_dir = os.path.join(build_dir, 'momo_sample')
+    sample_build_dir = os.path.join(build_dir, 'sumomo')
     mkdir_p(sample_build_dir)
     with cd(sample_build_dir):
         webrtc_info = get_webrtc_info(False, source_dir, build_dir, install_dir)
@@ -152,15 +171,10 @@ def main():
 
         # クロスコンパイルの設定。
         # 本来は toolchain ファイルに書く内容
-        sysroot = cmdcap(['xcrun', '--sdk', 'macosx', '--show-sdk-path'])
         cmake_args += [
-            '-DCMAKE_SYSTEM_PROCESSOR=arm64',
-            '-DCMAKE_OSX_ARCHITECTURES=arm64',
-            "-DCMAKE_C_COMPILER=clang",
-            '-DCMAKE_C_COMPILER_TARGET=aarch64-apple-darwin',
-            "-DCMAKE_CXX_COMPILER=clang++",
-            '-DCMAKE_CXX_COMPILER_TARGET=aarch64-apple-darwin',
-            f'-DCMAKE_SYSROOT={sysroot}',
+            f"-DCMAKE_C_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang')}",
+            f"-DCMAKE_CXX_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang++')}",
+            f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}",
         ]
 
         cmd(['cmake', os.path.join(PROJECT_DIR)] + cmake_args)
