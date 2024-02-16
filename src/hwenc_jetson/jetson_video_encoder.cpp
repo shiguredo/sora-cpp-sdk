@@ -243,6 +243,9 @@ int32_t JetsonVideoEncoder::JetsonConfigure() {
 
     ret = encoder_->setHWPresetType(V4L2_ENC_HW_PRESET_ULTRAFAST);
     INIT_ERROR(ret < 0, "Failed to setHWPresetType");
+
+    ret = encoder_->setInsertSpsPpsAtIdrEnabled(true);
+    INIT_ERROR(ret < 0, "Failed to setInsertSpsPpsAtIdrEnabled");
   } else if (codec_.codecType == webrtc::kVideoCodecVP8) {
     uint32_t qp_min =
         codec_.mode == webrtc::VideoCodecMode::kScreensharing ? 12 : 2;
