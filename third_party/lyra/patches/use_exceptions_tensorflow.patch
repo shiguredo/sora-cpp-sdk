@@ -1,13 +1,13 @@
 diff --git a/tensorflow/lite/build_def.bzl b/tensorflow/lite/build_def.bzl
-index 43015747773..d361e6f6c47 100644
+index b9bf02b373d..ea6c67362dc 100644
 --- a/tensorflow/lite/build_def.bzl
 +++ b/tensorflow/lite/build_def.bzl
-@@ -42,7 +42,7 @@ def tflite_copts():
+@@ -46,7 +46,7 @@ def tflite_copts():
      }) + select({
          clean_dep("//tensorflow:windows"): [],
          "//conditions:default": [
 -            "-fno-exceptions",  # Exceptions are unused in TFLite.
 +            # "-fno-exceptions",  # Exceptions are unused in TFLite.
          ],
-     })
- 
+     }) + select({
+         clean_dep("//tensorflow/lite:tflite_with_xnnpack_explicit_false"): ["-DTFLITE_WITHOUT_XNNPACK"],
