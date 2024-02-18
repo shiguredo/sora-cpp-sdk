@@ -12,32 +12,32 @@
 ## メモ
 
 - ubuntu-20.04_x86_64, ubuntu-22.04_x86_64 のビルドに必要な依存
-  - clang-12
+  - clang-18
   - CUDA
 ```bash
-sudo apt-get update
-sudo apt-get install -y software-properties-common
-wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin
-sudo mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600
-sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/3bf863cc.pub
-sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/ /"
-sudo apt-get update
-# 10.2.89-1 の部分は VERSION ファイルの CUDA_VERSION を参照すること
-sudo apt-get -y install cuda=10.2.89-1
+# clang-18
+wget https://apt.llvm.org/llvm.sh
+chmod a+x llvm.sh
+sudo ./llvm.sh 18
 
-# CUDA の Ubuntu-20.04 のリポジトリは CUDA 11 以上でしか使えないので、以下のコマンドではインストールできない
-# wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-ubuntu2004.pin
-# sudo mv cuda-ubuntu2004.pin /etc/apt/preferences.d/cuda-repository-pin-600
-# sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/3bf863cc.pub
-# sudo add-apt-repository "deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/ /"
-# sudo apt-get update
-# sudo apt-get -y install cuda=10.2 clang-12
+# CUDA
+wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb
+sudo dpkg -i cuda-keyring_*all.deb
+sudo apt-get update
+# 11.8.0-1 の部分は VERSION ファイルの CUDA_VERSION を参照すること
+sudo apt-get -y install cuda=11.8.0-1
 ```
   - libva-dev
   - libdrm-dev
+```bash
+sudo apt install libva-dev libdrm-dev
+```
 - ubuntu-20.04_x86_64, ubuntu-22.04_x86_64 の実行に必要な依存
   - libva2
   - libdrm2
+```bash
+sudo apt install libva2 libdrm2
+```
   - （もし内部実装が Intel Media SDK の oneVPL を有効にしたいなら）libmfx1
   - （もし内部実装が oneVPL GPU の oneVPL を有効にしたいなら）libmfx-gen1.2 （Ubuntu 22.04 のみ利用可）
 
