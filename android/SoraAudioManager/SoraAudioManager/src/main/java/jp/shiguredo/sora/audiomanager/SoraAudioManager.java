@@ -26,9 +26,9 @@ import android.util.Log;
 
 public class SoraAudioManager {
     private static final String TAG = "SoraAudioManager";
-    protected final Context context;
-    protected final AudioManager audioManager;
-    protected final BroadcastReceiver wiredHeadsetReceiver;
+    protected Context context;
+    protected AudioManager audioManager;
+    protected BroadcastReceiver wiredHeadsetReceiver;
     protected boolean running;
     private int savedAudioMode = AudioManager.MODE_INVALID;
     private boolean savedIsMicrophoneMute;
@@ -52,6 +52,9 @@ public class SoraAudioManager {
             hasWiredHeadset = (state == STATE_PLUGGED);
             updateAudioDeviceState();
         }
+    }
+
+    protected SoraAudioManager() {
     }
 
     protected SoraAudioManager(Context context) {

@@ -24,4 +24,8 @@ public class SoraAudioManagerFactory {
             return SoraAudioManagerLegacy.create(context);
         }
     }
+
+    public static SoraAudioManager createWithMainThreadWrapper(Context context) {
+        return new MainThreadWrapper(context);
+    }
 }
