@@ -26,6 +26,8 @@
   - force_i420_conversion_for_simulcast_adapter のデフォルト値は true で I420 への変換を行う
   - 変換を行わない場合、エンコードの性能が向上するが、バッファーの実装によってはサイマルキャストが利用できなくなる
   - @enm10k
+- [UPDATE] SoraSignalingObserver に OnSwitched を追加する
+  - @enm10k
 - [FIX] Jetson Orin で AV1 を送信中、他のユーザーが後から接続して受信した時に映像が出ない問題を修正
   - @melpon
 
