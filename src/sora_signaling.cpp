@@ -1172,6 +1172,10 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
     // Data Channel による通信の開始
     using_datachannel_ = true;
 
+    auto ob = config_.observer.lock();
+    if (ob) {
+      ob->OnSwitched(std::move(text));
+    }
 
     // ignore_disconnect_websocket == true の場合は WS を切断する
     auto it = m.as_object().find("ignore_disconnect_websocket");
