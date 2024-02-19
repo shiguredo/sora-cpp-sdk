@@ -36,7 +36,7 @@ def install_deps(source_dir, build_dir, install_dir, debug):
             'version_file': os.path.join(install_dir, 'webrtc.version'),
             'source_dir': source_dir,
             'install_dir': install_dir,
-            'platform': 'ubuntu-22.04_x86_64',
+            'platform': 'ubuntu-20.04_x86_64',
         }
         install_webrtc(**install_webrtc_args)
 
@@ -73,7 +73,7 @@ def install_deps(source_dir, build_dir, install_dir, debug):
             'source_dir': source_dir,
             'install_dir': install_dir,
             'sora_version': version['SORA_CPP_SDK_VERSION'],
-            'platform': 'ubuntu-22.04_x86_64',
+            'platform': 'ubuntu-20.04_x86_64',
         }
         install_boost(**install_boost_args)
 
@@ -84,7 +84,7 @@ def install_deps(source_dir, build_dir, install_dir, debug):
             'source_dir': source_dir,
             'install_dir': install_dir,
             'sora_version': version['SORA_CPP_SDK_VERSION'],
-            'platform': 'ubuntu-22.04_x86_64',
+            'platform': 'ubuntu-20.04_x86_64',
         }
         install_lyra(**install_lyra_args)
 
@@ -122,7 +122,7 @@ def install_deps(source_dir, build_dir, install_dir, debug):
             'version_file': os.path.join(install_dir, 'sora.version'),
             'source_dir': source_dir,
             'install_dir': install_dir,
-            'platform': 'ubuntu-22.04_x86_64',
+            'platform': 'ubuntu-20.04_x86_64',
         }
         install_sora(**install_sora_args)
 
@@ -142,7 +142,7 @@ def main():
     args = parser.parse_args()
 
     configuration_dir = 'debug' if args.debug else 'release'
-    dir = 'ubuntu-22.04_x86_64'
+    dir = 'ubuntu-20.04_x86_64'
     source_dir = os.path.join(BASE_DIR, '_source', dir, configuration_dir)
     build_dir = os.path.join(BASE_DIR, '_build', dir, configuration_dir)
     install_dir = os.path.join(BASE_DIR, '_install', dir, configuration_dir)
@@ -154,7 +154,7 @@ def main():
 
     configuration = 'Debug' if args.debug else 'Release'
 
-    sample_build_dir = os.path.join(build_dir, 'momo_sample')
+    sample_build_dir = os.path.join(build_dir, 'sumomo')
     mkdir_p(sample_build_dir)
     with cd(sample_build_dir):
         webrtc_info = get_webrtc_info(False, source_dir, build_dir, install_dir)

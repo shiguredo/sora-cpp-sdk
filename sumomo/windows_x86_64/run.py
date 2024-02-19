@@ -131,7 +131,7 @@ def main():
     if args.relwithdebinfo:
         configuration = 'RelWithDebInfo'
 
-    sample_build_dir = os.path.join(build_dir, 'momo_sample')
+    sample_build_dir = os.path.join(build_dir, 'sumomo')
     mkdir_p(sample_build_dir)
     with cd(sample_build_dir):
         webrtc_info = get_webrtc_info(False, source_dir, build_dir, install_dir)

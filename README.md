@@ -36,10 +36,10 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
 WebRTC SFU Sora と映像の送受信を行い、[SDL (Simple DirectMedia Layer)](https://www.libsdl.org/) を利用して受信映像を表示するサンプルです。
 使い方は [SDL サンプルを使ってみる](./doc/USE_SDL_SAMPLE.md) をお読みください。
 
-### Momo サンプル
+### Sumomo 
 
 [WebRTC Native Client Momo](https://github.com/shiguredo/momo) の sora モードを模したサンプルです。
-使い方は [Momo サンプルを使ってみる](./doc/USE_MOMO_SAMPLE.md) をお読みください。
+使い方は [Sumomo を使ってみる](./doc/USE_SUMOMO.md) をお読みください。
 
 ### メッセージング受信サンプル
 

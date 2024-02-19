@@ -11,6 +11,8 @@
 
 ## develop
 
+- [CHANGE] momo_sample を sumomo にリネームする
+  - @enm10k
 - [CHANGE] JetPack のバージョンを 5.1.2 にあげる
   - JetPack 5.1.1, 5.1.2 で動作を確認
   - JetPack 5.1 では、互換性の問題で JetsonJpegDecoder がエラーになることを確認
