@@ -66,7 +66,7 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
         [this](const boost::system::error_code&, int) { conn_->Disconnect(); });
 
     timer_.reset(new boost::asio::deadline_timer(*ioc_));
-    timer_->expires_from_now(boost::posix_time::seconds(1));
+    timer_->expires_from_now(boost::posix_time::seconds(3));
     timer_->async_wait([this, labels](boost::system::error_code ec) {
       if (ec) {
         return;
@@ -100,6 +100,9 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
   void OnNotify(std::string text) override {}
   void OnPush(std::string text) override {}
   void OnMessage(std::string label, std::string data) override {}
+  void OnSwitched(std::string text) override {
+    RTC_LOG(LS_INFO) << "OnSwitched: " << text;
+  }
 
   void OnTrack(rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
       override {}

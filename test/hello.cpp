@@ -107,9 +107,6 @@ void HelloSora::OnDisconnect(sora::SoraSignalingErrorCode ec,
   RTC_LOG(LS_INFO) << "OnDisconnect: " << message;
   ioc_->stop();
 }
-void HelloSora::OnSwitched(std::string text) {
-  RTC_LOG(LS_INFO) << "OnSwitched: " << text;
-}
 
 #if defined(__ANDROID__) || (defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE)
 
