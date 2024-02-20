@@ -1727,6 +1727,14 @@ def main():
             shutil.copyfile(os.path.join(sora_build_dir, 'bundled', 'libsora.a'),
                             os.path.join(install_dir, 'sora', 'lib', 'libsora.a'))
 
+    if platform.target.os == 'android':
+        # Android の場合のみ SoraAudioManager をビルドする
+        with cd(os.path.join(BASE_DIR, 'android', 'SoraAudioManager')):
+            cmd(['./gradlew', '--no-daemon', 'assembleRelease'])
+            shutil.copyfile(os.path.join(BASE_DIR, 'android', 'SoraAudioManager', 'SoraAudioManager',
+                                         'build', 'outputs', 'aar', 'SoraAudioManager-release.aar'),
+                            os.path.join(install_dir, 'sora', 'lib', 'SoraAudioManager.aar'))
+
     if args.test:
         if platform.target.os == 'ios':
             if not args.no_lyra:
