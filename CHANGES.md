@@ -28,6 +28,8 @@
   - @enm10k
 - [UPDATE]  Lyra を 1.3.2 にあげる
   - @melpon
+- [ADD] SoraSignalingObserver に OnSwitched を追加する
+  - @enm10k
 - [FIX] Jetson Orin で AV1 を送信中、他のユーザーが後から接続して受信した時に映像が出ない問題を修正
   - @melpon @enm10k
 
