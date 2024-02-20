@@ -154,7 +154,6 @@ public class SoraAudioManager2 extends SoraAudioManager {
         AudioDeviceInfo bluetoothHeadsetDevice = null;
         // 新しいデバイスを探す
         for (AudioDeviceInfo newDevice : newAudioDevices) {
-            Log.d(TAG, "newDevice Type: " + newDevice.getType());
             if (!audioDevices.contains(newDevice)) {
                 // 新しいデバイス
                 if (newDevice.getType() == AudioDeviceInfo.TYPE_WIRED_HEADSET ||
@@ -211,10 +210,10 @@ public class SoraAudioManager2 extends SoraAudioManager {
             Log.e(TAG, "No supported audio device was found");
             return;
         }
-        if (newAudioDevice != selectedAudioDevice) {
+        if (!newAudioDevice.equals(selectedAudioDevice)) {
             Log.d(TAG, "New device status: "
-                    + "available=" + audioDevices + ", "
-                    + "selected=" + newAudioDevice);
+                    + "available=[" + audioDeviceInfosToString(audioDevices) + "], "
+                    + "selected=" + audioDeviceInfoTypeToString(newAudioDevice.getType()));
             audioManager.setCommunicationDevice(newAudioDevice);
             selectedAudioDevice = newAudioDevice;
             if (onChangeRouteObserver != null) {
@@ -233,6 +232,92 @@ public class SoraAudioManager2 extends SoraAudioManager {
                 return "CONNECTING";
             case AudioManager.SCO_AUDIO_STATE_ERROR:
                 return "ERROR";
+            default:
+                return "INVALID";
+        }
+    }
+
+    static String audioDeviceInfosToString(List<AudioDeviceInfo> newAudioDevices) {
+        StringBuilder devicesStringBuilder = new StringBuilder();
+
+        for (AudioDeviceInfo device : newAudioDevices) {
+            String deviceTypeString = audioDeviceInfoTypeToString(device.getType());
+
+            devicesStringBuilder.append(deviceTypeString).append(", ");
+        }
+
+        // 末尾のカンマとスペースを削除
+        if (devicesStringBuilder.length() > 0) {
+            devicesStringBuilder.setLength(devicesStringBuilder.length() - 2);
+        }
+
+        return devicesStringBuilder.toString();
+    }
+
+    static String audioDeviceInfoTypeToString(int type) {
+        switch (type) {
+            case AudioDeviceInfo.TYPE_AUX_LINE:
+                return "AUX_LINE";
+            case AudioDeviceInfo.TYPE_BLE_BROADCAST:
+                return "BLE_BROADCAST";
+            case AudioDeviceInfo.TYPE_BLE_HEADSET:
+                return "BLE_HEADSET";
+            case AudioDeviceInfo.TYPE_BLE_SPEAKER:
+                return "BLE_SPEAKER";
+            case AudioDeviceInfo.TYPE_BLUETOOTH_A2DP:
+                return "BLUETOOTH_A2DP";
+            case AudioDeviceInfo.TYPE_BLUETOOTH_SCO:
+                return "BLUETOOTH_SCO";
+            case AudioDeviceInfo.TYPE_BUILTIN_EARPIECE:
+                return "BUILTIN_EARPIECE";
+            case AudioDeviceInfo.TYPE_BUILTIN_MIC:
+                return "BUILTIN_MIC";
+            case AudioDeviceInfo.TYPE_BUILTIN_SPEAKER:
+                return "BUILTIN_SPEAKER";
+            case AudioDeviceInfo.TYPE_BUILTIN_SPEAKER_SAFE:
+                return "BUILTIN_SPEAKER_SAFE";
+            case AudioDeviceInfo.TYPE_BUS:
+                return "BUS";
+            case AudioDeviceInfo.TYPE_DOCK:
+                return "DOCK";
+            case AudioDeviceInfo.TYPE_DOCK_ANALOG:
+                return "DOCK_ANALOG";
+            case AudioDeviceInfo.TYPE_FM:
+                return "FM";
+            case AudioDeviceInfo.TYPE_FM_TUNER:
+                return "FM_TUNER";
+            case AudioDeviceInfo.TYPE_HDMI:
+                return "HDMI";
+            case AudioDeviceInfo.TYPE_HDMI_ARC:
+                return "HDMI_ARC";
+            case AudioDeviceInfo.TYPE_HDMI_EARC:
+                return "HDMI_EARC";
+            case AudioDeviceInfo.TYPE_HEARING_AID:
+                return "HEARING_AID";
+            case AudioDeviceInfo.TYPE_IP:
+                return "IP";
+            case AudioDeviceInfo.TYPE_LINE_ANALOG:
+                return "LINE_ANALOG";
+            case AudioDeviceInfo.TYPE_LINE_DIGITAL:
+                return "LINE_DIGITAL";
+            case AudioDeviceInfo.TYPE_REMOTE_SUBMIX:
+                return "REMOTE_SUBMIX";
+            case AudioDeviceInfo.TYPE_TELEPHONY:
+                return "TELEPHONY";
+            case AudioDeviceInfo.TYPE_TV_TUNER:
+                return "TV_TUNER";
+            case AudioDeviceInfo.TYPE_UNKNOWN:
+                return "UNKNOWN";
+            case AudioDeviceInfo.TYPE_USB_ACCESSORY:
+                return "USB_ACCESSORY";
+            case AudioDeviceInfo.TYPE_USB_DEVICE:
+                return "USB_DEVICE";
+            case AudioDeviceInfo.TYPE_USB_HEADSET:
+                return "USB_HEADSET";
+            case AudioDeviceInfo.TYPE_WIRED_HEADPHONES:
+                return "WIRED_HEADPHONES";
+            case AudioDeviceInfo.TYPE_WIRED_HEADSET:
+                return "WIRED_HEADSET";
             default:
                 return "INVALID";
         }
