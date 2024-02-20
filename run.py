@@ -10,6 +10,7 @@ import argparse
 import multiprocessing
 import hashlib
 import glob
+import shlex
 from typing import Callable, NamedTuple, Optional, List, Union, Dict
 if platform.system() == 'Windows':
     import winreg
@@ -352,7 +353,9 @@ def apply_patch(patch, dir, depth):
             with open(patch) as stdin:
                 cmd(['patch', f'-p{depth}'], stdin=stdin)
 
-# NOTE(enm10k): shutil.copytree に Python 3.8 で追加された dirs_exist_ok=True を指定して使いたかったが、 GitHub Actions の Windows のランナー (widnwos-2019) にインストールされている Python のバージョンが古くて利用できなかった
+
+# NOTE(enm10k): shutil.copytree に Python 3.8 で追加された dirs_exist_ok=True を指定して使いたかったが、
+# GitHub Actions の Windows のランナー (widnwos-2019) にインストールされている Python のバージョンが古くて利用できなかった
 # actions/setup-python で Python 3.8 を設定してビルドしたところ、 Lyra のビルドがエラーになったためこの関数を自作した
 # Windows のランナーを更新した場合は、この関数は不要になる可能性が高い
 def copytree(src_dir, dst_dir):
@@ -363,6 +366,13 @@ def copytree(src_dir, dst_dir):
             os.makedirs(dest_path, exist_ok=True)
         else:
             shutil.copy2(file_path, dest_path)
+
+
+def git_get_url_and_revision(dir):
+    with cd(dir):
+        rev = cmdcap(['git', 'rev-parse', 'HEAD'])
+        url = cmdcap(['git', 'remote', 'get-url', 'origin'])
+        return url, rev
 
 
 @versioned
@@ -377,53 +387,22 @@ def install_webrtc(version, source_dir, install_dir, platform: str):
     extract(archive, output_dir=install_dir, output_dirname='webrtc')
 
 
-class WebrtcConfig(NamedTuple):
-    webrtcbuild_fetch: bool
-    webrtcbuild_fetch_force: bool
-    webrtc_fetch: bool
-    webrtc_fetch_force: bool
-    webrtc_gen: bool
-    webrtc_gen_force: bool
-    webrtc_extra_gn_args: str
-    webrtc_nobuild: bool
-
-
-def build_install_webrtc(version, source_dir, build_dir, install_dir, platform, debug, config):
-    webrtcbuild_source_dir = os.path.join(source_dir, 'webrtc-build')
-
-    clone_and_checkout(url='https://github.com/shiguredo-webrtc-build/webrtc-build.git',
-                       version=version,
-                       dir=webrtcbuild_source_dir,
-                       fetch=config.webrtcbuild_fetch,
-                       fetch_force=config.webrtcbuild_fetch_force)
-
-    with cd(webrtcbuild_source_dir):
-        args = ['--source-dir', source_dir,
-                '--build-dir', build_dir,
-                '--webrtc-nobuild-ios-framework',
+def build_webrtc(platform, webrtc_build_dir, webrtc_build_args, debug):
+    with cd(webrtc_build_dir):
+        args = ['--webrtc-nobuild-ios-framework',
                 '--webrtc-nobuild-android-aar']
         if debug:
             args += ['--debug']
-        if config.webrtc_fetch:
-            args += ['--webrtc-fetch']
-        if config.webrtc_fetch_force:
-            args += ['--webrtc-fetch-force']
-        if config.webrtc_gen:
-            args += ['--webrtc-gen']
-        if config.webrtc_gen_force:
-            args += ['--webrtc-gen-force']
-        if len(config.webrtc_extra_gn_args) != 0:
-            args += ['--webrtc-extra-gn-args', config.webrtc_extra_gn_args]
-        if config.webrtc_nobuild:
-            args += ['--webrtc-nobuild']
+
+        args += webrtc_build_args
 
         cmd(['python3', 'run.py', 'build', platform, *args])
 
-    # インクルードディレクトリを増やしたくないので、
-    # __config_site を libc++ のディレクトリにコピーしておく
-    src_config = os.path.join(source_dir, 'webrtc', 'src', 'buildtools', 'third_party', 'libc++', '__config_site')
-    dst_config = os.path.join(source_dir, 'webrtc', 'src', 'third_party', 'libc++', 'src', 'include', '__config_site')
-    if not os.path.exists(dst_config):
+        # インクルードディレクトリを増やしたくないので、
+        # __config_site を libc++ のディレクトリにコピーしておく
+        webrtc_source_dir = os.path.join(webrtc_build_dir, '_source', platform, 'webrtc')
+        src_config = os.path.join(webrtc_source_dir, 'src', 'buildtools', 'third_party', 'libc++', '__config_site')
+        dst_config = os.path.join(webrtc_source_dir, 'src', 'third_party', 'libc++', 'src', 'include', '__config_site')
         shutil.copyfile(src_config, dst_config)
 
 
@@ -431,34 +410,38 @@ class WebrtcInfo(NamedTuple):
     version_file: str
     deps_file: str
     webrtc_include_dir: str
+    webrtc_source_dir: Optional[str]
     webrtc_library_dir: str
     clang_dir: str
     libcxx_dir: str
 
 
-def get_webrtc_info(webrtcbuild: bool, source_dir: str, build_dir: str, install_dir: str) -> WebrtcInfo:
-    webrtc_source_dir = os.path.join(source_dir, 'webrtc')
-    webrtc_build_dir = os.path.join(build_dir, 'webrtc')
+def get_webrtc_info(platform: str, webrtc_build_dir: Optional[str], install_dir: str, debug: bool) -> WebrtcInfo:
     webrtc_install_dir = os.path.join(install_dir, 'webrtc')
 
-    if webrtcbuild:
-        return WebrtcInfo(
-            version_file=os.path.join(source_dir, 'webrtc-build', 'VERSION'),
-            deps_file=os.path.join(source_dir, 'webrtc-build', 'DEPS'),
-            webrtc_include_dir=os.path.join(webrtc_source_dir, 'src'),
-            webrtc_library_dir=os.path.join(webrtc_build_dir, 'obj')
-            if platform.system() == 'Windows' else webrtc_build_dir, clang_dir=os.path.join(
-                webrtc_source_dir, 'src', 'third_party', 'llvm-build', 'Release+Asserts'),
-            libcxx_dir=os.path.join(webrtc_source_dir, 'src', 'third_party', 'libc++', 'src'),)
-    else:
+    if webrtc_build_dir is None:
         return WebrtcInfo(
             version_file=os.path.join(webrtc_install_dir, 'VERSIONS'),
             deps_file=os.path.join(webrtc_install_dir, 'DEPS'),
             webrtc_include_dir=os.path.join(webrtc_install_dir, 'include'),
-            webrtc_library_dir=os.path.join(install_dir, 'webrtc', 'lib'),
+            webrtc_source_dir=None,
+            webrtc_library_dir=os.path.join(webrtc_install_dir, 'lib'),
             clang_dir=os.path.join(install_dir, 'llvm', 'clang'),
             libcxx_dir=os.path.join(install_dir, 'llvm', 'libcxx'),
         )
+    else:
+        webrtc_build_source_dir = os.path.join(webrtc_build_dir, '_source', platform, 'webrtc')
+        configuration = 'debug' if debug else 'release'
+        webrtc_build_build_dir = os.path.join(webrtc_build_dir, '_build', platform, configuration, 'webrtc')
+
+        return WebrtcInfo(
+            version_file=os.path.join(webrtc_build_dir, 'VERSION'),
+            deps_file=os.path.join(webrtc_build_dir, 'DEPS'),
+            webrtc_include_dir=os.path.join(webrtc_build_source_dir, 'src'),
+            webrtc_source_dir=os.path.join(webrtc_build_source_dir, 'src'),
+            webrtc_library_dir=webrtc_build_build_dir,
+            clang_dir=os.path.join(webrtc_build_source_dir, 'src', 'third_party', 'llvm-build', 'Release+Asserts'),
+            libcxx_dir=os.path.join(webrtc_build_source_dir, 'src', 'third_party', 'libc++', 'src'),)
 
 
 @versioned
@@ -766,7 +749,8 @@ def install_vpl(version, configuration, source_dir, build_dir, install_dir, cmak
 
 
 @versioned
-def install_lyra(version, install_dir, base_dir, debug, target, webrtc_version, webrtc_info, webrtc_deps, api_level, temp_dir):
+def install_lyra(version, install_dir, base_dir, debug, target,
+                 webrtc_version, webrtc_info, webrtc_deps, api_level, temp_dir):
     lyra_install_dir = os.path.join(install_dir, 'lyra')
     rm_rf(lyra_install_dir)
 
@@ -776,18 +760,26 @@ def install_lyra(version, install_dir, base_dir, debug, target, webrtc_version, 
 
         # protobuf のバージョンを揃えるために、WebRTC の third_party を利用する
         if not os.path.exists('third_party'):
-            if temp_dir is None:
-                git_clone_shallow(
+            if webrtc_info.webrtc_source_dir is None:
+                webrtc_third_party_url, webrtc_third_party_commit = (
                     webrtc_version['WEBRTC_SRC_THIRD_PARTY_URL'],
                     webrtc_version['WEBRTC_SRC_THIRD_PARTY_COMMIT'],
+                )
+            else:
+                webrtc_third_party_url, webrtc_third_party_commit = git_get_url_and_revision(
+                    os.path.join(webrtc_info.webrtc_source_dir, 'third_party'))
+            if temp_dir is None:
+                git_clone_shallow(
+                    webrtc_third_party_url,
+                    webrtc_third_party_commit,
                     'third_party')
             else:
                 # temp_dir が指定されている場合は、そこに clone してから必要な部分だけコピーする
                 mkdir_p('third_party')
                 with cd(temp_dir):
                     git_clone_shallow(
-                        webrtc_version['WEBRTC_SRC_THIRD_PARTY_URL'],
-                        webrtc_version['WEBRTC_SRC_THIRD_PARTY_COMMIT'],
+                        webrtc_third_party_url,
+                        webrtc_third_party_commit,
                         'third_party')
                     shutil.copytree(
                         os.path.join(temp_dir, 'third_party', 'protobuf'),
@@ -818,10 +810,13 @@ def install_lyra(version, install_dir, base_dir, debug, target, webrtc_version, 
             opts += ['--features', 'static_link_msvcrt']
         if target in ('ubuntu-20.04_x86_64', 'ubuntu-22.04_x86_64'):
             opts += ['--config', 'linux_x86_64']
-            clang_version = get_clang_version(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))
-            clang_version = fix_clang_version(webrtc_info.clang_dir, clang_version)
+            # 標準の clang-18 を使うので決め打ちにする
+            clang_dir = '/usr'
+            clang_version = '18'
             os.environ['CLANG_VERSION'] = clang_version
-            os.environ['BAZEL_LLVM_DIR'] = os.path.join(install_dir, 'llvm')
+            os.environ['BAZEL_CLANG_DIR'] = clang_dir
+            os.environ['BAZEL_LLVM_POSTFIX'] = '-18'
+            os.environ['BAZEL_LIBCXX_DIR'] = webrtc_info.libcxx_dir
             os.environ['BAZEL_WEBRTC_INCLUDE_DIR'] = webrtc_info.webrtc_include_dir
             os.environ['BAZEL_WEBRTC_LIBRARY_DIR'] = webrtc_info.webrtc_library_dir
         if target == 'ubuntu-20.04_armv8_jetson':
@@ -830,7 +825,8 @@ def install_lyra(version, install_dir, base_dir, debug, target, webrtc_version, 
             clang_version = fix_clang_version(webrtc_info.clang_dir, clang_version)
             os.environ['CLANG_VERSION'] = clang_version
             os.environ['BAZEL_SYSROOT'] = os.path.join(install_dir, 'rootfs')
-            os.environ['BAZEL_LLVM_DIR'] = os.path.join(install_dir, 'llvm')
+            os.environ['BAZEL_CLANG_DIR'] = webrtc_info.clang_dir
+            os.environ['BAZEL_LIBCXX_DIR'] = webrtc_info.libcxx_dir
             os.environ['BAZEL_WEBRTC_INCLUDE_DIR'] = webrtc_info.webrtc_include_dir
             os.environ['BAZEL_WEBRTC_LIBRARY_DIR'] = webrtc_info.webrtc_library_dir
         if target == 'macos_arm64':
@@ -847,7 +843,8 @@ def install_lyra(version, install_dir, base_dir, debug, target, webrtc_version, 
             clang_version = fix_clang_version(os.path.join(install_dir, 'android-ndk',
                                               'toolchains', 'llvm', 'prebuilt', 'linux-x86_64'), clang_version)
             os.environ['CLANG_VERSION'] = clang_version
-            os.environ['BAZEL_LLVM_DIR'] = os.path.join(install_dir, 'llvm')
+            os.environ['BAZEL_CLANG_DIR'] = webrtc_info.clang_dir
+            os.environ['BAZEL_LIBCXX_DIR'] = webrtc_info.libcxx_dir
             os.environ['BAZEL_WEBRTC_INCLUDE_DIR'] = webrtc_info.webrtc_include_dir
             os.environ['BAZEL_WEBRTC_LIBRARY_DIR'] = webrtc_info.webrtc_library_dir
 
@@ -1100,11 +1097,32 @@ class Platform(object):
         self.target = target
 
 
+def get_webrtc_platform(platform: Platform) -> str:
+    # WebRTC
+    if platform.target.os == 'windows':
+        return f'windows_{platform.target.arch}'
+    elif platform.target.os == 'macos':
+        return f'macos_{platform.target.arch}'
+    elif platform.target.os == 'ios':
+        return 'ios'
+    elif platform.target.os == 'android':
+        return 'android'
+    elif platform.target.os == 'ubuntu':
+        return f'ubuntu-{platform.target.osver}_{platform.target.arch}'
+    elif platform.target.os == 'raspberry-pi-os':
+        return f'raspberry-pi-os_{platform.target.arch}'
+    elif platform.target.os == 'jetson':
+        return 'ubuntu-20.04_armv8'
+    else:
+        raise Exception(f'Unknown platform {platform.target.os}')
+
+
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
-def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
-                 webrtcbuild: bool, webrtc_config: WebrtcConfig, no_lyra: bool):
+def install_deps(
+        platform: Platform, source_dir: str, build_dir: str, install_dir: str, debug: bool,
+        webrtc_build_dir: Optional[str], webrtc_build_args: List[str], no_lyra: bool):
     with cd(BASE_DIR):
         version = read_version_file('VERSION')
 
@@ -1148,36 +1166,9 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
                 os.environ['ANDROID_SDK_ROOT'] = os.path.join(install_dir, 'android-sdk-cmdline-tools')
 
         # WebRTC
-        if platform.target.os == 'windows':
-            webrtc_platform = f'windows_{platform.target.arch}'
-        elif platform.target.os == 'macos':
-            webrtc_platform = f'macos_{platform.target.arch}'
-        elif platform.target.os == 'ios':
-            webrtc_platform = 'ios'
-        elif platform.target.os == 'android':
-            webrtc_platform = 'android'
-        elif platform.target.os == 'ubuntu':
-            webrtc_platform = f'ubuntu-{platform.target.osver}_{platform.target.arch}'
-        elif platform.target.os == 'raspberry-pi-os':
-            webrtc_platform = f'raspberry-pi-os_{platform.target.arch}'
-        elif platform.target.os == 'jetson':
-            webrtc_platform = 'ubuntu-20.04_armv8'
-        else:
-            raise Exception(f'Unknown platform {platform.target.os}')
+        webrtc_platform = get_webrtc_platform(platform)
 
-        if webrtcbuild:
-            install_webrtc_args = {
-                'version': version['WEBRTC_BUILD_VERSION'],
-                'source_dir': source_dir,
-                'build_dir': build_dir,
-                'install_dir': install_dir,
-                'platform': webrtc_platform,
-                'debug': debug,
-                'config': webrtc_config,
-            }
-
-            build_install_webrtc(**install_webrtc_args)
-        else:
+        if webrtc_build_dir is None:
             install_webrtc_args = {
                 'version': version['WEBRTC_BUILD_VERSION'],
                 'version_file': os.path.join(install_dir, 'webrtc.version'),
@@ -1187,14 +1178,23 @@ def install_deps(platform: Platform, source_dir, build_dir, install_dir, debug,
             }
 
             install_webrtc(**install_webrtc_args)
+        else:
+            build_webrtc_args = {
+                'platform': webrtc_platform,
+                'webrtc_build_dir': webrtc_build_dir,
+                'webrtc_build_args': webrtc_build_args,
+                'debug': debug,
+            }
 
-        webrtc_info = get_webrtc_info(webrtcbuild, source_dir, build_dir, install_dir)
+            build_webrtc(**build_webrtc_args)
+
+        webrtc_info = get_webrtc_info(webrtc_platform, webrtc_build_dir, install_dir, debug)
         webrtc_version = read_version_file(webrtc_info.version_file)
         webrtc_deps = read_version_file(webrtc_info.deps_file)
 
         # Windows は MSVC を使うので不要
         # macOS と iOS は Apple Clang を使うので不要
-        if platform.target.os not in ('windows', 'macos', 'ios') and not webrtcbuild:
+        if platform.target.os not in ('windows', 'macos', 'ios') and webrtc_build_dir is None:
             # LLVM
             tools_url = webrtc_version['WEBRTC_SRC_TOOLS_URL']
             tools_commit = webrtc_version['WEBRTC_SRC_TOOLS_COMMIT']
@@ -1571,15 +1571,8 @@ def main():
     parser.add_argument("--debug", action='store_true')
     parser.add_argument("--relwithdebinfo", action='store_true')
     parser.add_argument("--no-lyra", action='store_true')
-    parser.add_argument("--webrtcbuild", action='store_true')
-    parser.add_argument("--webrtcbuild-fetch", action='store_true')
-    parser.add_argument("--webrtcbuild-fetch-force", action='store_true')
-    parser.add_argument("--webrtc-fetch", action='store_true')
-    parser.add_argument("--webrtc-fetch-force", action='store_true')
-    parser.add_argument("--webrtc-gen", action='store_true')
-    parser.add_argument("--webrtc-gen-force", action='store_true')
-    parser.add_argument("--webrtc-extra-gn-args", default='')
-    parser.add_argument("--webrtc-nobuild", action='store_true')
+    parser.add_argument("--webrtc-build-dir")
+    parser.add_argument("--webrtc-build-args", default='')
     parser.add_argument("--test", action='store_true')
     parser.add_argument("--run", action='store_true')
     parser.add_argument("--package", action='store_true')
@@ -1616,9 +1609,11 @@ def main():
     mkdir_p(source_dir)
     mkdir_p(build_dir)
     mkdir_p(install_dir)
+    webrtc_build_dir = os.path.abspath(args.webrtc_build_dir) if args.webrtc_build_dir is not None else None
+    webrtc_build_args = shlex.split(args.webrtc_build_args)
 
     install_deps(platform, source_dir, build_dir, install_dir, args.debug,
-                 webrtcbuild=args.webrtcbuild, webrtc_config=args, no_lyra=args.no_lyra)
+                 webrtc_build_dir=webrtc_build_dir, webrtc_build_args=webrtc_build_args, no_lyra=args.no_lyra)
 
     configuration = 'Release'
     if args.debug:
@@ -1636,7 +1631,8 @@ def main():
         if not args.no_lyra:
             cmake_args.append(f"-DLYRA_DIR={cmake_path(os.path.join(install_dir, 'lyra'))}")
         cmake_args.append(f"-DUSE_LYRA={'ON' if not args.no_lyra else 'OFF'}")
-        webrtc_info = get_webrtc_info(args.webrtcbuild, source_dir, build_dir, install_dir)
+        webrtc_platform = get_webrtc_platform(platform)
+        webrtc_info = get_webrtc_info(webrtc_platform, webrtc_build_dir, install_dir, args.debug)
         webrtc_version = read_version_file(webrtc_info.version_file)
         webrtc_deps = read_version_file(webrtc_info.deps_file)
         with cd(BASE_DIR):

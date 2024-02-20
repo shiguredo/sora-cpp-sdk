@@ -22,7 +22,7 @@ cc_toolchain_config(
         '%sysroot%/usr/include',
         '%sysroot%/usr/local/include',
         "%{webrtc_include_dir}/third_party/libc++abi/src/include",
-        "%{llvm_dir}/libcxx/include",
+        "%{libcxx_dir}/include",
     ],
     tool_paths = {
         "ar": '%{android_ndk}/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar',
@@ -86,7 +86,7 @@ cc_toolchain_config(
     ],
     # conly_flags = [],
     cxx_flags = [
-        "-isystem%{llvm_dir}/libcxx/include",
+        "-isystem%{libcxx_dir}/include",
         "-isystem%{webrtc_include_dir}/third_party/libc++abi/src/include",
         "-std=c++17",
         "-nostdinc++",
@@ -100,7 +100,7 @@ cc_toolchain_config(
     link_flags = [
         "-Wl,-no-as-needed",
         "-Wl,-z,relro,-z,now",
-        "-B", "%{llvm_dir}/clang/bin/",
+        "-B", "%{clang_dir}/bin/",
         "-L", "%{webrtc_library_dir}",
         "--target=aarch64-none-linux-android%{android_api}",
     ],
