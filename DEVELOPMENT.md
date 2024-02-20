@@ -9,6 +9,34 @@
 - ビルドフラグによらず常にビルドされるファイルは、サブディレクトリを作らず `include/sora/` と `src/` に保存する
 - ビルドフラグによってビルドされたりされなかったりするファイルは、サブディレクトリを作ってそこに保存する
 
+## ローカルの webrtc-build を利用する
+
+ローカルの webrtc-build を使ってビルドするには、以下のようにする。
+
+```bash
+# ../webrtc-build に shiguredo-webrtc-build/webrtc-build がある場合
+python3 run.py ubuntu-20.04_x86_64 --webrtc-build-dir ../webrtc-build
+```
+
+webrtc-build に引数を渡してビルドする場合、以下のようにする。
+
+```bash
+python3 run.py ubuntu-20.04_x86_64 --webrtc-build-dir ../webrtc-build --webrtc-build-args='--webrtc-fetch'
+```
+
+この時、VERSION に指定している WEBRTC_BUILD_VERSION に関係なく、現在 webrtc-build リポジトリでチェックアウトされている内容でビルドするため、バージョンの不整合に注意すること。
+
+## デバッグビルド
+
+C++ SDK をデバッグビルドするには、libwebrtc も含めて、依存ライブラリすべてをデバッグビルドする必要がある。
+しかし libwebrtc のバイナリはリリースビルドであるため、libwebrtc のデバッグバイナリを作るにはローカルの webrtc-build を利用する必要がある。
+
+```bash
+python3 run.py ubuntu-20.04_x86_64 --debug --webrtc-build-dir ../webrtc-build
+```
+
+このように `--debug` を付けると、C++ SDK だけでなく、ローカルの webrtc-build を含む全ての依存ライブラリもデバッグビルドを行う。
+
 ## メモ
 
 - ubuntu-20.04_x86_64, ubuntu-22.04_x86_64 のビルドに必要な依存

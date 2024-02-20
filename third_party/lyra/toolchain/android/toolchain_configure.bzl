@@ -4,7 +4,8 @@ def _impl(repository_ctx):
         return
 
     if not ('CLANG_VERSION' in repository_ctx.os.environ and
-        'BAZEL_LLVM_DIR' in repository_ctx.os.environ and
+        'BAZEL_CLANG_DIR' in repository_ctx.os.environ and
+        'BAZEL_LIBCXX_DIR' in repository_ctx.os.environ and
         'BAZEL_WEBRTC_INCLUDE_DIR' in repository_ctx.os.environ and
         'BAZEL_WEBRTC_LIBRARY_DIR' in repository_ctx.os.environ):
         return
@@ -12,7 +13,8 @@ def _impl(repository_ctx):
     android_ndk = repository_ctx.os.environ['ANDROID_NDK_HOME']
     android_api = repository_ctx.os.environ['ANDROID_API']
     clang_version = repository_ctx.os.environ['CLANG_VERSION']
-    llvm_dir = repository_ctx.os.environ['BAZEL_LLVM_DIR']
+    clang_dir = repository_ctx.os.environ['BAZEL_CLANG_DIR']
+    libcxx_dir = repository_ctx.os.environ['BAZEL_LIBCXX_DIR']
     webrtc_include_dir = repository_ctx.os.environ['BAZEL_WEBRTC_INCLUDE_DIR']
     webrtc_library_dir = repository_ctx.os.environ['BAZEL_WEBRTC_LIBRARY_DIR']
     repository_ctx.template(
@@ -22,7 +24,8 @@ def _impl(repository_ctx):
             "%{android_ndk}": android_ndk,
             "%{android_api}": android_api,
             "%{clang_version}": clang_version,
-            "%{llvm_dir}": llvm_dir,
+            "%{clang_dir}": clang_dir,
+            "%{libcxx_dir}": libcxx_dir,
             "%{webrtc_include_dir}": webrtc_include_dir,
             "%{webrtc_library_dir}": webrtc_library_dir,
         },

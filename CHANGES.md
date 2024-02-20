@@ -11,8 +11,13 @@
 
 ## develop
 
-- [CHANGE] WebRTC を `m121.6167.3.0` にあげる
-  - libwebrtc から cricket::MediaEngineDependencies が削除されたため、 SoraClientContextConfig から configure_media_dependencies を削除した
+- [CHANGE] `--webrtcbuild`, `--webrtc-fetch` などの webrtc ローカルビルドに関するフラグを削除し、代わりに `--webrtc-build-dir` と `--webrtc-build-args` を追加する
+  - これにより、既存の webrtc-build ディレクトリを使ってローカルビルドを行うことができるようになる
+  - @melpon
+- [CHANGE] SoraClientContextConfig から configure_media_dependencies を削除した
+  - libwebrtc から cricket::MediaEngineDependencies が削除されたため
+  - @enm10k
+- [UPDATE] WebRTC を `m121.6167.3.0` にあげる
   - @torikizi @enm10k
 - [UPDATE] Boost を1.84.0 にあげる
   - @enm10k
