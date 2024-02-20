@@ -18,11 +18,13 @@
 python3 run.py ubuntu-20.04_x86_64 --webrtc-build-dir ../webrtc-build
 ```
 
-引数を渡してビルドする場合、以下のようにする。
+webrtc-build に引数を渡してビルドする場合、以下のようにする。
 
 ```bash
 python3 run.py ubuntu-20.04_x86_64 --webrtc-build-dir ../webrtc-build --webrtc-build-args='--webrtc-fetch'
 ```
+
+この時、VERSION に指定している WEBRTC_BUILD_VERSION に関係なく、現在 webrtc-build リポジトリでチェックアウトされている内容でビルドするため、バージョンの不整合に注意すること。
 
 ## デバッグビルド
 
