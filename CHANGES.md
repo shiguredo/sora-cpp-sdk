@@ -19,9 +19,9 @@
   - @enm10k
 - [UPDATE] WebRTC を `m121.6167.3.0` にあげる
   - @torikizi @enm10k
-- [UPDATE] Boost を1.84.0 にあげる
+- [UPDATE] Boost を 1.84.0 にあげる
   - @enm10k
-- [UPDATE] CMake を3.28.1 にあげる
+- [UPDATE] CMake を 3.28.1 にあげる
   - @enm10k
 - [UPDATE] CUDA を 11.8 にあげる
   - 更新時に発生したビルド・エラーを回避するために `include/sora/fix_cuda_noinline_macro_error.h` を追加した
@@ -31,7 +31,7 @@
   - force_i420_conversion_for_simulcast_adapter のデフォルト値は true で I420 への変換を行う
   - 変換を行わない場合、エンコードの性能が向上するが、バッファーの実装によってはサイマルキャストが利用できなくなる
   - @enm10k
-- [UPDATE]  Lyra を 1.3.2 にあげる
+- [UPDATE] Lyra を 1.3.2 にあげる
   - @melpon
 - [ADD] SoraSignalingObserver に OnSwitched を追加する
   - @enm10k
@@ -85,6 +85,10 @@
   - ANDROID_NDK_VERSION を r26b にアップデート
   - CMAKE_VERSION を 3.27.7 にアップデート
   - @melpon @enm10k @torikizi
+- [ADD] H.265 に対応
+  - WebRTC の m119.6045.2.1 で H.265 がサポートされたため、C++ SDK でも H.265 に対応
+  - macOS / iOS / Android で H.265 が利用可能
+  - @voluntas @torikizi @melpon @enm10k
 
 ## 2023.14.0 (2023-10-02)
 
