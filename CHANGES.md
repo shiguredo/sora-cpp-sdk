@@ -17,11 +17,11 @@
 - [CHANGE] SoraClientContextConfig から configure_media_dependencies を削除した
   - libwebrtc から cricket::MediaEngineDependencies が削除されたため
   - @enm10k
-- [UPDATE] WebRTC を `m121.6167.3.0` にあげる
+- [UPDATE] libwebrtc を `m121.6167.3.0` にあげる
   - @torikizi @enm10k
-- [UPDATE] Boost を1.84.0 にあげる
+- [UPDATE] Boost を 1.84.0 にあげる
   - @enm10k
-- [UPDATE] CMake を3.28.1 にあげる
+- [UPDATE] CMake を 3.28.1 にあげる
   - @enm10k
 - [UPDATE] CUDA を 11.8 にあげる
   - 更新時に発生したビルド・エラーを回避するために `include/sora/fix_cuda_noinline_macro_error.h` を追加した
@@ -31,7 +31,7 @@
   - force_i420_conversion_for_simulcast_adapter のデフォルト値は true で I420 への変換を行う
   - 変換を行わない場合、エンコードの性能が向上するが、バッファーの実装によってはサイマルキャストが利用できなくなる
   - @enm10k
-- [UPDATE]  Lyra を 1.3.2 にあげる
+- [UPDATE] Lyra を 1.3.2 にあげる
   - @melpon
 - [ADD] SoraSignalingObserver に OnSwitched を追加する
   - @enm10k
@@ -54,13 +54,13 @@
 
 ## 2023.17.0 (2023-12-25)
 
-- [UPDATE] WebRTC を `m120.6099.1.2` に上げる
+- [UPDATE] libwebrtc を `m120.6099.1.2` に上げる
   - `m120.6099.1.1` より x86 シミュレータビルドがなくなったため、CI で ios の test ビルドを行わなくした
   - @melpon @enm10k @torikizi @miosakuma
 
 ## 2023.16.1 (2023-12-02)
 
-- [FIX] WebRTC を `m119.6045.2.2` に上げる
+- [FIX] libwebrtc を `m119.6045.2.2` に上げる
   - Apple 非公開 API を利用していたため、Apple からリジェクトされる問題を修正
   - @voluntas
 
@@ -77,20 +77,24 @@
 
 ## 2023.15.0 (2023-10-31)
 
-- [UPDATE] WebRTC を m119.6045.2.1 に上げる
+- [UPDATE] libwebrtc を m119.6045.2.1 に上げる
   - @voluntas @torikizi @melpon @enm10k
-- [UPDATE] WebRTC を m119 に上げたことで必要になった関連するライブラリもバージョンを上げる
+- [UPDATE] libwebrtc を m119 に上げたことで必要になった関連するライブラリもバージョンを上げる
   - Ubuntu で使用する clang のバージョンを 15 にアップデート
   - すべてのプラットフォームで set_target_properties の CXX_STANDARD と C_STANDARD を 20 にアップデート
   - ANDROID_NDK_VERSION を r26b にアップデート
   - CMAKE_VERSION を 3.27.7 にアップデート
   - @melpon @enm10k @torikizi
+- [ADD] H.265 に対応
+  - libwebrtc の m119.6045.2.1 で H.265 がサポートされたため、C++ SDK でも H.265 に対応
+  - macOS / iOS / Android で H.265 が利用可能
+  - @voluntas @torikizi @melpon @enm10k
 
 ## 2023.14.0 (2023-10-02)
 
 - [UPDATE] Boost を 1.83.0 に上げる
   - @voluntas
-- [UPDATE] WebRTC を m117.5938.2.0 に上げる
+- [UPDATE] libwebrtc を m117.5938.2.0 に上げる
   - @melpon @miosakuma @voluntas
 - [FIX] `MacAudioOutputHelper` でコメントアウトしていた処理をコメントインする
   - 当初 libwebrtc のサンプルにはない処理で、消していた処理を復活させる
@@ -125,7 +129,7 @@
 
 ## 2023.11.0 (2023-09-06)
 
-- [UPDATE] WebRTC を m116.5845.6.1 に上げる
+- [UPDATE] libwebrtc を m116.5845.6.1 に上げる
   - @torikizi
 - [UPDATE] m116 で `cricket::Codec` は protected になったため `cricket::CreateVideoCodec` を利用するように修正
   - @torikizi
@@ -148,7 +152,7 @@
 
 ## 2023.8.0 (2023-07-28)
 
-- [UPDATE] WebRTC を m115.5790.7.0 に上げる
+- [UPDATE] libwebrtc を m115.5790.7.0 に上げる
   - @melpon @miosakuma
 
 ## 2023.7.2 (2023-07-12)
@@ -175,7 +179,7 @@
 
 ## 2023.6.0 (2023-05-30)
 
-- [UPDATE] WebRTC を m114.5735.2.0 に上げる
+- [UPDATE] libwebrtc を m114.5735.2.0 に上げる
   - @miosakuma
 - [FIX] 一部の Windows で VP8 の受信時にクラッシュする問題を修正する
   - Query した上で Init しても MFX_ERR_UNSUPPORTED になるため VPL の場合は毎回 Init を呼ぶようにする
@@ -188,7 +192,7 @@
 
 ## 2023.5.0 (2023-05-08)
 
-- [UPDATE] WebRTC を m114.5735.0.1 に上げる
+- [UPDATE] libwebrtc を m114.5735.0.1 に上げる
   - @melpon
 - [UPDATE] Boost を 1.82.0 に上げる
   - @melpon
@@ -220,7 +224,7 @@
   - @melpon
 - [UPDATE] 例外が有効になっていなかった一部の依存ライブラリも例外を有効にする
   - @melpon
-- [UPDATE] WebRTC を m111.5563.4.4 に上げる
+- [UPDATE] libwebrtc を m111.5563.4.4 に上げる
   - @melpon
 - [ADD] 2022.11.0 で無効にしていた Jetson の HW MJPEG デコーダを有効にする
   - @tnoho @melpon
@@ -237,14 +241,14 @@
   - @melpon
 - [UPDATE] oneVPL のデコードでリサイズに対応してなかったのを修正
   - @melpon
-- [UPDATE] WebRTC を m111.5563.4.2 に上げる
+- [UPDATE] libwebrtc を m111.5563.4.2 に上げる
   - @melpon @miosakuma
 
 ## 2023.1.0 (2023-01-12)
 
 - [ADD] SoraSignalingConfig に audio_streaming_language_code を追加
   - @melpon
-- [UPDATE] WebRTC を m109.5414.2.0 に上げる
+- [UPDATE] libwebrtc を m109.5414.2.0 に上げる
   - @melpon
 - [UPDATE] Boost を 1.81.0 に上げる
   - @melpon
