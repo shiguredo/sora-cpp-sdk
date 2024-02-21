@@ -86,7 +86,7 @@
   - CMAKE_VERSION を 3.27.7 にアップデート
   - @melpon @enm10k @torikizi
 - [ADD] H.265 に対応
-  - WebRTC の m119.6045.2.1 で H.265 がサポートされたため、C++ SDK でも H.265 に対応
+  - libwebrtc の m119.6045.2.1 で H.265 がサポートされたため、C++ SDK でも H.265 に対応
   - macOS / iOS / Android で H.265 が利用可能
   - @voluntas @torikizi @melpon @enm10k
 
