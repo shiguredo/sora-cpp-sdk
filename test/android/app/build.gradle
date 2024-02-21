@@ -3,6 +3,7 @@ plugins {
 }
 
 android {
+    namespace "jp.shiguredo.hello"
     compileSdk 32
 
     defaultConfig {
