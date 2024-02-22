@@ -4,12 +4,12 @@ plugins {
 
 android {
     namespace "jp.shiguredo.hello"
-    compileSdk 32
+    compileSdk 34
 
     defaultConfig {
         applicationId "jp.shiguredo.hello"
         minSdk 29
-        targetSdk 32
+        targetSdk 34
         versionCode 1
         versionName "1.0"
 
