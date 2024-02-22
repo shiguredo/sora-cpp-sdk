@@ -394,6 +394,78 @@ def get_webrtc_info(webrtcbuild: bool, source_dir: str, build_dir: str, install_
             libcxx_dir=os.path.join(install_dir, 'llvm', 'libcxx'),
         )
 
+class SoraInfo(NamedTuple):
+    # version_file: str
+    sora_install_dir: str
+    # sora_library_dir: str
+    boost_install_dir: str
+    # boost_library_dir: str
+    lyra_install_dir: str
+    # lyra_library_dir: str
+    # TODO: libwebrtc の情報もここで管理すべき?
+
+
+def install_sora_and_deps(source_dir, build_dir, install_dir):
+    version = read_version_file('VERSION')
+    # NOTE(enm10k): WebRTC も Sora CPP SDK と同じバージョンを使うのが良い気がする
+
+    # Boost
+    install_boost_args = {
+        'version': version['BOOST_VERSION'],
+        'version_file': os.path.join(install_dir, 'boost.version'),
+        'source_dir': source_dir,
+        'install_dir': install_dir,
+        'sora_version': version['SORA_CPP_SDK_VERSION'],
+        'platform': 'macos_arm64',
+    }
+    install_boost(**install_boost_args)
+
+    # Lyra
+    install_lyra_args = {
+        'version': version['LYRA_VERSION'],
+        'version_file': os.path.join(install_dir, 'lyra.version'),
+        'source_dir': source_dir,
+        'install_dir': install_dir,
+        'sora_version': version['SORA_CPP_SDK_VERSION'],
+        'platform': 'macos_arm64',
+    }
+    install_lyra(**install_lyra_args)
+
+    # CMake
+    install_cmake_args = {
+        'version': version['CMAKE_VERSION'],
+        'version_file': os.path.join(install_dir, 'cmake.version'),
+        'source_dir': source_dir,
+        'install_dir': install_dir,
+        'platform': 'macos-universal',
+        'ext': 'tar.gz'
+    }
+    install_cmake(**install_cmake_args)
+    add_path(os.path.join(install_dir, 'cmake', 'CMake.app', 'Contents', 'bin'))
+
+    # Sora C++ SDK
+    install_sora_args = {
+        'version': version['SORA_CPP_SDK_VERSION'],
+        'version_file': os.path.join(install_dir, 'sora.version'),
+        'source_dir': source_dir,
+        'install_dir': install_dir,
+        'platform': 'macos_arm64',
+    }
+    install_sora(**install_sora_args)
+
+def build_sora(sora_dir):
+    add_path(os.path.join(sora_install_dir, 'cmake', 'CMake.app', 'Contents', 'bin'))
+    # TODO: Sora CPP SDK をビルドする
+    pass
+
+# def get_sora_info(sora_dir: Optional[str] = None, sora_install_dir: Optional[str]):
+def get_sora_info(install_dir: Optional[str]):
+    return SoraInfo(
+        # version_file = os.path.join(sora_dir, 'VERSION')
+        sora_install_dir = os.path.join(install_dir, 'sora'),
+        boost_install_dir = os.path.join(install_dir, 'boost'),
+        lyra_install_dir = os.path.join(install_dir, 'lyra'),
+    )
 
 @versioned
 def install_llvm(version, install_dir,
