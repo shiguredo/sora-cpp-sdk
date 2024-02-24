@@ -14,15 +14,17 @@ from base import (  # noqa
     cd,
     cmd,
     cmdcap,
+    add_path,
     cmake_path,
     get_sora_info,
     mkdir_p,
     read_version_file,
     get_webrtc_info,
     install_webrtc,
+    build_sora,
+    install_sora_and_deps,
     install_cmake,
     install_sdl2,
-    install_sora_and_deps,
     install_cli11,
 )
 
@@ -43,11 +45,23 @@ def install_deps(source_dir, build_dir, install_dir, debug, local_sora: str):
 
         sysroot = cmdcap(['xcrun', '--sdk', 'macosx', '--show-sdk-path'])
 
-        # Sora, Boost, Lyra, CMake
+        # Sora C++ SDK, Boost, Lyra
         if local_sora:
             build_sora()
         else:
-            install_sora_and_deps(source_dir, build_dir, install_dir)
+            install_sora_and_deps('macos_arm64', source_dir, build_dir, install_dir)
+
+        # CMake
+        install_cmake_args = {
+            'version': version['CMAKE_VERSION'],
+            'version_file': os.path.join(install_dir, 'cmake.version'),
+            'source_dir': source_dir,
+            'install_dir': install_dir,
+            'platform': 'macos-universal',
+            'ext': 'tar.gz'
+        }
+        install_cmake(**install_cmake_args)
+        add_path(os.path.join(install_dir, 'cmake', 'CMake.app', 'Contents', 'bin'))
 
         # SDL2
         install_sdl2_args = {
@@ -105,7 +119,7 @@ def main():
         webrtc_info = get_webrtc_info(False, source_dir, build_dir, install_dir)
 
         if args.local_sora:
-            sora_info = os.path.join(args.local_sora, '_install', dir, configuration_dir)
+            sora_info = get_sora_info(os.path.join(args.local_sora, '_install', dir, configuration_dir))
         else:
             sora_info = get_sora_info(install_dir)
 

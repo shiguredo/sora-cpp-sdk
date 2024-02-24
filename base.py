@@ -405,7 +405,7 @@ class SoraInfo(NamedTuple):
     # TODO: libwebrtc の情報もここで管理すべき?
 
 
-def install_sora_and_deps(source_dir, build_dir, install_dir):
+def install_sora_and_deps(platform: str, source_dir:str, build_dir:str, install_dir: str):
     version = read_version_file('VERSION')
     # NOTE(enm10k): WebRTC も Sora CPP SDK と同じバージョンを使うのが良い気がする
 
@@ -416,7 +416,7 @@ def install_sora_and_deps(source_dir, build_dir, install_dir):
         'source_dir': source_dir,
         'install_dir': install_dir,
         'sora_version': version['SORA_CPP_SDK_VERSION'],
-        'platform': 'macos_arm64',
+        'platform': platform,
     }
     install_boost(**install_boost_args)
 
@@ -427,21 +427,9 @@ def install_sora_and_deps(source_dir, build_dir, install_dir):
         'source_dir': source_dir,
         'install_dir': install_dir,
         'sora_version': version['SORA_CPP_SDK_VERSION'],
-        'platform': 'macos_arm64',
+        'platform': platform,
     }
     install_lyra(**install_lyra_args)
-
-    # CMake
-    install_cmake_args = {
-        'version': version['CMAKE_VERSION'],
-        'version_file': os.path.join(install_dir, 'cmake.version'),
-        'source_dir': source_dir,
-        'install_dir': install_dir,
-        'platform': 'macos-universal',
-        'ext': 'tar.gz'
-    }
-    install_cmake(**install_cmake_args)
-    add_path(os.path.join(install_dir, 'cmake', 'CMake.app', 'Contents', 'bin'))
 
     # Sora C++ SDK
     install_sora_args = {
@@ -449,7 +437,7 @@ def install_sora_and_deps(source_dir, build_dir, install_dir):
         'version_file': os.path.join(install_dir, 'sora.version'),
         'source_dir': source_dir,
         'install_dir': install_dir,
-        'platform': 'macos_arm64',
+        'platform': platform,
     }
     install_sora(**install_sora_args)
 
