@@ -438,7 +438,7 @@ def install_sora_and_deps(platform: str, source_dir:str, build_dir:str, install_
     install_sora(**install_sora_args)
 
 
-def build_sora(platform: str, sora_dir: str, args: Dict[str, str] = {}):
+def build_sora(platform: str, sora_dir: str, args: List[str] = []):
     with cd(sora_dir):
         cmd(['python3', 'run.py', platform, *args])
 
