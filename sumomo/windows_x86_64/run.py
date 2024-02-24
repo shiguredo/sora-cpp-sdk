@@ -25,7 +25,7 @@ from base import (  # noqa
 )
 
 
-def install_deps(source_dir, build_dir, install_dir, debug, local_sora: str):
+def install_deps(source_dir, build_dir, install_dir, debug, sora_dir: str):
     with cd(BASE_DIR):
         version = read_version_file('VERSION')
 
@@ -41,8 +41,8 @@ def install_deps(source_dir, build_dir, install_dir, debug, local_sora: str):
         install_webrtc(**install_webrtc_args)
 
         # Sora C++ SDK, Boost, Lyra
-        if local_sora:
-            build_sora()
+        if sora_dir:
+            build_sora('windows_x86_64'. sora_dir)
         else:
             install_sora_and_deps('windows_x86_64', source_dir, build_dir, install_dir)
 
@@ -84,7 +84,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", action='store_true')
     parser.add_argument("--relwithdebinfo", action='store_true')
-    parser.add_argument("--local-sora", default="")
+    parser.add_argument("--sora-dir", default="")
 
     args = parser.parse_args()
 
@@ -97,7 +97,7 @@ def main():
     mkdir_p(build_dir)
     mkdir_p(install_dir)
 
-    install_deps(source_dir, build_dir, install_dir, args.debug, args.local_sora)
+    install_deps(source_dir, build_dir, install_dir, args.debug, args.sora_dir)
 
     configuration = 'Release'
     if args.debug:
@@ -110,8 +110,8 @@ def main():
     with cd(sample_build_dir):
         webrtc_info = get_webrtc_info(False, source_dir, build_dir, install_dir)
 
-        if args.local_sora:
-            sora_info = get_sora_info(os.path.join(args.local_sora, '_install', dir, configuration_dir))
+        if args.sora_dir:
+            sora_info = get_sora_info(os.path.join(args.sora_dir, '_install', dir, configuration_dir))
         else:
             sora_info = get_sora_info(install_dir)
 

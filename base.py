@@ -394,20 +394,16 @@ def get_webrtc_info(webrtcbuild: bool, source_dir: str, build_dir: str, install_
             libcxx_dir=os.path.join(install_dir, 'llvm', 'libcxx'),
         )
 
+
 class SoraInfo(NamedTuple):
-    # version_file: str
     sora_install_dir: str
-    # sora_library_dir: str
     boost_install_dir: str
-    # boost_library_dir: str
     lyra_install_dir: str
-    # lyra_library_dir: str
-    # TODO: libwebrtc の情報もここで管理すべき?
+    # NOTE(enm10k): WebRTC も Sora CPP SDK と同じバージョンを使うのが良い気がする
 
 
 def install_sora_and_deps(platform: str, source_dir:str, build_dir:str, install_dir: str):
     version = read_version_file('VERSION')
-    # NOTE(enm10k): WebRTC も Sora CPP SDK と同じバージョンを使うのが良い気がする
 
     # Boost
     install_boost_args = {
@@ -441,19 +437,19 @@ def install_sora_and_deps(platform: str, source_dir:str, build_dir:str, install_
     }
     install_sora(**install_sora_args)
 
-def build_sora(sora_dir):
-    add_path(os.path.join(sora_install_dir, 'cmake', 'CMake.app', 'Contents', 'bin'))
-    # TODO: Sora CPP SDK をビルドする
-    pass
 
-# def get_sora_info(sora_dir: Optional[str] = None, sora_install_dir: Optional[str]):
-def get_sora_info(install_dir: Optional[str]):
+def build_sora(platform: str, sora_dir: str, args: Dict[str, str] = {}):
+    with cd(sora_dir):
+        cmd(['python3', 'run.py', platform, *args])
+
+
+def get_sora_info(install_dir: str):
     return SoraInfo(
-        # version_file = os.path.join(sora_dir, 'VERSION')
         sora_install_dir = os.path.join(install_dir, 'sora'),
         boost_install_dir = os.path.join(install_dir, 'boost'),
         lyra_install_dir = os.path.join(install_dir, 'lyra'),
     )
+
 
 @versioned
 def install_llvm(version, install_dir,
