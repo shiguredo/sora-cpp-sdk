@@ -42,7 +42,7 @@ def install_deps(source_dir, build_dir, install_dir, debug, sora_dir: str):
 
         # Sora C++ SDK, Boost, Lyra
         if sora_dir:
-            build_sora('windows_x86_64'. sora_dir)
+            build_sora('windows_x86_64'. sora_dir, debug)
         else:
             install_sora_and_deps('windows_x86_64', source_dir, build_dir, install_dir)
 

@@ -83,7 +83,7 @@ def install_deps(source_dir, build_dir, install_dir, debug, sora_dir: str):
 
         # Sora C++ SDK, Boost, Lyra
         if sora_dir:
-            build_sora('ubuntu-20.04_armv8_jetson', sora_dir)
+            build_sora('ubuntu-20.04_armv8_jetson', sora_dir, debug)
         else:
             install_sora_and_deps('ubuntu-20.04_armv8_jetson', source_dir, build_dir, install_dir)
 

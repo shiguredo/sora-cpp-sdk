@@ -47,7 +47,7 @@ def install_deps(source_dir, build_dir, install_dir, debug, sora_dir: str):
 
         # Sora C++ SDK, Boost, Lyra
         if sora_dir:
-            build_sora('macos_arm64', sora_dir)
+            build_sora('macos_arm64', sora_dir, debug)
         else:
             install_sora_and_deps('macos_arm64', source_dir, build_dir, install_dir)
 
