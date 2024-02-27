@@ -21,7 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class SoraAudioManagerLegacy extends SoraAudioManager {
+public class SoraAudioManagerLegacy extends SoraAudioManagerBase {
     private static final String TAG = "SoraAudioManagerLegacy";
     private enum AudioDevice { SPEAKER_PHONE, WIRED_HEADSET, EARPIECE, BLUETOOTH, NONE }
     private final AudioDevice defaultAudioDevice;

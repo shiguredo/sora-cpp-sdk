@@ -2,13 +2,13 @@ package jp.shiguredo.sora.audiomanager;
 
 import android.content.Context;
 
-class MainThreadWrapper extends SoraAudioManager {
+class MainThreadWrapper implements SoraAudioManager {
     private SoraAudioManager soraAudioManager;
 
-    private static class OnChangeRouteObserver implements SoraAudioManager.OnChangeRouteObserver {
-        SoraAudioManager.OnChangeRouteObserver observer;
+    private static class OnChangeRouteObserverWrapper implements OnChangeRouteObserver {
+        OnChangeRouteObserver observer;
 
-        public OnChangeRouteObserver(SoraAudioManager.OnChangeRouteObserver observer) {
+        public OnChangeRouteObserverWrapper(OnChangeRouteObserver observer) {
             this.observer = observer;
         }
 
@@ -36,12 +36,12 @@ class MainThreadWrapper extends SoraAudioManager {
     }
 
     @Override
-    public void start(SoraAudioManager.OnChangeRouteObserver observer) {
+    public void start(OnChangeRouteObserver observer) {
         //メインスレッドでない場合はメインスレッドで再実行
         if (!SoraThreadUtils.runOnMainThread(() -> start(observer))) {
             return;
         }
-        soraAudioManager.start(new OnChangeRouteObserver(observer));
+        soraAudioManager.start(new OnChangeRouteObserverWrapper(observer));
     }
 
     @Override

@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @TargetApi(Build.VERSION_CODES.S)
-public class SoraAudioManager2 extends SoraAudioManager {
+public class SoraAudioManager2 extends SoraAudioManagerBase {
     private static final String TAG = "SoraAudioManager2";
     private final BroadcastReceiver bluetoothHeadsetReceiver;
     private final List<AudioDeviceInfo> audioDevices = new ArrayList<>();
@@ -72,10 +72,6 @@ public class SoraAudioManager2 extends SoraAudioManager {
         this.bluetoothHeadsetReceiver = new BluetoothHeadsetBroadcastReceiver();
     }
 
-    /*
-     * オーディオの制御を開始する
-     * Java は destructor がないので start - stop にする
-     */
     @Override
     public void start(OnChangeRouteObserver observer) {
         Log.d(TAG, "start");
@@ -107,7 +103,6 @@ public class SoraAudioManager2 extends SoraAudioManager {
         registerWiredHeadsetReceiver();
     }
 
-    // オーディオの制御を終了する
     @SuppressLint("WrongConstant")
     public void stop() {
         Log.d(TAG, "stop");
@@ -128,7 +123,7 @@ public class SoraAudioManager2 extends SoraAudioManager {
         super.stop();
     }
 
-    // ハンズフリーかを確認する
+    @Override
     public boolean isHandsfree() {
         AudioDeviceInfo currentDeviceInfo = audioManager.getCommunicationDevice();
         if (currentDeviceInfo == null) {
