@@ -438,7 +438,13 @@ def install_sora_and_deps(platform: str, source_dir:str, build_dir:str, install_
     install_sora(**install_sora_args)
 
 
-def build_sora(platform: str, sora_dir: str, debug: bool, args: List[str] = []):
+def add_sora_arguments(parser):
+    parser.add_argument("--sora-dir", type=str, default="")
+    parser.add_argument("--sora-args", type=str, default="")
+
+
+def build_sora(platform: str, sora_dir: str, sora_args: str, debug: bool):
+    args = sora_args.split()
     if debug and '--debug' not in args:
         args.insert(0, '--debug')
 

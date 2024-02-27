@@ -25,10 +25,11 @@ from base import (  # noqa
     install_cmake,
     install_sdl2,
     install_cli11,
+    add_sora_arguments,
 )
 
 
-def install_deps(source_dir, build_dir, install_dir, debug, sora_dir: str):
+def install_deps(source_dir, build_dir, install_dir, debug, sora_dir: str, sora_args: str):
     with cd(BASE_DIR):
         version = read_version_file('VERSION')
 
@@ -83,7 +84,7 @@ def install_deps(source_dir, build_dir, install_dir, debug, sora_dir: str):
 
         # Sora C++ SDK, Boost, Lyra
         if sora_dir:
-            build_sora('ubuntu-20.04_armv8_jetson', sora_dir, debug)
+            build_sora('ubuntu-20.04_armv8_jetson', sora_dir, sora_args, debug)
         else:
             install_sora_and_deps('ubuntu-20.04_armv8_jetson', source_dir, build_dir, install_dir)
 
@@ -137,7 +138,7 @@ def install_deps(source_dir, build_dir, install_dir, debug, sora_dir: str):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", action='store_true')
-    parser.add_argument("--sora-dir", default="")
+    add_sora_arguments(parser)
 
     args = parser.parse_args()
 
@@ -150,7 +151,7 @@ def main():
     mkdir_p(build_dir)
     mkdir_p(install_dir)
 
-    install_deps(source_dir, build_dir, install_dir, args.debug, args.sora_dir)
+    install_deps(source_dir, build_dir, install_dir, args.debug, args.sora_dir, args.sora_args)
 
     configuration = 'Debug' if args.debug else 'Release'
 
