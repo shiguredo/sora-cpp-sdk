@@ -399,7 +399,6 @@ class SoraInfo(NamedTuple):
     sora_install_dir: str
     boost_install_dir: str
     lyra_install_dir: str
-    # NOTE(enm10k): WebRTC も Sora CPP SDK と同じバージョンを使うのが良い気がする
 
 
 def install_sora_and_deps(platform: str, source_dir:str, build_dir:str, install_dir: str):
