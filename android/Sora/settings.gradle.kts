@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "SoraAudioManager"
-include(":SoraAudioManager")
+rootProject.name = "Sora"
+include(":Sora")

@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace 'jp.shiguredo.sora.audiomanager'
+    namespace 'jp.shiguredo.sora'
     compileSdk 34
 
     defaultConfig {
