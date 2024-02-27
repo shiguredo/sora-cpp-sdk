@@ -2,9 +2,6 @@ import os
 import multiprocessing
 import argparse
 import sys
-
-from typing import Optional
-
 PROJECT_DIR = os.path.abspath(os.path.dirname(__file__))
 BASE_DIR = os.path.join(PROJECT_DIR, '..', '..')
 sys.path.insert(0, BASE_DIR)
