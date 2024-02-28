@@ -207,6 +207,12 @@ jobs:
         if: matrix.name == 'android'
         run: |
           sudo apt-get -y install ninja-build
+          - name: Setup JDK 17
+          uses: actions/setup-java@v3
+          with:
+            java-version: '17'
+            distribution: 'temurin'
+          if: matrix.name == 'android'
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         if: matrix.name == 'android'
