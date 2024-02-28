@@ -207,6 +207,7 @@ jobs:
         if: matrix.name == 'android'
         run: |
           sudo apt-get -y install ninja-build
+      # JDK を指定しないとデフォルトの JDK 11 で動作するため指定する
       - name: Setup JDK 17
         uses: actions/setup-java@v3
         with:

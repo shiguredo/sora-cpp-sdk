@@ -33,6 +33,20 @@
   - @enm10k
 - [UPDATE] Lyra を 1.3.2 にあげる
   - @melpon
+- [UPDATE] Node.js 16 の Deprecated に伴い setup-android と setup-msbuild のバージョンをアップデート
+  - setup-android を v3 にアップデート
+  - setup-android のアップデートに伴い ANDROID_SDK_CMDLINE_TOOLS_VERSION のバージョンを `9862592` にアップデート
+    - `9862592` は CMDLINE_TOOLS のバージョン 10 に相当
+    - 最新の 11 を指定するとエラーが出ることを懸念し、今回は 10 を指定
+    - バージョンの組み合わせは [setup-android の README を参照](https://github.com/android-actions/setup-android)
+  - build.yml に Setup JDK 17 を追加
+    - JDK のバージョンを指定しない場合、デフォルトで JDK 11 を使用するため、JDK 17 を指定する
+    - JDK 11 は setup-android のアップデートの影響で利用できなくなるため
+    - JDK 17 を選択する理由は setup-android の README に記載されているバージョンの組み合わせに合わせるため
+  - setup-msbuild を v2 にアップデート
+  - node 20 に対応したバージョンを指定するため、最新の v2 を指定
+  - リリースノートを参照すると、v2 は node 20 に対応していることがわかる [setup-msbuild のリリースノート](https://github.com/microsoft/setup-msbuild/releases/tag/v2)
+  - @torikizi
 - [ADD] SoraSignalingObserver に OnSwitched を追加する
   - @enm10k
 - [FIX] Jetson Orin で AV1 を送信中、他のユーザーが後から接続して受信した時に映像が出ない問題を修正
