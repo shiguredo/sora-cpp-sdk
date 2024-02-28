@@ -4,6 +4,7 @@ import os
 import urllib.parse
 import zipfile
 import tarfile
+import shlex
 import shutil
 import platform
 import multiprocessing
@@ -438,20 +439,22 @@ def install_sora_and_deps(platform: str, source_dir:str, build_dir:str, install_
 
 
 def add_sora_arguments(parser):
-    parser.add_argument("--sora-dir", type=str, default="")
-    parser.add_argument("--sora-args", type=str, default="")
+    parser.add_argument("--sora-dir", type=str, default=None)
+    parser.add_argument("--sora-args", type=shlex.split, default=[])
 
 
-def build_sora(platform: str, sora_dir: str, sora_args: str, debug: bool):
-    args = sora_args.split()
+def build_sora(platform: str, sora_dir: str, sora_args: List[str], debug: bool):
     if debug and '--debug' not in args:
-        args.insert(0, '--debug')
+        sora_args = ['--debug', *sora_args]
 
     with cd(sora_dir):
-        cmd(['python3', 'run.py', platform, *args])
+        cmd(['python3', 'run.py', platform, *sora_args])
 
 
-def get_sora_info(install_dir: str):
+def get_sora_info(install_dir: str, sora_dir: Optional[str], platform: str, configuration: str) -> SoraInfo:
+    if sora_dir:
+        install_dir = os.path.join(sora_dir, '_install', platform, configuration)
+
     return SoraInfo(
         sora_install_dir = os.path.join(install_dir, 'sora'),
         boost_install_dir = os.path.join(install_dir, 'boost'),

@@ -2,6 +2,7 @@ import os
 import multiprocessing
 import argparse
 import sys
+from typing import Optional, List
 PROJECT_DIR = os.path.abspath(os.path.dirname(__file__))
 BASE_DIR = os.path.join(PROJECT_DIR, '..', '..')
 sys.path.insert(0, BASE_DIR)
@@ -26,7 +27,7 @@ from base import (  # noqa
 )
 
 
-def install_deps(source_dir, build_dir, install_dir, debug, sora_dir: str, sora_args: str):
+def install_deps(source_dir, build_dir, install_dir, debug, sora_dir: Optional[str], sora_args: List[str]):
     with cd(BASE_DIR):
         version = read_version_file('VERSION')
 
@@ -110,11 +111,7 @@ def main():
     mkdir_p(sample_build_dir)
     with cd(sample_build_dir):
         webrtc_info = get_webrtc_info(False, source_dir, build_dir, install_dir)
-
-        if args.sora_dir:
-            sora_info = get_sora_info(os.path.join(args.sora_dir, '_install', dir, configuration_dir))
-        else:
-            sora_info = get_sora_info(install_dir)
+        sora_info = get_sora_info(install_dir, args.sora_dir, dir, configuration_dir)
 
         cmake_args = []
         cmake_args.append(f'-DCMAKE_BUILD_TYPE={configuration}')
