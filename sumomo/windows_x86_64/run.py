@@ -43,10 +43,10 @@ def install_deps(source_dir, build_dir, install_dir, debug, sora_dir: Optional[s
         install_webrtc(**install_webrtc_args)
 
         # Sora C++ SDK, Boost, Lyra
-        if sora_dir:
-            build_sora('windows_x86_64'. sora_dir, sora_args, debug)
-        else:
+        if sora_dir is  None:
             install_sora_and_deps('windows_x86_64', source_dir, build_dir, install_dir)
+        else:
+            build_sora('windows_x86_64'. sora_dir, sora_args, debug)
 
         # CMake
         install_cmake_args = {
@@ -111,7 +111,7 @@ def main():
     mkdir_p(sample_build_dir)
     with cd(sample_build_dir):
         webrtc_info = get_webrtc_info(False, source_dir, build_dir, install_dir)
-        sora_info = get_sora_info(install_dir, args.sora_dir, dir, configuration_dir)
+        sora_info = get_sora_info(install_dir, args.sora_dir, dir, args.debug)
 
         cmake_args = []
         cmake_args.append(f'-DCMAKE_BUILD_TYPE={configuration}')

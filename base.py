@@ -451,8 +451,9 @@ def build_sora(platform: str, sora_dir: str, sora_args: List[str], debug: bool):
         cmd(['python3', 'run.py', platform, *sora_args])
 
 
-def get_sora_info(install_dir: str, sora_dir: Optional[str], platform: str, configuration: str) -> SoraInfo:
-    if sora_dir:
+def get_sora_info(install_dir: str, sora_dir: Optional[str], platform: str, debug: bool) -> SoraInfo:
+    if sora_dir is not None:
+        configuration = 'debug' if debug else 'release'
         install_dir = os.path.join(sora_dir, '_install', platform, configuration)
 
     return SoraInfo(
