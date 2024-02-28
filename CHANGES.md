@@ -44,8 +44,8 @@
     - JDK 11 は setup-android のアップデートの影響で利用できなくなるため
     - JDK 17 を選択する理由は setup-android の README に記載されているバージョンの組み合わせに合わせるため
   - setup-msbuild を v2 にアップデート
-  - node 20 に対応したバージョンを指定するため、最新の v2 を指定
-  - リリースノートを参照すると、v2 は node 20 に対応していることがわかる [setup-msbuild のリリースノート](https://github.com/microsoft/setup-msbuild/releases/tag/v2)
+    - node 20 に対応したバージョンを指定するため、最新の v2 を指定
+    - リリースノートを参照すると、v2 は node 20 に対応していることがわかる [setup-msbuild のリリースノート](https://github.com/microsoft/setup-msbuild/releases/tag/v2)
   - @torikizi
 - [ADD] SoraSignalingObserver に OnSwitched を追加する
   - @enm10k
