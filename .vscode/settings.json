@@ -1,4 +1,6 @@
 {
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.typeCheckingMode": "strict",
   "[python]": {
     "editor.formatOnSave": true,
     "editor.formatOnSaveMode": "file",
@@ -130,7 +132,5 @@
     "xutility": "cpp",
     "__nullptr": "cpp",
     "__config": "cpp"
-  },
-  "python.analysis.autoImportCompletions": true,
-  "python.analysis.typeCheckingMode": "off"
+  }
 }
