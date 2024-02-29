@@ -125,5 +125,7 @@
     "xutility": "cpp",
     "__nullptr": "cpp",
     "__config": "cpp"
-  }
+  },
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.typeCheckingMode": "off"
 }
