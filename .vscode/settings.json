@@ -5,6 +5,7 @@
     "editor.defaultFormatter": "charliermarsh.ruff",
     "editor.autoIndent": "full",
     "editor.codeActionsOnSave": {
+      "source.fixAll.ruff": "always",
       "source.organizeImports": "explicit"
     }
   },
