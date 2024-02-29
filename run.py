@@ -1,17 +1,18 @@
-import subprocess
+import argparse
+import glob
+import hashlib
 import logging
+import multiprocessing
 import os
+import platform
+import shlex
+import shutil
+import subprocess
+import tarfile
 import urllib.parse
 import zipfile
-import tarfile
-import shutil
-import platform
-import argparse
-import multiprocessing
-import hashlib
-import glob
-import shlex
-from typing import Callable, NamedTuple, Optional, List, Union, Dict
+from typing import Callable, Dict, List, NamedTuple, Optional, Union
+
 if platform.system() == 'Windows':
     import winreg
 
