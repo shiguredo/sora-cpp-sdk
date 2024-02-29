@@ -2,7 +2,11 @@
   "[python]": {
     "editor.formatOnSave": true,
     "editor.formatOnSaveMode": "file",
-    "editor.defaultFormatter": "charliermarsh.ruff"
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.autoIndent": "full",
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    }
   },
   "[cpp]": {
     "editor.formatOnSave": true
