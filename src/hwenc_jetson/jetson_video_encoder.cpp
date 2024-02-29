@@ -154,6 +154,8 @@ int32_t JetsonVideoEncoder::InitEncode(const webrtc::VideoCodec* codec_settings,
   target_bitrate_bps_ = codec_settings->startBitrate * 1000;
   if (codec_settings->codecType == webrtc::kVideoCodecH264) {
     key_frame_interval_ = codec_settings->H264().keyFrameInterval;
+  } else if (codec_settings->codecType == webrtc::kVideoCodecH265) {
+    key_frame_interval_ = codec_settings->H265().keyFrameInterval;
   } else if (codec_settings->codecType == webrtc::kVideoCodecVP8) {
     key_frame_interval_ = codec_settings->VP8().keyFrameInterval;
   } else if (codec_settings->codecType == webrtc::kVideoCodecVP9) {
@@ -224,6 +226,9 @@ int32_t JetsonVideoEncoder::JetsonConfigure() {
   if (codec_.codecType == webrtc::kVideoCodecH264) {
     ret = encoder_->setCapturePlaneFormat(V4L2_PIX_FMT_H264, width_, height_,
                                           2 * 1024 * 1024);
+  } else if (codec_.codecType == webrtc::kVideoCodecH265) {
+    ret = encoder_->setCapturePlaneFormat(V4L2_PIX_FMT_H265, width_, height_,
+                                          2 * 1024 * 1024);
   } else if (codec_.codecType == webrtc::kVideoCodecVP8) {
     ret = encoder_->setCapturePlaneFormat(V4L2_PIX_FMT_VP8, width_, height_,
                                           2 * 1024 * 1024);
@@ -260,6 +265,21 @@ int32_t JetsonVideoEncoder::JetsonConfigure() {
     // NX は V4L2_ENC_HW_PRESET_FAST でないとフレームレートがでない
     ret = encoder_->setHWPresetType(V4L2_ENC_HW_PRESET_FAST);
     INIT_ERROR(ret < 0, "Failed to setHWPresetType");
+  } else if (codec_.codecType == webrtc::kVideoCodecH265) {
+    // https://docs.nvidia.com/jetson/l4t-multimedia/group__V4L2Enc.html
+    // V4L2_MPEG_VIDEO_H265_PROFILE_MAIN or V4L2_MPEG_VIDEO_H265_PROFILE_MAIN10
+    ret = encoder_->setProfile(V4L2_MPEG_VIDEO_H265_PROFILE_MAIN);
+    INIT_ERROR(ret < 0, "Failed to setProfile");
+
+    // https://en.wikipedia.org/wiki/High_Efficiency_Video_Coding_tiers_and_levels#Levels
+    ret = encoder_->setLevel(V4L2_MPEG_VIDEO_H265_LEVEL_6_2_HIGH_TIER);
+    INIT_ERROR(ret < 0, "Failed to setLevel");
+
+    ret = encoder_->setHWPresetType(V4L2_ENC_HW_PRESET_ULTRAFAST);
+    INIT_ERROR(ret < 0, "Failed to setHWPresetType");
+
+    ret = encoder_->setInsertSpsPpsAtIdrEnabled(true);
+    INIT_ERROR(ret < 0, "Failed to setInsertSpsPpsAtIdrEnabled");
   } else if (codec_.codecType == webrtc::kVideoCodecVP8) {
     uint32_t qp_min =
         codec_.mode == webrtc::VideoCodecMode::kScreensharing ? 12 : 2;
@@ -549,6 +569,12 @@ webrtc::VideoEncoder::EncoderInfo JetsonVideoEncoder::GetEncoderInfo() const {
     static const int kHighH264QpThreshold = 40;
     info.scaling_settings = VideoEncoder::ScalingSettings(kLowH264QpThreshold,
                                                           kHighH264QpThreshold);
+  } else if (codec_.codecType == webrtc::kVideoCodecH265) {
+    // TODO(enm10k): 要調整
+    static const int kLowH265QpThreshold = 34;
+    static const int kHighH265QpThreshold = 40;
+    info.scaling_settings = VideoEncoder::ScalingSettings(kLowH265QpThreshold,
+                                                          kHighH265QpThreshold);
   } else if (codec_.codecType == webrtc::kVideoCodecVP8) {
     static const int kLowVp8QpThreshold = 29;
     static const int kHighVp8QpThreshold = 95;
@@ -842,6 +868,10 @@ int32_t JetsonVideoEncoder::SendFrame(
 
     codec_specific.codecSpecific.H264.packetization_mode =
         webrtc::H264PacketizationMode::NonInterleaved;
+  } else if (codec_.codecType == webrtc::kVideoCodecH265) {
+    auto encoded_image_buffer =
+        webrtc::EncodedImageBuffer::Create(buffer, size);
+    encoded_image_.SetEncodedData(encoded_image_buffer);
   } else if (codec_.codecType == webrtc::kVideoCodecAV1 ||
              codec_.codecType == webrtc::kVideoCodecVP9 ||
              codec_.codecType == webrtc::kVideoCodecVP8) {

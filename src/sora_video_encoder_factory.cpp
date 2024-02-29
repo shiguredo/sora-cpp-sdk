@@ -284,6 +284,15 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
                                        cricket::CreateVideoCodec(format)));
                              },
                              16));
+  config.encoders.insert(config.encoders.begin(),
+                         VideoEncoderConfig(
+                             webrtc::kVideoCodecH265,
+                             [](auto format) {
+                               return std::unique_ptr<webrtc::VideoEncoder>(
+                                   absl::make_unique<JetsonVideoEncoder>(
+                                       cricket::CreateVideoCodec(format)));
+                             },
+                             16));
 #endif
 
   return config;
