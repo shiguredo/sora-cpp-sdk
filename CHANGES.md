@@ -33,7 +33,8 @@
   - @enm10k
 - [UPDATE] Lyra を 1.3.2 にあげる
   - @melpon
-- [UPDATE] Node.js 16 の Deprecated に伴い setup-android と setup-msbuild のバージョンをアップデート
+- [UPDATE] Github Actions の setup-android と setup-msbuild のバージョンをアップデート
+  - Node.js 16 の Deprecated に伴う対応
   - setup-android を v3 にアップデート
   - setup-android のアップデートに伴い ANDROID_SDK_CMDLINE_TOOLS_VERSION のバージョンを `9862592` にアップデート
     - `9862592` は CMDLINE_TOOLS のバージョン 10 に相当
