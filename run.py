@@ -11,7 +11,7 @@ import subprocess
 import tarfile
 import urllib.parse
 import zipfile
-from typing import Callable, Dict, List, NamedTuple, Optional, Union
+from typing import Dict, List, NamedTuple, Optional
 
 if platform.system() == "Windows":
     import winreg
@@ -201,11 +201,7 @@ def versioned(func):
 #
 # 単一のディレクトリに格納されている場合はそのディレクトリ名を返す。
 # そうでない場合は None を返す。
-def _is_single_dir(
-    infos: List[Union[zipfile.ZipInfo, tarfile.TarInfo]],
-    get_name: Callable[[Union[zipfile.ZipInfo, tarfile.TarInfo]], str],
-    is_dir: Callable[[Union[zipfile.ZipInfo, tarfile.TarInfo]], bool],
-) -> Optional[str]:
+def _is_single_dir(infos, get_name, is_dir) -> Optional[str]:
     # tarfile: ['path', 'path/to', 'path/to/file.txt']
     # zipfile: ['path/', 'path/to/', 'path/to/file.txt']
     # どちらも / 区切りだが、ディレクトリの場合、後ろに / が付くかどうかが違う
@@ -781,7 +777,7 @@ def install_cuda_windows(version, source_dir, build_dir, install_dir):
     elif version == "11.8.0-1":
         url = "https://developer.download.nvidia.com/compute/cuda/11.8.0/local_installers/cuda_11.8.0_522.06_windows.exe"  # noqa: E501
     else:
-        raise f"Unknown CUDA version {version}"
+        raise Exception(f"Unknown CUDA version {version}")
     file = download(url, source_dir)
 
     mkdir_p(os.path.join(build_dir, "cuda"))
@@ -1112,10 +1108,12 @@ class PlatformTarget(object):
 
 def get_windows_osver():
     osver = platform.release()
-    with winreg.OpenKeyEx(
-        winreg.HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion"
+    # Windows 以外の環境だと reportAttributeAccessIssue を報告されてしまうので ignore する
+    with winreg.OpenKeyEx(  # type: ignore[reportAttributeAccessIssue]
+        winreg.HKEY_LOCAL_MACHINE,  # type: ignore[reportAttributeAccessIssue]
+        "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion",
     ) as key:
-        return osver + "." + winreg.QueryValueEx(key, "ReleaseId")[0]
+        return osver + "." + winreg.QueryValueEx(key, "ReleaseId")[0]  # type: ignore[reportAttributeAccessIssue]
 
 
 def get_macos_osver():
