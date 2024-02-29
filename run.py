@@ -2051,8 +2051,6 @@ def main():
         elif platform.target.os == "android":
             # Android の場合は事前に用意したプロジェクトをビルドする
             with cd(os.path.join(BASE_DIR, "test", "android")):
-                cmd(["./gradlew", "--no-daemon", "assemble"])
-
                 if not args.no_lyra:
                     # Lyra テストのビルド先のディレクトリに
                     # Lyra のモデル係数ファイルをコピーする
@@ -2061,6 +2059,8 @@ def main():
                     rm_rf(model_dst)
                     mkdir_p(os.path.dirname(model_dst))
                     shutil.copytree(model_src, model_dst)
+
+                cmd(["./gradlew", "--no-daemon", "assemble"])
         else:
             # 普通のプロジェクトは CMake でビルドする
             test_build_dir = os.path.join(build_dir, "test")
