@@ -679,7 +679,7 @@ def install_boost(
                 f.write(
                     f"using clang \
                     : android \
-                    : {os.path.join(bin, f'clang++')} \
+                    : {os.path.join(bin, 'clang++')} \
                       --target=aarch64-none-linux-android{native_api_level} \
                       --sysroot={sysroot} \
                     : <archiver>{os.path.join(bin, 'llvm-ar')} \
