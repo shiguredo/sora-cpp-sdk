@@ -8,7 +8,7 @@
     "editor.autoIndent": "full",
     "editor.codeActionsOnSave": {
       "source.fixAll.ruff": "always",
-      "source.organizeImports": "explicit"
+      "source.organizeImports.ruff": "explicit"
     }
   },
   "[cpp]": {
