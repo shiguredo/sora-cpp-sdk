@@ -49,11 +49,15 @@
     - リリースノートを参照すると、v2 は node 20 に対応していることがわかる [setup-msbuild のリリースノート](https://github.com/microsoft/setup-msbuild/releases/tag/v2)
   - @torikizi
 - [ADD] Python コードのフォーマッターに Ruff を使うようにする
-  
+  - @voluntas
 - [ADD] SoraSignalingObserver に OnSwitched を追加する
   - @enm10k
 - [FIX] Jetson Orin で AV1 を送信中、他のユーザーが後から接続して受信した時に映像が出ない問題を修正
   - @melpon @enm10k
+- [FIX] test/android のアプリが実行時にエラーで落ちてしまう問題を修正
+  - "AttachCurrentThread() must be called on this thread." というメッセージでエラーとなっていた
+  - JVM::Initialize の前に AttachCurrentThreadIfNeeded 呼ぶ必要があった
+  - @melpon
 
 ## 2024.1.0 (2024-01-16)
 
