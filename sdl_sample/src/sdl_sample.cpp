@@ -22,7 +22,7 @@ struct SDLSampleConfig {
   std::string role;
   std::string video_codec_type;
   std::string audio_codec_type;
-  int audio_codec_lyra_bitrate;
+  int audio_codec_lyra_bitrate = 0;
   boost::optional<bool> audio_codec_lyra_usedtx;
   boost::optional<bool> multistream;
   int width = 640;
