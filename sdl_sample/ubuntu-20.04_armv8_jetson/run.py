@@ -3,6 +3,7 @@ import multiprocessing
 import argparse
 import sys
 import hashlib
+from typing import Optional, List
 PROJECT_DIR = os.path.abspath(os.path.dirname(__file__))
 BASE_DIR = os.path.join(PROJECT_DIR, '..', '..')
 sys.path.insert(0, BASE_DIR)
@@ -14,21 +15,22 @@ from base import (  # noqa
     mkdir_p,
     add_path,
     cmake_path,
+    get_sora_info,
     read_version_file,
     get_webrtc_info,
     install_rootfs,
     install_webrtc,
     install_llvm,
-    install_boost,
-    install_lyra,
+    build_sora,
+    install_sora_and_deps,
     install_cmake,
     install_sdl2,
-    install_sora,
     install_cli11,
+    add_sora_arguments,
 )
 
 
-def install_deps(source_dir, build_dir, install_dir, debug):
+def install_deps(source_dir, build_dir, install_dir, debug, sora_dir: Optional[str], sora_args: List[str]):
     with cd(BASE_DIR):
         version = read_version_file('VERSION')
 
@@ -81,27 +83,11 @@ def install_deps(source_dir, build_dir, install_dir, debug):
         }
         install_llvm(**install_llvm_args)
 
-        # Boost
-        install_boost_args = {
-            'version': version['BOOST_VERSION'],
-            'version_file': os.path.join(install_dir, 'boost.version'),
-            'source_dir': source_dir,
-            'install_dir': install_dir,
-            'sora_version': version['SORA_CPP_SDK_VERSION'],
-            'platform': 'ubuntu-20.04_armv8_jetson',
-        }
-        install_boost(**install_boost_args)
-
-        # Lyra
-        install_lyra_args = {
-            'version': version['LYRA_VERSION'],
-            'version_file': os.path.join(install_dir, 'lyra.version'),
-            'source_dir': source_dir,
-            'install_dir': install_dir,
-            'sora_version': version['SORA_CPP_SDK_VERSION'],
-            'platform': 'ubuntu-20.04_armv8_jetson',
-        }
-        install_lyra(**install_lyra_args)
+        # Sora C++ SDK, Boost, Lyra
+        if sora_dir is None:
+            install_sora_and_deps('ubuntu-20.04_armv8_jetson', source_dir, build_dir, install_dir)
+        else:
+            build_sora('ubuntu-20.04_armv8_jetson', sora_dir, sora_args, debug)
 
         # CMake
         install_cmake_args = {
@@ -141,16 +127,6 @@ def install_deps(source_dir, build_dir, install_dir, debug):
         }
         install_sdl2(**install_sdl2_args)
 
-        # Sora C++ SDK
-        install_sora_args = {
-            'version': version['SORA_CPP_SDK_VERSION'],
-            'version_file': os.path.join(install_dir, 'sora.version'),
-            'source_dir': source_dir,
-            'install_dir': install_dir,
-            'platform': 'ubuntu-20.04_armv8_jetson',
-        }
-        install_sora(**install_sora_args)
-
         # CLI11
         install_cli11_args = {
             'version': version['CLI11_VERSION'],
@@ -163,6 +139,7 @@ def install_deps(source_dir, build_dir, install_dir, debug):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", action='store_true')
+    add_sora_arguments(parser)
 
     args = parser.parse_args()
 
@@ -175,7 +152,7 @@ def main():
     mkdir_p(build_dir)
     mkdir_p(install_dir)
 
-    install_deps(source_dir, build_dir, install_dir, args.debug)
+    install_deps(source_dir, build_dir, install_dir, args.debug, args.sora_dir, args.sora_args)
 
     configuration = 'Debug' if args.debug else 'Release'
 
@@ -183,14 +160,15 @@ def main():
     mkdir_p(sample_build_dir)
     with cd(sample_build_dir):
         webrtc_info = get_webrtc_info(False, source_dir, build_dir, install_dir)
+        sora_info = get_sora_info(install_dir, args.sora_dir, dir, args.debug)
 
         cmake_args = []
         cmake_args.append(f'-DCMAKE_BUILD_TYPE={configuration}')
-        cmake_args.append(f"-DBOOST_ROOT={cmake_path(os.path.join(install_dir, 'boost'))}")
-        cmake_args.append(f"-DLYRA_DIR={cmake_path(os.path.join(install_dir, 'lyra'))}")
+        cmake_args.append(f"-DBOOST_ROOT={cmake_path(sora_info.boost_install_dir)}")
+        cmake_args.append(f"-DLYRA_DIR={cmake_path(sora_info.lyra_install_dir)}")
         cmake_args.append(f"-DWEBRTC_INCLUDE_DIR={cmake_path(webrtc_info.webrtc_include_dir)}")
         cmake_args.append(f"-DWEBRTC_LIBRARY_DIR={cmake_path(webrtc_info.webrtc_library_dir)}")
-        cmake_args.append(f"-DSORA_DIR={cmake_path(os.path.join(install_dir, 'sora'))}")
+        cmake_args.append(f"-DSORA_DIR={cmake_path(sora_info.sora_install_dir)}")
         cmake_args.append(f"-DCLI11_DIR={cmake_path(os.path.join(install_dir, 'cli11'))}")
         cmake_args.append(f"-DSDL2_DIR={cmake_path(os.path.join(install_dir, 'sdl2'))}")
 
