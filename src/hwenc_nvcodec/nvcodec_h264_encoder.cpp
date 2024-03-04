@@ -1,3 +1,5 @@
+#include "sora/fix_cuda_noinline_macro_error.h"
+
 #include "sora/hwenc_nvcodec/nvcodec_h264_encoder.h"
 
 #ifdef _WIN32

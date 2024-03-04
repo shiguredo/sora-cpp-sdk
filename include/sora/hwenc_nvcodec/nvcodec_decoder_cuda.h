@@ -2,7 +2,11 @@
 #define SORA_HWENC_NVCODEC_NVCODEC_DECODER_CUDA_H_
 
 #include <memory>
+
+// clang-format off
+#include "sora/fix_cuda_noinline_macro_error.h"
 #include <string>
+// clang-format on
 
 #include "sora/cuda_context.h"
 

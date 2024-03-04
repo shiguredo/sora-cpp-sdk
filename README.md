@@ -20,23 +20,23 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
 ## 特徴
 
 - 各プラットフォームで利用可能な HWA への対応
-    - NVIDIA VIDEO CODEC SDK (NVENC / NVDEC)
-        - VP9 / H.264
-    - NVIDIA Jetson Video HWA
-        - VP9 / AV1 / H.264
-    - Apple macOS / iOS Video Toolbox
-        - H.264 / H.265
-    - Google Android HWA
-        - VP8 / VP9 / H.264 / H.265
-    - [Intel oneVPL](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onevpl.html) (Intel Media SDK の後継)
-        - VP9 / AV1 / H.264
+  - NVIDIA Video Codec SDK (NVENC / NVDEC)
+    - VP9 / H.264
+  - NVIDIA Jetson Video HWA
+    - VP9 / AV1 / H.264
+  - Apple macOS / iOS Video Toolbox
+    - H.264 / H.265
+  - Google Android HWA
+    - VP8 / VP9 / H.264 / H.265
+  - [Intel VPL](https://github.com/intel/libvpl) (Intel Media SDK の後継)
+    - VP9 / AV1 / H.264
 - 各プラットフォームへの [google/lyra: A Very Low\-Bitrate Codec for Speech Compression](https://github.com/google/lyra) 対応
 
 ## ライブラリのバイナリ提供について
 
 以下からダウンロードが可能です。
 
-*hololens2 は無視してください*
+_hololens2 は無視してください_
 
 https://github.com/shiguredo/sora-cpp-sdk/releases
 
@@ -49,9 +49,9 @@ https://github.com/shiguredo/sora-cpp-sdk/releases
 - Windows 10.1809 x86_64 以降
 - macOS 13.5 arm64 以降
 - Ubuntu 20.04 ARMv8 Jetson (JetPack 5.1.1 以降)
-    - Jetson AGX Orin
-    - Jetson AGX Xavier
-    - Jetson Xavier NX
+  - Jetson AGX Orin
+  - Jetson AGX Xavier
+  - Jetson Xavier NX
 - Ubuntu 20.04 x86_64
 - Ubuntu 22.04 x86_64
 - Android 7 arm64 以降
@@ -60,10 +60,6 @@ https://github.com/shiguredo/sora-cpp-sdk/releases
 ## サンプル集
 
 https://github.com/shiguredo/sora-cpp-sdk-samples
-
-## 使ってみる
-
-準備中。
 
 ## FAQ
 
@@ -77,7 +73,9 @@ https://github.com/shiguredo/sora-cpp-sdk-samples
 
 **詳細は Discord やメールなどでお気軽にお問い合わせください**
 
-- NVIDIA Jetson JetPack 6 対応
+- Ubuntu 24.04 x86_64
+- Ubuntu 22.04 arm64 対応
+  - NVIDIA Jetson JetPack 6 対応
 - AMD 系 HWA 対応
 - Windows arm64 対応
 
@@ -102,8 +100,8 @@ Discord へお願いします。
 Apache License 2.0
 
 ```
-Copyright 2021-2023, Wandbox LLC (Original Author)
-Copyright 2021-2023, Shiguredo Inc.
+Copyright 2021-2024, Wandbox LLC (Original Author)
+Copyright 2021-2024, Shiguredo Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

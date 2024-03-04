@@ -9,6 +9,8 @@
 *
 */
 
+#include "sora/fix_cuda_noinline_macro_error.h"
+
 #include <algorithm>
 #include <chrono>
 #include <cmath>

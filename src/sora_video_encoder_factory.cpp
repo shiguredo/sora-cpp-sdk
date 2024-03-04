@@ -125,12 +125,17 @@ SoraVideoEncoderFactory::CreateVideoEncoder(
     const webrtc::SdpVideoFormat& format) {
   if (internal_encoder_factory_ != nullptr) {
     // サイマルキャストの場合はアダプタを噛ましつつ、無条件ですべてアライメントする
-    auto encoder = std::make_shared<webrtc::SimulcastEncoderAdapter>(
-        internal_encoder_factory_.get(), format);
-    // kNative を I420 に変換する
-    auto adapted1 = std::make_shared<I420EncoderAdapter>(encoder);
-    auto adapted2 = absl::make_unique<AlignedEncoderAdapter>(adapted1, 16, 16);
-    return adapted2;
+    std::unique_ptr<webrtc::VideoEncoder> encoder =
+        std::make_unique<webrtc::SimulcastEncoderAdapter>(
+            internal_encoder_factory_.get(), format);
+
+    if (config_.force_i420_conversion_for_simulcast_adapter) {
+      encoder = std::make_unique<I420EncoderAdapter>(std::move(encoder));
+    }
+
+    encoder =
+        std::make_unique<AlignedEncoderAdapter>(std::move(encoder), 16, 16);
+    return encoder;
   }
 
   int alignment = 0;
@@ -175,15 +180,16 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
 
 #if USE_NVCODEC_ENCODER
   if (NvCodecH264Encoder::IsSupported(cuda_context)) {
-    config.encoders.insert(config.encoders.begin(),
-                           VideoEncoderConfig(
-                               webrtc::kVideoCodecH264,
-                               [cuda_context = cuda_context](auto format)
-                                   -> std::unique_ptr<webrtc::VideoEncoder> {
-                                 return NvCodecH264Encoder::Create(
-                                     cricket::CreateVideoCodec(format), cuda_context);
-                               },
-                               16));
+    config.encoders.insert(
+        config.encoders.begin(),
+        VideoEncoderConfig(
+            webrtc::kVideoCodecH264,
+            [cuda_context = cuda_context](
+                auto format) -> std::unique_ptr<webrtc::VideoEncoder> {
+              return NvCodecH264Encoder::Create(
+                  cricket::CreateVideoCodec(format), cuda_context);
+            },
+            16));
   }
 #endif
 

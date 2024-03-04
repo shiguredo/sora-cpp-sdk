@@ -138,6 +138,8 @@ class JetsonVideoEncoder : public webrtc::VideoEncoder {
   std::queue<NvBuffer*>* enc0_buffer_queue_;
   int output_plane_fd_[32];
   webrtc::EncodedImage encoded_image_;
+  webrtc::ScalabilityMode scalability_mode_;
+  std::vector<uint8_t> obu_seq_header_;
 };
 
 }  // namespace sora
