@@ -438,17 +438,20 @@ def install_sora_and_deps(platform: str, source_dir:str, build_dir:str, install_
     install_sora(**install_sora_args)
 
 
+'''
+内部で os.path.abspath() を利用しており、 os.path.abspath() はカレントディレクトリに依存するため、
+この関数を利用する場合は ArgumentParser.parse_args() 実行前にカレントディレクトリを変更してはならない
+'''
 def add_sora_arguments(parser):
-    parser.add_argument("--sora-dir", type=str, default=None,
+    parser.add_argument("--sora-dir", type=os.path.abspath, default=None,
                         help="Refer to local Sora C++ SDK. "
-                        "When this option is specified, Sora C++ SDK will also be built. "
-                        "Specifying an absolute path is recommended.")
+                        "When this option is specified, Sora C++ SDK will also be built.")
     parser.add_argument("--sora-args", type=shlex.split, default=[],
                         help="Options for building local Sora C++ SDK when `--sora-dir` is specified.")
 
 
 def build_sora(platform: str, sora_dir: str, sora_args: List[str], debug: bool):
-    if debug and '--debug' not in args:
+    if debug and '--debug' not in sora_args:
         sora_args = ['--debug', *sora_args]
 
     with cd(sora_dir):
