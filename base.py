@@ -439,8 +439,12 @@ def install_sora_and_deps(platform: str, source_dir:str, build_dir:str, install_
 
 
 def add_sora_arguments(parser):
-    parser.add_argument("--sora-dir", type=str, default=None)
-    parser.add_argument("--sora-args", type=shlex.split, default=[])
+    parser.add_argument("--sora-dir", type=str, default=None,
+                        help="Refer to local Sora C++ SDK. "
+                        "When this option is specified, Sora C++ SDK will also be built. "
+                        "Specifying an absolute path is recommended.")
+    parser.add_argument("--sora-args", type=shlex.split, default=[],
+                        help="Options for building local Sora C++ SDK when `--sora-dir` is specified.")
 
 
 def build_sora(platform: str, sora_dir: str, sora_args: List[str], debug: bool):
