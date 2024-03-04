@@ -11,6 +11,8 @@
 
 ## develop
 
+## 2024.2.0 (2024-03-04)
+
 - [CHANGE] `--webrtcbuild`, `--webrtc-fetch` などの webrtc ローカルビルドに関するフラグを削除し、代わりに `--webrtc-build-dir` と `--webrtc-build-args` を追加する
   - これにより、既存の webrtc-build ディレクトリを使ってローカルビルドを行うことができるようになる
   - @melpon
