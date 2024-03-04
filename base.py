@@ -438,10 +438,12 @@ def install_sora_and_deps(platform: str, source_dir:str, build_dir:str, install_
     install_sora(**install_sora_args)
 
 
-'''
-内部で os.path.abspath() を利用しており、 os.path.abspath() はカレントディレクトリに依存するため、
-この関数を利用する場合は ArgumentParser.parse_args() 実行前にカレントディレクトリを変更してはならない
-'''
+
+# 内部で os.path.abspath() を利用しており、 os.path.abspath() はカレントディレクトリに依存するため、
+# この関数を利用する場合は ArgumentParser.parse_args() 実行前にカレントディレクトリを変更してはならない
+# 
+# また、 --sora-args の指定には `--sora-args='--test'` のように `=` を使う必要がある
+# `--sora-args '--test'` のようにスペースを使うと、ハイフンから始まるオプションが正しく解釈されない
 def add_sora_arguments(parser):
     parser.add_argument("--sora-dir", type=os.path.abspath, default=None,
                         help="Refer to local Sora C++ SDK. "
