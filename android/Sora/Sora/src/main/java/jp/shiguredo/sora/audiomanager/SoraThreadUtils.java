@@ -16,16 +16,20 @@ import android.os.Looper;
 import android.os.Handler;
 
 class SoraThreadUtils {
+
     public static void checkIsOnMainThread() {
         if (Looper.myLooper() != Looper.getMainLooper()) {
             throw new IllegalStateException("Not on main thread!");
         }
     }
-    public static boolean runOnMainThread(Runnable action) {
-        if (Looper.myLooper() != Looper.getMainLooper()) {
+
+    public static void runOnMainThread(Runnable action) {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            // 現在のスレッドがメインスレッドであれば、直接 action を実行
+            action.run();
+        } else {
+            // 現在のスレッドがメインスレッドではない場合、メインスレッドに action をポスト
             new Handler(Looper.getMainLooper()).post(action);
-            return false;
         }
-        return true;
     }
 }
