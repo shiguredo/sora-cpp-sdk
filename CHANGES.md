@@ -9,7 +9,7 @@
 - FIX
   - バグ修正
 
-## develop
+## sora-cpp-sdk-2024.2.0
 
 - [CHANGE] momo_sample を sumomo にリネームする
   - @enm10k
@@ -18,14 +18,24 @@
   - JetPack 5.1 では、互換性の問題で JetsonJpegDecoder がエラーになることを確認
   - @enm10k
 - [UPDATE] VERSIONS のライブラリをアップデートする
-  - SORA_CPP_SDK_VERSION を 2024.1.0 にあげる
-  - SDL2 を 2.30.0 にあげる
-  - CLI11 を v2.4.1 にあげる
+  - SORA_CPP_SDK_VERSION を 2024.2.0 にあげる
+  - WEBRTC_BUILD_VERSION を m121.6167.3.0 にあげる
+  - BOOST_VERSION を 1.84.0 にあげる
+  - LYRA_VERSION を 1.3.2 にあげる
+  - CMAKE_VERSION を 3.28.1 にあげる
+  - SDL2_VERSION を 2.30.0 にあげる
+  - CLI11_VERSION を v2.4.1 にあげる
   - @miosakuma @enm10k
 - [FIX] sdl_sample で `--audio-codec-lyra-bitrate` が未指定の時に不定な値が送信されるのを修正する
   - SDLSampleConfig.audio_codec_lyra_bitrate の値が初期化されておらず、未指定の時に不定な値が送信されるようになっていた
     - SDLSampleConfig.audio_codec_lyra_bitrate の初期値を 0 に設定する
     - 値が 0 の時、Sora に値は送信されない
+  - @miosakuma
+
+## sora-cpp-sdk-2024.1.0
+
+- [UPDATE] VERSIONS のライブラリをアップデートする
+  - SORA_CPP_SDK_VERSION を 2024.1.0 にあげる
   - @miosakuma
 
 ## sora-cpp-sdk-2023.17.0

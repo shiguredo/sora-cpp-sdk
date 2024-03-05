@@ -154,6 +154,7 @@ def main():
             f"-DCMAKE_C_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang')}",
             f"-DCMAKE_CXX_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang++')}",
             f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}",
+            '-DCMAKE_CXX_FLAGS=\'-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE\'',
         ]
 
         cmd(['cmake', os.path.join(PROJECT_DIR)] + cmake_args)
