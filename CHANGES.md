@@ -9,7 +9,7 @@
 - FIX
   - バグ修正
 
-## develop
+## sora-cpp-sdk-2024.2.0
 
 - [CHANGE] momo_sample を sumomo にリネームする
   - @enm10k
@@ -30,6 +30,12 @@
   - SDLSampleConfig.audio_codec_lyra_bitrate の値が初期化されておらず、未指定の時に不定な値が送信されるようになっていた
     - SDLSampleConfig.audio_codec_lyra_bitrate の初期値を 0 に設定する
     - 値が 0 の時、Sora に値は送信されない
+  - @miosakuma
+
+## sora-cpp-sdk-2024.1.0
+
+- [UPDATE] VERSIONS のライブラリをアップデートする
+  - SORA_CPP_SDK_VERSION を 2024.1.0 にあげる
   - @miosakuma
 
 ## sora-cpp-sdk-2023.17.0
