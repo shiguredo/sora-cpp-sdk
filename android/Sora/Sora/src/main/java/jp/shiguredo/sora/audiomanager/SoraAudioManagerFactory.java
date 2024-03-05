@@ -25,7 +25,11 @@ public class SoraAudioManagerFactory {
         }
     }
 
+    public static SoraAudioManager withMainThreadWrapper(SoraAudioManager audioManager) {
+        return new MainThreadWrapper(audioManager);
+    }
+
     public static SoraAudioManager createWithMainThreadWrapper(Context context) {
-        return new MainThreadWrapper(context);
+        return withMainThreadWrapper(create(context));
     }
 }
