@@ -161,7 +161,6 @@ class SoraBluetoothManager {
             Context context,
             SoraAudioManagerLegacy soraAudioManagerLegacy,
             AudioManager audioManager) {
-        SoraThreadUtils.checkIsOnMainThread();
         this.context = context;
         this.soraAudioManagerLegacy = soraAudioManagerLegacy;
         this.audioManager = audioManager;

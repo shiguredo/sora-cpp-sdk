@@ -50,7 +50,6 @@ abstract class SoraAudioManagerBase implements SoraAudioManager {
     }
 
     protected SoraAudioManagerBase(Context context) {
-        SoraThreadUtils.checkIsOnMainThread();
         this.context = context;
         audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
         wiredHeadsetReceiver = new WiredHeadsetReceiver();
