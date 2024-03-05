@@ -49,6 +49,8 @@
 - [CHANGE] ビルド時に Bazel のインストールを行わないようにする
   - Lyra のために Bazel を利用していたので、関連して削除となる
   - @melpon
+- [UPDATE] libwebrtc を `m122.6261.0.0` にあげる
+  - @miosakuma
 - [ADD] Android 向けに音声出力先変更機能として `SoraAudioManager` を追加する
   - Android では C++ を経由した OS の API 利用が煩雑となるため、Java で実装し、Sora.aar をビルドして提供を行う
   - Sora.aar ファイルは Android のパッケージに含める
