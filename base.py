@@ -4,6 +4,7 @@ import os
 import urllib.parse
 import zipfile
 import tarfile
+import shlex
 import shutil
 import platform
 import multiprocessing
@@ -393,6 +394,82 @@ def get_webrtc_info(webrtcbuild: bool, source_dir: str, build_dir: str, install_
             clang_dir=os.path.join(install_dir, 'llvm', 'clang'),
             libcxx_dir=os.path.join(install_dir, 'llvm', 'libcxx'),
         )
+
+
+class SoraInfo(NamedTuple):
+    sora_install_dir: str
+    boost_install_dir: str
+    lyra_install_dir: str
+
+
+def install_sora_and_deps(platform: str, source_dir:str, build_dir:str, install_dir: str):
+    version = read_version_file('VERSION')
+
+    # Boost
+    install_boost_args = {
+        'version': version['BOOST_VERSION'],
+        'version_file': os.path.join(install_dir, 'boost.version'),
+        'source_dir': source_dir,
+        'install_dir': install_dir,
+        'sora_version': version['SORA_CPP_SDK_VERSION'],
+        'platform': platform,
+    }
+    install_boost(**install_boost_args)
+
+    # Lyra
+    install_lyra_args = {
+        'version': version['LYRA_VERSION'],
+        'version_file': os.path.join(install_dir, 'lyra.version'),
+        'source_dir': source_dir,
+        'install_dir': install_dir,
+        'sora_version': version['SORA_CPP_SDK_VERSION'],
+        'platform': platform,
+    }
+    install_lyra(**install_lyra_args)
+
+    # Sora C++ SDK
+    install_sora_args = {
+        'version': version['SORA_CPP_SDK_VERSION'],
+        'version_file': os.path.join(install_dir, 'sora.version'),
+        'source_dir': source_dir,
+        'install_dir': install_dir,
+        'platform': platform,
+    }
+    install_sora(**install_sora_args)
+
+
+
+# 内部で os.path.abspath() を利用しており、 os.path.abspath() はカレントディレクトリに依存するため、
+# この関数を利用する場合は ArgumentParser.parse_args() 実行前にカレントディレクトリを変更してはならない
+# 
+# また、 --sora-args の指定には `--sora-args='--test'` のように `=` を使う必要がある
+# `--sora-args '--test'` のようにスペースを使うと、ハイフンから始まるオプションが正しく解釈されない
+def add_sora_arguments(parser):
+    parser.add_argument("--sora-dir", type=os.path.abspath, default=None,
+                        help="Refer to local Sora C++ SDK. "
+                        "When this option is specified, Sora C++ SDK will also be built.")
+    parser.add_argument("--sora-args", type=shlex.split, default=[],
+                        help="Options for building local Sora C++ SDK when `--sora-dir` is specified.")
+
+
+def build_sora(platform: str, sora_dir: str, sora_args: List[str], debug: bool):
+    if debug and '--debug' not in sora_args:
+        sora_args = ['--debug', *sora_args]
+
+    with cd(sora_dir):
+        cmd(['python3', 'run.py', platform, *sora_args])
+
+
+def get_sora_info(install_dir: str, sora_dir: Optional[str], platform: str, debug: bool) -> SoraInfo:
+    if sora_dir is not None:
+        configuration = 'debug' if debug else 'release'
+        install_dir = os.path.join(sora_dir, '_install', platform, configuration)
+
+    return SoraInfo(
+        sora_install_dir = os.path.join(install_dir, 'sora'),
+        boost_install_dir = os.path.join(install_dir, 'boost'),
+        lyra_install_dir = os.path.join(install_dir, 'lyra'),
+    )
 
 
 @versioned
