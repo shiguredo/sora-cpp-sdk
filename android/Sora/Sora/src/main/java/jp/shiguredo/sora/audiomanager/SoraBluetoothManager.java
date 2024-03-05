@@ -157,7 +157,7 @@ class SoraBluetoothManager {
         return new SoraBluetoothManager(context, soraAudioManagerLegacy, audioManager);
     }
 
-    protected  SoraBluetoothManager(
+    protected SoraBluetoothManager(
             Context context,
             SoraAudioManagerLegacy soraAudioManagerLegacy,
             AudioManager audioManager) {
@@ -249,7 +249,7 @@ class SoraBluetoothManager {
          * すでに接続済みの場合は startBluetoothSco ではインテントは発火しないが
          * registerReceiver を設定した際に発火する
          * ただ、その場合も startBluetoothSco は呼んでおかないと、
-         * 他のプログラムが stopBluetoothSco した際に終了してします
+         * 他のプログラムが stopBluetoothSco した際に終了してしまう
          */
         audioManager.startBluetoothSco();
         // bluetooth SCO ヘッドセットの使用をリクエストする

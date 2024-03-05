@@ -21,7 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class SoraAudioManagerLegacy extends SoraAudioManagerBase {
+class SoraAudioManagerLegacy extends SoraAudioManagerBase {
     private static final String TAG = "SoraAudioManagerLegacy";
     private enum AudioDevice { SPEAKER_PHONE, WIRED_HEADSET, EARPIECE, BLUETOOTH, NONE }
     private final AudioDevice defaultAudioDevice;
@@ -110,6 +110,7 @@ public class SoraAudioManagerLegacy extends SoraAudioManagerBase {
     }
 
     // ハンズフリーかを確認する
+    @Override
     public boolean isHandsfree() {
         // audioManager.isSpeakerphoneOn() は意図しない結果を返すのでこうした
         return selectedAudioDevice == AudioDevice.SPEAKER_PHONE;

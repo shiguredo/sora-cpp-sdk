@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @TargetApi(Build.VERSION_CODES.S)
-public class SoraAudioManager2 extends SoraAudioManagerBase {
+class SoraAudioManager2 extends SoraAudioManagerBase {
     private static final String TAG = "SoraAudioManager2";
     private final BroadcastReceiver bluetoothHeadsetReceiver;
     private final List<AudioDeviceInfo> audioDevices = new ArrayList<>();
@@ -103,6 +103,7 @@ public class SoraAudioManager2 extends SoraAudioManagerBase {
         registerWiredHeadsetReceiver();
     }
 
+    @Override
     @SuppressLint("WrongConstant")
     public void stop() {
         Log.d(TAG, "stop");
