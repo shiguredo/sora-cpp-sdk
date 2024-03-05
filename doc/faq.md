@@ -36,13 +36,6 @@ iOS または macOS から FHD で配信したい場合は Sora の H.264 のプ
 
 Sora の設定については [Sora のドキュメント](https://sora-doc.shiguredo.jp/SORA_CONF#1581db) をご確認ください。
 
-## Jetson から AV1 の映像が配信できません
-
-Sora C++ SDK 2024.1.0 にて Jetson で AV1 の映像を配信した場合に、Jetson より後に接続したクライアントが Jetson の映像を受信できなくなる事象を確認しています。
-JetPack 5.1.2 対応の影響によるものであり、原因は現在調査中です。
-
-JetPack 5.1.2 に対応する前の Sora C++ SDK 2023.17.0 を利用することで、この事象を回避することができます。
-
 ## Momo で 4K@30fps の映像が配信できる設定を Sora C++ SDK で指定しても、同じパフォーマンスが出せません
 
 Sora C++ SDK では、 SoraVideoEncoderFactoryConfig という構造体に force_i420_conversion_for_simulcast_adapter というフラグがあり、デフォルトで true になっています。
