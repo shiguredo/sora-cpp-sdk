@@ -1,7 +1,7 @@
 #include "lyra.h"
 
-#include "lyra_decoder.h"
-#include "lyra_encoder.h"
+#include "lyra/lyra_decoder.h"
+#include "lyra/lyra_encoder.h"
 
 using namespace chromemedia::codec;
 

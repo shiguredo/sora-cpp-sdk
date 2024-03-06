@@ -48,6 +48,7 @@ class SoraSignalingObserver {
   virtual void OnNotify(std::string text) = 0;
   virtual void OnPush(std::string text) = 0;
   virtual void OnMessage(std::string label, std::string data) = 0;
+  virtual void OnSwitched(std::string text) {}
 
   virtual void OnTrack(
       rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver) = 0;

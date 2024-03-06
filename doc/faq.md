@@ -1,5 +1,11 @@
 # FAQ
 
+## ドキュメント
+
+Sora C++ SDK にドキュメントはありません。基本的にはサンプルを参考にしてください。
+
+また、不明点などあれば Discord でお問い合わせください。
+
 ## ビルド
 
 ビルド関連の質問については環境問題がほとんどであり、環境問題を改善するコストがとても高いため基本的には解答しません。
@@ -20,3 +26,19 @@ NVIDIA VIDEO CODEC SDK のハードウェアデコーダでは width height の�
 ## Windows の Chrome で Jetson の H.264 映像を受信すると色が緑色になります
 
 Windows 環境でのみ Jetson の H.264 映像を受信すると映像の色が緑色になってしまうことを確認しています。こちらの事象は NVIDIA Jetson の JetPack を 5.1.1 にすることで解決します。
+
+## iOS または macOS から H.264 の FHD で配信するにはどうすればいいですか？
+
+iOS または macOS から FHD で配信したい場合は Sora の H.264 のプロファイルレベル ID を 5.2 以上に設定してください。設定は以下の方法で行うことができます。
+
+- `SoraSignalingConfig` に `video_h264_params` を設定する
+- Sora の設定を変更する
+
+Sora の設定については [Sora のドキュメント](https://sora-doc.shiguredo.jp/SORA_CONF#1581db) をご確認ください。
+
+## Jetson から AV1 の映像が配信できません
+
+Sora CPP SDK 2024.1.0 にて Jetson で AV1 の映像を配信した場合に、Jetson より後に接続したクライアントが Jetson の映像を受信できなくなる事象を確認しています。
+JetPack 5.1.2 対応の影響によるものであり、原因は現在調査中です。
+
+JetPack 5.1.2 に対応する前の Sora CPP SDK 2023.17.0 を利用することで、この事象を回避することができます。

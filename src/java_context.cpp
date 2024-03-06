@@ -10,6 +10,8 @@ namespace sora {
 
 void* GetJNIEnv() {
 #ifdef SORA_CPP_SDK_ANDROID
+  void* env = webrtc::AttachCurrentThreadIfNeeded();
+
   // webrtc::JVM::Initialize を呼んでおかないと
   // libwebrtc の内部関数で落ちることがあるので設定しておく
   static bool jvm_initialized = false;
@@ -17,7 +19,7 @@ void* GetJNIEnv() {
     webrtc::JVM::Initialize(webrtc::jni::GetJVM());
     jvm_initialized = true;
   }
-  return webrtc::AttachCurrentThreadIfNeeded();
+  return env;
 #else
   return nullptr;
 #endif

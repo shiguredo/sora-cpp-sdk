@@ -1,3 +1,5 @@
+#include "sora/fix_cuda_noinline_macro_error.h"
+
 #include "nvcodec_h264_encoder_cuda.h"
 
 #include <iostream>
