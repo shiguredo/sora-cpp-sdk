@@ -38,7 +38,7 @@ Sora の設定については [Sora のドキュメント](https://sora-doc.shig
 
 ## 4K@30fps で映像を配信できません
 
-Sora C++ SDK では、 SoraVideoEncoderFactoryConfig という構造体に force_i420_conversion_for_simulcast_adapter というフラグがあり、デフォルトで true になっています。
+Sora C++ SDK では、 `SoraVideoEncoderFactoryConfig` という構造体に `force_i420_conversion_for_simulcast_adapter` というフラグがあり、デフォルトで true になっています。
 このフラグを false にすることで、パフォーマンスが向上して 4K@30fps で映像を配信できる可能性がありますが、 JetsonBuffer を利用している環境などでサイマルキャストが正常に動作しなくなります。
 
 このフラグが必要になった背景をコードの [コメント](https://github.com/shiguredo/sora-cpp-sdk/blob/8f6dba9218e0cda7cdefafe64a37c1af9d5e5c9e/include/sora/sora_video_encoder_factory.h#L57-L71) から以下に抜粋します。
