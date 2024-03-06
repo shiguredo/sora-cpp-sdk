@@ -1,6 +1,8 @@
 #include "sora/sora_client_context.h"
 
 // WebRTC
+#include <api/audio_codecs/builtin_audio_decoder_factory.h>
+#include <api/audio_codecs/builtin_audio_encoder_factory.h>
 #include <api/create_peerconnection_factory.h>
 #include <api/enable_media.h>
 #include <api/environment/environment_factory.h>
@@ -21,8 +23,6 @@
 #include "sora/audio_device_module.h"
 #include "sora/camera_device_capturer.h"
 #include "sora/java_context.h"
-#include "sora/sora_audio_decoder_factory.h"
-#include "sora/sora_audio_encoder_factory.h"
 #include "sora/sora_peer_connection_factory.h"
 #include "sora/sora_video_decoder_factory.h"
 #include "sora/sora_video_encoder_factory.h"
@@ -79,8 +79,10 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
     return sora::CreateAudioDeviceModule(config);
   });
 
-  dependencies.audio_encoder_factory = sora::CreateBuiltinAudioEncoderFactory();
-  dependencies.audio_decoder_factory = sora::CreateBuiltinAudioDecoderFactory();
+  dependencies.audio_encoder_factory =
+      webrtc::CreateBuiltinAudioEncoderFactory();
+  dependencies.audio_decoder_factory =
+      webrtc::CreateBuiltinAudioDecoderFactory();
 
   std::shared_ptr<sora::CudaContext> cuda_context;
   if (c->config_.use_hardware_encoder) {
@@ -93,7 +95,8 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
             ? sora::GetDefaultVideoEncoderFactoryConfig(cuda_context, env)
             : sora::GetSoftwareOnlyVideoEncoderFactoryConfig();
     config.use_simulcast_adapter = true;
-    config.force_i420_conversion_for_simulcast_adapter = c->config_.force_i420_conversion_for_simulcast_adapter;
+    config.force_i420_conversion_for_simulcast_adapter =
+        c->config_.force_i420_conversion_for_simulcast_adapter;
     dependencies.video_encoder_factory =
         absl::make_unique<sora::SoraVideoEncoderFactory>(std::move(config));
   }

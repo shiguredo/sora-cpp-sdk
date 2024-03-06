@@ -115,66 +115,6 @@ bool SoraSignaling::ParseURL(const std::string& url,
 }
 
 bool SoraSignaling::CheckSdp(const std::string& sdp) {
-  // Lyra バージョンをチェックしない設定になっている
-  if (!config_.check_lyra_version) {
-    return true;
-  }
-
-  // SDP のパース
-  webrtc::SdpParseError sdp_error;
-  std::unique_ptr<webrtc::SessionDescriptionInterface> session_description =
-      webrtc::CreateSessionDescription(webrtc::SdpType::kOffer, sdp,
-                                       &sdp_error);
-  if (!session_description) {
-    RTC_LOG(LS_ERROR) << "Failed to create session description: "
-                      << sdp_error.description.c_str()
-                      << "\nline: " << sdp_error.line.c_str();
-    webrtc::RTCError rtc_error(webrtc::RTCErrorType::SYNTAX_ERROR,
-                               sdp_error.description);
-    DoInternalDisconnect(SoraSignalingErrorCode::INTERNAL_ERROR,
-                         "INTERNAL-ERROR",
-                         "Failed to create session description: error=" +
-                             std::string(rtc_error.message()));
-    return false;
-  }
-
-  const cricket::SessionDescription* desc = session_description->description();
-  for (const auto& content : desc->contents()) {
-    auto md = content.media_description();
-    if (md->type() != cricket::MEDIA_TYPE_AUDIO) {
-      continue;
-    }
-    if (md->direction() == webrtc::RtpTransceiverDirection::kInactive ||
-        md->direction() == webrtc::RtpTransceiverDirection::kStopped) {
-      continue;
-    }
-    for (const auto& codec : md->as_audio()->codecs()) {
-      if (codec.name != "lyra") {
-        continue;
-      }
-
-      // 全員の Lyra バージョンが Version::GetLyraCompatibleVersion() と一致してるかを調べる
-      std::string version;
-      if (!codec.GetParam("version", &version)) {
-        RTC_LOG(LS_ERROR) << "Missing Lyra version: mid=" << content.mid();
-        DoInternalDisconnect(SoraSignalingErrorCode::INTERNAL_ERROR,
-                             "INTERNAL-ERROR",
-                             "Missing Lyra version: mid=" + content.mid());
-        return false;
-      }
-
-      if (version != Version::GetLyraCompatibleVersion()) {
-        std::string str = "Incompatible Lyra version: mid=" + content.mid() +
-                          " version=" + version + " expected_version=" +
-                          Version::GetLyraCompatibleVersion();
-        RTC_LOG(LS_ERROR) << str;
-        DoInternalDisconnect(SoraSignalingErrorCode::LYRA_VERSION_INCOMPATIBLE,
-                             "INTERNAL-ERROR", str);
-        return false;
-      }
-    }
-  }
-
   return true;
 }
 
@@ -383,9 +323,7 @@ void SoraSignaling::DoSendConnect(bool redirect) {
   if (!config_.audio) {
     m["audio"] = false;
   } else if (config_.audio && config_.audio_codec_type.empty() &&
-             config_.audio_bit_rate == 0 &&
-             config_.audio_codec_lyra_bitrate == 0 &&
-             !config_.audio_codec_lyra_usedtx) {
+             config_.audio_bit_rate == 0) {
     m["audio"] = true;
   } else {
     m["audio"] = boost::json::object();
@@ -394,17 +332,6 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     }
     if (config_.audio_bit_rate != 0) {
       m["audio"].as_object()["bit_rate"] = config_.audio_bit_rate;
-    }
-    if (config_.audio_codec_type == "LYRA") {
-      boost::json::object p = {
-          {"version", Version::GetLyraCompatibleVersion()}};
-      if (config_.audio_codec_lyra_bitrate != 0) {
-        p["bitrate"] = config_.audio_codec_lyra_bitrate;
-      }
-      if (config_.audio_codec_lyra_usedtx) {
-        p["usedtx"] = *config_.audio_codec_lyra_usedtx;
-      }
-      m["audio"].as_object()["lyra_params"] = p;
     }
   }
 

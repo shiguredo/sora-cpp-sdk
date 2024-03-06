@@ -25,7 +25,6 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE NEVER)
 find_package(Boost REQUIRED COMPONENTS json filesystem)
 find_package(WebRTC REQUIRED)
 find_package(Sora REQUIRED)
-find_package(Lyra REQUIRED)
 find_package(Threads REQUIRED)
 
 find_library(Blend2D_LIBRARY NAMES blend2d PATHS ${BLEND2D_ROOT_DIR}/lib)

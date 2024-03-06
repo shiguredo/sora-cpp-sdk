@@ -11,6 +11,25 @@
 
 ## develop
 
+- [CHANGE] Lyra を Sora C++ SDK から外し、Lyra に関連するファイルや関数、オプションを除ける
+  - SoraSignalingConfig::audio_codec_lyra_bitrate オプションを削除
+  - SoraSignalingConfig::audio_codec_lyra_usedtx オプションを削除
+  - SoraSignalingConfig::check_lyra_version オプションを削除
+  - audio_encoder_lyra.{h,cpp} を削除し、AudioEncoderLyra クラスを削除
+  - audio_decoder_lyra.{h,cpp} を削除し、AudioDecoderLyra クラスを削除
+  - sora_audio_encoder_factory.{h,cpp} を削除し、CreateBuiltinAudioEncoderFactory 関数を削除
+  - sora_audio_decoder_factory.{h,cpp} を削除し、CreateBuiltinAudioDecoderFactory 関数を削除
+  - Version クラスから GetLyraCompatibleVersion 関数を削除
+  - enum class SoraSignalingErrorCode から LYRA_VERSION_INCOMPATIBLE を削除
+  - VERSION ファイルから LYRA_VERSION, LYRA_COMPATIBLE_VERSION を削除
+  - リリースパッケージから `lyra-1.3.2_sora-cpp-sdk-2024.2.0_android.tar.gz` などの Lyra パッケージを生成しないようにする
+  - インストールする内容から `share/cmake/FindLyra.cmake` を削除
+  - run.py を実行する時のオプションから `--no-lyra` オプションを削除
+  - test/hello 実行時に指定する json フォーマットのオプション mode: lyra を削除し、mode オプションそのものも削除
+- [CHANGE] ビルド時に Bazel のインストールを行わないようにする
+  - Lyra のために Bazel を利用していたので、関連して削除となる
+  - @melpon
+
 ## 2024.2.0 (2024-03-04)
 
 - [CHANGE] `--webrtcbuild`, `--webrtc-fetch` などの webrtc ローカルビルドに関するフラグを削除し、代わりに `--webrtc-build-dir` と `--webrtc-build-args` を追加する

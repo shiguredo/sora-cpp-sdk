@@ -30,7 +30,6 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
     - VP8 / VP9 / H.264 / H.265
   - [Intel VPL](https://github.com/intel/libvpl) (Intel Media SDK の後継)
     - VP9 / AV1 / H.264
-- 各プラットフォームへの [google/lyra: A Very Low\-Bitrate Codec for Speech Compression](https://github.com/google/lyra) 対応
 
 ## ライブラリのバイナリ提供について
 
