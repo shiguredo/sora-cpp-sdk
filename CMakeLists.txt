@@ -12,7 +12,6 @@ set(WEBRTC_LIBRARY_NAME "webrtc" CACHE STRING "WebRTC のライブラリ名")
 set(USE_LIBCXX OFF CACHE BOOL "libstdc++ の代わりに libc++ を使うかどうか")
 set(LIBCXX_INCLUDE_DIR "" CACHE PATH "libc++ を使う場合の libc++ のインクルードディレクトリ\n空文字だった場合はデフォルト検索パスの libc++ を利用する")
 set(USE_NVCODEC_ENCODER OFF CACHE BOOL "NVIDIA Video Codec SDK によるハードウェアエンコーダを利用するかどうか")
-set(USE_LYRA OFF CACHE BOOL "Lyra を利用するかどうか")
 
 project(sora-cpp-sdk C CXX)
 
@@ -69,9 +68,6 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE NEVER)
 find_package(WebRTC REQUIRED)
 find_package(Boost REQUIRED COMPONENTS json filesystem)
 find_package(Threads REQUIRED)
-if (USE_LYRA)
-  find_package(Lyra REQUIRED)
-endif()
 
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
@@ -104,8 +100,6 @@ target_sources(sora
     src/rtc_stats.cpp
     src/scalable_track_source.cpp
     src/session_description.cpp
-    src/sora_audio_decoder_factory.cpp
-    src/sora_audio_encoder_factory.cpp
     src/sora_client_context.cpp
     src/sora_peer_connection_factory.cpp
     src/sora_signaling.cpp
@@ -118,13 +112,6 @@ target_sources(sora
     src/websocket.cpp
     src/zlib_helper.cpp
 )
-if (USE_LYRA)
-  target_sources(sora
-    PRIVATE
-      src/audio_decoder_lyra.cpp
-      src/audio_encoder_lyra.cpp
-  )
-endif()
 
 target_compile_definitions(sora PRIVATE ${SORA_TARGET_DEF})
 
@@ -141,12 +128,6 @@ if (NOT USE_NVCODEC_ENCODER)
   target_sources(sora PRIVATE src/cuda_context_cuda.cpp)
 endif()
 
-if (USE_LYRA)
-  target_link_libraries(sora
-    PUBLIC
-      Lyra::lyra
-  )
-endif()
 target_link_libraries(sora
   PUBLIC
     WebRTC::webrtc
@@ -169,7 +150,6 @@ target_compile_definitions(sora
     USE_NVCODEC_ENCODER=$<BOOL:${USE_NVCODEC_ENCODER}>
     USE_JETSON_ENCODER=$<BOOL:${USE_JETSON_ENCODER}>
     USE_VPL_ENCODER=$<BOOL:${USE_VPL_ENCODER}>
-    USE_LYRA=$<BOOL:${USE_LYRA}>
 )
 
 # 指定したライブラリを自身の静的ライブラリにバンドルする
@@ -619,7 +599,6 @@ install(
     cmake/FindWebRTC.cmake
     cmake/FindLibdrm.cmake
     cmake/FindLibva.cmake
-    cmake/FindLyra.cmake
   DESTINATION ${CMAKE_INSTALL_DATADIR}/cmake
 )
 install(FILES LICENSE NOTICE.md

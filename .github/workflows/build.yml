@@ -68,7 +68,6 @@ jobs:
           }
           echo "name=${PACKAGE_NAME}" >> ${Env:GITHUB_OUTPUT}
           echo "boost_name=${BOOST_PACKAGE_NAME}" >> ${Env:GITHUB_OUTPUT}
-          echo "lyra_name=${LYRA_PACKAGE_NAME}" >> ${Env:GITHUB_OUTPUT}
         id: package_name
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
@@ -80,11 +79,6 @@ jobs:
         with:
           name: ${{ steps.package_name.outputs.boost_name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.boost_name }}
-      - name: Upload Lyra Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.package_name.outputs.lyra_name }}
-          path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.lyra_name }}
       - name: Upload Environment
         uses: actions/upload-artifact@v4
         with:
@@ -119,7 +113,6 @@ jobs:
           source _package/${{ matrix.name }}/release/sora.env
           echo "name=${PACKAGE_NAME}" >> $GITHUB_OUTPUT
           echo "boost_name=${BOOST_PACKAGE_NAME}" >> $GITHUB_OUTPUT
-          echo "lyra_name=${LYRA_PACKAGE_NAME}" >> $GITHUB_OUTPUT
         id: package_name
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
@@ -131,11 +124,6 @@ jobs:
         with:
           name: ${{ steps.package_name.outputs.boost_name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.boost_name }}
-      - name: Upload Lyra Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.package_name.outputs.lyra_name }}
-          path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.lyra_name }}
       - name: Upload Environment
         uses: actions/upload-artifact@v4
         with:
@@ -201,8 +189,6 @@ jobs:
           sudo apt-get -y install multistrap binutils-aarch64-linux-gnu
           # multistrap に insecure なリポジトリからの取得を許可する設定を入れる
           sudo sed -e 's/Apt::Get::AllowUnauthenticated=true/Apt::Get::AllowUnauthenticated=true";\n$config_str .= " -o Acquire::AllowInsecureRepositories=true/' -i /usr/sbin/multistrap
-          # Lyra ビルドのためにクロスコンパイル環境一式を入れる
-          sudo apt-get -y install libstdc++-9-dev-arm64-cross gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
       - name: Install deps for Android
         if: matrix.name == 'android'
         run: |
@@ -224,7 +210,6 @@ jobs:
           source _package/${{ matrix.name }}/release/sora.env
           echo "name=${PACKAGE_NAME}" >> $GITHUB_OUTPUT
           echo "boost_name=${BOOST_PACKAGE_NAME}" >> $GITHUB_OUTPUT
-          echo "lyra_name=${LYRA_PACKAGE_NAME}" >> $GITHUB_OUTPUT
         id: package_name
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
@@ -236,11 +221,6 @@ jobs:
         with:
           name: ${{ steps.package_name.outputs.boost_name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.boost_name }}
-      - name: Upload Lyra Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.package_name.outputs.lyra_name }}
-          path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.lyra_name }}
       - name: Upload Environment
         uses: actions/upload-artifact@v4
         with:
