@@ -26,9 +26,14 @@
   - インストールする内容から `share/cmake/FindLyra.cmake` を削除
   - run.py を実行する時のオプションから `--no-lyra` オプションを削除
   - test/hello 実行時に指定する json フォーマットのオプション mode: lyra を削除し、mode オプションそのものも削除
+  - @melpon
 - [CHANGE] ビルド時に Bazel のインストールを行わないようにする
   - Lyra のために Bazel を利用していたので、関連して削除となる
   - @melpon
+- [ADD] Android 向けに音声出力先変更機能として `SoraAudioManager` を追加する
+  - Android では C++ を経由した OS の API 利用が煩雑となるため、Java で実装し、Sora.aar をビルドして提供を行う
+  - Sora.aar ファイルは Android のパッケージに含める
+  - @tnoho
 
 ## 2024.2.0 (2024-03-04)
 
