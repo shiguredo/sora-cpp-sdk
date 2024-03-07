@@ -11,6 +11,32 @@
 
 ## develop
 
+## 2024.3.0 (2024-03-07)
+
+- [CHANGE] Lyra を Sora C++ SDK から外し、Lyra に関連するファイルや関数、オプションを除ける
+  - SoraSignalingConfig::audio_codec_lyra_bitrate オプションを削除
+  - SoraSignalingConfig::audio_codec_lyra_usedtx オプションを削除
+  - SoraSignalingConfig::check_lyra_version オプションを削除
+  - audio_encoder_lyra.{h,cpp} を削除し、AudioEncoderLyra クラスを削除
+  - audio_decoder_lyra.{h,cpp} を削除し、AudioDecoderLyra クラスを削除
+  - sora_audio_encoder_factory.{h,cpp} を削除し、CreateBuiltinAudioEncoderFactory 関数を削除
+  - sora_audio_decoder_factory.{h,cpp} を削除し、CreateBuiltinAudioDecoderFactory 関数を削除
+  - Version クラスから GetLyraCompatibleVersion 関数を削除
+  - enum class SoraSignalingErrorCode から LYRA_VERSION_INCOMPATIBLE を削除
+  - VERSION ファイルから LYRA_VERSION, LYRA_COMPATIBLE_VERSION を削除
+  - リリースパッケージから `lyra-1.3.2_sora-cpp-sdk-2024.2.0_android.tar.gz` などの Lyra パッケージを生成しないようにする
+  - インストールする内容から `share/cmake/FindLyra.cmake` を削除
+  - run.py を実行する時のオプションから `--no-lyra` オプションを削除
+  - test/hello 実行時に指定する json フォーマットのオプション mode: lyra を削除し、mode オプションそのものも削除
+  - @melpon
+- [CHANGE] ビルド時に Bazel のインストールを行わないようにする
+  - Lyra のために Bazel を利用していたので、関連して削除となる
+  - @melpon
+- [ADD] Android 向けに音声出力先変更機能として `SoraAudioManager` を追加する
+  - Android では C++ を経由した OS の API 利用が煩雑となるため、Java で実装し、Sora.aar をビルドして提供を行う
+  - Sora.aar ファイルは Android のパッケージに含める
+  - @tnoho
+
 ## 2024.2.0 (2024-03-04)
 
 - [CHANGE] `--webrtcbuild`, `--webrtc-fetch` などの webrtc ローカルビルドに関するフラグを削除し、代わりに `--webrtc-build-dir` と `--webrtc-build-args` を追加する
@@ -27,11 +53,6 @@
   - @enm10k
 - [UPDATE] CUDA を 11.8 にあげる
   - 更新時に発生したビルド・エラーを回避するために `include/sora/fix_cuda_noinline_macro_error.h` を追加した
-  - @enm10k
-- [UPDATE] `SoraClientContextConfig`, `SoraVideoEncoderFactoryConfig` に `force_i420_conversion_for_simulcast_adapter` を追加する
-  - use_simulcast_adapter = true の際に、エンコーダー内でビデオ・フレームのバッファーを I420 に変換しているが、この変換の有無をフラグで制御可能にした
-  - force_i420_conversion_for_simulcast_adapter のデフォルト値は true で I420 への変換を行う
-  - 変換を行わない場合、エンコードの性能が向上するが、バッファーの実装によってはサイマルキャストが利用できなくなる
   - @enm10k
 - [UPDATE] Lyra を 1.3.2 にあげる
   - @melpon
@@ -52,6 +73,11 @@
   - @torikizi
 - [ADD] Python コードのフォーマッターに Ruff を使うようにする
   - @voluntas
+- [ADD] `SoraClientContextConfig`, `SoraVideoEncoderFactoryConfig` に `force_i420_conversion_for_simulcast_adapter` を追加する
+  - use_simulcast_adapter = true の際に、エンコーダー内でビデオ・フレームのバッファーを I420 に変換しているが、この変換の有無をフラグで制御可能にした
+  - force_i420_conversion_for_simulcast_adapter のデフォルト値は true で I420 への変換を行う
+  - 変換を行わない場合、エンコードの性能が向上するが、バッファーの実装によってはサイマルキャストが利用できなくなる
+  - @enm10k
 - [ADD] `SoraSignalingObserver` に `OnSwitched` を追加する
   - @enm10k
 - [FIX] Jetson Orin で AV1 を送信中、他のユーザーが後から接続して受信した時に映像が出ない問題を修正

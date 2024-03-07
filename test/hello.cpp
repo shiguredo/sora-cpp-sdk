@@ -47,17 +47,6 @@ void HelloSora::Run() {
       audio_track_id,
       pc_factory()->CreateAudioSource(cricket::AudioOptions()).get());
 
-  if (config_.mode == HelloSoraConfig::Mode::Hello) {
-    FakeVideoCapturerConfig fake_config;
-    fake_config.width = config_.capture_width;
-    fake_config.height = config_.capture_height;
-    fake_config.fps = 30;
-    video_source_ = CreateFakeVideoCapturer(fake_config);
-    std::string video_track_id = rtc::CreateRandomString(16);
-    video_track_ =
-        pc_factory()->CreateVideoTrack(video_track_id, video_source_.get());
-  }
-
   ioc_.reset(new boost::asio::io_context(1));
 
   sora::SoraSignalingConfig config;
@@ -72,12 +61,6 @@ void HelloSora::Run() {
   config.video_bit_rate = config_.video_bit_rate;
   config.multistream = true;
   config.simulcast = config_.simulcast;
-  if (config_.mode == HelloSoraConfig::Mode::Lyra) {
-    config.video = false;
-    config.sora_client = "Hello Sora with Lyra";
-    config.audio_codec_type = "LYRA";
-    config.check_lyra_version = true;
-  }
   conn_ = sora::SoraSignaling::Create(config);
 
   boost::asio::executor_work_guard<boost::asio::io_context::executor_type>
@@ -148,11 +131,6 @@ int main(int argc, char* argv[]) {
   config.channel_id = v.as_object().at("channel_id").as_string().c_str();
   if (auto it = v.as_object().find("role"); it != v.as_object().end()) {
     config.role = it->value().as_string();
-  }
-  if (auto it = v.as_object().find("mode"); it != v.as_object().end()) {
-    if (it->value().as_string() == "lyra") {
-      config.mode = HelloSoraConfig::Mode::Lyra;
-    }
   }
   if (auto it = v.as_object().find("capture_width");
       it != v.as_object().end()) {

@@ -3,12 +3,13 @@ plugins {
 }
 
 android {
-    compileSdk 32
+    namespace "jp.shiguredo.hello"
+    compileSdk 34
 
     defaultConfig {
         applicationId "jp.shiguredo.hello"
         minSdk 29
-        targetSdk 32
+        targetSdk 34
         versionCode 1
         versionName "1.0"
 
@@ -26,7 +27,6 @@ android {
                 //    "-DLIBCXX_INCLUDE_DIR=$projectDir/../../../_source/android/debug/webrtc/src/buildtools/third_party/libc++/trunk/include",
                 arguments "-DCMAKE_TOOLCHAIN_FILE=$projectDir/../../../_install/android/release/android-ndk/build/cmake/android.toolchain.cmake",
                     "-DSORA_DIR=$projectDir/../../../_install/android/release/sora",
-                    "-DLYRA_DIR=$projectDir/../../../_install/android/release/lyra",
                     "-DCMAKE_BUILD_TYPE=Release",
                     "-DBOOST_ROOT=$projectDir/../../../_install/android/release/boost",
                     "-DBLEND2D_ROOT_DIR=$projectDir/../../../_install/android/release/blend2d",
@@ -41,7 +41,7 @@ android {
                     "-DANDROID_PLATFORM=29",
                     "-DANDROID_ABI=arm64-v8a",
                     "-DANDROID_CPP_FEATURES=exceptions rtti",
-                    "-DANDROID_NDK=OFF",
+                    "-DANDROID_NDK=$projectDir/../../../_install/android/release/android-ndk",
                     "-DCMAKE_ANDROID_EXCEPTIONS=ON",
                     "-DCMAKE_CXX_FLAGS='-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE'"
             }

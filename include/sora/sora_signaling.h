@@ -38,7 +38,6 @@ enum class SoraSignalingErrorCode {
   WEBSOCKET_ONERROR,
   PEER_CONNECTION_STATE_FAILED,
   ICE_FAILED,
-  LYRA_VERSION_INCOMPATIBLE,
 };
 
 class SoraSignalingObserver {
@@ -75,8 +74,6 @@ struct SoraSignalingConfig {
   bool audio = true;
   std::string video_codec_type = "";
   std::string audio_codec_type = "";
-  int audio_codec_lyra_bitrate = 0;
-  boost::optional<bool> audio_codec_lyra_usedtx;
   int video_bit_rate = 0;
   int audio_bit_rate = 0;
   boost::json::value video_vp9_params;
@@ -136,7 +133,6 @@ struct SoraSignalingConfig {
   rtc::PacketSocketFactory* socket_factory = nullptr;
 
   bool disable_signaling_url_randomization = false;
-  bool check_lyra_version = false;
 };
 
 class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
