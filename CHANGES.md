@@ -11,6 +11,11 @@
 
 ## develop
 
+## 2024.3.1 (2024-03-07)
+
+- [FIX] Sora C++ SDK を利用してビルドする時に自動的に _LIBCPP_HARDENING_MODE が定義されるように修正
+  - @melpon
+
 ## 2024.3.0 (2024-03-07)
 
 - [CHANGE] Lyra を Sora C++ SDK から外し、Lyra に関連するファイルや関数、オプションを除ける

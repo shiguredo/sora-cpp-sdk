@@ -1659,8 +1659,6 @@ def main():
             cmake_args.append(
                 f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}"
             )
-            cxxflags = ["-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE"]
-            cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
         if platform.target.os == "macos":
             sysroot = cmdcap(["xcrun", "--sdk", "macosx", "--show-sdk-path"])
             target = (
@@ -1706,8 +1704,6 @@ def main():
             cmake_args.append(
                 f"-DSORA_WEBRTC_LDFLAGS={os.path.join(install_dir, 'webrtc.ldflags')}"
             )
-            cxxflags = ["-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE"]
-            cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
         if platform.target.os == "jetson":
             sysroot = os.path.join(install_dir, "rootfs")
             cmake_args.append("-DCMAKE_SYSTEM_NAME=Linux")
@@ -1727,8 +1723,6 @@ def main():
                 f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}"
             )
             cmake_args.append("-DUSE_JETSON_ENCODER=ON")
-            cxxflags = ["-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE"]
-            cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
 
         # NvCodec
         if platform.target.os in ("windows", "ubuntu") and platform.target.arch == "x86_64":
@@ -1792,13 +1786,23 @@ def main():
                 os.path.join(install_dir, "sora", "lib", "libsora.a"),
             )
 
-    if platform.target.os == 'android':
+    if platform.target.os == "android":
         # Android の場合のみライブラリをビルドする
-        with cd(os.path.join(BASE_DIR, 'android', 'Sora')):
-            cmd(['./gradlew', '--no-daemon', 'assembleRelease'])
-            shutil.copyfile(os.path.join(BASE_DIR, 'android', 'Sora', 'Sora',
-                                         'build', 'outputs', 'aar', 'Sora-release.aar'),
-                            os.path.join(install_dir, 'sora', 'lib', 'Sora.aar'))
+        with cd(os.path.join(BASE_DIR, "android", "Sora")):
+            cmd(["./gradlew", "--no-daemon", "assembleRelease"])
+            shutil.copyfile(
+                os.path.join(
+                    BASE_DIR,
+                    "android",
+                    "Sora",
+                    "Sora",
+                    "build",
+                    "outputs",
+                    "aar",
+                    "Sora-release.aar",
+                ),
+                os.path.join(install_dir, "sora", "lib", "Sora.aar"),
+            )
 
     if args.test:
         if platform.target.os == "ios":
@@ -1874,8 +1878,6 @@ def main():
                     cmake_args.append(
                         f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}"
                     )
-                    cxxflags = ["-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE"]
-                    cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
                 if platform.target.os == "jetson":
                     sysroot = os.path.join(install_dir, "rootfs")
                     cmake_args.append("-DJETSON=ON")
@@ -1899,8 +1901,6 @@ def main():
                     cmake_args.append(
                         f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}"
                     )
-                    cxxflags = ["-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE"]
-                    cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
 
                 if platform.target.os in ("windows", "macos", "ubuntu"):
                     cmake_args.append("-DTEST_CONNECT_DISCONNECT=ON")
