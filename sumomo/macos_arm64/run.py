@@ -19,39 +19,57 @@ from base import (  # noqa
     mkdir_p,
     read_version_file,
     get_webrtc_info,
+    build_webrtc,
     install_webrtc,
     build_sora,
     install_sora_and_deps,
     install_cmake,
     install_sdl2,
     install_cli11,
+    add_webrtc_build_arguments,
     add_sora_arguments,
 )
 
 
 def install_deps(
-    source_dir, build_dir, install_dir, debug, sora_dir: Optional[str], sora_args: List[str]
+    source_dir,
+    build_dir,
+    install_dir,
+    debug,
+    webrtc_build_dir: Optional[str],
+    webrtc_build_args: List[str],
+    sora_dir: Optional[str],
+    sora_args: List[str],
 ):
     with cd(BASE_DIR):
         version = read_version_file("VERSION")
 
         # WebRTC
-        install_webrtc_args = {
-            "version": version["WEBRTC_BUILD_VERSION"],
-            "version_file": os.path.join(install_dir, "webrtc.version"),
-            "source_dir": source_dir,
-            "install_dir": install_dir,
-            "platform": "macos_arm64",
-        }
-        install_webrtc(**install_webrtc_args)
+        if webrtc_build_dir is None:
+            install_webrtc_args = {
+                "version": version["WEBRTC_BUILD_VERSION"],
+                "version_file": os.path.join(install_dir, "webrtc.version"),
+                "source_dir": source_dir,
+                "install_dir": install_dir,
+                "platform": "macos_arm64",
+            }
+            install_webrtc(**install_webrtc_args)
+        else:
+            build_webrtc_args = {
+                "platform": "macos_arm64",
+                "webrtc_build_dir": webrtc_build_dir,
+                "webrtc_build_args": webrtc_build_args,
+                "debug": debug,
+            }
+            build_webrtc(**build_webrtc_args)
 
         sysroot = cmdcap(["xcrun", "--sdk", "macosx", "--show-sdk-path"])
 
         # Sora C++ SDK, Boost
         if sora_dir is None:
-            install_sora_and_deps("macos_arm64", source_dir, build_dir, install_dir)
+            install_sora_and_deps("macos_arm64", source_dir, install_dir)
         else:
-            build_sora("macos_arm64", sora_dir, sora_args, debug)
+            build_sora("macos_arm64", sora_dir, sora_args, debug, webrtc_build_dir)
 
         # CMake
         install_cmake_args = {
@@ -98,28 +116,38 @@ def install_deps(
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", action="store_true")
+    add_webrtc_build_arguments(parser)
     add_sora_arguments(parser)
 
     args = parser.parse_args()
 
     configuration_dir = "debug" if args.debug else "release"
-    dir = "macos_arm64"
-    source_dir = os.path.join(BASE_DIR, "_source", dir, configuration_dir)
-    build_dir = os.path.join(BASE_DIR, "_build", dir, configuration_dir)
-    install_dir = os.path.join(BASE_DIR, "_install", dir, configuration_dir)
+    platform = "macos_arm64"
+    source_dir = os.path.join(BASE_DIR, "_source", platform, configuration_dir)
+    build_dir = os.path.join(BASE_DIR, "_build", platform, configuration_dir)
+    install_dir = os.path.join(BASE_DIR, "_install", platform, configuration_dir)
     mkdir_p(source_dir)
     mkdir_p(build_dir)
     mkdir_p(install_dir)
 
-    install_deps(source_dir, build_dir, install_dir, args.debug, args.sora_dir, args.sora_args)
+    install_deps(
+        source_dir,
+        build_dir,
+        install_dir,
+        args.debug,
+        args.webrtc_build_dir,
+        args.webrtc_build_args,
+        args.sora_dir,
+        args.sora_args,
+    )
 
     configuration = "Debug" if args.debug else "Release"
 
     sample_build_dir = os.path.join(build_dir, "sumomo")
     mkdir_p(sample_build_dir)
     with cd(sample_build_dir):
-        webrtc_info = get_webrtc_info(False, source_dir, build_dir, install_dir)
-        sora_info = get_sora_info(install_dir, args.sora_dir, dir, args.debug)
+        webrtc_info = get_webrtc_info("macos_arm64", args.webrtc_build_dir, install_dir, args.debug)
+        sora_info = get_sora_info(platform, args.sora_dir, install_dir, args.debug)
 
         cmake_args = []
         cmake_args.append(f"-DCMAKE_BUILD_TYPE={configuration}")

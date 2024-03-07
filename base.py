@@ -1,3 +1,4 @@
+import filecmp
 import logging
 import multiprocessing
 import os
@@ -315,6 +316,12 @@ def git_clone_shallow(url, hash, dir):
         cmd(["git", "reset", "--hard", "FETCH_HEAD"])
 
 
+def copyfile_if_different(src, dst):
+    if os.path.exists(dst) and filecmp.cmp(src, dst, shallow=False):
+        return
+    shutil.copyfile(src, dst)
+
+
 @versioned
 def install_rootfs(version, install_dir, conf):
     rootfs_dir = os.path.join(install_dir, "rootfs")
@@ -365,43 +372,84 @@ def install_webrtc(version, source_dir, install_dir, platform: str):
     extract(archive, output_dir=install_dir, output_dirname="webrtc")
 
 
+def build_webrtc(platform, webrtc_build_dir, webrtc_build_args, debug):
+    with cd(webrtc_build_dir):
+        args = ["--webrtc-nobuild-ios-framework", "--webrtc-nobuild-android-aar"]
+        if debug:
+            args += ["--debug"]
+
+        args += webrtc_build_args
+
+        cmd(["python3", "run.py", "build", platform, *args])
+
+        # インクルードディレクトリを増やしたくないので、
+        # __config_site を libc++ のディレクトリにコピーしておく
+        webrtc_source_dir = os.path.join(webrtc_build_dir, "_source", platform, "webrtc")
+        src_config = os.path.join(
+            webrtc_source_dir, "src", "buildtools", "third_party", "libc++", "__config_site"
+        )
+        dst_config = os.path.join(
+            webrtc_source_dir, "src", "third_party", "libc++", "src", "include", "__config_site"
+        )
+        copyfile_if_different(src_config, dst_config)
+
+
 class WebrtcInfo(NamedTuple):
     version_file: str
+    deps_file: str
     webrtc_include_dir: str
+    webrtc_source_dir: Optional[str]
     webrtc_library_dir: str
     clang_dir: str
     libcxx_dir: str
 
 
 def get_webrtc_info(
-    webrtcbuild: bool, source_dir: str, build_dir: str, install_dir: str
+    platform: str, webrtc_build_dir: Optional[str], install_dir: str, debug: bool
 ) -> WebrtcInfo:
-    webrtc_source_dir = os.path.join(source_dir, "webrtc")
-    webrtc_build_dir = os.path.join(build_dir, "webrtc")
     webrtc_install_dir = os.path.join(install_dir, "webrtc")
 
-    if webrtcbuild:
-        return WebrtcInfo(
-            version_file=os.path.join(source_dir, "webrtc-build", "VERSION"),
-            webrtc_include_dir=os.path.join(webrtc_source_dir, "src"),
-            webrtc_library_dir=os.path.join(webrtc_build_dir, "obj")
-            if platform.system() == "Windows"
-            else webrtc_build_dir,
-            clang_dir=os.path.join(
-                webrtc_source_dir, "src", "third_party", "llvm-build", "Release+Asserts"
-            ),
-            libcxx_dir=os.path.join(
-                webrtc_source_dir, "src", "buildtools", "third_party", "libc++", "src"
-            ),
-        )
-    else:
+    if webrtc_build_dir is None:
         return WebrtcInfo(
             version_file=os.path.join(webrtc_install_dir, "VERSIONS"),
+            deps_file=os.path.join(webrtc_install_dir, "DEPS"),
             webrtc_include_dir=os.path.join(webrtc_install_dir, "include"),
-            webrtc_library_dir=os.path.join(install_dir, "webrtc", "lib"),
+            webrtc_source_dir=None,
+            webrtc_library_dir=os.path.join(webrtc_install_dir, "lib"),
             clang_dir=os.path.join(install_dir, "llvm", "clang"),
             libcxx_dir=os.path.join(install_dir, "llvm", "libcxx"),
         )
+    else:
+        webrtc_build_source_dir = os.path.join(webrtc_build_dir, "_source", platform, "webrtc")
+        configuration = "debug" if debug else "release"
+        webrtc_build_build_dir = os.path.join(
+            webrtc_build_dir, "_build", platform, configuration, "webrtc"
+        )
+
+        return WebrtcInfo(
+            version_file=os.path.join(webrtc_build_dir, "VERSION"),
+            deps_file=os.path.join(webrtc_build_dir, "DEPS"),
+            webrtc_include_dir=os.path.join(webrtc_build_source_dir, "src"),
+            webrtc_source_dir=os.path.join(webrtc_build_source_dir, "src"),
+            webrtc_library_dir=webrtc_build_build_dir,
+            clang_dir=os.path.join(
+                webrtc_build_source_dir, "src", "third_party", "llvm-build", "Release+Asserts"
+            ),
+            libcxx_dir=os.path.join(webrtc_build_source_dir, "src", "third_party", "libc++", "src"),
+        )
+
+
+@versioned
+def install_sora(version, source_dir, install_dir, platform: str):
+    win = platform.startswith("windows_")
+    filename = f'sora-cpp-sdk-{version}_{platform}.{"zip" if win else "tar.gz"}'
+    rm_rf(os.path.join(source_dir, filename))
+    archive = download(
+        f"https://github.com/shiguredo/sora-cpp-sdk/releases/download/{version}/{filename}",
+        output_dir=source_dir,
+    )
+    rm_rf(os.path.join(install_dir, "sora"))
+    extract(archive, output_dir=install_dir, output_dirname="sora")
 
 
 class SoraInfo(NamedTuple):
@@ -409,7 +457,7 @@ class SoraInfo(NamedTuple):
     boost_install_dir: str
 
 
-def install_sora_and_deps(platform: str, source_dir: str, build_dir: str, install_dir: str):
+def install_sora_and_deps(platform: str, source_dir: str, install_dir: str):
     version = read_version_file("VERSION")
 
     # Boost
@@ -434,37 +482,20 @@ def install_sora_and_deps(platform: str, source_dir: str, build_dir: str, instal
     install_sora(**install_sora_args)
 
 
-# 内部で os.path.abspath() を利用しており、 os.path.abspath() はカレントディレクトリに依存するため、
-# この関数を利用する場合は ArgumentParser.parse_args() 実行前にカレントディレクトリを変更してはならない
-#
-# また、 --sora-args の指定には `--sora-args='--test'` のように `=` を使う必要がある
-# `--sora-args '--test'` のようにスペースを使うと、ハイフンから始まるオプションが正しく解釈されない
-def add_sora_arguments(parser):
-    parser.add_argument(
-        "--sora-dir",
-        type=os.path.abspath,
-        default=None,
-        help="Refer to local Sora C++ SDK. "
-        "When this option is specified, Sora C++ SDK will also be built.",
-    )
-    parser.add_argument(
-        "--sora-args",
-        type=shlex.split,
-        default=[],
-        help="Options for building local Sora C++ SDK when `--sora-dir` is specified.",
-    )
-
-
-def build_sora(platform: str, sora_dir: str, sora_args: List[str], debug: bool):
+def build_sora(
+    platform: str, sora_dir: str, sora_args: List[str], debug: bool, webrtc_build_dir: Optional[str]
+):
     if debug and "--debug" not in sora_args:
         sora_args = ["--debug", *sora_args]
+    if webrtc_build_dir is not None:
+        sora_args = ["--webrtc-build-dir", webrtc_build_dir, *sora_args]
 
     with cd(sora_dir):
         cmd(["python3", "run.py", platform, *sora_args])
 
 
 def get_sora_info(
-    install_dir: str, sora_dir: Optional[str], platform: str, debug: bool
+    platform: str, sora_dir: Optional[str], install_dir: str, debug: bool
 ) -> SoraInfo:
     if sora_dir is not None:
         configuration = "debug" if debug else "release"
@@ -655,19 +686,6 @@ def install_sdl2(
 
 
 @versioned
-def install_sora(version, source_dir, install_dir, platform: str):
-    win = platform.startswith("windows_")
-    filename = f'sora-cpp-sdk-{version}_{platform}.{"zip" if win else "tar.gz"}'
-    rm_rf(os.path.join(source_dir, filename))
-    archive = download(
-        f"https://github.com/shiguredo/sora-cpp-sdk/releases/download/{version}/{filename}",
-        output_dir=source_dir,
-    )
-    rm_rf(os.path.join(install_dir, "sora"))
-    extract(archive, output_dir=install_dir, output_dirname="sora")
-
-
-@versioned
 def install_cli11(version, install_dir):
     cli11_install_dir = os.path.join(install_dir, "cli11")
     rm_rf(cli11_install_dir)
@@ -682,4 +700,42 @@ def install_cli11(version, install_dir):
             "https://github.com/CLIUtils/CLI11.git",
             cli11_install_dir,
         ]
+    )
+
+
+# 内部で os.path.abspath() を利用しており、 os.path.abspath() はカレントディレクトリに依存するため、
+# この関数を利用する場合は ArgumentParser.parse_args() 実行前にカレントディレクトリを変更してはならない
+#
+# また、 --sora-args の指定には `--sora-args='--test'` のように `=` を使う必要がある
+# `--sora-args '--test'` のようにスペースを使うと、ハイフンから始まるオプションが正しく解釈されない
+def add_sora_arguments(parser):
+    parser.add_argument(
+        "--sora-dir",
+        type=os.path.abspath,
+        default=None,
+        help="Refer to local Sora C++ SDK. "
+        "When this option is specified, Sora C++ SDK will also be built.",
+    )
+    parser.add_argument(
+        "--sora-args",
+        type=shlex.split,
+        default=[],
+        help="Options for building local Sora C++ SDK when `--sora-dir` is specified.",
+    )
+
+
+# add_sora_arguments と同様の注意点があるので注意すること
+def add_webrtc_build_arguments(parser):
+    parser.add_argument(
+        "--webrtc-build-dir",
+        type=os.path.abspath,
+        default=None,
+        help="Refer to local webrtc-build. "
+        "When this option is specified, webrtc-build will also be built.",
+    )
+    parser.add_argument(
+        "--webrtc-build-args",
+        type=shlex.split,
+        default=[],
+        help="Options for building local webrtc-build when `--webrtc-build-dir` is specified.",
     )

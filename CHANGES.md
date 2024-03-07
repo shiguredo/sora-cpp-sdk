@@ -13,6 +13,10 @@
 
 - [CHANGE] Lyra を削除する
   - @enm10k
+- [ADD] 各 run.py に --sora-dir と --sora-args オプションを追加する
+  - @enm10k
+- [ADD] 各 run.py に --webrtc-build-dir と --webrtc-build-args オプションを追加する
+  - @melpon
 - [UPDATE] VERSION のライブラリをアップデートする
   - SORA_CPP_SDK_VERSION を 2024.3.1 にあげる
   - @enm10k
