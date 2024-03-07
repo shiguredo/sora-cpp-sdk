@@ -22,7 +22,6 @@ set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_STATIC_RUNTIME ON)
 
 find_package(Boost REQUIRED COMPONENTS json filesystem)
-find_package(Lyra REQUIRED)
 find_package(WebRTC REQUIRED)
 find_package(Sora REQUIRED)
 find_package(SDL2 REQUIRED)
@@ -41,20 +40,6 @@ set_target_properties(sumomo
   PROPERTIES
     # CRTライブラリを静的リンクさせる
     MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
-)
-
-# Lyra ファイルのコピー
-add_custom_command(
-  TARGET sumomo POST_BUILD
-  COMMAND
-    ${CMAKE_COMMAND} -E copy_directory
-    ${LYRA_DIR}/share/model_coeffs/
-    ${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/model_coeffs/
-  DEPENDS
-    ${LYRA_DIR}/share/model_coeffs/lyra_config.binarypb
-    ${LYRA_DIR}/share/model_coeffs/lyragan.tflite
-    ${LYRA_DIR}/share/model_coeffs/quantizer.tflite
-    ${LYRA_DIR}/share/model_coeffs/soundstream_encoder.tflite
 )
 
 target_compile_definitions(sumomo

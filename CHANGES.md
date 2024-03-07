@@ -9,6 +9,11 @@
 - FIX
   - バグ修正
 
+## develop
+
+- [CHANGE] Lyra を削除する
+  - @enm10k
+
 ## sora-cpp-sdk-2024.2.0
 
 - [CHANGE] momo_sample を sumomo にリネームする

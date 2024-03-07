@@ -81,7 +81,7 @@ def install_deps(source_dir, build_dir, install_dir, debug, sora_dir: Optional[s
         }
         install_llvm(**install_llvm_args)
 
-        # Sora C++ SDK, Boost, Lyra
+        # Sora C++ SDK, Boost
         if sora_dir is None:
             install_sora_and_deps('ubuntu-20.04_armv8_jetson', source_dir, build_dir, install_dir)
         else:
@@ -137,7 +137,6 @@ def main():
         cmake_args = []
         cmake_args.append(f'-DCMAKE_BUILD_TYPE={configuration}')
         cmake_args.append(f"-DBOOST_ROOT={cmake_path(sora_info.boost_install_dir)}")
-        cmake_args.append(f"-DLYRA_DIR={cmake_path(sora_info.lyra_install_dir)}")
         cmake_args.append(f"-DWEBRTC_INCLUDE_DIR={cmake_path(webrtc_info.webrtc_include_dir)}")
         cmake_args.append(f"-DWEBRTC_LIBRARY_DIR={cmake_path(webrtc_info.webrtc_library_dir)}")
         cmake_args.append(f"-DSORA_DIR={cmake_path(sora_info.sora_install_dir)}")
