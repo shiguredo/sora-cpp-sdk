@@ -14,7 +14,7 @@
 - [CHANGE] Lyra を削除する
   - @enm10k
 - [UPDATE] VERSION のライブラリをアップデートする
-  - SORA_CPP_SDK_VERSION を 2024.3.0 にあげる
+  - SORA_CPP_SDK_VERSION を 2024.3.1 にあげる
   - @enm10k
 
 ## sora-cpp-sdk-2024.2.0
