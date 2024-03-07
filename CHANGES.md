@@ -35,6 +35,8 @@
 - [ADD] Android 向けに音声出力先変更機能として `SoraAudioManager` を追加する
   - Android では C++ を経由した OS の API 利用が煩雑となるため、Java で実装し、Sora.aar をビルドして提供を行う
   - Sora.aar ファイルは Android のパッケージに含める
+  - iOS 向けとは異なりインスタンス生成が必要
+    - API レベル 31 でオーディオデバイスの切り替えや Bluetooth ヘッドセットのスイッチングの API が変更となり、API レベルに応じて処理を切り替える必要があったため
   - @tnoho
 
 ## 2024.2.0 (2024-03-04)
