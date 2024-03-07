@@ -11,6 +11,8 @@
 
 ## develop
 
+## 2024.3.0 (2024-03-07)
+
 - [CHANGE] Lyra を Sora C++ SDK から外し、Lyra に関連するファイルや関数、オプションを除ける
   - SoraSignalingConfig::audio_codec_lyra_bitrate オプションを削除
   - SoraSignalingConfig::audio_codec_lyra_usedtx オプションを削除
