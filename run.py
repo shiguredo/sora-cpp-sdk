@@ -1566,8 +1566,8 @@ def main():
     parser.add_argument("target", choices=AVAILABLE_TARGETS)
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--relwithdebinfo", action="store_true")
-    parser.add_argument("--webrtc-build-dir")
-    parser.add_argument("--webrtc-build-args", default="")
+    parser.add_argument("--webrtc-build-dir", type=os.path.abspath)
+    parser.add_argument("--webrtc-build-args", default="", type=shlex.split)
     parser.add_argument("--test", action="store_true")
     parser.add_argument("--run", action="store_true")
     parser.add_argument("--package", action="store_true")
@@ -1604,10 +1604,6 @@ def main():
     mkdir_p(source_dir)
     mkdir_p(build_dir)
     mkdir_p(install_dir)
-    webrtc_build_dir = (
-        os.path.abspath(args.webrtc_build_dir) if args.webrtc_build_dir is not None else None
-    )
-    webrtc_build_args = shlex.split(args.webrtc_build_args)
 
     install_deps(
         platform,
@@ -1615,8 +1611,8 @@ def main():
         build_dir,
         install_dir,
         args.debug,
-        webrtc_build_dir=webrtc_build_dir,
-        webrtc_build_args=webrtc_build_args,
+        webrtc_build_dir=args.webrtc_build_dir,
+        webrtc_build_args=args.webrtc_build_args,
     )
 
     configuration = "Release"
@@ -1633,7 +1629,9 @@ def main():
         cmake_args.append(f"-DCMAKE_INSTALL_PREFIX={cmake_path(os.path.join(install_dir, 'sora'))}")
         cmake_args.append(f"-DBOOST_ROOT={cmake_path(os.path.join(install_dir, 'boost'))}")
         webrtc_platform = get_webrtc_platform(platform)
-        webrtc_info = get_webrtc_info(webrtc_platform, webrtc_build_dir, install_dir, args.debug)
+        webrtc_info = get_webrtc_info(
+            webrtc_platform, args.webrtc_build_dir, install_dir, args.debug
+        )
         webrtc_version = read_version_file(webrtc_info.version_file)
         webrtc_deps = read_version_file(webrtc_info.deps_file)
         with cd(BASE_DIR):
