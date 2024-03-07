@@ -11,6 +11,11 @@
 
 ## develop
 
+## 2024.3.1 (2024-03-07)
+
+- [FIX] Sora C++ SDK を利用してビルドする時に自動的に _LIBCPP_HARDENING_MODE が定義されるように修正
+  - @melpon
+
 ## 2024.3.0 (2024-03-07)
 
 - [CHANGE] Lyra を Sora C++ SDK から外し、Lyra に関連するファイルや関数、オプションを除ける
@@ -35,6 +40,8 @@
 - [ADD] Android 向けに音声出力先変更機能として `SoraAudioManager` を追加する
   - Android では C++ を経由した OS の API 利用が煩雑となるため、Java で実装し、Sora.aar をビルドして提供を行う
   - Sora.aar ファイルは Android のパッケージに含める
+  - iOS 向けとは異なりインスタンス生成が必要
+    - API レベル 31 でオーディオデバイスの切り替えや Bluetooth ヘッドセットのスイッチングの API が変更となり、API レベルに応じて処理を切り替える必要があったため
   - @tnoho
 
 ## 2024.2.0 (2024-03-04)

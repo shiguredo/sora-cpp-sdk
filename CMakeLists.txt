@@ -397,6 +397,7 @@ elseif (SORA_TARGET_OS STREQUAL "android")
       _LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS
       _LIBCXXABI_DISABLE_VISIBILITY_ANNOTATIONS
       _LIBCPP_ENABLE_NODISCARD
+      _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE
       # https://github.com/boostorg/container_hash/issues/22 と同じ問題が clang-15 でも起きるので、これを手動で定義して回避する
       BOOST_NO_CXX98_FUNCTION_BASE
   )
@@ -411,6 +412,7 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
       _LIBCPP_ABI_NAMESPACE=Cr
       _LIBCPP_ABI_VERSION=2
       _LIBCPP_DISABLE_AVAILABILITY
+      _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE
       # https://github.com/boostorg/container_hash/issues/22 と同じ問題が clang-15 でも起きるので、これを手動で定義して回避する
       BOOST_NO_CXX98_FUNCTION_BASE
   )
@@ -498,6 +500,7 @@ elseif (SORA_TARGET_OS STREQUAL "jetson")
       _LIBCPP_ABI_NAMESPACE=Cr
       _LIBCPP_ABI_VERSION=2
       _LIBCPP_DISABLE_AVAILABILITY
+      _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE
       # https://github.com/boostorg/container_hash/issues/22 と同じ問題が clang-15 でも起きるので、これを手動で定義して回避する
       BOOST_NO_CXX98_FUNCTION_BASE
   )
