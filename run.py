@@ -1,4 +1,5 @@
 import argparse
+import filecmp
 import glob
 import hashlib
 import logging
@@ -362,6 +363,12 @@ def apply_patch(patch, dir, depth):
                 cmd(["patch", f"-p{depth}"], stdin=stdin)
 
 
+def copyfile_if_different(src, dst):
+    if os.path.exists(dst) and filecmp.cmp(src, dst, shallow=False):
+        return
+    shutil.copyfile(src, dst)
+
+
 # NOTE(enm10k): shutil.copytree に Python 3.8 で追加された dirs_exist_ok=True を指定して使いたかったが、
 # GitHub Actions の Windows のランナー (widnwos-2019) にインストールされている Python のバージョンが古くて利用できなかった
 # actions/setup-python で Python 3.8 を設定してビルドしたところ、 Lyra のビルドがエラーになったためこの関数を自作した
@@ -415,7 +422,7 @@ def build_webrtc(platform, webrtc_build_dir, webrtc_build_args, debug):
         dst_config = os.path.join(
             webrtc_source_dir, "src", "third_party", "libc++", "src", "include", "__config_site"
         )
-        shutil.copyfile(src_config, dst_config)
+        copyfile_if_different(src_config, dst_config)
 
 
 class WebrtcInfo(NamedTuple):
