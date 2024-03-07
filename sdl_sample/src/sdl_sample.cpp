@@ -22,8 +22,6 @@ struct SDLSampleConfig {
   std::string role;
   std::string video_codec_type;
   std::string audio_codec_type;
-  int audio_codec_lyra_bitrate = 0;
-  boost::optional<bool> audio_codec_lyra_usedtx;
   boost::optional<bool> multistream;
   int width = 640;
   int height = 480;
@@ -79,8 +77,6 @@ class SDLSample : public std::enable_shared_from_this<SDLSample>,
     config.role = config_.role;
     config.video_codec_type = config_.video_codec_type;
     config.audio_codec_type = config_.audio_codec_type;
-    config.audio_codec_lyra_bitrate = config_.audio_codec_lyra_bitrate;
-    config.audio_codec_lyra_usedtx = config_.audio_codec_lyra_usedtx;
     config.metadata = config_.metadata;
     conn_ = sora::SoraSignaling::Create(config);
 
@@ -221,12 +217,7 @@ int main(int argc, char* argv[]) {
       ->check(CLI::IsMember({"", "VP8", "VP9", "AV1", "H264", "H265"}));
   app.add_option("--audio-codec-type", config.audio_codec_type,
                  "Audio codec for send")
-      ->check(CLI::IsMember({"", "OPUS", "LYRA"}));
-  app.add_option("--audio-codec-lyra-bitrate", config.audio_codec_lyra_bitrate,
-                 "Bitrate used in the audio codec Lyra");
-  add_optional_bool(app, "--audio-codec-lyra-usedtx",
-                    config.audio_codec_lyra_usedtx,
-                    "Use DTX used in the audio codec Lyra (default: none)");
+      ->check(CLI::IsMember({"", "OPUS"}));
   std::string metadata;
   app.add_option("--metadata", metadata,
                  "Signaling metadata used in connect message")
@@ -257,7 +248,8 @@ int main(int argc, char* argv[]) {
     rtc::LogMessage::LogThreads();
   }
 
-  auto context = sora::SoraClientContext::Create(sora::SoraClientContextConfig());
+  auto context =
+      sora::SoraClientContext::Create(sora::SoraClientContextConfig());
   auto sdlsample = std::make_shared<SDLSample>(context, config);
   sdlsample->Run();
 

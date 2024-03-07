@@ -22,7 +22,6 @@ from base import (  # noqa
     build_sora,
     install_sora_and_deps,
     install_cmake,
-    install_sora,
     install_cli11,
     add_sora_arguments,
 )
@@ -123,7 +122,6 @@ def main():
         cmake_args = []
         cmake_args.append(f'-DCMAKE_BUILD_TYPE={configuration}')
         cmake_args.append(f"-DBOOST_ROOT={cmake_path(sora_info.boost_install_dir)}")
-        cmake_args.append(f"-DLYRA_DIR={cmake_path(sora_info.lyra_install_dir)}")
         cmake_args.append(f"-DWEBRTC_INCLUDE_DIR={cmake_path(webrtc_info.webrtc_include_dir)}")
         cmake_args.append(f"-DWEBRTC_LIBRARY_DIR={cmake_path(webrtc_info.webrtc_library_dir)}")
         cmake_args.append(f"-DSORA_DIR={cmake_path(sora_info.sora_install_dir)}")

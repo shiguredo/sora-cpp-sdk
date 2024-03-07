@@ -399,7 +399,6 @@ def get_webrtc_info(webrtcbuild: bool, source_dir: str, build_dir: str, install_
 class SoraInfo(NamedTuple):
     sora_install_dir: str
     boost_install_dir: str
-    lyra_install_dir: str
 
 
 def install_sora_and_deps(platform: str, source_dir:str, build_dir:str, install_dir: str):
@@ -415,17 +414,6 @@ def install_sora_and_deps(platform: str, source_dir:str, build_dir:str, install_
         'platform': platform,
     }
     install_boost(**install_boost_args)
-
-    # Lyra
-    install_lyra_args = {
-        'version': version['LYRA_VERSION'],
-        'version_file': os.path.join(install_dir, 'lyra.version'),
-        'source_dir': source_dir,
-        'install_dir': install_dir,
-        'sora_version': version['SORA_CPP_SDK_VERSION'],
-        'platform': platform,
-    }
-    install_lyra(**install_lyra_args)
 
     # Sora C++ SDK
     install_sora_args = {
@@ -467,8 +455,7 @@ def get_sora_info(install_dir: str, sora_dir: Optional[str], platform: str, debu
 
     return SoraInfo(
         sora_install_dir = os.path.join(install_dir, 'sora'),
-        boost_install_dir = os.path.join(install_dir, 'boost'),
-        lyra_install_dir = os.path.join(install_dir, 'lyra'),
+        boost_install_dir = os.path.join(install_dir, 'boost')
     )
 
 
@@ -507,18 +494,6 @@ def install_boost(version, source_dir, install_dir, sora_version, platform: str)
         output_dir=source_dir)
     rm_rf(os.path.join(install_dir, 'boost'))
     extract(archive, output_dir=install_dir, output_dirname='boost')
-
-
-@versioned
-def install_lyra(version, source_dir, install_dir, sora_version, platform: str):
-    win = platform.startswith("windows_")
-    filename = f'lyra-{version}_sora-cpp-sdk-{sora_version}_{platform}.{"zip" if win else "tar.gz"}'
-    rm_rf(os.path.join(source_dir, filename))
-    archive = download(
-        f'https://github.com/shiguredo/sora-cpp-sdk/releases/download/{sora_version}/{filename}',
-        output_dir=source_dir)
-    rm_rf(os.path.join(install_dir, 'lyra'))
-    extract(archive, output_dir=install_dir, output_dirname='lyra')
 
 
 def cmake_path(path: str) -> str:
