@@ -1,11 +1,15 @@
 {
-    "python.linting.flake8Enabled": true,
-    "python.linting.flake8Args": ["--max-line-length=120"],
-    "python.linting.enabled": true,
-    "python.formatting.autopep8Args": ["--max-line-length", "120", "--experimental"],
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.typeCheckingMode": "basic",
     "[python]": {
         "editor.formatOnSave": true,
-        "editor.formatOnSaveMode": "file"
+        "editor.formatOnSaveMode": "file",
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.autoIndent": "full",
+        "editor.codeActionsOnSave": {
+            "source.fixAll.ruff": "always",
+            "source.organizeImports.ruff": "explicit"
+        }
     },
     "[cpp]": {
         "editor.formatOnSave": true
