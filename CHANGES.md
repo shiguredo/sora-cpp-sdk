@@ -21,7 +21,7 @@
 
 - [CHANGE] momo_sample を sumomo にリネームする
   - @enm10k
-- [UPDATE] VERSIONS のライブラリをアップデートする
+- [UPDATE] VERSION のライブラリをアップデートする
   - SORA_CPP_SDK_VERSION を 2024.2.0 にあげる
   - WEBRTC_BUILD_VERSION を m121.6167.3.0 にあげる
   - BOOST_VERSION を 1.84.0 にあげる
@@ -42,13 +42,13 @@
   - JetPack 5.1.1, 5.1.2 で動作を確認
   - JetPack 5.1 では、互換性の問題で JetsonJpegDecoder がエラーになることを確認
   - @enm10k
-- [UPDATE] VERSIONS のライブラリをアップデートする
+- [UPDATE] VERSION のライブラリをアップデートする
   - SORA_CPP_SDK_VERSION を 2024.1.0 にあげる
   - @miosakuma
 
 ## sora-cpp-sdk-2023.17.0
 
-- [UPDATE] VERSIONS のライブラリをアップデートする
+- [UPDATE] VERSION のライブラリをアップデートする
   - SORA_CPP_SDK_VERSION を 2023.17.0 にあげる
   - WEBRTC_BUILD_VERSION を m120.6099.1.2 にあげる
   - @miosakuma
@@ -61,7 +61,7 @@
 - [UPDATE]
   - momo_sample に --hw-mjpeg-decoder オプションを追加する
   - @enm10k
-- [UPDATE] VERSIONS のライブラリをアップデートする
+- [UPDATE] VERSION のライブラリをアップデートする
   - SORA_CPP_SDK_VERSION を 2023.15.1 にあげる
   - WEBRTC_BUILD_VERSION を m119.6045.2.1 にあげる
   - CMake を 3.27.7 に上げる
@@ -69,14 +69,14 @@
 
 ## sora-cpp-sdk-2023.14.0
 
-- [UPDATE] VERSIONS のライブラリをアップデートする
+- [UPDATE] VERSION のライブラリをアップデートする
   - SORA_CPP_SDK_VERSION を 2023.14.0 にあげる
   - WEBRTC_BUILD_VERSION を m117.5938.2.0 にあげる
   - @torikizi
 
 ## sora-cpp-sdk-2023.13.0
 
-- [UPDATE] VERSIONS のライブラリをアップデートする
+- [UPDATE] VERSION のライブラリをアップデートする
   - SORA_CPP_SDK_VERSION を 2023.13.0 にあげる
   - WEBRTC_BUILD_VERSION を m116.5845.6.1 にあげる
   - @torikizi
@@ -92,7 +92,7 @@
 
 ## sora-cpp-sdk-2023.7.0
 
-- [UPDATE] VERSIONS のライブラリをアップデートする
+- [UPDATE] VERSION のライブラリをアップデートする
   - SORA_CPP_SDK_VERSION を 2023.7.0 にあげる
   - CMAKE_VERSION を 3.26.4 にあげる
   - @torikizi
@@ -117,7 +117,7 @@
   - @melpon
 - [UPDATE] JetPack 5.1 に対応する
   - @melpon
-- [UPDATE] VERSIONS のライブラリをアップデートする
+- [UPDATE] VERSION のライブラリをアップデートする
   - SORA_CPP_SDK_VERSION を 2023.5.0 にあげる
   - WEBRTC_BUILD_VERSION を m114.5735.0.1 にあげる
   - BOOST_VERSION を 1.82.0 にあげる
