@@ -50,7 +50,7 @@ class SDLSample : public std::enable_shared_from_this<SDLSample>,
 
       std::string video_track_id = rtc::CreateRandomString(16);
       video_track_ = context_->peer_connection_factory()->CreateVideoTrack(
-          video_track_id, video_source.get());
+          video_source, video_track_id);
       if (config_.show_me) {
         renderer_->AddTrack(video_track_.get());
       }

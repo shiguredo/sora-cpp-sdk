@@ -114,7 +114,7 @@ class MomoSample : public std::enable_shared_from_this<MomoSample>,
                               ->CreateAudioSource(cricket::AudioOptions())
                               .get());
       video_track_ = context_->peer_connection_factory()->CreateVideoTrack(
-          video_track_id, video_source.get());
+          video_source, video_track_id);
       if (config_.use_sdl && config_.show_me) {
         renderer_->AddTrack(video_track_.get());
       }
