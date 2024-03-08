@@ -1258,12 +1258,12 @@ def install_deps(
             ]
             install_boost_args["visibility"] = "hidden"
             if platform.target.arch == "x86_64":
-                install_boost_args["cflags"] += ["-target", "x86_64-apple-darwin"]
-                install_boost_args["cxxflags"] += ["-target", "x86_64-apple-darwin"]
+                install_boost_args["cflags"].extend(["-target", "x86_64-apple-darwin"])
+                install_boost_args["cxxflags"].extend(["-target", "x86_64-apple-darwin"])
                 install_boost_args["architecture"] = "x86"
             if platform.target.arch == "arm64":
-                install_boost_args["cflags"] += ["-target", "aarch64-apple-darwin"]
-                install_boost_args["cxxflags"] += ["-target", "aarch64-apple-darwin"]
+                install_boost_args["cflags"].extend(["-target", "aarch64-apple-darwin"])
+                install_boost_args["cxxflags"].extend(["-target", "aarch64-apple-darwin"])
                 install_boost_args["architecture"] = "arm"
         elif platform.target.os == "ios":
             install_boost_args["target_os"] = "iphone"
