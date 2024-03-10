@@ -28,7 +28,9 @@ import android.util.Log;
 import java.util.List;
 
 class SoraBluetoothManager {
-    private static final String TAG = "SoraBluetoothManager";
+    private static final String TAG = "SoraAudioManagerBluetooth";
+    // Bluetooth SCO の開始実行遅延
+    private static final int BLUETOOTH_START_SCO_DELAY_MS = 5000;
     // Bluetooth SCO の開始/終了タイムアウト
     private static final int BLUETOOTH_SCO_TIMEOUT_MS = 4000;
     // SCO 接続試行上限
@@ -61,10 +63,18 @@ class SoraBluetoothManager {
     private BluetoothDevice bluetoothDevice;
     int scoConnectionAttempts;
 
-    private final Runnable bluetoothTimeoutRunnable = new Runnable() {
+    private final Runnable updateAudioDeviceStateRunnable = new Runnable() {
         @Override
         public void run() {
-            bluetoothTimeout();
+            Log.d(TAG, "updateAudioDeviceStateRunnable");
+            updateAudioDeviceState();
+        }
+    };
+
+    private final Runnable checkScoTimeoutRunnable = new Runnable() {
+        @Override
+        public void run() {
+            checkScoTimeout();
         }
     };
 
@@ -75,6 +85,8 @@ class SoraBluetoothManager {
                 return;
             }
             bluetoothHeadset = (BluetoothHeadset) proxy;
+
+            Log.d(TAG, "onServiceConnected");
             updateAudioDeviceState();
         }
 
@@ -87,6 +99,8 @@ class SoraBluetoothManager {
             bluetoothHeadset = null;
             bluetoothDevice = null;
             bluetoothState = State.HEADSET_UNAVAILABLE;
+
+            Log.d(TAG, "onServiceDisconnected");
             updateAudioDeviceState();
         }
     }
@@ -118,10 +132,14 @@ class SoraBluetoothManager {
                 if (state == BluetoothHeadset.STATE_CONNECTED) {
                     // Bluetooth ヘッドセットとが接続された
                     scoConnectionAttempts = 0;
-                    updateAudioDeviceState();
+
+                    Log.d(TAG, "BluetoothHeadset.STATE_CONNECTED");
+                    handler.postDelayed(updateAudioDeviceStateRunnable, BLUETOOTH_START_SCO_DELAY_MS);
                 } else if (state == BluetoothHeadset.STATE_DISCONNECTED) {
                     // おそらく Bluetooth が通話中に切られた
                     stopScoAudio();
+
+                    Log.d(TAG, "BluetoothHeadset.STATE_DISCONNECTED");
                     updateAudioDeviceState();
                 }
                 /* SCO の状態変化 */
@@ -134,16 +152,18 @@ class SoraBluetoothManager {
                         + "sb=" + isInitialStickyBroadcast() + ", "
                         + "BT state: " + bluetoothState);
                 if (state == BluetoothHeadset.STATE_AUDIO_CONNECTED) {
-                    cancelTimer();
+                    cancelCheckScoTimer();
                     if (bluetoothState == State.SCO_CONNECTING) {
                         bluetoothState = State.SCO_CONNECTED;
                         scoConnectionAttempts = 0;
+                        Log.d(TAG, "State.SCO_CONNECTED");
                         updateAudioDeviceState();
                     }
                 } else if (state == BluetoothHeadset.STATE_AUDIO_DISCONNECTED) {
                     if (isInitialStickyBroadcast()) {
                         return;
                     }
+                    Log.d(TAG, "BluetoothHeadset.STATE_AUDIO_DISCONNECTED");
                     updateAudioDeviceState();
                 }
             }
@@ -219,7 +239,7 @@ class SoraBluetoothManager {
             return;
         }
         context.unregisterReceiver(bluetoothHeadsetReceiver);
-        cancelTimer();
+        cancelCheckScoTimer();
         if (bluetoothHeadset != null) {
             bluetoothAdapter.closeProfileProxy(BluetoothProfile.HEADSET, bluetoothHeadset);
             bluetoothHeadset = null;
@@ -254,7 +274,7 @@ class SoraBluetoothManager {
         // bluetooth SCO ヘッドセットの使用をリクエストする
         audioManager.setBluetoothScoOn(true);
         scoConnectionAttempts++;
-        startTimer();
+        startCheckScoTimer();
         return true;
     }
 
@@ -263,7 +283,7 @@ class SoraBluetoothManager {
         if (bluetoothState != State.SCO_CONNECTING && bluetoothState != State.SCO_CONNECTED) {
             return;
         }
-        cancelTimer();
+        cancelCheckScoTimer();
         // Bluetooth SCO を終了する
         audioManager.stopBluetoothSco();
         // bluetooth SCO ヘッドセットを使用しない
@@ -290,18 +310,18 @@ class SoraBluetoothManager {
         soraAudioManagerLegacy.updateAudioDeviceState();
     }
 
-    private void startTimer() {
+    private void startCheckScoTimer() {
         SoraThreadUtils.checkIsOnMainThread();
-        handler.postDelayed(bluetoothTimeoutRunnable, BLUETOOTH_SCO_TIMEOUT_MS);
+        handler.postDelayed(checkScoTimeoutRunnable, BLUETOOTH_SCO_TIMEOUT_MS);
     }
 
     /** Cancels any outstanding timer tasks. */
-    private void cancelTimer() {
+    private void cancelCheckScoTimer() {
         SoraThreadUtils.checkIsOnMainThread();
-        handler.removeCallbacks(bluetoothTimeoutRunnable);
+        handler.removeCallbacks(checkScoTimeoutRunnable);
     }
 
-    private void bluetoothTimeout() {
+    private void checkScoTimeout() {
         SoraThreadUtils.checkIsOnMainThread();
         Log.d(TAG, "bluetoothTimeout: BT state=" + bluetoothState + ", "
                 + "attempts: " + scoConnectionAttempts + ", "
@@ -329,6 +349,7 @@ class SoraBluetoothManager {
             // SCO 接続に失敗した
             stopScoAudio();
         }
+        Log.d(TAG, "checkScoTimeout");
         updateAudioDeviceState();
     }
 

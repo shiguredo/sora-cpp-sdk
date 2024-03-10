@@ -45,6 +45,7 @@ abstract class SoraAudioManagerBase implements SoraAudioManager {
         public void onReceive(Context context, Intent intent) {
             int state = intent.getIntExtra("state", STATE_UNPLUGGED);
             hasWiredHeadset = (state == STATE_PLUGGED);
+            Log.d(TAG, "WiredHeadsetReceiver");
             updateAudioDeviceState();
         }
     }
