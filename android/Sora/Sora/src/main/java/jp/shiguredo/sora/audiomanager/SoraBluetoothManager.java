@@ -118,7 +118,10 @@ class SoraBluetoothManager {
                 if (state == BluetoothHeadset.STATE_CONNECTED) {
                     // Bluetooth ヘッドセットとが接続された
                     scoConnectionAttempts = 0;
-                    updateAudioDeviceState();
+                    // ここで updateAudioDeviceState() を実行すると startBluetoothSco() が実行される
+                    // しかし、この後 STATE_AUDIO_CONNECTED と STATE_AUDIO_DISCONNECTED がきてしまい切断されるため、
+                    // updateAudioDeviceState() は STATE_AUDIO_DISCONNECTED 時に任せることとしてここでは実行しない
+                    // updateAudioDeviceState();
                 } else if (state == BluetoothHeadset.STATE_DISCONNECTED) {
                     // おそらく Bluetooth が通話中に切られた
                     stopScoAudio();
