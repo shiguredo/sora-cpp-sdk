@@ -4,6 +4,7 @@
 /_source
 /_package
 /test/*.json
+!/test/*.example.json
 /test/ios/build/
 /test/ios/hello/model_coeffs/
 /test/android/app/src/main/assets
