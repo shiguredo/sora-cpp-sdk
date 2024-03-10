@@ -27,8 +27,8 @@ import android.util.Log;
 
 import java.util.List;
 
-class SoraBluetoothManager {
-    private static final String TAG = "SoraBluetoothManager";
+class SoraAudioManagerBluetooth {
+    private static final String TAG = "SoraAudioManagerBluetooth";
     // Bluetooth SCO の開始/終了タイムアウト
     private static final int BLUETOOTH_SCO_TIMEOUT_MS = 4000;
     // SCO 接続試行上限
@@ -153,14 +153,14 @@ class SoraBluetoothManager {
         }
     }
 
-    static SoraBluetoothManager create(
+    static SoraAudioManagerBluetooth create(
             Context context,
             SoraAudioManagerLegacy soraAudioManagerLegacy,
             AudioManager audioManager) {
-        return new SoraBluetoothManager(context, soraAudioManagerLegacy, audioManager);
+        return new SoraAudioManagerBluetooth(context, soraAudioManagerLegacy, audioManager);
     }
 
-    protected SoraBluetoothManager(
+    protected SoraAudioManagerBluetooth(
             Context context,
             SoraAudioManagerLegacy soraAudioManagerLegacy,
             AudioManager audioManager) {

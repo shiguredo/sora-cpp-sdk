@@ -25,7 +25,7 @@ class SoraAudioManagerLegacy extends SoraAudioManagerBase {
     private static final String TAG = "SoraAudioManagerLegacy";
     private enum AudioDevice { SPEAKER_PHONE, WIRED_HEADSET, EARPIECE, BLUETOOTH, NONE }
     private final AudioDevice defaultAudioDevice;
-    private final SoraBluetoothManager bluetoothManager;
+    private final SoraAudioManagerBluetooth bluetoothManager;
     private Set<AudioDevice> audioDevices = new HashSet<>();
     private boolean running;
     private boolean savedIsSpeakerPhoneOn;
@@ -40,7 +40,7 @@ class SoraAudioManagerLegacy extends SoraAudioManagerBase {
     private SoraAudioManagerLegacy(Context context) {
         super(context);
 
-        bluetoothManager = SoraBluetoothManager.create(context, this, audioManager);
+        bluetoothManager = SoraAudioManagerBluetooth.create(context, this, audioManager);
 
         // デフォルトのデバイスを設定する
         // 受話用のスピーカーがある場合は受話用のスピーカーを使う
@@ -133,9 +133,9 @@ class SoraAudioManagerLegacy extends SoraAudioManagerBase {
             return;
         }
 
-        if (bluetoothManager.getState() == SoraBluetoothManager.State.HEADSET_AVAILABLE
-                || bluetoothManager.getState() == SoraBluetoothManager.State.HEADSET_UNAVAILABLE
-                || bluetoothManager.getState() == SoraBluetoothManager.State.SCO_DISCONNECTING) {
+        if (bluetoothManager.getState() == SoraAudioManagerBluetooth.State.HEADSET_AVAILABLE
+                || bluetoothManager.getState() == SoraAudioManagerBluetooth.State.HEADSET_UNAVAILABLE
+                || bluetoothManager.getState() == SoraAudioManagerBluetooth.State.SCO_DISCONNECTING) {
             // Bluetooth のデバイスを更新する
             bluetoothManager.updateDevice();
         }
@@ -143,9 +143,9 @@ class SoraAudioManagerLegacy extends SoraAudioManagerBase {
         // 存在するオーディオデバイスのリストを生成する
         Set<AudioDevice> newAudioDevices = new HashSet<>();
 
-        if (bluetoothManager.getState() == SoraBluetoothManager.State.SCO_CONNECTED
-                || bluetoothManager.getState() == SoraBluetoothManager.State.SCO_CONNECTING
-                || bluetoothManager.getState() == SoraBluetoothManager.State.HEADSET_AVAILABLE) {
+        if (bluetoothManager.getState() == SoraAudioManagerBluetooth.State.SCO_CONNECTED
+                || bluetoothManager.getState() == SoraAudioManagerBluetooth.State.SCO_CONNECTING
+                || bluetoothManager.getState() == SoraAudioManagerBluetooth.State.HEADSET_AVAILABLE) {
             // Bluetooth デバイスが存在する
             newAudioDevices.add(AudioDevice.BLUETOOTH);
         }
@@ -193,7 +193,7 @@ class SoraAudioManagerLegacy extends SoraAudioManagerBase {
 
         // Bluetooth audio を開始する必要があるか
         boolean needBluetoothAudioStart =
-                bluetoothManager.getState() == SoraBluetoothManager.State.HEADSET_AVAILABLE
+                bluetoothManager.getState() == SoraAudioManagerBluetooth.State.HEADSET_AVAILABLE
                         && !isSetHandsfree
                         && (lastConnectedAudioDevice == AudioDevice.BLUETOOTH || !hasWiredHeadset);
         Log.d(TAG, "Update device state: "
@@ -203,8 +203,8 @@ class SoraAudioManagerLegacy extends SoraAudioManagerBase {
 
         // Bluetooth audio を停止する必要があるか
         boolean needBluetoothAudioStop =
-                (bluetoothManager.getState() == SoraBluetoothManager.State.SCO_CONNECTED
-                        || bluetoothManager.getState() == SoraBluetoothManager.State.SCO_CONNECTING)
+                (bluetoothManager.getState() == SoraAudioManagerBluetooth.State.SCO_CONNECTED
+                        || bluetoothManager.getState() == SoraAudioManagerBluetooth.State.SCO_CONNECTING)
                         && (isSetHandsfree
                         || (lastConnectedAudioDevice == AudioDevice.WIRED_HEADSET && hasWiredHeadset));
 
@@ -224,10 +224,10 @@ class SoraAudioManagerLegacy extends SoraAudioManagerBase {
 
         // ハンズフリーの解除を待つのは SCO_CONNECTING の間だけ
         willOffHandsfree = willOffHandsfree
-                && bluetoothManager.getState() == SoraBluetoothManager.State.SCO_CONNECTING;
+                && bluetoothManager.getState() == SoraAudioManagerBluetooth.State.SCO_CONNECTING;
 
         final AudioDevice newAudioDevice;
-        if (bluetoothManager.getState() == SoraBluetoothManager.State.SCO_CONNECTED) {
+        if (bluetoothManager.getState() == SoraAudioManagerBluetooth.State.SCO_CONNECTED) {
             newAudioDevice = AudioDevice.BLUETOOTH;
             willOffHandsfree = false;
         } else if (!isSetHandsfree && hasWiredHeadset) {
