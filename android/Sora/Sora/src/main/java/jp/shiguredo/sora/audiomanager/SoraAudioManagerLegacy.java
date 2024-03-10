@@ -214,7 +214,7 @@ class SoraAudioManagerLegacy extends SoraAudioManagerBase {
         }
 
         if (needBluetoothAudioStart && !needBluetoothAudioStop) {
-            // Bluetooth SCO audio を介しする
+            // Bluetooth SCO audio を開始する
             if (!bluetoothManager.startScoAudio()) {
                 // 失敗した場合はリストから BLUETOOTH を削除する
                 audioDevices.remove(AudioDevice.BLUETOOTH);
