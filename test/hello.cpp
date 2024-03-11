@@ -132,7 +132,10 @@ int main(int argc, char* argv[]) {
     std::ostringstream oss;
     oss << ifs.rdbuf();
     std::string js = oss.str();
-    v = boost::json::parse(js);
+    boost::json::parse_options opt;
+    opt.allow_comments = true;
+    opt.allow_trailing_commas = true;
+    v = boost::json::parse(js, {}, opt);
   }
   HelloSoraConfig config;
   for (auto&& x : v.as_object().at("signaling_urls").as_array()) {
