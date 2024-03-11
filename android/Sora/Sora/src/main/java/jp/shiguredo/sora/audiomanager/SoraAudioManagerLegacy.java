@@ -243,11 +243,11 @@ class SoraAudioManagerLegacy extends SoraAudioManagerBase {
         } else {
             newAudioDevice = defaultAudioDevice;
         }
+        setSpeakerphoneOn(newAudioDevice == AudioDevice.SPEAKER_PHONE);
         if (newAudioDevice != selectedAudioDevice) {
             Log.d(TAG, "New device status: "
                     + "available=" + audioDevices + ", "
                     + "selected=" + newAudioDevice);
-            setSpeakerphoneOn(newAudioDevice == AudioDevice.SPEAKER_PHONE);
             selectedAudioDevice = newAudioDevice;
             if (onChangeRouteObserver != null) {
                 onChangeRouteObserver.OnChangeRoute();
