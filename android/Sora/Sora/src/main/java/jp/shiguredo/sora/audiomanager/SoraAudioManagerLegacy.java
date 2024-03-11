@@ -132,6 +132,9 @@ class SoraAudioManagerLegacy extends SoraAudioManagerBase {
         if (!running) {
             return;
         }
+        Log.d(TAG, "Update audio device state: "
+                + "is handsfree=" + isSetHandsfree + ", "
+                + "isSpeakerphoneOn=" + audioManager.isSpeakerphoneOn());
 
         if (bluetoothManager.getState() == SoraAudioManagerBluetooth.State.HEADSET_AVAILABLE
                 || bluetoothManager.getState() == SoraAudioManagerBluetooth.State.HEADSET_UNAVAILABLE
