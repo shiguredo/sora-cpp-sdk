@@ -196,10 +196,6 @@ class SoraAudioManagerLegacy extends SoraAudioManagerBase {
                 bluetoothManager.getState() == SoraAudioManagerBluetooth.State.HEADSET_AVAILABLE
                         && !isSetHandsfree
                         && (lastConnectedAudioDevice == AudioDevice.BLUETOOTH || !hasWiredHeadset);
-        Log.d(TAG, "Update device state: "
-                + "wired headset=" + hasWiredHeadset + ", "
-                + "BT state=" + bluetoothManager.getState() + ", "
-                + "need BT audio start=" + needBluetoothAudioStart);
 
         // Bluetooth audio を停止する必要があるか
         boolean needBluetoothAudioStop =
@@ -207,6 +203,13 @@ class SoraAudioManagerLegacy extends SoraAudioManagerBase {
                         || bluetoothManager.getState() == SoraAudioManagerBluetooth.State.SCO_CONNECTING)
                         && (isSetHandsfree
                         || (lastConnectedAudioDevice == AudioDevice.WIRED_HEADSET && hasWiredHeadset));
+
+        Log.d(TAG, "Update device state: "
+                + "set handsfree=" + isSetHandsfree + ", "
+                + "wired headset=" + hasWiredHeadset + ", "
+                + "BT state=" + bluetoothManager.getState() + ", "
+                + "need BT audio start=" + needBluetoothAudioStart + ", "
+                + "need BT audio stop=" + needBluetoothAudioStop);
 
         if (needBluetoothAudioStop) {
             bluetoothManager.stopScoAudio();
