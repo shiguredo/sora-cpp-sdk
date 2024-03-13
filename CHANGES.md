@@ -13,6 +13,8 @@
 
 - [ADD] test/hello.cpp に video, audio フラグを追加
   - @melpon
+- [FIX] Android ハンズフリー機能において Android 11 以前で Bluetooth SCO が切れてしまう問題を改善
+  - @tnoho
 
 ## 2024.3.1 (2024-03-07)
 
