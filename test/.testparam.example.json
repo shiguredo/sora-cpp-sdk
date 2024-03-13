@@ -1,0 +1,33 @@
+{
+    // hello.cpp のバイナリが利用する設定ファイルです。
+    // test/.testparam.example.json を適当な名前（例えば test/.testparam.json）にコピーして、
+    // そのファイルを適宜書き換えた上で、以下のように実行して下さい。
+    //
+    // _build/<platform>/<configuration>/test/hello test/.testparam.json
+    //
+    // _default キーの内容がデフォルトの値です（ただし signaling_urls, channel_id は必須）。
+    // デフォルトの値から変更したくなったら、そのキーをコピーして書き換えて下さい。
+    //
+    // ファイルをコピーしてあらかじめいくつかテンプレートを用意しておいたり、
+    // _default キーの様に _h264_simulcast や _test_pattern などのキーを用意してテンプレートを作っておくなど、
+    // 自分の使いやすいように設定ファイルを作っておくと良いです。
+    //
+    // なお test/*.json は .gitignore に登録されているので、
+    // test/ 直下に増やす分にはいくら増やしても間違えてコミットされることは無いです。
+    "_default": {
+      "signaling_urls": [],
+      "channel_id": "",
+      "role": "sendonly",
+      "video": true,
+      "audio": true,
+      "capture_width": 1024,
+      "capture_height": 768,
+      "video_bit_rate": 0,
+      "video_codec_type": "H264",
+      "simulcast": false,
+      "use_hardware_encoder": true,
+    },
+
+    "signaling_urls": ["必須"],
+    "channel_id": "hissu",
+}

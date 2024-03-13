@@ -7,6 +7,8 @@ struct HelloSoraConfig {
   std::vector<std::string> signaling_urls;
   std::string channel_id;
   std::string role = "sendonly";
+  bool video = true;
+  bool audio = true;
   int capture_width = 1024;
   int capture_height = 768;
   int video_bit_rate = 0;

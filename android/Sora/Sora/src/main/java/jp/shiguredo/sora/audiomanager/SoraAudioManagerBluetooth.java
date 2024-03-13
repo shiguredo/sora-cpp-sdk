@@ -27,8 +27,8 @@ import android.util.Log;
 
 import java.util.List;
 
-class SoraBluetoothManager {
-    private static final String TAG = "SoraBluetoothManager";
+class SoraAudioManagerBluetooth {
+    private static final String TAG = "SoraAudioManagerBluetooth";
     // Bluetooth SCO の開始/終了タイムアウト
     private static final int BLUETOOTH_SCO_TIMEOUT_MS = 4000;
     // SCO 接続試行上限
@@ -118,7 +118,10 @@ class SoraBluetoothManager {
                 if (state == BluetoothHeadset.STATE_CONNECTED) {
                     // Bluetooth ヘッドセットとが接続された
                     scoConnectionAttempts = 0;
-                    updateAudioDeviceState();
+                    // ここで updateAudioDeviceState() を実行すると startBluetoothSco() が実行される
+                    // しかし、この後 STATE_AUDIO_CONNECTED と STATE_AUDIO_DISCONNECTED がきてしまい切断されるため、
+                    // updateAudioDeviceState() は STATE_AUDIO_DISCONNECTED 時に任せることとしてここでは実行しない
+                    // updateAudioDeviceState();
                 } else if (state == BluetoothHeadset.STATE_DISCONNECTED) {
                     // おそらく Bluetooth が通話中に切られた
                     stopScoAudio();
@@ -150,14 +153,14 @@ class SoraBluetoothManager {
         }
     }
 
-    static SoraBluetoothManager create(
+    static SoraAudioManagerBluetooth create(
             Context context,
             SoraAudioManagerLegacy soraAudioManagerLegacy,
             AudioManager audioManager) {
-        return new SoraBluetoothManager(context, soraAudioManagerLegacy, audioManager);
+        return new SoraAudioManagerBluetooth(context, soraAudioManagerLegacy, audioManager);
     }
 
-    protected SoraBluetoothManager(
+    protected SoraAudioManagerBluetooth(
             Context context,
             SoraAudioManagerLegacy soraAudioManagerLegacy,
             AudioManager audioManager) {

@@ -42,6 +42,14 @@ HelloSora::~HelloSora() {
 void HelloSora::Run() {
   void* env = sora::GetJNIEnv();
 
+  FakeVideoCapturerConfig fake_config;
+  fake_config.width = config_.capture_width;
+  fake_config.height = config_.capture_height;
+  fake_config.fps = 30;
+  video_source_ = CreateFakeVideoCapturer(fake_config);
+  std::string video_track_id = rtc::CreateRandomString(16);
+  video_track_ = pc_factory()->CreateVideoTrack(video_source_, video_track_id);
+
   std::string audio_track_id = rtc::CreateRandomString(16);
   audio_track_ = pc_factory()->CreateAudioTrack(
       audio_track_id,
@@ -57,6 +65,8 @@ void HelloSora::Run() {
   config.channel_id = config_.channel_id;
   config.sora_client = "Hello Sora";
   config.role = config_.role;
+  config.video = config_.video;
+  config.audio = config_.audio;
   config.video_codec_type = config_.video_codec_type;
   config.video_bit_rate = config_.video_bit_rate;
   config.multistream = true;
@@ -122,7 +132,10 @@ int main(int argc, char* argv[]) {
     std::ostringstream oss;
     oss << ifs.rdbuf();
     std::string js = oss.str();
-    v = boost::json::parse(js);
+    boost::json::parse_options opt;
+    opt.allow_comments = true;
+    opt.allow_trailing_commas = true;
+    v = boost::json::parse(js, {}, opt);
   }
   HelloSoraConfig config;
   for (auto&& x : v.as_object().at("signaling_urls").as_array()) {
@@ -131,6 +144,12 @@ int main(int argc, char* argv[]) {
   config.channel_id = v.as_object().at("channel_id").as_string().c_str();
   if (auto it = v.as_object().find("role"); it != v.as_object().end()) {
     config.role = it->value().as_string();
+  }
+  if (auto it = v.as_object().find("video"); it != v.as_object().end()) {
+    config.video = it->value().as_bool();
+  }
+  if (auto it = v.as_object().find("audio"); it != v.as_object().end()) {
+    config.audio = it->value().as_bool();
   }
   if (auto it = v.as_object().find("capture_width");
       it != v.as_object().end()) {

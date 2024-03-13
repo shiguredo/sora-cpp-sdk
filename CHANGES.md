@@ -11,6 +11,13 @@
 
 ## develop
 
+## 2024.4.0 (2024-03-13)
+
+- [ADD] test/hello.cpp に video, audio フラグを追加
+  - @melpon
+- [FIX] Android ハンズフリー機能において Android 11 以前で Bluetooth SCO が切れてしまう問題を改善
+  - @tnoho
+
 ## 2024.3.1 (2024-03-07)
 
 - [FIX] Sora C++ SDK を利用してビルドする時に自動的に _LIBCPP_HARDENING_MODE が定義されるように修正
