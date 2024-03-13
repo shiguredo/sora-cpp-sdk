@@ -11,6 +11,9 @@
 
 ## develop
 
+- [FIX] HWA 利用の判定を `#if defined(USE_*_ENCODER)` という使い方で統一するように修正
+  - @melpon
+
 ## 2024.4.0 (2024-03-13)
 
 - [ADD] test/hello.cpp に video, audio フラグを追加

@@ -26,15 +26,15 @@
 #include "sora/android/android_video_factory.h"
 #endif
 
-#if USE_NVCODEC_ENCODER
+#if defined(USE_NVCODEC_ENCODER)
 #include "sora/hwenc_nvcodec/nvcodec_h264_encoder.h"
 #endif
 
-#if USE_VPL_ENCODER
+#if defined(USE_VPL_ENCODER)
 #include "sora/hwenc_vpl/vpl_video_encoder.h"
 #endif
 
-#if USE_JETSON_ENCODER
+#if defined(USE_JETSON_ENCODER)
 #include "sora/hwenc_jetson/jetson_video_encoder.h"
 #endif
 
@@ -180,7 +180,7 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
   }
 #endif
 
-#if USE_NVCODEC_ENCODER
+#if defined(USE_NVCODEC_ENCODER)
   if (NvCodecH264Encoder::IsSupported(cuda_context)) {
     config.encoders.insert(
         config.encoders.begin(),
@@ -195,7 +195,7 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
   }
 #endif
 
-#if USE_VPL_ENCODER
+#if defined(USE_VPL_ENCODER)
   auto session = VplSession::Create();
   if (VplVideoEncoder::IsSupported(session, webrtc::kVideoCodecVP8)) {
     config.encoders.insert(
@@ -243,7 +243,7 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
   }
 #endif
 
-#if USE_JETSON_ENCODER
+#if defined(USE_JETSON_ENCODER)
   if (JetsonVideoEncoder::IsSupportedVP8()) {
     config.encoders.insert(config.encoders.begin(),
                            VideoEncoderConfig(
