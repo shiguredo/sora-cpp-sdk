@@ -147,9 +147,9 @@ target_include_directories(sora PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories(sora INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}> $<INSTALL_INTERFACE:include>)
 target_compile_definitions(sora
   PRIVATE
-    USE_NVCODEC_ENCODER=$<BOOL:${USE_NVCODEC_ENCODER}>
-    USE_JETSON_ENCODER=$<BOOL:${USE_JETSON_ENCODER}>
-    USE_VPL_ENCODER=$<BOOL:${USE_VPL_ENCODER}>
+    $<$<BOOL:${USE_NVCODEC_ENCODER}>:USE_NVCODEC_ENCODER>
+    $<$<BOOL:${USE_JETSON_ENCODER}>:USE_JETSON_ENCODER>
+    $<$<BOOL:${USE_VPL_ENCODER}>:USE_VPL_ENCODER>
 )
 
 # 指定したライブラリを自身の静的ライブラリにバンドルする
