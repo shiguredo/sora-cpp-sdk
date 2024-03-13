@@ -29,6 +29,7 @@ from buildbase import (
     install_cmake,
     install_cuda_windows,
     install_llvm,
+    install_openh264,
     install_rootfs,
     install_vpl,
     install_webrtc,
@@ -351,6 +352,15 @@ def install_deps(
                 install_vpl_args["cmake_args"] += cmake_args
             install_vpl(**install_vpl_args)
 
+        # OpenH264
+        install_openh264_args = {
+            "version": version["OPENH264_VERSION"],
+            "version_file": os.path.join(install_dir, "openh264.version"),
+            "source_dir": source_dir,
+            "install_dir": install_dir,
+        }
+        install_openh264(**install_openh264_args)
+
         if platform.target.os == "android":
             # Android 側からのコールバックする関数は消してはいけないので、
             # libwebrtc.a の中から消してはいけない関数の一覧を作っておく
@@ -578,6 +588,7 @@ def main():
         cmake_args.append(f"-DWEBRTC_BUILD_VERSION={webrtc_version['WEBRTC_BUILD_VERSION']}")
         cmake_args.append(f"-DWEBRTC_READABLE_VERSION={webrtc_version['WEBRTC_READABLE_VERSION']}")
         cmake_args.append(f"-DWEBRTC_COMMIT={webrtc_version['WEBRTC_COMMIT']}")
+        cmake_args.append(f"-DOPENH264_ROOT={cmake_path(os.path.join(install_dir, 'openh264'))}")
         if platform.target.os == "windows":
             cmake_args.append(f"-DCMAKE_SYSTEM_VERSION={WINDOWS_SDK_VERSION}")
         if platform.target.os == "ubuntu":

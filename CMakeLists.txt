@@ -96,6 +96,7 @@ target_sources(sora
     src/device_video_capturer.cpp
     src/i420_encoder_adapter.cpp
     src/java_context.cpp
+    src/open_h264_video_encoder.cpp
     src/rtc_ssl_verifier.cpp
     src/rtc_stats.cpp
     src/scalable_track_source.cpp
@@ -151,6 +152,9 @@ target_compile_definitions(sora
     USE_JETSON_ENCODER=$<BOOL:${USE_JETSON_ENCODER}>
     USE_VPL_ENCODER=$<BOOL:${USE_VPL_ENCODER}>
 )
+
+# OpenH264
+target_include_directories(sora PRIVATE ${OPENH264_ROOT}/include)
 
 # 指定したライブラリを自身の静的ライブラリにバンドルする
 function(bundle_static_library target static_libs bundled_target)

@@ -90,10 +90,11 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
   }
 
   {
-    auto config =
-        c->config_.use_hardware_encoder
-            ? sora::GetDefaultVideoEncoderFactoryConfig(cuda_context, env)
-            : sora::GetSoftwareOnlyVideoEncoderFactoryConfig();
+    auto config = c->config_.use_hardware_encoder
+                      ? sora::GetDefaultVideoEncoderFactoryConfig(
+                            cuda_context, env, c->config_.openh264)
+                      : sora::GetSoftwareOnlyVideoEncoderFactoryConfig(
+                            c->config_.openh264);
     config.use_simulcast_adapter = true;
     config.force_i420_conversion_for_simulcast_adapter =
         c->config_.force_i420_conversion_for_simulcast_adapter;

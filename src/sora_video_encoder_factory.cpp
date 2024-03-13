@@ -41,6 +41,7 @@
 #include "default_video_formats.h"
 #include "sora/aligned_encoder_adapter.h"
 #include "sora/i420_encoder_adapter.h"
+#include "sora/open_h264_video_encoder.h"
 
 namespace sora {
 
@@ -162,8 +163,9 @@ SoraVideoEncoderFactory::CreateVideoEncoder(
 
 SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
     std::shared_ptr<CudaContext> cuda_context,
-    void* env) {
-  auto config = GetSoftwareOnlyVideoEncoderFactoryConfig();
+    void* env,
+    std::optional<std::string> openh264) {
+  auto config = GetSoftwareOnlyVideoEncoderFactoryConfig(openh264);
 
 #if defined(__APPLE__)
   config.encoders.insert(config.encoders.begin(),
@@ -289,7 +291,8 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
   return config;
 }
 
-SoraVideoEncoderFactoryConfig GetSoftwareOnlyVideoEncoderFactoryConfig() {
+SoraVideoEncoderFactoryConfig GetSoftwareOnlyVideoEncoderFactoryConfig(
+    std::optional<std::string> openh264) {
   SoraVideoEncoderFactoryConfig config;
   config.encoders.push_back(VideoEncoderConfig(
       webrtc::kVideoCodecVP8,
@@ -298,6 +301,13 @@ SoraVideoEncoderFactoryConfig GetSoftwareOnlyVideoEncoderFactoryConfig() {
       VideoEncoderConfig(webrtc::kVideoCodecVP9, [](auto format) {
         return webrtc::VP9Encoder::Create(cricket::CreateVideoCodec(format));
       }));
+  if (openh264) {
+    config.encoders.push_back(VideoEncoderConfig(
+        webrtc::kVideoCodecH264, [openh264 = *openh264](auto format) {
+          return CreateOpenH264VideoEncoder(cricket::CreateVideoCodec(format),
+                                            openh264);
+        }));
+  }
 #if !defined(__arm__) || defined(__aarch64__) || defined(__ARM_NEON__)
   config.encoders.push_back(VideoEncoderConfig(
       webrtc::kVideoCodecAV1,

@@ -1139,6 +1139,43 @@ def install_blend2d(
 
 
 @versioned
+def install_openh264(version, source_dir, install_dir):
+    rm_rf(os.path.join(source_dir, "openh264"))
+    rm_rf(os.path.join(install_dir, "openh264"))
+    git_clone_shallow(
+        "https://github.com/cisco/openh264.git", version, os.path.join(source_dir, "openh264")
+    )
+    with cd(os.path.join(source_dir, "openh264")):
+        cmd(["make", f'PREFIX={os.path.join(install_dir, "openh264")}', "install-headers"])
+
+
+@versioned
+def install_yaml(version, source_dir, build_dir, install_dir, cmake_args):
+    rm_rf(os.path.join(source_dir, "yaml"))
+    rm_rf(os.path.join(install_dir, "yaml"))
+    rm_rf(os.path.join(build_dir, "yaml"))
+    git_clone_shallow(
+        "https://github.com/jbeder/yaml-cpp.git", version, os.path.join(source_dir, "yaml")
+    )
+
+    mkdir_p(os.path.join(build_dir, "yaml"))
+    with cd(os.path.join(build_dir, "yaml")):
+        cmd(
+            [
+                "cmake",
+                os.path.join(source_dir, "yaml"),
+                "-DCMAKE_BUILD_TYPE=Release",
+                f"-DCMAKE_INSTALL_PREFIX={install_dir}/yaml",
+                "-DYAML_CPP_BUILD_TESTS=OFF",
+                "-DYAML_CPP_BUILD_TOOLS=OFF",
+                *cmake_args,
+            ]
+        )
+        cmd(["cmake", "--build", ".", f"-j{multiprocessing.cpu_count()}"])
+        cmd(["cmake", "--build", ".", "--target", "install"])
+
+
+@versioned
 def install_protobuf(version, source_dir, install_dir, platform: str):
     # platform:
     # - linux-aarch_64
