@@ -290,7 +290,7 @@ bool OpenH264VideoEncoder::InitOpenH264() {
   }
 
 #if defined(_WIN32)
-  HMODULE handle = LoadLibraryA(name);
+  HMODULE handle = LoadLibraryA(openh264_.c_str());
 #else
   void* handle = ::dlopen(openh264_.c_str(), RTLD_LAZY);
 #endif
