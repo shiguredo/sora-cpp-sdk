@@ -30,6 +30,12 @@ struct SoraClientContextConfig {
   // で得られたオブジェクトを返す必要がある。
   // Android プラットフォームに対応しない場合は未設定でよい。
   std::function<void*(void*)> get_android_application_context;
+
+  // OpenH264 の動的ライブラリのパス
+  // 設定すると OpenH264 が H264 エンコーダの候補に含まれる。
+  // ただし configure_dependencies をカスタマイズして dependencies.video_encoder_factory を
+  // 上書きしている場合、OpenH264 が H264 エンコーダの候補に含まれない可能性があるので注意。
+  std::optional<std::string> openh264;
 };
 
 // Sora 向けクライアントを生成するためのデータを保持するクラス
