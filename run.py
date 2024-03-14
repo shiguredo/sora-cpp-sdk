@@ -358,6 +358,7 @@ def install_deps(
             "version_file": os.path.join(install_dir, "openh264.version"),
             "source_dir": source_dir,
             "install_dir": install_dir,
+            "is_windows": platform.target.os == "windows",
         }
         install_openh264(**install_openh264_args)
 
