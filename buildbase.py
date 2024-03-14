@@ -1139,14 +1139,26 @@ def install_blend2d(
 
 
 @versioned
-def install_openh264(version, source_dir, install_dir):
+def install_openh264(version, source_dir, install_dir, is_windows):
     rm_rf(os.path.join(source_dir, "openh264"))
     rm_rf(os.path.join(install_dir, "openh264"))
     git_clone_shallow(
         "https://github.com/cisco/openh264.git", version, os.path.join(source_dir, "openh264")
     )
     with cd(os.path.join(source_dir, "openh264")):
-        cmd(["make", f'PREFIX={os.path.join(install_dir, "openh264")}', "install-headers"])
+        if is_windows:
+            # Windows は make が無いので手動でコピーする
+            # install-headers:
+            # 	mkdir -p $(DESTDIR)$(PREFIX)/include/wels
+            # 	install -m 644 $(SRC_PATH)/codec/api/wels/codec*.h $(DESTDIR)$(PREFIX)/include/wels
+            mkdir_p(os.path.join(install_dir, "openh264", "include", "wels"))
+            with cd(os.path.join("codec", "api", "wels")):
+                for file in glob.glob("codec*.h"):
+                    shutil.copyfile(
+                        file, os.path.join(install_dir, "openh264", "include", "wels", file)
+                    )
+        else:
+            cmd(["make", f'PREFIX={os.path.join(install_dir, "openh264")}', "install-headers"])
 
 
 @versioned
