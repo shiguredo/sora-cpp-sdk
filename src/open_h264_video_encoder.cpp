@@ -19,8 +19,13 @@
 #include <string>
 #include <vector>
 
+#if defined(_WIN32)
+// Windows
+#include <windows.h>
+#else
 // Linux
 #include <dlfcn.h>
+#endif
 
 // WebRTC
 #include <absl/strings/match.h>
@@ -134,7 +139,11 @@ class OpenH264VideoEncoder : public H264Encoder {
   void ReleaseOpenH264();
 
   std::string openh264_;
+#if defined(_WIN32)
+  HMODULE openh264_handle_ = nullptr;
+#else
   void* openh264_handle_ = nullptr;
+#endif
   using CreateEncoderFunc = int (*)(ISVCEncoder**);
   using DestroyEncoderFunc = void (*)(ISVCEncoder*);
   CreateEncoderFunc create_encoder_ = nullptr;
@@ -280,10 +289,28 @@ bool OpenH264VideoEncoder::InitOpenH264() {
     return true;
   }
 
+#if defined(_WIN32)
+  HMODULE handle = LoadLibraryA(name);
+#else
   void* handle = ::dlopen(openh264_.c_str(), RTLD_LAZY);
+#endif
   if (handle == nullptr) {
     return false;
   }
+#if defined(_WIN32)
+  create_encoder_ =
+      (CreateEncoderFunc)::GetProcAddress(handle, "WelsCreateSVCEncoder");
+  if (create_encoder_ == nullptr) {
+    FreeLibrary(handle);
+    return false;
+  }
+  destroy_encoder_ =
+      (DestroyEncoderFunc)::GetProcAddress(handle, "WelsDestroySVCEncoder");
+  if (destroy_encoder_ == nullptr) {
+    FreeLibrary(handle);
+    return false;
+  }
+#else
   create_encoder_ = (CreateEncoderFunc)::dlsym(handle, "WelsCreateSVCEncoder");
   if (create_encoder_ == nullptr) {
     ::dlclose(handle);
@@ -295,13 +322,18 @@ bool OpenH264VideoEncoder::InitOpenH264() {
     ::dlclose(handle);
     return false;
   }
+#endif
   openh264_handle_ = handle;
   return true;
 }
 
 void OpenH264VideoEncoder::ReleaseOpenH264() {
   if (openh264_handle_ != nullptr) {
+#if defined(_WIN32)
+    FreeLibrary(openh264_handle_);
+#else
     ::dlclose(openh264_handle_);
+#endif
     openh264_handle_ = nullptr;
   }
 }
