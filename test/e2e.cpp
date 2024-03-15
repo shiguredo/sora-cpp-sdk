@@ -138,10 +138,7 @@ TEST_CASE("Sora に接続して切断するだけ") {
 #ifdef _WIN32
   webrtc::ScopedCOMInitializer com_initializer(
       webrtc::ScopedCOMInitializer::kMTA);
-  if (!com_initializer.Succeeded()) {
-    std::cerr << "CoInitializeEx failed" << std::endl;
-    return 1;
-  }
+  REQUIRE(com_initializer.Succeeded());
 #endif
 
   rtc::LogMessage::LogToDebug(rtc::LS_ERROR);
