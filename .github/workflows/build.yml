@@ -85,7 +85,7 @@ jobs:
           - macos_arm64
           - ios
     name: Build sora-cpp-sdk for ${{ matrix.name }}
-    runs-on: macos-13
+    runs-on: macos-14
     env:
       TEST_SIGNALING_URL: ${{ secrets.TEST_SIGNALING_URL }}
       TEST_CHANNEL_ID_PREFIX: ${{ secrets.TEST_CHANNEL_ID_PREFIX }}
