@@ -47,14 +47,19 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 def get_common_cmake_args(
-    platform: Platform, version: Dict[str, str], webrtc_info: WebrtcInfo, install_dir: str
+    platform: Platform,
+    version: Dict[str, str],
+    webrtc_info: WebrtcInfo,
+    install_dir: str,
+    debug: bool,
 ):
     args = []
 
     webrtc_deps = read_version_file(webrtc_info.deps_file)
 
     if platform.target.os == "windows":
-        cxxflags = ["/D_ITERATOR_DEBUG_LEVEL=0"]
+        cxxflags = ["/EHsc", "/D_ITERATOR_DEBUG_LEVEL=0"]
+        cxxflags.append("/MTd" if debug else "/MT")
         args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
     if platform.target.os == "macos":
         sysroot = cmdcap(["xcrun", "--sdk", "macosx", "--show-sdk-path"])
@@ -497,7 +502,7 @@ def install_deps(
             "cmake_args": [],
         }
         install_blend2d_args["cmake_args"] = get_common_cmake_args(
-            platform, version, webrtc_info, install_dir
+            platform, version, webrtc_info, install_dir, debug
         )
         install_blend2d(**install_blend2d_args)
 
@@ -510,10 +515,11 @@ def install_deps(
                 "source_dir": source_dir,
                 "build_dir": build_dir,
                 "install_dir": install_dir,
+                "configuration": "Debug" if debug else "Release",
                 "cmake_args": [],
             }
             install_catch2_args["cmake_args"] = get_common_cmake_args(
-                platform, version, webrtc_info, install_dir
+                platform, version, webrtc_info, install_dir, debug
             )
             install_catch2(**install_catch2_args)
 

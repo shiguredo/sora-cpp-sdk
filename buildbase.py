@@ -411,6 +411,15 @@ def git_get_url_and_revision(dir):
         return url, rev
 
 
+def replace_vcproj_static_runtime(project_file: str):
+    # なぜか MSVC_STATIC_RUNTIME が効かずに DLL ランタイムを使ってしまうので
+    # 生成されたプロジェクトに対して静的ランタイムを使うように変更する
+    s = open(project_file, "r", encoding="utf-8").read()
+    s = s.replace("MultiThreadedDLL", "MultiThreaded")
+    s = s.replace("MultiThreadedDebugDLL", "MultiThreadedDebug")
+    open(project_file, "w", encoding="utf-8").write(s)
+
+
 @versioned
 def install_webrtc(version, source_dir, install_dir, platform: str):
     win = platform.startswith("windows_")
@@ -1044,14 +1053,10 @@ def install_vpl(version, configuration, source_dir, build_dir, install_dir, cmak
                 *cmake_args,
             ]
         )
-        # なぜか MSVC_STATIC_RUNTIME が効かずに DLL ランタイムを使ってしまうので
         # 生成されたプロジェクトに対して静的ランタイムを使うように変更する
         vpl_path = os.path.join("dispatcher", "VPL.vcxproj")
         if os.path.exists(vpl_path):
-            s = open(vpl_path, "r", encoding="utf-8").read()
-            s = s.replace("MultiThreadedDLL", "MultiThreaded")
-            s = s.replace("MultiThreadedDebugDLL", "MultiThreadedDebug")
-            open(vpl_path, "w", encoding="utf-8").write(s)
+            replace_vcproj_static_runtime(vpl_path)
 
         cmd(
             ["cmake", "--build", ".", f"-j{multiprocessing.cpu_count()}", "--config", configuration]
@@ -1100,10 +1105,7 @@ def install_blend2d(
         # 生成されたプロジェクトに対して静的ランタイムを使うように変更する
         project_path = os.path.join(build_dir, "blend2d", "blend2d.vcxproj")
         if os.path.exists(project_path):
-            s = open(project_path, "r", encoding="utf-8").read()
-            s = s.replace("MultiThreadedDLL", "MultiThreaded")
-            s = s.replace("MultiThreadedDebugDLL", "MultiThreadedDebug")
-            open(project_path, "w", encoding="utf-8").write(s)
+            replace_vcproj_static_runtime(project_path)
 
         if ios:
             cmd(
@@ -1188,7 +1190,7 @@ def install_yaml(version, source_dir, build_dir, install_dir, cmake_args):
 
 
 @versioned
-def install_catch2(version, source_dir, build_dir, install_dir, cmake_args):
+def install_catch2(version, source_dir, build_dir, install_dir, configuration, cmake_args):
     rm_rf(os.path.join(source_dir, "catch2"))
     rm_rf(os.path.join(install_dir, "catch2"))
     rm_rf(os.path.join(build_dir, "catch2"))
@@ -1202,14 +1204,23 @@ def install_catch2(version, source_dir, build_dir, install_dir, cmake_args):
             [
                 "cmake",
                 os.path.join(source_dir, "catch2"),
-                "-DCMAKE_BUILD_TYPE=Release",
+                f"-DCMAKE_BUILD_TYPE={configuration}",
                 f"-DCMAKE_INSTALL_PREFIX={install_dir}/catch2",
-                "CATCH_BUILD_TESTING=OFF",
+                "-DCATCH_BUILD_TESTING=OFF",
                 *cmake_args,
             ]
         )
-        cmd(["cmake", "--build", ".", f"-j{multiprocessing.cpu_count()}"])
-        cmd(["cmake", "--build", ".", "--target", "install"])
+        # 生成されたプロジェクトに対して静的ランタイムを使うように変更する
+        project_path = os.path.join("src", "Catch2.vcxproj")
+        if os.path.exists(project_path):
+            replace_vcproj_static_runtime(project_path)
+        project_path = os.path.join("src", "Catch2WithMain.vcxproj")
+        if os.path.exists(project_path):
+            replace_vcproj_static_runtime(project_path)
+        cmd(
+            ["cmake", "--build", ".", "--config", configuration, f"-j{multiprocessing.cpu_count()}"]
+        )
+        cmd(["cmake", "--build", ".", "--config", configuration, "--target", "install"])
 
 
 @versioned
