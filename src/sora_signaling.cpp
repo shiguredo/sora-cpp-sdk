@@ -933,6 +933,8 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
 
     pc_ = CreatePeerConnection(m.at("config"));
 
+    // RTC_LOG(LS_ERROR) << sdp;
+
     SessionDescription::SetOffer(
         pc_.get(), sdp,
         [self = shared_from_this(), m, text]() {
