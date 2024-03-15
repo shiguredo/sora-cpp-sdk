@@ -13,6 +13,7 @@
                 "${workspaceFolder}/_install/ubuntu-20.04_x86_64/release/openh264/include",
                 "${workspaceFolder}/_install/ubuntu-20.04_x86_64/release/vpl/include",
                 "${workspaceFolder}/_install/ubuntu-20.04_x86_64/release/blend2d/include",
+                "${workspaceFolder}/_install/ubuntu-20.04_x86_64/release/catch2/include",
                 "${workspaceFolder}/_build/ubuntu-20.04_x86_64/release/sora",
                 "${workspaceFolder}/third_party/NvCodec/include",
                 "${workspaceFolder}/third_party/NvCodec/NvCodec",

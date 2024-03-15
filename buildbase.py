@@ -1188,6 +1188,31 @@ def install_yaml(version, source_dir, build_dir, install_dir, cmake_args):
 
 
 @versioned
+def install_catch2(version, source_dir, build_dir, install_dir, cmake_args):
+    rm_rf(os.path.join(source_dir, "catch2"))
+    rm_rf(os.path.join(install_dir, "catch2"))
+    rm_rf(os.path.join(build_dir, "catch2"))
+    git_clone_shallow(
+        "https://github.com/catchorg/Catch2.git", version, os.path.join(source_dir, "catch2")
+    )
+
+    mkdir_p(os.path.join(build_dir, "catch2"))
+    with cd(os.path.join(build_dir, "catch2")):
+        cmd(
+            [
+                "cmake",
+                os.path.join(source_dir, "catch2"),
+                "-DCMAKE_BUILD_TYPE=Release",
+                f"-DCMAKE_INSTALL_PREFIX={install_dir}/catch2",
+                "CATCH_BUILD_TESTING=OFF",
+                *cmake_args,
+            ]
+        )
+        cmd(["cmake", "--build", ".", f"-j{multiprocessing.cpu_count()}"])
+        cmd(["cmake", "--build", ".", "--target", "install"])
+
+
+@versioned
 def install_protobuf(version, source_dir, install_dir, platform: str):
     # platform:
     # - linux-aarch_64
