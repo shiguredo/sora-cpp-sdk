@@ -103,16 +103,28 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
     conn_->Connect();
     ioc_->run();
     REQUIRE(ok_);
+    REQUIRE_FALSE(_connection_id.empty());
   }
 
-  void OnSetOffer(std::string offer) override {}
+  void OnSetOffer(std::string offer) override {
+    auto v = boost::json::parse(offer);
+    if (v.at("type") == "offer") {
+      _connection_id = v.at("connection_id").as_string();
+    }
+  }
   void OnDisconnect(sora::SoraSignalingErrorCode ec,
                     std::string message) override {
     RTC_LOG(LS_INFO) << "OnDisconnect: " << message;
     REQUIRE(ok_);
     ioc_->stop();
   }
-  void OnNotify(std::string text) override {}
+  void OnNotify(std::string text) override {
+    auto v = boost::json::parse(text);
+    if (v.at("type") == "notify" &&
+        v.at("event_type") == "connection.created") {
+      REQUIRE(_connection_id == v.at("connection_id").as_string());
+    }
+  }
   void OnPush(std::string text) override {}
   void OnMessage(std::string label, std::string data) override {}
   void OnSwitched(std::string text) override {}
@@ -132,6 +144,7 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
   rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source_;
   rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track_;
   std::atomic<bool> ok_{false};
+  std::string _connection_id;
 };
 
 TEST_CASE("Sora に接続して切断するだけ") {

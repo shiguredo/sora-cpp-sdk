@@ -53,6 +53,9 @@ def get_common_cmake_args(
 
     webrtc_deps = read_version_file(webrtc_info.deps_file)
 
+    if platform.target.os == "windows":
+        cxxflags = ["/D_ITERATOR_DEBUG_LEVEL=0"]
+        args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
     if platform.target.os == "macos":
         sysroot = cmdcap(["xcrun", "--sdk", "macosx", "--show-sdk-path"])
         target = (
@@ -535,7 +538,7 @@ def main():
     parser.add_argument("--relwithdebinfo", action="store_true")
     add_webrtc_build_arguments(parser)
     parser.add_argument("--test", action="store_true")
-    parser.add_argument("--run-e2e", action="store_true")
+    parser.add_argument("--run-e2e-test", action="store_true")
     parser.add_argument("--package", action="store_true")
 
     args = parser.parse_args()
@@ -899,7 +902,7 @@ def main():
                     ]
                 )
 
-                if args.run_e2e:
+                if args.run_e2e_test:
                     if (
                         platform.build.os == platform.target.os
                         and platform.build.arch == platform.target.arch
