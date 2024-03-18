@@ -103,13 +103,13 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
     conn_->Connect();
     ioc_->run();
     REQUIRE(ok_);
-    REQUIRE_FALSE(_connection_id.empty());
+    REQUIRE_FALSE(connection_id_.empty());
   }
 
   void OnSetOffer(std::string offer) override {
     auto v = boost::json::parse(offer);
     if (v.at("type") == "offer") {
-      _connection_id = v.at("connection_id").as_string();
+      connection_id_ = v.at("connection_id").as_string();
     }
   }
   void OnDisconnect(sora::SoraSignalingErrorCode ec,
@@ -122,7 +122,7 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
     auto v = boost::json::parse(text);
     if (v.at("type") == "notify" &&
         v.at("event_type") == "connection.created") {
-      REQUIRE(_connection_id == v.at("connection_id").as_string());
+      REQUIRE(connection_id_ == v.at("connection_id").as_string());
     }
   }
   void OnPush(std::string text) override {}
@@ -144,7 +144,7 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
   rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source_;
   rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track_;
   std::atomic<bool> ok_{false};
-  std::string _connection_id;
+  std::string connection_id_;
 };
 
 TEST_CASE("Sora に接続して切断するだけ") {
