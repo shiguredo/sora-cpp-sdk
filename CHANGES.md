@@ -13,6 +13,8 @@
 
 - [ADD] OpenH264 エンコーダを追加
   - @melpon
+- [ADD] Catch2 を使って E2E テストを追加
+  - @melpon
 - [FIX] HWA 利用の判定を `#if defined(USE_*_ENCODER)` という使い方で統一するように修正
   - @melpon
 
