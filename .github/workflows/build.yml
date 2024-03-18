@@ -52,6 +52,7 @@ jobs:
       - run: python3 run.py --test --run-e2e-test --package ${{ matrix.name }}
         env:
           SORA_CPP_SDK_TEMP_DIR: C:\
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Get package name
         run: |
           Get-Content "_package\${{ matrix.name }}\release\sora.env" | Foreach-Object {
@@ -99,6 +100,8 @@ jobs:
           echo "user=`users`" >> $GITHUB_OUTPUT
         id: env
       - run: python3 run.py --test --run-e2e-test --package ${{ matrix.name }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Get package name
         run: |
           source _package/${{ matrix.name }}/release/sora.env
@@ -194,6 +197,8 @@ jobs:
         uses: android-actions/setup-android@v3
         if: matrix.name == 'android'
       - run: python3 run.py --test --run-e2e-test --package ${{ matrix.name }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Get package name
         run: |
           source _package/${{ matrix.name }}/release/sora.env
