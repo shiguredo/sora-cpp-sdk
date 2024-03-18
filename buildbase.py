@@ -445,6 +445,12 @@ def build_webrtc(platform, webrtc_build_dir, webrtc_build_args, debug):
         )
         copyfile_if_different(src_config, dst_config)
 
+        # __assertion_handler をコピーする
+        copyfile_if_different(
+            os.path.join(webrtc_source_dir, "src", "buildtools", "third_party", "libc++", "__assertion_handler"),
+            os.path.join(webrtc_source_dir, "src", "third_party", "libc++", "src", "include", "__assertion_handler"),
+        )
+
 
 class WebrtcInfo(NamedTuple):
     version_file: str
