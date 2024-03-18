@@ -20,6 +20,8 @@
 - [UPDATE] VERSION のライブラリをアップデートする
   - SORA_CPP_SDK_VERSION を 2024.3.1 にあげる
   - @enm10k
+- [FIX] sumomo がデバッグ・ビルドで動作しない問題を修正する
+  - @enm10k
 
 ## sora-cpp-sdk-2024.2.0
 
