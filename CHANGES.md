@@ -13,6 +13,8 @@
 
 - [ADD] OpenH264 エンコーダを追加
   - @melpon
+- [ADD] Catch2 を使って E2E テストを追加
+  - @melpon
 - [UPDATE] libwebrtc を `m122.6261.0.1` にあげる
   - Ubuntu のビルドを通すために、 __assertion_handler というファイルをコピーする必要があった
   - @miosakuma @enm10k

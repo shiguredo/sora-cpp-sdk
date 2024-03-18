@@ -15,6 +15,7 @@ project(sora-test C CXX)
 
 list(APPEND CMAKE_PREFIX_PATH ${SORA_DIR})
 list(APPEND CMAKE_MODULE_PATH ${SORA_DIR}/share/cmake)
+list(APPEND CMAKE_PREFIX_PATH ${CATCH2_ROOT}/lib/cmake)
 
 set(Boost_USE_STATIC_LIBS ON)
 if (WIN32)
@@ -27,6 +28,7 @@ find_package(Sora REQUIRED)
 find_package(Threads REQUIRED)
 find_package(Libdrm)
 find_package(Libva)
+find_package(Catch2)
 
 find_library(Blend2D_LIBRARY NAMES blend2d PATHS ${BLEND2D_ROOT_DIR}/lib)
 
@@ -99,4 +101,11 @@ if (TEST_DEVICE_LIST)
   add_executable(device_list)
   target_sources(device_list PRIVATE device_list.cpp)
   init_target(device_list)
+endif()
+
+if (TEST_E2E)
+  add_executable(e2e)
+  target_sources(e2e PRIVATE e2e.cpp)
+  init_target(e2e)
+  target_link_libraries(e2e PRIVATE Catch2::Catch2WithMain Catch2::Catch2)
 endif()

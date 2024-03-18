@@ -6,10 +6,11 @@ import os
 import shutil
 import tarfile
 import zipfile
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from buildbase import (
     Platform,
+    WebrtcInfo,
     add_path,
     add_webrtc_build_arguments,
     build_and_install_boost,
@@ -26,6 +27,7 @@ from buildbase import (
     install_android_ndk,
     install_android_sdk_cmdline_tools,
     install_blend2d,
+    install_catch2,
     install_cmake,
     install_cuda_windows,
     install_llvm,
@@ -42,6 +44,100 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+
+
+def get_common_cmake_args(
+    platform: Platform,
+    version: Dict[str, str],
+    webrtc_info: WebrtcInfo,
+    install_dir: str,
+    debug: bool,
+):
+    args = []
+
+    webrtc_deps = read_version_file(webrtc_info.deps_file)
+
+    if platform.target.os == "windows":
+        cxxflags = ["/EHsc", "/D_ITERATOR_DEBUG_LEVEL=0"]
+        cxxflags.append("/MTd" if debug else "/MT")
+        args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
+    if platform.target.os == "macos":
+        sysroot = cmdcap(["xcrun", "--sdk", "macosx", "--show-sdk-path"])
+        target = (
+            "x86_64-apple-darwin" if platform.target.arch == "x86_64" else "aarch64-apple-darwin"
+        )
+        args.append(f"-DCMAKE_SYSTEM_PROCESSOR={platform.target.arch}")
+        args.append(f"-DCMAKE_OSX_ARCHITECTURES={platform.target.arch}")
+        args.append(f"-DCMAKE_OSX_DEPLOYMENT_TARGET={webrtc_deps['MACOS_DEPLOYMENT_TARGET']}")
+        args.append(f"-DCMAKE_C_COMPILER_TARGET={target}")
+        args.append(f"-DCMAKE_CXX_COMPILER_TARGET={target}")
+        args.append(f"-DCMAKE_OBJCXX_COMPILER_TARGET={target}")
+        args.append(f"-DCMAKE_SYSROOT={sysroot}")
+    if platform.target.os == "ubuntu":
+        if platform.target.package_name in ("ubuntu-20.04_x86_64", "ubuntu-22.04_x86_64"):
+            args.append("-DCMAKE_C_COMPILER=clang-18")
+            args.append("-DCMAKE_CXX_COMPILER=clang++-18")
+        else:
+            args.append(
+                f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}"
+            )
+            args.append(
+                f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}"
+            )
+        path = cmake_path(os.path.join(webrtc_info.libcxx_dir, "include"))
+        args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
+        cxxflags = ["-nostdinc++", "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE"]
+        args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
+    if platform.target.os == "jetson":
+        sysroot = os.path.join(install_dir, "rootfs")
+        args.append("-DCMAKE_SYSTEM_NAME=Linux")
+        args.append("-DCMAKE_SYSTEM_PROCESSOR=aarch64")
+        args.append(f"-DCMAKE_SYSROOT={sysroot}")
+        args.append("-DCMAKE_C_COMPILER_TARGET=aarch64-linux-gnu")
+        args.append("-DCMAKE_CXX_COMPILER_TARGET=aarch64-linux-gnu")
+        args.append(
+            f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}"
+        )
+        args.append(
+            f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}"
+        )
+        args.append(f"-DCMAKE_FIND_ROOT_PATH={sysroot}")
+        args.append("-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER")
+        args.append("-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH")
+        args.append("-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH")
+        args.append("-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH")
+        path = cmake_path(os.path.join(webrtc_info.libcxx_dir, "include"))
+        args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
+        cxxflags = ["-nostdinc++", "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE"]
+        args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
+    if platform.target.os == "ios":
+        args += ["-G", "Xcode"]
+        args.append("-DCMAKE_SYSTEM_NAME=iOS")
+        args.append("-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64")
+        args.append(f"-DCMAKE_OSX_DEPLOYMENT_TARGET={webrtc_deps['IOS_DEPLOYMENT_TARGET']}")
+        args.append("-DCMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH=NO")
+        args.append("-DBLEND2D_NO_JIT=ON")
+    if platform.target.os == "android":
+        toolchain_file = os.path.join(
+            install_dir, "android-ndk", "build", "cmake", "android.toolchain.cmake"
+        )
+        android_native_api_level = version["ANDROID_NATIVE_API_LEVEL"]
+        args.append(f"-DCMAKE_TOOLCHAIN_FILE={toolchain_file}")
+        args.append(f"-DANDROID_NATIVE_API_LEVEL={android_native_api_level}")
+        args.append(f"-DANDROID_PLATFORM={android_native_api_level}")
+        args.append("-DANDROID_ABI=arm64-v8a")
+        args.append("-DANDROID_STL=none")
+        path = cmake_path(os.path.join(webrtc_info.libcxx_dir, "include"))
+        args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
+        args.append("-DANDROID_CPP_FEATURES=exceptions rtti")
+        # r23b には ANDROID_CPP_FEATURES=exceptions でも例外が設定されない問題がある
+        # https://github.com/android/ndk/issues/1618
+        args.append("-DCMAKE_ANDROID_EXCEPTIONS=ON")
+        args.append("-DANDROID_NDK=OFF")
+        cxxflags = ["-nostdinc++", "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE"]
+        args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
+
+    return args
 
 
 def install_deps(
@@ -405,90 +501,27 @@ def install_deps(
             "ios": platform.target.package_name == "ios",
             "cmake_args": [],
         }
-        cmake_args = []
-        if platform.target.os == "macos":
-            sysroot = cmdcap(["xcrun", "--sdk", "macosx", "--show-sdk-path"])
-            target = (
-                "x86_64-apple-darwin"
-                if platform.target.arch == "x86_64"
-                else "aarch64-apple-darwin"
-            )
-            cmake_args.append(f"-DCMAKE_SYSTEM_PROCESSOR={platform.target.arch}")
-            cmake_args.append(f"-DCMAKE_OSX_ARCHITECTURES={platform.target.arch}")
-            cmake_args.append(
-                f"-DCMAKE_OSX_DEPLOYMENT_TARGET={webrtc_deps['MACOS_DEPLOYMENT_TARGET']}"
-            )
-            cmake_args.append(f"-DCMAKE_C_COMPILER_TARGET={target}")
-            cmake_args.append(f"-DCMAKE_CXX_COMPILER_TARGET={target}")
-            cmake_args.append(f"-DCMAKE_OBJCXX_COMPILER_TARGET={target}")
-            cmake_args.append(f"-DCMAKE_SYSROOT={sysroot}")
-        if platform.target.os == "ubuntu":
-            if platform.target.package_name in ("ubuntu-20.04_x86_64", "ubuntu-22.04_x86_64"):
-                cmake_args.append("-DCMAKE_C_COMPILER=clang-18")
-                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-18")
-            else:
-                cmake_args.append(
-                    f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}"
-                )
-                cmake_args.append(
-                    f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}"
-                )
-            path = cmake_path(os.path.join(webrtc_info.libcxx_dir, "include"))
-            cmake_args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
-            cxxflags = ["-nostdinc++", "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE"]
-            cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
-        if platform.target.os == "jetson":
-            sysroot = os.path.join(install_dir, "rootfs")
-            cmake_args.append("-DCMAKE_SYSTEM_NAME=Linux")
-            cmake_args.append("-DCMAKE_SYSTEM_PROCESSOR=aarch64")
-            cmake_args.append(f"-DCMAKE_SYSROOT={sysroot}")
-            cmake_args.append("-DCMAKE_C_COMPILER_TARGET=aarch64-linux-gnu")
-            cmake_args.append("-DCMAKE_CXX_COMPILER_TARGET=aarch64-linux-gnu")
-            cmake_args.append(
-                f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}"
-            )
-            cmake_args.append(
-                f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}"
-            )
-            cmake_args.append(f"-DCMAKE_FIND_ROOT_PATH={sysroot}")
-            cmake_args.append("-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER")
-            cmake_args.append("-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH")
-            cmake_args.append("-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH")
-            cmake_args.append("-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH")
-            path = cmake_path(os.path.join(webrtc_info.libcxx_dir, "include"))
-            cmake_args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
-            cxxflags = ["-nostdinc++", "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE"]
-            cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
-        if platform.target.os == "ios":
-            cmake_args += ["-G", "Xcode"]
-            cmake_args.append("-DCMAKE_SYSTEM_NAME=iOS")
-            cmake_args.append("-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64")
-            cmake_args.append(
-                f"-DCMAKE_OSX_DEPLOYMENT_TARGET={webrtc_deps['IOS_DEPLOYMENT_TARGET']}"
-            )
-            cmake_args.append("-DCMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH=NO")
-            cmake_args.append("-DBLEND2D_NO_JIT=ON")
-        if platform.target.os == "android":
-            toolchain_file = os.path.join(
-                install_dir, "android-ndk", "build", "cmake", "android.toolchain.cmake"
-            )
-            android_native_api_level = version["ANDROID_NATIVE_API_LEVEL"]
-            cmake_args.append(f"-DCMAKE_TOOLCHAIN_FILE={toolchain_file}")
-            cmake_args.append(f"-DANDROID_NATIVE_API_LEVEL={android_native_api_level}")
-            cmake_args.append(f"-DANDROID_PLATFORM={android_native_api_level}")
-            cmake_args.append("-DANDROID_ABI=arm64-v8a")
-            cmake_args.append("-DANDROID_STL=none")
-            path = cmake_path(os.path.join(webrtc_info.libcxx_dir, "include"))
-            cmake_args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
-            cmake_args.append("-DANDROID_CPP_FEATURES=exceptions rtti")
-            # r23b には ANDROID_CPP_FEATURES=exceptions でも例外が設定されない問題がある
-            # https://github.com/android/ndk/issues/1618
-            cmake_args.append("-DCMAKE_ANDROID_EXCEPTIONS=ON")
-            cmake_args.append("-DANDROID_NDK=OFF")
-            cxxflags = ["-nostdinc++", "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE"]
-            cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
-        install_blend2d_args["cmake_args"] = cmake_args
+        install_blend2d_args["cmake_args"] = get_common_cmake_args(
+            platform, version, webrtc_info, install_dir, debug
+        )
         install_blend2d(**install_blend2d_args)
+
+        # テストできる環境だけ入れる
+        if platform.build.os == platform.target.os and platform.build.arch == platform.target.arch:
+            # Catch2
+            install_catch2_args = {
+                "version": version["CATCH2_VERSION"],
+                "version_file": os.path.join(install_dir, "catch2.version"),
+                "source_dir": source_dir,
+                "build_dir": build_dir,
+                "install_dir": install_dir,
+                "configuration": "Debug" if debug else "Release",
+                "cmake_args": [],
+            }
+            install_catch2_args["cmake_args"] = get_common_cmake_args(
+                platform, version, webrtc_info, install_dir, debug
+            )
+            install_catch2(**install_catch2_args)
 
 
 AVAILABLE_TARGETS = [
@@ -511,7 +544,7 @@ def main():
     parser.add_argument("--relwithdebinfo", action="store_true")
     add_webrtc_build_arguments(parser)
     parser.add_argument("--test", action="store_true")
-    parser.add_argument("--run", action="store_true")
+    parser.add_argument("--run-e2e-test", action="store_true")
     parser.add_argument("--package", action="store_true")
 
     args = parser.parse_args()
@@ -783,6 +816,9 @@ def main():
                 cmake_args.append(f"-DCMAKE_BUILD_TYPE={configuration}")
                 cmake_args.append(f"-DBOOST_ROOT={cmake_path(os.path.join(install_dir, 'boost'))}")
                 cmake_args.append(
+                    f"-DCATCH2_ROOT={cmake_path(os.path.join(install_dir, 'catch2'))}"
+                )
+                cmake_args.append(
                     f"-DWEBRTC_INCLUDE_DIR={cmake_path(webrtc_info.webrtc_include_dir)}"
                 )
                 cmake_args.append(
@@ -854,6 +890,11 @@ def main():
                     cmake_args.append("-DTEST_CONNECT_DISCONNECT=ON")
                     cmake_args.append("-DTEST_DATACHANNEL=ON")
                     cmake_args.append("-DTEST_DEVICE_LIST=ON")
+                if (
+                    platform.build.os == platform.target.os
+                    and platform.build.arch == platform.target.arch
+                ):
+                    cmake_args.append("-DTEST_E2E=ON")
 
                 cmd(["cmake", os.path.join(BASE_DIR, "test")] + cmake_args)
                 cmd(
@@ -867,21 +908,15 @@ def main():
                     ]
                 )
 
-                if args.run:
-                    if platform.target.os == "windows":
-                        cmd(
-                            [
-                                os.path.join(test_build_dir, configuration, "hello.exe"),
-                                os.path.join(BASE_DIR, "test", ".testparam.json"),
-                            ]
-                        )
-                    else:
-                        cmd(
-                            [
-                                os.path.join(test_build_dir, "hello"),
-                                os.path.join(BASE_DIR, "test", ".testparam.json"),
-                            ]
-                        )
+                if args.run_e2e_test:
+                    if (
+                        platform.build.os == platform.target.os
+                        and platform.build.arch == platform.target.arch
+                    ):
+                        if platform.target.os == "windows":
+                            cmd([os.path.join(test_build_dir, configuration, "e2e.exe")])
+                        else:
+                            cmd([os.path.join(test_build_dir, "e2e")])
 
     if args.package:
         mkdir_p(package_dir)
