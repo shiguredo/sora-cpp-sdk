@@ -338,7 +338,6 @@ int32_t VplVideoEncoderImpl::InitEncode(
     int32_t number_of_cores,
     size_t max_payload_size) {
   RTC_DCHECK(codec_settings);
-  RTC_DCHECK_EQ(codec_settings->codecType, webrtc::kVideoCodecH264);
 
   int32_t release_ret = Release();
   if (release_ret != WEBRTC_VIDEO_CODEC_OK) {
