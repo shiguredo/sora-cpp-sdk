@@ -159,12 +159,8 @@ std::unique_ptr<MFXVideoENCODE> VplVideoEncoderImpl::CreateEncoder(
   param.mfx.GopRefDist = 1;
   //param.mfx.EncodedOrder = 0;
   param.AsyncDepth = 1;
-  if (codec == MFX_CODEC_HEVC) {
-    param.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
-  } else {
-    param.IOPattern =
-        MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
-  }
+  param.IOPattern =
+      MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
 
   mfxExtBuffer* ext_buffers[10];
   mfxExtCodingOption ext_coding_option;
@@ -270,9 +266,7 @@ std::unique_ptr<MFXVideoENCODE> VplVideoEncoderImpl::CreateEncoder(
       param.mfx.QPI = 25;
       param.mfx.QPP = 33;
       param.mfx.QPB = 40;
-      if (codec == MFX_CODEC_HEVC) {
-        param.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
-      }
+      param.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
     }
     memcpy(&bk_param, &param, sizeof(bk_param));
     sts = encoder->Query(&param, &param);
