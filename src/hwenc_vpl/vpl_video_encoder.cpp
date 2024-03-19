@@ -7,6 +7,7 @@
 #include <common_video/h264/h264_bitstream_parser.h>
 #include <common_video/include/bitrate_adjuster.h>
 #include <modules/video_coding/codecs/h264/include/h264.h>
+#include <modules/video_coding/codecs/h265/include/h265_globals.h>
 #include <rtc_base/logging.h>
 #include <rtc_base/synchronization/mutex.h>
 
