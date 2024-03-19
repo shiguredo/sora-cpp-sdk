@@ -126,7 +126,12 @@ std::unique_ptr<MFXVideoENCODE> VplVideoEncoderImpl::CreateEncoder(
   }
   param.mfx.TargetUsage = MFX_TARGETUSAGE_BALANCED;
   //param.mfx.BRCParamMultiplier = 1;
-  param.mfx.InitialDelayInKB = target_kbps;
+
+  if (codec == MFX_CODEC_HEVC) {
+    // MFX_CODEC_AVC で設定するとエラーになる
+    param.mfx.InitialDelayInKB = target_kbps;
+  }
+
   param.mfx.TargetKbps = target_kbps;
   param.mfx.MaxKbps = max_kbps;
   param.mfx.RateControlMethod = MFX_RATECONTROL_VBR;
@@ -154,9 +159,12 @@ std::unique_ptr<MFXVideoENCODE> VplVideoEncoderImpl::CreateEncoder(
   param.mfx.GopRefDist = 1;
   //param.mfx.EncodedOrder = 0;
   param.AsyncDepth = 1;
-  //param.IOPattern =
-  //    MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
-  param.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
+  if (codec == MFX_CODEC_HEVC) {
+    param.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
+  } else {
+    param.IOPattern =
+        MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
+  }
 
   mfxExtBuffer* ext_buffers[10];
   mfxExtCodingOption ext_coding_option;
@@ -262,7 +270,9 @@ std::unique_ptr<MFXVideoENCODE> VplVideoEncoderImpl::CreateEncoder(
       param.mfx.QPI = 25;
       param.mfx.QPP = 33;
       param.mfx.QPB = 40;
-      param.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
+      if (codec == MFX_CODEC_HEVC) {
+        param.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
+      }
     }
     memcpy(&bk_param, &param, sizeof(bk_param));
     sts = encoder->Query(&param, &param);
