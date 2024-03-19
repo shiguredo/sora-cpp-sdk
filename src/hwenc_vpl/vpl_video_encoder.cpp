@@ -1,7 +1,6 @@
 #include "sora/hwenc_vpl/vpl_video_encoder.h"
 
 #include <chrono>
-#include <iostream>
 #include <mutex>
 
 // WebRTC
@@ -240,10 +239,10 @@ std::unique_ptr<MFXVideoENCODE> VplVideoEncoderImpl::CreateEncoder(
   mfxPlatform platform;
   memset(&platform, 0, sizeof(platform));
   MFXVideoCORE_QueryPlatform(GetVplSession(session), &platform);
-  std::cerr << "--------------- codec=" << CodecToString(codec)
-            << " CodeName=" << platform.CodeName
-            << " DeviceId=" << platform.DeviceId
-            << " MediaAdapterType=" << platform.MediaAdapterType << std::endl;
+  RTC_LOG(LS_INFO) << "--------------- codec=" << CodecToString(codec)
+                   << " CodeName=" << platform.CodeName
+                   << " DeviceId=" << platform.DeviceId
+                   << " MediaAdapterType=" << platform.MediaAdapterType;
 
   // MFX_ERR_NONE	The function completed successfully.
   // MFX_ERR_UNSUPPORTED	The function failed to identify a specific implementation for the required features.
@@ -253,9 +252,9 @@ std::unique_ptr<MFXVideoENCODE> VplVideoEncoderImpl::CreateEncoder(
   memcpy(&bk_param, &param, sizeof(bk_param));
   sts = encoder->Query(&param, &param);
   if (sts < 0) {
-    std::cerr << "Unsupported encoder codec: codec=" << CodecToString(codec)
-              << " sts=" << sts << " ... Retry with low power mode"
-              << std::endl;
+    RTC_LOG(LS_ERROR) << "Unsupported encoder codec: codec="
+                      << CodecToString(codec) << " sts=" << sts
+                      << " ... Retry with low power mode";
     memcpy(&param, &bk_param, sizeof(bk_param));
 
     // 失敗したら LowPower ON にした状態でもう一度確認する
@@ -270,8 +269,8 @@ std::unique_ptr<MFXVideoENCODE> VplVideoEncoderImpl::CreateEncoder(
     memcpy(&bk_param, &param, sizeof(bk_param));
     sts = encoder->Query(&param, &param);
     if (sts < 0) {
-      std::cerr << "Unsupported encoder codec: codec=" << CodecToString(codec)
-                << " sts=" << sts << std::endl;
+      RTC_LOG(LS_ERROR) << "Unsupported encoder codec: codec="
+                        << CodecToString(codec) << " sts=" << sts;
       return nullptr;
     }
   }
@@ -321,8 +320,8 @@ std::unique_ptr<MFXVideoENCODE> VplVideoEncoderImpl::CreateEncoder(
   //#undef F
 
   if (sts != MFX_ERR_NONE) {
-    std::cerr << "Supported specified codec but has warning: codec="
-              << CodecToString(codec) << " sts=" << sts << std::endl;
+    RTC_LOG(LS_ERROR) << "Supported specified codec but has warning: codec="
+                      << CodecToString(codec) << " sts=" << sts;
   }
 
   if (init) {
