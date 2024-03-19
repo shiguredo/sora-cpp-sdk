@@ -141,13 +141,8 @@ std::unique_ptr<MFXVideoDECODE> VplVideoDecoderImpl::CreateDecoderInternal(
 
   sts = decoder->Query(&param, &param);
   if (sts < 0) {
-    const char* codec_str = codec == MFX_CODEC_VP8   ? "MFX_CODEC_VP8"
-                            : codec == MFX_CODEC_VP9 ? "MFX_CODEC_VP9"
-                            : codec == MFX_CODEC_AV1 ? "MFX_CODEC_AV1"
-                            : codec == MFX_CODEC_AVC ? "MFX_CODEC_AVC"
-                                                     : "MFX_CODEC_UNKNOWN";
-    //RTC_LOG(LS_ERROR) << "Unsupported decoder codec: codec=" << codec_str
-    //                  << " sts=" << sts;
+    RTC_LOG(LS_ERROR) << "Unsupported decoder codec: codec="
+                      << CodecToString(codec) << " sts=" << sts;
     return nullptr;
   }
 
@@ -162,6 +157,8 @@ std::unique_ptr<MFXVideoDECODE> VplVideoDecoderImpl::CreateDecoderInternal(
     // Initialize the oneVPL encoder
     sts = decoder->Init(&param);
     if (sts != MFX_ERR_NONE) {
+      RTC_LOG(LS_WARNING) << "Init failed: codec=" << CodecToString(codec)
+                          << " sts=" << sts;
       return nullptr;
     }
   }
@@ -228,8 +225,8 @@ int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
   mfxStatus sts;
   mfxSyncPoint syncp;
   mfxFrameSurface1* out_surface = nullptr;
-  //RTC_LOG(LS_ERROR) << "before DataOffset=" << bitstream_.DataOffset
-  //                  << " DataLength=" << bitstream_.DataLength;
+  RTC_LOG(LS_ERROR) << "before DataOffset=" << bitstream_.DataOffset
+                    << " DataLength=" << bitstream_.DataLength;
   while (true) {
     sts = decoder_->DecodeFrameAsync(&bitstream_, &*surface, &out_surface,
                                      &syncp);
@@ -259,8 +256,8 @@ int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
 
     break;
   }
-  //RTC_LOG(LS_ERROR) << "after DataOffset=" << bitstream_.DataOffset
-  //                  << " DataLength=" << bitstream_.DataLength;
+  RTC_LOG(LS_ERROR) << "after DataOffset=" << bitstream_.DataOffset
+                    << " DataLength=" << bitstream_.DataLength;
   if (sts == MFX_ERR_MORE_DATA) {
     // もっと入力が必要なので出直す
     return WEBRTC_VIDEO_CODEC_OK;
@@ -275,7 +272,7 @@ int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
   // H264 は sts == MFX_WRN_VIDEO_PARAM_CHANGED でハンドリングできるのでここではチェックしない
   // VP9 は受信フレームのサイズが変わっても MFX_WRN_VIDEO_PARAM_CHANGED を返さないようなので、
   // ここで毎フレーム情報を取得してサイズを更新する。
-  if (codec_ != MFX_CODEC_AVC) {
+  if (codec_ != MFX_CODEC_AVC || codec_ != MFX_CODEC_HEVC) {
     mfxVideoParam param;
     memset(&param, 0, sizeof(param));
     sts = decoder_->GetVideoParam(&param);

@@ -184,6 +184,7 @@ SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
             }));
   }
   if (VplVideoDecoder::IsSupported(session, webrtc::kVideoCodecH264)) {
+    RTC_LOG(LS_ERROR) << "H264 is Supported by VPL.";
     config.decoders.insert(
         config.decoders.begin(),
         VideoDecoderConfig(
@@ -191,6 +192,17 @@ SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
             [](auto format) -> std::unique_ptr<webrtc::VideoDecoder> {
               return VplVideoDecoder::Create(VplSession::Create(),
                                              webrtc::kVideoCodecH264);
+            }));
+  }
+  if (VplVideoDecoder::IsSupported(session, webrtc::kVideoCodecH265)) {
+    RTC_LOG(LS_ERROR) << "H265 is Supported by VPL.";
+    config.decoders.insert(
+        config.decoders.begin(),
+        VideoDecoderConfig(
+            webrtc::kVideoCodecH265,
+            [](auto format) -> std::unique_ptr<webrtc::VideoDecoder> {
+              return VplVideoDecoder::Create(VplSession::Create(),
+                                             webrtc::kVideoCodecH265);
             }));
   }
   if (VplVideoDecoder::IsSupported(session, webrtc::kVideoCodecAV1)) {
