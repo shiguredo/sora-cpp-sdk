@@ -78,6 +78,7 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
     config.sora_client = "Sora C++ E2E Test Client";
     config.role = "sendonly";
     config.video = true;
+    config.video_codec_type = "H265";
     config.audio = false;
     config.multistream = true;
     conn_ = sora::SoraSignaling::Create(config);
