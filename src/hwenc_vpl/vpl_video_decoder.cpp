@@ -124,9 +124,18 @@ std::unique_ptr<MFXVideoDECODE> VplVideoDecoderImpl::CreateDecoderInternal(
   param.mfx.FrameInfo.Width = (width + 15) / 16 * 16;
   param.mfx.FrameInfo.Height = (height + 15) / 16 * 16;
 
-  param.mfx.GopRefDist = 1;
-  param.AsyncDepth = 1;
   param.IOPattern = MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
+
+  if (codec == MFX_CODEC_HEVC) {
+    param.mfx.GopRefDist = 0;
+    param.AsyncDepth = 0;
+    param.mfx.CodecProfile = 1;
+    param.mfx.CodecLevel = 20;
+    param.mfx.IdrInterval = 0;
+  } else {
+    param.mfx.GopRefDist = 1;
+    param.AsyncDepth = 1;
+  }
 
   //qmfxExtCodingOption ext_coding_option;
   //qmemset(&ext_coding_option, 0, sizeof(ext_coding_option));
