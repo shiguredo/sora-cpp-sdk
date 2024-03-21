@@ -146,10 +146,10 @@ std::unique_ptr<MFXVideoDECODE> VplVideoDecoderImpl::CreateDecoderInternal(
     return nullptr;
   }
 
-  //if (sts != MFX_ERR_NONE) {
-  //  RTC_LOG(LS_WARNING) << "Supported specified codec but has warning: sts="
-  //                      << sts;
-  //}
+  if (sts != MFX_ERR_NONE) {
+    RTC_LOG(LS_WARNING) << "Supported specified codec but has warning: sts="
+                        << sts;
+  }
 
   // Query した上で Init しても MFX_ERR_UNSUPPORTED になることがあるので
   // 本来 Init が不要な時も常に呼ぶようにして確認する
