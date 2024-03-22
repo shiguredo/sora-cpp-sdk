@@ -142,6 +142,7 @@ def add_path(path: str, is_after=False):
     else:
         os.environ["PATH"] = path + PATH_SEPARATOR + os.environ["PATH"]
 
+
 def gh_run_download(
     repo: str,
     filename: str,
@@ -183,7 +184,6 @@ def gh_run_download(
         raise
 
     return output_path
-
 
 
 def download(url: str, output_dir: Optional[str] = None, filename: Optional[str] = None) -> str:
@@ -474,10 +474,11 @@ def install_webrtc(version, source_dir, install_dir, platform: str):
     # )
 
     archive = gh_run_download(
-        f"shiguredo-webrtc-build/webrtc-build",
+        "shiguredo-webrtc-build/webrtc-build",
         filename,
         source_dir,
-        branch='feature/apply-h265-patch-to-ubuntu-x86-64',
+        # branch='feature/apply-h265-patch-to-ubuntu-x86-64',
+        branch="feature/apply-h265-patch-for-onevpl",
     )
     rm_rf(os.path.join(install_dir, "webrtc"))
     extract(archive, output_dir=install_dir, output_dirname="webrtc")
