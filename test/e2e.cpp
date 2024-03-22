@@ -20,6 +20,7 @@
 #include <sora/audio_device_module.h>
 #include <sora/camera_device_capturer.h>
 #include <sora/java_context.h>
+#include <sora/rtc_stats.h>
 #include <sora/sora_client_context.h>
 #include <sora/sora_video_decoder_factory.h>
 #include <sora/sora_video_encoder_factory.h>
@@ -66,6 +67,7 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
     REQUIRE(channel_id_prefix != nullptr);
     config.signaling_urls.push_back(signaling_url);
     config.channel_id = channel_id_prefix + std::string("sora");
+    // config.channel_id = channel_id_prefix;
     if (secret_key != nullptr) {
       auto md = boost::json::object();
       md["access_token"] = std::string(secret_key);
@@ -91,7 +93,7 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
         [this](const boost::system::error_code&, int) { conn_->Disconnect(); });
 
     timer_.reset(new boost::asio::deadline_timer(*ioc_));
-    timer_->expires_from_now(boost::posix_time::seconds(5));
+    timer_->expires_from_now(boost::posix_time::seconds(30));
     timer_->async_wait([this](boost::system::error_code ec) {
       if (ec) {
         return;
@@ -108,9 +110,17 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
   }
 
   void OnSetOffer(std::string offer) override {
+    std::string stream_id = rtc::CreateRandomString(16);
     auto v = boost::json::parse(offer);
     if (v.at("type") == "offer") {
       connection_id_ = v.at("connection_id").as_string();
+    }
+
+    if (video_track_ != nullptr) {
+      RTC_LOG(LS_ERROR) << "HOGE: " << video_track_->id();
+      webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpSenderInterface>>
+          video_result =
+              conn_->GetPeerConnection()->AddTrack(video_track_, {stream_id});
     }
   }
   void OnDisconnect(sora::SoraSignalingErrorCode ec,
@@ -121,6 +131,23 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
   }
   void OnNotify(std::string text) override {
     auto v = boost::json::parse(text);
+
+    // outbound-rtp
+    conn_->GetPeerConnection()->GetStats(
+        sora::RTCStatsCallback::Create(
+            [self = shared_from_this()](
+                const rtc::scoped_refptr<const webrtc::RTCStatsReport>&
+                    report) {
+              for (auto it = report->begin(); it != report->end(); ++it) {
+                RTC_LOG(LS_ERROR) << "HOGE: " << it->type();
+                if (std::string(it->type()) == "outbound-rtp" ||
+                    std::string(it->type()) == "codec") {
+                  RTC_LOG(LS_ERROR) << "HOGE: " << it->ToJson();
+                }
+              }
+            })
+            .get());
+
     if (v.at("type") == "notify" &&
         v.at("event_type") == "connection.created") {
       REQUIRE(connection_id_ == v.at("connection_id").as_string());
