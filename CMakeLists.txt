@@ -247,6 +247,7 @@ if (SORA_TARGET_OS STREQUAL "windows")
   target_compile_definitions(sora
     PUBLIC
       WEBRTC_WIN
+      RTC_ENABLE_H265
       _ITERATOR_DEBUG_LEVEL=0
   )
 
