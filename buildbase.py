@@ -1084,7 +1084,7 @@ def install_vpl(version, configuration, source_dir, build_dir, install_dir, cmak
             ]
         )
         # 生成されたプロジェクトに対して静的ランタイムを使うように変更する
-        vpl_path = os.path.join("dispatcher", "VPL.vcxproj")
+        vpl_path = os.path.join("libvpl", "VPL.vcxproj")
         if os.path.exists(vpl_path):
             replace_vcproj_static_runtime(vpl_path)
 
