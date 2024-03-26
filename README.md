@@ -56,10 +56,6 @@ https://github.com/shiguredo/sora-cpp-sdk/releases
 - Android 7 arm64 以降
 - iOS 13 arm64 以降
 
-## サンプル集
-
-https://github.com/shiguredo/sora-cpp-sdk-samples
-
 ## FAQ
 
 [faq.md](doc/faq.md) をお読みください。
