@@ -11,6 +11,8 @@
 
 ## develop
 
+- [CHANGE] 別リポジトリに分かれていた Sora C++ SDK のサンプル集を examples/ 以下のディレクトリに統合する
+  - @melpon
 - [ADD] OpenH264 エンコーダを追加
   - @melpon
 - [ADD] Catch2 を使って E2E テストを追加
