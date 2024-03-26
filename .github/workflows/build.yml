@@ -82,7 +82,7 @@ jobs:
         run: |
           cd examples
           mkdir examples_${{ matrix.name }}
-          foreach ($app in @('sdl_sample', 'sumomo', 'messaging_recvonly_sample') {
+          foreach ($app in @('sdl_sample', 'sumomo', 'messaging_recvonly_sample')) {
             python3 "$app\${{ matrix.name }}\run.py" --sora-dir ..
             cp "_build\${{ matrix.name }}\release\$app\Release\$app.exe" "examples_${{ matrix.name }}"
           }
