@@ -77,6 +77,19 @@ jobs:
         with:
           name: ${{ matrix.name }}.env
           path: _package/${{ matrix.name }}/release/sora.env
+      # Examples のビルド
+      - run: |
+          cd examples
+          mkdir examples_${{ matrix.name }}
+          for app in sdl_sample sumomo messaging_recvonly_sample; do
+            python3 $app/${{ matrix.name }}/run.py --sora-dir ..
+            cp _build\${{ matrix.name }}\release\$app\Release\$app.exe examples_${{ matrix.name }}
+          done
+      - name: Upload Examples Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: examples_${{ matrix.name }}
+          path: examples_${{ matrix.name }}
   build-macos:
     strategy:
       fail-fast: false
@@ -120,6 +133,21 @@ jobs:
         with:
           name: ${{ matrix.name }}.env
           path: _package/${{ matrix.name }}/release/sora.env
+      # Examples のビルド
+      - run: |
+          cd examples
+          mkdir examples_${{ matrix.name }}
+          for app in sdl_sample sumomo messaging_recvonly_sample; do
+            python3 $app/${{ matrix.name }}/run.py --sora-dir ..
+            cp _build/${{ matrix.name }}/release/$app/$app examples_${{ matrix.name }}
+          done
+        if: matrix.name == 'macos_arm64'
+      - name: Upload Examples Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: examples_${{ matrix.name }}
+          path: examples_${{ matrix.name }}
+        if: matrix.name == 'macos_arm64'
   build-ubuntu:
     strategy:
       fail-fast: false
@@ -215,6 +243,21 @@ jobs:
         with:
           name: ${{ matrix.name }}.env
           path: _package/${{ matrix.name }}/release/sora.env
+      # Examples のビルド
+      - run: |
+          cd examples
+          mkdir examples_${{ matrix.name }}
+          for app in sdl_sample sumomo messaging_recvonly_sample; do
+            python3 $app/${{ matrix.name }}/run.py --sora-dir ..
+            cp _build/${{ matrix.name }}/release/$app/$app examples_${{ matrix.name }}
+          done
+        if: matrix.name == 'ubuntu-20.04_x86_64' || matrix.name == 'ubuntu-22.04_x86_64' || matrix.name == 'ubuntu-20.04_armv8_jetson'
+      - name: Upload Examples Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: examples_${{ matrix.name }}
+          path: examples_${{ matrix.name }}
+        if: matrix.name == 'ubuntu-20.04_x86_64' || matrix.name == 'ubuntu-22.04_x86_64' || matrix.name == 'ubuntu-20.04_armv8_jetson'
       - name: Slack Notification
         if: failure()
         uses: rtCamp/action-slack-notify@v2
