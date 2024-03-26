@@ -14,15 +14,15 @@
 
 以下にそれぞれのプラットフォームでのビルド方法を記載します。
 
-**ビルドに関しての問い合わせは受け付けておりません。うまくいかない場合は [GitHub Actions](https://github.com/shiguredo/sora-cpp-sdk-samples/blob/develop/.github/workflows/build.yml) の内容をご確認ください。**
+**ビルドに関しての問い合わせは受け付けておりません。うまくいかない場合は [GitHub Actions](https://github.com/shiguredo/sora-cpp-sdk/blob/develop/.github/workflows/build.yml) の内容をご確認ください。**
 
 ### リポジトリをクローンする
 
-[develop ブランチ](https://github.com/shiguredo/sora-cpp-sdk-samples.git) をクローンして利用してください。
+[sora-cpp-sdk](https://github.com/shiguredo/sora-cpp-sdk) をクローンして、examples 以下のディレクトリを利用してください。
 
 ```shell
-$ git clone https://github.com/shiguredo/sora-cpp-sdk-samples.git
-$ cd sora-cpp-sdk-samples
+$ git clone https://github.com/shiguredo/sora-cpp-sdk.git
+$ cd sora-cpp-sdk/examples
 ```
 
 ### Sumomo をビルドする
