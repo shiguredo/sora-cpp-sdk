@@ -2,31 +2,6 @@
 
 examples 以下のディレクトリには、 Sora C++ SDK を利用したサンプルアプリを掲載しています。実際の利用シーンに即したサンプルをご用意しておりますので、目的に応じた Sora C++ SDK の使い方を簡単に学ぶことができます。
 
-## About Shiguredo's open source software
-
-We will not respond to PRs or issues that have not been discussed on Discord. Also, Discord is only available in Japanese.
-
-Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use.
-
-## 時雨堂のオープンソースソフトウェアについて
-
-利用前に https://github.com/shiguredo/oss をお読みください。
-
-## 動作環境
-
-- Windows 10 21H2 x86_64 以降
-- macOS 12.4 arm64 以降
-- Ubuntu 20.04 ARMv8 Jetson
-    - [NVIDIA Jetson AGX Orin](https://www.nvidia.com/ja-jp/autonomous-machines/embedded-systems/jetson-orin/)
-    - [NVIDIA Jetson Xavier NX](https://www.nvidia.com/ja-jp/autonomous-machines/embedded-systems/jetson-xavier-nx/)
-    - [NVIDIA Jetson AGX Xavier](https://www.nvidia.com/ja-jp/autonomous-machines/embedded-systems/jetson-agx-xavier/)
-- Ubuntu 22.04 x86_64
-- Ubuntu 20.04 x86_64
-
-## 対応 WebRTC SFU Sora
-
-- WebRTC SFU Sora 2023.2.0 以降
-
 ## サンプルの紹介
 
 ### SDL サンプル
