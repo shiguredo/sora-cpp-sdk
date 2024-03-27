@@ -22,7 +22,7 @@
   - @melpon
 - [ADD] Catch2 を使って E2E テストを追加
   - @melpon
-- [ADD] Ubuntu 22.04 で oneVPL のH.265 に対応する
+- [ADD] Ubuntu 22.04 で Intel VPL のH.265 に対応する
   - @enm10k
 - [FIX] HWA 利用の判定を `#if defined(USE_*_ENCODER)` という使い方で統一するように修正
   - @melpon
