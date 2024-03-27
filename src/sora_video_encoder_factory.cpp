@@ -231,7 +231,6 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
             16));
   }
   if (VplVideoEncoder::IsSupported(session, webrtc::kVideoCodecH265)) {
-    RTC_LOG(LS_ERROR) << "H265 is Supported by VPL.";
     config.encoders.insert(
         config.encoders.begin(),
         VideoEncoderConfig(

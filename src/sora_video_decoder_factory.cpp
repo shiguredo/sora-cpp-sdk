@@ -184,7 +184,6 @@ SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
             }));
   }
   if (VplVideoDecoder::IsSupported(session, webrtc::kVideoCodecH264)) {
-    RTC_LOG(LS_ERROR) << "H264 is Supported by VPL.";
     config.decoders.insert(
         config.decoders.begin(),
         VideoDecoderConfig(
@@ -195,7 +194,6 @@ SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
             }));
   }
   if (VplVideoDecoder::IsSupported(session, webrtc::kVideoCodecH265)) {
-    RTC_LOG(LS_ERROR) << "H265 is Supported by VPL.";
     config.decoders.insert(
         config.decoders.begin(),
         VideoDecoderConfig(
