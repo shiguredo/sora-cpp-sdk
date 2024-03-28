@@ -62,14 +62,19 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
     auto signaling_url = std::getenv("TEST_SIGNALING_URL");
     auto channel_id_prefix = std::getenv("TEST_CHANNEL_ID_PREFIX");
     auto secret_key = std::getenv("TEST_SECRET_KEY");
-    auto run_number = std::getenv("GITHUB_RUN_NUMBER") == nullptr ? "" : std::getenv("GITHUB_RUN_NUMBER");
-    auto job = std::getenv("GITHUB_JOB") == nullptr ? "" : std::getenv("GITHUB_JOB");
+    auto run_number = std::getenv("GITHUB_RUN_NUMBER") == nullptr
+                          ? ""
+                          : std::getenv("GITHUB_RUN_NUMBER");
+    auto matrix_name = std::getenv("TEST_MATRIX_NAME") == nullptr
+                           ? ""
+                           : std::getenv("TEST_MATRIX_NAME");
     REQUIRE(signaling_url != nullptr);
     REQUIRE(channel_id_prefix != nullptr);
     config.signaling_urls.push_back(signaling_url);
     auto channel_id =
-        std::string(run_number) + "-" + job + "-sora-cpp-sdk-e2e-test";
-    RTC_LOG(LS_ERROR) << "channel_id=" << ("channel_id_prefix-" + channel_id);
+        std::string(run_number) + "-" + matrix_name + "-sora-cpp-sdk-e2e-test";
+    RTC_LOG(LS_ERROR) << "channel_id="
+                      << ("${TEST_CHANNEL_ID_PREFIX}" + channel_id);
     config.channel_id = channel_id_prefix + channel_id;
     if (secret_key != nullptr) {
       auto md = boost::json::object();
