@@ -138,8 +138,6 @@ std::unique_ptr<MFXVideoENCODE> VplVideoEncoderImpl::CreateEncoder(
   //param.mfx.NumRefFrame = 1;
   param.mfx.FrameInfo.FrameRateExtN = framerate;
   param.mfx.FrameInfo.FrameRateExtD = 1;
-  //param.mfx.FrameInfo.AspectRatioW = 1;
-  //param.mfx.FrameInfo.AspectRatioH = 1;
   param.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
   param.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
   param.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
@@ -191,43 +189,15 @@ std::unique_ptr<MFXVideoENCODE> VplVideoEncoderImpl::CreateEncoder(
     ext_buffers[1] = (mfxExtBuffer*)&ext_coding_option2;
     ext_buffers_size = 2;
   }
-  //mfxExtHyperModeParam ext_hyper_mode_param;
-  //if (codec == MFX_CODEC_HEVC) {
-  //  ext_hyper_mode_param.Header.BufferId = MFX_EXTBUFF_HYPER_MODE_PARAM;
-  //  ext_hyper_mode_param.Header.BufferSz = sizeof(ext_hyper_mode_param);
-  //  ext_hyper_mode_param.Mode = MFX_HYPERMODE_ON;
-  //  ext_buffers[0] = (mfxExtBuffer*)&ext_hyper_mode_param;
-  //  ext_buffers_size = 1;
-  //}
   if (codec == MFX_CODEC_HEVC) {
-    //param.mfx.NumSlice = 0;
-    //param.mfx.IdrInterval = 1;
-    //param.mfx.GopRefDist = 1;
-
-    //param.mfx.RateControlMethod = MFX_RATECONTROL_VBR;
-    //param.mfx.TargetKbps = target_kbps;
-    //param.mfx.MaxKbps = max_kbps;
-    //param.mfx.BufferSizeInKB = (target_kbps / 8) * 2;
-    //param.mfx.InitialDelayInKB = (target_kbps / 8) * 1;
-
-    //param.mfx.GopPicSize = 240;
-
     memset(&ext_coding_option2, 0, sizeof(ext_coding_option2));
     ext_coding_option2.Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
     ext_coding_option2.Header.BufferSz = sizeof(ext_coding_option2);
     ext_coding_option2.RepeatPPS = MFX_CODINGOPTION_ON;
-    //ext_coding_option2.MaxSliceSize = 1;
-    //ext_coding_option2.AdaptiveI = MFX_CODINGOPTION_ON;
 
     ext_buffers[0] = (mfxExtBuffer*)&ext_coding_option2;
     ext_buffers_size = 1;
   }
-
-  // q->exthevctiles.Header.BufferId = MFX_EXTBUFF_HEVC_TILES;
-  // q->exthevctiles.Header.BufferSz = sizeof(q->exthevctiles);
-  // q->exthevctiles.NumTileColumns  = q->tile_cols;
-  // q->exthevctiles.NumTileRows     = q->tile_rows;
-  // q->extparam_internal[q->nb_extparam_internal++] = (mfxExtBuffer *)&q->exthevctiles;
 
   if (ext_buffers_size != 0) {
     param.ExtParam = ext_buffers;
@@ -420,7 +390,6 @@ int32_t VplVideoEncoderImpl::Encode(
   memset(&ctrl, 0, sizeof(ctrl));
   //send_key_frame = true;
   if (send_key_frame) {
-    RTC_LOG(LS_ERROR) << "Key Frame Requested";
     ctrl.FrameType = MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF;
   } else {
     ctrl.FrameType = MFX_FRAMETYPE_UNKNOWN;
@@ -491,10 +460,6 @@ int32_t VplVideoEncoderImpl::Encode(
     //fwrite(p, 1, size, fp);
     //fclose(fp);
 
-    if (bitstream_.FrameType == MFX_FRAMETYPE_I ||
-        bitstream_.FrameType == MFX_FRAMETYPE_IDR) {
-      RTC_LOG(LS_ERROR) << "Key Frame Generated";
-    }
     auto buf = webrtc::EncodedImageBuffer::Create(p, size);
     encoded_image_.SetEncodedData(buf);
     encoded_image_._encodedWidth = width_;
