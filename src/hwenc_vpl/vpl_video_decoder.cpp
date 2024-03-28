@@ -114,6 +114,12 @@ std::unique_ptr<MFXVideoDECODE> VplVideoDecoderImpl::CreateDecoderInternal(
   memset(&param, 0, sizeof(param));
 
   param.mfx.CodecId = codec;
+
+  if (codec == MFX_CODEC_HEVC) {
+    // この設定がないと H.265 デコーダーの Init が sts=-15 で失敗する
+    param.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN;
+  }
+
   param.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
   param.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
   param.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
@@ -127,10 +133,6 @@ std::unique_ptr<MFXVideoDECODE> VplVideoDecoderImpl::CreateDecoderInternal(
   param.mfx.GopRefDist = 1;
   param.AsyncDepth = 1;
   param.IOPattern = MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
-
-  if (codec == MFX_CODEC_HEVC) {
-    param.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN;
-  }
 
   //qmfxExtCodingOption ext_coding_option;
   //qmemset(&ext_coding_option, 0, sizeof(ext_coding_option));
