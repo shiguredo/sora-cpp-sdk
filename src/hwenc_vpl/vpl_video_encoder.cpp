@@ -5,6 +5,7 @@
 
 // WebRTC
 #include <common_video/h264/h264_bitstream_parser.h>
+#include <common_video/h265/h265_bitstream_parser.h>
 #include <common_video/include/bitrate_adjuster.h>
 #include <modules/video_coding/codecs/h264/include/h264.h>
 #include <modules/video_coding/codecs/h265/include/h265_globals.h>
@@ -65,6 +66,7 @@ class VplVideoEncoderImpl : public VplVideoEncoder {
   std::vector<std::vector<uint8_t>> v_packet_;
   webrtc::EncodedImage encoded_image_;
   webrtc::H264BitstreamParser h264_bitstream_parser_;
+  webrtc::H265BitstreamParser h265_bitstream_parser_;
 
   int32_t InitVpl();
   int32_t ReleaseVpl();
@@ -475,6 +477,9 @@ int32_t VplVideoEncoderImpl::Encode(
     if (codec_ == MFX_CODEC_AVC) {
       h264_bitstream_parser_.ParseBitstream(encoded_image_);
       encoded_image_.qp_ = h264_bitstream_parser_.GetLastSliceQp().value_or(-1);
+    } else if (codec_ == MFX_CODEC_HEVC) {
+      h265_bitstream_parser_.ParseBitstream(encoded_image_);
+      encoded_image_.qp_ = h265_bitstream_parser_.GetLastSliceQp().value_or(-1);
     }
 
     webrtc::CodecSpecificInfo codec_specific;
