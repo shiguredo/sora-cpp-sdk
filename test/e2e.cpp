@@ -62,10 +62,15 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
     auto signaling_url = std::getenv("TEST_SIGNALING_URL");
     auto channel_id_prefix = std::getenv("TEST_CHANNEL_ID_PREFIX");
     auto secret_key = std::getenv("TEST_SECRET_KEY");
+    auto run_number = std::getenv("GITHUB_RUN_NUMBER") == nullptr ? "" : std::getenv("GITHUB_RUN_NUMBER");
+    auto job = std::getenv("GITHUB_JOB") == nullptr ? "" : std::getenv("GITHUB_JOB");
     REQUIRE(signaling_url != nullptr);
     REQUIRE(channel_id_prefix != nullptr);
     config.signaling_urls.push_back(signaling_url);
-    config.channel_id = channel_id_prefix + std::string("sora");
+    auto channel_id =
+        std::string(run_number) + "-" + job + "-sora-cpp-sdk-e2e-test";
+    RTC_LOG(LS_ERROR) << "channel_id=" << ("channel_id_prefix-" + channel_id);
+    config.channel_id = channel_id_prefix + channel_id;
     if (secret_key != nullptr) {
       auto md = boost::json::object();
       md["access_token"] = std::string(secret_key);
