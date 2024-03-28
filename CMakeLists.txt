@@ -247,6 +247,7 @@ if (SORA_TARGET_OS STREQUAL "windows")
   target_compile_definitions(sora
     PUBLIC
       WEBRTC_WIN
+      RTC_ENABLE_H265
       _ITERATOR_DEBUG_LEVEL=0
   )
 
@@ -419,6 +420,7 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
       _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE
       # https://github.com/boostorg/container_hash/issues/22 と同じ問題が clang-15 でも起きるので、これを手動で定義して回避する
       BOOST_NO_CXX98_FUNCTION_BASE
+      RTC_ENABLE_H265
   )
 
   set_target_properties(sora PROPERTIES POSITION_INDEPENDENT_CODE ON)

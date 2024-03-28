@@ -26,7 +26,7 @@
                 "_LIBCPP_DISABLE_AVAILABILITY",
                 "OPENSSL_IS_BORINGSSL",
                 "SORA_CPP_SDK_UBUNTU_2004",
-                "USE_NVCODEC_ENCODER=1"
+                "USE_NVCODEC_ENCODER"
             ],
             "compilerPath": "${workspaceFolder}/_install/ubuntu-20.04_x86_64/release/llvm/clang/bin/clang++",
             "compilerArgs": ["-nostdinc++"],
@@ -56,11 +56,45 @@
                 "_LIBCPP_ABI_UNSTABLE",
                 "_LIBCPP_DISABLE_AVAILABILITY",
                 "OPENSSL_IS_BORINGSSL",
-                "USE_JETSON_ENCODER=1",
+                "USE_JETSON_ENCODER",
                 "SORA_CPP_SDK_JETSON",
                 "HELLO_JETSON"
             ],
             "compilerPath": "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson/release/llvm/clang/bin/clang++",
+            "compilerArgs": ["-nostdinc++"],
+            "cStandard": "gnu17",
+            "cppStandard": "gnu++17",
+            "intelliSenseMode": "linux-clang-x64"
+        },
+        {
+            "name": "ubuntu-22.04_x86_64 Release",
+            "includePath": [
+                "${workspaceFolder}/_install/ubuntu-22.04_x86_64/release/boost/include",
+                "${workspaceFolder}/_install/ubuntu-22.04_x86_64/release/webrtc/include",
+                "${workspaceFolder}/_install/ubuntu-22.04_x86_64/release/webrtc/include/third_party/abseil-cpp",
+                "${workspaceFolder}/_install/ubuntu-22.04_x86_64/release/webrtc/include/third_party/boringssl/src/include",
+                "${workspaceFolder}/_install/ubuntu-22.04_x86_64/release/webrtc/include/third_party/libyuv/include",
+                "${workspaceFolder}/_install/ubuntu-22.04_x86_64/release/webrtc/include/third_party/zlib",
+                "${workspaceFolder}/_install/ubuntu-22.04_x86_64/release/llvm/libcxx/include",
+                "${workspaceFolder}/_install/ubuntu-22.04_x86_64/release/openh264/include",
+                "${workspaceFolder}/_install/ubuntu-22.04_x86_64/release/vpl/include",
+                "${workspaceFolder}/_install/ubuntu-22.04_x86_64/release/blend2d/include",
+                "${workspaceFolder}/_build/ubuntu-22.04_x86_64/release/sora",
+                "${workspaceFolder}/third_party/NvCodec/include",
+                "${workspaceFolder}/third_party/NvCodec/NvCodec",
+                "${workspaceFolder}/include",
+                "/usr/local/cuda/include"
+            ],
+            "defines": [
+                "WEBRTC_POSIX",
+                "_LIBCPP_ABI_UNSTABLE",
+                "_LIBCPP_DISABLE_AVAILABILITY",
+                "OPENSSL_IS_BORINGSSL",
+                "SORA_CPP_SDK_UBUNTU_2204",
+                "USE_NVCODEC_ENCODER",
+                "USE_VPL_ENCODER"
+            ],
+            "compilerPath": "${workspaceFolder}/_install/ubuntu-22.04_x86_64/release/llvm/clang/bin/clang++",
             "compilerArgs": ["-nostdinc++"],
             "cStandard": "gnu17",
             "cppStandard": "gnu++17",
