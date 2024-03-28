@@ -556,7 +556,7 @@ int32_t VplVideoEncoderImpl::InitVpl() {
   sts = encoder_->QueryIOSurf(&param, &alloc_request_);
   VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-  RTC_LOG(LS_ERROR) << "Encoder NumFrameSuggested="
+  RTC_LOG(LS_INFO) << "Encoder NumFrameSuggested="
                     << alloc_request_.NumFrameSuggested;
 
   frame_info_ = param.mfx.FrameInfo;
