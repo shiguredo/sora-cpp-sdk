@@ -474,24 +474,21 @@ int32_t VplVideoEncoderImpl::Encode(
       encoded_image_._frameType = webrtc::VideoFrameType::kVideoFrameDelta;
     }
 
-    if (codec_ == MFX_CODEC_AVC) {
-      h264_bitstream_parser_.ParseBitstream(encoded_image_);
-      encoded_image_.qp_ = h264_bitstream_parser_.GetLastSliceQp().value_or(-1);
-    } else if (codec_ == MFX_CODEC_HEVC) {
-      h265_bitstream_parser_.ParseBitstream(encoded_image_);
-      encoded_image_.qp_ = h265_bitstream_parser_.GetLastSliceQp().value_or(-1);
-    }
-
     webrtc::CodecSpecificInfo codec_specific;
     if (codec_ == MFX_CODEC_AVC) {
       codec_specific.codecType = webrtc::kVideoCodecH264;
       codec_specific.codecSpecific.H264.packetization_mode =
           webrtc::H264PacketizationMode::NonInterleaved;
-    }
-    if (codec_ == MFX_CODEC_HEVC) {
+
+      h264_bitstream_parser_.ParseBitstream(encoded_image_);
+      encoded_image_.qp_ = h264_bitstream_parser_.GetLastSliceQp().value_or(-1);
+    } else if (codec_ == MFX_CODEC_HEVC) {
       codec_specific.codecType = webrtc::kVideoCodecH265;
       codec_specific.codecSpecific.H265.packetization_mode =
           webrtc::H265PacketizationMode::NonInterleaved;
+
+      h265_bitstream_parser_.ParseBitstream(encoded_image_);
+      encoded_image_.qp_ = h265_bitstream_parser_.GetLastSliceQp().value_or(-1);
     }
 
     webrtc::EncodedImageCallback::Result result =
