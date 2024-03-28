@@ -145,13 +145,13 @@ std::unique_ptr<MFXVideoDECODE> VplVideoDecoderImpl::CreateDecoderInternal(
 
   sts = decoder->Query(&param, &param);
   if (sts < 0) {
-    RTC_LOG(LS_ERROR) << "Unsupported decoder codec: codec="
-                      << CodecToString(codec) << " sts=" << sts;
+    RTC_LOG(LS_VERBOSE) << "Unsupported decoder codec: codec="
+                        << CodecToString(codec) << " sts=" << sts;
     return nullptr;
   }
 
   if (sts != MFX_ERR_NONE) {
-    RTC_LOG(LS_WARNING) << "Supported specified codec but has warning: sts="
+    RTC_LOG(LS_VERBOSE) << "Supported specified codec but has warning: sts="
                         << sts;
   }
 
@@ -161,7 +161,7 @@ std::unique_ptr<MFXVideoDECODE> VplVideoDecoderImpl::CreateDecoderInternal(
     // Initialize the oneVPL encoder
     sts = decoder->Init(&param);
     if (sts != MFX_ERR_NONE) {
-      RTC_LOG(LS_WARNING) << "Init failed: codec=" << CodecToString(codec)
+      RTC_LOG(LS_VERBOSE) << "Init failed: codec=" << CodecToString(codec)
                           << " sts=" << sts;
       return nullptr;
     }
