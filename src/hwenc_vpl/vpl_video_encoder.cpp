@@ -180,9 +180,6 @@ std::unique_ptr<MFXVideoENCODE> VplVideoEncoderImpl::CreateEncoder(
     ext_buffers[1] = (mfxExtBuffer*)&ext_coding_option2;
     ext_buffers_size = 2;
   } else if (codec == MFX_CODEC_HEVC) {
-    // InitialDelayInKB を MFX_CODEC_AVC で設定するとエラーになる
-    param.mfx.InitialDelayInKB = target_kbps;
-
     memset(&ext_coding_option2, 0, sizeof(ext_coding_option2));
     ext_coding_option2.Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
     ext_coding_option2.Header.BufferSz = sizeof(ext_coding_option2);
