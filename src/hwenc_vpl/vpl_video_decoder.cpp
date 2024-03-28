@@ -229,8 +229,8 @@ int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
   mfxStatus sts;
   mfxSyncPoint syncp;
   mfxFrameSurface1* out_surface = nullptr;
-  RTC_LOG(LS_ERROR) << "before DataOffset=" << bitstream_.DataOffset
-                    << " DataLength=" << bitstream_.DataLength;
+  RTC_LOG(LS_VERBOSE) << "before DataOffset=" << bitstream_.DataOffset
+                      << " DataLength=" << bitstream_.DataLength;
   while (true) {
     sts = decoder_->DecodeFrameAsync(&bitstream_, &*surface, &out_surface,
                                      &syncp);
@@ -260,8 +260,8 @@ int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
 
     break;
   }
-  RTC_LOG(LS_ERROR) << "after DataOffset=" << bitstream_.DataOffset
-                    << " DataLength=" << bitstream_.DataLength;
+  RTC_LOG(LS_VERBOSE) << "after DataOffset=" << bitstream_.DataOffset
+                      << " DataLength=" << bitstream_.DataLength;
   if (sts == MFX_ERR_MORE_DATA) {
     // もっと入力が必要なので出直す
     return WEBRTC_VIDEO_CODEC_OK;
