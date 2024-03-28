@@ -123,19 +123,12 @@ std::unique_ptr<MFXVideoENCODE> VplVideoEncoderImpl::CreateEncoder(
   } else if (codec == MFX_CODEC_AV1) {
     //param.mfx.CodecProfile = MFX_PROFILE_AV1_MAIN;
   }
-  param.mfx.TargetUsage = MFX_TARGETUSAGE_BALANCED;
-  //param.mfx.BRCParamMultiplier = 1;
 
-  if (codec == MFX_CODEC_HEVC) {
-    // MFX_CODEC_AVC で設定するとエラーになる
-    param.mfx.InitialDelayInKB = target_kbps;
-  }
+  param.mfx.TargetUsage = MFX_TARGETUSAGE_BALANCED;
 
   param.mfx.TargetKbps = target_kbps;
   param.mfx.MaxKbps = max_kbps;
   param.mfx.RateControlMethod = MFX_RATECONTROL_VBR;
-  //param.mfx.NumSlice = 1;
-  //param.mfx.NumRefFrame = 1;
   param.mfx.FrameInfo.FrameRateExtN = framerate;
   param.mfx.FrameInfo.FrameRateExtD = 1;
   param.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
@@ -150,11 +143,7 @@ std::unique_ptr<MFXVideoENCODE> VplVideoEncoderImpl::CreateEncoder(
   param.mfx.FrameInfo.Width = (width + 15) / 16 * 16;
   param.mfx.FrameInfo.Height = (height + 15) / 16 * 16;
 
-  //param.mfx.GopOptFlag = MFX_GOP_STRICT;
-  //param.mfx.IdrInterval = codec_settings->H264().keyFrameInterval;
-  // param.mfx.IdrInterval = 0;
   param.mfx.GopRefDist = 1;
-  //param.mfx.EncodedOrder = 0;
   param.AsyncDepth = 1;
   param.IOPattern =
       MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
@@ -188,8 +177,10 @@ std::unique_ptr<MFXVideoENCODE> VplVideoEncoderImpl::CreateEncoder(
     ext_buffers[0] = (mfxExtBuffer*)&ext_coding_option;
     ext_buffers[1] = (mfxExtBuffer*)&ext_coding_option2;
     ext_buffers_size = 2;
-  }
-  if (codec == MFX_CODEC_HEVC) {
+  } else if (codec == MFX_CODEC_HEVC) {
+    // InitialDelayInKB を MFX_CODEC_AVC で設定するとエラーになる
+    param.mfx.InitialDelayInKB = target_kbps;
+
     memset(&ext_coding_option2, 0, sizeof(ext_coding_option2));
     ext_coding_option2.Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
     ext_coding_option2.Header.BufferSz = sizeof(ext_coding_option2);
