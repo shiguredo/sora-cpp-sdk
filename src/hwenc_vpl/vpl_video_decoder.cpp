@@ -278,7 +278,7 @@ int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
   // H264 は sts == MFX_WRN_VIDEO_PARAM_CHANGED でハンドリングできるのでここではチェックしない
   // VP9 は受信フレームのサイズが変わっても MFX_WRN_VIDEO_PARAM_CHANGED を返さないようなので、
   // ここで毎フレーム情報を取得してサイズを更新する。
-  if (codec_ != MFX_CODEC_AVC || codec_ != MFX_CODEC_HEVC) {
+  if (codec_ == MFX_CODEC_VP9) {
     mfxVideoParam param;
     memset(&param, 0, sizeof(param));
     sts = decoder_->GetVideoParam(&param);
