@@ -29,7 +29,8 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
   - Google Android HWA
     - VP8 / VP9 / H.264 / H.265
   - [Intel VPL](https://github.com/intel/libvpl) (Intel Media SDK の後継)
-    - VP9 / AV1 / H.264
+    - VP9 / H.264 / H.265
+    - H.265 は Ubuntu 22.04 のみ
 
 ## ライブラリのバイナリ提供について
 
