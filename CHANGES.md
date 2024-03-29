@@ -11,6 +11,8 @@
 
 ## develop
 
+## 2024.5.0 (2024-03-29)
+
 - [CHANGE] 別リポジトリに分かれていた Sora C++ SDK のサンプル集を examples/ 以下のディレクトリに統合する
   - @melpon
 - [UPDATE] libwebrtc を `m122.6261.1.0` にあげる
