@@ -1063,7 +1063,7 @@ def install_vpl(version, configuration, source_dir, build_dir, install_dir, cmak
     rm_rf(vpl_source_dir)
     rm_rf(vpl_build_dir)
     rm_rf(vpl_install_dir)
-    git_clone_shallow("https://github.com/oneapi-src/oneVPL.git", version, vpl_source_dir)
+    git_clone_shallow("https://github.com/intel/libvpl.git", version, vpl_source_dir)
 
     mkdir_p(vpl_build_dir)
     with cd(vpl_build_dir):
@@ -1084,7 +1084,7 @@ def install_vpl(version, configuration, source_dir, build_dir, install_dir, cmak
             ]
         )
         # 生成されたプロジェクトに対して静的ランタイムを使うように変更する
-        vpl_path = os.path.join("dispatcher", "VPL.vcxproj")
+        vpl_path = os.path.join("libvpl", "VPL.vcxproj")
         if os.path.exists(vpl_path):
             replace_vcproj_static_runtime(vpl_path)
 

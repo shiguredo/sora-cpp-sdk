@@ -230,6 +230,17 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
             },
             16));
   }
+  if (VplVideoEncoder::IsSupported(session, webrtc::kVideoCodecH265)) {
+    config.encoders.insert(
+        config.encoders.begin(),
+        VideoEncoderConfig(
+            webrtc::kVideoCodecH265,
+            [](auto format) -> std::unique_ptr<webrtc::VideoEncoder> {
+              return VplVideoEncoder::Create(VplSession::Create(),
+                                             webrtc::kVideoCodecH265);
+            },
+            16));
+  }
   if (VplVideoEncoder::IsSupported(session, webrtc::kVideoCodecAV1)) {
     config.encoders.insert(
         config.encoders.begin(),
