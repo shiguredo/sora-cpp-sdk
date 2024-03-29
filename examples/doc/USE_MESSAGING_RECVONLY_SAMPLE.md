@@ -6,9 +6,9 @@
 
 ## 動作環境
 
-[動作環境](../README.md#動作環境) をご確認ください。
+[動作環境](../../README.md#動作環境) をご確認ください。
 
-接続先として WebRTC SFU Sora サーバ が必要です。[対応 Sora](../README.md#対応-sora) をご確認ください。
+接続先として WebRTC SFU Sora サーバ が必要です。[対応 Sora](../../README.md#対応-sora) をご確認ください。
 
 ## サンプルをビルドする
 
