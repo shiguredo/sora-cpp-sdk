@@ -138,6 +138,13 @@
     "xutility": "cpp",
     "__nullptr": "cpp",
     "__config": "cpp",
-    "**/test/*.json": "jsonc"
+    "**/test/*.json": "jsonc",
+    "__debug": "cpp",
+    "__locale": "cpp",
+    "__mutex_base": "cpp",
+    "__threading_support": "cpp",
+    "__verbose_abort": "cpp",
+    "string_view": "cpp",
+    "*.tcc": "cpp"
   }
 }

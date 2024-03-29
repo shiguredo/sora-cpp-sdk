@@ -23,7 +23,7 @@
 #include "sora/android/android_video_factory.h"
 #endif
 
-#if USE_NVCODEC_ENCODER
+#if defined(USE_NVCODEC_ENCODER)
 #include "sora/hwenc_nvcodec/nvcodec_video_decoder.h"
 #endif
 
@@ -31,7 +31,7 @@
 #include "sora/hwenc_vpl/vpl_video_decoder.h"
 #endif
 
-#if USE_JETSON_ENCODER
+#if defined(USE_JETSON_ENCODER)
 #include "sora/hwenc_jetson/jetson_video_decoder.h"
 #endif
 
@@ -125,7 +125,7 @@ SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
   }
 #endif
 
-#if USE_NVCODEC_ENCODER
+#if defined(USE_NVCODEC_ENCODER)
   if (NvCodecVideoDecoder::IsSupported(cuda_context,
                                        sora::CudaVideoCodec::VP8)) {
     config.decoders.insert(
@@ -193,6 +193,16 @@ SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
                                              webrtc::kVideoCodecH264);
             }));
   }
+  if (VplVideoDecoder::IsSupported(session, webrtc::kVideoCodecH265)) {
+    config.decoders.insert(
+        config.decoders.begin(),
+        VideoDecoderConfig(
+            webrtc::kVideoCodecH265,
+            [](auto format) -> std::unique_ptr<webrtc::VideoDecoder> {
+              return VplVideoDecoder::Create(VplSession::Create(),
+                                             webrtc::kVideoCodecH265);
+            }));
+  }
   if (VplVideoDecoder::IsSupported(session, webrtc::kVideoCodecAV1)) {
     config.decoders.insert(
         config.decoders.begin(),
@@ -205,7 +215,7 @@ SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
   }
 #endif
 
-#if USE_JETSON_ENCODER
+#if defined(USE_JETSON_ENCODER)
   if (JetsonVideoDecoder::IsSupportedVP8()) {
     config.decoders.insert(
         config.decoders.begin(),

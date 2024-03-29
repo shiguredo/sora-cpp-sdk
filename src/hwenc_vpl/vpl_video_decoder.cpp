@@ -114,6 +114,12 @@ std::unique_ptr<MFXVideoDECODE> VplVideoDecoderImpl::CreateDecoderInternal(
   memset(&param, 0, sizeof(param));
 
   param.mfx.CodecId = codec;
+
+  if (codec == MFX_CODEC_HEVC) {
+    // この設定がないと H.265 デコーダーの Init が sts=-15 で失敗する
+    param.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN;
+  }
+
   param.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
   param.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
   param.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
@@ -141,20 +147,15 @@ std::unique_ptr<MFXVideoDECODE> VplVideoDecoderImpl::CreateDecoderInternal(
 
   sts = decoder->Query(&param, &param);
   if (sts < 0) {
-    const char* codec_str = codec == MFX_CODEC_VP8   ? "MFX_CODEC_VP8"
-                            : codec == MFX_CODEC_VP9 ? "MFX_CODEC_VP9"
-                            : codec == MFX_CODEC_AV1 ? "MFX_CODEC_AV1"
-                            : codec == MFX_CODEC_AVC ? "MFX_CODEC_AVC"
-                                                     : "MFX_CODEC_UNKNOWN";
-    //RTC_LOG(LS_ERROR) << "Unsupported decoder codec: codec=" << codec_str
-    //                  << " sts=" << sts;
+    RTC_LOG(LS_VERBOSE) << "Unsupported decoder codec: codec="
+                        << CodecToString(codec) << " sts=" << sts;
     return nullptr;
   }
 
-  //if (sts != MFX_ERR_NONE) {
-  //  RTC_LOG(LS_WARNING) << "Supported specified codec but has warning: sts="
-  //                      << sts;
-  //}
+  if (sts != MFX_ERR_NONE) {
+    RTC_LOG(LS_VERBOSE) << "Supported specified codec but has warning: sts="
+                        << sts;
+  }
 
   // Query した上で Init しても MFX_ERR_UNSUPPORTED になることがあるので
   // 本来 Init が不要な時も常に呼ぶようにして確認する
@@ -162,6 +163,8 @@ std::unique_ptr<MFXVideoDECODE> VplVideoDecoderImpl::CreateDecoderInternal(
     // Initialize the oneVPL encoder
     sts = decoder->Init(&param);
     if (sts != MFX_ERR_NONE) {
+      RTC_LOG(LS_VERBOSE) << "Init failed: codec=" << CodecToString(codec)
+                          << " sts=" << sts;
       return nullptr;
     }
   }
@@ -228,8 +231,8 @@ int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
   mfxStatus sts;
   mfxSyncPoint syncp;
   mfxFrameSurface1* out_surface = nullptr;
-  //RTC_LOG(LS_ERROR) << "before DataOffset=" << bitstream_.DataOffset
-  //                  << " DataLength=" << bitstream_.DataLength;
+  RTC_LOG(LS_VERBOSE) << "before DataOffset=" << bitstream_.DataOffset
+                      << " DataLength=" << bitstream_.DataLength;
   while (true) {
     sts = decoder_->DecodeFrameAsync(&bitstream_, &*surface, &out_surface,
                                      &syncp);
@@ -259,8 +262,8 @@ int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
 
     break;
   }
-  //RTC_LOG(LS_ERROR) << "after DataOffset=" << bitstream_.DataOffset
-  //                  << " DataLength=" << bitstream_.DataLength;
+  RTC_LOG(LS_VERBOSE) << "after DataOffset=" << bitstream_.DataOffset
+                      << " DataLength=" << bitstream_.DataLength;
   if (sts == MFX_ERR_MORE_DATA) {
     // もっと入力が必要なので出直す
     return WEBRTC_VIDEO_CODEC_OK;
@@ -275,7 +278,7 @@ int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
   // H264 は sts == MFX_WRN_VIDEO_PARAM_CHANGED でハンドリングできるのでここではチェックしない
   // VP9 は受信フレームのサイズが変わっても MFX_WRN_VIDEO_PARAM_CHANGED を返さないようなので、
   // ここで毎フレーム情報を取得してサイズを更新する。
-  if (codec_ != MFX_CODEC_AVC) {
+  if (codec_ == MFX_CODEC_VP9) {
     mfxVideoParam param;
     memset(&param, 0, sizeof(param));
     sts = decoder_->GetVideoParam(&param);

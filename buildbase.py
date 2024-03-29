@@ -411,6 +411,15 @@ def git_get_url_and_revision(dir):
         return url, rev
 
 
+def replace_vcproj_static_runtime(project_file: str):
+    # なぜか MSVC_STATIC_RUNTIME が効かずに DLL ランタイムを使ってしまうので
+    # 生成されたプロジェクトに対して静的ランタイムを使うように変更する
+    s = open(project_file, "r", encoding="utf-8").read()
+    s = s.replace("MultiThreadedDLL", "MultiThreaded")
+    s = s.replace("MultiThreadedDebugDLL", "MultiThreadedDebug")
+    open(project_file, "w", encoding="utf-8").write(s)
+
+
 @versioned
 def install_webrtc(version, source_dir, install_dir, platform: str):
     win = platform.startswith("windows_")
@@ -444,6 +453,26 @@ def build_webrtc(platform, webrtc_build_dir, webrtc_build_args, debug):
             webrtc_source_dir, "src", "third_party", "libc++", "src", "include", "__config_site"
         )
         copyfile_if_different(src_config, dst_config)
+
+        # __assertion_handler をコピーする
+        src_assertion = os.path.join(
+            webrtc_source_dir,
+            "src",
+            "buildtools",
+            "third_party",
+            "libc++",
+            "__assertion_handler",
+        )
+        dst_assertion = os.path.join(
+            webrtc_source_dir,
+            "src",
+            "third_party",
+            "libc++",
+            "src",
+            "include",
+            "__assertion_handler",
+        )
+        copyfile_if_different(src_assertion, dst_assertion)
 
 
 class WebrtcInfo(NamedTuple):
@@ -848,6 +877,16 @@ def install_llvm(
             os.path.join(llvm_dir, "libcxx", "include", "__config_site"),
         )
 
+        # __assertion_handler をコピーする
+        # 背景: https://source.chromium.org/chromium/_/chromium/external/github.com/llvm/llvm-project/libcxx.git/+/1e5bda0d1ce8e346955aa4a85eaab258785f11f7
+        shutil.copyfile(
+            # NOTE(enm10k): 最初は default_assertion_handler.in をコピーしていたが、 buildtools 以下に
+            # default_assertion_handler.in から生成されたと思われる __assertion_handler が存在するため、それをコピーする
+            # os.path.join(llvm_dir, "libcxx", "vendor", "llvm", "default_assertion_handler.in"),
+            os.path.join(llvm_dir, "buildtools", "third_party", "libc++", "__assertion_handler"),
+            os.path.join(llvm_dir, "libcxx", "include", "__assertion_handler"),
+        )
+
 
 def cmake_path(path: str) -> str:
     return path.replace("\\", "/")
@@ -1024,7 +1063,7 @@ def install_vpl(version, configuration, source_dir, build_dir, install_dir, cmak
     rm_rf(vpl_source_dir)
     rm_rf(vpl_build_dir)
     rm_rf(vpl_install_dir)
-    git_clone_shallow("https://github.com/oneapi-src/oneVPL.git", version, vpl_source_dir)
+    git_clone_shallow("https://github.com/intel/libvpl.git", version, vpl_source_dir)
 
     mkdir_p(vpl_build_dir)
     with cd(vpl_build_dir):
@@ -1044,14 +1083,10 @@ def install_vpl(version, configuration, source_dir, build_dir, install_dir, cmak
                 *cmake_args,
             ]
         )
-        # なぜか MSVC_STATIC_RUNTIME が効かずに DLL ランタイムを使ってしまうので
         # 生成されたプロジェクトに対して静的ランタイムを使うように変更する
-        vpl_path = os.path.join("dispatcher", "VPL.vcxproj")
+        vpl_path = os.path.join("libvpl", "VPL.vcxproj")
         if os.path.exists(vpl_path):
-            s = open(vpl_path, "r", encoding="utf-8").read()
-            s = s.replace("MultiThreadedDLL", "MultiThreaded")
-            s = s.replace("MultiThreadedDebugDLL", "MultiThreadedDebug")
-            open(vpl_path, "w", encoding="utf-8").write(s)
+            replace_vcproj_static_runtime(vpl_path)
 
         cmd(
             ["cmake", "--build", ".", f"-j{multiprocessing.cpu_count()}", "--config", configuration]
@@ -1100,10 +1135,7 @@ def install_blend2d(
         # 生成されたプロジェクトに対して静的ランタイムを使うように変更する
         project_path = os.path.join(build_dir, "blend2d", "blend2d.vcxproj")
         if os.path.exists(project_path):
-            s = open(project_path, "r", encoding="utf-8").read()
-            s = s.replace("MultiThreadedDLL", "MultiThreaded")
-            s = s.replace("MultiThreadedDebugDLL", "MultiThreadedDebug")
-            open(project_path, "w", encoding="utf-8").write(s)
+            replace_vcproj_static_runtime(project_path)
 
         if ios:
             cmd(
@@ -1136,6 +1168,89 @@ def install_blend2d(
                 ]
             )
             cmd(["cmake", "--build", ".", "--target", "install", "--config", configuration])
+
+
+@versioned
+def install_openh264(version, source_dir, install_dir, is_windows):
+    rm_rf(os.path.join(source_dir, "openh264"))
+    rm_rf(os.path.join(install_dir, "openh264"))
+    git_clone_shallow(
+        "https://github.com/cisco/openh264.git", version, os.path.join(source_dir, "openh264")
+    )
+    with cd(os.path.join(source_dir, "openh264")):
+        if is_windows:
+            # Windows は make が無いので手動でコピーする
+            # install-headers:
+            # 	mkdir -p $(DESTDIR)$(PREFIX)/include/wels
+            # 	install -m 644 $(SRC_PATH)/codec/api/wels/codec*.h $(DESTDIR)$(PREFIX)/include/wels
+            mkdir_p(os.path.join(install_dir, "openh264", "include", "wels"))
+            with cd(os.path.join("codec", "api", "wels")):
+                for file in glob.glob("codec*.h"):
+                    shutil.copyfile(
+                        file, os.path.join(install_dir, "openh264", "include", "wels", file)
+                    )
+        else:
+            cmd(["make", f'PREFIX={os.path.join(install_dir, "openh264")}', "install-headers"])
+
+
+@versioned
+def install_yaml(version, source_dir, build_dir, install_dir, cmake_args):
+    rm_rf(os.path.join(source_dir, "yaml"))
+    rm_rf(os.path.join(install_dir, "yaml"))
+    rm_rf(os.path.join(build_dir, "yaml"))
+    git_clone_shallow(
+        "https://github.com/jbeder/yaml-cpp.git", version, os.path.join(source_dir, "yaml")
+    )
+
+    mkdir_p(os.path.join(build_dir, "yaml"))
+    with cd(os.path.join(build_dir, "yaml")):
+        cmd(
+            [
+                "cmake",
+                os.path.join(source_dir, "yaml"),
+                "-DCMAKE_BUILD_TYPE=Release",
+                f"-DCMAKE_INSTALL_PREFIX={install_dir}/yaml",
+                "-DYAML_CPP_BUILD_TESTS=OFF",
+                "-DYAML_CPP_BUILD_TOOLS=OFF",
+                *cmake_args,
+            ]
+        )
+        cmd(["cmake", "--build", ".", f"-j{multiprocessing.cpu_count()}"])
+        cmd(["cmake", "--build", ".", "--target", "install"])
+
+
+@versioned
+def install_catch2(version, source_dir, build_dir, install_dir, configuration, cmake_args):
+    rm_rf(os.path.join(source_dir, "catch2"))
+    rm_rf(os.path.join(install_dir, "catch2"))
+    rm_rf(os.path.join(build_dir, "catch2"))
+    git_clone_shallow(
+        "https://github.com/catchorg/Catch2.git", version, os.path.join(source_dir, "catch2")
+    )
+
+    mkdir_p(os.path.join(build_dir, "catch2"))
+    with cd(os.path.join(build_dir, "catch2")):
+        cmd(
+            [
+                "cmake",
+                os.path.join(source_dir, "catch2"),
+                f"-DCMAKE_BUILD_TYPE={configuration}",
+                f"-DCMAKE_INSTALL_PREFIX={install_dir}/catch2",
+                "-DCATCH_BUILD_TESTING=OFF",
+                *cmake_args,
+            ]
+        )
+        # 生成されたプロジェクトに対して静的ランタイムを使うように変更する
+        project_path = os.path.join("src", "Catch2.vcxproj")
+        if os.path.exists(project_path):
+            replace_vcproj_static_runtime(project_path)
+        project_path = os.path.join("src", "Catch2WithMain.vcxproj")
+        if os.path.exists(project_path):
+            replace_vcproj_static_runtime(project_path)
+        cmd(
+            ["cmake", "--build", ".", "--config", configuration, f"-j{multiprocessing.cpu_count()}"]
+        )
+        cmd(["cmake", "--build", ".", "--config", configuration, "--target", "install"])
 
 
 @versioned

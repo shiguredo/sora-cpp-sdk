@@ -26,21 +26,22 @@
 #include "sora/android/android_video_factory.h"
 #endif
 
-#if USE_NVCODEC_ENCODER
+#if defined(USE_NVCODEC_ENCODER)
 #include "sora/hwenc_nvcodec/nvcodec_h264_encoder.h"
 #endif
 
-#if USE_VPL_ENCODER
+#if defined(USE_VPL_ENCODER)
 #include "sora/hwenc_vpl/vpl_video_encoder.h"
 #endif
 
-#if USE_JETSON_ENCODER
+#if defined(USE_JETSON_ENCODER)
 #include "sora/hwenc_jetson/jetson_video_encoder.h"
 #endif
 
 #include "default_video_formats.h"
 #include "sora/aligned_encoder_adapter.h"
 #include "sora/i420_encoder_adapter.h"
+#include "sora/open_h264_video_encoder.h"
 
 namespace sora {
 
@@ -162,8 +163,9 @@ SoraVideoEncoderFactory::CreateVideoEncoder(
 
 SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
     std::shared_ptr<CudaContext> cuda_context,
-    void* env) {
-  auto config = GetSoftwareOnlyVideoEncoderFactoryConfig();
+    void* env,
+    std::optional<std::string> openh264) {
+  auto config = GetSoftwareOnlyVideoEncoderFactoryConfig(openh264);
 
 #if defined(__APPLE__)
   config.encoders.insert(config.encoders.begin(),
@@ -178,7 +180,7 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
   }
 #endif
 
-#if USE_NVCODEC_ENCODER
+#if defined(USE_NVCODEC_ENCODER)
   if (NvCodecH264Encoder::IsSupported(cuda_context)) {
     config.encoders.insert(
         config.encoders.begin(),
@@ -193,7 +195,7 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
   }
 #endif
 
-#if USE_VPL_ENCODER
+#if defined(USE_VPL_ENCODER)
   auto session = VplSession::Create();
   if (VplVideoEncoder::IsSupported(session, webrtc::kVideoCodecVP8)) {
     config.encoders.insert(
@@ -228,6 +230,17 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
             },
             16));
   }
+  if (VplVideoEncoder::IsSupported(session, webrtc::kVideoCodecH265)) {
+    config.encoders.insert(
+        config.encoders.begin(),
+        VideoEncoderConfig(
+            webrtc::kVideoCodecH265,
+            [](auto format) -> std::unique_ptr<webrtc::VideoEncoder> {
+              return VplVideoEncoder::Create(VplSession::Create(),
+                                             webrtc::kVideoCodecH265);
+            },
+            16));
+  }
   if (VplVideoEncoder::IsSupported(session, webrtc::kVideoCodecAV1)) {
     config.encoders.insert(
         config.encoders.begin(),
@@ -241,7 +254,7 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
   }
 #endif
 
-#if USE_JETSON_ENCODER
+#if defined(USE_JETSON_ENCODER)
   if (JetsonVideoEncoder::IsSupportedVP8()) {
     config.encoders.insert(config.encoders.begin(),
                            VideoEncoderConfig(
@@ -289,7 +302,8 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
   return config;
 }
 
-SoraVideoEncoderFactoryConfig GetSoftwareOnlyVideoEncoderFactoryConfig() {
+SoraVideoEncoderFactoryConfig GetSoftwareOnlyVideoEncoderFactoryConfig(
+    std::optional<std::string> openh264) {
   SoraVideoEncoderFactoryConfig config;
   config.encoders.push_back(VideoEncoderConfig(
       webrtc::kVideoCodecVP8,
@@ -298,6 +312,13 @@ SoraVideoEncoderFactoryConfig GetSoftwareOnlyVideoEncoderFactoryConfig() {
       VideoEncoderConfig(webrtc::kVideoCodecVP9, [](auto format) {
         return webrtc::VP9Encoder::Create(cricket::CreateVideoCodec(format));
       }));
+  if (openh264) {
+    config.encoders.push_back(VideoEncoderConfig(
+        webrtc::kVideoCodecH264, [openh264 = *openh264](auto format) {
+          return CreateOpenH264VideoEncoder(cricket::CreateVideoCodec(format),
+                                            openh264);
+        }));
+  }
 #if !defined(__arm__) || defined(__aarch64__) || defined(__ARM_NEON__)
   config.encoders.push_back(VideoEncoderConfig(
       webrtc::kVideoCodecAV1,

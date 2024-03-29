@@ -17,6 +17,11 @@ jobs:
           - windows_x86_64
     name: Build sora-cpp-sdk for ${{ matrix.name }}
     runs-on: windows-2019
+    env:
+      TEST_SIGNALING_URL: ${{ secrets.TEST_SIGNALING_URL }}
+      TEST_CHANNEL_ID_PREFIX: ${{ secrets.TEST_CHANNEL_ID_PREFIX }}
+      TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
+      TEST_MATRIX_NAME: ${{ matrix.name }}
     steps:
       - uses: actions/checkout@v4
       - uses: microsoft/setup-msbuild@v2
@@ -45,7 +50,7 @@ jobs:
           key: windows-cuda-${{ steps.versions.outputs.cuda_version }}.v1
       - run: echo "${CUDA_VERSION}" > _install\windows_x86_64\release\cuda.version
         if: steps.cache-cuda.outputs.cache-hit == 'true'
-      - run: python3 run.py --test --package ${{ matrix.name }}
+      - run: python3 run.py --test --run-e2e-test --package ${{ matrix.name }}
         env:
           SORA_CPP_SDK_TEMP_DIR: C:\
       - name: Get package name
@@ -73,6 +78,20 @@ jobs:
         with:
           name: ${{ matrix.name }}.env
           path: _package/${{ matrix.name }}/release/sora.env
+      # Examples のビルド
+      - name: Build Examples
+        run: |
+          cd examples
+          mkdir examples_${{ matrix.name }}
+          foreach ($app in @('sdl_sample', 'sumomo', 'messaging_recvonly_sample')) {
+            python3 "$app\${{ matrix.name }}\run.py" --sora-dir ..
+            cp "_build\${{ matrix.name }}\release\$app\Release\$app.exe" "examples_${{ matrix.name }}"
+          }
+      - name: Upload Examples Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: examples_${{ matrix.name }}
+          path: examples/examples_${{ matrix.name }}
   build-macos:
     strategy:
       fail-fast: false
@@ -81,7 +100,12 @@ jobs:
           - macos_arm64
           - ios
     name: Build sora-cpp-sdk for ${{ matrix.name }}
-    runs-on: macos-13
+    runs-on: macos-14
+    env:
+      TEST_SIGNALING_URL: ${{ secrets.TEST_SIGNALING_URL }}
+      TEST_CHANNEL_ID_PREFIX: ${{ secrets.TEST_CHANNEL_ID_PREFIX }}
+      TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
+      TEST_MATRIX_NAME: ${{ matrix.name }}
     steps:
       - uses: actions/checkout@v4
       - name: Select Xcode 14.3.1
@@ -90,7 +114,7 @@ jobs:
         run: |
           echo "user=`users`" >> $GITHUB_OUTPUT
         id: env
-      - run: python3 run.py --test --package ${{ matrix.name }}
+      - run: python3 run.py --test --run-e2e-test --package ${{ matrix.name }}
       - name: Get package name
         run: |
           source _package/${{ matrix.name }}/release/sora.env
@@ -112,6 +136,22 @@ jobs:
         with:
           name: ${{ matrix.name }}.env
           path: _package/${{ matrix.name }}/release/sora.env
+      # Examples のビルド
+      - name: Build Examples
+        run: |
+          cd examples
+          mkdir examples_${{ matrix.name }}
+          for app in sdl_sample sumomo messaging_recvonly_sample; do
+            python3 $app/${{ matrix.name }}/run.py --sora-dir ..
+            cp _build/${{ matrix.name }}/release/$app/$app examples_${{ matrix.name }}
+          done
+        if: matrix.name == 'macos_arm64'
+      - name: Upload Examples Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: examples_${{ matrix.name }}
+          path: examples/examples_${{ matrix.name }}
+        if: matrix.name == 'macos_arm64'
   build-ubuntu:
     strategy:
       fail-fast: false
@@ -123,6 +163,11 @@ jobs:
           - android
     name: Build sora-cpp-sdk for ${{ matrix.name }}
     runs-on: ${{ matrix.name == 'ubuntu-22.04_x86_64' && 'ubuntu-22.04' || 'ubuntu-20.04' }}
+    env:
+      TEST_SIGNALING_URL: ${{ secrets.TEST_SIGNALING_URL }}
+      TEST_CHANNEL_ID_PREFIX: ${{ secrets.TEST_CHANNEL_ID_PREFIX }}
+      TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
+      TEST_MATRIX_NAME: ${{ matrix.name }}
     steps:
       - uses: actions/checkout@v4
       - name: Disk cleanup
@@ -181,7 +226,7 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         if: matrix.name == 'android'
-      - run: python3 run.py --test --package ${{ matrix.name }}
+      - run: python3 run.py --test --run-e2e-test --package ${{ matrix.name }}
       - name: Get package name
         run: |
           source _package/${{ matrix.name }}/release/sora.env
@@ -203,6 +248,22 @@ jobs:
         with:
           name: ${{ matrix.name }}.env
           path: _package/${{ matrix.name }}/release/sora.env
+      # Examples のビルド
+      - name: Build Examples
+        run: |
+          cd examples
+          mkdir examples_${{ matrix.name }}
+          for app in sdl_sample sumomo messaging_recvonly_sample; do
+            python3 $app/${{ matrix.name }}/run.py --sora-dir ..
+            cp _build/${{ matrix.name }}/release/$app/$app examples_${{ matrix.name }}
+          done
+        if: matrix.name == 'ubuntu-20.04_x86_64' || matrix.name == 'ubuntu-22.04_x86_64' || matrix.name == 'ubuntu-20.04_armv8_jetson'
+      - name: Upload Examples Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: examples_${{ matrix.name }}
+          path: examples/examples_${{ matrix.name }}
+        if: matrix.name == 'ubuntu-20.04_x86_64' || matrix.name == 'ubuntu-22.04_x86_64' || matrix.name == 'ubuntu-20.04_armv8_jetson'
       - name: Slack Notification
         if: failure()
         uses: rtCamp/action-slack-notify@v2

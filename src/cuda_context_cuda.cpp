@@ -2,7 +2,7 @@
 
 #include "sora/cuda_context.h"
 
-#if !USE_NVCODEC_ENCODER
+#if !defined(USE_NVCODEC_ENCODER)
 
 namespace sora {
 

@@ -96,6 +96,7 @@ target_sources(sora
     src/device_video_capturer.cpp
     src/i420_encoder_adapter.cpp
     src/java_context.cpp
+    src/open_h264_video_encoder.cpp
     src/rtc_ssl_verifier.cpp
     src/rtc_stats.cpp
     src/scalable_track_source.cpp
@@ -147,10 +148,13 @@ target_include_directories(sora PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_include_directories(sora INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}> $<INSTALL_INTERFACE:include>)
 target_compile_definitions(sora
   PRIVATE
-    USE_NVCODEC_ENCODER=$<BOOL:${USE_NVCODEC_ENCODER}>
-    USE_JETSON_ENCODER=$<BOOL:${USE_JETSON_ENCODER}>
-    USE_VPL_ENCODER=$<BOOL:${USE_VPL_ENCODER}>
+    $<$<BOOL:${USE_NVCODEC_ENCODER}>:USE_NVCODEC_ENCODER>
+    $<$<BOOL:${USE_JETSON_ENCODER}>:USE_JETSON_ENCODER>
+    $<$<BOOL:${USE_VPL_ENCODER}>:USE_VPL_ENCODER>
 )
+
+# OpenH264
+target_include_directories(sora PRIVATE ${OPENH264_ROOT}/include)
 
 # 指定したライブラリを自身の静的ライブラリにバンドルする
 function(bundle_static_library target static_libs bundled_target)
@@ -243,6 +247,7 @@ if (SORA_TARGET_OS STREQUAL "windows")
   target_compile_definitions(sora
     PUBLIC
       WEBRTC_WIN
+      RTC_ENABLE_H265
       _ITERATOR_DEBUG_LEVEL=0
   )
 
@@ -415,6 +420,7 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
       _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE
       # https://github.com/boostorg/container_hash/issues/22 と同じ問題が clang-15 でも起きるので、これを手動で定義して回避する
       BOOST_NO_CXX98_FUNCTION_BASE
+      RTC_ENABLE_H265
   )
 
   set_target_properties(sora PROPERTIES POSITION_INDEPENDENT_CODE ON)

@@ -11,6 +11,24 @@
 
 ## develop
 
+## 2024.5.0 (2024-03-29)
+
+- [CHANGE] 別リポジトリに分かれていた Sora C++ SDK のサンプル集を examples/ 以下のディレクトリに統合する
+  - @melpon
+- [UPDATE] libwebrtc を `m122.6261.1.0` にあげる
+  - Ubuntu のビルドを通すために、 __assertion_handler というファイルをコピーする必要があった
+  - @miosakuma @enm10k
+- [UPDATE] libvpl を v2.10.1 にあげる
+  - @enm10k
+- [ADD] OpenH264 エンコーダを追加
+  - @melpon
+- [ADD] Catch2 を使って E2E テストを追加
+  - @melpon
+- [ADD] Ubuntu 22.04 で Intel VPL のH.265 に対応する
+  - @enm10k
+- [FIX] HWA 利用の判定を `#if defined(USE_*_ENCODER)` という使い方で統一するように修正
+  - @melpon
+
 ## 2024.4.0 (2024-03-13)
 
 - [ADD] test/hello.cpp に video, audio フラグを追加

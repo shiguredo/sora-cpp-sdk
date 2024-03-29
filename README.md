@@ -29,7 +29,8 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
   - Google Android HWA
     - VP8 / VP9 / H.264 / H.265
   - [Intel VPL](https://github.com/intel/libvpl) (Intel Media SDK の後継)
-    - VP9 / AV1 / H.264
+    - VP9 / H.264 / H.265
+    - H.265 は Ubuntu 22.04 のみ
 
 ## ライブラリのバイナリ提供について
 
@@ -38,6 +39,10 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
 _hololens2 は無視してください_
 
 https://github.com/shiguredo/sora-cpp-sdk/releases
+
+## サンプル集
+
+[examples](examples)を参照してください。
 
 ## 対応 Sora
 
@@ -55,10 +60,6 @@ https://github.com/shiguredo/sora-cpp-sdk/releases
 - Ubuntu 22.04 x86_64
 - Android 7 arm64 以降
 - iOS 13 arm64 以降
-
-## サンプル集
-
-https://github.com/shiguredo/sora-cpp-sdk-samples
 
 ## FAQ
 
@@ -113,4 +114,12 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
+```
+
+## OpenH264
+
+https://www.openh264.org/BINARY_LICENSE.txt
+
+```
+"OpenH264 Video Codec provided by Cisco Systems, Inc."
 ```

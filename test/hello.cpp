@@ -177,6 +177,9 @@ int main(int argc, char* argv[]) {
       it != v.as_object().end()) {
     context_config.use_hardware_encoder = it->value().as_bool();
   }
+  if (auto it = v.as_object().find("openh264"); it != v.as_object().end()) {
+    context_config.openh264 = it->value().as_string();
+  }
   auto context = sora::SoraClientContext::Create(context_config);
 
   auto hello = std::make_shared<HelloSora>(context, config);
