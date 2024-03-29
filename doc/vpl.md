@@ -29,17 +29,17 @@ https://www.intel.com/content/www/us/en/developer/tools/vpl/overview.html#gs.73u
 
 ### Windows
 
-基本的に手動でドライバーのインストールなどを行う必要はありません。
+手動でドライバーのインストールなどを行う必要はありません。
 
 ### Linux
 
-https://dgpu-docs.intel.com/driver/client/overview.html を参考に作業します。
+https://dgpu-docs.intel.com/driver/client/overview.html を参考に必要なドライバーとソフトウェアをインストールします。
 
 OS は Ubuntu 22.04 を利用します。
 
 #### Intel VPL を利用する手順
 
-Intel VPL を利用する場合は libmfxgen1 ではなく libmfx-gen1.2 を利用する必要があるため、参考にしたドキュメントのコマンドをそこだけ読み替えて実行します。
+Intel VPL を利用する場合は libmfxgen1 ではなく libmfx-gen1.2 を利用する必要があるため、ドキュメントのコマンドを一部読み替えて実行します。
 
 ```
 # Intel の apt リポジトリを追加
@@ -60,7 +60,7 @@ sudo apt install -y \
 
 #### Intel Media SDK を利用する手順
 
-参考にしたドキュメントの通りです。
+ドキュメントの通りです。
 
 ```
 # Intel の apt リポジトリを追加
@@ -81,10 +81,10 @@ sudo apt install -y \
 
 ### Linux で環境構築ができたことを確認する手順
 
-`vainfo` コマンドを実行ます。  
+`vainfo` コマンドを実行します。  
 エラーが発生しなければ、 VPL の実行に必要なドライバーやライブラリのインストールに成功しています。  
 
-以下は Ubuntu 22.04 で上記の手順に基づいて環境構築を行った際の `vainfo` コマンドの結果です。  
+以下は Ubuntu 22.04 で上記の手順に基づいて環境を構築した際の `vainfo` コマンドの結果です。  
 対応しているプロファイルやエントリーポイントは環境によって異なります。
 
 ```
@@ -108,7 +108,7 @@ vainfo: Supported profile and entrypoints
 
 ## Sora C++ SDK で Intel VPL が利用されていることを確認する
 
-利用されているエンコーダー/デコーダーは以下の方法で確認できます。
+以下のいずれかの方法で Intel VPL が利用されていることを確認できます。
 
 ### libwebrtc の統計情報を確認する
 
