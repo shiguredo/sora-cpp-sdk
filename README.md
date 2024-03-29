@@ -39,6 +39,10 @@ _hololens2 は無視してください_
 
 https://github.com/shiguredo/sora-cpp-sdk/releases
 
+## サンプル集
+
+[examples](examples)を参照してください。
+
 ## 対応 Sora
 
 - WebRTC SFU Sora 2023.2.0 以降
