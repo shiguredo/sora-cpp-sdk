@@ -29,7 +29,7 @@ https://www.intel.com/content/www/us/en/developer/tools/vpl/overview.html#gs.73u
 
 ### Windows
 
-TODO: libvpl.dll (?) をインストールする手順を書く
+基本的に手動でドライバーのインストールなどを行う必要はありません。
 
 ### Linux
 
@@ -108,16 +108,16 @@ vainfo: Supported profile and entrypoints
 
 ## Sora C++ SDK で Intel VPL が利用されていることを確認する
 
-利用されているエンコーダー/デコーダーは以下の方法が確認できます
+利用されているエンコーダー/デコーダーは以下の方法で確認できます。
 
-### libwebrtc の統計情報
+### libwebrtc の統計情報を確認する
 
-統計上の以下の値を確認します。
+統計情報の以下の値を確認します。
 
 - エンコーダー.. type: outbound-rtp の encoderImplementation
 - デコーダー ... type: inbound-rtp の decoderImplementation
 
-### Sora C++ SDK のログ
+### Sora C++ SDK のログを確認する
 
 Sora C++ SDK のログ・レベルを上げてエンコーダー/デコーダーを動作させた際に、ログに出力されるファイル名、内容から Intel VPL が利用されていることを確認できます。
 
