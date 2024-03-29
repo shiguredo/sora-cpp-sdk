@@ -110,13 +110,6 @@ vainfo: Supported profile and entrypoints
 
 以下のいずれかの方法で Intel VPL が利用されていることを確認できます。
 
-### libwebrtc の統計情報を確認する
-
-統計情報の以下の値を確認します。
-
-- エンコーダー.. type: outbound-rtp の encoderImplementation
-- デコーダー ... type: inbound-rtp の decoderImplementation
-
 ### Sora C++ SDK のログを確認する
 
 Sora C++ SDK のログ・レベルを上げてエンコーダー/デコーダーを動作させた際に、ログに出力されるファイル名、内容から Intel VPL が利用されていることを確認できます。
