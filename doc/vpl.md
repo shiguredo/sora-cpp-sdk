@@ -112,7 +112,7 @@ vainfo: Supported profile and entrypoints
 
 ### libwebrtc の統計情報を確認する
 
-統計情報の以下の値に `Intel VPL` と出力されていることを確認します。
+統計情報の以下の値に `libvpl` と出力されていることを確認します。
 
 - type: outbound-rtp の encoderImplementation
 - type: inbound-rtp の decoderImplementation
