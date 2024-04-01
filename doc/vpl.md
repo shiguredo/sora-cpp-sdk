@@ -6,14 +6,14 @@ Intel VPL を利用する方法を説明します
 
 ## 前提知識: ランタイムについて
 
-Intel VPL には Intel VPL と Intel Media SDK の 2 つのランタイムがあり、チップの世代によって利用できるランタイムが異なります。  
+Intel VPL には Intel VPL (*1) と Intel Media SDK の 2 つのランタイムがあり、チップの世代によって利用できるランタイムが異なります。  
 Intel Media SDK は既に開発が終了しており、後継の Intel VPL に開発が移行しているため、これから VPL を利用する場合は、 Intel VPL に対応したチップを利用することを推奨します。
 
 第 11 世代 以降のチップを利用している場合は、 Intel VPL ランタイムを利用することができます。  
 
 https://www.intel.com/content/www/us/en/developer/tools/vpl/overview.html#gs.73uoi4 の Specifications のセクションより、ランタイムと対応するチップの一覧を以下に引用します。
 
-- Intel VPL (*1) ... https://github.com/oneapi-src/oneVPL-intel-gpu
+- Intel VPL ... https://github.com/oneapi-src/oneVPL-intel-gpu
   - Intel® Iris® Xe graphics
   - Intel Iris Xe MAX graphics
   - Intel® Arc™ Graphics
@@ -108,8 +108,6 @@ vainfo: Supported profile and entrypoints
 
 ## Sora C++ SDK で Intel VPL が利用されていることを確認する
 
-以下のいずれかの方法で Intel VPL が利用されていることを確認できます。
-
 ### Sora C++ SDK のログを確認する
 
 Sora C++ SDK のログ・レベルを上げてエンコーダー/デコーダーを動作させた際に、ログに出力されるファイル名、内容から Intel VPL が利用されていることを確認できます。
@@ -120,7 +118,7 @@ Sora C++ SDK の 実装 (SoraVideoEncoderFactory, SoraVideoDecoderFactory クラ
 
 そのため、 NVIDIA の GPU が搭載された PC で Intel VPL を利用するには、以下のいずれかの対応が必要です。
 
-- NVIDIA の GPU を利用するエンコーダー/デコーダーをビルド時に無効化する (= ビルド・スクリプトで `USE_NVCODEC_ENCODER` を指定している箇所を削除する)
+- NVIDIA の GPU を利用するエンコーダー/デコーダーをビルド時に無効化する ... ビルド・スクリプトで `USE_NVCODEC_ENCODER` を指定している箇所を削除する
 - NVIDIA の GPU のドライバーを削除する
 
 Sora C++ SDK をビルドしている場合は、前者の方法を推奨します。  
