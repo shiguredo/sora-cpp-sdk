@@ -31,11 +31,9 @@ https://www.intel.com/content/www/us/en/developer/tools/vpl/overview.html#gs.73u
 
 手動でドライバーのインストールなどを行う必要はありません。
 
-### Linux
+### Ubuntu 22.04
 
 https://dgpu-docs.intel.com/driver/client/overview.html を参考に必要なドライバーとソフトウェアをインストールします。
-
-OS は Ubuntu 22.04 を利用します。
 
 #### Intel VPL ランタイムを利用する手順
 
@@ -79,12 +77,12 @@ sudo apt install -y \
   mesa-vdpau-drivers mesa-vulkan-drivers va-driver-all vainfo hwinfo clinfo
 ```
 
-### Linux で環境構築ができたことを確認する手順
+### Ubuntu 22.04 で環境構築ができたことを確認する手順
 
 `vainfo` コマンドを実行します。  
 エラーが発生しなければ、 Intel VPL の実行に必要なドライバーやライブラリのインストールに成功しています。  
 
-以下は Ubuntu 22.04 で上記の手順に基づいて環境を構築した際の `vainfo` コマンドの結果です。  
+以下は `vainfo` を実行した出力の例です。  
 対応しているプロファイルやエントリーポイントは環境によって異なります。
 
 ```
