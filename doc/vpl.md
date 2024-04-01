@@ -108,6 +108,15 @@ vainfo: Supported profile and entrypoints
 
 ## Sora C++ SDK で Intel VPL が利用されていることを確認する
 
+以下のいずれかの方法で Intel VPL が利用されていることを確認できます。
+
+### libwebrtc の統計情報を確認する
+
+統計情報の以下の値に `Intel VPL` と出力されていることを確認します。
+
+- type: outbound-rtp の encoderImplementation
+- type: inbound-rtp の decoderImplementation
+
 ### Sora C++ SDK のログを確認する
 
 Sora C++ SDK のログ・レベルを上げてエンコーダー/デコーダーを動作させた際に、ログに出力されるファイル名、内容から Intel VPL が利用されていることを確認できます。
