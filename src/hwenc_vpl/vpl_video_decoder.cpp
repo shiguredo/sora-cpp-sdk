@@ -332,7 +332,7 @@ int32_t VplVideoDecoderImpl::Release() {
 }
 
 const char* VplVideoDecoderImpl::ImplementationName() const {
-  return "oneVPL";
+  return "libvpl";
 }
 
 bool VplVideoDecoderImpl::InitVpl() {

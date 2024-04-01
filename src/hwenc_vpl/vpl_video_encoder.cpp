@@ -521,7 +521,7 @@ void VplVideoEncoderImpl::SetRates(const RateControlParameters& parameters) {
 webrtc::VideoEncoder::EncoderInfo VplVideoEncoderImpl::GetEncoderInfo() const {
   webrtc::VideoEncoder::EncoderInfo info;
   info.supports_native_handle = true;
-  info.implementation_name = "NvCodec H264";
+  info.implementation_name = "libvpl";
   info.scaling_settings = webrtc::VideoEncoder::ScalingSettings(
       kLowH264QpThreshold, kHighH264QpThreshold);
   info.is_hardware_accelerated = true;
