@@ -11,9 +11,9 @@
 
 ## develop
 
-- [CHANGE] VplVideoDecoderImpl の ImplementationName を oneVPL から libvpl に変更する
+- [CHANGE] `VplVideoDecoderImpl` の `ImplementationName` を `oneVPL` から `libvpl` に変更する
   - @enm10k
-- [FIX] VplVideoEncoderImpl の implementation_name の値が誤っていたため libvpl に修正する
+- [FIX] `VplVideoEncoderImpl` の `implementation_name` の値が誤っていたため `libvpl` に修正する
   - @enm10k
 
 ## 2024.5.0 (2024-03-29)
