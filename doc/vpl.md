@@ -7,9 +7,11 @@ Intel VPL を利用する方法を説明します
 ## 前提知識: ランタイムについて
 
 Intel VPL には Intel VPL (*1) と Intel Media SDK の 2 つのランタイムがあり、チップの世代によって利用できるランタイムが異なります。  
-Intel Media SDK は既に開発が終了しており、後継の Intel VPL に開発が移行しているため、これから VPL を利用する場合は、 Intel VPL に対応したチップを利用することを推奨します。
+
+*1 ... ライブラリの Intel VPL と区別するために、以後は Intel VPL ランタイムと表記します。
 
 第 11 世代 以降のチップを利用している場合は、 Intel VPL ランタイムを利用することができます。  
+Intel Media SDK は既に開発が終了しており、後継の Intel VPL ランタイムに開発が移行しているため、これから VPL を利用する場合は、 Intel VPL ランタイムに対応したチップを利用することを推奨します。
 
 https://www.intel.com/content/www/us/en/developer/tools/vpl/overview.html#gs.73uoi4 の Specifications のセクションより、ランタイムと対応するチップの一覧を以下に引用します。
 
@@ -23,8 +25,6 @@ https://www.intel.com/content/www/us/en/developer/tools/vpl/overview.html#gs.73u
   - Intel® Server GPU
   - 5th to 11th generation Intel Core processors using integrated graphics
 
-*1 ... `apt info libmfx-gen1.2` の出力などでは、 Intel oneVPL GPU runtime とも表記されます
-
 ## 環境構築
 
 ### Windows
@@ -37,9 +37,9 @@ https://dgpu-docs.intel.com/driver/client/overview.html を参考に必要なド
 
 OS は Ubuntu 22.04 を利用します。
 
-#### Intel VPL を利用する手順
+#### Intel VPL ランタイムを利用する手順
 
-Intel VPL を利用する場合は libmfxgen1 ではなく libmfx-gen1.2 を利用する必要があるため、ドキュメントのコマンドを一部読み替えて実行します。
+Intel VPL ランタイムを利用する場合は libmfxgen1 ではなく libmfx-gen1.2 を使う必要があるため、ドキュメントのコマンドを一部読み替えて実行します。
 
 ```
 # Intel の apt リポジトリを追加
@@ -82,7 +82,7 @@ sudo apt install -y \
 ### Linux で環境構築ができたことを確認する手順
 
 `vainfo` コマンドを実行します。  
-エラーが発生しなければ、 VPL の実行に必要なドライバーやライブラリのインストールに成功しています。  
+エラーが発生しなければ、 Intel VPL の実行に必要なドライバーやライブラリのインストールに成功しています。  
 
 以下は Ubuntu 22.04 で上記の手順に基づいて環境を構築した際の `vainfo` コマンドの結果です。  
 対応しているプロファイルやエントリーポイントは環境によって異なります。
