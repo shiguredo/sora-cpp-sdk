@@ -15,6 +15,8 @@
 
 - [CHANGE] 別リポジトリに分かれていた Sora C++ SDK のサンプル集を examples/ 以下のディレクトリに統合する
   - @melpon
+- [CHANGE] VplVideoDecoderImpl の ImplementationName を oneVPL から libvpl に変更する
+  - @enm10k
 - [UPDATE] libwebrtc を `m122.6261.1.0` にあげる
   - Ubuntu のビルドを通すために、 __assertion_handler というファイルをコピーする必要があった
   - @miosakuma @enm10k
@@ -28,6 +30,8 @@
   - @enm10k
 - [FIX] HWA 利用の判定を `#if defined(USE_*_ENCODER)` という使い方で統一するように修正
   - @melpon
+- [FIX] VplVideoEncoderImpl の implementation_name の値が誤っていたため libvpl に修正する
+  - @enm10k
 
 ## 2024.4.0 (2024-03-13)
 
