@@ -13,7 +13,7 @@
 #include <rtc_base/time_utils.h>
 #include <third_party/libyuv/include/libyuv/convert.h>
 
-// oneVPL
+// Intel VPL
 #include <vpl/mfxdefs.h>
 #include <vpl/mfxvideo++.h>
 #include <vpl/mfxvp8.h>
@@ -160,7 +160,7 @@ std::unique_ptr<MFXVideoDECODE> VplVideoDecoderImpl::CreateDecoderInternal(
   // Query した上で Init しても MFX_ERR_UNSUPPORTED になることがあるので
   // 本来 Init が不要な時も常に呼ぶようにして確認する
   /*if (init)*/ {
-    // Initialize the oneVPL encoder
+    // Initialize the Intel VPL encoder
     sts = decoder->Init(&param);
     if (sts != MFX_ERR_NONE) {
       RTC_LOG(LS_VERBOSE) << "Init failed: codec=" << CodecToString(codec)
@@ -332,7 +332,7 @@ int32_t VplVideoDecoderImpl::Release() {
 }
 
 const char* VplVideoDecoderImpl::ImplementationName() const {
-  return "oneVPL";
+  return "libvpl";
 }
 
 bool VplVideoDecoderImpl::InitVpl() {

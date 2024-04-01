@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-// oneVPL
+// Intel VPL
 #include <vpl/mfxvideo++.h>
 
 #include "sora/hwenc_vpl/vpl_session.h"
