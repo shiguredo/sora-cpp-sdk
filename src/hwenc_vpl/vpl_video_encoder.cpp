@@ -12,7 +12,7 @@
 #include <rtc_base/logging.h>
 #include <rtc_base/synchronization/mutex.h>
 
-// oneVPL
+// Intel VPL
 #include <vpl/mfxvideo++.h>
 #include <vpl/mfxvp8.h>
 
