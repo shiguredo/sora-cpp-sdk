@@ -4,15 +4,15 @@
 // WebRTC
 #include <api/video/video_codec_type.h>
 
-// oneVPL
+// Intel VPL
 #include <vpl/mfxdefs.h>
 
-#define VPL_CHECK_RESULT(P, X, ERR)                 \
-  {                                                 \
-    if ((X) > (P)) {                                \
-      RTC_LOG(LS_ERROR) << "oneVPL Error: " << ERR; \
-      throw ERR;                                    \
-    }                                               \
+#define VPL_CHECK_RESULT(P, X, ERR)                    \
+  {                                                    \
+    if ((X) > (P)) {                                   \
+      RTC_LOG(LS_ERROR) << "Intel VPL Error: " << ERR; \
+      throw ERR;                                       \
+    }                                                  \
   }
 
 namespace sora {

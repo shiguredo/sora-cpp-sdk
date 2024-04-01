@@ -2,7 +2,7 @@
 
 #include <rtc_base/logging.h>
 
-// oneVPL
+// Intel VPL
 #include <vpl/mfxdispatcher.h>
 #include <vpl/mfxvideo.h>
 
@@ -77,9 +77,9 @@ std::shared_ptr<VplSession> VplSession::Create() {
     return nullptr;
   }
 
-  RTC_LOG(LS_VERBOSE) << "oneVPL Implementation: "
+  RTC_LOG(LS_VERBOSE) << "Intel VPL Implementation: "
                       << (impl == MFX_IMPL_SOFTWARE ? "SOFTWARE" : "HARDWARE");
-  RTC_LOG(LS_VERBOSE) << "oneVPL Version: " << ver.Major << "." << ver.Minor;
+  RTC_LOG(LS_VERBOSE) << "Intel VPL Version: " << ver.Major << "." << ver.Minor;
   return session;
 }
 

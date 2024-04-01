@@ -39,9 +39,10 @@ python3 run.py ubuntu-20.04_x86_64 --debug --webrtc-build-dir ../webrtc-build
 
 ## メモ
 
-- ubuntu-20.04_x86_64, ubuntu-22.04_x86_64 のビルドに必要な依存
-  - clang-18
-  - CUDA
+### ubuntu-20.04_x86_64, ubuntu-22.04_x86_64 のビルドに必要な依存
+
+- clang-18
+- CUDA
 ```bash
 # clang-18
 wget https://apt.llvm.org/llvm.sh
@@ -55,16 +56,18 @@ sudo apt-get update
 # 11.8.0-1 の部分は VERSION ファイルの CUDA_VERSION を参照すること
 sudo apt-get -y install cuda=11.8.0-1
 ```
-  - libva-dev
-  - libdrm-dev
+- libva-dev
+- libdrm-dev
 ```bash
 sudo apt install libva-dev libdrm-dev
 ```
-- ubuntu-20.04_x86_64, ubuntu-22.04_x86_64 の実行に必要な依存
-  - libva2
-  - libdrm2
+
+### ubuntu-20.04_x86_64, ubuntu-22.04_x86_64 の実行に必要な依存
+
+- libva2
+- libdrm2
 ```bash
 sudo apt install libva2 libdrm2
 ```
-  - （もし内部実装が Intel Media SDK の oneVPL を有効にしたいなら）libmfx1
-  - （もし内部実装が oneVPL GPU の oneVPL を有効にしたいなら）libmfx-gen1.2 （Ubuntu 22.04 のみ利用可）
+- （Intel VPL の Intel Media SDK を利用したいなら）libmfx1
+- （Intel VPL の Intel VPL ランタイムを利用したいなら）libmfx-gen1.2 （Ubuntu 22.04 のみ利用可）
