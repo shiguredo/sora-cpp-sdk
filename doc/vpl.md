@@ -106,32 +106,11 @@ vainfo: Supported profile and entrypoints
 
 ## Sora C++ SDK で Intel VPL が利用されていることを確認する
 
-以下のいずれかの方法で Intel VPL が利用されていることを確認できます。
-
-### libwebrtc の統計情報を確認する
-
-統計情報の以下の値に `libvpl` と出力されていることを確認します。
+WebRTC の統計情報から利用されているエンコーダー/デコーダーを確認できます。  
+以下の値に `libvpl` と出力されている場合、 Intel VPL が利用されています。
 
 - type: outbound-rtp の encoderImplementation
 - type: inbound-rtp の decoderImplementation
-
-### Sora C++ SDK のログを確認する
-
-Sora C++ SDK のログ・レベルを `rtc::LS_VERBOSE` に設定してエンコーダー/デコーダーを動作させた際に、ログに出力されるファイル名と内容から Intel VPL が利用されていることを確認できます。
-
-以下は Intel VPL を使ったデコーダーが出力するログの例です。
-sumomo (サンプル・プログラム) のログを `vpl` で絞り込んでいます
-
-```
-[001:955][2471] (vpl_video_decoder.cpp:265): after DataOffset=591 DataLength=906
-[001:985][2471] (vpl_video_decoder.cpp:234): before DataOffset=0 DataLength=4252
-[001:985][2471] (vpl_video_decoder.cpp:265): after DataOffset=906 DataLength=3346
-[002:017][2471] (vpl_video_decoder.cpp:234): before DataOffset=0 DataLength=4507
-[002:017][2471] (vpl_video_decoder.cpp:265): after DataOffset=3346 DataLength=1161
-[002:047][2471] (vpl_video_decoder.cpp:234): before DataOffset=0 DataLength=2357
-[002:048][2471] (vpl_video_decoder.cpp:265): after DataOffset=1161 DataLength=1196
-[002:079][2471] (vpl_video_decoder.cpp:234): before DataOffset=0 DataLength=5586
-```
 
 ## NVIDIA の GPU が搭載された PC で Intel VPL を利用する
 
