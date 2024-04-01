@@ -351,9 +351,9 @@ shall be binding upon assignees.
 ###############################################################################
 ```
 
-## oneVPL
+## Intel VPL
 
-https://github.com/oneapi-src/oneVPL
+https://github.com/intel/libvpl
 
 ```
 MIT License
