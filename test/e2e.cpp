@@ -85,7 +85,6 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
     config.pc_factory = pc_factory;
     config.io_context = ioc_.get();
     config.observer = shared_from_this();
-    config.sora_client = "Sora C++ E2E Test Client";
     config.role = "sendonly";
     config.video = true;
     config.audio = false;
