@@ -24,7 +24,7 @@ https://www.intel.com/content/www/us/en/developer/tools/vpl/overview.html#gs.73u
   - Intel® Server GPU
   - 5th to 11th generation Intel Core processors using integrated graphics
 
-## 注意点: NVIDIA の GPU が搭載された PC で Intel VPL を利用する方法
+## NVIDIA の GPU が搭載された PC で Intel VPL を利用する方法
 
 Sora C++ SDK の 実装 (SoraVideoEncoderFactory, SoraVideoDecoderFactory クラス) では、 NVIDIA の GPU を利用するエンコーダー/デコーダーの優先度が Intel VPL を利用するものより高くなっています。
 
