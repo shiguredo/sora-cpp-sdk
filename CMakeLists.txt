@@ -332,6 +332,7 @@ elseif (SORA_TARGET_OS STREQUAL "macos")
     PUBLIC
       WEBRTC_POSIX
       WEBRTC_MAC
+      RTC_ENABLE_H265
   )
 
   target_link_libraries(sora
@@ -376,6 +377,7 @@ elseif (SORA_TARGET_OS STREQUAL "ios")
       WEBRTC_MAC
       WEBRTC_IOS
       OPENSSL_IS_BORINGSSL
+      RTC_ENABLE_H265
   )
 
 elseif (SORA_TARGET_OS STREQUAL "android")
@@ -396,6 +398,7 @@ elseif (SORA_TARGET_OS STREQUAL "android")
       WEBRTC_POSIX
       WEBRTC_LINUX
       WEBRTC_ANDROID
+      RTC_ENABLE_H265
       _LIBCPP_ABI_NAMESPACE=Cr
       _LIBCPP_ABI_VERSION=2
       _LIBCPP_DISABLE_AVAILABILITY
