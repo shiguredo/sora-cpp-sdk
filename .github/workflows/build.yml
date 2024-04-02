@@ -88,7 +88,7 @@ jobs:
             cp "_build\${{ matrix.name }}\release\$app\Release\$app.exe" "examples_${{ matrix.name }}"
           }
       - name: Upload Examples Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: examples_${{ matrix.name }}
           path: examples/examples_${{ matrix.name }}
@@ -147,7 +147,7 @@ jobs:
           done
         if: matrix.name == 'macos_arm64'
       - name: Upload Examples Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: examples_${{ matrix.name }}
           path: examples/examples_${{ matrix.name }}
@@ -259,7 +259,7 @@ jobs:
           done
         if: matrix.name == 'ubuntu-20.04_x86_64' || matrix.name == 'ubuntu-22.04_x86_64' || matrix.name == 'ubuntu-20.04_armv8_jetson'
       - name: Upload Examples Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: examples_${{ matrix.name }}
           path: examples/examples_${{ matrix.name }}
