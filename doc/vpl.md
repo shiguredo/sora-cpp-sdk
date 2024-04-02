@@ -1,8 +1,9 @@
 # Intel VPL
 
-## このドキュメントについて
+## 概要
 
-Intel VPL を利用する方法を説明します
+ここでは Intel VPL のハードウェアアクセラレーター機能を利用した、
+エンコーダーとデコーダーを利用する方法について説明します。
 
 ## Intel VPL ランタイムについて
 
@@ -10,7 +11,8 @@ Intel VPL には Intel VPL (ライブラリの Intel VPL と区別するため�
 
 第 11 世代 以降のチップを利用している場合は、 Intel VPL ランタイムを利用することができます。
 
-Intel Media SDK は既に開発が終了しており、後継の Intel VPL ランタイムに開発が移行しているため、これから VPL を利用する場合は、 Intel VPL ランタイムに対応したチップを利用することを推奨します。
+Intel Media SDK は既に開発が終了しており、後継の Intel VPL ランタイムに開発が移行しているため、
+これから VPL を利用する場合は、 Intel VPL ランタイムに対応したチップを利用することを推奨します。
 
 https://www.intel.com/content/www/us/en/developer/tools/vpl/overview.html#gs.73uoi4 の Specifications のセクションより、ランタイムと対応するチップの一覧を以下に引用します。
 
@@ -26,7 +28,8 @@ https://www.intel.com/content/www/us/en/developer/tools/vpl/overview.html#gs.73u
 
 ## NVIDIA の GPU が搭載された PC で Intel VPL を利用する方法
 
-Sora C++ SDK の 実装 (SoraVideoEncoderFactory, SoraVideoDecoderFactory クラス) では、 NVIDIA の GPU を利用するエンコーダー/デコーダーの優先度が Intel VPL を利用するものより高くなっています。
+Sora C++ SDK の 実装 (SoraVideoEncoderFactory, SoraVideoDecoderFactory クラス) では、
+NVIDIA の GPU を利用するエンコーダー/デコーダーの優先度が Intel VPL を利用するものより高くなっています。
 
 そのため、 NVIDIA の GPU が搭載された PC で Intel VPL を利用するには、以下のいずれかの対応が必要です。
 
