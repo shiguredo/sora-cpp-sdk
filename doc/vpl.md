@@ -4,7 +4,7 @@
 
 Intel VPL を利用する方法を説明します
 
-## 前提知識: ランタイムについて
+## Intel VPL ランタイムについて
 
 Intel VPL には Intel VPL (ライブラリの Intel VPL と区別するために、以後は Intel VPL ランタイムと表記します) と Intel Media SDK の 2 つのランタイムがあり、チップの世代によって利用できるランタイムが異なります。
 
@@ -56,7 +56,7 @@ $ wget -qO - https://repositories.intel.com/gpu/intel-graphics.key | \
   sudo gpg --dearmor --output /usr/share/keyrings/intel-graphics.gpg
 $ echo "deb [arch=amd64,i386 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/gpu/ubuntu jammy client" | \
   sudo tee /etc/apt/sources.list.d/intel-gpu-jammy.list
-$ sudo apt update
+$ sudo apt updatっｇ
 
 # パッケージのインストール
 $ sudo apt install -y \
