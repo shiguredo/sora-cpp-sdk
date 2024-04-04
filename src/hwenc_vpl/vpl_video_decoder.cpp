@@ -393,6 +393,10 @@ void VplVideoDecoderImpl::ReleaseVpl() {
     decoder_->Close();
   }
   decoder_.reset();
+  while (!bitstreams_.empty()) {
+    free(bitstreams_.front());
+    bitstreams_.pop();
+  }
 }
 
 ////////////////////////
