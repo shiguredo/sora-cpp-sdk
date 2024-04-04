@@ -69,7 +69,12 @@ class VplVideoDecoderImpl : public VplVideoDecoder {
   std::vector<uint8_t> surface_buffer_;
   std::vector<mfxFrameSurface1> surfaces_;
   std::vector<uint8_t> bitstream_buffer_;
-  mfxBitstream bitstream_;
+  struct Bitstream {
+    mfxBitstream bs;
+    uint64_t pts;
+    char buf[1];
+  };
+  std::queue<Bitstream*> bitstreams_;
 };
 
 VplVideoDecoderImpl::VplVideoDecoderImpl(std::shared_ptr<VplSession> session,
@@ -193,11 +198,13 @@ int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
 
-  if (bitstream_.MaxLength < bitstream_.DataLength + input_image.size()) {
-    bitstream_buffer_.resize(bitstream_.DataLength + input_image.size());
-    bitstream_.MaxLength = bitstream_.DataLength + bitstream_buffer_.size();
-    bitstream_.Data = bitstream_buffer_.data();
-  }
+  Bitstream* bs =
+      (Bitstream*)std::malloc(sizeof(Bitstream) - 1 + input_image.size());
+  memset(&bs->bs, 0, sizeof(mfxBitstream));
+  bs->bs.Data = (mfxU8*)bs->buf;
+  bs->pts = input_image.RtpTimestamp();
+  bs->bs.DataLength = input_image.size();
+  bs->bs.MaxLength = input_image.size();
   //printf("size=%zu\n", input_image.size());
   //for (size_t i = 0; i < input_image.size(); i++) {
   //  const uint8_t* p = input_image.data();
@@ -209,12 +216,8 @@ int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
   //  }
   //}
 
-  memmove(bitstream_.Data, bitstream_.Data + bitstream_.DataOffset,
-          bitstream_.DataLength);
-  bitstream_.DataOffset = 0;
-  memcpy(bitstream_.Data + bitstream_.DataLength, input_image.data(),
-         input_image.size());
-  bitstream_.DataLength += input_image.size();
+  memcpy(bs->bs.Data, input_image.data(), input_image.size());
+  bitstreams_.push(bs);
 
   // 使ってない入力サーフェスを取り出す
   auto surface =
@@ -225,23 +228,59 @@ int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
-  // これだとキューイングしたデータとずれるので、本当は surface と一緒に保存して利用するべき
-  uint64_t pts = input_image.RtpTimestamp();
+  RTC_LOG(LS_VERBOSE) << "Decode Queue Length: size=" << bitstreams_.size()
+                      << " surface=" << (surface - surfaces_.begin());
 
-  mfxStatus sts;
-  mfxSyncPoint syncp;
-  mfxFrameSurface1* out_surface = nullptr;
-  RTC_LOG(LS_VERBOSE) << "before DataOffset=" << bitstream_.DataOffset
-                      << " DataLength=" << bitstream_.DataLength;
-  while (true) {
-    sts = decoder_->DecodeFrameAsync(&bitstream_, &*surface, &out_surface,
-                                     &syncp);
-    if (sts == MFX_WRN_DEVICE_BUSY) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(1));
-      continue;
+  // キューが空になるか、sts == MFX_ERR_MORE_DATA あたりが出るまでループさせる
+  while (!bitstreams_.empty()) {
+    mfxStatus sts;
+    mfxSyncPoint syncp;
+    mfxFrameSurface1* out_surface = nullptr;
+
+    while (true) {
+      sts =
+          decoder_->DecodeFrameAsync(&bs->bs, &*surface, &out_surface, &syncp);
+      if (sts == MFX_WRN_DEVICE_BUSY) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        continue;
+      }
+      // 受信した映像のサイズが変わってたら width_, height_ を更新する
+      if (sts == MFX_WRN_VIDEO_PARAM_CHANGED) {
+        mfxVideoParam param;
+        memset(&param, 0, sizeof(param));
+        sts = decoder_->GetVideoParam(&param);
+        if (sts != MFX_ERR_NONE) {
+          return WEBRTC_VIDEO_CODEC_ERROR;
+        }
+
+        if (width_ != param.mfx.FrameInfo.CropW ||
+            height_ != param.mfx.FrameInfo.CropH) {
+          RTC_LOG(LS_INFO) << "Change Frame Size: " << width_ << "x" << height_
+                           << " to " << param.mfx.FrameInfo.CropW << "x"
+                           << param.mfx.FrameInfo.CropH;
+          width_ = param.mfx.FrameInfo.CropW;
+          height_ = param.mfx.FrameInfo.CropH;
+        }
+        continue;
+      }
+
+      break;
     }
-    // 受信した映像のサイズが変わってたら width_, height_ を更新する
-    if (sts == MFX_WRN_VIDEO_PARAM_CHANGED) {
+    if (sts == MFX_ERR_MORE_DATA) {
+      // もっと入力が必要なので出直す
+      return WEBRTC_VIDEO_CODEC_OK;
+    }
+    if (!syncp) {
+      RTC_LOG(LS_WARNING) << "Failed to DecodeFrameAsync: syncp is null, sts="
+                          << (int)sts;
+      return WEBRTC_VIDEO_CODEC_OK;
+    }
+    VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    // H264 は sts == MFX_WRN_VIDEO_PARAM_CHANGED でハンドリングできるのでここではチェックしない
+    // VP9 は受信フレームのサイズが変わっても MFX_WRN_VIDEO_PARAM_CHANGED を返さないようなので、
+    // ここで毎フレーム情報を取得してサイズを更新する。
+    if (codec_ == MFX_CODEC_VP9) {
       mfxVideoParam param;
       memset(&param, 0, sizeof(param));
       sts = decoder_->GetVideoParam(&param);
@@ -257,64 +296,30 @@ int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
         width_ = param.mfx.FrameInfo.CropW;
         height_ = param.mfx.FrameInfo.CropH;
       }
-      continue;
     }
 
-    break;
+    sts = MFXVideoCORE_SyncOperation(GetVplSession(session_), syncp, 600000);
+    VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    uint64_t pts = bitstreams_.front()->pts;
+    bitstreams_.pop();
+    // NV12 から I420 に変換
+    rtc::scoped_refptr<webrtc::I420Buffer> i420_buffer =
+        buffer_pool_.CreateI420Buffer(width_, height_);
+    libyuv::NV12ToI420(out_surface->Data.Y, out_surface->Data.Pitch,
+                       out_surface->Data.UV, out_surface->Data.Pitch,
+                       i420_buffer->MutableDataY(), i420_buffer->StrideY(),
+                       i420_buffer->MutableDataU(), i420_buffer->StrideU(),
+                       i420_buffer->MutableDataV(), i420_buffer->StrideV(),
+                       width_, height_);
+
+    webrtc::VideoFrame decoded_image = webrtc::VideoFrame::Builder()
+                                           .set_video_frame_buffer(i420_buffer)
+                                           .set_timestamp_rtp(pts)
+                                           .build();
+    decode_complete_callback_->Decoded(decoded_image, absl::nullopt,
+                                       absl::nullopt);
   }
-  RTC_LOG(LS_VERBOSE) << "after DataOffset=" << bitstream_.DataOffset
-                      << " DataLength=" << bitstream_.DataLength;
-  if (sts == MFX_ERR_MORE_DATA) {
-    // もっと入力が必要なので出直す
-    return WEBRTC_VIDEO_CODEC_OK;
-  }
-  if (!syncp) {
-    RTC_LOG(LS_WARNING) << "Failed to DecodeFrameAsync: syncp is null, sts="
-                        << (int)sts;
-    return WEBRTC_VIDEO_CODEC_OK;
-  }
-  VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-  // H264 は sts == MFX_WRN_VIDEO_PARAM_CHANGED でハンドリングできるのでここではチェックしない
-  // VP9 は受信フレームのサイズが変わっても MFX_WRN_VIDEO_PARAM_CHANGED を返さないようなので、
-  // ここで毎フレーム情報を取得してサイズを更新する。
-  if (codec_ == MFX_CODEC_VP9) {
-    mfxVideoParam param;
-    memset(&param, 0, sizeof(param));
-    sts = decoder_->GetVideoParam(&param);
-    if (sts != MFX_ERR_NONE) {
-      return WEBRTC_VIDEO_CODEC_ERROR;
-    }
-
-    if (width_ != param.mfx.FrameInfo.CropW ||
-        height_ != param.mfx.FrameInfo.CropH) {
-      RTC_LOG(LS_INFO) << "Change Frame Size: " << width_ << "x" << height_
-                       << " to " << param.mfx.FrameInfo.CropW << "x"
-                       << param.mfx.FrameInfo.CropH;
-      width_ = param.mfx.FrameInfo.CropW;
-      height_ = param.mfx.FrameInfo.CropH;
-    }
-  }
-
-  sts = MFXVideoCORE_SyncOperation(GetVplSession(session_), syncp, 600000);
-  VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-  // NV12 から I420 に変換
-  rtc::scoped_refptr<webrtc::I420Buffer> i420_buffer =
-      buffer_pool_.CreateI420Buffer(width_, height_);
-  libyuv::NV12ToI420(out_surface->Data.Y, out_surface->Data.Pitch,
-                     out_surface->Data.UV, out_surface->Data.Pitch,
-                     i420_buffer->MutableDataY(), i420_buffer->StrideY(),
-                     i420_buffer->MutableDataU(), i420_buffer->StrideU(),
-                     i420_buffer->MutableDataV(), i420_buffer->StrideV(),
-                     width_, height_);
-
-  webrtc::VideoFrame decoded_image = webrtc::VideoFrame::Builder()
-                                         .set_video_frame_buffer(i420_buffer)
-                                         .set_timestamp_rtp(pts)
-                                         .build();
-  decode_complete_callback_->Decoded(decoded_image, absl::nullopt,
-                                     absl::nullopt);
 
   return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -355,12 +360,6 @@ bool VplVideoDecoderImpl::InitVpl() {
 
   RTC_LOG(LS_INFO) << "Decoder NumFrameSuggested="
                    << alloc_request_.NumFrameSuggested;
-
-  // 入力ビットストリーム
-  bitstream_buffer_.resize(1024 * 1024);
-  memset(&bitstream_, 0, sizeof(bitstream_));
-  bitstream_.MaxLength = bitstream_buffer_.size();
-  bitstream_.Data = bitstream_buffer_.data();
 
   // 必要な枚数分の出力サーフェスを作る
   {
