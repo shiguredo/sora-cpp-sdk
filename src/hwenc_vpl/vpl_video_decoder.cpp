@@ -302,6 +302,7 @@ int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
     VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     uint64_t pts = bitstreams_.front()->pts;
+    free(bitstreams_.front());
     bitstreams_.pop();
     // NV12 から I420 に変換
     rtc::scoped_refptr<webrtc::I420Buffer> i420_buffer =
