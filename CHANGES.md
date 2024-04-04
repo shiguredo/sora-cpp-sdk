@@ -11,6 +11,9 @@
 
 ## develop
 
+- [FIX] VPL デコーダで遅延が起きたりセグフォすることがあるのを修正
+  - @melpon
+
 ## 2024.6.0 (2024-04-01)
 
 - [CHANGE] `VplVideoDecoderImpl` の `ImplementationName` を `oneVPL` から `libvpl` に変更する
