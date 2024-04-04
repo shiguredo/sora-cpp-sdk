@@ -245,28 +245,25 @@ int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
         continue;
       }
-      // 受信した映像のサイズが変わってたら width_, height_ を更新する
-      if (sts == MFX_WRN_VIDEO_PARAM_CHANGED) {
-        mfxVideoParam param;
-        memset(&param, 0, sizeof(param));
-        sts = decoder_->GetVideoParam(&param);
-        if (sts != MFX_ERR_NONE) {
-          return WEBRTC_VIDEO_CODEC_ERROR;
-        }
-
-        if (width_ != param.mfx.FrameInfo.CropW ||
-            height_ != param.mfx.FrameInfo.CropH) {
-          RTC_LOG(LS_INFO) << "Change Frame Size: " << width_ << "x" << height_
-                           << " to " << param.mfx.FrameInfo.CropW << "x"
-                           << param.mfx.FrameInfo.CropH;
-          width_ = param.mfx.FrameInfo.CropW;
-          height_ = param.mfx.FrameInfo.CropH;
-        }
-        continue;
-      }
-
       break;
     }
+
+    mfxVideoParam param;
+    memset(&param, 0, sizeof(param));
+    sts = decoder_->GetVideoParam(&param);
+    if (sts != MFX_ERR_NONE) {
+      return WEBRTC_VIDEO_CODEC_ERROR;
+    }
+
+    if (width_ != param.mfx.FrameInfo.CropW ||
+        height_ != param.mfx.FrameInfo.CropH) {
+      RTC_LOG(LS_INFO) << "Change Frame Size: " << width_ << "x" << height_
+                       << " to " << param.mfx.FrameInfo.CropW << "x"
+                       << param.mfx.FrameInfo.CropH;
+      width_ = param.mfx.FrameInfo.CropW;
+      height_ = param.mfx.FrameInfo.CropH;
+    }
+
     if (sts == MFX_ERR_MORE_DATA) {
       // もっと入力が必要なので出直す
       return WEBRTC_VIDEO_CODEC_OK;
@@ -277,27 +274,6 @@ int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
       return WEBRTC_VIDEO_CODEC_OK;
     }
     VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-    // H264 は sts == MFX_WRN_VIDEO_PARAM_CHANGED でハンドリングできるのでここではチェックしない
-    // VP9 は受信フレームのサイズが変わっても MFX_WRN_VIDEO_PARAM_CHANGED を返さないようなので、
-    // ここで毎フレーム情報を取得してサイズを更新する。
-    if (codec_ == MFX_CODEC_VP9) {
-      mfxVideoParam param;
-      memset(&param, 0, sizeof(param));
-      sts = decoder_->GetVideoParam(&param);
-      if (sts != MFX_ERR_NONE) {
-        return WEBRTC_VIDEO_CODEC_ERROR;
-      }
-
-      if (width_ != param.mfx.FrameInfo.CropW ||
-          height_ != param.mfx.FrameInfo.CropH) {
-        RTC_LOG(LS_INFO) << "Change Frame Size: " << width_ << "x" << height_
-                         << " to " << param.mfx.FrameInfo.CropW << "x"
-                         << param.mfx.FrameInfo.CropH;
-        width_ = param.mfx.FrameInfo.CropW;
-        height_ = param.mfx.FrameInfo.CropH;
-      }
-    }
 
     sts = MFXVideoCORE_SyncOperation(GetVplSession(session_), syncp, 600000);
     VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
