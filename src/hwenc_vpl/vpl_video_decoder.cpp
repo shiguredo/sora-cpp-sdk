@@ -1,6 +1,7 @@
 #include "sora/hwenc_vpl/vpl_video_decoder.h"
 
 #include <iostream>
+#include <queue>
 #include <thread>
 
 // WebRTC
