@@ -248,22 +248,6 @@ int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
       break;
     }
 
-    mfxVideoParam param;
-    memset(&param, 0, sizeof(param));
-    sts = decoder_->GetVideoParam(&param);
-    if (sts != MFX_ERR_NONE) {
-      return WEBRTC_VIDEO_CODEC_ERROR;
-    }
-
-    if (width_ != param.mfx.FrameInfo.CropW ||
-        height_ != param.mfx.FrameInfo.CropH) {
-      RTC_LOG(LS_INFO) << "Change Frame Size: " << width_ << "x" << height_
-                       << " to " << param.mfx.FrameInfo.CropW << "x"
-                       << param.mfx.FrameInfo.CropH;
-      width_ = param.mfx.FrameInfo.CropW;
-      height_ = param.mfx.FrameInfo.CropH;
-    }
-
     if (sts == MFX_ERR_MORE_DATA) {
       // もっと入力が必要なので出直す
       return WEBRTC_VIDEO_CODEC_OK;
@@ -277,6 +261,15 @@ int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
 
     sts = MFXVideoCORE_SyncOperation(GetVplSession(session_), syncp, 600000);
     VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    if (width_ != out_surface->Info.CropW ||
+        height_ != out_surface->Info.CropH) {
+      RTC_LOG(LS_INFO) << "Change Frame Size: " << width_ << "x" << height_
+                       << " to " << out_surface->Info.CropW << "x"
+                       << out_surface->Info.CropH;
+      width_ = out_surface->Info.CropW;
+      height_ = out_surface->Info.CropH;
+    }
 
     uint64_t pts = bitstreams_.front()->pts;
     free(bitstreams_.front());
