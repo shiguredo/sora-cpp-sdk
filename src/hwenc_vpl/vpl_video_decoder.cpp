@@ -69,13 +69,6 @@ class VplVideoDecoderImpl : public VplVideoDecoder {
   std::unique_ptr<MFXVideoDECODE> decoder_;
   std::vector<uint8_t> surface_buffer_;
   std::vector<mfxFrameSurface1> surfaces_;
-  std::vector<uint8_t> bitstream_buffer_;
-  struct Bitstream {
-    mfxBitstream bs;
-    uint64_t pts;
-    char buf[1];
-  };
-  std::queue<Bitstream*> bitstreams_;
 };
 
 VplVideoDecoderImpl::VplVideoDecoderImpl(std::shared_ptr<VplSession> session,
@@ -199,13 +192,13 @@ int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
 
-  Bitstream* bs =
-      (Bitstream*)std::malloc(sizeof(Bitstream) - 1 + input_image.size());
-  memset(&bs->bs, 0, sizeof(mfxBitstream));
-  bs->bs.Data = (mfxU8*)bs->buf;
-  bs->pts = input_image.RtpTimestamp();
-  bs->bs.DataLength = input_image.size();
-  bs->bs.MaxLength = input_image.size();
+  mfxBitstream bs;
+  memset(&bs, 0, sizeof(mfxBitstream));
+  std::vector<uint8_t> buf;
+  buf.assign(input_image.data(), input_image.data() + input_image.size());
+  bs.Data = buf.data();
+  bs.DataLength = input_image.size();
+  bs.MaxLength = input_image.size();
   //printf("size=%zu\n", input_image.size());
   //for (size_t i = 0; i < input_image.size(); i++) {
   //  const uint8_t* p = input_image.data();
@@ -217,9 +210,6 @@ int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
   //  }
   //}
 
-  memcpy(bs->bs.Data, input_image.data(), input_image.size());
-  bitstreams_.push(bs);
-
   // 使ってない入力サーフェスを取り出す
   auto surface =
       std::find_if(surfaces_.begin(), surfaces_.end(),
@@ -229,18 +219,14 @@ int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
-  RTC_LOG(LS_VERBOSE) << "Decode Queue Length: size=" << bitstreams_.size()
-                      << " surface=" << (surface - surfaces_.begin());
-
   // キューが空になるか、sts == MFX_ERR_MORE_DATA あたりが出るまでループさせる
-  while (!bitstreams_.empty()) {
+  while (true) {
     mfxStatus sts;
     mfxSyncPoint syncp;
     mfxFrameSurface1* out_surface = nullptr;
 
     while (true) {
-      sts =
-          decoder_->DecodeFrameAsync(&bs->bs, &*surface, &out_surface, &syncp);
+      sts = decoder_->DecodeFrameAsync(&bs, &*surface, &out_surface, &syncp);
       if (sts == MFX_WRN_DEVICE_BUSY) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
         continue;
@@ -271,9 +257,7 @@ int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
       height_ = out_surface->Info.CropH;
     }
 
-    uint64_t pts = bitstreams_.front()->pts;
-    free(bitstreams_.front());
-    bitstreams_.pop();
+    uint64_t pts = input_image.RtpTimestamp();
     // NV12 から I420 に変換
     rtc::scoped_refptr<webrtc::I420Buffer> i420_buffer =
         buffer_pool_.CreateI420Buffer(width_, height_);
@@ -363,10 +347,6 @@ void VplVideoDecoderImpl::ReleaseVpl() {
     decoder_->Close();
   }
   decoder_.reset();
-  while (!bitstreams_.empty()) {
-    free(bitstreams_.front());
-    bitstreams_.pop();
-  }
 }
 
 ////////////////////////
