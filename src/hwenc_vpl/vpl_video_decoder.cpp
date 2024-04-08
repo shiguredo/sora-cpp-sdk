@@ -234,6 +234,22 @@ int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
       break;
     }
 
+    mfxVideoParam param;
+    memset(&param, 0, sizeof(param));
+    mfxStatus sts2 = decoder_->GetVideoParam(&param);
+    if (sts2 != MFX_ERR_NONE) {
+      RTC_LOG(LS_ERROR) << "Failed to GetVideoParam: sts=" << sts2;
+      return WEBRTC_VIDEO_CODEC_ERROR;
+    }
+    auto width = param.mfx.FrameInfo.CropW;
+    auto height = param.mfx.FrameInfo.CropH;
+    if (width_ != width || height_ != height) {
+      RTC_LOG(LS_INFO) << "Change Frame Size: " << width_ << "x" << height_
+                       << " to " << width << "x" << height;
+      width_ = width;
+      height_ = height;
+    }
+
     if (sts == MFX_ERR_MORE_DATA) {
       // もっと入力が必要なので出直す
       return WEBRTC_VIDEO_CODEC_OK;
@@ -241,21 +257,12 @@ int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
     if (!syncp) {
       RTC_LOG(LS_WARNING) << "Failed to DecodeFrameAsync: syncp is null, sts="
                           << (int)sts;
-      return WEBRTC_VIDEO_CODEC_OK;
+      continue;
     }
     VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     sts = MFXVideoCORE_SyncOperation(GetVplSession(session_), syncp, 600000);
     VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-    if (width_ != out_surface->Info.CropW ||
-        height_ != out_surface->Info.CropH) {
-      RTC_LOG(LS_INFO) << "Change Frame Size: " << width_ << "x" << height_
-                       << " to " << out_surface->Info.CropW << "x"
-                       << out_surface->Info.CropH;
-      width_ = out_surface->Info.CropW;
-      height_ = out_surface->Info.CropH;
-    }
 
     uint64_t pts = input_image.RtpTimestamp();
     // NV12 から I420 に変換
