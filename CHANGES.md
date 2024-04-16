@@ -11,6 +11,11 @@
 
 ## develop
 
+- [UPDATE] Boost を 1.85.0 にあげる
+  - @enm10k
+- [UPDATE] SDL2 を 2.30.2 にあげる
+  - @enm10k
+
 ## 2024.6.1 (2024-04-16)
 
 - [CHANGE] テストモジュールについて `SoraSignalingConfig` の `sora_client` に値を設定しないようにする
