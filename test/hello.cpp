@@ -63,7 +63,6 @@ void HelloSora::Run() {
   config.observer = shared_from_this();
   config.signaling_urls = config_.signaling_urls;
   config.channel_id = config_.channel_id;
-  config.sora_client = "Hello Sora";
   config.role = config_.role;
   config.video = config_.video;
   config.audio = config_.audio;
