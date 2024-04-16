@@ -11,6 +11,8 @@
 
 ## develop
 
+## 2024.6.1 (2024-04-16)
+
 - [CHANGE] テストモジュールについて `SoraSignalingConfig` の `sora_client` に値を設定しないようにする
   - @enm10k
 - [FIX] VPL デコーダで遅延が起きたりセグフォすることがあるのを修正
