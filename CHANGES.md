@@ -17,6 +17,10 @@
   - @enm10k
 - [ADD] sumomo に `--openh264` と `--use-hardware-encoder` オプションを追加
   - @melpon
+- [ADD] sumomo に `--video-h264-params` と `--video-h265-params` オプションを追加
+  - @enm10k
+- [ADD] SoraSignalingConfig に `video_h265_params` を追加
+  - @enm10k
 
 ## 2024.6.1 (2024-04-16)
 
