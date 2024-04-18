@@ -148,12 +148,14 @@ class MomoSample : public std::enable_shared_from_this<MomoSample>,
     config.proxy_url = config_.proxy_url;
     config.proxy_username = config_.proxy_username;
     config.proxy_password = config_.proxy_password;
-    config.network_manager = context_->signaling_thread()->BlockingCall([this]() {
-        return context_->connection_context()->default_network_manager();
-    });
-    config.socket_factory = context_->signaling_thread()->BlockingCall([this]() {
-        return context_->connection_context()->default_socket_factory();
-    });
+    config.network_manager =
+        context_->signaling_thread()->BlockingCall([this]() {
+          return context_->connection_context()->default_network_manager();
+        });
+    config.socket_factory =
+        context_->signaling_thread()->BlockingCall([this]() {
+          return context_->connection_context()->default_socket_factory();
+        });
     conn_ = sora::SoraSignaling::Create(config);
 
     boost::asio::executor_work_guard<boost::asio::io_context::executor_type>
@@ -399,6 +401,13 @@ int main(int argc, char* argv[]) {
   app.add_option("--srtp-key-log-file", config.srtp_key_log_file,
                  "SRTP keying material output file");
 
+  // SoraClientContextConfig に関するオプション
+  boost::optional<bool> use_hardware_encoder;
+  add_optional_bool(app, "--use-hardware-encoder", use_hardware_encoder,
+                    "Use hardware encoder");
+  std::string openh264;
+  app.add_option("--openh264", openh264, "Path to OpenH264 library");
+
   try {
     app.parse(argc, argv);
   } catch (const CLI::ParseError& e) {
@@ -416,8 +425,12 @@ int main(int argc, char* argv[]) {
     rtc::LogMessage::LogThreads();
   }
 
-  auto context =
-      sora::SoraClientContext::Create(sora::SoraClientContextConfig());
+  auto context_config = sora::SoraClientContextConfig();
+  if (use_hardware_encoder != boost::none) {
+    context_config.use_hardware_encoder = *use_hardware_encoder;
+  }
+  context_config.openh264 = openh264;
+  auto context = sora::SoraClientContext::Create(context_config);
   auto momosample = std::make_shared<MomoSample>(context, config);
   momosample->Run();
 

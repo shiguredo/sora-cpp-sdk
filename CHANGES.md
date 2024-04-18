@@ -15,6 +15,8 @@
   - @enm10k
 - [UPDATE] SDL2 を 2.30.2 にあげる
   - @enm10k
+- [ADD] sumomo に `--openh264` と `--use-hardware-encoder` オプションを追加
+  - @melpon
 
 ## 2024.6.1 (2024-04-16)
 
