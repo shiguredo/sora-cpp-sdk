@@ -19,7 +19,7 @@
 #include <rtc_base/win/scoped_com_initializer.h>
 #endif
 
-struct MomoSampleConfig {
+struct SumomoConfig {
   std::string signaling_url;
   std::string channel_id;
   std::string role;
@@ -81,11 +81,10 @@ struct MomoSampleConfig {
   }
 };
 
-class MomoSample : public std::enable_shared_from_this<MomoSample>,
-                   public sora::SoraSignalingObserver {
+class Sumomo : public std::enable_shared_from_this<Sumomo>,
+               public sora::SoraSignalingObserver {
  public:
-  MomoSample(std::shared_ptr<sora::SoraClientContext> context,
-             MomoSampleConfig config)
+  Sumomo(std::shared_ptr<sora::SoraClientContext> context, SumomoConfig config)
       : context_(context), config_(config) {}
 
   void Run() {
@@ -259,7 +258,7 @@ class MomoSample : public std::enable_shared_from_this<MomoSample>,
 
  private:
   std::shared_ptr<sora::SoraClientContext> context_;
-  MomoSampleConfig config_;
+  SumomoConfig config_;
   rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track_;
   rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track_;
   std::shared_ptr<sora::SoraSignaling> conn_;
@@ -298,7 +297,7 @@ int main(int argc, char* argv[]) {
   }
 #endif
 
-  MomoSampleConfig config;
+  SumomoConfig config;
 
   auto is_valid_resolution = CLI::Validator(
       [](std::string input) -> std::string {
@@ -431,8 +430,8 @@ int main(int argc, char* argv[]) {
   }
   context_config.openh264 = openh264;
   auto context = sora::SoraClientContext::Create(context_config);
-  auto momosample = std::make_shared<MomoSample>(context, config);
-  momosample->Run();
+  auto sumomo = std::make_shared<Sumomo>(context, config);
+  sumomo->Run();
 
   return 0;
 }
