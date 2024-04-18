@@ -265,6 +265,10 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     m["simulcast"] = *config_.simulcast;
   }
 
+  if (config_.simulcast_multicodec) {
+    m["simulcast_multicodec"] = *config_.simulcast_multicodec;
+  }
+
   if (!config_.simulcast_rid.empty()) {
     m["simulcast_rid"] = config_.simulcast_rid;
   }

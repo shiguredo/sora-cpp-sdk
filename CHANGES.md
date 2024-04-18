@@ -11,6 +11,9 @@
 
 ## develop
 
+- [ADD] sumomo に --simulcast-multicodec オプションを追加
+  - @melpon
+
 ## 2024.6.0 (2024-04-01)
 
 - [CHANGE] `VplVideoDecoderImpl` の `ImplementationName` を `oneVPL` から `libvpl` に変更する
