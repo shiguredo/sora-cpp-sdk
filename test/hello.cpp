@@ -70,6 +70,7 @@ void HelloSora::Run() {
   config.video_bit_rate = config_.video_bit_rate;
   config.multistream = true;
   config.simulcast = config_.simulcast;
+  config.simulcast_multicodec = config_.simulcast_multicodec;
   conn_ = sora::SoraSignaling::Create(config);
 
   boost::asio::executor_work_guard<boost::asio::io_context::executor_type>
@@ -168,6 +169,9 @@ int main(int argc, char* argv[]) {
   }
   if (auto it = v.as_object().find("simulcast"); it != v.as_object().end()) {
     config.simulcast = it->value().as_bool();
+  }
+  if (auto it = v.as_object().find("simulcast_multicodec"); it != v.as_object().end()) {
+    config.simulcast_multicodec = it->value().as_bool();
   }
 
   sora::SoraClientContextConfig context_config;
