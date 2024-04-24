@@ -26,16 +26,26 @@ std::vector<webrtc::SdpVideoFormat> GetDefaultVideoFormats(
         cricket::kAv1CodecName, webrtc::SdpVideoFormat::Parameters(),
         webrtc::LibaomAv1EncoderSupportedScalabilityModes()));
   } else if (codec == webrtc::kVideoCodecH264) {
-    r.push_back(CreateH264Format(webrtc::H264Profile::kProfileBaseline,
-                                 webrtc::H264Level::kLevel3_1, "1"));
-    r.push_back(CreateH264Format(webrtc::H264Profile::kProfileBaseline,
-                                 webrtc::H264Level::kLevel3_1, "0"));
-    r.push_back(
-        CreateH264Format(webrtc::H264Profile::kProfileConstrainedBaseline,
-                         webrtc::H264Level::kLevel3_1, "1"));
-    r.push_back(
-        CreateH264Format(webrtc::H264Profile::kProfileConstrainedBaseline,
-                         webrtc::H264Level::kLevel3_1, "0"));
+    for (auto profile : {
+             webrtc::H264Profile::kProfileBaseline,
+             webrtc::H264Profile::kProfileConstrainedBaseline,
+             webrtc::H264Profile::kProfileMain,
+         }) {
+      for (auto level : {
+               webrtc::H264Level::kLevel3_1,
+               webrtc::H264Level::kLevel3_2,
+               webrtc::H264Level::kLevel4,
+               webrtc::H264Level::kLevel4_1,
+               webrtc::H264Level::kLevel4_2,
+               webrtc::H264Level::kLevel5,
+               webrtc::H264Level::kLevel5_1,
+               webrtc::H264Level::kLevel5_2,
+           }) {
+        for (auto mode : {0, 1}) {
+          r.push_back(CreateH264Format(profile, level, std::to_string(mode)));
+        }
+      }
+    }
   } else if (codec == webrtc::kVideoCodecH265) {
     r.push_back(webrtc::SdpVideoFormat(cricket::kH265CodecName));
   }
