@@ -23,7 +23,7 @@
       "capture_width": 1024,
       "capture_height": 768,
       "video_bit_rate": 0,
-      "video_codec_type": "H264",
+      "video_codec_type": null,
       "simulcast": false,
       "use_hardware_encoder": true,
       "openh264": null,
