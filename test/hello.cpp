@@ -170,6 +170,9 @@ int main(int argc, char* argv[]) {
   if (auto it = v.as_object().find("simulcast"); it != v.as_object().end()) {
     config.simulcast = it->value().as_bool();
   }
+  if (auto it = v.as_object().find("log_level"); it != v.as_object().end()) {
+    rtc::LogMessage::LogToDebug((rtc::LoggingSeverity)boost::json::value_to<int>(it->value()));
+  }
 
   sora::SoraClientContextConfig context_config;
   context_config.get_android_application_context = GetAndroidApplicationContext;

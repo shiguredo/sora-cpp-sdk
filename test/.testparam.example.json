@@ -27,6 +27,7 @@
       "simulcast": false,
       "use_hardware_encoder": true,
       "openh264": null,
+      "log_level": 2,
     },
 
     "signaling_urls": ["必須"],
