@@ -25,6 +25,7 @@
       "video_bit_rate": 0,
       "video_codec_type": null,
       "simulcast": false,
+      "simulcast_multicodec": false,
       "use_hardware_encoder": true,
       "openh264": null,
       "log_level": 2,
