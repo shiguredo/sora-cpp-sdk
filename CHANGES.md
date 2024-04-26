@@ -15,6 +15,8 @@
   - @enm10k
 - [UPDATE] SDL2 を 2.30.2 にあげる
   - @enm10k
+- [UPDATE] libwebrtc を m123.6312.3.4 にあげる
+  - @enm10k
 - [ADD] sumomo に `--openh264` と `--use-hardware-encoder` オプションを追加
   - @melpon
 - [ADD] sumomo に `--video-h264-params` と `--video-h265-params` オプションを追加
