@@ -13,6 +13,10 @@ set(USE_LIBCXX OFF CACHE BOOL "libstdc++ の代わりに libc++ を使うかど�
 set(LIBCXX_INCLUDE_DIR "" CACHE PATH "libc++ を使う場合の libc++ のインクルードディレクトリ\n空文字だった場合はデフォルト検索パスの libc++ を利用する")
 set(USE_NVCODEC_ENCODER OFF CACHE BOOL "NVIDIA Video Codec SDK によるハードウェアエンコーダを利用するかどうか")
 
+# ubuntu-22.04_armv8_jetson 対応時に追加
+# rootfs 上のプログラムが利用されることを防ぐ
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+
 project(sora-cpp-sdk C CXX)
 
 set(SORA_TARGET ${SORA_CPP_SDK_TARGET})
@@ -46,6 +50,10 @@ elseif (SORA_TARGET STREQUAL "ubuntu-22.04_x86_64")
   set(SORA_TARGET_ARCH "x86_64")
   set(SORA_TARGET_DEF "SORA_CPP_SDK_UBUNTU_2204")
 elseif (SORA_TARGET STREQUAL "ubuntu-20.04_armv8_jetson")
+  set(SORA_TARGET_OS "jetson")
+  set(SORA_TARGET_ARCH "armv8")
+  set(SORA_TARGET_DEF "SORA_CPP_SDK_JETSON")
+elseif (SORA_TARGET STREQUAL "ubuntu-22.04_armv8_jetson")
   set(SORA_TARGET_OS "jetson")
   set(SORA_TARGET_ARCH "armv8")
   set(SORA_TARGET_DEF "SORA_CPP_SDK_JETSON")
