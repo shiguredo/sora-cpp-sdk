@@ -13,7 +13,7 @@
 
 - [UPDATE] Boost を 1.85.0 にあげる
   - @enm10k
-- [UPDATE] SDL2 を 2.30.2 にあげる
+- [UPDATE] SDL2 を 2.30.3 にあげる
   - @enm10k
 - [UPDATE] libwebrtc を m123.6312.3.5 にあげる
   - Android の test アプリのリンク時に発生したエラーを解決するために、リンカーを Android NDK に含まれるものから libwebrtc のものに変更した
