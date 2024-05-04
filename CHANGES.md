@@ -19,6 +19,8 @@
   - Android の test アプリのリンク時に発生したエラーを解決するために、リンカーを Android NDK に含まれるものから libwebrtc のものに変更した
   - リンカーのバージョンの違いによる互換性の問題でエラーが発生していたため、次回 Android NDK のバージョンを更新する際に、修正箇所を元に戻せる可能性がある
   - @melpon @enm10k
+- [UPDATE] CLI11 を 2.4.2 にあげる
+  - @enm10k
 - [ADD] sumomo に `--openh264` と `--use-hardware-encoder` オプションを追加
   - @melpon
 - [ADD] sumomo に `--video-h264-params` と `--video-h265-params` オプションを追加
