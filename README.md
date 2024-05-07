@@ -30,7 +30,7 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
     - VP8 / VP9 / H.264 / H.265
   - [Intel VPL](https://github.com/intel/libvpl) (Intel Media SDK の後継)
     - VP9 / H.264 / H.265
-    - H.265 は Ubuntu 22.04 のみ
+    - H.265 は Windows と Ubuntu 22.04 のみ
 
 ## ライブラリのバイナリ提供について
 
@@ -68,6 +68,9 @@ https://github.com/shiguredo/sora-cpp-sdk/releases
 ## 優先実装
 
 優先実装とは Sora のライセンスを契約頂いているお客様限定で Sora C++ SDK の実装予定機能を有償にて前倒しで実装することです。
+
+- Intel VPL H.265 対応
+  - [アダワープジャパン株式会社](https://adawarp.com/) 様
 
 ### 優先実装が可能な機能一覧
 

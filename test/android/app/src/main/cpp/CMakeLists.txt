@@ -45,6 +45,16 @@ target_link_libraries(hello PRIVATE Sora::sora ${Blend2D_LIBRARY})
 target_compile_definitions(hello PRIVATE BL_STATIC=1)
 target_include_directories(hello PRIVATE ${BLEND2D_ROOT_DIR}/include)
 
+# libwebrtc が ELF フォーマットの新しい仕様を使ってリンクしているため、
+# Android NDK に用意されている標準のリンカーだと以下のようなリンクエラーになってしまう。
+#
+# C/C++: ld.lld: error: /home/runner/work/sora-cpp-sdk/sora-cpp-sdk/_install/android/release/webrtc/lib/arm64-v8a/libwebrtc.a(jsep_ice_candidate.o):(.rodata+0x4): unknown relocation (315) against symbol typeinfo for webrtc::JsepIceCandidate
+#
+# なので libwebrtc と同じバージョンのリンカーを使ってリンクするために -B でリンカーのパスを指定する。
+#
+# 新しい仕様の該当コミット: https://github.com/llvm/llvm-project/commit/04a906ec980e7bf49ffda0808766f51d08e8ae76
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -B ${LLVM_DIR}/bin")
+
 target_compile_options(hello
   PRIVATE
     "$<$<COMPILE_LANGUAGE:CXX>:-nostdinc++>"

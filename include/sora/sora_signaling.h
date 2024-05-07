@@ -79,6 +79,7 @@ struct SoraSignalingConfig {
   boost::json::value video_vp9_params;
   boost::json::value video_av1_params;
   boost::json::value video_h264_params;
+  boost::json::value video_h265_params;
   std::string audio_streaming_language_code;
   boost::json::value metadata;
   boost::json::value signaling_notify_metadata;
