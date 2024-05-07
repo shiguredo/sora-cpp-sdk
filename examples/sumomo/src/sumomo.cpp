@@ -1,6 +1,3 @@
-// WebRTC
-#include <api/environment/environment_factory.h>
-
 // Sora
 #include <sora/camera_device_capturer.h>
 #include <sora/sora_client_context.h>
@@ -450,8 +447,7 @@ int main(int argc, char* argv[]) {
     context_config.use_hardware_encoder = *use_hardware_encoder;
   }
   context_config.openh264 = openh264;
-  auto env = webrtc::CreateEnvironment();
-  auto context = sora::SoraClientContext::Create(context_config, env);
+  auto context = sora::SoraClientContext::Create(context_config);
   auto sumomo = std::make_shared<Sumomo>(context, config);
   sumomo->Run();
 

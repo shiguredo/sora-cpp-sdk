@@ -60,6 +60,9 @@ class SoraClientContext {
       const SoraClientContextConfig& config,
       webrtc::Environment& env);
 
+  static std::shared_ptr<SoraClientContext> Create(
+      const SoraClientContextConfig& config);
+
   ~SoraClientContext();
 
   rtc::Thread* network_thread() const { return network_thread_.get(); }
@@ -78,6 +81,7 @@ class SoraClientContext {
                ? config_.get_android_application_context(env)
                : nullptr;
   }
+  std::shared_ptr<webrtc::Environment> env;
 
  private:
   SoraClientContextConfig config_;
