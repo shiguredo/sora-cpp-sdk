@@ -56,7 +56,8 @@ struct SoraClientContextConfig {
 class SoraClientContext {
  public:
   static std::shared_ptr<SoraClientContext> Create(
-      const SoraClientContextConfig& config);
+      const SoraClientContextConfig& config,
+      webrtc::Environment& env);
 
   ~SoraClientContext();
 

@@ -1,3 +1,6 @@
+// WebRTC
+#include <api/environment/environment_factory.h>
+
 // Sora
 #include <sora/camera_device_capturer.h>
 #include <sora/sora_client_context.h>
@@ -248,8 +251,9 @@ int main(int argc, char* argv[]) {
     rtc::LogMessage::LogThreads();
   }
 
+  auto env = webrtc::CreateEnvironment();
   auto context =
-      sora::SoraClientContext::Create(sora::SoraClientContextConfig());
+      sora::SoraClientContext::Create(sora::SoraClientContextConfig(), env);
   auto sdlsample = std::make_shared<SDLSample>(context, config);
   sdlsample->Run();
 

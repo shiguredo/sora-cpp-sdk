@@ -14,6 +14,7 @@ class PeerConnectionFactoryWithContext : public webrtc::PeerConnectionFactory {
   PeerConnectionFactoryWithContext(
       webrtc::PeerConnectionFactoryDependencies dependencies)
       : PeerConnectionFactoryWithContext(
+            // TODO(enm10k): environment を外部から設定できるようにする
             webrtc::ConnectionContext::Create(webrtc::CreateEnvironment(),
                                               &dependencies),
             &dependencies) {}

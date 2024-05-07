@@ -5,7 +5,7 @@
 #include <api/audio_codecs/builtin_audio_encoder_factory.h>
 #include <api/create_peerconnection_factory.h>
 #include <api/enable_media.h>
-#include <api/environment/environment_factory.h>
+// #include <api/environment/environment_factory.h>
 #include <api/rtc_event_log/rtc_event_log_factory.h>
 #include <api/task_queue/default_task_queue_factory.h>
 #include <call/call_config.h>
@@ -41,7 +41,8 @@ SoraClientContext::~SoraClientContext() {
 }
 
 std::shared_ptr<SoraClientContext> SoraClientContext::Create(
-    const SoraClientContextConfig& config) {
+    const SoraClientContextConfig& config,
+    webrtc::Environment& env) {
   rtc::InitializeSSL();
 
   std::shared_ptr<SoraClientContext> c = std::make_shared<SoraClientContext>();
@@ -63,7 +64,7 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
       absl::make_unique<webrtc::RtcEventLogFactory>(
           dependencies.task_queue_factory.get());
 
-  void* env = sora::GetJNIEnv();
+  void* jni_env = sora::GetJNIEnv();
 
   dependencies.adm = c->worker_thread_->BlockingCall([&] {
     sora::AudioDeviceModuleConfig config;
@@ -92,7 +93,7 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
   {
     auto config = c->config_.use_hardware_encoder
                       ? sora::GetDefaultVideoEncoderFactoryConfig(
-                            cuda_context, env, c->config_.openh264)
+                            cuda_context, jni_env, c->config_.openh264)
                       : sora::GetSoftwareOnlyVideoEncoderFactoryConfig(
                             c->config_.openh264);
     config.use_simulcast_adapter = true;
@@ -102,10 +103,11 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
         absl::make_unique<sora::SoraVideoEncoderFactory>(std::move(config));
   }
   {
-    auto config =
-        c->config_.use_hardware_encoder
-            ? sora::GetDefaultVideoDecoderFactoryConfig(cuda_context, env)
-            : sora::GetSoftwareOnlyVideoDecoderFactoryConfig();
+    // auto env = webrtc::CreateEnvironment();
+    auto config = c->config_.use_hardware_encoder
+                      ? sora::GetDefaultVideoDecoderFactoryConfig(
+                            env, cuda_context, jni_env)
+                      : sora::GetSoftwareOnlyVideoDecoderFactoryConfig(env);
     dependencies.video_decoder_factory =
         absl::make_unique<sora::SoraVideoDecoderFactory>(std::move(config));
   }

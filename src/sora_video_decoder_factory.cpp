@@ -2,6 +2,7 @@
 
 // WebRTC
 #include <absl/strings/match.h>
+#include <api/environment/environment.h>
 #include <api/video_codecs/sdp_video_format.h>
 #include <media/base/codec.h>
 #include <media/base/media_constants.h>
@@ -67,8 +68,8 @@ SoraVideoDecoderFactory::GetSupportedFormats() const {
   return r;
 }
 
-std::unique_ptr<webrtc::VideoDecoder>
-SoraVideoDecoderFactory::CreateVideoDecoder(
+std::unique_ptr<webrtc::VideoDecoder> SoraVideoDecoderFactory::Create(
+    const webrtc::Environment& env,
     const webrtc::SdpVideoFormat& format) {
   webrtc::VideoCodecType specified_codec =
       webrtc::PayloadStringToCodecType(format.name);
@@ -84,10 +85,10 @@ SoraVideoDecoderFactory::CreateVideoDecoder(
     std::vector<webrtc::SdpVideoFormat> supported_formats = formats_[n++];
 
     if (enc.factory != nullptr) {
-      create_video_decoder =
-          [factory = enc.factory.get()](const webrtc::SdpVideoFormat& format) {
-            return factory->CreateVideoDecoder(format);
-          };
+      create_video_decoder = [factory = enc.factory.get(),
+                              &env](const webrtc::SdpVideoFormat& format) {
+        return factory->Create(env, format);
+      };
     } else if (enc.create_video_decoder != nullptr) {
       create_video_decoder = enc.create_video_decoder;
     }
@@ -108,9 +109,10 @@ SoraVideoDecoderFactory::CreateVideoDecoder(
 }
 
 SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
+    webrtc::Environment& env,
     std::shared_ptr<CudaContext> cuda_context,
-    void* env) {
-  auto config = GetSoftwareOnlyVideoDecoderFactoryConfig();
+    void* jni_env) {
+  auto config = GetSoftwareOnlyVideoDecoderFactoryConfig(env);
 
 #if defined(__APPLE__)
   config.decoders.insert(config.decoders.begin(),
@@ -118,10 +120,10 @@ SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
 #endif
 
 #if defined(SORA_CPP_SDK_ANDROID)
-  if (env != nullptr) {
+  if (jni_env != nullptr) {
     config.decoders.insert(config.decoders.begin(),
                            VideoDecoderConfig(CreateAndroidVideoDecoderFactory(
-                               static_cast<JNIEnv*>(env))));
+                               static_cast<JNIEnv*>(jni_env))));
   }
 #endif
 
@@ -249,11 +251,12 @@ SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
   return config;
 }
 
-SoraVideoDecoderFactoryConfig GetSoftwareOnlyVideoDecoderFactoryConfig() {
+SoraVideoDecoderFactoryConfig GetSoftwareOnlyVideoDecoderFactoryConfig(
+    webrtc::Environment& env) {
   SoraVideoDecoderFactoryConfig config;
   config.decoders.push_back(VideoDecoderConfig(
       webrtc::kVideoCodecVP8,
-      [](auto format) { return webrtc::VP8Decoder::Create(); }));
+      [&env](auto format) { return webrtc::CreateVp8Decoder(env); }));
   config.decoders.push_back(VideoDecoderConfig(
       webrtc::kVideoCodecVP9,
       [](auto format) { return webrtc::VP9Decoder::Create(); }));
