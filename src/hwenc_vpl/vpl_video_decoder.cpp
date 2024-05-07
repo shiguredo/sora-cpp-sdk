@@ -1,6 +1,7 @@
 #include "sora/hwenc_vpl/vpl_video_decoder.h"
 
 #include <iostream>
+#include <queue>
 #include <thread>
 
 // WebRTC
@@ -248,96 +249,70 @@ int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
-  // これだとキューイングしたデータとずれるので、本当は surface と一緒に保存して利用するべき
-  uint64_t pts = input_image.RtpTimestamp();
-
-  mfxStatus sts;
-  mfxSyncPoint syncp;
-  mfxFrameSurface1* out_surface = nullptr;
-  RTC_LOG(LS_VERBOSE) << "before DataOffset=" << bitstream_.DataOffset
-                      << " DataLength=" << bitstream_.DataLength;
+  // キューが空になるか、sts == MFX_ERR_MORE_DATA あたりが出るまでループさせる
   while (true) {
-    sts = decoder_->DecodeFrameAsync(&bitstream_, &*surface, &out_surface,
-                                     &syncp);
-    if (sts == MFX_WRN_DEVICE_BUSY) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(1));
-      continue;
-    }
-    // 受信した映像のサイズが変わってたら width_, height_ を更新する
-    if (sts == MFX_WRN_VIDEO_PARAM_CHANGED) {
-      mfxVideoParam param;
-      memset(&param, 0, sizeof(param));
-      sts = decoder_->GetVideoParam(&param);
-      if (sts != MFX_ERR_NONE) {
-        return WEBRTC_VIDEO_CODEC_ERROR;
-      }
+    mfxStatus sts;
+    mfxSyncPoint syncp;
+    mfxFrameSurface1* out_surface = nullptr;
 
-      if (width_ != param.mfx.FrameInfo.CropW ||
-          height_ != param.mfx.FrameInfo.CropH) {
-        RTC_LOG(LS_INFO) << "Change Frame Size: " << width_ << "x" << height_
-                         << " to " << param.mfx.FrameInfo.CropW << "x"
-                         << param.mfx.FrameInfo.CropH;
-        width_ = param.mfx.FrameInfo.CropW;
-        height_ = param.mfx.FrameInfo.CropH;
+    while (true) {
+      sts = decoder_->DecodeFrameAsync(&bitstream_, &*surface, &out_surface,
+                                       &syncp);
+      if (sts == MFX_WRN_DEVICE_BUSY) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        continue;
       }
-      continue;
+      break;
     }
 
-    break;
-  }
-  RTC_LOG(LS_VERBOSE) << "after DataOffset=" << bitstream_.DataOffset
-                      << " DataLength=" << bitstream_.DataLength;
-  if (sts == MFX_ERR_MORE_DATA) {
-    // もっと入力が必要なので出直す
-    return WEBRTC_VIDEO_CODEC_OK;
-  }
-  if (!syncp) {
-    RTC_LOG(LS_WARNING) << "Failed to DecodeFrameAsync: syncp is null, sts="
-                        << (int)sts;
-    return WEBRTC_VIDEO_CODEC_OK;
-  }
-  VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-  // H264 は sts == MFX_WRN_VIDEO_PARAM_CHANGED でハンドリングできるのでここではチェックしない
-  // VP9 は受信フレームのサイズが変わっても MFX_WRN_VIDEO_PARAM_CHANGED を返さないようなので、
-  // ここで毎フレーム情報を取得してサイズを更新する。
-  if (codec_ == MFX_CODEC_VP9) {
     mfxVideoParam param;
     memset(&param, 0, sizeof(param));
-    sts = decoder_->GetVideoParam(&param);
-    if (sts != MFX_ERR_NONE) {
+    mfxStatus sts2 = decoder_->GetVideoParam(&param);
+    if (sts2 != MFX_ERR_NONE) {
+      RTC_LOG(LS_ERROR) << "Failed to GetVideoParam: sts=" << sts2;
       return WEBRTC_VIDEO_CODEC_ERROR;
     }
-
-    if (width_ != param.mfx.FrameInfo.CropW ||
-        height_ != param.mfx.FrameInfo.CropH) {
+    auto width = param.mfx.FrameInfo.CropW;
+    auto height = param.mfx.FrameInfo.CropH;
+    if (width_ != width || height_ != height) {
       RTC_LOG(LS_INFO) << "Change Frame Size: " << width_ << "x" << height_
-                       << " to " << param.mfx.FrameInfo.CropW << "x"
-                       << param.mfx.FrameInfo.CropH;
-      width_ = param.mfx.FrameInfo.CropW;
-      height_ = param.mfx.FrameInfo.CropH;
+                       << " to " << width << "x" << height;
+      width_ = width;
+      height_ = height;
     }
+
+    if (sts == MFX_ERR_MORE_DATA) {
+      // もっと入力が必要なので出直す
+      return WEBRTC_VIDEO_CODEC_OK;
+    }
+    if (!syncp) {
+      RTC_LOG(LS_WARNING) << "Failed to DecodeFrameAsync: syncp is null, sts="
+                          << (int)sts;
+      continue;
+    }
+    VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    sts = MFXVideoCORE_SyncOperation(GetVplSession(session_), syncp, 600000);
+    VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    uint64_t pts = input_image.RtpTimestamp();
+    // NV12 から I420 に変換
+    rtc::scoped_refptr<webrtc::I420Buffer> i420_buffer =
+        buffer_pool_.CreateI420Buffer(width_, height_);
+    libyuv::NV12ToI420(out_surface->Data.Y, out_surface->Data.Pitch,
+                       out_surface->Data.UV, out_surface->Data.Pitch,
+                       i420_buffer->MutableDataY(), i420_buffer->StrideY(),
+                       i420_buffer->MutableDataU(), i420_buffer->StrideU(),
+                       i420_buffer->MutableDataV(), i420_buffer->StrideV(),
+                       width_, height_);
+
+    webrtc::VideoFrame decoded_image = webrtc::VideoFrame::Builder()
+                                           .set_video_frame_buffer(i420_buffer)
+                                           .set_timestamp_rtp(pts)
+                                           .build();
+    decode_complete_callback_->Decoded(decoded_image, absl::nullopt,
+                                       absl::nullopt);
   }
-
-  sts = MFXVideoCORE_SyncOperation(GetVplSession(session_), syncp, 600000);
-  VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-  // NV12 から I420 に変換
-  rtc::scoped_refptr<webrtc::I420Buffer> i420_buffer =
-      buffer_pool_.CreateI420Buffer(width_, height_);
-  libyuv::NV12ToI420(out_surface->Data.Y, out_surface->Data.Pitch,
-                     out_surface->Data.UV, out_surface->Data.Pitch,
-                     i420_buffer->MutableDataY(), i420_buffer->StrideY(),
-                     i420_buffer->MutableDataU(), i420_buffer->StrideU(),
-                     i420_buffer->MutableDataV(), i420_buffer->StrideV(),
-                     width_, height_);
-
-  webrtc::VideoFrame decoded_image = webrtc::VideoFrame::Builder()
-                                         .set_video_frame_buffer(i420_buffer)
-                                         .set_timestamp_rtp(pts)
-                                         .build();
-  decode_complete_callback_->Decoded(decoded_image, absl::nullopt,
-                                     absl::nullopt);
 
   return WEBRTC_VIDEO_CODEC_OK;
 }

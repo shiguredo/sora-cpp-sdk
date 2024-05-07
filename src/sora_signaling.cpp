@@ -314,6 +314,10 @@ void SoraSignaling::DoSendConnect(bool redirect) {
       m["video"].as_object()["h264_params"] = config_.video_h264_params;
     }
 
+    if (!config_.video_h265_params.is_null()) {
+      m["video"].as_object()["h265_params"] = config_.video_h265_params;
+    }
+
     // オプションの設定が行われてなければ単に true を設定
     if (m["video"].as_object().empty()) {
       m["video"] = true;
