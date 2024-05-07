@@ -27,6 +27,8 @@
   - @enm10k
 - [ADD] 古い Intel CPU でも H265 エンコーダが動くようにする
   - @melpon
+- [ADD] Intel VPL で AV1 デコーダを動くようにする
+  - @melpon
 
 ## 2024.6.1 (2024-04-16)
 
