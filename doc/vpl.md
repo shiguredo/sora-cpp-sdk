@@ -59,7 +59,7 @@ $ wget -qO - https://repositories.intel.com/gpu/intel-graphics.key | \
   sudo gpg --dearmor --output /usr/share/keyrings/intel-graphics.gpg
 $ echo "deb [arch=amd64,i386 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/gpu/ubuntu jammy client" | \
   sudo tee /etc/apt/sources.list.d/intel-gpu-jammy.list
-$ sudo apt updatっｇ
+$ sudo apt update
 
 # パッケージのインストール
 $ sudo apt install -y \
