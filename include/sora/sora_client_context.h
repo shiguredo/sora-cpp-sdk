@@ -60,13 +60,6 @@ class SoraClientContext {
       const SoraClientContextConfig& config,
       webrtc::Environment& env);
 
-  static std::shared_ptr<SoraClientContext> Create(
-      const SoraClientContextConfig& config) {
-    // TODO(enm10k): ライフタイム的には env をクラスで保持した方が良さそうだが、 Create が static なメソッドなので難しい気がする
-    auto env = webrtc::CreateEnvironment();
-    return Create(SoraClientContextConfig(), env);
-  };
-
   ~SoraClientContext();
 
   rtc::Thread* network_thread() const { return network_thread_.get(); }

@@ -4,6 +4,7 @@
 #include <iostream>
 
 // WebRTC
+#include <api/environment/environment_factory.h>
 #include <rtc_base/logging.h>
 
 #ifdef _WIN32
@@ -44,7 +45,8 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
     sora::SoraClientContextConfig context_config;
     context_config.use_audio_device = false;
     context_config.use_hardware_encoder = false;
-    auto context = sora::SoraClientContext::Create(context_config);
+    auto env = webrtc::CreateEnvironment();
+    auto context = sora::SoraClientContext::Create(context_config, env);
     auto pc_factory = context->peer_connection_factory();
     context_ = context;
 

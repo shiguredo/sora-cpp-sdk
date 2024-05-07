@@ -3,6 +3,7 @@
 #include <iostream>
 
 // WebRTC
+#include <api/environment/environment_factory.h>
 #include <rtc_base/logging.h>
 
 #ifdef _WIN32
@@ -145,8 +146,9 @@ int main(int argc, char* argv[]) {
   //rtc::LogMessage::LogTimestamps();
   //rtc::LogMessage::LogThreads();
 
+  auto env = webrtc::CreateEnvironment();
   auto context =
-      sora::SoraClientContext::Create(sora::SoraClientContextConfig());
+      sora::SoraClientContext::Create(sora::SoraClientContextConfig(), env);
 
   boost::json::value v;
   {

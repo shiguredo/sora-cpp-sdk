@@ -4,6 +4,7 @@
 #include <iostream>
 
 // WebRTC
+#include <api/environment/environment_factory.h>
 #include <rtc_base/logging.h>
 
 #ifdef _WIN32
@@ -179,7 +180,8 @@ int main(int argc, char* argv[]) {
   if (auto it = v.as_object().find("openh264"); it != v.as_object().end()) {
     context_config.openh264 = it->value().as_string();
   }
-  auto context = sora::SoraClientContext::Create(context_config);
+  auto env = webrtc::CreateEnvironment();
+  auto context = sora::SoraClientContext::Create(context_config, env);
 
   auto hello = std::make_shared<HelloSora>(context, config);
   hello->Run();
