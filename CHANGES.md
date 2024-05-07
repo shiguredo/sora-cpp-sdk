@@ -16,6 +16,8 @@
 - [UPDATE] SDL2 を 2.30.2 にあげる
   - @enm10k
 - [UPDATE] libwebrtc を m123.6312.3.5 にあげる
+  - Android の test アプリのリンク時に発生したエラーを解決するために、リンカーを Android NDK に含まれるものから libwebrtc のものに変更した
+  - リンカーのバージョンの違いによる互換性の問題でエラーが発生していたため、次回 Android NDK のバージョンを更新する際に、修正箇所を元に戻せる可能性がある
   - @melpon @enm10k
 - [ADD] sumomo に `--openh264` と `--use-hardware-encoder` オプションを追加
   - @melpon
