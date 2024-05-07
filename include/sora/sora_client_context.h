@@ -2,6 +2,7 @@
 #define SORA_SORA_CLIENT_CONTEXT_H_
 
 // WebRTC
+#include <api/environment/environment_factory.h>
 #include <api/peer_connection_interface.h>
 #include <media/engine/webrtc_media_engine.h>
 #include <pc/connection_context.h>
@@ -58,6 +59,13 @@ class SoraClientContext {
   static std::shared_ptr<SoraClientContext> Create(
       const SoraClientContextConfig& config,
       webrtc::Environment& env);
+
+  static std::shared_ptr<SoraClientContext> Create(
+      const SoraClientContextConfig& config) {
+    // TODO(enm10k): ライフタイム的には env をクラスで保持した方が良さそうだが、 Create が static なメソッドなので難しい気がする
+    auto env = webrtc::CreateEnvironment();
+    return Create(SoraClientContextConfig(), env);
+  };
 
   ~SoraClientContext();
 
