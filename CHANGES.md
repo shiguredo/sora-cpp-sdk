@@ -25,6 +25,8 @@
   - @enm10k
 - [ADD] SoraSignalingConfig に `video_h265_params` を追加
   - @enm10k
+- [ADD] 古い Intel CPU でも H265 エンコーダが動くようにする
+  - @melpon
 
 ## 2024.6.1 (2024-04-16)
 
