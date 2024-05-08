@@ -53,7 +53,7 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
   c->worker_thread_->Start();
   c->signaling_thread_ = rtc::Thread::Create();
   c->signaling_thread_->Start();
-  c->env = std::make_shared<webrtc::Environment>(env);
+  c->env_ = std::make_shared<webrtc::Environment>(env);
 
   webrtc::PeerConnectionFactoryDependencies dependencies;
   dependencies.network_thread = c->network_thread_.get();
