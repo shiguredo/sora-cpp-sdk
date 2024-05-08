@@ -26,19 +26,6 @@ https://www.intel.com/content/www/us/en/developer/tools/vpl/overview.html#gs.73u
   - Intel® Server GPU
   - 5th to 11th generation Intel Core processors using integrated graphics
 
-## NVIDIA の GPU が搭載された PC で Intel VPL を利用する方法
-
-Sora C++ SDK の 実装 (SoraVideoEncoderFactory, SoraVideoDecoderFactory クラス) では、
-NVIDIA の GPU を利用するエンコーダー/デコーダーの優先度が Intel VPL を利用するものより高くなっています。
-
-そのため、 NVIDIA の GPU が搭載された PC で Intel VPL を利用するには、以下のいずれかの対応が必要です。
-
-- NVIDIA の GPU を利用するエンコーダー/デコーダーをビルド時に無効化する ... ビルド・スクリプトで `USE_NVCODEC_ENCODER` を指定している箇所を削除する
-- NVIDIA の GPU のドライバーを削除する
-
-Sora C++ SDK をビルドしている場合は、前者の方法を推奨します。  
-また、 GPU のドライバーを削除する場合は自己責任で行ってください。
-
 ## 環境構築
 
 ### Windows
