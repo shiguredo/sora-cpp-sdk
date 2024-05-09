@@ -30,7 +30,14 @@ https://www.intel.com/content/www/us/en/developer/tools/vpl/overview.html#gs.73u
 
 ### Windows
 
-手動でドライバーのインストールなどを行う必要はありません。
+Intel VPL を利用するためには Intel のディスプレイドライバーがインストールされている必要があります。  
+Windows では環境によってドライバーの有無が異なるため、以下のいずれかの手順でインストールされているドライバーを確認してください。
+
+- デバイスマネージャー > ディスプレイアダプター > インストールされているドライバーを確認
+- Win + R キーを押下 > `ファイル名を指定して実行` のダイアログが開くので `dxdiag` と入力して `OK` ボタンを押下 > DirectX 診断ツールが起動するので、 `ディスプレイ` のタブからインストールされているドライバーを確認
+
+Intel のドライバーが確認できない場合は、以下のページから適切なドライバーをインストールしてください。  
+https://www.intel.co.jp/content/www/jp/ja/download-center/home.html
 
 ### Ubuntu 22.04
 
