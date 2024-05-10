@@ -11,17 +11,19 @@
 
 ## develop
 
-- [CHANGE] libwebrtc を m124.6367.3.1 にあげる
-  - 継承元のクラスの変更に追従するため、 SoraVideoDecoderFactory の初期化に利用する関数を CreateVideoDecoder から Create に変更
-  - Android の test アプリがリンクできなくなったため、リンカーを Android NDK のものから libwebrtc のものに変更
-  - リンカーのバージョンの違いによる互換性の問題でエラーが発生していた
-  - @melpon @enm10k
+- [CHANGE] SoraVideoDecoderFactory の初期化に利用する関数を CreateVideoDecoder から Create に変更する
+  - libwebrtc に定義されている継承元クラスが変更されたことに対する追従
+  - @enm10k
 - [UPDATE] Boost を 1.85.0 にあげる
   - @enm10k
 - [UPDATE] SDL2 を 2.30.3 にあげる
   - @enm10k
 - [UPDATE] CLI11 を 2.4.2 にあげる
   - @enm10k
+- [UPDATE] libwebrtc を m124.6367.3.1 にあげる
+  - Android の test アプリがリンクできなくなったため、リンカーを Android NDK のものから libwebrtc のものに変更
+  - リンカーのバージョンの違いによる互換性の問題でエラーが発生していた
+  - @melpon @enm10k
 - [ADD] sumomo に `--openh264` と `--use-hardware-encoder` オプションを追加
   - @melpon
 - [ADD] sumomo に `--video-h264-params` と `--video-h265-params` オプションを追加
