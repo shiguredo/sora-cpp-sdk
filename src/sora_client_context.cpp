@@ -40,8 +40,7 @@ SoraClientContext::~SoraClientContext() {
 }
 
 std::shared_ptr<SoraClientContext> SoraClientContext::Create(
-    const SoraClientContextConfig& config,
-    webrtc::Environment& env) {
+    const SoraClientContextConfig& config) {
   rtc::InitializeSSL();
 
   std::shared_ptr<SoraClientContext> c = std::make_shared<SoraClientContext>();
@@ -53,7 +52,6 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
   c->worker_thread_->Start();
   c->signaling_thread_ = rtc::Thread::Create();
   c->signaling_thread_->Start();
-  c->env_ = std::make_shared<webrtc::Environment>(env);
 
   webrtc::PeerConnectionFactoryDependencies dependencies;
   dependencies.network_thread = c->network_thread_.get();
@@ -103,6 +101,9 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
         absl::make_unique<sora::SoraVideoEncoderFactory>(std::move(config));
   }
   {
+    // SDK の外部から webrtc::Environment を設定したくなるまで、ここで初期化する
+    auto env = webrtc::CreateEnvironment();
+
     auto config = c->config_.use_hardware_encoder
                       ? sora::GetDefaultVideoDecoderFactoryConfig(
                             env, cuda_context, jni_env)
@@ -135,12 +136,6 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
   c->factory_->SetOptions(factory_options);
 
   return c;
-}
-
-std::shared_ptr<SoraClientContext> SoraClientContext::Create(
-    const SoraClientContextConfig& config) {
-  auto env = webrtc::CreateEnvironment();
-  return Create(config, env);
 }
 
 }  // namespace sora

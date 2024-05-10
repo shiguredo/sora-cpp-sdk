@@ -57,10 +57,6 @@ struct SoraClientContextConfig {
 class SoraClientContext {
  public:
   static std::shared_ptr<SoraClientContext> Create(
-      const SoraClientContextConfig& config,
-      webrtc::Environment& env);
-
-  static std::shared_ptr<SoraClientContext> Create(
       const SoraClientContextConfig& config);
 
   ~SoraClientContext();
@@ -89,7 +85,6 @@ class SoraClientContext {
   std::unique_ptr<rtc::Thread> signaling_thread_;
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> factory_;
   rtc::scoped_refptr<webrtc::ConnectionContext> connection_context_;
-  std::shared_ptr<webrtc::Environment> env_;
 };
 
 }  // namespace sora

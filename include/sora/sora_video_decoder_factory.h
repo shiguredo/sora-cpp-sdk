@@ -68,7 +68,8 @@ SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
     std::shared_ptr<CudaContext> cuda_context = nullptr,
     void* jni_env = nullptr);
 // ソフトウェアデコーダのみを使う設定を返す
-SoraVideoDecoderFactoryConfig GetSoftwareOnlyVideoDecoderFactoryConfig(webrtc::Environment& env);
+SoraVideoDecoderFactoryConfig GetSoftwareOnlyVideoDecoderFactoryConfig(
+    webrtc::Environment& env);
 
 }  // namespace sora
 
