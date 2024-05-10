@@ -110,9 +110,8 @@ std::unique_ptr<webrtc::VideoDecoder> SoraVideoDecoderFactory::Create(
 
 SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
     std::shared_ptr<CudaContext> cuda_context,
-    void* jni_env,
-    webrtc::Environment env) {
-  auto config = GetSoftwareOnlyVideoDecoderFactoryConfig(env);
+    void* jni_env) {
+  auto config = GetSoftwareOnlyVideoDecoderFactoryConfig();
 
 #if defined(__APPLE__)
   config.decoders.insert(config.decoders.begin(),
@@ -251,8 +250,8 @@ SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
   return config;
 }
 
-SoraVideoDecoderFactoryConfig GetSoftwareOnlyVideoDecoderFactoryConfig(
-    webrtc::Environment env) {
+SoraVideoDecoderFactoryConfig GetSoftwareOnlyVideoDecoderFactoryConfig() {
+  auto env = webrtc::CreateEnvironment();
   SoraVideoDecoderFactoryConfig config;
   config.decoders.push_back(VideoDecoderConfig(
       webrtc::kVideoCodecVP8,

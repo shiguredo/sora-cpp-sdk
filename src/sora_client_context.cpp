@@ -101,13 +101,10 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
         absl::make_unique<sora::SoraVideoEncoderFactory>(std::move(config));
   }
   {
-    // SDK の外部から webrtc::Environment を設定したくなるまで、ここで初期化する
-    auto env = webrtc::CreateEnvironment();
-
-    auto config = c->config_.use_hardware_encoder
-                      ? sora::GetDefaultVideoDecoderFactoryConfig(cuda_context,
-                                                                  jni_env, env)
-                      : sora::GetSoftwareOnlyVideoDecoderFactoryConfig(env);
+    auto config =
+        c->config_.use_hardware_encoder
+            ? sora::GetDefaultVideoDecoderFactoryConfig(cuda_context, jni_env)
+            : sora::GetSoftwareOnlyVideoDecoderFactoryConfig();
     dependencies.video_decoder_factory =
         absl::make_unique<sora::SoraVideoDecoderFactory>(std::move(config));
   }
