@@ -323,7 +323,7 @@ jobs:
           needs.build-windows.result == 'failure' ||
           needs.build-macos.result == 'failure' ||
           needs.build-ubuntu.result == 'failure' ||
-          needs.create-release.result == 'failure' ||
+          needs.create-release.result == 'failure'
         env:
           SLACK_CHANNEL: sora-cpp-sdk
           SLACK_COLOR: danger
