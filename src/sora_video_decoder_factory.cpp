@@ -86,7 +86,7 @@ std::unique_ptr<webrtc::VideoDecoder> SoraVideoDecoderFactory::Create(
 
     if (enc.factory != nullptr) {
       create_video_decoder = [factory = enc.factory.get(),
-                              &env](const webrtc::SdpVideoFormat& format) {
+                              env](const webrtc::SdpVideoFormat& format) {
         return factory->Create(env, format);
       };
     } else if (enc.create_video_decoder != nullptr) {
@@ -256,7 +256,7 @@ SoraVideoDecoderFactoryConfig GetSoftwareOnlyVideoDecoderFactoryConfig() {
   SoraVideoDecoderFactoryConfig config;
   config.decoders.push_back(VideoDecoderConfig(
       webrtc::kVideoCodecVP8,
-      [&env](auto format) { return webrtc::CreateVp8Decoder(env); }));
+      [env](auto format) { return webrtc::CreateVp8Decoder(env); }));
   config.decoders.push_back(VideoDecoderConfig(
       webrtc::kVideoCodecVP9,
       [](auto format) { return webrtc::VP9Decoder::Create(); }));
