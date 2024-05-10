@@ -105,8 +105,8 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
     auto env = webrtc::CreateEnvironment();
 
     auto config = c->config_.use_hardware_encoder
-                      ? sora::GetDefaultVideoDecoderFactoryConfig(
-                            env, cuda_context, jni_env)
+                      ? sora::GetDefaultVideoDecoderFactoryConfig(cuda_context,
+                                                                  jni_env, env)
                       : sora::GetSoftwareOnlyVideoDecoderFactoryConfig(env);
     dependencies.video_decoder_factory =
         absl::make_unique<sora::SoraVideoDecoderFactory>(std::move(config));

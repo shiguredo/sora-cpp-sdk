@@ -5,7 +5,7 @@
 #include <vector>
 
 // WebRTC
-#include <api/environment/environment.h>
+#include <api/environment/environment_factory.h>
 #include <api/video/video_codec_type.h>
 #include <api/video_codecs/video_decoder_factory.h>
 
@@ -64,12 +64,12 @@ class SoraVideoDecoderFactory : public webrtc::VideoDecoderFactory {
 
 // ハードウェアデコーダを出来るだけ使おうとして、見つからなければソフトウェアデコーダを使う設定を返す
 SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
-    webrtc::Environment& env,
     std::shared_ptr<CudaContext> cuda_context = nullptr,
-    void* jni_env = nullptr);
+    void* jni_env = nullptr,
+    webrtc::Environment env = webrtc::CreateEnvironment());
 // ソフトウェアデコーダのみを使う設定を返す
 SoraVideoDecoderFactoryConfig GetSoftwareOnlyVideoDecoderFactoryConfig(
-    webrtc::Environment& env);
+    webrtc::Environment env = webrtc::CreateEnvironment());
 
 }  // namespace sora
 
