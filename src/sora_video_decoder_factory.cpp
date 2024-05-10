@@ -2,7 +2,7 @@
 
 // WebRTC
 #include <absl/strings/match.h>
-#include <api/environment/environment.h>
+#include <api/environment/environment_factory.h>
 #include <api/video_codecs/sdp_video_format.h>
 #include <media/base/codec.h>
 #include <media/base/media_constants.h>
@@ -110,7 +110,7 @@ std::unique_ptr<webrtc::VideoDecoder> SoraVideoDecoderFactory::Create(
 
 SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
     std::shared_ptr<CudaContext> cuda_context,
-    void* jni_env) {
+    void* env) {
   auto config = GetSoftwareOnlyVideoDecoderFactoryConfig();
 
 #if defined(__APPLE__)
@@ -119,10 +119,10 @@ SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
 #endif
 
 #if defined(SORA_CPP_SDK_ANDROID)
-  if (jni_env != nullptr) {
+  if (env != nullptr) {
     config.decoders.insert(config.decoders.begin(),
                            VideoDecoderConfig(CreateAndroidVideoDecoderFactory(
-                               static_cast<JNIEnv*>(jni_env))));
+                               static_cast<JNIEnv*>(env))));
   }
 #endif
 
@@ -251,6 +251,7 @@ SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
 }
 
 SoraVideoDecoderFactoryConfig GetSoftwareOnlyVideoDecoderFactoryConfig() {
+  // SDK の外部から webrtc::Environment を設定したくなるまで、ここで初期化する
   auto env = webrtc::CreateEnvironment();
   SoraVideoDecoderFactoryConfig config;
   config.decoders.push_back(VideoDecoderConfig(

@@ -2,7 +2,6 @@
 #define SORA_SORA_CLIENT_CONTEXT_H_
 
 // WebRTC
-#include <api/environment/environment_factory.h>
 #include <api/peer_connection_interface.h>
 #include <media/engine/webrtc_media_engine.h>
 #include <pc/connection_context.h>
