@@ -25,16 +25,16 @@ github actions のビルドが失敗していたり、
 ### github に公開されているバイナリの sdk を利用する
 
 ```bash
-$ python3 examples/sumomo/macos_arm64/run.py
+python3 examples/sumomo/macos_arm64/run.py
 ```
 
 ### ローカルでビルドした sdk を利用する
 
 ```bash
-$ python3 examples/sumomo/macos_arm64/run.py --sora-dir .
+python3 examples/sumomo/macos_arm64/run.py --sora-dir .
 ```
 
 ローカルでビルドした sdk のルートディレクトリを `--sora-dir` にて指定してください。
 
 > [!note]
-> `--sora-dir` を指定した際は examples 以下の version ファイルを利用しません。
+> `--sora-dir` を指定した際は examples 以下の `VERSION` ファイルを利用しません。
