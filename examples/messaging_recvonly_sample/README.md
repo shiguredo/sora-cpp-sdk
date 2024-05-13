@@ -16,14 +16,13 @@
 
 **ビルドに関しての問い合わせは受け付けておりません。うまくいかない場合は [GitHub Actions](https://github.com/shiguredo/sora-cpp-sdk/blob/develop/.github/workflows/build.yml) の内容をご確認ください。**
 
-
 ### リポジトリをクローンする
 
 [sora-cpp-sdk](https://github.com/shiguredo/sora-cpp-sdk) をクローンして、examples 以下のディレクトリを利用してください。
 
 ```shell
-$ git clone https://github.com/shiguredo/sora-cpp-sdk.git
-$ cd sora-cpp-sdk/examples
+git clone https://github.com/shiguredo/sora-cpp-sdk.git
+cd sora-cpp-sdk/examples
 ```
 
 ### メッセージング受信サンプルをビルドする
@@ -35,7 +34,7 @@ $ cd sora-cpp-sdk/examples
 以下のツールを準備してください。
 
 - [Visual Studio 2019](https://visualstudio.microsoft.com/ja/downloads/)
-    - C++ をビルドするためのコンポーネントを入れてください。
+  - C++ をビルドするためのコンポーネントを入れてください。
 - Python 3.10.5
 
 ##### ビルド
@@ -62,7 +61,7 @@ $ cd sora-cpp-sdk/examples
 ##### ビルド
 
 ```shell
-$ python3 messaging_recvonly_sample/macos_arm64/run.py
+python3 messaging_recvonly_sample/macos_arm64/run.py
 ```
 
 成功した場合、`_build/macos_arm64/release/messaging_recvonly_sample` に `messaging_recvonly_sample` が作成されます。
@@ -79,17 +78,17 @@ _build/macos_arm64/release/messaging_recvonly_sample
 必要なパッケージをインストールしてください。
 
 ```shell
-$ sudo apt install libx11-dev
-$ sudo apt install libdrm-dev
-$ sudo apt install libva-dev
-$ sudo apt install pkg-config
-$ sudo apt install python3
+sudo apt install libx11-dev
+sudo apt install libdrm-dev
+sudo apt install libva-dev
+sudo apt install pkg-config
+sudo apt install python3
 ```
 
 ##### ビルド
 
 ```shell
-$ python3 messaging_recvonly_sample/ubuntu-20.04_x86_64/run.py
+python3 messaging_recvonly_sample/ubuntu-20.04_x86_64/run.py
 ```
 
 成功した場合、`_build/ubuntu-20.04_x86_64/release/messaging_recvonly_sample` に `messaging_recvonly_sample` が作成されます。
@@ -106,17 +105,17 @@ _build/ubuntu-20.04_x86_64/release/messaging_recvonly_sample/
 必要なパッケージをインストールしてください。
 
 ```shell
-$ sudo apt install libx11-dev
-$ sudo apt install libdrm-dev
-$ sudo apt install libva-dev
-$ sudo apt install pkg-config
-$ sudo apt install python3
+sudo apt install libx11-dev
+sudo apt install libdrm-dev
+sudo apt install libva-dev
+sudo apt install pkg-config
+sudo apt install python3
 ```
 
 ##### ビルド
 
 ```shell
-$ python3 messaging_recvonly_sample/ubuntu-22.04_x86_64/run.py
+python3 messaging_recvonly_sample/ubuntu-22.04_x86_64/run.py
 ```
 
 成功した場合、以下のファイルが作成されます。`_build/ubuntu-22.04_x86_64/release/messaging_recvonly_sample` に `messaging_recvonly_sample` が作成されます。
@@ -135,21 +134,21 @@ _build/ubuntu-22.04_x86_64/release/messaging_recvonly_sample/
 必要なパッケージをインストールしてください。
 
 ```shell
-$ sudo apt install multistrap
-$ sudo apt install binutils-aarch64-linux-gnu
-$ sudo apt install python3
+sudo apt install multistrap
+sudo apt install binutils-aarch64-linux-gnu
+sudo apt install python3
 ```
 
 multistrap に insecure なリポジトリからの取得を許可する設定を行います。
 
 ```shell
-$ sudo sed -e 's/Apt::Get::AllowUnauthenticated=true/Apt::Get::AllowUnauthenticated=true";\n$config_str .= " -o Acquire::AllowInsecureRepositories=true/' -i /usr/sbin/multistrap
+sudo sed -e 's/Apt::Get::AllowUnauthenticated=true/Apt::Get::AllowUnauthenticated=true";\n$config_str .= " -o Acquire::AllowInsecureRepositories=true/' -i /usr/sbin/multistrap
 ```
 
 ##### ビルド
 
 ```shell
-$ python3 messaging_recvonly_sample/ubuntu-20.04_armv8_jetson/run.py
+python3 messaging_recvonly_sample/ubuntu-20.04_armv8_jetson/run.py
 ```
 
 成功した場合、以下のファイルが作成されます。`_build/ubuntu-20.04_armv8_jetson/release/messaging_recvonly_sample` に `messaging_recvonly_sample` が作成されます。
@@ -168,13 +167,15 @@ _build/ubuntu-20.04_armv8_jetson/release/messaging_recvonly_sample/
 デフォルトでは `#sora-devtools` ラベルのメッセージが受信対象となります。
 
 Windows の場合
+
 ```powershell
 > .\messaging_recvonly_sample.exe --signaling-url wss://sora.example.com/signaling --channel-id sora
 ```
 
 Windows 以外の場合
+
 ```shell
-$ ./messaging_recvonly_sample --signaling-url wss://sora.example.com/signaling --channel-id sora
+./messaging_recvonly_sample --signaling-url wss://sora.example.com/signaling --channel-id sora
 ```
 
 #### Sora に関するオプション
@@ -183,12 +184,12 @@ $ ./messaging_recvonly_sample --signaling-url wss://sora.example.com/signaling -
 
 - `--signaling-url` : Sora サーバのシグナリング URL (必須)
 - `--channel-id` : channel_id (必須)
-    - 任意のチャンネル ID
+  - 任意のチャンネル ID
 - `--data-channels` : 受信対象のデータチャネルのリストを JSON 形式で指定します
-    - 未指定の場合は `[{"label":"#sora-devtools", "direction":"recvonly"}]` が設定されます
-    - 指定可能な内容については Sora のドキュメントの ["type": "connect" 時の "data_channels"](https://sora-doc.shiguredo.jp/MESSAGING#8e04a8) を参照してください
+  - 未指定の場合は `[{"label":"#sora-devtools", "direction":"recvonly"}]` が設定されます
+  - 指定可能な内容については Sora のドキュメントの ["type": "connect" 時の "data_channels"](https://sora-doc.shiguredo.jp/MESSAGING#8e04a8) を参照してください
 
 #### その他のオプション
 
 - `--help`
-    - ヘルプを表示します
+  - ヘルプを表示します
