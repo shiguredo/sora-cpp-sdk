@@ -4,33 +4,37 @@
 
 ビルド関連の質問については環境問題がほとんどであり、環境問題を改善するコストがとても高いため基本的には解答しません。
 
-GitHub Actions でビルドを行い確認していますので、まずは GitHub Actions の [build.yml](https://github.com/shiguredo/sora-cpp-sdk/blob/develop/.github/workflows/build.yml) を確認してみてください。
+github actions でビルドを行い確認していますので、まずは github actions の [build.yml](https://github.com/shiguredo/sora-cpp-sdk/blob/develop/.github/workflows/build.yml) を確認してみてください。
 
-GitHub Actions のビルドが失敗していたり、
-ビルド済みバイナリがうまく動作しない場合は Discord へご連絡ください。
+github actions のビルドが失敗していたり、
+ビルド済みバイナリがうまく動作しない場合は discord へご連絡ください。
 
 ## サンプルのビルド
 
-**ここでは macOS arm64 でのビルドを想定しています**
+> [!important]
+> ここでは macos arm64 でのビルドを想定しています
 
 サンプルをビルドする際、二つのパターンでビルドすることができます。
 
-- GitHub に公開されているバイナリの SDK を利用する
-- ローカルでビルドした SDK を利用する
+- github に公開されているバイナリの sdk を利用する
+- ローカルでビルドした sdk を利用する
 
 ここでは一通りの機能を実装しているサンプルである sumomo を例にします。
 また、ビルド用の `run.py` はプラットフォーム毎に用意されています。
 
-### GitHub に公開されているバイナリの SDK を利用する
+### github に公開されているバイナリの sdk を利用する
 
 ```bash
 $ python3 examples/sumomo/macos_arm64/run.py
 ```
 
-### ローカルでビルドした SDK を利用する
+### ローカルでビルドした sdk を利用する
 
 ```bash
 $ python3 examples/sumomo/macos_arm64/run.py --sora-dir .
 ```
 
-ローカルでビルドした SDK のルートディレクトリを `--sora-dir` にて指定してください。
+ローカルでビルドした sdk のルートディレクトリを `--sora-dir` にて指定してください。
+
+> [!note]
+> `--sora-dir` を指定した際は examples 以下の version ファイルを利用しません。
