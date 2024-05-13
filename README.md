@@ -7,11 +7,11 @@
 
 We will not respond to PRs or issues that have not been discussed on Discord. Also, Discord is only available in Japanese.
 
-Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use.
+Please read <https://github.com/shiguredo/oss/blob/master/README.en.md> before use.
 
 ## 時雨堂のオープンソースソフトウェアについて
 
-利用前に https://github.com/shiguredo/oss をお読みください。
+利用前に <https://github.com/shiguredo/oss> をお読みください。
 
 ## Sora C++ SDK について
 
@@ -38,7 +38,7 @@ Please read https://github.com/shiguredo/oss/blob/master/README.en.md before use
 
 _hololens2 は無視してください_
 
-https://github.com/shiguredo/sora-cpp-sdk/releases
+<https://github.com/shiguredo/sora-cpp-sdk/releases>
 
 ## サンプル集
 
@@ -60,6 +60,10 @@ https://github.com/shiguredo/sora-cpp-sdk/releases
 - Ubuntu 22.04 x86_64
 - Android 7 arm64 以降
 - iOS 13 arm64 以降
+
+## 既知の問題
+
+[known_issues.md](doc/known_issues.md) をお読みください。
 
 ## FAQ
 
@@ -92,7 +96,7 @@ https://github.com/shiguredo/sora-cpp-sdk/releases
 
 最新の状況などは Discord で共有しています。質問や相談も Discord でのみ受け付けています。
 
-https://discord.gg/shiguredo
+<https://discord.gg/shiguredo>
 
 ### バグ報告
 
@@ -121,7 +125,7 @@ limitations under the License.
 
 ## OpenH264
 
-https://www.openh264.org/BINARY_LICENSE.txt
+<https://www.openh264.org/BINARY_LICENSE.txt>
 
 ```
 "OpenH264 Video Codec provided by Cisco Systems, Inc."
