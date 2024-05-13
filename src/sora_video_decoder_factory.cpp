@@ -2,6 +2,7 @@
 
 // WebRTC
 #include <absl/strings/match.h>
+#include <api/environment/environment_factory.h>
 #include <api/video_codecs/sdp_video_format.h>
 #include <media/base/codec.h>
 #include <media/base/media_constants.h>
@@ -67,8 +68,8 @@ SoraVideoDecoderFactory::GetSupportedFormats() const {
   return r;
 }
 
-std::unique_ptr<webrtc::VideoDecoder>
-SoraVideoDecoderFactory::CreateVideoDecoder(
+std::unique_ptr<webrtc::VideoDecoder> SoraVideoDecoderFactory::Create(
+    const webrtc::Environment& env,
     const webrtc::SdpVideoFormat& format) {
   webrtc::VideoCodecType specified_codec =
       webrtc::PayloadStringToCodecType(format.name);
@@ -84,10 +85,10 @@ SoraVideoDecoderFactory::CreateVideoDecoder(
     std::vector<webrtc::SdpVideoFormat> supported_formats = formats_[n++];
 
     if (enc.factory != nullptr) {
-      create_video_decoder =
-          [factory = enc.factory.get()](const webrtc::SdpVideoFormat& format) {
-            return factory->CreateVideoDecoder(format);
-          };
+      create_video_decoder = [factory = enc.factory.get(),
+                              env](const webrtc::SdpVideoFormat& format) {
+        return factory->Create(env, format);
+      };
     } else if (enc.create_video_decoder != nullptr) {
       create_video_decoder = enc.create_video_decoder;
     }
@@ -250,10 +251,12 @@ SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
 }
 
 SoraVideoDecoderFactoryConfig GetSoftwareOnlyVideoDecoderFactoryConfig() {
+  // SDK の外部から webrtc::Environment を設定したくなるまで、ここで初期化する
+  auto env = webrtc::CreateEnvironment();
   SoraVideoDecoderFactoryConfig config;
   config.decoders.push_back(VideoDecoderConfig(
       webrtc::kVideoCodecVP8,
-      [](auto format) { return webrtc::VP8Decoder::Create(); }));
+      [env](auto format) { return webrtc::CreateVp8Decoder(env); }));
   config.decoders.push_back(VideoDecoderConfig(
       webrtc::kVideoCodecVP9,
       [](auto format) { return webrtc::VP9Decoder::Create(); }));
