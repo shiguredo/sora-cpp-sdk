@@ -142,7 +142,7 @@ jobs:
           cd examples
           mkdir examples_${{ matrix.name }}
           for app in sdl_sample sumomo messaging_recvonly_sample; do
-            python3 $app/${{ matrix.name }}/run.py --sora-dir ..
+            python3 $app/${{ matrix.name }}/run.py --local-sora-cpp-sdk-dir ..
             cp _build/${{ matrix.name }}/release/$app/$app examples_${{ matrix.name }}
           done
         if: matrix.name == 'macos_arm64'
@@ -254,7 +254,7 @@ jobs:
           cd examples
           mkdir examples_${{ matrix.name }}
           for app in sdl_sample sumomo messaging_recvonly_sample; do
-            python3 $app/${{ matrix.name }}/run.py --sora-dir ..
+            python3 $app/${{ matrix.name }}/run.py --local-sora-cpp-sdk-dir ..
             cp _build/${{ matrix.name }}/release/$app/$app examples_${{ matrix.name }}
           done
         if: matrix.name == 'ubuntu-20.04_x86_64' || matrix.name == 'ubuntu-22.04_x86_64' || matrix.name == 'ubuntu-20.04_armv8_jetson'
