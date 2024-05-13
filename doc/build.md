@@ -15,6 +15,9 @@ GitHub Actions のビルドが失敗していたり、
 - ローカルでビルドした SDK を利用する
 
 ここでは一通りの機能を実装しているサンプルである sumomo を例にします。
+また、ビルド用の `run.py` はプラットフォーム毎に用意されています。
+
+ここでは macOS arm64 でのビルドを想定しています。
 
 ### GitHub に公開されているバイナリの SDK を利用する
 
@@ -28,4 +31,4 @@ $ python3 examples/sumomo/macos_arm64/run.py
 $ python3 examples/sumomo/macos_arm64/run.py --sora-dir .
 ```
 
-ローカルでビルドした SDK を `--sora-dir` にて指定してください。
+ローカルでビルドした SDK のルートディレクトリを `--sora-dir` にて指定してください。
