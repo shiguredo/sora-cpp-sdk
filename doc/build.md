@@ -31,10 +31,10 @@ python3 examples/sumomo/macos_arm64/run.py
 ### ローカルでビルドした sdk を利用する
 
 ```bash
-python3 examples/sumomo/macos_arm64/run.py --sora-dir .
+python3 examples/sumomo/macos_arm64/run.py --local-sora-cpp-sdk-dir .
 ```
 
-ローカルでビルドした sdk のルートディレクトリを `--sora-dir` にて指定してください。
+ローカルでビルドした sdk のルートディレクトリを `--local-sora-cpp-sdk-dir` にて指定してください。
 
 > [!note]
-> `--sora-dir` を指定した際は `examples/VERSION` に定義されている `SORA_CPP_SDK_VERSION` と `BOOST_VERSION` の値は利用されません。
+> `--local-sora-cpp-sdk-dir` を指定した際は `examples/VERSION` に定義されている `SORA_CPP_SDK_VERSION` と `BOOST_VERSION` の値は利用されません。

@@ -15,13 +15,13 @@
 
 ```bash
 # ../webrtc-build に shiguredo-webrtc-build/webrtc-build がある場合
-python3 run.py ubuntu-20.04_x86_64 --webrtc-build-dir ../webrtc-build
+python3 run.py ubuntu-20.04_x86_64 --local-webrtc-build-dir ../webrtc-build
 ```
 
 webrtc-build に引数を渡してビルドする場合、以下のようにする。
 
 ```bash
-python3 run.py ubuntu-20.04_x86_64 --webrtc-build-dir ../webrtc-build --webrtc-build-args='--webrtc-fetch'
+python3 run.py ubuntu-20.04_x86_64 --local-webrtc-build-dir ../webrtc-build --local-webrtc-build-args='--webrtc-fetch'
 ```
 
 この時、VERSION に指定している WEBRTC_BUILD_VERSION に関係なく、現在 webrtc-build リポジトリでチェックアウトされている内容でビルドするため、バージョンの不整合に注意すること。
@@ -32,7 +32,7 @@ C++ SDK をデバッグビルドするには、libwebrtc も含めて、依存�
 しかし libwebrtc のバイナリはリリースビルドであるため、libwebrtc のデバッグバイナリを作るにはローカルの webrtc-build を利用する必要がある。
 
 ```bash
-python3 run.py ubuntu-20.04_x86_64 --debug --webrtc-build-dir ../webrtc-build
+python3 run.py ubuntu-20.04_x86_64 --debug --local-webrtc-build-dir ../webrtc-build
 ```
 
 このように `--debug` を付けると、C++ SDK だけでなく、ローカルの webrtc-build を含む全ての依存ライブラリもデバッグビルドを行う。
