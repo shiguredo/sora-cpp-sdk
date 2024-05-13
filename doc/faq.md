@@ -2,9 +2,9 @@
 
 ## ドキュメント
 
-Sora C++ SDK にドキュメントはありません。基本的にはサンプルを参考にしてください。
+Sora C++ SDK にドキュメントはありません。サンプルを参考にしてください。
 
-また、不明点などあれば Discord でお問い合わせください。
+不明点などあれば時雨堂の Discord https://discord.gg/shiguredo の `#sora-sdk-faq` にてご相談ください。
 
 ## ビルド
 
@@ -29,9 +29,10 @@ NVIDIA VIDEO CODEC SDK のハードウェアデコーダでは width height の�
 
 Windows 環境でのみ Jetson の H.264 映像を受信すると映像の色が緑色になってしまうことを確認しています。こちらの事象は NVIDIA Jetson の JetPack を 5.1.1 にすることで解決します。
 
-## iOS または macOS から H.264 の FHD で配信するにはどうすればいいですか？
+## iOS または macOS から H.264 の 1080p で配信するにはどうすればいいですか？
 
-iOS または macOS から FHD で配信したい場合は Sora の H.264 のプロファイルレベル ID を 5.2 以上に設定してください。設定は以下の方法で行うことができます。
+iOS または macOS から 1080p で配信したい場合は Sora の H.264 のプロファイルレベル ID を 5.2 以上に設定してください。
+設定は以下の方法で行うことができます。
 
 - `SoraSignalingConfig` に `video_h264_params` を設定する
 - Sora の設定を変更する
@@ -41,6 +42,8 @@ Sora の設定については [Sora のドキュメント](https://sora-doc.shig
 ## 4K@30fps で映像を配信できません
 
 Sora C++ SDK では、 `SoraVideoEncoderFactoryConfig` という構造体に `force_i420_conversion_for_simulcast_adapter` というフラグがあり、デフォルトで true になっています。
-このフラグを false にすることで、パフォーマンスが向上して 4K@30fps で映像を配信できる可能性がありますが、 JetsonBuffer を利用している環境などでサイマルキャストが正常に動作しなくなります。
+
+このフラグを false にすることで、パフォーマンスが向上して 4K@30fps で映像を配信できる可能性がありますが、
+JetsonBuffer を利用している環境などでサイマルキャストが正常に動作しなくなります。
 
 このフラグが必要になった背景については [コードのコメント](https://github.com/shiguredo/sora-cpp-sdk/blob/8f6dba9218e0cda7cdefafe64a37c1af9d5e5c9e/include/sora/sora_video_encoder_factory.h#L57-L71) をご確認ください。
