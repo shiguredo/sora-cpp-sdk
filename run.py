@@ -146,8 +146,8 @@ def install_deps(
     build_dir: str,
     install_dir: str,
     debug: bool,
-    webrtc_build_dir: Optional[str],
-    webrtc_build_args: List[str],
+    local_webrtc_build_dir: Optional[str],
+    local_webrtc_build_args: List[str],
 ):
     with cd(BASE_DIR):
         version = read_version_file("VERSION")
@@ -198,7 +198,7 @@ def install_deps(
         # WebRTC
         webrtc_platform = get_webrtc_platform(platform)
 
-        if webrtc_build_dir is None:
+        if local_webrtc_build_dir is None:
             install_webrtc_args = {
                 "version": version["WEBRTC_BUILD_VERSION"],
                 "version_file": os.path.join(install_dir, "webrtc.version"),
@@ -211,20 +211,20 @@ def install_deps(
         else:
             build_webrtc_args = {
                 "platform": webrtc_platform,
-                "webrtc_build_dir": webrtc_build_dir,
-                "webrtc_build_args": webrtc_build_args,
+                "local_webrtc_build_dir": local_webrtc_build_dir,
+                "local_webrtc_build_args": local_webrtc_build_args,
                 "debug": debug,
             }
 
             build_webrtc(**build_webrtc_args)
 
-        webrtc_info = get_webrtc_info(webrtc_platform, webrtc_build_dir, install_dir, debug)
+        webrtc_info = get_webrtc_info(webrtc_platform, local_webrtc_build_dir, install_dir, debug)
         webrtc_version = read_version_file(webrtc_info.version_file)
         webrtc_deps = read_version_file(webrtc_info.deps_file)
 
         # Windows は MSVC を使うので不要
         # macOS と iOS は Apple Clang を使うので不要
-        if platform.target.os not in ("windows", "macos", "ios") and webrtc_build_dir is None:
+        if platform.target.os not in ("windows", "macos", "ios") and local_webrtc_build_dir is None:
             # LLVM
             tools_url = webrtc_version["WEBRTC_SRC_TOOLS_URL"]
             tools_commit = webrtc_version["WEBRTC_SRC_TOOLS_COMMIT"]
@@ -586,8 +586,8 @@ def main():
         build_dir,
         install_dir,
         args.debug,
-        webrtc_build_dir=args.webrtc_build_dir,
-        webrtc_build_args=args.webrtc_build_args,
+        local_webrtc_build_dir=args.local_webrtc_build_dir,
+        local_webrtc_build_args=args.local_webrtc_build_args,
     )
 
     configuration = "Release"
@@ -605,7 +605,7 @@ def main():
         cmake_args.append(f"-DBOOST_ROOT={cmake_path(os.path.join(install_dir, 'boost'))}")
         webrtc_platform = get_webrtc_platform(platform)
         webrtc_info = get_webrtc_info(
-            webrtc_platform, args.webrtc_build_dir, install_dir, args.debug
+            webrtc_platform, args.local_webrtc_build_dir, install_dir, args.debug
         )
         webrtc_version = read_version_file(webrtc_info.version_file)
         webrtc_deps = read_version_file(webrtc_info.deps_file)
