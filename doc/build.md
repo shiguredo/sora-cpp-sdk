@@ -37,4 +37,4 @@ python3 examples/sumomo/macos_arm64/run.py --sora-dir .
 ローカルでビルドした sdk のルートディレクトリを `--sora-dir` にて指定してください。
 
 > [!note]
-> `--sora-dir` を指定した際は examples 以下の `VERSION` ファイルを利用しません。
+> `--sora-dir` を指定した際は `examples/VERSION` に定義されている `SORA_CPP_SDK_VERSION` と `BOOST_VERSION` の値は利用されません。
