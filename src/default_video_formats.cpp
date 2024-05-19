@@ -1,10 +1,10 @@
 #include "default_video_formats.h"
 
 // WebRTC
-#include <media/base/media_constants.h>
 #include <api/video_codecs/sdp_video_format.h>
 #include <api/video_codecs/video_codec.h>
 #include <api/video_codecs/vp9_profile.h>
+#include <media/base/media_constants.h>
 #include <modules/video_coding/codecs/av1/av1_svc_config.h>
 #include <modules/video_coding/codecs/h264/include/h264.h>
 #include <modules/video_coding/codecs/vp8/include/vp8.h>
