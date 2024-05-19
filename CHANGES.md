@@ -15,9 +15,14 @@
   - @melpon
 - [CHANGE] `--webrtc-build-dir`, `--webrtc-build-args` を `--local-webrtc-build-dir` と `--local-webrtc-build-args` に変更する
   - @melpon
-- [CHANGE] SoraVideoDecoderFactory の初期化に利用する関数を CreateVideoDecoder から Create に変更する
+- [CHANGE] SoraVideoDecoderFactory の CreateVideoDecoder を Create に変更する
   - libwebrtc に定義されている継承元クラスが変更されたことに対する追従
   - @enm10k
+- [CHANGE] SoraVideoEncoderFactory の CreateVideoEncoder を Create に変更する
+  - libwebrtc に定義されている継承元クラスが変更されたことに対する追従
+  - @enm10k
+- [CHANGE] `CreateOpenH264VideoEncoder()` の第１引数の型を `const cricket::VideoCodec&` から `const webrtc::SdpVideoFormat&` に変更する
+  - @melpon
 - [UPDATE] Boost を 1.85.0 にあげる
   - @enm10k
 - [UPDATE] SDL2 を 2.30.3 にあげる
