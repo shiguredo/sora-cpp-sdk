@@ -20,8 +20,12 @@
 
 [sora-cpp-sdk](https://github.com/shiguredo/sora-cpp-sdk) をクローンして、examples 以下のディレクトリを利用してください。
 
+develop ブランチは開発ブランチであり、ビルドが失敗することがあるため、 `main` またはリリースタグを指定するようにしてください。
+
+以下は main ブランチを指定する例です。
+
 ```shell
-$ git clone https://github.com/shiguredo/sora-cpp-sdk.git
+git clone -b main https://github.com/shiguredo/sora-cpp-sdk.git
 $ cd sora-cpp-sdk/examples
 ```
 
