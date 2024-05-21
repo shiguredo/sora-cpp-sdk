@@ -29,7 +29,7 @@
   - @enm10k
 - [UPDATE] CLI11 を 2.4.2 にあげる
   - @enm10k
-- [UPDATE] libwebrtc を m125.6422.2.0 にあげる
+- [UPDATE] libwebrtc を m125.6422.2.1 にあげる
   - Android の test アプリがリンクできなくなったため、リンカーを Android NDK のものから libwebrtc のものに変更
   - リンカーのバージョンの違いによる互換性の問題でエラーが発生していた
   - @melpon @enm10k
