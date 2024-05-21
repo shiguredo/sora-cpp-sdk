@@ -940,8 +940,6 @@ def install_sdl2(
         ]
         if platform == "windows":
             cmake_args += [
-                "-G",
-                "Visual Studio 16 2019",
                 "-DSDL_FORCE_STATIC_VCRT=ON",
                 "-DHAVE_LIBC=ON",
             ]
