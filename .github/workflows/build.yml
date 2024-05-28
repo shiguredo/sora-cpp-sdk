@@ -16,7 +16,7 @@ jobs:
         name:
           - windows_x86_64
     name: Build sora-cpp-sdk for ${{ matrix.name }}
-    runs-on: windows-2019
+    runs-on: windows-2022
     env:
       TEST_SIGNALING_URL: ${{ secrets.TEST_SIGNALING_URL }}
       TEST_CHANNEL_ID_PREFIX: ${{ secrets.TEST_CHANNEL_ID_PREFIX }}

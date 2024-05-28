@@ -16,9 +16,13 @@
 #include <api/video/nv12_buffer.h>
 #include <common_video/h264/h264_bitstream_parser.h>
 #include <common_video/include/bitrate_adjuster.h>
-#include <libyuv.h>
 #include <modules/video_coding/codecs/h264/include/h264.h>
+#include <modules/video_coding/include/video_codec_interface.h>
+#include <modules/video_coding/include/video_error_codes.h>
 #include <rtc_base/logging.h>
+
+// libyuv
+#include <libyuv.h>
 
 // NvCodec
 #ifdef _WIN32

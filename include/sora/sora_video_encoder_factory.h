@@ -81,12 +81,14 @@ class SoraVideoEncoderFactory : public webrtc::VideoEncoderFactory {
 
   std::vector<webrtc::SdpVideoFormat> GetSupportedFormats() const override;
 
-  std::unique_ptr<webrtc::VideoEncoder> CreateVideoEncoder(
+  std::unique_ptr<webrtc::VideoEncoder> Create(
+      const webrtc::Environment& env,
       const webrtc::SdpVideoFormat& format) override;
 
  private:
   // 一番内側のエンコーダを作る
   std::unique_ptr<webrtc::VideoEncoder> CreateInternalVideoEncoder(
+      const webrtc::Environment& env,
       const webrtc::SdpVideoFormat& format,
       int& alignment);
 
