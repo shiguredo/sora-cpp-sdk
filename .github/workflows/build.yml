@@ -159,7 +159,6 @@ jobs:
         name:
           - ubuntu-20.04_x86_64
           - ubuntu-22.04_x86_64
-          - ubuntu-20.04_armv8_jetson
           - android
     name: Build sora-cpp-sdk for ${{ matrix.name }}
     runs-on: ${{ matrix.name == 'ubuntu-22.04_x86_64' && 'ubuntu-22.04' || 'ubuntu-20.04' }}
@@ -205,13 +204,6 @@ jobs:
 
           # Intel Media SDK のために libva-dev, libdrm-dev を入れる
           DEBIAN_FRONTEND=noninteractive sudo apt-get -y install libva-dev libdrm-dev
-      - name: Install deps for Jetson series
-        if: matrix.name == 'ubuntu-20.04_armv8_jetson'
-        run: |
-          sudo apt-get update
-          sudo apt-get -y install multistrap binutils-aarch64-linux-gnu
-          # multistrap に insecure なリポジトリからの取得を許可する設定を入れる
-          sudo sed -e 's/Apt::Get::AllowUnauthenticated=true/Apt::Get::AllowUnauthenticated=true";\n$config_str .= " -o Acquire::AllowInsecureRepositories=true/' -i /usr/sbin/multistrap
       - name: Install deps for Android
         if: matrix.name == 'android'
         run: |
@@ -257,13 +249,13 @@ jobs:
             python3 $app/${{ matrix.name }}/run.py --local-sora-cpp-sdk-dir ..
             cp _build/${{ matrix.name }}/release/$app/$app examples_${{ matrix.name }}
           done
-        if: matrix.name == 'ubuntu-20.04_x86_64' || matrix.name == 'ubuntu-22.04_x86_64' || matrix.name == 'ubuntu-20.04_armv8_jetson'
+        if: matrix.name == 'ubuntu-20.04_x86_64' || matrix.name == 'ubuntu-22.04_x86_64'
       - name: Upload Examples Artifact
         uses: actions/upload-artifact@v4
         with:
           name: examples_${{ matrix.name }}
           path: examples/examples_${{ matrix.name }}
-        if: matrix.name == 'ubuntu-20.04_x86_64' || matrix.name == 'ubuntu-22.04_x86_64' || matrix.name == 'ubuntu-20.04_armv8_jetson'
+        if: matrix.name == 'ubuntu-20.04_x86_64' || matrix.name == 'ubuntu-22.04_x86_64'
 
   create-release:
     name: Create Release
@@ -284,9 +276,6 @@ jobs:
       - uses: ./.github/actions/download
         with:
           platform: ios
-      - uses: ./.github/actions/download
-        with:
-          platform: ubuntu-20.04_armv8_jetson
       - uses: ./.github/actions/download
         with:
           platform: ubuntu-20.04_x86_64
