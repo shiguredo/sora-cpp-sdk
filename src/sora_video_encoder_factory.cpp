@@ -35,6 +35,10 @@
 #include "sora/hwenc_vpl/vpl_video_encoder.h"
 #endif
 
+#if defined(USE_JETSON_ENCODER)
+#include "sora/hwenc_jetson/jetson_video_encoder.h"
+#endif
+
 #include "default_video_formats.h"
 #include "sora/aligned_encoder_adapter.h"
 #include "sora/i420_encoder_adapter.h"
@@ -254,6 +258,51 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
             },
             16));
   }
+#endif
+
+#if defined(USE_JETSON_ENCODER)
+  if (JetsonVideoEncoder::IsSupportedVP8()) {
+    config.encoders.insert(config.encoders.begin(),
+                           VideoEncoderConfig(
+                               webrtc::kVideoCodecVP8,
+                               [](auto format) {
+                                 return std::unique_ptr<webrtc::VideoEncoder>(
+                                     absl::make_unique<JetsonVideoEncoder>(
+                                         cricket::CreateVideoCodec(format)));
+                               },
+                               16));
+  }
+  if (JetsonVideoEncoder::IsSupportedVP9()) {
+    config.encoders.insert(config.encoders.begin(),
+                           VideoEncoderConfig(
+                               webrtc::kVideoCodecVP9,
+                               [](auto format) {
+                                 return std::unique_ptr<webrtc::VideoEncoder>(
+                                     absl::make_unique<JetsonVideoEncoder>(
+                                         cricket::CreateVideoCodec(format)));
+                               },
+                               16));
+  }
+  if (JetsonVideoEncoder::IsSupportedAV1()) {
+    config.encoders.insert(config.encoders.begin(),
+                           VideoEncoderConfig(
+                               webrtc::kVideoCodecAV1,
+                               [](auto format) {
+                                 return std::unique_ptr<webrtc::VideoEncoder>(
+                                     absl::make_unique<JetsonVideoEncoder>(
+                                         cricket::CreateVideoCodec(format)));
+                               },
+                               16));
+  }
+  config.encoders.insert(config.encoders.begin(),
+                         VideoEncoderConfig(
+                             webrtc::kVideoCodecH264,
+                             [](auto format) {
+                               return std::unique_ptr<webrtc::VideoEncoder>(
+                                   absl::make_unique<JetsonVideoEncoder>(
+                                       cricket::CreateVideoCodec(format)));
+                             },
+                             16));
 #endif
 
   return config;

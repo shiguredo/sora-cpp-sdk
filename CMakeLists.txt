@@ -45,6 +45,10 @@ elseif (SORA_TARGET STREQUAL "ubuntu-22.04_x86_64")
   set(SORA_TARGET_OS_VERSION "22.04")
   set(SORA_TARGET_ARCH "x86_64")
   set(SORA_TARGET_DEF "SORA_CPP_SDK_UBUNTU_2204")
+elseif (SORA_TARGET STREQUAL "ubuntu-20.04_armv8_jetson")
+  set(SORA_TARGET_OS "jetson")
+  set(SORA_TARGET_ARCH "armv8")
+  set(SORA_TARGET_DEF "SORA_CPP_SDK_JETSON")
 endif()
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -145,6 +149,7 @@ target_include_directories(sora INTERFACE $<BUILD_INTERFACE:${CMAKE_CURRENT_SOUR
 target_compile_definitions(sora
   PRIVATE
     $<$<BOOL:${USE_NVCODEC_ENCODER}>:USE_NVCODEC_ENCODER>
+    $<$<BOOL:${USE_JETSON_ENCODER}>:USE_JETSON_ENCODER>
     $<$<BOOL:${USE_VPL_ENCODER}>:USE_VPL_ENCODER>
 )
 
@@ -491,6 +496,91 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
     list(APPEND BUNDLE_STATIC_LIBS $<TARGET_FILE:VPL::dispatcher>)
   endif()
 
+elseif (SORA_TARGET_OS STREQUAL "jetson")
+  target_sources(sora PRIVATE src/v4l2/v4l2_video_capturer.cpp)
+
+  target_compile_definitions(sora
+    PUBLIC
+      WEBRTC_POSIX
+      WEBRTC_LINUX
+      _LIBCPP_ABI_NAMESPACE=Cr
+      _LIBCPP_ABI_VERSION=2
+      _LIBCPP_DISABLE_AVAILABILITY
+      _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE
+      # https://github.com/boostorg/container_hash/issues/22 と同じ問題が clang-15 でも起きるので、これを手動で定義して回避する
+      BOOST_NO_CXX98_FUNCTION_BASE
+  )
+
+  set_target_properties(sora PROPERTIES POSITION_INDEPENDENT_CODE ON)
+  target_link_libraries(sora
+    PRIVATE
+      X11
+      #Xau
+      #Xdmcp
+      #Xtst
+      #xcb
+      #plds4
+      #Xext
+      #expat
+      dl
+      #nss3
+      #nssutil3
+      #plc4
+      #nspr4
+      #rt
+      Threads::Threads
+  )
+
+  if (USE_JETSON_ENCODER)
+    target_sources(sora
+      PRIVATE
+        src/hwenc_jetson/jetson_buffer.cpp
+        src/hwenc_jetson/jetson_jpeg_decoder.cpp
+        src/hwenc_jetson/jetson_jpeg_decoder_pool.cpp
+        src/hwenc_jetson/jetson_v4l2_capturer.cpp
+        src/hwenc_jetson/jetson_video_encoder.cpp
+        src/hwenc_jetson/jetson_video_decoder.cpp
+        ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvBufSurface.cpp
+        ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvBuffer.cpp
+        ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvElement.cpp
+        ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvElementProfiler.cpp
+        ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvJpegDecoder.cpp
+        ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvJpegEncoder.cpp
+        ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvLogging.cpp
+        ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvV4l2Element.cpp
+        ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvV4l2ElementPlane.cpp
+        ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvVideoDecoder.cpp
+        ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvVideoEncoder.cpp
+    )
+
+    target_include_directories(sora PRIVATE ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/include)
+    target_include_directories(sora PRIVATE ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/include/libjpeg-8b)
+    target_link_directories(sora PRIVATE ${CMAKE_SYSROOT}/usr/lib/aarch64-linux-gnu/tegra)
+    target_link_options(sora
+      PRIVATE
+        "-Wl,-rpath-link=${CMAKE_SYSROOT}/lib/aarch64-linux-gnu"
+        "-Wl,-rpath-link=${CMAKE_SYSROOT}/usr/lib/aarch64-linux-gnu"
+        "-Wl,-rpath-link=${CMAKE_SYSROOT}/usr/lib/aarch64-linux-gnu/tegra"
+    )
+    target_link_libraries(sora
+      PUBLIC
+        nvv4l2
+        nvv4lconvert
+        #nvbuf_fdmap
+        #nvddk_vic
+        #nvddk_2d_v2
+        nvjpeg
+        nvbufsurface
+        nvbufsurftransform
+
+        # nvbuf_utils を NvUtils に移行した際、ドキュメントには libnvbuf_utils.so を参照するように記載があったが、
+        # そのような so ファイルは存在しないためリンクが失敗した
+        # nvbuf_fdmap を追加したらリンクが通った
+        # https://developer.nvidia.com/sites/default/files/akamai/embedded/nvbuf_utils_to_nvutils_migration_guide.pdf
+        nvbuf_fdmap
+        #nvos
+    )
+  endif(USE_JETSON_ENCODER)
 endif()
 
 # 静的ライブラリを sora.lib に含める

@@ -23,8 +23,6 @@
   - @enm10k
 - [CHANGE] `CreateOpenH264VideoEncoder()` 関数の第１引数の型を `const cricket::VideoCodec&` から `const webrtc::SdpVideoFormat&` に変更する
   - @melpon
-- [CHANGE] Jetson 対応をサポートブランチに移動する
-  - @melpon
 - [UPDATE] Boost を 1.85.0 にあげる
   - @enm10k
 - [UPDATE] SDL2 を 2.30.3 にあげる

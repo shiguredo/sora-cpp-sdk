@@ -1,4 +1,5 @@
 import argparse
+import hashlib
 import logging
 import multiprocessing
 import os
@@ -31,6 +32,7 @@ from buildbase import (
     install_cuda_windows,
     install_llvm,
     install_openh264,
+    install_rootfs,
     install_vpl,
     install_webrtc,
     mkdir_p,
@@ -86,6 +88,28 @@ def get_common_cmake_args(
         args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
         cxxflags = ["-nostdinc++", "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE"]
         args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
+    if platform.target.os == "jetson":
+        sysroot = os.path.join(install_dir, "rootfs")
+        args.append("-DCMAKE_SYSTEM_NAME=Linux")
+        args.append("-DCMAKE_SYSTEM_PROCESSOR=aarch64")
+        args.append(f"-DCMAKE_SYSROOT={sysroot}")
+        args.append("-DCMAKE_C_COMPILER_TARGET=aarch64-linux-gnu")
+        args.append("-DCMAKE_CXX_COMPILER_TARGET=aarch64-linux-gnu")
+        args.append(
+            f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}"
+        )
+        args.append(
+            f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}"
+        )
+        args.append(f"-DCMAKE_FIND_ROOT_PATH={sysroot}")
+        args.append("-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER")
+        args.append("-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH")
+        args.append("-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH")
+        args.append("-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH")
+        path = cmake_path(os.path.join(webrtc_info.libcxx_dir, "include"))
+        args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
+        cxxflags = ["-nostdinc++", "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE"]
+        args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
     if platform.target.os == "ios":
         args += ["-G", "Xcode"]
         args.append("-DCMAKE_SYSTEM_NAME=iOS")
@@ -127,6 +151,19 @@ def install_deps(
 ):
     with cd(BASE_DIR):
         version = read_version_file("VERSION")
+
+        # multistrap を使った sysroot の構築
+        if platform.target.os == "jetson":
+            conf = os.path.join(BASE_DIR, "multistrap", f"{platform.target.package_name}.conf")
+            # conf ファイルのハッシュ値をバージョンとする
+            version_md5 = hashlib.md5(open(conf, "rb").read()).hexdigest()
+            install_rootfs_args = {
+                "version": version_md5,
+                "version_file": os.path.join(install_dir, "rootfs.version"),
+                "install_dir": install_dir,
+                "conf": conf,
+            }
+            install_rootfs(**install_rootfs_args)
 
         # Android NDK
         if platform.target.os == "android":
@@ -287,6 +324,35 @@ def install_deps(
             install_boost_args["toolset"] = "clang"
             install_boost_args["android_ndk"] = os.path.join(install_dir, "android-ndk")
             install_boost_args["native_api_level"] = version["ANDROID_NATIVE_API_LEVEL"]
+        elif platform.target.os == "jetson":
+            sysroot = os.path.join(install_dir, "rootfs")
+            install_boost_args["target_os"] = "linux"
+            install_boost_args["cxx"] = os.path.join(webrtc_info.clang_dir, "bin", "clang++")
+            install_boost_args["cflags"] = [
+                "-fPIC",
+                f"--sysroot={sysroot}",
+                "--target=aarch64-linux-gnu",
+                f"-I{os.path.join(sysroot, 'usr', 'include', 'aarch64-linux-gnu')}",
+            ]
+            install_boost_args["cxxflags"] = [
+                "-fPIC",
+                "--target=aarch64-linux-gnu",
+                f"--sysroot={sysroot}",
+                f"-I{os.path.join(sysroot, 'usr', 'include', 'aarch64-linux-gnu')}",
+                "-D_LIBCPP_ABI_NAMESPACE=Cr",
+                "-D_LIBCPP_ABI_VERSION=2",
+                "-D_LIBCPP_DISABLE_AVAILABILITY",
+                "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE",
+                "-nostdinc++",
+                "-std=gnu++17",
+                f"-isystem{os.path.join(webrtc_info.libcxx_dir, 'include')}",
+            ]
+            install_boost_args["linkflags"] = [
+                f"-L{os.path.join(sysroot, 'usr', 'lib', 'aarch64-linux-gnu')}",
+                f"-B{os.path.join(sysroot, 'usr', 'lib', 'aarch64-linux-gnu')}",
+            ]
+            install_boost_args["toolset"] = "clang"
+            install_boost_args["architecture"] = "arm"
         else:
             install_boost_args["target_os"] = "linux"
             install_boost_args["cxx"] = os.path.join(webrtc_info.clang_dir, "bin", "clang++")
@@ -464,6 +530,7 @@ AVAILABLE_TARGETS = [
     "macos_arm64",
     "ubuntu-20.04_x86_64",
     "ubuntu-22.04_x86_64",
+    "ubuntu-20.04_armv8_jetson",
     "ios",
     "android",
 ]
@@ -491,6 +558,8 @@ def main():
         platform = Platform("ubuntu", "20.04", "x86_64")
     elif args.target == "ubuntu-22.04_x86_64":
         platform = Platform("ubuntu", "22.04", "x86_64")
+    elif args.target == "ubuntu-20.04_armv8_jetson":
+        platform = Platform("jetson", None, "armv8")
     elif args.target == "ios":
         platform = Platform("ios", None, None)
     elif args.target == "android":
@@ -616,6 +685,25 @@ def main():
             cmake_args.append(
                 f"-DSORA_WEBRTC_LDFLAGS={os.path.join(install_dir, 'webrtc.ldflags')}"
             )
+        if platform.target.os == "jetson":
+            sysroot = os.path.join(install_dir, "rootfs")
+            cmake_args.append("-DCMAKE_SYSTEM_NAME=Linux")
+            cmake_args.append("-DCMAKE_SYSTEM_PROCESSOR=aarch64")
+            cmake_args.append(f"-DCMAKE_SYSROOT={sysroot}")
+            cmake_args.append("-DCMAKE_C_COMPILER_TARGET=aarch64-linux-gnu")
+            cmake_args.append("-DCMAKE_CXX_COMPILER_TARGET=aarch64-linux-gnu")
+            cmake_args.append(f"-DCMAKE_FIND_ROOT_PATH={sysroot}")
+            cmake_args.append("-DUSE_LIBCXX=ON")
+            cmake_args.append(
+                f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}"
+            )
+            cmake_args.append(
+                f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}"
+            )
+            cmake_args.append(
+                f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}"
+            )
+            cmake_args.append("-DUSE_JETSON_ENCODER=ON")
 
         # NvCodec
         if platform.target.os in ("windows", "ubuntu") and platform.target.arch == "x86_64":
@@ -773,6 +861,29 @@ def main():
                     cmake_args.append("-DUSE_LIBCXX=ON")
                     cmake_args.append(
                         f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}"
+                    )
+                if platform.target.os == "jetson":
+                    sysroot = os.path.join(install_dir, "rootfs")
+                    cmake_args.append("-DJETSON=ON")
+                    cmake_args.append("-DCMAKE_SYSTEM_NAME=Linux")
+                    cmake_args.append("-DCMAKE_SYSTEM_PROCESSOR=aarch64")
+                    cmake_args.append(f"-DCMAKE_SYSROOT={sysroot}")
+                    cmake_args.append("-DCMAKE_C_COMPILER_TARGET=aarch64-linux-gnu")
+                    cmake_args.append("-DCMAKE_CXX_COMPILER_TARGET=aarch64-linux-gnu")
+                    cmake_args.append(f"-DCMAKE_FIND_ROOT_PATH={sysroot}")
+                    cmake_args.append("-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER")
+                    cmake_args.append("-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH")
+                    cmake_args.append("-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH")
+                    cmake_args.append("-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH")
+                    cmake_args.append("-DUSE_LIBCXX=ON")
+                    cmake_args.append(
+                        f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}"
+                    )
+                    cmake_args.append(
+                        f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}"
+                    )
+                    cmake_args.append(
+                        f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}"
                     )
 
                 if platform.target.os in ("windows", "macos", "ubuntu"):
