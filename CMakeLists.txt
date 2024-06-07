@@ -561,14 +561,20 @@ elseif (SORA_TARGET_OS STREQUAL "jetson")
         ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/samples/common/classes/NvVideoEncoder.cpp
     )
 
-    target_include_directories(sora PRIVATE ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/include)
-    target_include_directories(sora PRIVATE ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/include/libjpeg-8b)
-    target_link_directories(sora PRIVATE ${CMAKE_SYSROOT}/usr/lib/aarch64-linux-gnu/tegra)
+    target_include_directories(sora
+      PRIVATE
+        ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/include
+        ${CMAKE_SYSROOT}/usr/src/jetson_multimedia_api/include/libjpeg-8b)
+    target_link_directories(sora
+      PRIVATE
+        ${CMAKE_SYSROOT}/usr/lib/aarch64-linux-gnu/tegra
+        ${CMAKE_SYSROOT}/usr/lib/aarch64-linux-gnu/nvidia)
     target_link_options(sora
       PRIVATE
         "-Wl,-rpath-link=${CMAKE_SYSROOT}/lib/aarch64-linux-gnu"
         "-Wl,-rpath-link=${CMAKE_SYSROOT}/usr/lib/aarch64-linux-gnu"
         "-Wl,-rpath-link=${CMAKE_SYSROOT}/usr/lib/aarch64-linux-gnu/tegra"
+        "-Wl,-rpath-link=${CMAKE_SYSROOT}/usr/lib/aarch64-linux-gnu/nvidia"
     )
     target_link_libraries(sora
       PUBLIC

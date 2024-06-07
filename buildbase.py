@@ -824,6 +824,16 @@ def install_rootfs(version, install_dir, conf):
     if os.path.exists(file) and not os.path.exists(link):
         os.symlink(os.path.basename(file), link)
 
+    # JetPack 6 から tegra → nvidia になった
+    link = os.path.join(
+        rootfs_dir, "usr", "lib", "aarch64-linux-gnu", "nvidia", "libnvbuf_fdmap.so"
+    )
+    file = os.path.join(
+        rootfs_dir, "usr", "lib", "aarch64-linux-gnu", "nvidia", "libnvbuf_fdmap.so.1.0.0"
+    )
+    if os.path.exists(file) and not os.path.exists(link):
+        os.symlink(os.path.basename(file), link)
+
 
 @versioned
 def install_android_ndk(version, install_dir, source_dir):

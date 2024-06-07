@@ -74,7 +74,10 @@ function (init_target target)
     set_target_properties(${target} PROPERTIES CXX_VISIBILITY_PRESET hidden)
   elseif (JETSON)
     target_compile_definitions(${target} PRIVATE JETSON)
-    target_link_directories(${target} PRIVATE ${CMAKE_SYSROOT}/usr/lib/aarch64-linux-gnu/tegra)
+    target_link_directories(${target}
+      PRIVATE
+        ${CMAKE_SYSROOT}/usr/lib/aarch64-linux-gnu/tegra
+        ${CMAKE_SYSROOT}/usr/lib/aarch64-linux-gnu/nvidia)
   endif()
 
 endfunction()
