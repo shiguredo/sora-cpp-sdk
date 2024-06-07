@@ -531,6 +531,7 @@ AVAILABLE_TARGETS = [
     "ubuntu-20.04_x86_64",
     "ubuntu-22.04_x86_64",
     "ubuntu-20.04_armv8_jetson",
+    "ubuntu-22.04_armv8_jetson",
     "ios",
     "android",
 ]
@@ -559,7 +560,9 @@ def main():
     elif args.target == "ubuntu-22.04_x86_64":
         platform = Platform("ubuntu", "22.04", "x86_64")
     elif args.target == "ubuntu-20.04_armv8_jetson":
-        platform = Platform("jetson", None, "armv8")
+        platform = Platform("jetson", "20.04", "armv8")
+    elif args.target == "ubuntu-22.04_armv8_jetson":
+        platform = Platform("jetson", "22.04", "armv8")
     elif args.target == "ios":
         platform = Platform("ios", None, None)
     elif args.target == "android":
