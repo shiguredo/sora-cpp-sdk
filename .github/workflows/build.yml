@@ -160,6 +160,7 @@ jobs:
           - ubuntu-20.04_x86_64
           - ubuntu-22.04_x86_64
           - ubuntu-20.04_armv8_jetson
+          - ubuntu-22.04_armv8_jetson
           - android
     name: Build sora-cpp-sdk for ${{ matrix.name }}
     runs-on: ${{ matrix.name == 'ubuntu-22.04_x86_64' && 'ubuntu-22.04' || 'ubuntu-20.04' }}
@@ -206,7 +207,7 @@ jobs:
           # Intel Media SDK のために libva-dev, libdrm-dev を入れる
           DEBIAN_FRONTEND=noninteractive sudo apt-get -y install libva-dev libdrm-dev
       - name: Install deps for Jetson series
-        if: matrix.name == 'ubuntu-20.04_armv8_jetson'
+        if: matrix.name == 'ubuntu-20.04_armv8_jetson' || matrix.name == 'ubuntu-22.04_armv8_jetson'
         run: |
           sudo apt-get update
           sudo apt-get -y install multistrap binutils-aarch64-linux-gnu
