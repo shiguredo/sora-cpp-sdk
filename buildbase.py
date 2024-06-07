@@ -690,7 +690,6 @@ def build_and_install_boost(
                 [
                     b2,
                     "install",
-                    "-d+0",
                     f'--prefix={os.path.join(install_dir, "boost")}',
                     "--with-json",
                     "--with-filesystem",
