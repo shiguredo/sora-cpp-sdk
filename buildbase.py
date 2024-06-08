@@ -537,6 +537,88 @@ def install_boost(version, source_dir, install_dir, sora_version, platform: str)
     extract(archive, output_dir=install_dir, output_dirname="boost")
 
 
+# 以下の問題を解決するためのパッチ
+#
+# No support for msvc-toolset 14.4x (VS 2022, 17.10.x): https://github.com/boostorg/boost/issues/914
+BOOST_PATCH_SUPPORT_14_4 = r"""
+diff --git a/tools/build/src/tools/msvc.jam b/tools/build/src/tools/msvc.jam
+index 54a6ced32..4bb3810b3 100644
+--- a/tools/build/src/tools/msvc.jam
++++ b/tools/build/src/tools/msvc.jam
+@@ -1137,7 +1137,15 @@ local rule generate-setup-cmd ( version : command : parent : options * : cpu : g
+         }
+         else
+         {
+-            if [ MATCH "(14.3)" : $(version) ]
++            if [ MATCH "(14.4)" : $(version) ]
++            {
++                if $(.debug-configuration)
++                {
++                    ECHO "notice: [generate-setup-cmd] $(version) is 14.4" ;
++                }
++                parent = [ path.native [ path.join  $(parent) "..\\..\\..\\..\\..\\Auxiliary\\Build" ] ] ;
++            }
++            else if [ MATCH "(14.3)" : $(version) ]
+             {
+                 if $(.debug-configuration)
+                 {
+@@ -1316,7 +1324,11 @@ local rule configure-really ( version ? : options * )
+             # version from the path.
+             # FIXME: We currently detect both Microsoft Visual Studio 9.0 and
+             # 9.0express as 9.0 here.
+-            if [ MATCH "(MSVC\\\\14.3)" : $(command) ]
++            if [ MATCH "(MSVC\\\\14.4)" : $(command) ]
++            {
++                version = 14.4 ;
++            }
++            else if [ MATCH "(MSVC\\\\14.3)" : $(command) ]
+             {
+                 version = 14.3 ;
+             }
+@@ -1745,13 +1757,17 @@ local rule default-path ( version )
+         # And fortunately, forward slashes do also work in native Windows.
+         local vswhere = "$(root)/Microsoft Visual Studio/Installer/vswhere.exe" ;
+         # The check for $(root) is to avoid a segmentation fault if not found.
+-        if $(version) in 14.1 14.2 14.3 default && $(root) && [ path.exists $(vswhere) ]
++        if $(version) in 14.1 14.2 14.3 14.4 default && $(root) && [ path.exists $(vswhere) ]
+         {
+             local req = "-requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64" ;
+             local prop = "-property installationPath" ;
+             local limit ;
+ 
+-            if $(version) = 14.3
++            if $(version) = 14.4
++            {
++                limit = "-version \"[17.0,18.0)\" -prerelease" ;
++            }
++            else if $(version) = 14.3
+             {
+                 limit = "-version \"[17.0,18.0)\" -prerelease" ;
+             }
+@@ -2174,7 +2190,7 @@ for local arch in [ MATCH "^\\.cpus-on-(.*)" : [ VARNAMES $(__name__) ] ]
+                      armv7 armv7s ;
+ 
+ # Known toolset versions, in order of preference.
+-.known-versions = 14.3 14.2 14.1 14.0 12.0 11.0 10.0 10.0express 9.0 9.0express 8.0 8.0express 7.1
++.known-versions = 14.4 14.3 14.2 14.1 14.0 12.0 11.0 10.0 10.0express 9.0 9.0express 8.0 8.0express 7.1
+     7.1toolkit 7.0 6.0 ;
+ 
+ # Version aliases.
+@@ -2226,6 +2242,11 @@ for local arch in [ MATCH "^\\.cpus-on-(.*)" : [ VARNAMES $(__name__) ] ]
+     "Microsoft Visual Studio/2022/*/VC/Tools/MSVC/*/bin/Host*/*"
+     ;
+ .version-14.3-env = VS170COMNTOOLS ProgramFiles ProgramFiles(x86) ;
++.version-14.4-path =
++    "../../VC/Tools/MSVC/*/bin/Host*/*"
++    "Microsoft Visual Studio/2022/*/VC/Tools/MSVC/*/bin/Host*/*"
++    ;
++.version-14.4-env = VS170COMNTOOLS ProgramFiles ProgramFiles(x86) ;
+ 
+ # Auto-detect all the available msvc installations on the system.
+ auto-detect-toolset-versions ;
+"""
+
+
 @versioned
 def build_and_install_boost(
     version: str,
@@ -565,6 +647,25 @@ def build_and_install_boost(
         bootstrap = ".\\bootstrap.bat" if target_os == "windows" else "./bootstrap.sh"
         b2 = "b2" if target_os == "windows" else "./b2"
         runtime_link = "static" if target_os == "windows" else "shared"
+
+        # Windows かつ Boost 1.85.0 の場合はパッチを当てる
+        if target_os == "windows" and version == "1.85.0":
+            directory = cmdcap(["git", "rev-parse", "--show-prefix"])
+            cmd(
+                [
+                    "git",
+                    "apply",
+                    "-p1",
+                    "--ignore-space-change",
+                    "--ignore-whitespace",
+                    "--whitespace=nowarn",
+                    f"--directory={directory}",
+                    "-",
+                ],
+                input=BOOST_PATCH_SUPPORT_14_4,
+                text=True,
+                encoding="utf-8",
+            )
 
         cmd([bootstrap])
 
@@ -820,6 +921,16 @@ def install_rootfs(version, install_dir, conf):
     link = os.path.join(rootfs_dir, "usr", "lib", "aarch64-linux-gnu", "tegra", "libnvbuf_fdmap.so")
     file = os.path.join(
         rootfs_dir, "usr", "lib", "aarch64-linux-gnu", "tegra", "libnvbuf_fdmap.so.1.0.0"
+    )
+    if os.path.exists(file) and not os.path.exists(link):
+        os.symlink(os.path.basename(file), link)
+
+    # JetPack 6 から tegra → nvidia になった
+    link = os.path.join(
+        rootfs_dir, "usr", "lib", "aarch64-linux-gnu", "nvidia", "libnvbuf_fdmap.so"
+    )
+    file = os.path.join(
+        rootfs_dir, "usr", "lib", "aarch64-linux-gnu", "nvidia", "libnvbuf_fdmap.so.1.0.0"
     )
     if os.path.exists(file) and not os.path.exists(link):
         os.symlink(os.path.basename(file), link)
