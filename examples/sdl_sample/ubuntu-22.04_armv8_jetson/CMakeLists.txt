@@ -39,4 +39,5 @@ target_compile_options(sdl_sample
 target_include_directories(sdl_sample PRIVATE ${CLI11_DIR}/include)
 target_link_libraries(sdl_sample PRIVATE Sora::sora SDL2::SDL2 SDL2::SDL2main)
 target_link_directories(sdl_sample PRIVATE ${CMAKE_SYSROOT}/usr/lib/aarch64-linux-gnu/tegra)
+target_link_directories(sdl_sample PRIVATE ${CMAKE_SYSROOT}/usr/lib/aarch64-linux-gnu/nvidia)
 target_compile_definitions(sdl_sample PRIVATE CLI11_HAS_FILESYSTEM=0)

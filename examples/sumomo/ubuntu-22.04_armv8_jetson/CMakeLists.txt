@@ -39,4 +39,5 @@ target_compile_options(sumomo
 target_include_directories(sumomo PRIVATE ${CLI11_DIR}/include)
 target_link_libraries(sumomo PRIVATE Sora::sora SDL2::SDL2 SDL2::SDL2main)
 target_link_directories(sumomo PRIVATE ${CMAKE_SYSROOT}/usr/lib/aarch64-linux-gnu/tegra)
+target_link_directories(sumomo PRIVATE ${CMAKE_SYSROOT}/usr/lib/aarch64-linux-gnu/nvidia)
 target_compile_definitions(sumomo PRIVATE CLI11_HAS_FILESYSTEM=0)

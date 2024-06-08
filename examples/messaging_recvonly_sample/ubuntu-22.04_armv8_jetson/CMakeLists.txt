@@ -37,4 +37,5 @@ target_compile_options(messaging_recvonly_sample
 target_include_directories(messaging_recvonly_sample PRIVATE ${CLI11_DIR}/include)
 target_link_libraries(messaging_recvonly_sample PRIVATE Sora::sora)
 target_link_directories(messaging_recvonly_sample PRIVATE ${CMAKE_SYSROOT}/usr/lib/aarch64-linux-gnu/tegra)
+target_link_directories(messaging_recvonly_sample PRIVATE ${CMAKE_SYSROOT}/usr/lib/aarch64-linux-gnu/nvidia)
 target_compile_definitions(messaging_recvonly_sample PRIVATE CLI11_HAS_FILESYSTEM=0)
