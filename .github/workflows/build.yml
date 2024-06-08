@@ -278,7 +278,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/download
         with:
-          platform: ubuntu-20.04_armv8_jetson
+          platform: ubuntu-22.04_armv8_jetson
       - name: Env to output
         run: |
           echo "package_paths<<EOF" >> $GITHUB_OUTPUT
