@@ -258,13 +258,13 @@ jobs:
             python3 $app/${{ matrix.name }}/run.py --local-sora-cpp-sdk-dir ..
             cp _build/${{ matrix.name }}/release/$app/$app examples_${{ matrix.name }}
           done
-        if: matrix.name == 'ubuntu-20.04_x86_64' || matrix.name == 'ubuntu-22.04_x86_64' || matrix.name == 'ubuntu-20.04_armv8_jetson'
+        if: matrix.name == 'ubuntu-20.04_x86_64' || matrix.name == 'ubuntu-22.04_x86_64' || matrix.name == 'ubuntu-20.04_armv8_jetson' || matrix.name == 'ubuntu-22.04_armv8_jetson'
       - name: Upload Examples Artifact
         uses: actions/upload-artifact@v4
         with:
           name: examples_${{ matrix.name }}
           path: examples/examples_${{ matrix.name }}
-        if: matrix.name == 'ubuntu-20.04_x86_64' || matrix.name == 'ubuntu-22.04_x86_64' || matrix.name == 'ubuntu-20.04_armv8_jetson'
+        if: matrix.name == 'ubuntu-20.04_x86_64' || matrix.name == 'ubuntu-22.04_x86_64' || matrix.name == 'ubuntu-20.04_armv8_jetson' || matrix.name == 'ubuntu-22.04_armv8_jetson'
 
   create-release:
     name: Create Release
