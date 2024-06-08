@@ -541,6 +541,19 @@ def install_boost(version, source_dir, install_dir, sora_version, platform: str)
 #
 # No support for msvc-toolset 14.4x (VS 2022, 17.10.x): https://github.com/boostorg/boost/issues/914
 BOOST_PATCH_SUPPORT_14_4 = r"""
+diff --git a/tools/build/src/engine/config_toolset.bat b/tools/build/src/engine/config_toolset.bat
+index 4ba577cac..3e3f6a3a1 100644
+--- a/tools/build/src/engine/config_toolset.bat
++++ b/tools/build/src/engine/config_toolset.bat
+@@ -157,7 +157,7 @@ pushd %CD%
+ if "_%VSINSTALLDIR%_" == "__" call :Call_If_Exists "%B2_TOOLSET_ROOT%Auxiliary\Build\vcvarsall.bat" %B2_BUILD_ARGS%
+ popd
+ @REM set "B2_CXX="%CXX%" /nologo /MP /MT /TP /Feb2 /wd4996 /O2 /GL /EHsc"
+-set "B2_CXX="%CXX%" /nologo -TP /wd4996 /wd4675 /EHs /GR /Zc:throwingNew /O2 /Ob2 /W3 /MD /Zc:forScope /Zc:wchar_t /Zc:inline /Gw /favor:blend /Feb2"
++set "B2_CXX="%CXX%" /nologo -TP /wd4996 /wd4675 /EHs /GR /Zc:throwingNew /O2 /Ob2 /W3 /MT /Zc:forScope /Zc:wchar_t /Zc:inline /Gw /favor:blend /Feb2"
+ set "B2_CXX_LINK=/link kernel32.lib advapi32.lib user32.lib"
+ set "_known_=1"
+ goto :Embed_Minafest_Via_Link
 diff --git a/tools/build/src/tools/msvc.jam b/tools/build/src/tools/msvc.jam
 index 54a6ced32..4bb3810b3 100644
 --- a/tools/build/src/tools/msvc.jam
