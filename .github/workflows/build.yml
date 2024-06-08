@@ -159,7 +159,6 @@ jobs:
         name:
           - ubuntu-20.04_x86_64
           - ubuntu-22.04_x86_64
-          - ubuntu-20.04_armv8_jetson
           - ubuntu-22.04_armv8_jetson
           - android
     name: Build sora-cpp-sdk for ${{ matrix.name }}
@@ -249,12 +248,6 @@ jobs:
         with:
           name: ${{ matrix.name }}.env
           path: _package/${{ matrix.name }}/release/sora.env
-      - name: Move rootfs to examples
-        run: |
-          mkdir -p examples/_install/${{ matrix.name }}/release
-          mv _install/${{ matrix.name }}/release/rootfs/ examples/_install/${{ matrix.name }}/release/rootfs/
-          mv _install/${{ matrix.name }}/release/rootfs.version examples/_install/${{ matrix.name }}/release/rootfs.version
-        if: matrix.name == 'ubuntu-20.04_armv8_jetson' || matrix.name == 'ubuntu-22.04_armv8_jetson'
       # Examples のビルド
       - name: Build Examples
         run: |
@@ -264,13 +257,13 @@ jobs:
             python3 $app/${{ matrix.name }}/run.py --local-sora-cpp-sdk-dir ..
             cp _build/${{ matrix.name }}/release/$app/$app examples_${{ matrix.name }}
           done
-        if: matrix.name == 'ubuntu-20.04_x86_64' || matrix.name == 'ubuntu-22.04_x86_64' || matrix.name == 'ubuntu-20.04_armv8_jetson' || matrix.name == 'ubuntu-22.04_armv8_jetson'
+        if: matrix.name == 'ubuntu-20.04_x86_64' || matrix.name == 'ubuntu-22.04_x86_64' || matrix.name == 'ubuntu-22.04_armv8_jetson'
       - name: Upload Examples Artifact
         uses: actions/upload-artifact@v4
         with:
           name: examples_${{ matrix.name }}
           path: examples/examples_${{ matrix.name }}
-        if: matrix.name == 'ubuntu-20.04_x86_64' || matrix.name == 'ubuntu-22.04_x86_64' || matrix.name == 'ubuntu-20.04_armv8_jetson' || matrix.name == 'ubuntu-22.04_armv8_jetson'
+        if: matrix.name == 'ubuntu-20.04_x86_64' || matrix.name == 'ubuntu-22.04_x86_64' || matrix.name == 'ubuntu-22.04_armv8_jetson'
 
   create-release:
     name: Create Release
