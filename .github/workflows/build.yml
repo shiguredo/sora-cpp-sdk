@@ -249,6 +249,12 @@ jobs:
         with:
           name: ${{ matrix.name }}.env
           path: _package/${{ matrix.name }}/release/sora.env
+      - name: Move rootfs to examples
+        run: |
+          mkdir -p examples/_install/${{ matrix.name }}/release
+          mv _install/${{ matrix.name }}/release/rootfs/ examples/_install/${{ matrix.name }}/release/rootfs/
+          mv _install/${{ matrix.name }}/release/rootfs.version examples/_install/${{ matrix.name }}/release/rootfs.version
+        if: matrix.name == 'ubuntu-20.04_armv8_jetson' || matrix.name == 'ubuntu-22.04_armv8_jetson'
       # Examples のビルド
       - name: Build Examples
         run: |
