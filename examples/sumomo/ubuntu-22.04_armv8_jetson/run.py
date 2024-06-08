@@ -48,17 +48,34 @@ def install_deps(
         version = read_version_file("VERSION")
 
         # multistrap を使った sysroot の構築
-        conf = os.path.join(BASE_DIR, "multistrap", "ubuntu-22.04_armv8_jetson.conf")
-        # conf ファイルのハッシュ値をバージョンとする
-        version_md5 = hashlib.md5(open(conf, "rb").read()).hexdigest()
-        install_rootfs_args = {
-            "version": version_md5,
-            "version_file": os.path.join(install_dir, "rootfs.version"),
-            "install_dir": install_dir,
-            "conf": conf,
-        }
-        install_rootfs(**install_rootfs_args)
-        sysroot = os.path.join(install_dir, "rootfs")
+        if local_sora_cpp_sdk_dir is None:
+            conf = os.path.join(BASE_DIR, "multistrap", "ubuntu-22.04_armv8_jetson.conf")
+            # conf ファイルのハッシュ値をバージョンとする
+            version_md5 = hashlib.md5(open(conf, "rb").read()).hexdigest()
+            install_rootfs_args = {
+                "version": version_md5,
+                "version_file": os.path.join(install_dir, "rootfs.version"),
+                "install_dir": install_dir,
+                "conf": conf,
+            }
+            install_rootfs(**install_rootfs_args)
+            sysroot = os.path.join(install_dir, "rootfs")
+        else:
+            dir = "debug" if debug else "release"
+            local_install_dir = os.path.join(
+                local_sora_cpp_sdk_dir, "_install", "ubuntu-22.04_armv8_jetson", dir
+            )
+            conf = os.path.join(BASE_DIR, "multistrap", "ubuntu-22.04_armv8_jetson.conf")
+            # conf ファイルのハッシュ値をバージョンとする
+            version_md5 = hashlib.md5(open(conf, "rb").read()).hexdigest()
+            install_rootfs_args = {
+                "version": version_md5,
+                "version_file": os.path.join(local_install_dir, "rootfs.version"),
+                "install_dir": local_install_dir,
+                "conf": conf,
+            }
+            install_rootfs(**install_rootfs_args)
+            sysroot = os.path.join(local_install_dir, "rootfs")
 
         # WebRTC
         if local_webrtc_build_dir is None:
@@ -216,7 +233,14 @@ def main():
 
         # クロスコンパイルの設定。
         # 本来は toolchain ファイルに書く内容
-        sysroot = os.path.join(install_dir, "rootfs")
+        if args.local_sora_cpp_sdk_dir is None:
+            sysroot = os.path.join(install_dir, "rootfs")
+        else:
+            dir = "debug" if args.debug else "release"
+            local_install_dir = os.path.join(
+                args.local_sora_cpp_sdk_dir, "_install", "ubuntu-22.04_armv8_jetson", dir
+            )
+            sysroot = os.path.join(local_install_dir, "rootfs")
         cmake_args += [
             "-DCMAKE_SYSTEM_NAME=Linux",
             "-DCMAKE_SYSTEM_PROCESSOR=aarch64",
