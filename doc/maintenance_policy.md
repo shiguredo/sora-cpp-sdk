@@ -89,8 +89,8 @@ P1 が一番プライオリティが高いです。
 
 ## P4
 
-- NVIDIA Jetson JetPack 6 arm64
-  - ブランチ: `support/jetson-jetpack-7`
+- NVIDIA Jetson JetPack 5 arm64
+  - ブランチ: `support/jetson-jetpack-5`
   - タグ: `{sora-cpp-sdk-version}-jetson-jetpack-{platform-version}.{release}`
     - `2024.1.0-jetson-jetpack-5.1.3.0`
 
