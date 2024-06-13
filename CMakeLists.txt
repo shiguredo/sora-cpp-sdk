@@ -249,7 +249,7 @@ if (SORA_TARGET_OS STREQUAL "windows")
   if (USE_NVCODEC_ENCODER)
     target_sources(sora
       PRIVATE
-        src/hwenc_nvcodec/nvcodec_h264_encoder.cpp
+        src/hwenc_nvcodec/nvcodec_video_encoder.cpp
         third_party/NvCodec/NvCodec/NvEncoder/NvEncoder.cpp
         third_party/NvCodec/NvCodec/NvEncoder/NvEncoderD3D11.cpp
         src/hwenc_nvcodec/nvcodec_video_decoder.cpp)
@@ -459,9 +459,9 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
     target_sources(sora
       PRIVATE
         src/cuda_context_cuda.cpp
-        src/hwenc_nvcodec/nvcodec_h264_encoder.cpp
+        src/hwenc_nvcodec/nvcodec_video_encoder.cpp
         src/hwenc_nvcodec/nvcodec_v4l2_capturer.cpp
-        src/hwenc_nvcodec/nvcodec_h264_encoder_cuda.cpp
+        src/hwenc_nvcodec/nvcodec_video_encoder_cuda.cpp
         src/hwenc_nvcodec/nvcodec_decoder_cuda.cpp
         src/hwenc_nvcodec/nvcodec_video_decoder.cpp
         third_party/NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
@@ -476,7 +476,7 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
     # これらのソースは CUDA としてコンパイルする
     set_source_files_properties(
         src/cuda_context_cuda.cpp
-        src/hwenc_nvcodec/nvcodec_h264_encoder_cuda.cpp
+        src/hwenc_nvcodec/nvcodec_video_encoder_cuda.cpp
         src/hwenc_nvcodec/nvcodec_decoder_cuda.cpp
         third_party/NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
         third_party/NvCodec/NvCodec/NvEncoder/NvEncoderCuda.cpp
