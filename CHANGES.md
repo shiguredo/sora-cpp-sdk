@@ -45,6 +45,8 @@
   - @melpon
 - [ADD] Intel VPL で AV1 デコーダを動くようにする
   - @melpon
+- [ADD] NVIDIA Video Codec SDK を H265 に対応する
+  - @melpon
 
 ## 2024.6.1 (2024-04-16)
 
