@@ -217,7 +217,7 @@ SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
 #endif
 
 #if defined(USE_JETSON_ENCODER)
-  if (JetsonVideoDecoder::IsSupportedVP8()) {
+  if (JetsonVideoDecoder::IsSupported(webrtc::kVideoCodecVP8)) {
     config.decoders.insert(
         config.decoders.begin(),
         VideoDecoderConfig(webrtc::kVideoCodecVP8, [](auto format) {
@@ -225,7 +225,15 @@ SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
               absl::make_unique<JetsonVideoDecoder>(webrtc::kVideoCodecVP8));
         }));
   }
-  if (JetsonVideoDecoder::IsSupportedAV1()) {
+  if (JetsonVideoDecoder::IsSupported(webrtc::kVideoCodecVP9)) {
+    config.decoders.insert(
+        config.decoders.begin(),
+        VideoDecoderConfig(webrtc::kVideoCodecVP9, [](auto format) {
+          return std::unique_ptr<webrtc::VideoDecoder>(
+              absl::make_unique<JetsonVideoDecoder>(webrtc::kVideoCodecVP9));
+        }));
+  }
+  if (JetsonVideoDecoder::IsSupported(webrtc::kVideoCodecAV1)) {
     config.decoders.insert(
         config.decoders.begin(),
         VideoDecoderConfig(webrtc::kVideoCodecAV1, [](auto format) {
@@ -233,18 +241,22 @@ SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
               absl::make_unique<JetsonVideoDecoder>(webrtc::kVideoCodecAV1));
         }));
   }
-  config.decoders.insert(
-      config.decoders.begin(),
-      VideoDecoderConfig(webrtc::kVideoCodecVP9, [](auto format) {
-        return std::unique_ptr<webrtc::VideoDecoder>(
-            absl::make_unique<JetsonVideoDecoder>(webrtc::kVideoCodecVP9));
-      }));
-  config.decoders.insert(
-      config.decoders.begin(),
-      VideoDecoderConfig(webrtc::kVideoCodecH264, [](auto format) {
-        return std::unique_ptr<webrtc::VideoDecoder>(
-            absl::make_unique<JetsonVideoDecoder>(webrtc::kVideoCodecH264));
-      }));
+  if (JetsonVideoDecoder::IsSupported(webrtc::kVideoCodecH264)) {
+    config.decoders.insert(
+        config.decoders.begin(),
+        VideoDecoderConfig(webrtc::kVideoCodecH264, [](auto format) {
+          return std::unique_ptr<webrtc::VideoDecoder>(
+              absl::make_unique<JetsonVideoDecoder>(webrtc::kVideoCodecH264));
+        }));
+  }
+  if (JetsonVideoDecoder::IsSupported(webrtc::kVideoCodecH265)) {
+    config.decoders.insert(
+        config.decoders.begin(),
+        VideoDecoderConfig(webrtc::kVideoCodecH265, [](auto format) {
+          return std::unique_ptr<webrtc::VideoDecoder>(
+              absl::make_unique<JetsonVideoDecoder>(webrtc::kVideoCodecH265));
+        }));
+  }
 #endif
 
   return config;

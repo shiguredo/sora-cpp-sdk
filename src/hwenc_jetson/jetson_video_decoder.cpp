@@ -29,6 +29,8 @@
 #include <NvBufSurface.h>
 #include <NvVideoDecoder.h>
 
+#include "jetson_util.h"
+
 #define INIT_ERROR(cond, desc)                 \
   if (cond) {                                  \
     RTC_LOG(LS_ERROR) << __FUNCTION__ << desc; \
@@ -40,11 +42,7 @@
 namespace sora {
 
 JetsonVideoDecoder::JetsonVideoDecoder(webrtc::VideoCodecType codec)
-    : input_format_(codec == webrtc::kVideoCodecVP8    ? V4L2_PIX_FMT_VP8
-                    : codec == webrtc::kVideoCodecVP9  ? V4L2_PIX_FMT_VP9
-                    : codec == webrtc::kVideoCodecH264 ? V4L2_PIX_FMT_H264
-                    : codec == webrtc::kVideoCodecAV1  ? V4L2_PIX_FMT_AV1
-                                                       : 0),
+    : input_format_(VideoCodecToV4L2Format(codec)),
       decoder_(nullptr),
       decode_complete_callback_(nullptr),
       buffer_pool_(false, 300 /* max_number_of_buffers*/),
@@ -56,20 +54,10 @@ JetsonVideoDecoder::~JetsonVideoDecoder() {
   Release();
 }
 
-bool JetsonVideoDecoder::IsSupportedVP8() {
-  //SuppressErrors sup;
-
+bool JetsonVideoDecoder::IsSupported(webrtc::VideoCodecType codec) {
   auto decoder = NvVideoDecoder::createVideoDecoder("dec0");
-  auto ret = decoder->setOutputPlaneFormat(V4L2_PIX_FMT_VP8, CHUNK_SIZE);
-  delete decoder;
-  return ret >= 0;
-}
-
-bool JetsonVideoDecoder::IsSupportedAV1() {
-  //SuppressErrors sup;
-
-  auto decoder = NvVideoDecoder::createVideoDecoder("dec0");
-  auto ret = decoder->setOutputPlaneFormat(V4L2_PIX_FMT_AV1, CHUNK_SIZE);
+  auto ret =
+      decoder->setOutputPlaneFormat(VideoCodecToV4L2Format(codec), CHUNK_SIZE);
   delete decoder;
   return ret >= 0;
 }
@@ -136,7 +124,8 @@ int32_t JetsonVideoDecoder::Decode(const webrtc::EncodedImage& input_image,
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
-  RTC_LOG(LS_INFO) << __FUNCTION__ << " timestamp:" << input_image.RtpTimestamp()
+  RTC_LOG(LS_INFO) << __FUNCTION__
+                   << " timestamp:" << input_image.RtpTimestamp()
                    << " bytesused:" << buffer->planes[0].bytesused;
   return WEBRTC_VIDEO_CODEC_OK;
 }
