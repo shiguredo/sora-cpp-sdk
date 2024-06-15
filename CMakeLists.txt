@@ -401,6 +401,7 @@ elseif (SORA_TARGET_OS STREQUAL "ios")
       WEBRTC_MAC
       WEBRTC_IOS
       OPENSSL_IS_BORINGSSL
+      RTC_ENABLE_H265
   )
 
 elseif (SORA_TARGET_OS STREQUAL "android")
@@ -430,6 +431,7 @@ elseif (SORA_TARGET_OS STREQUAL "android")
       _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE
       # https://github.com/boostorg/container_hash/issues/22 と同じ問題が clang-15 でも起きるので、これを手動で定義して回避する
       BOOST_NO_CXX98_FUNCTION_BASE
+      RTC_ENABLE_H265
   )
 
 elseif (SORA_TARGET_OS STREQUAL "ubuntu")
@@ -534,6 +536,7 @@ elseif (SORA_TARGET_OS STREQUAL "jetson")
       _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE
       # https://github.com/boostorg/container_hash/issues/22 と同じ問題が clang-15 でも起きるので、これを手動で定義して回避する
       BOOST_NO_CXX98_FUNCTION_BASE
+      RTC_ENABLE_H265
   )
 
   set_target_properties(sora PROPERTIES POSITION_INDEPENDENT_CODE ON)
