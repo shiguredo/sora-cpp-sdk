@@ -223,7 +223,7 @@ jobs:
           sudo apt-get install -y software-properties-common
 
           # X11
-          sudo apt-get install libx11-dev
+          sudo apt-get install libx11-dev libxext-dev
 
           # CUDA
           wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb
