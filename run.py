@@ -72,7 +72,11 @@ def get_common_cmake_args(
         args.append(f"-DCMAKE_OBJCXX_COMPILER_TARGET={target}")
         args.append(f"-DCMAKE_SYSROOT={sysroot}")
     if platform.target.os == "ubuntu":
-        if platform.target.package_name in ("ubuntu-20.04_x86_64", "ubuntu-22.04_x86_64"):
+        if platform.target.package_name in (
+            "ubuntu-20.04_x86_64",
+            "ubuntu-22.04_x86_64",
+            "ubuntu-24.04_x86_64",
+        ):
             args.append("-DCMAKE_C_COMPILER=clang-18")
             args.append("-DCMAKE_CXX_COMPILER=clang++-18")
         else:
@@ -464,6 +468,7 @@ AVAILABLE_TARGETS = [
     "macos_arm64",
     "ubuntu-20.04_x86_64",
     "ubuntu-22.04_x86_64",
+    "ubuntu-24.04_x86_64",
     "ios",
     "android",
 ]
@@ -491,6 +496,8 @@ def main():
         platform = Platform("ubuntu", "20.04", "x86_64")
     elif args.target == "ubuntu-22.04_x86_64":
         platform = Platform("ubuntu", "22.04", "x86_64")
+    elif args.target == "ubuntu-24.04_x86_64":
+        platform = Platform("ubuntu", "24.04", "x86_64")
     elif args.target == "ios":
         platform = Platform("ios", None, None)
     elif args.target == "android":
@@ -557,7 +564,11 @@ def main():
         if platform.target.os == "windows":
             cmake_args.append(f"-DCMAKE_SYSTEM_VERSION={WINDOWS_SDK_VERSION}")
         if platform.target.os == "ubuntu":
-            if platform.target.package_name in ("ubuntu-20.04_x86_64", "ubuntu-22.04_x86_64"):
+            if platform.target.package_name in (
+                "ubuntu-20.04_x86_64",
+                "ubuntu-22.04_x86_64",
+                "ubuntu-24.04_x86_64",
+            ):
                 cmake_args.append("-DCMAKE_C_COMPILER=clang-18")
                 cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-18")
             else:
@@ -760,6 +771,7 @@ def main():
                     if platform.target.package_name in (
                         "ubuntu-20.04_x86_64",
                         "ubuntu-22.04_x86_64",
+                        "ubuntu-24.04_x86_64",
                     ):
                         cmake_args.append("-DCMAKE_C_COMPILER=clang-18")
                         cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-18")
