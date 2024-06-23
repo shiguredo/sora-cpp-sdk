@@ -31,7 +31,7 @@
   - @enm10k
 - [UPDATE] CLI11 を 2.4.2 にあげる
   - @enm10k
-- [UPDATE] libwebrtc を m125.6422.2.1 にあげる
+- [UPDATE] libwebrtc を m125.6422.2.5 にあげる
   - Android の test アプリがリンクできなくなったため、リンカーを Android NDK のものから libwebrtc のものに変更
   - リンカーのバージョンの違いによる互換性の問題でエラーが発生していた
   - @melpon @enm10k
@@ -46,6 +46,8 @@
 - [ADD] Intel VPL で AV1 デコーダを動くようにする
   - @melpon
 - [ADD] NVIDIA Video Codec SDK を H265 に対応する
+  - @melpon
+- [ADD] Ubuntu 24.04 に対応する
   - @melpon
 
 ## 2024.6.1 (2024-04-16)
