@@ -14,7 +14,7 @@ Intel VPL には Intel VPL (ライブラリの Intel VPL と区別するため�
 Intel Media SDK は既に開発が終了しており、後継の Intel VPL ランタイムに開発が移行しているため、
 これから VPL を利用する場合は、 Intel VPL ランタイムに対応したチップを利用することを推奨します。
 
-https://www.intel.com/content/www/us/en/developer/tools/vpl/overview.html#gs.73uoi4 の Specifications のセクションより、ランタイムと対応するチップの一覧を以下に引用します。
+<https://www.intel.com/content/www/us/en/developer/tools/vpl/overview.html#gs.73uoi4> の Specifications のセクションより、ランタイムと対応するチップの一覧を以下に引用します。
 
 - [Intel VPL](https://github.com/oneapi-src/oneVPL-intel-gpu)
   - Intel® Iris® Xe graphics
@@ -37,11 +37,11 @@ Windows では環境によってドライバーの有無が異なるため、以
 - Win + R キーを押下 > `ファイル名を指定して実行` のダイアログが開くので `dxdiag` と入力して `OK` ボタンを押下 > DirectX 診断ツールが起動するので、 `ディスプレイ` のタブからインストールされているドライバーを確認
 
 Intel のドライバーが確認できない場合は、以下のページから適切なドライバーをインストールしてください。  
-https://www.intel.co.jp/content/www/jp/ja/download-center/home.html
+<https://www.intel.co.jp/content/www/jp/ja/download-center/home.html>
 
 ### Ubuntu 22.04
 
-https://dgpu-docs.intel.com/driver/client/overview.html を参考に必要なドライバーとソフトウェアをインストールします。
+<https://dgpu-docs.intel.com/driver/client/overview.html> を参考に必要なドライバーとソフトウェアをインストールします。
 
 #### Intel VPL ランタイムを利用する手順
 
@@ -49,14 +49,14 @@ Intel VPL ランタイムを利用する場合は libmfxgen1 ではなく libmfx
 
 ```bash
 # Intel の apt リポジトリを追加
-$ wget -qO - https://repositories.intel.com/gpu/intel-graphics.key | \
+wget -qO - https://repositories.intel.com/gpu/intel-graphics.key | \
   sudo gpg --dearmor --output /usr/share/keyrings/intel-graphics.gpg
-$ echo "deb [arch=amd64,i386 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/gpu/ubuntu jammy client" | \
+echo "deb [arch=amd64,i386 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/gpu/ubuntu jammy client" | \
   sudo tee /etc/apt/sources.list.d/intel-gpu-jammy.list
-$ sudo apt update
+sudo apt update
 
 # パッケージのインストール
-$ sudo apt install -y \
+sudo apt install -y \
   intel-opencl-icd intel-level-zero-gpu level-zero \
   intel-media-va-driver-non-free libmfx1 libmfx-gen1.2 libvpl2 \
   libegl-mesa0 libegl1-mesa libegl1-mesa-dev libgbm1 libgl1-mesa-dev libgl1-mesa-dri \
@@ -70,14 +70,14 @@ $ sudo apt install -y \
 
 ```bash
 # Intel の apt リポジトリを追加
-$ wget -qO - https://repositories.intel.com/gpu/intel-graphics.key | \
+wget -qO - https://repositories.intel.com/gpu/intel-graphics.key | \
   sudo gpg --dearmor --output /usr/share/keyrings/intel-graphics.gpg
-$ echo "deb [arch=amd64,i386 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/gpu/ubuntu jammy client" | \
+echo "deb [arch=amd64,i386 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/gpu/ubuntu jammy client" | \
   sudo tee /etc/apt/sources.list.d/intel-gpu-jammy.list
-$ sudo apt update
+sudo apt update
 
 # パッケージのインストール
-$ sudo apt install -y \
+sudo apt install -y \
   intel-opencl-icd intel-level-zero-gpu level-zero \
   intel-media-va-driver-non-free libmfx1 libmfxgen1 libvpl2 \
   libegl-mesa0 libegl1-mesa libegl1-mesa-dev libgbm1 libgl1-mesa-dev libgl1-mesa-dri \
@@ -93,7 +93,7 @@ $ sudo apt install -y \
 以下は `vainfo` を実行した出力の例です。  
 対応しているプロファイルやエントリーポイントは環境によって異なります。
 
-```
+```console
 $ vainfo
 Trying display: wayland
 libva info: VA-API version 1.20.0
