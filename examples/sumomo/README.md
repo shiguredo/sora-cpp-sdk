@@ -131,39 +131,6 @@ _build/ubuntu-22.04_x86_64/release/sumomo/
 └── sumomo
 ```
 
-#### Ubuntu 20.04 x86_64 で Ubuntu 20.04 armv8 Jetson 向けのビルドをする
-
-**NVIDIA Jetson 上ではビルドできません。Ubuntu 20.04 x86_64 上でクロスコンパイルしたバイナリを利用するようにしてください。**
-
-##### 事前準備
-
-必要なパッケージをインストールしてください。
-
-```shell
-sudo apt install multistrap
-sudo apt install binutils-aarch64-linux-gnu
-sudo apt install python3
-```
-
-multistrap に insecure なリポジトリからの取得を許可する設定を行います。
-
-```shell
-sudo sed -e 's/Apt::Get::AllowUnauthenticated=true/Apt::Get::AllowUnauthenticated=true";\n$config_str .= " -o Acquire::AllowInsecureRepositories=true/' -i /usr/sbin/multistrap
-```
-
-##### ビルド
-
-```shell
-python3 sumomo/ubuntu-20.04_armv8_jetson/run.py
-```
-
-成功した場合、以下のファイルが作成されます。`_build/ubuntu-20.04_armv8_jetson/release/sumomo` に `sumomo` が作成されます。
-
-```
-_build/ubuntu-20.04_armv8_jetson/release/sumomo/
-└── sumomo
-```
-
 ## 実行する
 
 ### コマンドラインから必要なオプションを指定して実行します

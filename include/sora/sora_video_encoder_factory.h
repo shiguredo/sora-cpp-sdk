@@ -56,7 +56,9 @@ struct SoraVideoEncoderFactoryConfig {
 
   /*
   use_simulcast_adapter = true の際に、エンコーダー内でビデオ・フレームのバッファーを I420 に変換するかどうか
-  false に設定すると CPU への負荷が下がり、エンコードの性能が向上するが、バッファーの実装によってはサイマルキャストが利用できなくなる
+
+  force_i420_conversion_for_simulcast_adapter = false を設定することで I420 への変換を実行しなくなるため、 CPU への負荷が下がり、エンコードの性能が向上する
+  ただし、使用するバッファーの実装によっては、バッファーを複数回読みこむことができないため、サイマルキャストが利用できなくなる
 
   このフラグが必要になった背景は以下の通り
   - サイマルキャスト時、 JetsonBuffer のような一部の kNative なバッファーの実装において、バッファーを複数回読み込めないという制限があるため、 I420 への変換が必要になる
@@ -81,12 +83,14 @@ class SoraVideoEncoderFactory : public webrtc::VideoEncoderFactory {
 
   std::vector<webrtc::SdpVideoFormat> GetSupportedFormats() const override;
 
-  std::unique_ptr<webrtc::VideoEncoder> CreateVideoEncoder(
+  std::unique_ptr<webrtc::VideoEncoder> Create(
+      const webrtc::Environment& env,
       const webrtc::SdpVideoFormat& format) override;
 
  private:
   // 一番内側のエンコーダを作る
   std::unique_ptr<webrtc::VideoEncoder> CreateInternalVideoEncoder(
+      const webrtc::Environment& env,
       const webrtc::SdpVideoFormat& format,
       int& alignment);
 

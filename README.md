@@ -29,7 +29,7 @@ Please read <https://github.com/shiguredo/oss/blob/master/README.en.md> before u
   - Google Android HWA
     - VP8 / VP9 / H.264 / H.265
   - [Intel VPL](https://github.com/intel/libvpl) (Intel Media SDK の後継)
-    - VP9 / H.264 / H.265
+    - VP9 / H.264 / H.265 / AV1
     - H.265 は Windows と Ubuntu 22.04 のみ
 
 ## ライブラリのバイナリ提供について
@@ -52,11 +52,9 @@ _hololens2 は無視してください_
 
 - Windows 10.1809 x86_64 以降
 - macOS 13.5 arm64 以降
-- Ubuntu 20.04 ARMv8 Jetson (JetPack 5.1.1 以降)
+- Ubuntu 22.04 ARMv8 Jetson (JetPack 6.0.0 以降)
   - Jetson AGX Orin
-  - Jetson AGX Xavier
-  - Jetson Xavier NX
-- Ubuntu 20.04 x86_64
+  - Jetson Orin NX
 - Ubuntu 22.04 x86_64
 - Android 7 arm64 以降
 - iOS 13 arm64 以降
@@ -69,6 +67,12 @@ _hololens2 は無視してください_
 
 [faq.md](doc/faq.md) をお読みください。
 
+## メンテナンスポリシー
+
+Sora C++ SDK のメンテナンスポリシーにはプライオリティがあります。
+
+詳細については [maintenance_policy.md](doc/maintenance_policy.md) をお読みください。
+
 ## 優先実装
 
 優先実装とは Sora のライセンスを契約頂いているお客様限定で Sora C++ SDK の実装予定機能を有償にて前倒しで実装することです。
@@ -76,15 +80,16 @@ _hololens2 は無視してください_
 - Intel VPL H.265 対応
   - [アダワープジャパン株式会社](https://adawarp.com/) 様
 
-### 優先実装が可能な機能一覧
+### 優先実装が可能な対応一覧
 
 **詳細は Discord やメールなどでお気軽にお問い合わせください**
 
-- Ubuntu 24.04 x86_64
-- Ubuntu 22.04 arm64 対応
-  - NVIDIA Jetson JetPack 6 対応
-- AMD 系 HWA 対応
+- NVIDIA Jetson JetPack 5 対応
+- NVIDIA Jetson JetPack 6 Jetson Orin Nano 対応
+- Raspberry Pi OS (64bit) arm64 対応
 - Windows arm64 対応
+- Ubuntu 24.04 x86_64
+- AMD 系 HWA 対応
 
 ## サポートについて
 
