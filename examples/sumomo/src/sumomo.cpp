@@ -19,7 +19,7 @@
 #include <rtc_base/win/scoped_com_initializer.h>
 #endif
 
-struct MomoSampleConfig {
+struct SumomoConfig {
   std::string signaling_url;
   std::string channel_id;
   std::string role;
@@ -32,6 +32,8 @@ struct MomoSampleConfig {
   bool hw_mjpeg_decoder = false;
   int video_bit_rate = 0;
   int audio_bit_rate = 0;
+  boost::json::value video_h264_params;
+  boost::json::value video_h265_params;
   boost::json::value metadata;
   boost::optional<bool> multistream;
   boost::optional<bool> spotlight;
@@ -82,11 +84,10 @@ struct MomoSampleConfig {
   }
 };
 
-class MomoSample : public std::enable_shared_from_this<MomoSample>,
-                   public sora::SoraSignalingObserver {
+class Sumomo : public std::enable_shared_from_this<Sumomo>,
+               public sora::SoraSignalingObserver {
  public:
-  MomoSample(std::shared_ptr<sora::SoraClientContext> context,
-             MomoSampleConfig config)
+  Sumomo(std::shared_ptr<sora::SoraClientContext> context, SumomoConfig config)
       : context_(context), config_(config) {}
 
   void Run() {
@@ -138,6 +139,8 @@ class MomoSample : public std::enable_shared_from_this<MomoSample>,
     config.audio_codec_type = config_.audio_codec_type;
     config.video_bit_rate = config_.video_bit_rate;
     config.audio_bit_rate = config_.audio_bit_rate;
+    config.video_h264_params = config_.video_h264_params;
+    config.video_h265_params = config_.video_h265_params;
     config.metadata = config_.metadata;
     config.multistream = config_.multistream;
     config.spotlight = config_.spotlight;
@@ -150,12 +153,14 @@ class MomoSample : public std::enable_shared_from_this<MomoSample>,
     config.proxy_url = config_.proxy_url;
     config.proxy_username = config_.proxy_username;
     config.proxy_password = config_.proxy_password;
-    config.network_manager = context_->signaling_thread()->BlockingCall([this]() {
-        return context_->connection_context()->default_network_manager();
-    });
-    config.socket_factory = context_->signaling_thread()->BlockingCall([this]() {
-        return context_->connection_context()->default_socket_factory();
-    });
+    config.network_manager =
+        context_->signaling_thread()->BlockingCall([this]() {
+          return context_->connection_context()->default_network_manager();
+        });
+    config.socket_factory =
+        context_->signaling_thread()->BlockingCall([this]() {
+          return context_->connection_context()->default_socket_factory();
+        });
     conn_ = sora::SoraSignaling::Create(config);
 
     boost::asio::executor_work_guard<boost::asio::io_context::executor_type>
@@ -259,7 +264,7 @@ class MomoSample : public std::enable_shared_from_this<MomoSample>,
 
  private:
   std::shared_ptr<sora::SoraClientContext> context_;
-  MomoSampleConfig config_;
+  SumomoConfig config_;
   rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track_;
   rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track_;
   std::shared_ptr<sora::SoraSignaling> conn_;
@@ -298,7 +303,7 @@ int main(int argc, char* argv[]) {
   }
 #endif
 
-  MomoSampleConfig config;
+  SumomoConfig config;
 
   auto is_valid_resolution = CLI::Validator(
       [](std::string input) -> std::string {
@@ -364,6 +369,12 @@ int main(int argc, char* argv[]) {
       ->check(CLI::Range(0, 30000));
   app.add_option("--audio-bit-rate", config.audio_bit_rate, "Audio bit rate")
       ->check(CLI::Range(0, 510));
+  std::string video_h264_params;
+  app.add_option("--video-h264-params", video_h264_params,
+                 "Parameters for H.264 video codec");
+  std::string video_h265_params;
+  app.add_option("--video-h265-params", video_h265_params,
+                 "Parameters for H.265 video codec");
   std::string metadata;
   app.add_option("--metadata", metadata,
                  "Signaling metadata used in connect message")
@@ -403,10 +414,25 @@ int main(int argc, char* argv[]) {
   app.add_option("--srtp-key-log-file", config.srtp_key_log_file,
                  "SRTP keying material output file");
 
+  // SoraClientContextConfig に関するオプション
+  boost::optional<bool> use_hardware_encoder;
+  add_optional_bool(app, "--use-hardware-encoder", use_hardware_encoder,
+                    "Use hardware encoder");
+  std::string openh264;
+  app.add_option("--openh264", openh264, "Path to OpenH264 library");
+
   try {
     app.parse(argc, argv);
   } catch (const CLI::ParseError& e) {
     exit(app.exit(e));
+  }
+
+  if (!video_h264_params.empty()) {
+    config.video_h264_params = boost::json::parse(video_h264_params);
+  }
+
+  if (!video_h265_params.empty()) {
+    config.video_h265_params = boost::json::parse(video_h265_params);
   }
 
   // メタデータのパース
@@ -420,10 +446,14 @@ int main(int argc, char* argv[]) {
     rtc::LogMessage::LogThreads();
   }
 
-  auto context =
-      sora::SoraClientContext::Create(sora::SoraClientContextConfig());
-  auto momosample = std::make_shared<MomoSample>(context, config);
-  momosample->Run();
+  auto context_config = sora::SoraClientContextConfig();
+  if (use_hardware_encoder != boost::none) {
+    context_config.use_hardware_encoder = *use_hardware_encoder;
+  }
+  context_config.openh264 = openh264;
+  auto context = sora::SoraClientContext::Create(context_config);
+  auto sumomo = std::make_shared<Sumomo>(context, config);
+  sumomo->Run();
 
   return 0;
 }

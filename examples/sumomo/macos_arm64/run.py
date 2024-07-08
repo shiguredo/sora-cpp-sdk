@@ -37,16 +37,16 @@ def install_deps(
     build_dir,
     install_dir,
     debug,
-    webrtc_build_dir: Optional[str],
-    webrtc_build_args: List[str],
-    sora_dir: Optional[str],
-    sora_args: List[str],
+    local_webrtc_build_dir: Optional[str],
+    local_webrtc_build_args: List[str],
+    local_sora_cpp_sdk_dir: Optional[str],
+    local_sora_cpp_sdk_args: List[str],
 ):
     with cd(BASE_DIR):
         version = read_version_file("VERSION")
 
         # WebRTC
-        if webrtc_build_dir is None:
+        if local_webrtc_build_dir is None:
             install_webrtc_args = {
                 "version": version["WEBRTC_BUILD_VERSION"],
                 "version_file": os.path.join(install_dir, "webrtc.version"),
@@ -58,8 +58,8 @@ def install_deps(
         else:
             build_webrtc_args = {
                 "platform": "macos_arm64",
-                "webrtc_build_dir": webrtc_build_dir,
-                "webrtc_build_args": webrtc_build_args,
+                "local_webrtc_build_dir": local_webrtc_build_dir,
+                "local_webrtc_build_args": local_webrtc_build_args,
                 "debug": debug,
             }
             build_webrtc(**build_webrtc_args)
@@ -67,10 +67,16 @@ def install_deps(
         sysroot = cmdcap(["xcrun", "--sdk", "macosx", "--show-sdk-path"])
 
         # Sora C++ SDK, Boost
-        if sora_dir is None:
+        if local_sora_cpp_sdk_dir is None:
             install_sora_and_deps("macos_arm64", source_dir, install_dir)
         else:
-            build_sora("macos_arm64", sora_dir, sora_args, debug, webrtc_build_dir)
+            build_sora(
+                "macos_arm64",
+                local_sora_cpp_sdk_dir,
+                local_sora_cpp_sdk_args,
+                debug,
+                local_webrtc_build_dir,
+            )
 
         # CMake
         install_cmake_args = {
@@ -136,10 +142,10 @@ def main():
         build_dir,
         install_dir,
         args.debug,
-        args.webrtc_build_dir,
-        args.webrtc_build_args,
-        args.sora_dir,
-        args.sora_args,
+        args.local_webrtc_build_dir,
+        args.local_webrtc_build_args,
+        args.local_sora_cpp_sdk_dir,
+        args.local_sora_cpp_sdk_args,
     )
 
     configuration = "Debug" if args.debug else "Release"
@@ -147,8 +153,10 @@ def main():
     sample_build_dir = os.path.join(build_dir, "sumomo")
     mkdir_p(sample_build_dir)
     with cd(sample_build_dir):
-        webrtc_info = get_webrtc_info("macos_arm64", args.webrtc_build_dir, install_dir, args.debug)
-        sora_info = get_sora_info(platform, args.sora_dir, install_dir, args.debug)
+        webrtc_info = get_webrtc_info(
+            "macos_arm64", args.local_webrtc_build_dir, install_dir, args.debug
+        )
+        sora_info = get_sora_info(platform, args.local_sora_cpp_sdk_dir, install_dir, args.debug)
 
         cmake_args = []
         cmake_args.append(f"-DCMAKE_BUILD_TYPE={configuration}")

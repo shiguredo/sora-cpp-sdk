@@ -4,6 +4,8 @@
 #include <p2p/client/basic_port_allocator.h>
 #include <pc/rtp_media_utils.h>
 #include <pc/session_description.h>
+#include <rtc_base/crypt_string.h>
+#include <rtc_base/proxy_info_revive.h>
 
 #include "sora/data_channel.h"
 #include "sora/rtc_ssl_verifier.h"
@@ -318,6 +320,10 @@ void SoraSignaling::DoSendConnect(bool redirect) {
       m["video"].as_object()["h264_params"] = config_.video_h264_params;
     }
 
+    if (!config_.video_h265_params.is_null()) {
+      m["video"].as_object()["h265_params"] = config_.video_h265_params;
+    }
+
     // オプションの設定が行われてなければ単に true を設定
     if (m["video"].as_object().empty()) {
       m["video"] = true;
@@ -518,11 +524,11 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
     dependencies.allocator->set_flags(rtc_config.port_allocator_config.flags);
 
     RTC_LOG(LS_INFO) << "Set Proxy: type="
-                     << rtc::ProxyToString(rtc::PROXY_HTTPS)
+                     << rtc::revive::ProxyToString(rtc::revive::PROXY_HTTPS)
                      << " url=" << config_.proxy_url
                      << " username=" << config_.proxy_username;
-    rtc::ProxyInfo pi;
-    pi.type = rtc::PROXY_HTTPS;
+    rtc::revive::ProxyInfo pi;
+    pi.type = rtc::revive::PROXY_HTTPS;
     URLParts parts;
     if (!URLParts::Parse(config_.proxy_url, parts)) {
       RTC_LOG(LS_ERROR) << "Failed to parse: proxy_url=" << config_.proxy_url;

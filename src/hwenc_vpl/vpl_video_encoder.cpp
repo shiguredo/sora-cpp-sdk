@@ -9,6 +9,8 @@
 #include <common_video/include/bitrate_adjuster.h>
 #include <modules/video_coding/codecs/h264/include/h264.h>
 #include <modules/video_coding/codecs/h265/include/h265_globals.h>
+#include <modules/video_coding/include/video_codec_interface.h>
+#include <modules/video_coding/include/video_error_codes.h>
 #include <rtc_base/logging.h>
 #include <rtc_base/synchronization/mutex.h>
 
@@ -50,6 +52,24 @@ class VplVideoEncoderImpl : public VplVideoEncoder {
       int target_kbps,
       int max_kbps,
       bool init);
+
+ private:
+  struct ExtBuffer {
+    mfxExtBuffer* ext_buffers[10];
+    mfxExtCodingOption ext_coding_option;
+    mfxExtCodingOption2 ext_coding_option2;
+  };
+  // いろいろなパターンでクエリを投げて、
+  // 成功した時の param を返す
+  static mfxStatus Queries(MFXVideoENCODE* encoder,
+                           mfxU32 codec,
+                           int width,
+                           int height,
+                           int framerate,
+                           int target_kbps,
+                           int max_kbps,
+                           mfxVideoParam& param,
+                           ExtBuffer& ext);
 
  private:
   std::mutex mutex_;
@@ -103,9 +123,51 @@ std::unique_ptr<MFXVideoENCODE> VplVideoEncoderImpl::CreateEncoder(
     int target_kbps,
     int max_kbps,
     bool init) {
-  mfxStatus sts = MFX_ERR_NONE;
+  std::unique_ptr<MFXVideoENCODE> encoder(
+      new MFXVideoENCODE(GetVplSession(session)));
+
+  mfxPlatform platform;
+  memset(&platform, 0, sizeof(platform));
+  MFXVideoCORE_QueryPlatform(GetVplSession(session), &platform);
+  RTC_LOG(LS_VERBOSE) << "--------------- codec=" << CodecToString(codec)
+                      << " CodeName=" << platform.CodeName
+                      << " DeviceId=" << platform.DeviceId
+                      << " MediaAdapterType=" << platform.MediaAdapterType;
 
   mfxVideoParam param;
+  ExtBuffer ext;
+  mfxStatus sts = Queries(encoder.get(), codec, width, height, framerate,
+                          target_kbps, max_kbps, param, ext);
+  if (sts < MFX_ERR_NONE) {
+    return nullptr;
+  }
+  if (sts > MFX_ERR_NONE) {
+    RTC_LOG(LS_VERBOSE) << "Supported specified codec but has warning: codec="
+                        << CodecToString(codec) << " sts=" << sts;
+  }
+
+  if (init) {
+    sts = encoder->Init(&param);
+    if (sts != MFX_ERR_NONE) {
+      RTC_LOG(LS_ERROR) << "Failed to Init: sts=" << sts;
+      return nullptr;
+    }
+  }
+
+  return encoder;
+}
+
+mfxStatus VplVideoEncoderImpl::Queries(MFXVideoENCODE* encoder,
+                                       mfxU32 codec,
+                                       int width,
+                                       int height,
+                                       int framerate,
+                                       int target_kbps,
+                                       int max_kbps,
+                                       mfxVideoParam& param,
+                                       ExtBuffer& ext) {
+  mfxStatus sts = MFX_ERR_NONE;
+
   memset(&param, 0, sizeof(param));
 
   param.mfx.CodecId = codec;
@@ -150,9 +212,9 @@ std::unique_ptr<MFXVideoENCODE> VplVideoEncoderImpl::CreateEncoder(
   param.IOPattern =
       MFX_IOPATTERN_IN_SYSTEM_MEMORY | MFX_IOPATTERN_OUT_SYSTEM_MEMORY;
 
-  mfxExtBuffer* ext_buffers[10];
-  mfxExtCodingOption ext_coding_option;
-  mfxExtCodingOption2 ext_coding_option2;
+  mfxExtBuffer** ext_buffers = ext.ext_buffers;
+  mfxExtCodingOption& ext_coding_option = ext.ext_coding_option;
+  mfxExtCodingOption2& ext_coding_option2 = ext.ext_coding_option2;
   int ext_buffers_size = 0;
   if (codec == MFX_CODEC_AVC) {
     memset(&ext_coding_option, 0, sizeof(ext_coding_option));
@@ -194,106 +256,105 @@ std::unique_ptr<MFXVideoENCODE> VplVideoEncoderImpl::CreateEncoder(
     param.NumExtParam = ext_buffers_size;
   }
 
-  std::unique_ptr<MFXVideoENCODE> encoder(
-      new MFXVideoENCODE(GetVplSession(session)));
+  // Query 関数を呼び出す。
+  // 失敗した場合 param は一切書き換わらない
+  // 成功した場合 param は書き換わる可能性がある
+  auto query = [](MFXVideoENCODE* encoder, mfxVideoParam& param) {
+    mfxVideoParam query_param;
+    memcpy(&query_param, &param, sizeof(param));
+    // ドキュメントによると、Query は以下のエラーを返す可能性がある。
+    // MFX_ERR_NONE	The function completed successfully.
+    // MFX_ERR_UNSUPPORTED	The function failed to identify a specific implementation for the required features.
+    // MFX_WRN_PARTIAL_ACCELERATION	The underlying hardware does not fully support the specified video parameters; The encoding may be partially accelerated. Only SDK HW implementations may return this status code.
+    // MFX_WRN_INCOMPATIBLE_VIDEO_PARAM	The function detected some video parameters were incompatible with others; incompatibility resolved.
+    mfxStatus sts = encoder->Query(&query_param, &query_param);
+    if (sts >= 0) {
+      // デバッグ用。
+      // Query によってどのパラメータが変更されたかを表示する
+      // #define F(NAME)                                           \
+      //   if (param.NAME != query_param.NAME)                     \
+      //   std::cout << "param " << #NAME << " old=" << param.NAME \
+      //             << " new=" << query_param.NAME << std::endl
+      //       F(mfx.LowPower);
+      //       F(mfx.BRCParamMultiplier);
+      //       F(mfx.FrameInfo.FrameRateExtN);
+      //       F(mfx.FrameInfo.FrameRateExtD);
+      //       F(mfx.FrameInfo.FourCC);
+      //       F(mfx.FrameInfo.ChromaFormat);
+      //       F(mfx.FrameInfo.PicStruct);
+      //       F(mfx.FrameInfo.CropX);
+      //       F(mfx.FrameInfo.CropY);
+      //       F(mfx.FrameInfo.CropW);
+      //       F(mfx.FrameInfo.CropH);
+      //       F(mfx.FrameInfo.Width);
+      //       F(mfx.FrameInfo.Height);
+      //       F(mfx.CodecId);
+      //       F(mfx.CodecProfile);
+      //       F(mfx.CodecLevel);
+      //       F(mfx.GopPicSize);
+      //       F(mfx.GopRefDist);
+      //       F(mfx.GopOptFlag);
+      //       F(mfx.IdrInterval);
+      //       F(mfx.TargetUsage);
+      //       F(mfx.RateControlMethod);
+      //       F(mfx.InitialDelayInKB);
+      //       F(mfx.TargetKbps);
+      //       F(mfx.MaxKbps);
+      //       F(mfx.BufferSizeInKB);
+      //       F(mfx.NumSlice);
+      //       F(mfx.NumRefFrame);
+      //       F(mfx.EncodedOrder);
+      //       F(mfx.DecodedOrder);
+      //       F(mfx.ExtendedPicStruct);
+      //       F(mfx.TimeStampCalc);
+      //       F(mfx.SliceGroupsPresent);
+      //       F(mfx.MaxDecFrameBuffering);
+      //       F(mfx.EnableReallocRequest);
+      //       F(AsyncDepth);
+      //       F(IOPattern);
+      // #undef F
 
-  mfxPlatform platform;
-  memset(&platform, 0, sizeof(platform));
-  MFXVideoCORE_QueryPlatform(GetVplSession(session), &platform);
-  RTC_LOG(LS_VERBOSE) << "--------------- codec=" << CodecToString(codec)
-                      << " CodeName=" << platform.CodeName
-                      << " DeviceId=" << platform.DeviceId
-                      << " MediaAdapterType=" << platform.MediaAdapterType;
-
-  // MFX_ERR_NONE	The function completed successfully.
-  // MFX_ERR_UNSUPPORTED	The function failed to identify a specific implementation for the required features.
-  // MFX_WRN_PARTIAL_ACCELERATION	The underlying hardware does not fully support the specified video parameters; The encoding may be partially accelerated. Only SDK HW implementations may return this status code.
-  // MFX_WRN_INCOMPATIBLE_VIDEO_PARAM	The function detected some video parameters were incompatible with others; incompatibility resolved.
-  mfxVideoParam bk_param;
-  memcpy(&bk_param, &param, sizeof(bk_param));
-  sts = encoder->Query(&param, &param);
-  if (sts < 0) {
-    RTC_LOG(LS_VERBOSE) << "Unsupported encoder codec: codec="
-                        << CodecToString(codec) << " sts=" << sts
-                        << " ... Retry with low power mode";
-    memcpy(&param, &bk_param, sizeof(bk_param));
-
-    // 失敗したら LowPower ON にした状態でもう一度確認する
-    param.mfx.LowPower = MFX_CODINGOPTION_ON;
-    if (codec == MFX_CODEC_AVC || codec == MFX_CODEC_HEVC) {
-      param.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
-      param.mfx.QPI = 25;
-      param.mfx.QPP = 33;
-      param.mfx.QPB = 40;
-      param.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
+      memcpy(&param, &query_param, sizeof(param));
     }
-    memcpy(&bk_param, &param, sizeof(bk_param));
-    sts = encoder->Query(&param, &param);
-    if (sts < 0) {
-      RTC_LOG(LS_VERBOSE) << "Unsupported encoder codec: codec="
-                          << CodecToString(codec) << " sts=" << sts;
-      return nullptr;
-    }
+    return sts;
+  };
+
+  // ここからは、ひたすらパラメータを変えて query を呼び出していく
+  sts = query(encoder, param);
+  if (sts >= 0) {
+    return sts;
   }
 
-  //#define F(NAME)                                              \
-  //  if (bk_param.NAME != param.NAME)                           \
-  //  std::cout << "param " << #NAME << " old=" << bk_param.NAME \
-  //            << " new=" << param.NAME << std::endl
-  //
-  //  F(mfx.LowPower);
-  //  F(mfx.BRCParamMultiplier);
-  //  F(mfx.FrameInfo.FrameRateExtN);
-  //  F(mfx.FrameInfo.FrameRateExtD);
-  //  F(mfx.FrameInfo.FourCC);
-  //  F(mfx.FrameInfo.ChromaFormat);
-  //  F(mfx.FrameInfo.PicStruct);
-  //  F(mfx.FrameInfo.CropX);
-  //  F(mfx.FrameInfo.CropY);
-  //  F(mfx.FrameInfo.CropW);
-  //  F(mfx.FrameInfo.CropH);
-  //  F(mfx.FrameInfo.Width);
-  //  F(mfx.FrameInfo.Height);
-  //  F(mfx.CodecId);
-  //  F(mfx.CodecProfile);
-  //  F(mfx.CodecLevel);
-  //  F(mfx.GopPicSize);
-  //  F(mfx.GopRefDist);
-  //  F(mfx.GopOptFlag);
-  //  F(mfx.IdrInterval);
-  //  F(mfx.TargetUsage);
-  //  F(mfx.RateControlMethod);
-  //  F(mfx.InitialDelayInKB);
-  //  F(mfx.TargetKbps);
-  //  F(mfx.MaxKbps);
-  //  F(mfx.BufferSizeInKB);
-  //  F(mfx.NumSlice);
-  //  F(mfx.NumRefFrame);
-  //  F(mfx.EncodedOrder);
-  //  F(mfx.DecodedOrder);
-  //  F(mfx.ExtendedPicStruct);
-  //  F(mfx.TimeStampCalc);
-  //  F(mfx.SliceGroupsPresent);
-  //  F(mfx.MaxDecFrameBuffering);
-  //  F(mfx.EnableReallocRequest);
-  //  F(AsyncDepth);
-  //  F(IOPattern);
-  //#undef F
-
-  if (sts != MFX_ERR_NONE) {
-    RTC_LOG(LS_VERBOSE) << "Supported specified codec but has warning: codec="
-                        << CodecToString(codec) << " sts=" << sts;
+  // IOPattern を MFX_IOPATTERN_IN_SYSTEM_MEMORY のみにしてみる
+  // Coffee Lake の H265 はこのパターンでないと通らない
+  RTC_LOG(LS_VERBOSE) << "Unsupported encoder codec: codec="
+                      << CodecToString(codec) << " sts=" << sts
+                      << " ... Retry with IOPattern IN_SYSTEM_MEMORY only";
+  param.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
+  sts = query(encoder, param);
+  if (sts >= 0) {
+    return sts;
   }
 
-  if (init) {
-    sts = encoder->Init(&param);
-    if (sts != MFX_ERR_NONE) {
-      RTC_LOG(LS_VERBOSE) << "Failed to Init: sts=" << sts;
-      return nullptr;
-    }
+  // LowPower ON にして、更に H264/H265 は固定 QP モードにしてみる
+  RTC_LOG(LS_VERBOSE) << "Unsupported encoder codec: codec="
+                      << CodecToString(codec) << " sts=" << sts
+                      << " ... Retry with low power mode";
+  param.mfx.LowPower = MFX_CODINGOPTION_ON;
+  if (codec == MFX_CODEC_AVC || codec == MFX_CODEC_HEVC) {
+    param.mfx.RateControlMethod = MFX_RATECONTROL_CQP;
+    param.mfx.QPI = 25;
+    param.mfx.QPP = 33;
+    param.mfx.QPB = 40;
   }
+  sts = query(encoder, param);
+  if (sts >= 0) {
+    return sts;
+  }
+  RTC_LOG(LS_VERBOSE) << "Unsupported encoder codec: codec="
+                      << CodecToString(codec) << " sts=" << sts;
 
-  return encoder;
+  return sts;
 }
 
 int32_t VplVideoEncoderImpl::InitEncode(
@@ -610,7 +671,11 @@ bool VplVideoEncoder::IsSupported(std::shared_ptr<VplSession> session,
 
   auto encoder = VplVideoEncoderImpl::CreateEncoder(
       session, ToMfxCodec(codec), 1920, 1080, 30, 10, 20, false);
-  return encoder != nullptr;
+  bool result = encoder != nullptr;
+  RTC_LOG(LS_VERBOSE) << "IsSupported: codec="
+                      << CodecToString(ToMfxCodec(codec))
+                      << " result=" << result;
+  return result;
 }
 
 std::unique_ptr<VplVideoEncoder> VplVideoEncoder::Create(
