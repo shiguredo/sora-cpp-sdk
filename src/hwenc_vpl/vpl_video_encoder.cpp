@@ -669,6 +669,13 @@ bool VplVideoEncoder::IsSupported(std::shared_ptr<VplSession> session,
     return false;
   }
 
+  // FIXME(melpon): IsSupported(VP9) == true になるにも関わらず、実際に使ってみると
+  // 実行時エラーでクラッシュするため、とりあえず VP9 だったら未サポートとして返す。
+  // （VPL の問題なのか使い方の問題なのかは不明）
+  if (codec == webrtc::kVideoCodecVP9) {
+    return false;
+  }
+
   auto encoder = VplVideoEncoderImpl::CreateEncoder(
       session, ToMfxCodec(codec), 1920, 1080, 30, 10, 20, false);
   bool result = encoder != nullptr;
