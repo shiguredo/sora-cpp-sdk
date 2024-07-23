@@ -16,6 +16,7 @@
 #include <boost/beast/websocket/stream.hpp>
 
 #include "url_parts.h"
+#include "version.h"
 
 namespace sora {
 
@@ -66,6 +67,8 @@ class Websocket {
   // サーバ
   Websocket(boost::asio::ip::tcp::socket socket);
   ~Websocket();
+
+  void SetUserAgent(http_header_value user_agent);
 
   // WebSocket クライアントの接続確立
   void Connect(const std::string& url, connect_callback_t on_connect);
@@ -143,6 +146,8 @@ class Websocket {
   std::vector<std::unique_ptr<WriteData>> write_data_;
 
   boost::asio::deadline_timer close_timeout_timer_;
+
+  http_header_value user_agent_;
 
   bool https_proxy_ = false;
   std::string proxy_url_;

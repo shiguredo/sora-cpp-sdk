@@ -1178,6 +1178,9 @@ void SoraSignaling::DoConnect() {
     } else {
       ws.reset(new Websocket(*config_.io_context));
     }
+    if (config_.user_agent != boost::none) {
+      ws->SetUserAgent(*config_.user_agent);
+    }
     ws->Connect(url, std::bind(&SoraSignaling::OnConnect, shared_from_this(),
                                std::placeholders::_1, url, ws));
     connecting_wss_.push_back(ws);

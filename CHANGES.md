@@ -49,6 +49,8 @@
   - @melpon
 - [ADD] Ubuntu 24.04 に対応する
   - @melpon
+- [ADD] WebSocket での接続時に User-Agent ヘッダーを追加する
+  - @melpon
 
 ## 2024.6.1 (2024-04-16)
 
