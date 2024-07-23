@@ -676,6 +676,13 @@ bool VplVideoEncoder::IsSupported(std::shared_ptr<VplSession> session,
     return false;
   }
 
+  // FIXME(miosakuma): Intel Core Ultra 7 では IsSupported(AV1) == true となるが、
+  // 実際に使ってみると映像が送信されないため、一時的に AV1 だったら未サポートとして返す。
+  // （VPL の問題なのか使い方の問題なのかは不明）
+  if (codec == webrtc::kVideoCodecAV1) {
+    return false;
+  }
+
   auto encoder = VplVideoEncoderImpl::CreateEncoder(
       session, ToMfxCodec(codec), 1920, 1080, 30, 10, 20, false);
   bool result = encoder != nullptr;
