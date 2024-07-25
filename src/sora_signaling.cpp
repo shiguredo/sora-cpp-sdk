@@ -4,7 +4,7 @@
 #include <p2p/client/basic_port_allocator.h>
 #include <pc/rtp_media_utils.h>
 #include <pc/session_description.h>
-#include <rtc_base/crypt_string.h>
+#include <rtc_base/crypt_string_revive.h>
 #include <rtc_base/proxy_info_revive.h>
 
 #include "sora/data_channel.h"
@@ -447,7 +447,7 @@ void SoraSignaling::DoSendUpdate(const std::string& sdp, std::string type) {
   }
 }
 
-class RawCryptString : public rtc::CryptStringImpl {
+class RawCryptString : public rtc::revive::CryptStringImpl {
  public:
   RawCryptString(const std::string& str) : str_(str) {}
   size_t GetLength() const override { return str_.size(); }
@@ -535,7 +535,7 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
       pi.username = config_.proxy_username;
     }
     if (!config_.proxy_password.empty()) {
-      pi.password = rtc::CryptString(RawCryptString(config_.proxy_password));
+      pi.password = rtc::revive::CryptString(RawCryptString(config_.proxy_password));
     }
     std::string proxy_agent = "Sora C++ SDK";
     if (!config_.proxy_agent.empty()) {
