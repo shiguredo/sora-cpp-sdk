@@ -23,7 +23,7 @@ Please read <https://github.com/shiguredo/oss/blob/master/README.en.md> before u
   - NVIDIA Video Codec SDK (NVENC / NVDEC)
     - VP9 / H.264
   - NVIDIA Jetson Video HWA
-    - VP9 / AV1 / H.264
+    - VP9 / AV1 / H.264 / H.265
   - Apple macOS / iOS Video Toolbox
     - H.264 / H.265
   - Google Android HWA
@@ -32,6 +32,7 @@ Please read <https://github.com/shiguredo/oss/blob/master/README.en.md> before u
     - H.264 / H.265 / AV1
     - AV1 は デコードのみ
     - H.265 は Windows と Ubuntu 22.04 のみ
+    - Media SDK での動作は未検証です
 
 ## ライブラリのバイナリ提供について
 
@@ -56,7 +57,12 @@ _hololens2 は無視してください_
 - Ubuntu 22.04 ARMv8 Jetson (JetPack 6.0.0 以降)
   - Jetson AGX Orin
   - Jetson Orin NX
+  - 動作未検証です
+- Ubuntu 20.04 x86_64
+  - 動作未検証です
 - Ubuntu 22.04 x86_64
+- Ubuntu 24.04 x86_64
+  - 動作未検証です
 - Android 7 arm64 以降
 - iOS 13 arm64 以降
 
