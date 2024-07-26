@@ -21,7 +21,7 @@ Please read <https://github.com/shiguredo/oss/blob/master/README.en.md> before u
 
 - 各プラットフォームで利用可能な HWA への対応
   - NVIDIA Video Codec SDK (NVENC / NVDEC)
-    - VP9 / H.264
+    - VP9 / H.264 / H.265
   - NVIDIA Jetson Video HWA
     - VP9 / AV1 / H.264 / H.265
   - Apple macOS / iOS Video Toolbox
