@@ -29,11 +29,13 @@
   - @melpon
 - [UPDATE] Boost を 1.85.0 にあげる
   - @enm10k
-- [UPDATE] SDL2 を 2.30.3 にあげる
+- [UPDATE] SDL2 を 2.30.5 にあげる
   - @enm10k
+- [UPDATE] CMake を 3.29.6 にあげる
+  - @voluntas
 - [UPDATE] CLI11 を 2.4.2 にあげる
   - @enm10k
-- [UPDATE] libwebrtc を m126.6478.1.1 にあげる
+- [UPDATE] libwebrtc を m127.6533.1.1 にあげる
   - Android の test アプリがリンクできなくなったため、リンカーを Android NDK のものから libwebrtc のものに変更
   - リンカーのバージョンの違いによる互換性の問題でエラーが発生していた
   - @melpon @enm10k @torikizi
