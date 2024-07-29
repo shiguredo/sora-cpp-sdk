@@ -46,13 +46,15 @@ class VplVideoDecoderImpl : public VplVideoDecoder {
       std::shared_ptr<VplSession> session,
       mfxU32 codec,
       std::vector<std::pair<int, int>> sizes,
-      bool init);
+      bool init,
+      mfxFrameAllocRequest* alloc_request);
   static std::unique_ptr<MFXVideoDECODE> CreateDecoderInternal(
       std::shared_ptr<VplSession> session,
       mfxU32 codec,
       int width,
       int height,
-      bool init);
+      bool init,
+      mfxFrameAllocRequest* alloc_request);
 
  private:
   bool InitVpl();
@@ -89,10 +91,12 @@ std::unique_ptr<MFXVideoDECODE> VplVideoDecoderImpl::CreateDecoder(
     std::shared_ptr<VplSession> session,
     mfxU32 codec,
     std::vector<std::pair<int, int>> sizes,
-    bool init) {
+    bool init,
+    mfxFrameAllocRequest* alloc_request) {
   for (auto size : sizes) {
-    auto decoder =
-        CreateDecoderInternal(session, codec, size.first, size.second, init);
+    memset(alloc_request, 0, sizeof(*alloc_request));
+    auto decoder = CreateDecoderInternal(session, codec, size.first,
+                                         size.second, init, alloc_request);
     if (decoder != nullptr) {
       return decoder;
     }
@@ -105,7 +109,8 @@ std::unique_ptr<MFXVideoDECODE> VplVideoDecoderImpl::CreateDecoderInternal(
     mfxU32 codec,
     int width,
     int height,
-    bool init) {
+    bool init,
+    mfxFrameAllocRequest* alloc_request) {
   std::unique_ptr<MFXVideoDECODE> decoder(
       new MFXVideoDECODE(GetVplSession(session)));
 
@@ -119,6 +124,11 @@ std::unique_ptr<MFXVideoDECODE> VplVideoDecoderImpl::CreateDecoderInternal(
   if (codec == MFX_CODEC_HEVC) {
     // この設定がないと H.265 デコーダーの Init が sts=-15 で失敗する
     param.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN;
+  } else if (codec == MFX_CODEC_AV1) {
+    // param.mfx.CodecProfile = MFX_PROFILE_AV1_MAIN;
+    // この設定がないと Query しても sts=-3 で失敗する
+    // MFX_LEVEL_AV1_2 で妥当かどうかはよく分からない
+    param.mfx.CodecLevel = MFX_LEVEL_AV1_2;
   }
 
   param.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
@@ -148,15 +158,27 @@ std::unique_ptr<MFXVideoDECODE> VplVideoDecoderImpl::CreateDecoderInternal(
 
   sts = decoder->Query(&param, &param);
   if (sts < 0) {
-    RTC_LOG(LS_VERBOSE) << "Unsupported decoder codec: codec="
-                        << CodecToString(codec) << " sts=" << sts;
+    RTC_LOG(LS_VERBOSE) << "Unsupported decoder codec: resolution=" << width
+                        << "x" << height << " codec=" << CodecToString(codec)
+                        << " sts=" << sts;
     return nullptr;
   }
 
   if (sts != MFX_ERR_NONE) {
-    RTC_LOG(LS_VERBOSE) << "Supported specified codec but has warning: sts="
-                        << sts;
+    RTC_LOG(LS_VERBOSE)
+        << "Supported specified codec but has warning: resolution=" << width
+        << "x" << height << " sts=" << sts;
   }
+
+  // MFX_CODEC_AV1 の時に Init より後に QueryIOSurf すると
+  // MFX_ERR_UNSUPPORTED になったのでここで QueryIOSurf しておく
+  // （MFX_CODEC_AVC や MFX_CODEC_HEVC の時には Init 後に QueryIOSurf しても動いた）
+  memset(alloc_request, 0, sizeof(*alloc_request));
+  sts = decoder->QueryIOSurf(&param, alloc_request);
+  VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+  RTC_LOG(LS_INFO) << "Decoder NumFrameSuggested="
+                   << alloc_request->NumFrameSuggested;
 
   // Query した上で Init しても MFX_ERR_UNSUPPORTED になることがあるので
   // 本来 Init が不要な時も常に呼ぶようにして確認する
@@ -164,7 +186,8 @@ std::unique_ptr<MFXVideoDECODE> VplVideoDecoderImpl::CreateDecoderInternal(
     // Initialize the Intel VPL encoder
     sts = decoder->Init(&param);
     if (sts != MFX_ERR_NONE) {
-      RTC_LOG(LS_VERBOSE) << "Init failed: codec=" << CodecToString(codec)
+      RTC_LOG(LS_VERBOSE) << "Init failed: resolution=" << width << "x"
+                          << height << " codec=" << CodecToString(codec)
                           << " sts=" << sts;
       return nullptr;
     }
@@ -311,8 +334,8 @@ const char* VplVideoDecoderImpl::ImplementationName() const {
 }
 
 bool VplVideoDecoderImpl::InitVpl() {
-  decoder_ =
-      CreateDecoder(session_, codec_, {{4096, 4096}, {2048, 2048}}, true);
+  decoder_ = CreateDecoder(session_, codec_, {{4096, 4096}, {2048, 2048}}, true,
+                           &alloc_request_);
 
   mfxStatus sts = MFX_ERR_NONE;
 
@@ -322,14 +345,6 @@ bool VplVideoDecoderImpl::InitVpl() {
   if (sts != MFX_ERR_NONE) {
     return false;
   }
-
-  // Query number of required surfaces for encoder
-  memset(&alloc_request_, 0, sizeof(alloc_request_));
-  sts = decoder_->QueryIOSurf(&param, &alloc_request_);
-  VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-  RTC_LOG(LS_INFO) << "Decoder NumFrameSuggested="
-                   << alloc_request_.NumFrameSuggested;
 
   // 入力ビットストリーム
   bitstream_buffer_.resize(1024 * 1024);
@@ -380,8 +395,10 @@ bool VplVideoDecoder::IsSupported(std::shared_ptr<VplSession> session,
     return false;
   }
 
+  mfxFrameAllocRequest alloc_request;
   auto decoder = VplVideoDecoderImpl::CreateDecoder(
-      session, ToMfxCodec(codec), {{4096, 4096}, {2048, 2048}}, false);
+      session, ToMfxCodec(codec), {{4096, 4096}, {2048, 2048}}, false,
+      &alloc_request);
 
   return decoder != nullptr;
 }

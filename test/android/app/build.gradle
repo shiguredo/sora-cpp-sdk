@@ -33,9 +33,11 @@ android {
                     "-DWEBRTC_INCLUDE_DIR=$projectDir/../../../_install/android/release/webrtc/include",
                     "-DWEBRTC_LIBRARY_DIR=$projectDir/../../../_install/android/release/webrtc/lib/arm64-v8a",
                     "-DLIBCXX_INCLUDE_DIR=$projectDir/../../../_install/android/release/llvm/libcxx/include",
-                    // "-DWEBRTC_INCLUDE_DIR=$projectDir/../../../_source/android/release/webrtc/src",
-                    // "-DWEBRTC_LIBRARY_DIR=$projectDir/../../../_build/android/release/webrtc",
-                    // "-DLIBCXX_INCLUDE_DIR=$projectDir/../../../_source/android/release/webrtc/src/buildtools/third_party/libc++/trunk/include",
+                    "-DLLVM_DIR=$projectDir/../../../_install/android/release/llvm/clang",
+                    // "-DWEBRTC_INCLUDE_DIR=$projectDir/../../../../webrtc-build/_source/android/webrtc/src",
+                    // "-DWEBRTC_LIBRARY_DIR=$projectDir/../../../../webrtc-build/_build/android/release/webrtc/arm64-v8a",
+                    // "-DLIBCXX_INCLUDE_DIR=$projectDir/../../../../webrtc-build/_source/android/webrtc/src/third_party/libc++/src/include",
+                    // "-DLLVM_DIR=$projectDir/../../../../webrtc-build/_source/android/webrtc/src/third_party/llvm-build/Release+Asserts",
                     "-DANDROID_STL=none",
                     "-DANDROID_NATIVE_API_LEVEL=29",
                     "-DANDROID_PLATFORM=29",
@@ -63,7 +65,7 @@ android {
     externalNativeBuild {
         cmake {
             path file('src/main/cpp/CMakeLists.txt')
-            version '3.28.1'
+            version '3.29.6'
         }
     }
     buildFeatures {

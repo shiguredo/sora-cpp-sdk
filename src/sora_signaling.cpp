@@ -4,6 +4,8 @@
 #include <p2p/client/basic_port_allocator.h>
 #include <pc/rtp_media_utils.h>
 #include <pc/session_description.h>
+#include <rtc_base/crypt_string_revive.h>
+#include <rtc_base/proxy_info_revive.h>
 
 #include "sora/data_channel.h"
 #include "sora/rtc_ssl_verifier.h"
@@ -314,6 +316,10 @@ void SoraSignaling::DoSendConnect(bool redirect) {
       m["video"].as_object()["h264_params"] = config_.video_h264_params;
     }
 
+    if (!config_.video_h265_params.is_null()) {
+      m["video"].as_object()["h265_params"] = config_.video_h265_params;
+    }
+
     // オプションの設定が行われてなければ単に true を設定
     if (m["video"].as_object().empty()) {
       m["video"] = true;
@@ -441,7 +447,7 @@ void SoraSignaling::DoSendUpdate(const std::string& sdp, std::string type) {
   }
 }
 
-class RawCryptString : public rtc::CryptStringImpl {
+class RawCryptString : public rtc::revive::CryptStringImpl {
  public:
   RawCryptString(const std::string& str) : str_(str) {}
   size_t GetLength() const override { return str_.size(); }
@@ -514,11 +520,11 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
     dependencies.allocator->set_flags(rtc_config.port_allocator_config.flags);
 
     RTC_LOG(LS_INFO) << "Set Proxy: type="
-                     << rtc::ProxyToString(rtc::PROXY_HTTPS)
+                     << rtc::revive::ProxyToString(rtc::revive::PROXY_HTTPS)
                      << " url=" << config_.proxy_url
                      << " username=" << config_.proxy_username;
-    rtc::ProxyInfo pi;
-    pi.type = rtc::PROXY_HTTPS;
+    rtc::revive::ProxyInfo pi;
+    pi.type = rtc::revive::PROXY_HTTPS;
     URLParts parts;
     if (!URLParts::Parse(config_.proxy_url, parts)) {
       RTC_LOG(LS_ERROR) << "Failed to parse: proxy_url=" << config_.proxy_url;
@@ -529,7 +535,7 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
       pi.username = config_.proxy_username;
     }
     if (!config_.proxy_password.empty()) {
-      pi.password = rtc::CryptString(RawCryptString(config_.proxy_password));
+      pi.password = rtc::revive::CryptString(RawCryptString(config_.proxy_password));
     }
     std::string proxy_agent = "Sora C++ SDK";
     if (!config_.proxy_agent.empty()) {
@@ -1171,6 +1177,9 @@ void SoraSignaling::DoConnect() {
       }
     } else {
       ws.reset(new Websocket(*config_.io_context));
+    }
+    if (config_.user_agent != boost::none) {
+      ws->SetUserAgent(*config_.user_agent);
     }
     ws->Connect(url, std::bind(&SoraSignaling::OnConnect, shared_from_this(),
                                std::placeholders::_1, url, ws));

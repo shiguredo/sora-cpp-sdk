@@ -5,6 +5,7 @@
 #include <vector>
 
 // WebRTC
+#include <api/environment/environment.h>
 #include <api/video/video_codec_type.h>
 #include <api/video_codecs/video_decoder_factory.h>
 
@@ -52,7 +53,8 @@ class SoraVideoDecoderFactory : public webrtc::VideoDecoderFactory {
 
   std::vector<webrtc::SdpVideoFormat> GetSupportedFormats() const override;
 
-  std::unique_ptr<webrtc::VideoDecoder> CreateVideoDecoder(
+  std::unique_ptr<webrtc::VideoDecoder> Create(
+      const webrtc::Environment& env,
       const webrtc::SdpVideoFormat& format) override;
 
  private:

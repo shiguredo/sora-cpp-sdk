@@ -11,6 +11,49 @@
 
 ## develop
 
+## 2024.7.0 (2024-07-29)
+
+- [CHANGE] `--sora-dir`, `--sora-args` を `--local-sora-cpp-sdk-dir` と `--local-sora-cpp-sdk-args` に変更する
+  - @melpon
+- [CHANGE] `--webrtc-build-dir`, `--webrtc-build-args` を `--local-webrtc-build-dir` と `--local-webrtc-build-args` に変更する
+  - @melpon
+- [CHANGE] SoraVideoDecoderFactory の CreateVideoDecoder 関数を Create に変更する
+  - libwebrtc に定義されている継承元クラスが変更されたことに対する追従
+  - @enm10k
+- [CHANGE] SoraVideoEncoderFactory の CreateVideoEncoder 関数を Create に変更する
+  - libwebrtc に定義されている継承元クラスが変更されたことに対する追従
+  - @enm10k
+- [CHANGE] `CreateOpenH264VideoEncoder()` 関数の第１引数の型を `const cricket::VideoCodec&` から `const webrtc::SdpVideoFormat&` に変更する
+  - @melpon
+- [CHANGE] Jetson 対応をサポートブランチに移動する
+  - @melpon
+- [UPDATE] Boost を 1.85.0 にあげる
+  - @enm10k
+- [UPDATE] SDL2 を 2.30.3 にあげる
+  - @enm10k
+- [UPDATE] CLI11 を 2.4.2 にあげる
+  - @enm10k
+- [UPDATE] libwebrtc を m126.6478.1.1 にあげる
+  - Android の test アプリがリンクできなくなったため、リンカーを Android NDK のものから libwebrtc のものに変更
+  - リンカーのバージョンの違いによる互換性の問題でエラーが発生していた
+  - @melpon @enm10k @torikizi
+- [ADD] sumomo に `--openh264` と `--use-hardware-encoder` オプションを追加
+  - @melpon
+- [ADD] sumomo に `--video-h264-params` と `--video-h265-params` オプションを追加
+  - @enm10k
+- [ADD] SoraSignalingConfig に `video_h265_params` を追加
+  - @enm10k
+- [ADD] 古い Intel CPU でも H265 エンコーダが動くようにする
+  - @melpon
+- [ADD] Intel VPL で AV1 デコーダを動くようにする
+  - @melpon
+- [ADD] NVIDIA Video Codec SDK を H265 に対応する
+  - @melpon
+- [ADD] Ubuntu 24.04 に対応する
+  - @melpon
+- [ADD] WebSocket での接続時に User-Agent ヘッダーを追加する
+  - @melpon
+
 ## 2024.6.1 (2024-04-16)
 
 - [CHANGE] テストモジュールについて `SoraSignalingConfig` の `sora_client` に値を設定しないようにする

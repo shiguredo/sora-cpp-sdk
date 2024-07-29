@@ -14,6 +14,7 @@ class PeerConnectionFactoryWithContext : public webrtc::PeerConnectionFactory {
   PeerConnectionFactoryWithContext(
       webrtc::PeerConnectionFactoryDependencies dependencies)
       : PeerConnectionFactoryWithContext(
+            // SDK の外部から webrtc::Environment を設定したくなるまで、ここで初期化する
             webrtc::ConnectionContext::Create(webrtc::CreateEnvironment(),
                                               &dependencies),
             &dependencies) {}

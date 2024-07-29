@@ -26,7 +26,8 @@
                 "_LIBCPP_DISABLE_AVAILABILITY",
                 "OPENSSL_IS_BORINGSSL",
                 "SORA_CPP_SDK_UBUNTU_2004",
-                "USE_NVCODEC_ENCODER"
+                "USE_NVCODEC_ENCODER",
+                "RTC_ENABLE_H265"
             ],
             "compilerPath": "${workspaceFolder}/_install/ubuntu-20.04_x86_64/release/llvm/clang/bin/clang++",
             "compilerArgs": ["-nostdinc++"],
@@ -58,7 +59,8 @@
                 "OPENSSL_IS_BORINGSSL",
                 "USE_JETSON_ENCODER",
                 "SORA_CPP_SDK_JETSON",
-                "HELLO_JETSON"
+                "HELLO_JETSON",
+                "RTC_ENABLE_H265"
             ],
             "compilerPath": "${workspaceFolder}/_install/ubuntu-20.04_armv8_jetson/release/llvm/clang/bin/clang++",
             "compilerArgs": ["-nostdinc++"],
@@ -92,9 +94,11 @@
                 "OPENSSL_IS_BORINGSSL",
                 "SORA_CPP_SDK_UBUNTU_2204",
                 "USE_NVCODEC_ENCODER",
-                "USE_VPL_ENCODER"
+                "USE_VPL_ENCODER",
+                "RTC_ENABLE_H265"
             ],
-            "compilerPath": "${workspaceFolder}/_install/ubuntu-22.04_x86_64/release/llvm/clang/bin/clang++",
+            // "compilerPath": "${workspaceFolder}/_install/ubuntu-22.04_x86_64/release/llvm/clang/bin/clang++",
+            "compilerPath": "/usr/bin/clang++-18",
             "compilerArgs": ["-nostdinc++"],
             "cStandard": "gnu17",
             "cppStandard": "gnu++17",
@@ -123,7 +127,8 @@
                 "OPENSSL_IS_BORINGSSL",
                 "USE_NVCODEC_ENCODER=0",
                 "SORA_CPP_SDK_ANDROID",
-                "HELLO_ANDROID"
+                "HELLO_ANDROID",
+                "RTC_ENABLE_H265"
             ],
             "compilerPath": "${workspaceFolder}/_install/android/release/llvm/clang/bin/clang++",
             "compilerArgs": ["-nostdinc++"],
@@ -148,7 +153,8 @@
             "defines": [
                 "WEBRTC_POSIX",
                 "WEBRTC_MAC",
-                "OPENSSL_IS_BORINGSSL"
+                "OPENSSL_IS_BORINGSSL",
+                "RTC_ENABLE_H265"
             ],
             "cStandard": "gnu17",
             "cppStandard": "gnu++17",
@@ -174,8 +180,9 @@
             "defines": [
                 "SORA_CPP_SDK_WINDOWS",
                 "WEBRTC_WIN",
-                "USE_NVCODEC_ENCODER=1",
-                "USE_VPL_ENCODER=1"
+                "USE_NVCODEC_ENCODER",
+                "USE_VPL_ENCODER",
+                "RTC_ENABLE_H265"
             ],
             "cStandard": "gnu17",
             "cppStandard": "gnu++17",
@@ -200,7 +207,8 @@
             "defines": [
                 "SORA_CPP_SDK_WINDOWS",
                 "WEBRTC_WIN",
-                "USE_NVCODEC_ENCODER=1"
+                "USE_NVCODEC_ENCODER",
+                "RTC_ENABLE_H265"
             ],
             "cStandard": "gnu17",
             "cppStandard": "gnu++17",

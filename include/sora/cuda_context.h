@@ -19,8 +19,10 @@ class CudaContext {
 
 enum class CudaVideoCodec {
   H264,
+  H265,
   VP8,
   VP9,
+  AV1,
   JPEG,
 };
 

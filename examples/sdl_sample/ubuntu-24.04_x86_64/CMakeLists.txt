@@ -25,18 +25,19 @@ find_package(WebRTC REQUIRED)
 find_package(Sora REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(Threads REQUIRED)
+find_package(Libva REQUIRED)
+find_package(Libdrm REQUIRED)
 
-add_executable(sumomo)
-set_target_properties(sumomo PROPERTIES CXX_STANDARD 20 C_STANDARD 20)
-set_target_properties(sumomo PROPERTIES POSITION_INDEPENDENT_CODE ON)
-target_sources(sumomo PRIVATE ../src/sumomo.cpp ../src/sdl_renderer.cpp)
+add_executable(sdl_sample)
+set_target_properties(sdl_sample PROPERTIES CXX_STANDARD 20 C_STANDARD 20)
+set_target_properties(sdl_sample PROPERTIES POSITION_INDEPENDENT_CODE ON)
+target_sources(sdl_sample PRIVATE ../src/sdl_sample.cpp ../src/sdl_renderer.cpp)
 
-target_compile_options(sumomo
+target_compile_options(sdl_sample
   PRIVATE
     "$<$<COMPILE_LANGUAGE:CXX>:-nostdinc++>"
     "$<$<COMPILE_LANGUAGE:CXX>:-isystem${LIBCXX_INCLUDE_DIR}>"
 )
-target_include_directories(sumomo PRIVATE ${CLI11_DIR}/include)
-target_link_libraries(sumomo PRIVATE Sora::sora SDL2::SDL2 SDL2::SDL2main)
-target_link_directories(sumomo PRIVATE ${CMAKE_SYSROOT}/usr/lib/aarch64-linux-gnu/tegra)
-target_compile_definitions(sumomo PRIVATE CLI11_HAS_FILESYSTEM=0)
+target_include_directories(sdl_sample PRIVATE ${CLI11_DIR}/include)
+target_link_libraries(sdl_sample PRIVATE Sora::sora SDL2::SDL2 SDL2::SDL2main)
+target_compile_definitions(sdl_sample PRIVATE CLI11_HAS_FILESYSTEM=0)
