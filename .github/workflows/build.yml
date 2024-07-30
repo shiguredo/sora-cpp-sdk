@@ -156,13 +156,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        name:
-          - ubuntu-20.04_x86_64
-          - ubuntu-22.04_x86_64
-          - ubuntu-22.04_armv8_jetson
-          - android
-    name: Build sora-cpp-sdk for ${{ matrix.name }}
-    runs-on: ${{ matrix.name == 'ubuntu-22.04_x86_64' && 'ubuntu-22.04' || 'ubuntu-20.04' }}
+        platform:
+          - name: ubuntu-20.04_x86_64
+            runs-on: ubuntu-20.04
+            os: ubuntu
+          - name: ubuntu-22.04_x86_64
+            runs-on: ubuntu-22.04
+            os: ubuntu
+          - name: ubuntu-24.04_x86_64
+            runs-on: ubuntu-24.04
+            os: ubuntu
+          - name: android
+            runs-on: ubuntu-22.04
+            os: android
+    name: Build sora-cpp-sdk for ${{ matrix.platform.name }}
+    runs-on: ${{ matrix.platform.runs-on }}
     env:
       TEST_SIGNALING_URL: ${{ secrets.TEST_SIGNALING_URL }}
       TEST_CHANNEL_ID_PREFIX: ${{ secrets.TEST_CHANNEL_ID_PREFIX }}
@@ -282,13 +290,13 @@ jobs:
             python3 $app/${{ matrix.platform.name }}/run.py --local-sora-cpp-sdk-dir ..
             cp _build/${{ matrix.platform.name }}/release/$app/$app examples_${{ matrix.platform.name }}
           done
-        if: matrix.name == 'ubuntu-20.04_x86_64' || matrix.name == 'ubuntu-22.04_x86_64' || matrix.name == 'ubuntu-22.04_armv8_jetson'
+        if: matrix.platform.os == 'ubuntu'
       - name: Upload Examples Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: examples_${{ matrix.name }}
-          path: examples/examples_${{ matrix.name }}
-        if: matrix.name == 'ubuntu-20.04_x86_64' || matrix.name == 'ubuntu-22.04_x86_64' || matrix.name == 'ubuntu-22.04_armv8_jetson'
+          name: examples_${{ matrix.platform.name }}
+          path: examples/examples_${{ matrix.platform.name }}
+        if: matrix.platform.os == 'ubuntu'
 
   create-release:
     name: Create Release
@@ -302,7 +310,25 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/download
         with:
-          platform: ubuntu-22.04_armv8_jetson
+          platform: windows_x86_64
+      - uses: ./.github/actions/download
+        with:
+          platform: macos_arm64
+      - uses: ./.github/actions/download
+        with:
+          platform: ios
+      - uses: ./.github/actions/download
+        with:
+          platform: ubuntu-20.04_x86_64
+      - uses: ./.github/actions/download
+        with:
+          platform: ubuntu-22.04_x86_64
+      - uses: ./.github/actions/download
+        with:
+          platform: ubuntu-24.04_x86_64
+      - uses: ./.github/actions/download
+        with:
+          platform: android
       - name: Env to output
         run: |
           echo "package_paths<<EOF" >> $GITHUB_OUTPUT
