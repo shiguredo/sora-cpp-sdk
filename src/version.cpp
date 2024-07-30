@@ -49,6 +49,8 @@
 
 #endif
 
+#define DEFAULT_USER_AGENT "Mozilla/5.0 (Sora C++ SDK/" SORA_CPP_SDK_VERSION ")"
+
 namespace sora {
 
 std::string Version::GetClientName() {
@@ -217,6 +219,10 @@ std::string Version::GetEnvironmentName() {
 #endif
 
   return environment;
+}
+
+http_header_value Version::GetDefaultUserAgent() {
+  return std::string(DEFAULT_USER_AGENT);
 }
 
 }  // namespace sora

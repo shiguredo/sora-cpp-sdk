@@ -14,7 +14,7 @@ Intel VPL には Intel VPL (ライブラリの Intel VPL と区別するため�
 Intel Media SDK は既に開発が終了しており、後継の Intel VPL ランタイムに開発が移行しているため、
 これから VPL を利用する場合は、 Intel VPL ランタイムに対応したチップを利用することを推奨します。
 
-https://www.intel.com/content/www/us/en/developer/tools/vpl/overview.html#gs.73uoi4 の Specifications のセクションより、ランタイムと対応するチップの一覧を以下に引用します。
+<https://www.intel.com/content/www/us/en/developer/tools/vpl/overview.html#gs.73uoi4> の Specifications のセクションより、ランタイムと対応するチップの一覧を以下に引用します。
 
 - [Intel VPL](https://github.com/oneapi-src/oneVPL-intel-gpu)
   - Intel® Iris® Xe graphics
@@ -37,26 +37,36 @@ Windows では環境によってドライバーの有無が異なるため、以
 - Win + R キーを押下 > `ファイル名を指定して実行` のダイアログが開くので `dxdiag` と入力して `OK` ボタンを押下 > DirectX 診断ツールが起動するので、 `ディスプレイ` のタブからインストールされているドライバーを確認
 
 Intel のドライバーが確認できない場合は、以下のページから適切なドライバーをインストールしてください。  
-https://www.intel.co.jp/content/www/jp/ja/download-center/home.html
+<https://www.intel.co.jp/content/www/jp/ja/download-center/home.html>
 
 ### Ubuntu 22.04
 
-https://dgpu-docs.intel.com/driver/client/overview.html を参考に必要なドライバーとソフトウェアをインストールします。
+Ubuntu 22.04 で Intel VPL を利用するためには、ドライバーとライブラリをインストールする必要があります。
+公式ドキュメントの <https://dgpu-docs.intel.com/driver/client/overview.html> を参考に必要なドライバーとライブラリをインストールします。
 
-#### Intel VPL ランタイムを利用する手順
+#### Intel VPL ランタイムをインストールする
 
-Intel VPL ランタイムを利用する場合は libmfxgen1 ではなく libmfx-gen1.2 を使う必要があるため、ドキュメントのコマンドを一部読み替えて実行します。
+##### Intel の apt リポジトリを追加
+
+パッケージのインストールには Intel の apt リポジトリを追加する必要があります。
 
 ```bash
-# Intel の apt リポジトリを追加
-$ wget -qO - https://repositories.intel.com/gpu/intel-graphics.key | \
-  sudo gpg --dearmor --output /usr/share/keyrings/intel-graphics.gpg
-$ echo "deb [arch=amd64,i386 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/gpu/ubuntu jammy client" | \
-  sudo tee /etc/apt/sources.list.d/intel-gpu-jammy.list
-$ sudo apt update
 
-# パッケージのインストール
-$ sudo apt install -y \
+wget -qO - https://repositories.intel.com/gpu/intel-graphics.key | \
+  sudo gpg --dearmor --output /usr/share/keyrings/intel-graphics.gpg
+echo "deb [arch=amd64,i386 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/gpu/ubuntu jammy client" | \
+  sudo tee /etc/apt/sources.list.d/intel-gpu-jammy.list
+sudo apt update
+```
+
+##### パッケージのインストール
+
+公式ドキュメントでは libmfxgen1 をインストールする手順が記載されていますが、Intel VPL ランタイムを使用するには libmfx-gen1.2 が必要です。
+
+以下の実行例のように、 libmfx-gen1.2 をインストールしてください。
+
+```bash
+sudo apt install -y \
   intel-opencl-icd intel-level-zero-gpu level-zero \
   intel-media-va-driver-non-free libmfx1 libmfx-gen1.2 libvpl2 \
   libegl-mesa0 libegl1-mesa libegl1-mesa-dev libgbm1 libgl1-mesa-dev libgl1-mesa-dri \
@@ -64,20 +74,30 @@ $ sudo apt install -y \
   mesa-vdpau-drivers mesa-vulkan-drivers va-driver-all vainfo hwinfo clinfo
 ```
 
+##### 再起動
+
+パッケージのインストールが完了したら、再起動してください。
+
 #### Intel Media SDK を利用する手順
 
-ドキュメントの通りです。
+Intel のチップセットの世代によって、 Intel Media SDK を利用する必要がある場合があります。
+
+以下の手順で Intel Media SDK をインストールしてください。
+
+##### Intel の apt リポジトリを追加
 
 ```bash
-# Intel の apt リポジトリを追加
-$ wget -qO - https://repositories.intel.com/gpu/intel-graphics.key | \
+wget -qO - https://repositories.intel.com/gpu/intel-graphics.key | \
   sudo gpg --dearmor --output /usr/share/keyrings/intel-graphics.gpg
-$ echo "deb [arch=amd64,i386 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/gpu/ubuntu jammy client" | \
+echo "deb [arch=amd64,i386 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/gpu/ubuntu jammy client" | \
   sudo tee /etc/apt/sources.list.d/intel-gpu-jammy.list
-$ sudo apt update
+sudo apt update
+```
 
-# パッケージのインストール
-$ sudo apt install -y \
+###### パッケージのインストール
+
+```bash
+sudo apt install -y \
   intel-opencl-icd intel-level-zero-gpu level-zero \
   intel-media-va-driver-non-free libmfx1 libmfxgen1 libvpl2 \
   libegl-mesa0 libegl1-mesa libegl1-mesa-dev libgbm1 libgl1-mesa-dev libgl1-mesa-dri \
@@ -93,7 +113,7 @@ $ sudo apt install -y \
 以下は `vainfo` を実行した出力の例です。  
 対応しているプロファイルやエントリーポイントは環境によって異なります。
 
-```
+```console
 $ vainfo
 Trying display: wayland
 libva info: VA-API version 1.20.0

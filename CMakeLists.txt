@@ -57,6 +57,11 @@ elseif (SORA_TARGET STREQUAL "ubuntu-22.04_armv8_jetson")
   set(SORA_TARGET_OS "jetson")
   set(SORA_TARGET_ARCH "armv8")
   set(SORA_TARGET_DEF "SORA_CPP_SDK_JETSON")
+elseif (SORA_TARGET STREQUAL "ubuntu-24.04_x86_64")
+  set(SORA_TARGET_OS "ubuntu")
+  set(SORA_TARGET_OS_VERSION "24.04")
+  set(SORA_TARGET_ARCH "x86_64")
+  set(SORA_TARGET_DEF "SORA_CPP_SDK_UBUNTU_2404")
 endif()
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -262,7 +267,7 @@ if (SORA_TARGET_OS STREQUAL "windows")
   if (USE_NVCODEC_ENCODER)
     target_sources(sora
       PRIVATE
-        src/hwenc_nvcodec/nvcodec_h264_encoder.cpp
+        src/hwenc_nvcodec/nvcodec_video_encoder.cpp
         third_party/NvCodec/NvCodec/NvEncoder/NvEncoder.cpp
         third_party/NvCodec/NvCodec/NvEncoder/NvEncoderD3D11.cpp
         src/hwenc_nvcodec/nvcodec_video_decoder.cpp)
@@ -474,9 +479,9 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
     target_sources(sora
       PRIVATE
         src/cuda_context_cuda.cpp
-        src/hwenc_nvcodec/nvcodec_h264_encoder.cpp
+        src/hwenc_nvcodec/nvcodec_video_encoder.cpp
         src/hwenc_nvcodec/nvcodec_v4l2_capturer.cpp
-        src/hwenc_nvcodec/nvcodec_h264_encoder_cuda.cpp
+        src/hwenc_nvcodec/nvcodec_video_encoder_cuda.cpp
         src/hwenc_nvcodec/nvcodec_decoder_cuda.cpp
         src/hwenc_nvcodec/nvcodec_video_decoder.cpp
         third_party/NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
@@ -491,7 +496,7 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
     # これらのソースは CUDA としてコンパイルする
     set_source_files_properties(
         src/cuda_context_cuda.cpp
-        src/hwenc_nvcodec/nvcodec_h264_encoder_cuda.cpp
+        src/hwenc_nvcodec/nvcodec_video_encoder_cuda.cpp
         src/hwenc_nvcodec/nvcodec_decoder_cuda.cpp
         third_party/NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
         third_party/NvCodec/NvCodec/NvEncoder/NvEncoderCuda.cpp

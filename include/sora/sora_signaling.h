@@ -15,8 +15,9 @@
 #include <api/peer_connection_interface.h>
 #include <api/scoped_refptr.h>
 
-#include "data_channel.h"
-#include "websocket.h"
+#include "sora/data_channel.h"
+#include "sora/version.h"
+#include "sora/websocket.h"
 
 namespace sora {
 
@@ -134,6 +135,8 @@ struct SoraSignalingConfig {
   rtc::PacketSocketFactory* socket_factory = nullptr;
 
   bool disable_signaling_url_randomization = false;
+
+  boost::optional<http_header_value> user_agent;
 };
 
 class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
