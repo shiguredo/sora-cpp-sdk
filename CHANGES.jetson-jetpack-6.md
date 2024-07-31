@@ -15,5 +15,5 @@
 
 - [ADD] NVIDIA Jetson JetPack SDK 6.0.0 に対応する
   - @melpon
-- [ADD] NVIDIA Jetson JetPack SDK の H.265 に対応する
+- [ADD] NVIDIA Jetson JetPack SDK 6.0.0 の H.265 に対応する
   - @melpon
