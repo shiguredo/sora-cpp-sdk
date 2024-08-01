@@ -60,7 +60,7 @@ cd sora-cpp-sdk/examples
 
 以下のツールを準備してください。
 
-- Python 3.9.13
+- Python 3.12.4
 
 ##### ビルド
 
