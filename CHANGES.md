@@ -11,6 +11,9 @@
 
 ## develop
 
+- [ADD] Intel VPL で AV1 エンコーダを動くようにする
+  - @tnoho
+
 ## 2024.7.0 (2024-07-29)
 
 - [CHANGE] `--sora-dir`, `--sora-args` を `--local-sora-cpp-sdk-dir` と `--local-sora-cpp-sdk-args` に変更する
