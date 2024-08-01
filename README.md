@@ -22,7 +22,7 @@ Please read <https://github.com/shiguredo/oss/blob/master/README.en.md> before u
 - 各プラットフォームで利用可能な HWA への対応
   - NVIDIA Video Codec SDK
     - VP9 / H.264 / H.265
-  - NVIDIA Jetson JetPack SDK
+  - NVIDIA JetPack SDK (JetPack 6.0 以降)
     - VP9 / AV1 / H.264 / H.265
   - Apple macOS / iOS Video Toolbox
     - H.264 / H.265
@@ -54,7 +54,7 @@ _hololens2 は無視してください_
 
 - Windows 10.1809 x86_64 以降
 - macOS 13.5 arm64 以降
-- Ubuntu 22.04 ARMv8 Jetson (JetPack 6.0.0 以降)
+- Ubuntu 22.04 ARMv8 Jetson (JetPack 6.0 以降)
   - Jetson AGX Orin
   - Jetson Orin NX
   - 動作未検証です
