@@ -37,7 +37,7 @@ cd sora-cpp-sdk/examples
 
 以下のツールを準備してください。
 
-- [Visual Studio 2019](https://visualstudio.microsoft.com/ja/downloads/)
+- [Visual Studio 2022](https://visualstudio.microsoft.com/ja/downloads/)
   - C++ をビルドするためのコンポーネントを入れてください。
 - Python 3.10.5
 
