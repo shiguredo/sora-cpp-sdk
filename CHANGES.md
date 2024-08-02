@@ -11,6 +11,8 @@
 
 ## develop
 
+## 2024.7.0 (2024-07-29)
+
 - [CHANGE] `--sora-dir`, `--sora-args` を `--local-sora-cpp-sdk-dir` と `--local-sora-cpp-sdk-args` に変更する
   - @melpon
 - [CHANGE] `--webrtc-build-dir`, `--webrtc-build-args` を `--local-webrtc-build-dir` と `--local-webrtc-build-args` に変更する
@@ -29,10 +31,10 @@
   - @enm10k
 - [UPDATE] CLI11 を 2.4.2 にあげる
   - @enm10k
-- [UPDATE] libwebrtc を m125.6422.2.1 にあげる
+- [UPDATE] libwebrtc を m126.6478.1.1 にあげる
   - Android の test アプリがリンクできなくなったため、リンカーを Android NDK のものから libwebrtc のものに変更
   - リンカーのバージョンの違いによる互換性の問題でエラーが発生していた
-  - @melpon @enm10k
+  - @melpon @enm10k @torikizi
 - [ADD] sumomo に `--openh264` と `--use-hardware-encoder` オプションを追加
   - @melpon
 - [ADD] sumomo に `--video-h264-params` と `--video-h265-params` オプションを追加
@@ -42,6 +44,12 @@
 - [ADD] 古い Intel CPU でも H265 エンコーダが動くようにする
   - @melpon
 - [ADD] Intel VPL で AV1 デコーダを動くようにする
+  - @melpon
+- [ADD] NVIDIA Video Codec SDK を H265 に対応する
+  - @melpon
+- [ADD] Ubuntu 24.04 に対応する
+  - @melpon
+- [ADD] WebSocket での接続時に User-Agent ヘッダーを追加する
   - @melpon
 
 ## 2024.6.1 (2024-04-16)

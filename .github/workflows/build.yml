@@ -167,7 +167,7 @@ jobs:
       TEST_SIGNALING_URL: ${{ secrets.TEST_SIGNALING_URL }}
       TEST_CHANNEL_ID_PREFIX: ${{ secrets.TEST_CHANNEL_ID_PREFIX }}
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
-      TEST_MATRIX_NAME: ${{ matrix.name }}
+      TEST_MATRIX_NAME: ${{ matrix.platform.name }}
     steps:
       - uses: actions/checkout@v4
       - name: Disk cleanup
@@ -178,7 +178,10 @@ jobs:
           sudo du -h -d1 /usr/local/share
           sudo du -h -d1 /usr/local/lib
           sudo du -h -d1 /usr/share
-          docker rmi `docker images -q -a`
+          RMI=`docker images -q -a`
+          if [ -n "$RMI" ]; then
+            docker rmi $RMI
+          fi
           # 4.6G
           sudo rm -rf /usr/local/.ghcup
           # 1.7G
@@ -186,19 +189,41 @@ jobs:
           # 1.4G
           sudo rm -rf /usr/share/dotnet
           df -h
-      - name: Install deps for ${{ matrix.name }}
-        if: matrix.name == 'ubuntu-20.04_x86_64' || matrix.name == 'ubuntu-22.04_x86_64'
+      # Ubuntu 24.04 だと libtinfo5 が見つからない問題があるので、その修正
+      # ref: https://qiita.com/gengen16k/items/88cf3c18a40a94205fab
+      - name: Fix CUDA issues for Ubuntu 24.04
+        if: matrix.platform.name == 'ubuntu-24.04_x86_64'
+        run: |
+          sudo tee /etc/apt/sources.list.d/jammy.list << EOF
+          deb http://archive.ubuntu.com/ubuntu/ jammy universe
+          EOF
+
+          sudo tee /etc/apt/preferences.d/pin-jammy <<EOF
+          Package: *
+          Pin: release n=jammy
+          Pin-Priority: -10
+
+          Package: libtinfo5
+          Pin: release n=jammy
+          Pin-Priority: 990
+          EOF
+      - name: Install deps for ${{ matrix.platform.name }}
+        if: matrix.platform.os == 'ubuntu'
         run: |
           source VERSION
-          # clang-18 と CUDA を入れる
           sudo apt-get update
           sudo apt-get install -y software-properties-common
 
+          # X11
+          sudo apt-get install libx11-dev libxext-dev
+
+          # CUDA
           wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb
           sudo dpkg -i cuda-keyring_*all.deb
           sudo apt-get update
           DEBIAN_FRONTEND=noninteractive sudo apt-get -y install cuda=$CUDA_VERSION
 
+          # clang-18
           wget https://apt.llvm.org/llvm.sh
           chmod a+x llvm.sh
           sudo ./llvm.sh 18
@@ -213,7 +238,7 @@ jobs:
           # multistrap に insecure なリポジトリからの取得を許可する設定を入れる
           sudo sed -e 's/Apt::Get::AllowUnauthenticated=true/Apt::Get::AllowUnauthenticated=true";\n$config_str .= " -o Acquire::AllowInsecureRepositories=true/' -i /usr/sbin/multistrap
       - name: Install deps for Android
-        if: matrix.name == 'android'
+        if: matrix.platform.os == 'android'
         run: |
           sudo apt-get -y install ninja-build
       # JDK を指定しないとデフォルトの JDK 11 で動作するため指定する
@@ -222,14 +247,14 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-        if: matrix.name == 'android'
+        if: matrix.platform.os == 'android'
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-        if: matrix.name == 'android'
-      - run: python3 run.py --test --run-e2e-test --package ${{ matrix.name }}
+        if: matrix.platform.os == 'android'
+      - run: python3 run.py --test --run-e2e-test --package ${{ matrix.platform.name }}
       - name: Get package name
         run: |
-          source _package/${{ matrix.name }}/release/sora.env
+          source _package/${{ matrix.platform.name }}/release/sora.env
           echo "name=${PACKAGE_NAME}" >> $GITHUB_OUTPUT
           echo "boost_name=${BOOST_PACKAGE_NAME}" >> $GITHUB_OUTPUT
         id: package_name
@@ -237,25 +262,25 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.package_name.outputs.name }}
-          path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.name }}
+          path: _package/${{ matrix.platform.name }}/release/${{ steps.package_name.outputs.name }}
       - name: Upload Boost Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.package_name.outputs.boost_name }}
-          path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.boost_name }}
+          path: _package/${{ matrix.platform.name }}/release/${{ steps.package_name.outputs.boost_name }}
       - name: Upload Environment
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.name }}.env
-          path: _package/${{ matrix.name }}/release/sora.env
+          name: ${{ matrix.platform.name }}.env
+          path: _package/${{ matrix.platform.name }}/release/sora.env
       # Examples のビルド
       - name: Build Examples
         run: |
           cd examples
-          mkdir examples_${{ matrix.name }}
+          mkdir examples_${{ matrix.platform.name }}
           for app in sdl_sample sumomo messaging_recvonly_sample; do
-            python3 $app/${{ matrix.name }}/run.py --local-sora-cpp-sdk-dir ..
-            cp _build/${{ matrix.name }}/release/$app/$app examples_${{ matrix.name }}
+            python3 $app/${{ matrix.platform.name }}/run.py --local-sora-cpp-sdk-dir ..
+            cp _build/${{ matrix.platform.name }}/release/$app/$app examples_${{ matrix.platform.name }}
           done
         if: matrix.name == 'ubuntu-20.04_x86_64' || matrix.name == 'ubuntu-22.04_x86_64' || matrix.name == 'ubuntu-20.04_armv8_jetson'
       - name: Upload Examples Artifact

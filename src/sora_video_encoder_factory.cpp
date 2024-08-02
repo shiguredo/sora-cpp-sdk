@@ -28,7 +28,7 @@
 #endif
 
 #if defined(USE_NVCODEC_ENCODER)
-#include "sora/hwenc_nvcodec/nvcodec_h264_encoder.h"
+#include "sora/hwenc_nvcodec/nvcodec_video_encoder.h"
 #endif
 
 #if defined(USE_VPL_ENCODER)
@@ -187,17 +187,27 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
 #endif
 
 #if defined(USE_NVCODEC_ENCODER)
-  if (NvCodecH264Encoder::IsSupported(cuda_context)) {
-    config.encoders.insert(
-        config.encoders.begin(),
-        VideoEncoderConfig(
-            webrtc::kVideoCodecH264,
-            [cuda_context = cuda_context](
-                auto format) -> std::unique_ptr<webrtc::VideoEncoder> {
-              return NvCodecH264Encoder::Create(
-                  cricket::CreateVideoCodec(format), cuda_context);
-            },
-            16));
+  if (NvCodecVideoEncoder::IsSupported(cuda_context, CudaVideoCodec::H264)) {
+    config.encoders.insert(config.encoders.begin(),
+                           VideoEncoderConfig(
+                               webrtc::kVideoCodecH264,
+                               [cuda_context = cuda_context](auto format)
+                                   -> std::unique_ptr<webrtc::VideoEncoder> {
+                                 return NvCodecVideoEncoder::Create(
+                                     cuda_context, CudaVideoCodec::H264);
+                               },
+                               16));
+  }
+  if (NvCodecVideoEncoder::IsSupported(cuda_context, CudaVideoCodec::H265)) {
+    config.encoders.insert(config.encoders.begin(),
+                           VideoEncoderConfig(
+                               webrtc::kVideoCodecH265,
+                               [cuda_context = cuda_context](auto format)
+                                   -> std::unique_ptr<webrtc::VideoEncoder> {
+                                 return NvCodecVideoEncoder::Create(
+                                     cuda_context, CudaVideoCodec::H265);
+                               },
+                               16));
   }
 #endif
 
@@ -326,9 +336,10 @@ SoraVideoEncoderFactoryConfig GetSoftwareOnlyVideoEncoderFactoryConfig(
         }));
   }
 #if !defined(__arm__) || defined(__aarch64__) || defined(__ARM_NEON__)
-  config.encoders.push_back(VideoEncoderConfig(
-      webrtc::kVideoCodecAV1,
-      [](auto format) { return webrtc::CreateLibaomAv1Encoder(webrtc::CreateEnvironment()); }));
+  config.encoders.push_back(
+      VideoEncoderConfig(webrtc::kVideoCodecAV1, [](auto format) {
+        return webrtc::CreateLibaomAv1Encoder(webrtc::CreateEnvironment());
+      }));
 #endif
   return config;
 }

@@ -97,7 +97,8 @@
                 "USE_VPL_ENCODER",
                 "RTC_ENABLE_H265"
             ],
-            "compilerPath": "${workspaceFolder}/_install/ubuntu-22.04_x86_64/release/llvm/clang/bin/clang++",
+            // "compilerPath": "${workspaceFolder}/_install/ubuntu-22.04_x86_64/release/llvm/clang/bin/clang++",
+            "compilerPath": "/usr/bin/clang++-18",
             "compilerArgs": ["-nostdinc++"],
             "cStandard": "gnu17",
             "cppStandard": "gnu++17",

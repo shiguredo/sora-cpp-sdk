@@ -160,6 +160,17 @@ SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
                                      cuda_context, CudaVideoCodec::H264));
                            }));
   }
+  if (NvCodecVideoDecoder::IsSupported(cuda_context,
+                                       sora::CudaVideoCodec::H265)) {
+    config.decoders.insert(
+        config.decoders.begin(),
+        VideoDecoderConfig(webrtc::kVideoCodecH265,
+                           [cuda_context = cuda_context](auto format) {
+                             return std::unique_ptr<webrtc::VideoDecoder>(
+                                 absl::make_unique<NvCodecVideoDecoder>(
+                                     cuda_context, CudaVideoCodec::H265));
+                           }));
+  }
 #endif
 
 #if USE_VPL_ENCODER
