@@ -20,19 +20,16 @@ Please read <https://github.com/shiguredo/oss/blob/master/README.en.md> before u
 ## 特徴
 
 - 各プラットフォームで利用可能な HWA への対応
-  - NVIDIA Video Codec SDK
-    - VP9 / H.264 / H.265
-  - NVIDIA JetPack SDK (JetPack 6.0 以降)
+  - [Intel VPL](https://github.com/intel/libvpl)
     - VP9 / AV1 / H.264 / H.265
-  - Apple macOS / iOS Video Toolbox
+  - [NVIDIA Video Codec SDK](https://developer.nvidia.com/video-codec-sdk)
+    - VP9 / H.264 / H.265
+  - [NVIDIA JetPack SDK](https://developer.nvidia.com/embedded/jetpack) (JetPack 6)
+    - VP9 / AV1 / H.264 / H.265
+  - [Apple Video Toolbox](https://developer.apple.com/documentation/videotoolbox)
     - H.264 / H.265
   - Google Android HWA
     - VP8 / VP9 / H.264 / H.265
-  - [Intel VPL](https://github.com/intel/libvpl) (Intel Media SDK の後継)
-    - AV1 / H.264 / H.265 
-    - AV1 は デコードのみ
-    - H.265 は Windows と Ubuntu 22.04 のみ
-    - Media SDK での動作は未検証です
 
 ## ライブラリのバイナリ提供について
 
