@@ -11,5 +11,7 @@
 
 ## develop
 
+## 2024.7.0-jetson-jetpack-5.1.3.0 (2024-08-06)
+
 - [CHANGE] NVIDIA Jetson JetPack SDK 5.1.3 に対応する
   - @melpon
