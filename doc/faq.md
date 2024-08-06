@@ -17,7 +17,7 @@ GitHub Actions でビルドを行い確認していますので、まずは GitH
 GitHub Actions のビルドが失敗していたり、
 ビルド済みバイナリがうまく動作しない場合は Discord へご連絡ください。
 
-## NVIDIA Jetson Orin (Ubuntu 20.04 arm64) でビルドできません
+## NVIDIA Jetson Orin (Ubuntu 22.04 arm64) でビルドできません
 
 Ubuntu 20.04 x86_64 でクロスコンパイルしたバイナリを利用するようにしてください。
 
