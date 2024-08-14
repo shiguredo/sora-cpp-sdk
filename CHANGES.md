@@ -8,13 +8,19 @@
   - 下位互換がある追加
 - FIX
   - バグ修正
+- TEST
+  - テスト関連
+- DOC
+  - ドキュメント関連
 
 ## develop
 
 - [ADD] Intel VPL で AV1 エンコーダを動くようにする
   - @tnoho
 
-## 2024.7.0 (2024-07-29)
+## 2024.7.0
+
+**日時**: 2024-07-29
 
 - [CHANGE] `--sora-dir`, `--sora-args` を `--local-sora-cpp-sdk-dir` と `--local-sora-cpp-sdk-args` に変更する
   - @melpon
@@ -59,21 +65,27 @@
 - [ADD] WebSocket での接続時に User-Agent ヘッダーを追加する
   - @melpon
 
-## 2024.6.1 (2024-04-16)
+## 2024.6.1
+
+**日時**: 2024-04-16
 
 - [CHANGE] テストモジュールについて `SoraSignalingConfig` の `sora_client` に値を設定しないようにする
   - @enm10k
 - [FIX] VPL デコーダで遅延が起きたりセグフォすることがあるのを修正
   - @melpon
 
-## 2024.6.0 (2024-04-01)
+## 2024.6.0
+
+**日時**: 2024-04-01
 
 - [CHANGE] `VplVideoDecoderImpl` の `ImplementationName` を `oneVPL` から `libvpl` に変更する
   - @enm10k
 - [FIX] `VplVideoEncoderImpl` の `implementation_name` の値が誤っていたため `libvpl` に修正する
   - @enm10k
 
-## 2024.5.0 (2024-03-29)
+## 2024.5.0
+
+**日時**: 2024-03-29
 
 - [CHANGE] 別リポジトリに分かれていた Sora C++ SDK のサンプル集を examples/ 以下のディレクトリに統合する
   - @melpon
@@ -91,7 +103,9 @@
 - [FIX] HWA 利用の判定を `#if defined(USE_*_ENCODER)` という使い方で統一するように修正
   - @melpon
 
-## 2024.4.0 (2024-03-13)
+## 2024.4.0
+
+**日時**: 2024-03-13
 
 - [ADD] test/hello.cpp に video, audio フラグを追加
   - @melpon
@@ -574,12 +588,16 @@
 - [FIX] Jetson の AV1 HWA のデコーダがうまく動いてなかったのを修正
   - @melpon
 
-## 2022.6.0 (2022-06-30)
+## 2022.6.0
+
+**日時**: 2022-06-30
 
 - [ADD] Jetson の AV1 HWA に対応
   - @melpon
 
-## 2022.5.0 (2022-06-22)
+## 2022.5.0
+
+**日時**: 2022-06-22
 
 - [ADD] bundle_id を追加
   - @melpon
