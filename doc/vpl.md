@@ -41,21 +41,31 @@ Intel のドライバーが確認できない場合は、以下のページか�
 
 ### Ubuntu 22.04
 
-<https://dgpu-docs.intel.com/driver/client/overview.html> を参考に必要なドライバーとソフトウェアをインストールします。
+Ubuntu 22.04 で Intel VPL を利用するためには、ドライバーとライブラリをインストールする必要があります。
+公式ドキュメントの <https://dgpu-docs.intel.com/driver/client/overview.html> を参考に必要なドライバーとライブラリをインストールします。
 
-#### Intel VPL ランタイムを利用する手順
+#### Intel VPL ランタイムをインストールする
 
-Intel VPL ランタイムを利用する場合は libmfxgen1 ではなく libmfx-gen1.2 を使う必要があるため、ドキュメントのコマンドを一部読み替えて実行します。
+##### Intel の apt リポジトリを追加
+
+パッケージのインストールには Intel の apt リポジトリを追加する必要があります。
 
 ```bash
-# Intel の apt リポジトリを追加
+
 wget -qO - https://repositories.intel.com/gpu/intel-graphics.key | \
   sudo gpg --dearmor --output /usr/share/keyrings/intel-graphics.gpg
 echo "deb [arch=amd64,i386 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/gpu/ubuntu jammy client" | \
   sudo tee /etc/apt/sources.list.d/intel-gpu-jammy.list
 sudo apt update
+```
 
-# パッケージのインストール
+##### パッケージのインストール
+
+公式ドキュメントでは libmfxgen1 をインストールする手順が記載されていますが、Intel VPL ランタイムを使用するには libmfx-gen1.2 が必要です。
+
+以下の実行例のように、 libmfx-gen1.2 をインストールしてください。
+
+```bash
 sudo apt install -y \
   intel-opencl-icd intel-level-zero-gpu level-zero \
   intel-media-va-driver-non-free libmfx1 libmfx-gen1.2 libvpl2 \
@@ -64,19 +74,29 @@ sudo apt install -y \
   mesa-vdpau-drivers mesa-vulkan-drivers va-driver-all vainfo hwinfo clinfo
 ```
 
+##### 再起動
+
+パッケージのインストールが完了したら、再起動してください。
+
 #### Intel Media SDK を利用する手順
 
-ドキュメントの通りです。
+Intel のチップセットの世代によって、 Intel Media SDK を利用する必要がある場合があります。
+
+以下の手順で Intel Media SDK をインストールしてください。
+
+##### Intel の apt リポジトリを追加
 
 ```bash
-# Intel の apt リポジトリを追加
 wget -qO - https://repositories.intel.com/gpu/intel-graphics.key | \
   sudo gpg --dearmor --output /usr/share/keyrings/intel-graphics.gpg
 echo "deb [arch=amd64,i386 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/gpu/ubuntu jammy client" | \
   sudo tee /etc/apt/sources.list.d/intel-gpu-jammy.list
 sudo apt update
+```
 
-# パッケージのインストール
+###### パッケージのインストール
+
+```bash
 sudo apt install -y \
   intel-opencl-icd intel-level-zero-gpu level-zero \
   intel-media-va-driver-non-free libmfx1 libmfxgen1 libvpl2 \
