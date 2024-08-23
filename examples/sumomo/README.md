@@ -37,7 +37,7 @@ cd sora-cpp-sdk/examples
 
 以下のツールを準備してください。
 
-- [Visual Studio 2019](https://visualstudio.microsoft.com/ja/downloads/)
+- [Visual Studio 2022](https://visualstudio.microsoft.com/ja/downloads/)
   - C++ をビルドするためのコンポーネントを入れてください。
 - Python 3.10.5
 
@@ -60,7 +60,7 @@ cd sora-cpp-sdk/examples
 
 以下のツールを準備してください。
 
-- Python 3.9.13
+- Python 3.12.4
 
 ##### ビルド
 
@@ -157,7 +157,7 @@ Windows 以外の場合
 - `--role` : [role](https://sora-doc.shiguredo.jp/SIGNALING#6d21b9) (必須)
   - sendrecv / sendonly / recvonly のいずれかを指定
 
-#### Momo Sample 実行に関するオプション
+#### Sumomo 実行に関するオプション
 
 - `--log-level` : 実行時にターミナルに出力するログのレベル
   - `verbose->0,info->1,warning->2,error->3,none->4` の値が指定可能です
@@ -167,6 +167,10 @@ Windows 以外の場合
 - `--hw-mjpeg-decoder` : HW MJPEG デコーダーの利用 (true/false)
   - 未指定の場合は false が設定されます
   - NVIDIA Jetson のみで利用できます
+- `--use-hardware-encoder` : ハードウェアエンコーダーの利用 (true/false)
+- `--openh264` : openh264 ライブラリのパスをフルパスで指定します
+  - デコードには対応していません
+
 
 #### Sora に関するオプション
 
@@ -186,6 +190,8 @@ Windows 以外の場合
 - `--video-bit-rate` : [ビデオビットレート指定](https://sora-doc.shiguredo.jp/SIGNALING#5667cf)
   - 0 - 30000 の値が指定可能です
   - 0 は未指定と見なされます
+- `--video-h264-params` : [ビデオの H.264 設定指定](https://sora-doc.shiguredo.jp/SIGNALING#ffc4cb)
+- `--video-h265-params` : [ビデオの H.265 設定指定](https://sora-doc.shiguredo.jp/SIGNALING#bfe45b)
 - `--audio-bit-rate` : [オーディオビットレート指定](https://sora-doc.shiguredo.jp/SIGNALING#414142)
   - 0 - 510 の値が指定可能です
   - 0 は未指定と見なされます

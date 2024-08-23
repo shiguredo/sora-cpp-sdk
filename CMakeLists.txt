@@ -371,6 +371,7 @@ elseif (SORA_TARGET_OS STREQUAL "macos")
       "-framework MetalKit"
       "-framework OpenGL"
       "-framework IOSurface"
+      "-framework ScreenCaptureKit"
   )
 
 elseif (SORA_TARGET_OS STREQUAL "ios")

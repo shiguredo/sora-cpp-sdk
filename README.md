@@ -20,18 +20,16 @@ Please read <https://github.com/shiguredo/oss/blob/master/README.en.md> before u
 ## 特徴
 
 - 各プラットフォームで利用可能な HWA への対応
-  - NVIDIA Video Codec SDK (NVENC / NVDEC)
-    - VP9 / H.264
-  - NVIDIA Jetson Video HWA
-    - VP9 / AV1 / H.264
-  - Apple macOS / iOS Video Toolbox
+  - [Intel VPL](https://github.com/intel/libvpl)
+    - VP9 / AV1 / H.264 / H.265
+  - [NVIDIA Video Codec SDK](https://developer.nvidia.com/video-codec-sdk)
+    - VP9 / H.264 / H.265
+  - [NVIDIA JetPack SDK](https://developer.nvidia.com/embedded/jetpack) (JetPack 6)
+    - VP9 / AV1 / H.264 / H.265
+  - [Apple Video Toolbox](https://developer.apple.com/documentation/videotoolbox)
     - H.264 / H.265
   - Google Android HWA
     - VP8 / VP9 / H.264 / H.265
-  - [Intel VPL](https://github.com/intel/libvpl) (Intel Media SDK の後継)
-    - H.264 / H.265 / AV1
-    - AV1 は デコードのみ
-    - H.265 は Windows と Ubuntu 22.04 のみ
 
 ## ライブラリのバイナリ提供について
 
@@ -53,10 +51,14 @@ _hololens2 は無視してください_
 
 - Windows 10.1809 x86_64 以降
 - macOS 13.5 arm64 以降
-- Ubuntu 22.04 ARMv8 Jetson (JetPack 6.0.0 以降)
+- Ubuntu 22.04 ARMv8 Jetson (JetPack 6.0 以降)
   - Jetson AGX Orin
   - Jetson Orin NX
+  - 動作未検証です
+- Ubuntu 20.04 x86_64
+  - 動作未検証です
 - Ubuntu 22.04 x86_64
+- Ubuntu 24.04 x86_64
 - Android 7 arm64 以降
 - iOS 13 arm64 以降
 
