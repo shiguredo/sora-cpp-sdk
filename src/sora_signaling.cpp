@@ -4,6 +4,8 @@
 #include <p2p/client/basic_port_allocator.h>
 #include <pc/rtp_media_utils.h>
 #include <pc/session_description.h>
+#include <rtc_base/crypt_string_revive.h>
+#include <rtc_base/proxy_info_revive.h>
 
 #include "sora/data_channel.h"
 #include "sora/rtc_ssl_verifier.h"
@@ -115,66 +117,6 @@ bool SoraSignaling::ParseURL(const std::string& url,
 }
 
 bool SoraSignaling::CheckSdp(const std::string& sdp) {
-  // Lyra バージョンをチェックしない設定になっている
-  if (!config_.check_lyra_version) {
-    return true;
-  }
-
-  // SDP のパース
-  webrtc::SdpParseError sdp_error;
-  std::unique_ptr<webrtc::SessionDescriptionInterface> session_description =
-      webrtc::CreateSessionDescription(webrtc::SdpType::kOffer, sdp,
-                                       &sdp_error);
-  if (!session_description) {
-    RTC_LOG(LS_ERROR) << "Failed to create session description: "
-                      << sdp_error.description.c_str()
-                      << "\nline: " << sdp_error.line.c_str();
-    webrtc::RTCError rtc_error(webrtc::RTCErrorType::SYNTAX_ERROR,
-                               sdp_error.description);
-    DoInternalDisconnect(SoraSignalingErrorCode::INTERNAL_ERROR,
-                         "INTERNAL-ERROR",
-                         "Failed to create session description: error=" +
-                             std::string(rtc_error.message()));
-    return false;
-  }
-
-  const cricket::SessionDescription* desc = session_description->description();
-  for (const auto& content : desc->contents()) {
-    auto md = content.media_description();
-    if (md->type() != cricket::MEDIA_TYPE_AUDIO) {
-      continue;
-    }
-    if (md->direction() == webrtc::RtpTransceiverDirection::kInactive ||
-        md->direction() == webrtc::RtpTransceiverDirection::kStopped) {
-      continue;
-    }
-    for (const auto& codec : md->as_audio()->codecs()) {
-      if (codec.name != "lyra") {
-        continue;
-      }
-
-      // 全員の Lyra バージョンが Version::GetLyraCompatibleVersion() と一致してるかを調べる
-      std::string version;
-      if (!codec.GetParam("version", &version)) {
-        RTC_LOG(LS_ERROR) << "Missing Lyra version: mid=" << content.mid();
-        DoInternalDisconnect(SoraSignalingErrorCode::INTERNAL_ERROR,
-                             "INTERNAL-ERROR",
-                             "Missing Lyra version: mid=" + content.mid());
-        return false;
-      }
-
-      if (version != Version::GetLyraCompatibleVersion()) {
-        std::string str = "Incompatible Lyra version: mid=" + content.mid() +
-                          " version=" + version + " expected_version=" +
-                          Version::GetLyraCompatibleVersion();
-        RTC_LOG(LS_ERROR) << str;
-        DoInternalDisconnect(SoraSignalingErrorCode::LYRA_VERSION_INCOMPATIBLE,
-                             "INTERNAL-ERROR", str);
-        return false;
-      }
-    }
-  }
-
   return true;
 }
 
@@ -374,6 +316,10 @@ void SoraSignaling::DoSendConnect(bool redirect) {
       m["video"].as_object()["h264_params"] = config_.video_h264_params;
     }
 
+    if (!config_.video_h265_params.is_null()) {
+      m["video"].as_object()["h265_params"] = config_.video_h265_params;
+    }
+
     // オプションの設定が行われてなければ単に true を設定
     if (m["video"].as_object().empty()) {
       m["video"] = true;
@@ -383,9 +329,7 @@ void SoraSignaling::DoSendConnect(bool redirect) {
   if (!config_.audio) {
     m["audio"] = false;
   } else if (config_.audio && config_.audio_codec_type.empty() &&
-             config_.audio_bit_rate == 0 &&
-             config_.audio_codec_lyra_bitrate == 0 &&
-             !config_.audio_codec_lyra_usedtx) {
+             config_.audio_bit_rate == 0) {
     m["audio"] = true;
   } else {
     m["audio"] = boost::json::object();
@@ -394,17 +338,6 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     }
     if (config_.audio_bit_rate != 0) {
       m["audio"].as_object()["bit_rate"] = config_.audio_bit_rate;
-    }
-    if (config_.audio_codec_type == "LYRA") {
-      boost::json::object p = {
-          {"version", Version::GetLyraCompatibleVersion()}};
-      if (config_.audio_codec_lyra_bitrate != 0) {
-        p["bitrate"] = config_.audio_codec_lyra_bitrate;
-      }
-      if (config_.audio_codec_lyra_usedtx) {
-        p["usedtx"] = *config_.audio_codec_lyra_usedtx;
-      }
-      m["audio"].as_object()["lyra_params"] = p;
     }
   }
 
@@ -514,7 +447,7 @@ void SoraSignaling::DoSendUpdate(const std::string& sdp, std::string type) {
   }
 }
 
-class RawCryptString : public rtc::CryptStringImpl {
+class RawCryptString : public rtc::revive::CryptStringImpl {
  public:
   RawCryptString(const std::string& str) : str_(str) {}
   size_t GetLength() const override { return str_.size(); }
@@ -587,11 +520,11 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
     dependencies.allocator->set_flags(rtc_config.port_allocator_config.flags);
 
     RTC_LOG(LS_INFO) << "Set Proxy: type="
-                     << rtc::ProxyToString(rtc::PROXY_HTTPS)
+                     << rtc::revive::ProxyToString(rtc::revive::PROXY_HTTPS)
                      << " url=" << config_.proxy_url
                      << " username=" << config_.proxy_username;
-    rtc::ProxyInfo pi;
-    pi.type = rtc::PROXY_HTTPS;
+    rtc::revive::ProxyInfo pi;
+    pi.type = rtc::revive::PROXY_HTTPS;
     URLParts parts;
     if (!URLParts::Parse(config_.proxy_url, parts)) {
       RTC_LOG(LS_ERROR) << "Failed to parse: proxy_url=" << config_.proxy_url;
@@ -602,7 +535,7 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
       pi.username = config_.proxy_username;
     }
     if (!config_.proxy_password.empty()) {
-      pi.password = rtc::CryptString(RawCryptString(config_.proxy_password));
+      pi.password = rtc::revive::CryptString(RawCryptString(config_.proxy_password));
     }
     std::string proxy_agent = "Sora C++ SDK";
     if (!config_.proxy_agent.empty()) {
@@ -1172,6 +1105,10 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
     // Data Channel による通信の開始
     using_datachannel_ = true;
 
+    auto ob = config_.observer.lock();
+    if (ob) {
+      ob->OnSwitched(std::move(text));
+    }
 
     // ignore_disconnect_websocket == true の場合は WS を切断する
     auto it = m.as_object().find("ignore_disconnect_websocket");
@@ -1240,6 +1177,9 @@ void SoraSignaling::DoConnect() {
       }
     } else {
       ws.reset(new Websocket(*config_.io_context));
+    }
+    if (config_.user_agent != boost::none) {
+      ws->SetUserAgent(*config_.user_agent);
     }
     ws->Connect(url, std::bind(&SoraSignaling::OnConnect, shared_from_this(),
                                std::placeholders::_1, url, ws));

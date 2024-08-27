@@ -1,6 +1,7 @@
 #include "sora/hwenc_vpl/vpl_video_decoder.h"
 
 #include <iostream>
+#include <queue>
 #include <thread>
 
 // WebRTC
@@ -13,7 +14,7 @@
 #include <rtc_base/time_utils.h>
 #include <third_party/libyuv/include/libyuv/convert.h>
 
-// oneVPL
+// Intel VPL
 #include <vpl/mfxdefs.h>
 #include <vpl/mfxvideo++.h>
 #include <vpl/mfxvp8.h>
@@ -45,13 +46,15 @@ class VplVideoDecoderImpl : public VplVideoDecoder {
       std::shared_ptr<VplSession> session,
       mfxU32 codec,
       std::vector<std::pair<int, int>> sizes,
-      bool init);
+      bool init,
+      mfxFrameAllocRequest* alloc_request);
   static std::unique_ptr<MFXVideoDECODE> CreateDecoderInternal(
       std::shared_ptr<VplSession> session,
       mfxU32 codec,
       int width,
       int height,
-      bool init);
+      bool init,
+      mfxFrameAllocRequest* alloc_request);
 
  private:
   bool InitVpl();
@@ -88,10 +91,12 @@ std::unique_ptr<MFXVideoDECODE> VplVideoDecoderImpl::CreateDecoder(
     std::shared_ptr<VplSession> session,
     mfxU32 codec,
     std::vector<std::pair<int, int>> sizes,
-    bool init) {
+    bool init,
+    mfxFrameAllocRequest* alloc_request) {
   for (auto size : sizes) {
-    auto decoder =
-        CreateDecoderInternal(session, codec, size.first, size.second, init);
+    memset(alloc_request, 0, sizeof(*alloc_request));
+    auto decoder = CreateDecoderInternal(session, codec, size.first,
+                                         size.second, init, alloc_request);
     if (decoder != nullptr) {
       return decoder;
     }
@@ -104,7 +109,8 @@ std::unique_ptr<MFXVideoDECODE> VplVideoDecoderImpl::CreateDecoderInternal(
     mfxU32 codec,
     int width,
     int height,
-    bool init) {
+    bool init,
+    mfxFrameAllocRequest* alloc_request) {
   std::unique_ptr<MFXVideoDECODE> decoder(
       new MFXVideoDECODE(GetVplSession(session)));
 
@@ -114,6 +120,17 @@ std::unique_ptr<MFXVideoDECODE> VplVideoDecoderImpl::CreateDecoderInternal(
   memset(&param, 0, sizeof(param));
 
   param.mfx.CodecId = codec;
+
+  if (codec == MFX_CODEC_HEVC) {
+    // この設定がないと H.265 デコーダーの Init が sts=-15 で失敗する
+    param.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN;
+  } else if (codec == MFX_CODEC_AV1) {
+    // param.mfx.CodecProfile = MFX_PROFILE_AV1_MAIN;
+    // この設定がないと Query しても sts=-3 で失敗する
+    // MFX_LEVEL_AV1_2 で妥当かどうかはよく分からない
+    param.mfx.CodecLevel = MFX_LEVEL_AV1_2;
+  }
+
   param.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
   param.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
   param.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
@@ -141,27 +158,37 @@ std::unique_ptr<MFXVideoDECODE> VplVideoDecoderImpl::CreateDecoderInternal(
 
   sts = decoder->Query(&param, &param);
   if (sts < 0) {
-    const char* codec_str = codec == MFX_CODEC_VP8   ? "MFX_CODEC_VP8"
-                            : codec == MFX_CODEC_VP9 ? "MFX_CODEC_VP9"
-                            : codec == MFX_CODEC_AV1 ? "MFX_CODEC_AV1"
-                            : codec == MFX_CODEC_AVC ? "MFX_CODEC_AVC"
-                                                     : "MFX_CODEC_UNKNOWN";
-    //RTC_LOG(LS_ERROR) << "Unsupported decoder codec: codec=" << codec_str
-    //                  << " sts=" << sts;
+    RTC_LOG(LS_VERBOSE) << "Unsupported decoder codec: resolution=" << width
+                        << "x" << height << " codec=" << CodecToString(codec)
+                        << " sts=" << sts;
     return nullptr;
   }
 
-  //if (sts != MFX_ERR_NONE) {
-  //  RTC_LOG(LS_WARNING) << "Supported specified codec but has warning: sts="
-  //                      << sts;
-  //}
+  if (sts != MFX_ERR_NONE) {
+    RTC_LOG(LS_VERBOSE)
+        << "Supported specified codec but has warning: resolution=" << width
+        << "x" << height << " sts=" << sts;
+  }
+
+  // MFX_CODEC_AV1 の時に Init より後に QueryIOSurf すると
+  // MFX_ERR_UNSUPPORTED になったのでここで QueryIOSurf しておく
+  // （MFX_CODEC_AVC や MFX_CODEC_HEVC の時には Init 後に QueryIOSurf しても動いた）
+  memset(alloc_request, 0, sizeof(*alloc_request));
+  sts = decoder->QueryIOSurf(&param, alloc_request);
+  VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+  RTC_LOG(LS_INFO) << "Decoder NumFrameSuggested="
+                   << alloc_request->NumFrameSuggested;
 
   // Query した上で Init しても MFX_ERR_UNSUPPORTED になることがあるので
   // 本来 Init が不要な時も常に呼ぶようにして確認する
   /*if (init)*/ {
-    // Initialize the oneVPL encoder
+    // Initialize the Intel VPL encoder
     sts = decoder->Init(&param);
     if (sts != MFX_ERR_NONE) {
+      RTC_LOG(LS_VERBOSE) << "Init failed: resolution=" << width << "x"
+                          << height << " codec=" << CodecToString(codec)
+                          << " sts=" << sts;
       return nullptr;
     }
   }
@@ -222,96 +249,70 @@ int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
-  // これだとキューイングしたデータとずれるので、本当は surface と一緒に保存して利用するべき
-  uint64_t pts = input_image.RtpTimestamp();
-
-  mfxStatus sts;
-  mfxSyncPoint syncp;
-  mfxFrameSurface1* out_surface = nullptr;
-  //RTC_LOG(LS_ERROR) << "before DataOffset=" << bitstream_.DataOffset
-  //                  << " DataLength=" << bitstream_.DataLength;
+  // キューが空になるか、sts == MFX_ERR_MORE_DATA あたりが出るまでループさせる
   while (true) {
-    sts = decoder_->DecodeFrameAsync(&bitstream_, &*surface, &out_surface,
-                                     &syncp);
-    if (sts == MFX_WRN_DEVICE_BUSY) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(1));
-      continue;
-    }
-    // 受信した映像のサイズが変わってたら width_, height_ を更新する
-    if (sts == MFX_WRN_VIDEO_PARAM_CHANGED) {
-      mfxVideoParam param;
-      memset(&param, 0, sizeof(param));
-      sts = decoder_->GetVideoParam(&param);
-      if (sts != MFX_ERR_NONE) {
-        return WEBRTC_VIDEO_CODEC_ERROR;
-      }
+    mfxStatus sts;
+    mfxSyncPoint syncp;
+    mfxFrameSurface1* out_surface = nullptr;
 
-      if (width_ != param.mfx.FrameInfo.CropW ||
-          height_ != param.mfx.FrameInfo.CropH) {
-        RTC_LOG(LS_INFO) << "Change Frame Size: " << width_ << "x" << height_
-                         << " to " << param.mfx.FrameInfo.CropW << "x"
-                         << param.mfx.FrameInfo.CropH;
-        width_ = param.mfx.FrameInfo.CropW;
-        height_ = param.mfx.FrameInfo.CropH;
+    while (true) {
+      sts = decoder_->DecodeFrameAsync(&bitstream_, &*surface, &out_surface,
+                                       &syncp);
+      if (sts == MFX_WRN_DEVICE_BUSY) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        continue;
       }
-      continue;
+      break;
     }
 
-    break;
-  }
-  //RTC_LOG(LS_ERROR) << "after DataOffset=" << bitstream_.DataOffset
-  //                  << " DataLength=" << bitstream_.DataLength;
-  if (sts == MFX_ERR_MORE_DATA) {
-    // もっと入力が必要なので出直す
-    return WEBRTC_VIDEO_CODEC_OK;
-  }
-  if (!syncp) {
-    RTC_LOG(LS_WARNING) << "Failed to DecodeFrameAsync: syncp is null, sts="
-                        << (int)sts;
-    return WEBRTC_VIDEO_CODEC_OK;
-  }
-  VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-  // H264 は sts == MFX_WRN_VIDEO_PARAM_CHANGED でハンドリングできるのでここではチェックしない
-  // VP9 は受信フレームのサイズが変わっても MFX_WRN_VIDEO_PARAM_CHANGED を返さないようなので、
-  // ここで毎フレーム情報を取得してサイズを更新する。
-  if (codec_ != MFX_CODEC_AVC) {
     mfxVideoParam param;
     memset(&param, 0, sizeof(param));
-    sts = decoder_->GetVideoParam(&param);
-    if (sts != MFX_ERR_NONE) {
+    mfxStatus sts2 = decoder_->GetVideoParam(&param);
+    if (sts2 != MFX_ERR_NONE) {
+      RTC_LOG(LS_ERROR) << "Failed to GetVideoParam: sts=" << sts2;
       return WEBRTC_VIDEO_CODEC_ERROR;
     }
-
-    if (width_ != param.mfx.FrameInfo.CropW ||
-        height_ != param.mfx.FrameInfo.CropH) {
+    auto width = param.mfx.FrameInfo.CropW;
+    auto height = param.mfx.FrameInfo.CropH;
+    if (width_ != width || height_ != height) {
       RTC_LOG(LS_INFO) << "Change Frame Size: " << width_ << "x" << height_
-                       << " to " << param.mfx.FrameInfo.CropW << "x"
-                       << param.mfx.FrameInfo.CropH;
-      width_ = param.mfx.FrameInfo.CropW;
-      height_ = param.mfx.FrameInfo.CropH;
+                       << " to " << width << "x" << height;
+      width_ = width;
+      height_ = height;
     }
+
+    if (sts == MFX_ERR_MORE_DATA) {
+      // もっと入力が必要なので出直す
+      return WEBRTC_VIDEO_CODEC_OK;
+    }
+    if (!syncp) {
+      RTC_LOG(LS_WARNING) << "Failed to DecodeFrameAsync: syncp is null, sts="
+                          << (int)sts;
+      continue;
+    }
+    VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    sts = MFXVideoCORE_SyncOperation(GetVplSession(session_), syncp, 600000);
+    VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+    uint64_t pts = input_image.RtpTimestamp();
+    // NV12 から I420 に変換
+    rtc::scoped_refptr<webrtc::I420Buffer> i420_buffer =
+        buffer_pool_.CreateI420Buffer(width_, height_);
+    libyuv::NV12ToI420(out_surface->Data.Y, out_surface->Data.Pitch,
+                       out_surface->Data.UV, out_surface->Data.Pitch,
+                       i420_buffer->MutableDataY(), i420_buffer->StrideY(),
+                       i420_buffer->MutableDataU(), i420_buffer->StrideU(),
+                       i420_buffer->MutableDataV(), i420_buffer->StrideV(),
+                       width_, height_);
+
+    webrtc::VideoFrame decoded_image = webrtc::VideoFrame::Builder()
+                                           .set_video_frame_buffer(i420_buffer)
+                                           .set_timestamp_rtp(pts)
+                                           .build();
+    decode_complete_callback_->Decoded(decoded_image, absl::nullopt,
+                                       absl::nullopt);
   }
-
-  sts = MFXVideoCORE_SyncOperation(GetVplSession(session_), syncp, 600000);
-  VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-  // NV12 から I420 に変換
-  rtc::scoped_refptr<webrtc::I420Buffer> i420_buffer =
-      buffer_pool_.CreateI420Buffer(width_, height_);
-  libyuv::NV12ToI420(out_surface->Data.Y, out_surface->Data.Pitch,
-                     out_surface->Data.UV, out_surface->Data.Pitch,
-                     i420_buffer->MutableDataY(), i420_buffer->StrideY(),
-                     i420_buffer->MutableDataU(), i420_buffer->StrideU(),
-                     i420_buffer->MutableDataV(), i420_buffer->StrideV(),
-                     width_, height_);
-
-  webrtc::VideoFrame decoded_image = webrtc::VideoFrame::Builder()
-                                         .set_video_frame_buffer(i420_buffer)
-                                         .set_timestamp_rtp(pts)
-                                         .build();
-  decode_complete_callback_->Decoded(decoded_image, absl::nullopt,
-                                     absl::nullopt);
 
   return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -329,12 +330,12 @@ int32_t VplVideoDecoderImpl::Release() {
 }
 
 const char* VplVideoDecoderImpl::ImplementationName() const {
-  return "oneVPL";
+  return "libvpl";
 }
 
 bool VplVideoDecoderImpl::InitVpl() {
-  decoder_ =
-      CreateDecoder(session_, codec_, {{4096, 4096}, {2048, 2048}}, true);
+  decoder_ = CreateDecoder(session_, codec_, {{4096, 4096}, {2048, 2048}}, true,
+                           &alloc_request_);
 
   mfxStatus sts = MFX_ERR_NONE;
 
@@ -344,14 +345,6 @@ bool VplVideoDecoderImpl::InitVpl() {
   if (sts != MFX_ERR_NONE) {
     return false;
   }
-
-  // Query number of required surfaces for encoder
-  memset(&alloc_request_, 0, sizeof(alloc_request_));
-  sts = decoder_->QueryIOSurf(&param, &alloc_request_);
-  VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
-
-  RTC_LOG(LS_INFO) << "Decoder NumFrameSuggested="
-                   << alloc_request_.NumFrameSuggested;
 
   // 入力ビットストリーム
   bitstream_buffer_.resize(1024 * 1024);
@@ -402,8 +395,10 @@ bool VplVideoDecoder::IsSupported(std::shared_ptr<VplSession> session,
     return false;
   }
 
+  mfxFrameAllocRequest alloc_request;
   auto decoder = VplVideoDecoderImpl::CreateDecoder(
-      session, ToMfxCodec(codec), {{4096, 4096}, {2048, 2048}}, false);
+      session, ToMfxCodec(codec), {{4096, 4096}, {2048, 2048}}, false,
+      &alloc_request);
 
   return decoder != nullptr;
 }

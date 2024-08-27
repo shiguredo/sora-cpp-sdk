@@ -1,6 +1,7 @@
 #include "sora/sora_peer_connection_factory.h"
 
 // WebRTC
+#include <api/environment/environment_factory.h>
 #include <pc/peer_connection_factory.h>
 #include <pc/peer_connection_factory_proxy.h>
 
@@ -13,7 +14,9 @@ class PeerConnectionFactoryWithContext : public webrtc::PeerConnectionFactory {
   PeerConnectionFactoryWithContext(
       webrtc::PeerConnectionFactoryDependencies dependencies)
       : PeerConnectionFactoryWithContext(
-            webrtc::ConnectionContext::Create(&dependencies),
+            // SDK の外部から webrtc::Environment を設定したくなるまで、ここで初期化する
+            webrtc::ConnectionContext::Create(webrtc::CreateEnvironment(),
+                                              &dependencies),
             &dependencies) {}
   PeerConnectionFactoryWithContext(
       rtc::scoped_refptr<webrtc::ConnectionContext> context,

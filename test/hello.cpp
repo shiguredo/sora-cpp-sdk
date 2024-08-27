@@ -42,21 +42,18 @@ HelloSora::~HelloSora() {
 void HelloSora::Run() {
   void* env = sora::GetJNIEnv();
 
+  FakeVideoCapturerConfig fake_config;
+  fake_config.width = config_.capture_width;
+  fake_config.height = config_.capture_height;
+  fake_config.fps = 30;
+  video_source_ = CreateFakeVideoCapturer(fake_config);
+  std::string video_track_id = rtc::CreateRandomString(16);
+  video_track_ = pc_factory()->CreateVideoTrack(video_source_, video_track_id);
+
   std::string audio_track_id = rtc::CreateRandomString(16);
   audio_track_ = pc_factory()->CreateAudioTrack(
       audio_track_id,
       pc_factory()->CreateAudioSource(cricket::AudioOptions()).get());
-
-  if (config_.mode == HelloSoraConfig::Mode::Hello) {
-    FakeVideoCapturerConfig fake_config;
-    fake_config.width = config_.capture_width;
-    fake_config.height = config_.capture_height;
-    fake_config.fps = 30;
-    video_source_ = CreateFakeVideoCapturer(fake_config);
-    std::string video_track_id = rtc::CreateRandomString(16);
-    video_track_ =
-        pc_factory()->CreateVideoTrack(video_track_id, video_source_.get());
-  }
 
   ioc_.reset(new boost::asio::io_context(1));
 
@@ -66,18 +63,13 @@ void HelloSora::Run() {
   config.observer = shared_from_this();
   config.signaling_urls = config_.signaling_urls;
   config.channel_id = config_.channel_id;
-  config.sora_client = "Hello Sora";
   config.role = config_.role;
+  config.video = config_.video;
+  config.audio = config_.audio;
   config.video_codec_type = config_.video_codec_type;
   config.video_bit_rate = config_.video_bit_rate;
   config.multistream = true;
   config.simulcast = config_.simulcast;
-  if (config_.mode == HelloSoraConfig::Mode::Lyra) {
-    config.video = false;
-    config.sora_client = "Hello Sora with Lyra";
-    config.audio_codec_type = "LYRA";
-    config.check_lyra_version = true;
-  }
   conn_ = sora::SoraSignaling::Create(config);
 
   boost::asio::executor_work_guard<boost::asio::io_context::executor_type>
@@ -139,7 +131,10 @@ int main(int argc, char* argv[]) {
     std::ostringstream oss;
     oss << ifs.rdbuf();
     std::string js = oss.str();
-    v = boost::json::parse(js);
+    boost::json::parse_options opt;
+    opt.allow_comments = true;
+    opt.allow_trailing_commas = true;
+    v = boost::json::parse(js, {}, opt);
   }
   HelloSoraConfig config;
   for (auto&& x : v.as_object().at("signaling_urls").as_array()) {
@@ -149,10 +144,11 @@ int main(int argc, char* argv[]) {
   if (auto it = v.as_object().find("role"); it != v.as_object().end()) {
     config.role = it->value().as_string();
   }
-  if (auto it = v.as_object().find("mode"); it != v.as_object().end()) {
-    if (it->value().as_string() == "lyra") {
-      config.mode = HelloSoraConfig::Mode::Lyra;
-    }
+  if (auto it = v.as_object().find("video"); it != v.as_object().end()) {
+    config.video = it->value().as_bool();
+  }
+  if (auto it = v.as_object().find("audio"); it != v.as_object().end()) {
+    config.audio = it->value().as_bool();
   }
   if (auto it = v.as_object().find("capture_width");
       it != v.as_object().end()) {
@@ -179,6 +175,9 @@ int main(int argc, char* argv[]) {
   if (auto it = v.as_object().find("use_hardware_encoder");
       it != v.as_object().end()) {
     context_config.use_hardware_encoder = it->value().as_bool();
+  }
+  if (auto it = v.as_object().find("openh264"); it != v.as_object().end()) {
+    context_config.openh264 = it->value().as_string();
   }
   auto context = sora::SoraClientContext::Create(context_config);
 

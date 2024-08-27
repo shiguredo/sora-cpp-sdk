@@ -11,6 +11,171 @@
 
 ## develop
 
+## 2024.7.0 (2024-07-29)
+
+- [CHANGE] `--sora-dir`, `--sora-args` を `--local-sora-cpp-sdk-dir` と `--local-sora-cpp-sdk-args` に変更する
+  - @melpon
+- [CHANGE] `--webrtc-build-dir`, `--webrtc-build-args` を `--local-webrtc-build-dir` と `--local-webrtc-build-args` に変更する
+  - @melpon
+- [CHANGE] SoraVideoDecoderFactory の CreateVideoDecoder 関数を Create に変更する
+  - libwebrtc に定義されている継承元クラスが変更されたことに対する追従
+  - @enm10k
+- [CHANGE] SoraVideoEncoderFactory の CreateVideoEncoder 関数を Create に変更する
+  - libwebrtc に定義されている継承元クラスが変更されたことに対する追従
+  - @enm10k
+- [CHANGE] `CreateOpenH264VideoEncoder()` 関数の第１引数の型を `const cricket::VideoCodec&` から `const webrtc::SdpVideoFormat&` に変更する
+  - @melpon
+- [CHANGE] Jetson 対応をサポートブランチに移動する
+  - @melpon
+- [UPDATE] Boost を 1.85.0 にあげる
+  - @enm10k
+- [UPDATE] SDL2 を 2.30.3 にあげる
+  - @enm10k
+- [UPDATE] CLI11 を 2.4.2 にあげる
+  - @enm10k
+- [UPDATE] libwebrtc を m126.6478.1.1 にあげる
+  - Android の test アプリがリンクできなくなったため、リンカーを Android NDK のものから libwebrtc のものに変更
+  - リンカーのバージョンの違いによる互換性の問題でエラーが発生していた
+  - @melpon @enm10k @torikizi
+- [ADD] sumomo に `--openh264` と `--use-hardware-encoder` オプションを追加
+  - @melpon
+- [ADD] sumomo に `--video-h264-params` と `--video-h265-params` オプションを追加
+  - @enm10k
+- [ADD] SoraSignalingConfig に `video_h265_params` を追加
+  - @enm10k
+- [ADD] 古い Intel CPU でも H265 エンコーダが動くようにする
+  - @melpon
+- [ADD] Intel VPL で AV1 デコーダを動くようにする
+  - @melpon
+- [ADD] NVIDIA Video Codec SDK を H265 に対応する
+  - @melpon
+- [ADD] Ubuntu 24.04 に対応する
+  - @melpon
+- [ADD] WebSocket での接続時に User-Agent ヘッダーを追加する
+  - @melpon
+
+## 2024.6.1 (2024-04-16)
+
+- [CHANGE] テストモジュールについて `SoraSignalingConfig` の `sora_client` に値を設定しないようにする
+  - @enm10k
+- [FIX] VPL デコーダで遅延が起きたりセグフォすることがあるのを修正
+  - @melpon
+
+## 2024.6.0 (2024-04-01)
+
+- [CHANGE] `VplVideoDecoderImpl` の `ImplementationName` を `oneVPL` から `libvpl` に変更する
+  - @enm10k
+- [FIX] `VplVideoEncoderImpl` の `implementation_name` の値が誤っていたため `libvpl` に修正する
+  - @enm10k
+
+## 2024.5.0 (2024-03-29)
+
+- [CHANGE] 別リポジトリに分かれていた Sora C++ SDK のサンプル集を examples/ 以下のディレクトリに統合する
+  - @melpon
+- [UPDATE] libwebrtc を `m122.6261.1.0` にあげる
+  - Ubuntu のビルドを通すために、 __assertion_handler というファイルをコピーする必要があった
+  - @miosakuma @enm10k
+- [UPDATE] libvpl を v2.10.1 にあげる
+  - @enm10k
+- [ADD] OpenH264 エンコーダを追加
+  - @melpon
+- [ADD] Catch2 を使って E2E テストを追加
+  - @melpon
+- [ADD] Ubuntu 22.04 で Intel VPL のH.265 に対応する
+  - @enm10k
+- [FIX] HWA 利用の判定を `#if defined(USE_*_ENCODER)` という使い方で統一するように修正
+  - @melpon
+
+## 2024.4.0 (2024-03-13)
+
+- [ADD] test/hello.cpp に video, audio フラグを追加
+  - @melpon
+- [FIX] Android ハンズフリー機能において Android 11 以前で Bluetooth SCO が切れてしまう問題を改善
+  - @tnoho
+
+## 2024.3.1 (2024-03-07)
+
+- [FIX] Sora C++ SDK を利用してビルドする時に自動的に _LIBCPP_HARDENING_MODE が定義されるように修正
+  - @melpon
+
+## 2024.3.0 (2024-03-07)
+
+- [CHANGE] Lyra を Sora C++ SDK から外し、Lyra に関連するファイルや関数、オプションを除ける
+  - SoraSignalingConfig::audio_codec_lyra_bitrate オプションを削除
+  - SoraSignalingConfig::audio_codec_lyra_usedtx オプションを削除
+  - SoraSignalingConfig::check_lyra_version オプションを削除
+  - audio_encoder_lyra.{h,cpp} を削除し、AudioEncoderLyra クラスを削除
+  - audio_decoder_lyra.{h,cpp} を削除し、AudioDecoderLyra クラスを削除
+  - sora_audio_encoder_factory.{h,cpp} を削除し、CreateBuiltinAudioEncoderFactory 関数を削除
+  - sora_audio_decoder_factory.{h,cpp} を削除し、CreateBuiltinAudioDecoderFactory 関数を削除
+  - Version クラスから GetLyraCompatibleVersion 関数を削除
+  - enum class SoraSignalingErrorCode から LYRA_VERSION_INCOMPATIBLE を削除
+  - VERSION ファイルから LYRA_VERSION, LYRA_COMPATIBLE_VERSION を削除
+  - リリースパッケージから `lyra-1.3.2_sora-cpp-sdk-2024.2.0_android.tar.gz` などの Lyra パッケージを生成しないようにする
+  - インストールする内容から `share/cmake/FindLyra.cmake` を削除
+  - run.py を実行する時のオプションから `--no-lyra` オプションを削除
+  - test/hello 実行時に指定する json フォーマットのオプション mode: lyra を削除し、mode オプションそのものも削除
+  - @melpon
+- [CHANGE] ビルド時に Bazel のインストールを行わないようにする
+  - Lyra のために Bazel を利用していたので、関連して削除となる
+  - @melpon
+- [ADD] Android 向けに音声出力先変更機能として `SoraAudioManager` を追加する
+  - Android では C++ を経由した OS の API 利用が煩雑となるため、Java で実装し、Sora.aar をビルドして提供を行う
+  - Sora.aar ファイルは Android のパッケージに含める
+  - iOS 向けとは異なりインスタンス生成が必要
+    - API レベル 31 でオーディオデバイスの切り替えや Bluetooth ヘッドセットのスイッチングの API が変更となり、API レベルに応じて処理を切り替える必要があったため
+  - @tnoho
+
+## 2024.2.0 (2024-03-04)
+
+- [CHANGE] `--webrtcbuild`, `--webrtc-fetch` などの webrtc ローカルビルドに関するフラグを削除し、代わりに `--webrtc-build-dir` と `--webrtc-build-args` を追加する
+  - これにより、既存の webrtc-build ディレクトリを使ってローカルビルドを行うことができるようになる
+  - @melpon
+- [CHANGE] `SoraClientContextConfig` から `configure_media_dependencies` を削除した
+  - libwebrtc から cricket::MediaEngineDependencies が削除されたため
+  - @enm10k
+- [UPDATE] libwebrtc を `m121.6167.3.0` にあげる
+  - @torikizi @enm10k
+- [UPDATE] Boost を 1.84.0 にあげる
+  - @enm10k
+- [UPDATE] CMake を 3.28.1 にあげる
+  - @enm10k
+- [UPDATE] CUDA を 11.8 にあげる
+  - 更新時に発生したビルド・エラーを回避するために `include/sora/fix_cuda_noinline_macro_error.h` を追加した
+  - @enm10k
+- [UPDATE] Lyra を 1.3.2 にあげる
+  - @melpon
+- [UPDATE] Github Actions の setup-android と setup-msbuild のバージョンをアップデート
+  - Node.js 16 の Deprecated に伴う対応
+  - setup-android を v3 にアップデート
+  - setup-android のアップデートに伴い ANDROID_SDK_CMDLINE_TOOLS_VERSION のバージョンを `9862592` にアップデート
+    - `9862592` は CMDLINE_TOOLS のバージョン 10 に相当
+    - 最新の 11 を指定するとエラーが出ることを懸念し、今回は 10 を指定
+    - バージョンの組み合わせは [setup-android の README を参照](https://github.com/android-actions/setup-android)
+  - build.yml に Setup JDK 17 を追加
+    - JDK のバージョンを指定しない場合、デフォルトで JDK 11 を使用するため、JDK 17 を指定する
+    - JDK 11 は setup-android のアップデートの影響で利用できなくなるため
+    - JDK 17 を選択する理由は setup-android の README に記載されているバージョンの組み合わせに合わせるため
+  - setup-msbuild を v2 にアップデート
+    - node 20 に対応したバージョンを指定するため、最新の v2 を指定
+    - リリースノートを参照すると、v2 は node 20 に対応していることがわかる [setup-msbuild のリリースノート](https://github.com/microsoft/setup-msbuild/releases/tag/v2)
+  - @torikizi
+- [ADD] Python コードのフォーマッターに Ruff を使うようにする
+  - @voluntas
+- [ADD] `SoraClientContextConfig`, `SoraVideoEncoderFactoryConfig` に `force_i420_conversion_for_simulcast_adapter` を追加する
+  - use_simulcast_adapter = true の際に、エンコーダー内でビデオ・フレームのバッファーを I420 に変換しているが、この変換の有無をフラグで制御可能にした
+  - force_i420_conversion_for_simulcast_adapter のデフォルト値は true で I420 への変換を行う
+  - 変換を行わない場合、エンコードの性能が向上するが、バッファーの実装によってはサイマルキャストが利用できなくなる
+  - @enm10k
+- [ADD] `SoraSignalingObserver` に `OnSwitched` を追加する
+  - @enm10k
+- [FIX] Jetson Orin で AV1 を送信中、他のユーザーが後から接続して受信した時に映像が出ない問題を修正
+  - @melpon @enm10k
+- [FIX] test/android のアプリが実行時にエラーで落ちてしまう問題を修正
+  - "AttachCurrentThread() must be called on this thread." というメッセージでエラーとなっていた
+  - JVM::Initialize の前に AttachCurrentThreadIfNeeded 呼ぶ必要があった
+  - @melpon
+
 ## 2024.1.0 (2024-01-16)
 
 - [CHANGE] JetPack 5.1.2 に対応
@@ -27,13 +192,13 @@
 
 ## 2023.17.0 (2023-12-25)
 
-- [UPDATE] WebRTC を `m120.6099.1.2` に上げる
+- [UPDATE] libwebrtc を `m120.6099.1.2` に上げる
   - `m120.6099.1.1` より x86 シミュレータビルドがなくなったため、CI で ios の test ビルドを行わなくした
   - @melpon @enm10k @torikizi @miosakuma
 
 ## 2023.16.1 (2023-12-02)
 
-- [FIX] WebRTC を `m119.6045.2.2` に上げる
+- [FIX] libwebrtc を `m119.6045.2.2` に上げる
   - Apple 非公開 API を利用していたため、Apple からリジェクトされる問題を修正
   - @voluntas
 
@@ -50,20 +215,24 @@
 
 ## 2023.15.0 (2023-10-31)
 
-- [UPDATE] WebRTC を m119.6045.2.1 に上げる
+- [UPDATE] libwebrtc を m119.6045.2.1 に上げる
   - @voluntas @torikizi @melpon @enm10k
-- [UPDATE] WebRTC を m119 に上げたことで必要になった関連するライブラリもバージョンを上げる
+- [UPDATE] libwebrtc を m119 に上げたことで必要になった関連するライブラリもバージョンを上げる
   - Ubuntu で使用する clang のバージョンを 15 にアップデート
   - すべてのプラットフォームで set_target_properties の CXX_STANDARD と C_STANDARD を 20 にアップデート
   - ANDROID_NDK_VERSION を r26b にアップデート
   - CMAKE_VERSION を 3.27.7 にアップデート
   - @melpon @enm10k @torikizi
+- [ADD] H.265 に対応
+  - libwebrtc の m119.6045.2.1 で H.265 がサポートされたため、C++ SDK でも H.265 に対応
+  - macOS / iOS / Android で H.265 が利用可能
+  - @voluntas @torikizi @melpon @enm10k
 
 ## 2023.14.0 (2023-10-02)
 
 - [UPDATE] Boost を 1.83.0 に上げる
   - @voluntas
-- [UPDATE] WebRTC を m117.5938.2.0 に上げる
+- [UPDATE] libwebrtc を m117.5938.2.0 に上げる
   - @melpon @miosakuma @voluntas
 - [FIX] `MacAudioOutputHelper` でコメントアウトしていた処理をコメントインする
   - 当初 libwebrtc のサンプルにはない処理で、消していた処理を復活させる
@@ -98,7 +267,7 @@
 
 ## 2023.11.0 (2023-09-06)
 
-- [UPDATE] WebRTC を m116.5845.6.1 に上げる
+- [UPDATE] libwebrtc を m116.5845.6.1 に上げる
   - @torikizi
 - [UPDATE] m116 で `cricket::Codec` は protected になったため `cricket::CreateVideoCodec` を利用するように修正
   - @torikizi
@@ -121,7 +290,7 @@
 
 ## 2023.8.0 (2023-07-28)
 
-- [UPDATE] WebRTC を m115.5790.7.0 に上げる
+- [UPDATE] libwebrtc を m115.5790.7.0 に上げる
   - @melpon @miosakuma
 
 ## 2023.7.2 (2023-07-12)
@@ -148,7 +317,7 @@
 
 ## 2023.6.0 (2023-05-30)
 
-- [UPDATE] WebRTC を m114.5735.2.0 に上げる
+- [UPDATE] libwebrtc を m114.5735.2.0 に上げる
   - @miosakuma
 - [FIX] 一部の Windows で VP8 の受信時にクラッシュする問題を修正する
   - Query した上で Init しても MFX_ERR_UNSUPPORTED になるため VPL の場合は毎回 Init を呼ぶようにする
@@ -161,7 +330,7 @@
 
 ## 2023.5.0 (2023-05-08)
 
-- [UPDATE] WebRTC を m114.5735.0.1 に上げる
+- [UPDATE] libwebrtc を m114.5735.0.1 に上げる
   - @melpon
 - [UPDATE] Boost を 1.82.0 に上げる
   - @melpon
@@ -193,7 +362,7 @@
   - @melpon
 - [UPDATE] 例外が有効になっていなかった一部の依存ライブラリも例外を有効にする
   - @melpon
-- [UPDATE] WebRTC を m111.5563.4.4 に上げる
+- [UPDATE] libwebrtc を m111.5563.4.4 に上げる
   - @melpon
 - [ADD] 2022.11.0 で無効にしていた Jetson の HW MJPEG デコーダを有効にする
   - @tnoho @melpon
@@ -210,14 +379,14 @@
   - @melpon
 - [UPDATE] oneVPL のデコードでリサイズに対応してなかったのを修正
   - @melpon
-- [UPDATE] WebRTC を m111.5563.4.2 に上げる
+- [UPDATE] libwebrtc を m111.5563.4.2 に上げる
   - @melpon @miosakuma
 
 ## 2023.1.0 (2023-01-12)
 
 - [ADD] SoraSignalingConfig に audio_streaming_language_code を追加
   - @melpon
-- [UPDATE] WebRTC を m109.5414.2.0 に上げる
+- [UPDATE] libwebrtc を m109.5414.2.0 に上げる
   - @melpon
 - [UPDATE] Boost を 1.81.0 に上げる
   - @melpon

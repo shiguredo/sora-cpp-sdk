@@ -1,8 +1,8 @@
 #include "sora/hwenc_vpl/vpl_session.h"
 
-#include <iostream>
+#include <rtc_base/logging.h>
 
-// oneVPL
+// Intel VPL
 #include <vpl/mfxdispatcher.h>
 #include <vpl/mfxvideo.h>
 
@@ -35,7 +35,7 @@ std::shared_ptr<VplSession> VplSession::Create() {
 
   session->loader = MFXLoad();
   if (session->loader == nullptr) {
-    std::cerr << "Failed to MFXLoad" << std::endl;
+    RTC_LOG(LS_VERBOSE) << "Failed to MFXLoad";
     return nullptr;
   }
 
@@ -44,7 +44,7 @@ std::shared_ptr<VplSession> VplSession::Create() {
 
   sts = MFXCreateSession(session->loader, 0, &session->session);
   if (sts != MFX_ERR_NONE) {
-    // std::cerr << "Failed to MFXCreateSession: sts=" << sts << std::endl;
+    RTC_LOG(LS_VERBOSE) << "Failed to MFXCreateSession: sts=" << sts;
     return nullptr;
   }
 
@@ -66,21 +66,20 @@ std::shared_ptr<VplSession> VplSession::Create() {
   mfxIMPL impl;
   sts = MFXQueryIMPL(session->session, &impl);
   if (sts != MFX_ERR_NONE) {
-    std::cerr << "Failed to MFXQueryIMPL: sts=" << sts << std::endl;
+    RTC_LOG(LS_VERBOSE) << "Failed to MFXQueryIMPL: sts=" << sts;
     return nullptr;
   }
 
   mfxVersion ver;
   sts = MFXQueryVersion(session->session, &ver);
   if (sts != MFX_ERR_NONE) {
-    std::cerr << "Failed to MFXQueryVersion: sts=" << sts << std::endl;
+    RTC_LOG(LS_VERBOSE) << "Failed to MFXQueryVersion: sts=" << sts;
     return nullptr;
   }
 
-  // std::cout << "oneVPL Implementation: "
-  //           << (impl == MFX_IMPL_SOFTWARE ? "SOFTWARE" : "HARDWARE")
-  //           << std::endl;
-  // std::cout << "oneVPL Version: " << ver.Major << "." << ver.Minor << std::endl;
+  RTC_LOG(LS_VERBOSE) << "Intel VPL Implementation: "
+                      << (impl == MFX_IMPL_SOFTWARE ? "SOFTWARE" : "HARDWARE");
+  RTC_LOG(LS_VERBOSE) << "Intel VPL Version: " << ver.Major << "." << ver.Minor;
   return session;
 }
 

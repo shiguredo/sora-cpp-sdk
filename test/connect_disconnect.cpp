@@ -50,7 +50,7 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
         audio_track_id,
         pc_factory()->CreateAudioSource(cricket::AudioOptions()).get());
     video_track_ =
-        pc_factory()->CreateVideoTrack(video_track_id, video_source_.get());
+        pc_factory()->CreateVideoTrack(video_source_, video_track_id);
 
     ioc_.reset(new boost::asio::io_context(1));
 
@@ -60,7 +60,6 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
     config.observer = shared_from_this();
     config.signaling_urls = config_.signaling_urls;
     config.channel_id = config_.channel_id;
-    config.sora_client = "Hello Sora";
     config.role = config_.role;
     config.video_codec_type = "H264";
     config.multistream = true;

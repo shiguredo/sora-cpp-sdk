@@ -15,8 +15,9 @@
 #include <api/peer_connection_interface.h>
 #include <api/scoped_refptr.h>
 
-#include "data_channel.h"
-#include "websocket.h"
+#include "sora/data_channel.h"
+#include "sora/version.h"
+#include "sora/websocket.h"
 
 namespace sora {
 
@@ -38,7 +39,6 @@ enum class SoraSignalingErrorCode {
   WEBSOCKET_ONERROR,
   PEER_CONNECTION_STATE_FAILED,
   ICE_FAILED,
-  LYRA_VERSION_INCOMPATIBLE,
 };
 
 class SoraSignalingObserver {
@@ -48,6 +48,7 @@ class SoraSignalingObserver {
   virtual void OnNotify(std::string text) = 0;
   virtual void OnPush(std::string text) = 0;
   virtual void OnMessage(std::string label, std::string data) = 0;
+  virtual void OnSwitched(std::string text) {}
 
   virtual void OnTrack(
       rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver) = 0;
@@ -74,13 +75,12 @@ struct SoraSignalingConfig {
   bool audio = true;
   std::string video_codec_type = "";
   std::string audio_codec_type = "";
-  int audio_codec_lyra_bitrate = 0;
-  boost::optional<bool> audio_codec_lyra_usedtx;
   int video_bit_rate = 0;
   int audio_bit_rate = 0;
   boost::json::value video_vp9_params;
   boost::json::value video_av1_params;
   boost::json::value video_h264_params;
+  boost::json::value video_h265_params;
   std::string audio_streaming_language_code;
   boost::json::value metadata;
   boost::json::value signaling_notify_metadata;
@@ -135,7 +135,8 @@ struct SoraSignalingConfig {
   rtc::PacketSocketFactory* socket_factory = nullptr;
 
   bool disable_signaling_url_randomization = false;
-  bool check_lyra_version = false;
+
+  boost::optional<http_header_value> user_agent;
 };
 
 class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,

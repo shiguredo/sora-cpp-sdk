@@ -14,6 +14,7 @@
 #include <boost/beast/websocket/stream.hpp>
 
 #include "sora/ssl_verifier.h"
+#include "sora/version.h"
 
 namespace sora {
 
@@ -47,7 +48,8 @@ Websocket::Websocket(boost::asio::io_context& ioc)
     : ws_(new websocket_t(ioc)),
       resolver_(new boost::asio::ip::tcp::resolver(ioc)),
       strand_(ws_->get_executor()),
-      close_timeout_timer_(ioc) {
+      close_timeout_timer_(ioc),
+      user_agent_(Version::GetDefaultUserAgent()) {
   ws_->write_buffer_bytes(8192);
 }
 Websocket::Websocket(Websocket::ssl_tag,
@@ -58,7 +60,8 @@ Websocket::Websocket(Websocket::ssl_tag,
     : resolver_(new boost::asio::ip::tcp::resolver(ioc)),
       strand_(ioc.get_executor()),
       close_timeout_timer_(ioc),
-      insecure_(insecure) {
+      insecure_(insecure),
+      user_agent_(Version::GetDefaultUserAgent()) {
   ssl_ctx_ = CreateSSLContext(client_cert, client_key);
   wss_.reset(new ssl_websocket_t(ioc, *ssl_ctx_));
   InitWss(wss_.get(), insecure);
@@ -66,7 +69,8 @@ Websocket::Websocket(Websocket::ssl_tag,
 Websocket::Websocket(boost::asio::ip::tcp::socket socket)
     : ws_(new websocket_t(std::move(socket))),
       strand_(ws_->get_executor()),
-      close_timeout_timer_(ws_->get_executor()) {
+      close_timeout_timer_(ws_->get_executor()),
+      user_agent_(Version::GetDefaultUserAgent()) {
   ws_->write_buffer_bytes(8192);
 }
 Websocket::Websocket(https_proxy_tag,
@@ -84,12 +88,17 @@ Websocket::Websocket(https_proxy_tag,
       proxy_socket_(new boost::asio::ip::tcp::socket(ioc)),
       proxy_url_(std::move(proxy_url)),
       proxy_username_(std::move(proxy_username)),
-      proxy_password_(std::move(proxy_password)) {
+      proxy_password_(std::move(proxy_password)),
+      user_agent_(Version::GetDefaultUserAgent()) {
   ssl_ctx_ = CreateSSLContext(client_cert, client_key);
 }
 
 Websocket::~Websocket() {
   RTC_LOG(LS_INFO) << "Websocket::~Websocket this=" << (void*)this;
+}
+
+void Websocket::SetUserAgent(http_header_value user_agent) {
+  user_agent_ = user_agent;
 }
 
 bool Websocket::IsSSL() const {
@@ -159,6 +168,20 @@ void Websocket::Connect(const std::string& url, connect_callback_t on_connect) {
       on_connect(ec);
       return;
     }
+  }
+
+  // ヘッダーの設定
+  auto set_headers = [this](boost::beast::websocket::request_type& req) {
+    if (user_agent_ != boost::none) {
+      req.set(boost::beast::http::field::user_agent, *user_agent_);
+    }
+  };
+  if (IsSSL()) {
+    wss_->set_option(
+        boost::beast::websocket::stream_base::decorator(set_headers));
+  } else {
+    ws_->set_option(
+        boost::beast::websocket::stream_base::decorator(set_headers));
   }
 
   on_connect_ = std::move(on_connect);

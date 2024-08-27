@@ -1,11 +1,10 @@
+/__pycache__
 /_install
 /_build
 /_source
 /_package
-/third_party/lyra/bazel-*
-/third_party/lyra/lyra/
-/third_party/lyra/third_party/
 /test/*.json
+!/test/*.example.json
 /test/ios/build/
 /test/ios/hello/model_coeffs/
 /test/android/app/src/main/assets

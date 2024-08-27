@@ -36,17 +36,11 @@ void Run() {
             NSLog(@"Failed to IosAudioInit: error=%@", [NSString stringWithUTF8String:error.c_str()]);
         }
     });
-    NSString* path = [[NSBundle mainBundle] resourcePath];
-    // NSLog(@"path1=%@", path);
-    NSString* path2 = [path stringByAppendingPathComponent:@"model_coeffs"];
-    NSLog(@"SORA_LYRA_MODEL_COEFFS_PATH=%@", path2);
-    setenv("SORA_LYRA_MODEL_COEFFS_PATH", [path2 UTF8String], 1);
     auto context = sora::SoraClientContext::Create(sora::SoraClientContextConfig());
     HelloSoraConfig config;
     config.signaling_urls.push_back("シグナリングURL");
     config.channel_id = "チャンネルID";
     config.role = "sendrecv";
-    // config.mode = HelloSoraConfig::Mode::Lyra;
     auto hello = std::make_shared<HelloSora>(context, config);
     hello->Run();
 }

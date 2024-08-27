@@ -101,16 +101,22 @@ NS_ASSUME_NONNULL_END
 namespace sora {
 
 MacAudioOutputHelper::MacAudioOutputHelper(AudioChangeRouteObserver* observer) {
-  adapter_ = [[SoraRTCAudioSessionDelegateAdapter alloc] initWithObserver:observer];
+  if (observer != nullptr) {
+    adapter_ = [[SoraRTCAudioSessionDelegateAdapter alloc] initWithObserver:observer];
 
-  RTC_OBJC_TYPE(RTCAudioSession)* session = [RTC_OBJC_TYPE(RTCAudioSession) sharedInstance];
-  [session addDelegate:adapter_];
+    RTC_OBJC_TYPE(RTCAudioSession)* session = [RTC_OBJC_TYPE(RTCAudioSession) sharedInstance];
+    [session addDelegate:adapter_];
+  } else {
+    adapter_ = nil;
+  }
 }
 
 MacAudioOutputHelper::~MacAudioOutputHelper() {
-  RTC_OBJC_TYPE(RTCAudioSession)* session = [RTC_OBJC_TYPE(RTCAudioSession) sharedInstance];
-  [session removeDelegate:adapter_];
-  adapter_ = nil;
+  if (adapter_ != nil) {
+    RTC_OBJC_TYPE(RTCAudioSession)* session = [RTC_OBJC_TYPE(RTCAudioSession) sharedInstance];
+    [session removeDelegate:adapter_];
+    adapter_ = nil;
+  }
 }
 
 bool MacAudioOutputHelper::IsHandsfree() {

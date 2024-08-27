@@ -3,14 +3,19 @@
 
 #include <string>
 
+// Boost
+#include <boost/optional.hpp>
+
 namespace sora {
+
+typedef boost::optional<std::string> http_header_value;
 
 class Version {
  public:
   static std::string GetClientName();
   static std::string GetLibwebrtcName();
   static std::string GetEnvironmentName();
-  static std::string GetLyraCompatibleVersion();
+  static http_header_value GetDefaultUserAgent();
 };
 
 }  // namespace sora

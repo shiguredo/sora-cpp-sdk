@@ -18,24 +18,22 @@ jobs:
           - windows_hololens2
     name: Build sora-cpp-sdk for ${{ matrix.name }}
     runs-on: windows-2022
+<<<<<<< HEAD
+=======
+    env:
+      TEST_SIGNALING_URL: ${{ secrets.TEST_SIGNALING_URL }}
+      TEST_CHANNEL_ID_PREFIX: ${{ secrets.TEST_CHANNEL_ID_PREFIX }}
+      TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
+      TEST_MATRIX_NAME: ${{ matrix.name }}
+>>>>>>> 2024.7.0
     steps:
       - uses: actions/checkout@v4
-      - uses: microsoft/setup-msbuild@v1.3
+      - uses: microsoft/setup-msbuild@v2
       - name: Env to output
         run: |
           echo "userprofile=${Env:USERPROFILE}" >> ${Env:GITHUB_OUTPUT}
           echo "username=${Env:USERNAME}" >> ${Env:GITHUB_OUTPUT}
         id: env
-      - name: Bazel cache (cache)
-        uses: actions/cache@v3
-        with:
-          path: "${{ steps.env.outputs.userprofile }}/_bazel_${{ steps.env.outputs.username }}/cache"
-          key: bazel-cache-${{ matrix.name }}-v1
-      - name: Bazel cache (install)
-        uses: actions/cache@v3
-        with:
-          path: "${{ steps.env.outputs.userprofile }}/_bazel_${{ steps.env.outputs.username }}/install"
-          key: bazel-install-${{ matrix.name }}-v1
       - name: Get Versions
         run: |
           Get-Content "VERSION" | Foreach-Object {
@@ -48,16 +46,20 @@ jobs:
       # CUDA のインストールバイナリのダウンロードは 3GB ぐらいあって、
       # ビルドの度に取得するのはつらいのでキャッシュする
       # （インストールする nvcc は解凍後で 100MB 程度なのでキャッシュ可能）
-      - name: Cache NVCC ${{ steps.versions.outputs.cuda_version }}
+      - name: Cache CUDA ${{ steps.versions.outputs.cuda_version }}
         id: cache-cuda
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: _install\windows_x86_64\release\cuda
           key: windows-cuda-${{ steps.versions.outputs.cuda_version }}.v1
       - run: echo "${CUDA_VERSION}" > _install\windows_x86_64\release\cuda.version
         if: steps.cache-cuda.outputs.cache-hit == 'true'
+<<<<<<< HEAD
       - run: pip install numpy
       - run: python3 run.py --test --package ${{ matrix.name }} --no-lyra
+=======
+      - run: python3 run.py --test --run-e2e-test --package ${{ matrix.name }}
+>>>>>>> 2024.7.0
         env:
           SORA_CPP_SDK_TEMP_DIR: C:\
       - name: Get package name
@@ -85,6 +87,20 @@ jobs:
         with:
           name: ${{ matrix.name }}.env
           path: _package/${{ matrix.name }}/release/sora.env
+      # Examples のビルド
+      - name: Build Examples
+        run: |
+          cd examples
+          mkdir examples_${{ matrix.name }}
+          foreach ($app in @('sdl_sample', 'sumomo', 'messaging_recvonly_sample')) {
+            python3 "$app\${{ matrix.name }}\run.py" --local-sora-cpp-sdk-dir ..
+            cp "_build\${{ matrix.name }}\release\$app\Release\$app.exe" "examples_${{ matrix.name }}"
+          }
+      - name: Upload Examples Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: examples_${{ matrix.name }}
+          path: examples/examples_${{ matrix.name }}
   build-macos:
     strategy:
       fail-fast: false
@@ -93,7 +109,12 @@ jobs:
           - macos_arm64
           - ios
     name: Build sora-cpp-sdk for ${{ matrix.name }}
-    runs-on: macos-13
+    runs-on: macos-14
+    env:
+      TEST_SIGNALING_URL: ${{ secrets.TEST_SIGNALING_URL }}
+      TEST_CHANNEL_ID_PREFIX: ${{ secrets.TEST_CHANNEL_ID_PREFIX }}
+      TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
+      TEST_MATRIX_NAME: ${{ matrix.name }}
     steps:
       - uses: actions/checkout@v4
       - name: Select Xcode 14.3.1
@@ -102,13 +123,7 @@ jobs:
         run: |
           echo "user=`users`" >> $GITHUB_OUTPUT
         id: env
-      - name: Bazel cache
-        uses: actions/cache@v3
-        with:
-          path: "/private/var/tmp/_bazel_${{ steps.env.outputs.user }}"
-          key: bazel-${{ matrix.name }}-v2
-      - run: pip3 install numpy setuptools
-      - run: python3 run.py --test --package ${{ matrix.name }} --no-lyra
+      - run: python3 run.py --test --run-e2e-test --package ${{ matrix.name }}
       - name: Get package name
         run: |
           source _package/${{ matrix.name }}/release/sora.env
@@ -130,64 +145,126 @@ jobs:
         with:
           name: ${{ matrix.name }}.env
           path: _package/${{ matrix.name }}/release/sora.env
+      # Examples のビルド
+      - name: Build Examples
+        run: |
+          cd examples
+          mkdir examples_${{ matrix.name }}
+          for app in sdl_sample sumomo messaging_recvonly_sample; do
+            python3 $app/${{ matrix.name }}/run.py --local-sora-cpp-sdk-dir ..
+            cp _build/${{ matrix.name }}/release/$app/$app examples_${{ matrix.name }}
+          done
+        if: matrix.name == 'macos_arm64'
+      - name: Upload Examples Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: examples_${{ matrix.name }}
+          path: examples/examples_${{ matrix.name }}
+        if: matrix.name == 'macos_arm64'
   build-ubuntu:
     strategy:
       fail-fast: false
       matrix:
-        name:
-          - ubuntu-20.04_x86_64
-          - ubuntu-22.04_x86_64
-          - ubuntu-20.04_armv8_jetson
-          - android
-    name: Build sora-cpp-sdk for ${{ matrix.name }}
-    runs-on: ${{ matrix.name == 'ubuntu-22.04_x86_64' && 'ubuntu-22.04' || 'ubuntu-20.04' }}
+        platform:
+          - name: ubuntu-20.04_x86_64
+            runs-on: ubuntu-20.04
+            os: ubuntu
+          - name: ubuntu-22.04_x86_64
+            runs-on: ubuntu-22.04
+            os: ubuntu
+          - name: ubuntu-24.04_x86_64
+            runs-on: ubuntu-24.04
+            os: ubuntu
+          - name: android
+            runs-on: ubuntu-22.04
+            os: android
+    name: Build sora-cpp-sdk for ${{ matrix.platform.name }}
+    runs-on: ${{ matrix.platform.runs-on }}
+    env:
+      TEST_SIGNALING_URL: ${{ secrets.TEST_SIGNALING_URL }}
+      TEST_CHANNEL_ID_PREFIX: ${{ secrets.TEST_CHANNEL_ID_PREFIX }}
+      TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
+      TEST_MATRIX_NAME: ${{ matrix.platform.name }}
     steps:
       - uses: actions/checkout@v4
-      - name: Bazel cache
-        uses: actions/cache@v3
-        with:
-          path: "~/.cache/bazel"
-          key: bazel-${{ matrix.name }}-v1
-      - name: Install deps for ${{ matrix.name }}
-        if: matrix.name == 'ubuntu-20.04_x86_64' || matrix.name == 'ubuntu-22.04_x86_64'
+      - name: Disk cleanup
+        run: |
+          set -x
+          df -h
+          sudo du -h -d1 /usr/local
+          sudo du -h -d1 /usr/local/share
+          sudo du -h -d1 /usr/local/lib
+          sudo du -h -d1 /usr/share
+          RMI=`docker images -q -a`
+          if [ -n "$RMI" ]; then
+            docker rmi $RMI
+          fi
+          # 4.6G
+          sudo rm -rf /usr/local/.ghcup
+          # 1.7G
+          sudo rm -rf /usr/share/swift
+          # 1.4G
+          sudo rm -rf /usr/share/dotnet
+          df -h
+      # Ubuntu 24.04 だと libtinfo5 が見つからない問題があるので、その修正
+      # ref: https://qiita.com/gengen16k/items/88cf3c18a40a94205fab
+      - name: Fix CUDA issues for Ubuntu 24.04
+        if: matrix.platform.name == 'ubuntu-24.04_x86_64'
+        run: |
+          sudo tee /etc/apt/sources.list.d/jammy.list << EOF
+          deb http://archive.ubuntu.com/ubuntu/ jammy universe
+          EOF
+
+          sudo tee /etc/apt/preferences.d/pin-jammy <<EOF
+          Package: *
+          Pin: release n=jammy
+          Pin-Priority: -10
+
+          Package: libtinfo5
+          Pin: release n=jammy
+          Pin-Priority: 990
+          EOF
+      - name: Install deps for ${{ matrix.platform.name }}
+        if: matrix.platform.os == 'ubuntu'
         run: |
           source VERSION
-          # clang-18 と CUDA を入れる
           sudo apt-get update
           sudo apt-get install -y software-properties-common
 
+          # X11
+          sudo apt-get install libx11-dev libxext-dev
+
+          # CUDA
           wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb
           sudo dpkg -i cuda-keyring_*all.deb
           sudo apt-get update
           DEBIAN_FRONTEND=noninteractive sudo apt-get -y install cuda=$CUDA_VERSION
 
+          # clang-18
           wget https://apt.llvm.org/llvm.sh
           chmod a+x llvm.sh
           sudo ./llvm.sh 18
 
           # Intel Media SDK のために libva-dev, libdrm-dev を入れる
           DEBIAN_FRONTEND=noninteractive sudo apt-get -y install libva-dev libdrm-dev
-      - name: Install deps for Jetson series
-        if: matrix.name == 'ubuntu-20.04_armv8_jetson'
-        run: |
-          sudo apt-get update
-          sudo apt-get -y install multistrap binutils-aarch64-linux-gnu
-          # multistrap に insecure なリポジトリからの取得を許可する設定を入れる
-          sudo sed -e 's/Apt::Get::AllowUnauthenticated=true/Apt::Get::AllowUnauthenticated=true";\n$config_str .= " -o Acquire::AllowInsecureRepositories=true/' -i /usr/sbin/multistrap
-          # Lyra ビルドのためにクロスコンパイル環境一式を入れる
-          sudo apt-get -y install libstdc++-9-dev-arm64-cross gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
       - name: Install deps for Android
-        if: matrix.name == 'android'
+        if: matrix.platform.os == 'android'
         run: |
           sudo apt-get -y install ninja-build
+      # JDK を指定しないとデフォルトの JDK 11 で動作するため指定する
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+        if: matrix.platform.os == 'android'
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v2.0.10
-        if: matrix.name == 'android'
-      - run: pip3 install numpy
-      - run: python3 run.py --test --package ${{ matrix.name }} --no-lyra
+        uses: android-actions/setup-android@v3
+        if: matrix.platform.os == 'android'
+      - run: python3 run.py --test --run-e2e-test --package ${{ matrix.platform.name }}
       - name: Get package name
         run: |
-          source _package/${{ matrix.name }}/release/sora.env
+          source _package/${{ matrix.platform.name }}/release/sora.env
           echo "name=${PACKAGE_NAME}" >> $GITHUB_OUTPUT
           echo "boost_name=${BOOST_PACKAGE_NAME}" >> $GITHUB_OUTPUT
         id: package_name
@@ -195,17 +272,34 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.package_name.outputs.name }}
-          path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.name }}
+          path: _package/${{ matrix.platform.name }}/release/${{ steps.package_name.outputs.name }}
       - name: Upload Boost Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.package_name.outputs.boost_name }}
-          path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.boost_name }}
+          path: _package/${{ matrix.platform.name }}/release/${{ steps.package_name.outputs.boost_name }}
       - name: Upload Environment
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.name }}.env
-          path: _package/${{ matrix.name }}/release/sora.env
+          name: ${{ matrix.platform.name }}.env
+          path: _package/${{ matrix.platform.name }}/release/sora.env
+      # Examples のビルド
+      - name: Build Examples
+        run: |
+          cd examples
+          mkdir examples_${{ matrix.platform.name }}
+          for app in sdl_sample sumomo messaging_recvonly_sample; do
+            python3 $app/${{ matrix.platform.name }}/run.py --local-sora-cpp-sdk-dir ..
+            cp _build/${{ matrix.platform.name }}/release/$app/$app examples_${{ matrix.platform.name }}
+          done
+        if: matrix.platform.os == 'ubuntu'
+      - name: Upload Examples Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: examples_${{ matrix.platform.name }}
+          path: examples/examples_${{ matrix.platform.name }}
+        if: matrix.platform.os == 'ubuntu'
+
   create-release:
     name: Create Release
     if: contains(github.ref, 'tags/202')
@@ -230,13 +324,13 @@ jobs:
           platform: ios
       - uses: ./.github/actions/download
         with:
-          platform: ubuntu-20.04_armv8_jetson
-      - uses: ./.github/actions/download
-        with:
           platform: ubuntu-20.04_x86_64
       - uses: ./.github/actions/download
         with:
           platform: ubuntu-22.04_x86_64
+      - uses: ./.github/actions/download
+        with:
+          platform: ubuntu-24.04_x86_64
       - uses: ./.github/actions/download
         with:
           platform: android
@@ -247,6 +341,29 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
         id: env
       - name: Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: ${{ steps.env.outputs.package_paths }}
+          prerelease: ${{ contains(github.ref, 'canary') }}
+
+  notification:
+    name: Slack Notification
+    runs-on: ubuntu-latest
+    needs:
+      - build-windows
+      - build-macos
+      - build-ubuntu
+      - create-release
+    if: always()
+    steps:
+      - uses: rtCamp/action-slack-notify@v2
+        if: |
+          needs.build-windows.result == 'failure' ||
+          needs.build-macos.result == 'failure' ||
+          needs.build-ubuntu.result == 'failure' ||
+          needs.create-release.result == 'failure'
+        env:
+          SLACK_CHANNEL: sora-cpp-sdk
+          SLACK_COLOR: danger
+          SLACK_TITLE: Build failed
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
