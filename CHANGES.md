@@ -11,6 +11,12 @@
 
 ## develop
 
+- [UPDATE] libwebrtc を m128.6613.2.0 にあげる
+  - H.265 Patch の修正に伴い、C++ SDK の H.265 に関する設定を変更
+  - examples と test に `rtc::CreateRandomString` のヘッダを追加
+  - @tnoho
+- [UPDATE] Xcode のバージョンを 15.4 にあげる
+  - @tnoho
 - [ADD] Intel VPL で AV1 エンコーダを動くようにする
   - @tnoho
 
