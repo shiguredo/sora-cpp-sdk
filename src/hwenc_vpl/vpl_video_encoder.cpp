@@ -525,8 +525,8 @@ int32_t VplVideoEncoderImpl::Encode(
     encoded_image_.capture_time_ms_ = frame.render_time_ms();
     encoded_image_.rotation_ = frame.rotation();
     encoded_image_.SetColorSpace(frame.color_space());
-    if (bitstream_.FrameType == MFX_FRAMETYPE_I ||
-        bitstream_.FrameType == MFX_FRAMETYPE_IDR) {
+    if (bitstream_.FrameType & MFX_FRAMETYPE_I ||
+        bitstream_.FrameType & MFX_FRAMETYPE_IDR) {
       encoded_image_._frameType = webrtc::VideoFrameType::kVideoFrameKey;
     } else {
       encoded_image_._frameType = webrtc::VideoFrameType::kVideoFrameDelta;
@@ -673,13 +673,6 @@ bool VplVideoEncoder::IsSupported(std::shared_ptr<VplSession> session,
   // 実行時エラーでクラッシュするため、とりあえず VP9 だったら未サポートとして返す。
   // （VPL の問題なのか使い方の問題なのかは不明）
   if (codec == webrtc::kVideoCodecVP9) {
-    return false;
-  }
-
-  // FIXME(miosakuma): Intel Core Ultra 7 では IsSupported(AV1) == true となるが、
-  // 実際に使ってみると映像が送信されないため、一時的に AV1 だったら未サポートとして返す。
-  // （VPL の問題なのか使い方の問題なのかは不明）
-  if (codec == webrtc::kVideoCodecAV1) {
     return false;
   }
 
