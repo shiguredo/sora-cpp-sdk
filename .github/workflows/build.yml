@@ -18,14 +18,11 @@ jobs:
           - windows_hololens2
     name: Build sora-cpp-sdk for ${{ matrix.name }}
     runs-on: windows-2022
-<<<<<<< HEAD
-=======
     env:
       TEST_SIGNALING_URL: ${{ secrets.TEST_SIGNALING_URL }}
       TEST_CHANNEL_ID_PREFIX: ${{ secrets.TEST_CHANNEL_ID_PREFIX }}
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
       TEST_MATRIX_NAME: ${{ matrix.name }}
->>>>>>> 2024.7.0
     steps:
       - uses: actions/checkout@v4
       - uses: microsoft/setup-msbuild@v2
@@ -54,12 +51,7 @@ jobs:
           key: windows-cuda-${{ steps.versions.outputs.cuda_version }}.v1
       - run: echo "${CUDA_VERSION}" > _install\windows_x86_64\release\cuda.version
         if: steps.cache-cuda.outputs.cache-hit == 'true'
-<<<<<<< HEAD
-      - run: pip install numpy
-      - run: python3 run.py --test --package ${{ matrix.name }} --no-lyra
-=======
       - run: python3 run.py --test --run-e2e-test --package ${{ matrix.name }}
->>>>>>> 2024.7.0
         env:
           SORA_CPP_SDK_TEMP_DIR: C:\
       - name: Get package name
