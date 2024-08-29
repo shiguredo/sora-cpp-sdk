@@ -241,6 +241,7 @@ def install_deps(
                 install_boost_args["architecture"] = "x86"
             else:
                 install_boost_args["architecture"] = "arm"
+                install_boost_args["runtime_link"] = "shared"
         elif platform.target.os == "macos":
             sysroot = cmdcap(["xcrun", "--sdk", "macosx", "--show-sdk-path"])
             install_boost_args["target_os"] = "darwin"

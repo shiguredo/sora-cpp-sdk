@@ -649,6 +649,7 @@ def build_and_install_boost(
     architecture,
     android_ndk,
     native_api_level,
+    runtime_link=None,
 ):
     version_underscore = version.replace(".", "_")
     archive = download(
@@ -659,7 +660,8 @@ def build_and_install_boost(
     with cd(os.path.join(build_dir, "boost")):
         bootstrap = ".\\bootstrap.bat" if target_os == "windows" else "./bootstrap.sh"
         b2 = "b2" if target_os == "windows" else "./b2"
-        runtime_link = "static" if target_os == "windows" else "shared"
+        if runtime_link is None:
+            runtime_link = "static" if target_os == "windows" else "shared"
 
         # Windows かつ Boost 1.85.0 の場合はパッチを当てる
         if target_os == "windows" and version == "1.85.0":
@@ -1565,7 +1567,7 @@ class Platform(object):
         elif p.os in ("ios", "android"):
             self._check(p.arch is None)
         else:
-            self._check(p.arch in ("x86_64", "arm64"))
+            self._check(p.arch in ("x86_64", "arm64", "hololens2"))
 
     def __init__(self, target_os, target_osver, target_arch):
         build = get_build_platform()
@@ -1575,7 +1577,7 @@ class Platform(object):
         self._check_platform_target(target)
 
         if target.os == "windows":
-            self._check(target.arch == "x86_64")
+            self._check(target.arch in ("x86_64", "arm64", "hololens2"))
             self._check(build.os == "windows")
             self._check(build.arch == "x86_64")
         if target.os == "macos":
