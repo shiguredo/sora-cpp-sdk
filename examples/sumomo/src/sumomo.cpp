@@ -13,6 +13,9 @@
 // Boost
 #include <boost/optional/optional.hpp>
 
+// WebRTC
+#include <rtc_base/crypto_random.h>
+
 #include "sdl_renderer.h"
 
 #ifdef _WIN32
