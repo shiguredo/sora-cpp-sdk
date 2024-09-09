@@ -409,9 +409,13 @@ void SoraSignaling::DoSendConnect(bool redirect) {
   }
 
   RTC_LOG(LS_INFO) << "Send type=connect: " << boost::json::serialize(m);
+  std::string text = boost::json::serialize(m);
   ws_->WriteText(
-      boost::json::serialize(m),
-      [self = shared_from_this()](boost::system::error_code, size_t) {});
+      text, [self = shared_from_this()](boost::system::error_code, size_t) {});
+
+  if (auto ob = config_.observer.lock(); ob) {
+    ob->OnSignaling(std::move(text));
+  }
 }
 
 void SoraSignaling::DoSendPong() {
@@ -437,13 +441,17 @@ void SoraSignaling::DoSendPong(
 
 void SoraSignaling::DoSendUpdate(const std::string& sdp, std::string type) {
   boost::json::value m = {{"type", type}, {"sdp", sdp}};
+  std::string text = boost::json::serialize(m);
   if (dc_ && using_datachannel_ && dc_->IsOpen("signaling")) {
     // DataChannel が使える場合は DataChannel に送る
-    SendDataChannel("signaling", boost::json::serialize(m));
+    SendDataChannel("signaling", text);
   } else if (ws_) {
-    ws_->WriteText(
-        boost::json::serialize(m),
-        [self = shared_from_this()](boost::system::error_code, size_t) {});
+    ws_->WriteText(text, [self = shared_from_this()](boost::system::error_code,
+                                                     size_t) {});
+  }
+
+  if (auto ob = config_.observer.lock(); ob) {
+    ob->OnSignaling(std::move(text));
   }
 }
 
@@ -666,44 +674,46 @@ void SoraSignaling::DoInternalDisconnect(
   } else if (!using_datachannel_ && ws_connected_) {
     boost::json::value disconnect = {{"type", "disconnect"},
                                      {"reason", "NO-ERROR"}};
-    ws_->WriteText(
-        boost::json::serialize(disconnect),
-        [self = shared_from_this(), on_close](boost::system::error_code ec,
-                                              std::size_t) {
-          if (ec) {
-            on_close(
-                false, SoraSignalingErrorCode::CLOSE_FAILED,
-                "Failed to write disconnect message to close WebSocket: ec=" +
-                    ec.message());
-            return;
-          }
+    std::string text = boost::json::serialize(disconnect);
+    ws_->WriteText(text, [self = shared_from_this(), on_close](
+                             boost::system::error_code ec, std::size_t) {
+      if (ec) {
+        on_close(false, SoraSignalingErrorCode::CLOSE_FAILED,
+                 "Failed to write disconnect message to close WebSocket: ec=" +
+                     ec.message());
+        return;
+      }
 
-          self->closing_timeout_timer_.expires_from_now(
+      self->closing_timeout_timer_.expires_from_now(
               boost::posix_time::seconds(
                   self->config_.websocket_close_timeout));
-          self->closing_timeout_timer_.async_wait(
-              [self](boost::system::error_code ec) {
-                if (ec) {
-                  return;
-                }
-                self->ws_->Cancel();
-              });
-          self->on_ws_close_ = [self, on_close](boost::system::error_code ec) {
-            boost::system::error_code tec;
-            self->closing_timeout_timer_.cancel(tec);
-            bool ec_error = ec != boost::beast::websocket::error::closed;
-            if (ec_error) {
-              auto reason = self->ws_->reason();
-              on_close(false, SoraSignalingErrorCode::CLOSE_FAILED,
-                       "Failed to close WebSocket: ec=" + ec.message() +
-                           " wscode=" + std::to_string(reason.code) +
-                           " wsreason=" + reason.reason.c_str());
+      self->closing_timeout_timer_.async_wait(
+          [self](boost::system::error_code ec) {
+            if (ec) {
               return;
             }
-            on_close(true, SoraSignalingErrorCode::CLOSE_SUCCEEDED,
-                     "Succeeded to close WebSocket");
-          };
-        });
+            self->ws_->Cancel();
+          });
+      self->on_ws_close_ = [self, on_close](boost::system::error_code ec) {
+        boost::system::error_code tec;
+        self->closing_timeout_timer_.cancel(tec);
+        bool ec_error = ec != boost::beast::websocket::error::closed;
+        if (ec_error) {
+          auto reason = self->ws_->reason();
+          on_close(false, SoraSignalingErrorCode::CLOSE_FAILED,
+                   "Failed to close WebSocket: ec=" + ec.message() +
+                       " wscode=" + std::to_string(reason.code) +
+                       " wsreason=" + reason.reason.c_str());
+          return;
+        }
+        on_close(true, SoraSignalingErrorCode::CLOSE_SUCCEEDED,
+                 "Succeeded to close WebSocket");
+      };
+    });
+
+    if (auto ob = config_.observer.lock(); ob) {
+      ob->OnSignaling(std::move(text));
+    }
   } else {
     on_close(false, SoraSignalingErrorCode::INTERNAL_ERROR,
              "Unknown state. WS and DC is already released.");
@@ -873,11 +883,20 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
   }
 
   if (type == "redirect") {
+    if (auto ob = config_.observer.lock(); ob) {
+      ob->OnSignaling(std::move(text));
+    }
+
     const std::string location = m.at("location").as_string().c_str();
     Redirect(location);
     // Redirect の中で次の Read をしているのでここで return する
     return;
   } else if (type == "offer") {
+    if (auto ob = config_.observer.lock(); ob) {
+      // 後続で使っているのでコピーする
+      ob->OnSignaling(text);
+    }
+
     const std::string sdp = m.at("sdp").as_string().c_str();
 
     std::string video_mid;
@@ -1018,9 +1037,14 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
                     }
 
                     boost::json::value m = {{"type", "answer"}, {"sdp", sdp}};
+                    std::string text = boost::json::serialize(m);
                     self->ws_->WriteText(
-                        boost::json::serialize(m),
-                        [self](boost::system::error_code, size_t) {});
+                        text, [self](boost::system::error_code, size_t) {});
+
+                    auto ob = self->config_.observer.lock();
+                    if (ob) {
+                      ob->OnSignaling(std::move(text));
+                    }
                   });
                 },
                 self->CreateIceError("Failed to CreateAnswer in offer "
@@ -1032,6 +1056,11 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
     if (pc_ == nullptr) {
       return;
     }
+
+    if (auto ob = config_.observer.lock(); ob) {
+      ob->OnSignaling(std::move(text));
+    }
+
     std::string answer_type = type == "update" ? "update" : "re-answer";
     const std::string sdp = m.at("sdp").as_string().c_str();
     if (!CheckSdp(sdp)) {
@@ -1427,15 +1456,19 @@ void SoraSignaling::OnIceCandidate(
   }
 
   boost::json::value m = {{"type", "candidate"}, {"candidate", sdp}};
-  boost::asio::post(
-      *config_.io_context, [self = shared_from_this(), m = std::move(m)]() {
-        if (self->state_ != State::Connected) {
-          return;
-        }
+  boost::asio::post(*config_.io_context, [self = shared_from_this(),
+                                          m = std::move(m)]() {
+    if (self->state_ != State::Connected) {
+      return;
+    }
 
-        self->ws_->WriteText(boost::json::serialize(m),
-                             [self](boost::system::error_code, size_t) {});
-      });
+    std::string text = boost::json::serialize(m);
+    self->ws_->WriteText(text, [self](boost::system::error_code, size_t) {});
+
+    if (auto ob = self->config_.observer.lock(); ob) {
+      ob->OnSignaling(std::move(text));
+    }
+  });
 }
 
 void SoraSignaling::OnIceCandidateError(const std::string& address,
@@ -1537,6 +1570,10 @@ void SoraSignaling::OnMessage(
   }
 
   if (label == "signaling") {
+    if (auto ob = config_.observer.lock(); ob) {
+      ob->OnSignaling(std::move(data));
+    }
+
     const std::string type = json.at("type").as_string().c_str();
     if (type == "re-offer") {
       const std::string sdp = json.at("sdp").as_string().c_str();
