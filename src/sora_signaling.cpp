@@ -543,7 +543,8 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
       pi.username = config_.proxy_username;
     }
     if (!config_.proxy_password.empty()) {
-      pi.password = rtc::revive::CryptString(RawCryptString(config_.proxy_password));
+      pi.password =
+          rtc::revive::CryptString(RawCryptString(config_.proxy_password));
     }
     std::string proxy_agent = "Sora C++ SDK";
     if (!config_.proxy_agent.empty()) {
@@ -603,11 +604,11 @@ void SoraSignaling::DoInternalDisconnect(
   }
 
   if (using_datachannel_ && ws_connected_) {
-    webrtc::DataBuffer disconnect = ConvertToDataBuffer(
-        "signaling",
+    std::string text =
         force_error_code == boost::none
             ? R"({"type":"disconnect","reason":"NO-ERROR"})"
-            : R"({"type":"disconnect","reason":")" + reason + "\"}");
+            : R"({"type":"disconnect","reason":")" + reason + "\"}";
+    webrtc::DataBuffer disconnect = ConvertToDataBuffer("signaling", text);
     dc_->Close(
         disconnect,
         [self = shared_from_this(), on_close, force_error_code,
@@ -656,9 +657,13 @@ void SoraSignaling::DoInternalDisconnect(
           };
         },
         config_.disconnect_wait_timeout);
+
+    if (auto ob = config_.observer.lock(); ob) {
+      ob->OnSignaling(std::move(text));
+    }
   } else if (using_datachannel_ && !ws_connected_) {
-    webrtc::DataBuffer disconnect = ConvertToDataBuffer(
-        "signaling", R"({"type":"disconnect","reason":"NO-ERROR"})");
+    std::string text = R"({"type":"disconnect","reason":"NO-ERROR"})";
+    webrtc::DataBuffer disconnect = ConvertToDataBuffer("signaling", text);
     dc_->Close(
         disconnect,
         [on_close](boost::system::error_code ec) {
@@ -671,6 +676,10 @@ void SoraSignaling::DoInternalDisconnect(
                    "Succeeded to close DataChannel");
         },
         config_.disconnect_wait_timeout);
+
+    if (auto ob = config_.observer.lock(); ob) {
+      ob->OnSignaling(std::move(text));
+    }
   } else if (!using_datachannel_ && ws_connected_) {
     boost::json::value disconnect = {{"type", "disconnect"},
                                      {"reason", "NO-ERROR"}};
@@ -685,8 +694,7 @@ void SoraSignaling::DoInternalDisconnect(
       }
 
       self->closing_timeout_timer_.expires_from_now(
-              boost::posix_time::seconds(
-                  self->config_.websocket_close_timeout));
+          boost::posix_time::seconds(self->config_.websocket_close_timeout));
       self->closing_timeout_timer_.async_wait(
           [self](boost::system::error_code ec) {
             if (ec) {
@@ -827,11 +835,11 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
     }
     if (state_ == State::Connected && using_datachannel_ && ws_connected_) {
       // DataChanel で reason: "WEBSOCKET-ONCLOSE" または "WEBSOCKET-ONERROR" を送る事を試みてから終了する
-      webrtc::DataBuffer disconnect = ConvertToDataBuffer(
-          "signaling",
+      std::string text =
           ec == boost::beast::websocket::error::closed
               ? R"({"type":"disconnect","reason":"WEBSOCKET-ONCLOSE"})"
-              : R"({"type":"disconnect","reason":"WEBSOCKET-ONERROR"})");
+              : R"({"type":"disconnect","reason":"WEBSOCKET-ONERROR"})";
+      webrtc::DataBuffer disconnect = ConvertToDataBuffer("signaling", text);
       auto error_code = ec == boost::beast::websocket::error::closed
                             ? SoraSignalingErrorCode::WEBSOCKET_ONCLOSE
                             : SoraSignalingErrorCode::WEBSOCKET_ONERROR;
@@ -857,6 +865,10 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
                     ec.message() + reason_str);
           },
           config_.disconnect_wait_timeout);
+
+      if (auto ob = config_.observer.lock(); ob) {
+        ob->OnSignaling(std::move(text));
+      }
       return;
     }
 
