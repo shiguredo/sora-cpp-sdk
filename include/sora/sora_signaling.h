@@ -220,6 +220,7 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
       std::vector<webrtc::RtpEncodingParameters> encodings);
   void ResetEncodingParameters();
 
+  void WsWriteSignaling(std::string text, Websocket::write_callback_t on_write);
   void SendOnDisconnect(SoraSignalingErrorCode ec, std::string message);
   void SendOnSignalingMessage(SoraSignalingType type,
                               SoraSignalingDirection direction,
