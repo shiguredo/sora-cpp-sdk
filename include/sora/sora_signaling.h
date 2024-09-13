@@ -41,6 +41,16 @@ enum class SoraSignalingErrorCode {
   ICE_FAILED,
 };
 
+enum class SoraSignalingType {
+  WEBSOCKET,
+  DATACHANNEL,
+};
+
+enum class SoraSignalingDirection {
+  SENT,
+  RECEIVED,
+};
+
 class SoraSignalingObserver {
  public:
   virtual void OnSetOffer(std::string offer) = 0;
@@ -49,7 +59,9 @@ class SoraSignalingObserver {
   virtual void OnPush(std::string text) = 0;
   virtual void OnMessage(std::string label, std::string data) = 0;
   virtual void OnSwitched(std::string text) {}
-  virtual void OnSignalingMessage(std::string text) {}
+  virtual void OnSignalingMessage(SoraSignalingType type,
+                                  SoraSignalingDirection direction,
+                                  std::string message) {}
 
   virtual void OnTrack(
       rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver) = 0;
@@ -209,6 +221,9 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
   void ResetEncodingParameters();
 
   void SendOnDisconnect(SoraSignalingErrorCode ec, std::string message);
+  void SendOnSignalingMessage(SoraSignalingType type,
+                              SoraSignalingDirection direction,
+                              std::string message);
 
   webrtc::DataBuffer ConvertToDataBuffer(const std::string& label,
                                          const std::string& input);
