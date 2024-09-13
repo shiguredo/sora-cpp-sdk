@@ -414,7 +414,7 @@ void SoraSignaling::DoSendConnect(bool redirect) {
       text, [self = shared_from_this()](boost::system::error_code, size_t) {});
 
   if (auto ob = config_.observer.lock(); ob) {
-    ob->OnSignaling(std::move(text));
+    ob->OnSignalingMessage(std::move(text));
   }
 }
 
@@ -451,7 +451,7 @@ void SoraSignaling::DoSendUpdate(const std::string& sdp, std::string type) {
   }
 
   if (auto ob = config_.observer.lock(); ob) {
-    ob->OnSignaling(std::move(text));
+    ob->OnSignalingMessage(std::move(text));
   }
 }
 
@@ -659,7 +659,7 @@ void SoraSignaling::DoInternalDisconnect(
         config_.disconnect_wait_timeout);
 
     if (auto ob = config_.observer.lock(); ob) {
-      ob->OnSignaling(std::move(text));
+      ob->OnSignalingMessage(std::move(text));
     }
   } else if (using_datachannel_ && !ws_connected_) {
     std::string text = R"({"type":"disconnect","reason":"NO-ERROR"})";
@@ -678,7 +678,7 @@ void SoraSignaling::DoInternalDisconnect(
         config_.disconnect_wait_timeout);
 
     if (auto ob = config_.observer.lock(); ob) {
-      ob->OnSignaling(std::move(text));
+      ob->OnSignalingMessage(std::move(text));
     }
   } else if (!using_datachannel_ && ws_connected_) {
     boost::json::value disconnect = {{"type", "disconnect"},
@@ -720,7 +720,7 @@ void SoraSignaling::DoInternalDisconnect(
     });
 
     if (auto ob = config_.observer.lock(); ob) {
-      ob->OnSignaling(std::move(text));
+      ob->OnSignalingMessage(std::move(text));
     }
   } else {
     on_close(false, SoraSignalingErrorCode::INTERNAL_ERROR,
@@ -867,7 +867,7 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
           config_.disconnect_wait_timeout);
 
       if (auto ob = config_.observer.lock(); ob) {
-        ob->OnSignaling(std::move(text));
+        ob->OnSignalingMessage(std::move(text));
       }
       return;
     }
@@ -896,7 +896,7 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
 
   if (type == "redirect") {
     if (auto ob = config_.observer.lock(); ob) {
-      ob->OnSignaling(std::move(text));
+      ob->OnSignalingMessage(std::move(text));
     }
 
     const std::string location = m.at("location").as_string().c_str();
@@ -906,7 +906,7 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
   } else if (type == "offer") {
     if (auto ob = config_.observer.lock(); ob) {
       // 後続で使っているのでコピーする
-      ob->OnSignaling(text);
+      ob->OnSignalingMessage(text);
     }
 
     const std::string sdp = m.at("sdp").as_string().c_str();
@@ -1055,7 +1055,7 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
 
                     auto ob = self->config_.observer.lock();
                     if (ob) {
-                      ob->OnSignaling(std::move(text));
+                      ob->OnSignalingMessage(std::move(text));
                     }
                   });
                 },
@@ -1070,7 +1070,7 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
     }
 
     if (auto ob = config_.observer.lock(); ob) {
-      ob->OnSignaling(std::move(text));
+      ob->OnSignalingMessage(std::move(text));
     }
 
     std::string answer_type = type == "update" ? "update" : "re-answer";
@@ -1478,7 +1478,7 @@ void SoraSignaling::OnIceCandidate(
     self->ws_->WriteText(text, [self](boost::system::error_code, size_t) {});
 
     if (auto ob = self->config_.observer.lock(); ob) {
-      ob->OnSignaling(std::move(text));
+      ob->OnSignalingMessage(std::move(text));
     }
   });
 }
@@ -1583,7 +1583,7 @@ void SoraSignaling::OnMessage(
 
   if (label == "signaling") {
     if (auto ob = config_.observer.lock(); ob) {
-      ob->OnSignaling(std::move(data));
+      ob->OnSignalingMessage(std::move(data));
     }
 
     const std::string type = json.at("type").as_string().c_str();
