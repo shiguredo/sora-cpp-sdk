@@ -17,6 +17,8 @@
   - @tnoho
 - [UPDATE] Xcode のバージョンを 15.4 にあげる
   - @tnoho
+- [ADD] シグナリングメッセージを取得できるよう OnSignalingMessage を SoraSignalingObserver に追加する
+  - @tnoho
 - [ADD] Intel VPL で AV1 エンコーダを動くようにする
   - @tnoho
 
