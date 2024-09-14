@@ -408,10 +408,10 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     m["forwarding_filter"] = obj;
   }
 
-  RTC_LOG(LS_INFO) << "Send type=connect: " << boost::json::serialize(m);
-  ws_->WriteText(
-      boost::json::serialize(m),
-      [self = shared_from_this()](boost::system::error_code, size_t) {});
+  std::string text = boost::json::serialize(m);
+  RTC_LOG(LS_INFO) << "Send type=connect: " << text;
+  WsWriteSignaling(std::move(text), [self = shared_from_this()](
+                                        boost::system::error_code, size_t) {});
 }
 
 void SoraSignaling::DoSendPong() {
@@ -437,12 +437,15 @@ void SoraSignaling::DoSendPong(
 
 void SoraSignaling::DoSendUpdate(const std::string& sdp, std::string type) {
   boost::json::value m = {{"type", type}, {"sdp", sdp}};
+  std::string text = boost::json::serialize(m);
   if (dc_ && using_datachannel_ && dc_->IsOpen("signaling")) {
     // DataChannel が使える場合は DataChannel に送る
-    SendDataChannel("signaling", boost::json::serialize(m));
+    SendDataChannel("signaling", text);
+    SendOnSignalingMessage(SoraSignalingType::DATACHANNEL,
+                           SoraSignalingDirection::SENT, std::move(text));
   } else if (ws_) {
-    ws_->WriteText(
-        boost::json::serialize(m),
+    WsWriteSignaling(
+        std::move(text),
         [self = shared_from_this()](boost::system::error_code, size_t) {});
   }
 }
@@ -535,7 +538,8 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
       pi.username = config_.proxy_username;
     }
     if (!config_.proxy_password.empty()) {
-      pi.password = rtc::revive::CryptString(RawCryptString(config_.proxy_password));
+      pi.password =
+          rtc::revive::CryptString(RawCryptString(config_.proxy_password));
     }
     std::string proxy_agent = "Sora C++ SDK";
     if (!config_.proxy_agent.empty()) {
@@ -595,11 +599,11 @@ void SoraSignaling::DoInternalDisconnect(
   }
 
   if (using_datachannel_ && ws_connected_) {
-    webrtc::DataBuffer disconnect = ConvertToDataBuffer(
-        "signaling",
+    std::string text =
         force_error_code == boost::none
             ? R"({"type":"disconnect","reason":"NO-ERROR"})"
-            : R"({"type":"disconnect","reason":")" + reason + "\"}");
+            : R"({"type":"disconnect","reason":")" + reason + "\"}";
+    webrtc::DataBuffer disconnect = ConvertToDataBuffer("signaling", text);
     dc_->Close(
         disconnect,
         [self = shared_from_this(), on_close, force_error_code,
@@ -648,9 +652,12 @@ void SoraSignaling::DoInternalDisconnect(
           };
         },
         config_.disconnect_wait_timeout);
+
+    SendOnSignalingMessage(SoraSignalingType::DATACHANNEL,
+                           SoraSignalingDirection::SENT, std::move(text));
   } else if (using_datachannel_ && !ws_connected_) {
-    webrtc::DataBuffer disconnect = ConvertToDataBuffer(
-        "signaling", R"({"type":"disconnect","reason":"NO-ERROR"})");
+    std::string text = R"({"type":"disconnect","reason":"NO-ERROR"})";
+    webrtc::DataBuffer disconnect = ConvertToDataBuffer("signaling", text);
     dc_->Close(
         disconnect,
         [on_close](boost::system::error_code ec) {
@@ -663,10 +670,13 @@ void SoraSignaling::DoInternalDisconnect(
                    "Succeeded to close DataChannel");
         },
         config_.disconnect_wait_timeout);
+
+    SendOnSignalingMessage(SoraSignalingType::DATACHANNEL,
+                           SoraSignalingDirection::SENT, std::move(text));
   } else if (!using_datachannel_ && ws_connected_) {
     boost::json::value disconnect = {{"type", "disconnect"},
                                      {"reason", "NO-ERROR"}};
-    ws_->WriteText(
+    WsWriteSignaling(
         boost::json::serialize(disconnect),
         [self = shared_from_this(), on_close](boost::system::error_code ec,
                                               std::size_t) {
@@ -817,11 +827,11 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
     }
     if (state_ == State::Connected && using_datachannel_ && ws_connected_) {
       // DataChanel で reason: "WEBSOCKET-ONCLOSE" または "WEBSOCKET-ONERROR" を送る事を試みてから終了する
-      webrtc::DataBuffer disconnect = ConvertToDataBuffer(
-          "signaling",
+      std::string text =
           ec == boost::beast::websocket::error::closed
               ? R"({"type":"disconnect","reason":"WEBSOCKET-ONCLOSE"})"
-              : R"({"type":"disconnect","reason":"WEBSOCKET-ONERROR"})");
+              : R"({"type":"disconnect","reason":"WEBSOCKET-ONERROR"})";
+      webrtc::DataBuffer disconnect = ConvertToDataBuffer("signaling", text);
       auto error_code = ec == boost::beast::websocket::error::closed
                             ? SoraSignalingErrorCode::WEBSOCKET_ONCLOSE
                             : SoraSignalingErrorCode::WEBSOCKET_ONERROR;
@@ -847,6 +857,9 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
                     ec.message() + reason_str);
           },
           config_.disconnect_wait_timeout);
+
+      SendOnSignalingMessage(SoraSignalingType::DATACHANNEL,
+                             SoraSignalingDirection::SENT, std::move(text));
       return;
     }
 
@@ -873,11 +886,18 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
   }
 
   if (type == "redirect") {
+    SendOnSignalingMessage(SoraSignalingType::WEBSOCKET,
+                           SoraSignalingDirection::RECEIVED, std::move(text));
+
     const std::string location = m.at("location").as_string().c_str();
     Redirect(location);
     // Redirect の中で次の Read をしているのでここで return する
     return;
   } else if (type == "offer") {
+    // 後続で使っているので text はコピーする
+    SendOnSignalingMessage(SoraSignalingType::WEBSOCKET,
+                           SoraSignalingDirection::RECEIVED, text);
+
     const std::string sdp = m.at("sdp").as_string().c_str();
 
     std::string video_mid;
@@ -1018,7 +1038,7 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
                     }
 
                     boost::json::value m = {{"type", "answer"}, {"sdp", sdp}};
-                    self->ws_->WriteText(
+                    self->WsWriteSignaling(
                         boost::json::serialize(m),
                         [self](boost::system::error_code, size_t) {});
                   });
@@ -1032,6 +1052,10 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
     if (pc_ == nullptr) {
       return;
     }
+
+    SendOnSignalingMessage(SoraSignalingType::WEBSOCKET,
+                           SoraSignalingDirection::RECEIVED, std::move(text));
+
     std::string answer_type = type == "update" ? "update" : "re-answer";
     const std::string sdp = m.at("sdp").as_string().c_str();
     if (!CheckSdp(sdp)) {
@@ -1299,6 +1323,14 @@ void SoraSignaling::ResetEncodingParameters() {
   sender->SetParameters(parameters);
 }
 
+void SoraSignaling::WsWriteSignaling(std::string text,
+                                     Websocket::write_callback_t on_write) {
+  ws_->WriteText(text, on_write);
+
+  SendOnSignalingMessage(SoraSignalingType::WEBSOCKET,
+                         SoraSignalingDirection::SENT, std::move(text));
+}
+
 void SoraSignaling::SendOnDisconnect(SoraSignalingErrorCode ec,
                                      std::string message) {
   if (ec != SoraSignalingErrorCode::CLOSE_SUCCEEDED) {
@@ -1312,6 +1344,14 @@ void SoraSignaling::SendOnDisconnect(SoraSignalingErrorCode ec,
       ob->OnDisconnect(ec, std::move(message));
     }
   });
+}
+
+void SoraSignaling::SendOnSignalingMessage(SoraSignalingType type,
+                                           SoraSignalingDirection direction,
+                                           std::string message) {
+  if (auto ob = config_.observer.lock(); ob) {
+    ob->OnSignalingMessage(type, direction, std::move(message));
+  }
 }
 
 webrtc::DataBuffer SoraSignaling::ConvertToDataBuffer(
@@ -1433,8 +1473,8 @@ void SoraSignaling::OnIceCandidate(
           return;
         }
 
-        self->ws_->WriteText(boost::json::serialize(m),
-                             [self](boost::system::error_code, size_t) {});
+        self->WsWriteSignaling(boost::json::serialize(m),
+                               [self](boost::system::error_code, size_t) {});
       });
 }
 
@@ -1537,6 +1577,9 @@ void SoraSignaling::OnMessage(
   }
 
   if (label == "signaling") {
+    SendOnSignalingMessage(SoraSignalingType::DATACHANNEL,
+                           SoraSignalingDirection::RECEIVED, std::move(data));
+
     const std::string type = json.at("type").as_string().c_str();
     if (type == "re-offer") {
       const std::string sdp = json.at("sdp").as_string().c_str();
