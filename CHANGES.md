@@ -11,6 +11,8 @@
 
 ## develop
 
+- [UPDATE] CMake を 3.30.3 にあげる
+  - @voluntas
 - [UPDATE] Boost を 1.86.0 にあげる
   - @voluntas
 - [UPDATE] libwebrtc を m128.6613.2.0 にあげる
