@@ -27,6 +27,8 @@
   - @tnoho
 - [ADD] Intel VPL で AV1 エンコーダを動くようにする
   - @tnoho
+- [ADD] ルート証明書を指定可能にする
+  - @melpon
 
 ### misc
 

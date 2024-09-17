@@ -135,6 +135,7 @@ struct SoraSignalingConfig {
 
   std::string client_cert;
   std::string client_key;
+  std::optional<std::string> ca_cert;
 
   int websocket_close_timeout = 3;
   int websocket_connection_timeout = 30;

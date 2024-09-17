@@ -56,15 +56,17 @@ Websocket::Websocket(Websocket::ssl_tag,
                      boost::asio::io_context& ioc,
                      bool insecure,
                      const std::string& client_cert,
-                     const std::string& client_key)
+                     const std::string& client_key,
+                     const std::optional<std::string>& ca_cert)
     : resolver_(new boost::asio::ip::tcp::resolver(ioc)),
       strand_(ioc.get_executor()),
       close_timeout_timer_(ioc),
       insecure_(insecure),
-      user_agent_(Version::GetDefaultUserAgent()) {
+      user_agent_(Version::GetDefaultUserAgent()),
+      ca_cert_(ca_cert) {
   ssl_ctx_ = CreateSSLContext(client_cert, client_key);
   wss_.reset(new ssl_websocket_t(ioc, *ssl_ctx_));
-  InitWss(wss_.get(), insecure);
+  InitWss(wss_.get(), insecure, ca_cert);
 }
 Websocket::Websocket(boost::asio::ip::tcp::socket socket)
     : ws_(new websocket_t(std::move(socket))),
@@ -78,6 +80,7 @@ Websocket::Websocket(https_proxy_tag,
                      bool insecure,
                      const std::string& client_cert,
                      const std::string& client_key,
+                     const std::optional<std::string>& ca_cert,
                      std::string proxy_url,
                      std::string proxy_username,
                      std::string proxy_password)
@@ -85,6 +88,7 @@ Websocket::Websocket(https_proxy_tag,
       strand_(ioc.get_executor()),
       close_timeout_timer_(ioc),
       insecure_(insecure),
+      ca_cert_(ca_cert),
       https_proxy_(true),
       proxy_socket_(new boost::asio::ip::tcp::socket(ioc)),
       proxy_url_(std::move(proxy_url)),
@@ -106,12 +110,15 @@ bool Websocket::IsSSL() const {
   return https_proxy_ || wss_ != nullptr;
 }
 
-void Websocket::InitWss(ssl_websocket_t* wss, bool insecure) {
+void Websocket::InitWss(ssl_websocket_t* wss,
+                        bool insecure,
+                        const std::optional<std::string>& ca_cert) {
   wss->write_buffer_bytes(8192);
 
   wss->next_layer().set_verify_mode(boost::asio::ssl::verify_peer);
   wss->next_layer().set_verify_callback(
-      [insecure](bool preverified, boost::asio::ssl::verify_context& ctx) {
+      [insecure, ca_cert](bool preverified,
+                          boost::asio::ssl::verify_context& ctx) {
         if (preverified) {
           return true;
         }
@@ -121,7 +128,7 @@ void Websocket::InitWss(ssl_websocket_t* wss, bool insecure) {
         }
         X509* cert = X509_STORE_CTX_get0_cert(ctx.native_handle());
         STACK_OF(X509)* chain = X509_STORE_CTX_get0_chain(ctx.native_handle());
-        return SSLVerifier::VerifyX509(cert, chain);
+        return SSLVerifier::VerifyX509(cert, chain, ca_cert);
       });
 }
 
@@ -412,7 +419,7 @@ void Websocket::OnReadProxy(boost::system::error_code ec,
 
   // wss を作って、あとは普通の SSL ハンドシェイクを行う
   wss_.reset(new ssl_websocket_t(std::move(*proxy_socket_), *ssl_ctx_));
-  InitWss(wss_.get(), insecure_);
+  InitWss(wss_.get(), insecure_, ca_cert_);
 
   // SNI の設定を行う
   if (!SSL_set_tlsext_host_name(wss_->next_layer().native_handle(),
