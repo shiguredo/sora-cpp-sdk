@@ -171,13 +171,14 @@ void SoraSignaling::Redirect(std::string url) {
           ws.reset(
               new Websocket(Websocket::ssl_tag(), *self->config_.io_context,
                             self->config_.insecure, self->config_.client_cert,
-                            self->config_.client_key));
+                            self->config_.client_key, self->config_.ca_cert));
         } else {
           ws.reset(new Websocket(
               Websocket::https_proxy_tag(), *self->config_.io_context,
               self->config_.insecure, self->config_.client_cert,
-              self->config_.client_key, self->config_.proxy_url,
-              self->config_.proxy_username, self->config_.proxy_password));
+              self->config_.client_key, self->config_.ca_cert,
+              self->config_.proxy_url, self->config_.proxy_username,
+              self->config_.proxy_password));
         }
       } else {
         ws.reset(new Websocket(*self->config_.io_context));
@@ -509,7 +510,7 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
   //
   // それを解消するために tls_cert_verifier を設定して自前で検証を行う。
   dependencies.tls_cert_verifier = std::unique_ptr<rtc::SSLCertificateVerifier>(
-      new RTCSSLVerifier(config_.insecure));
+      new RTCSSLVerifier(config_.insecure, config_.ca_cert));
 
   // Proxy を設定する
   if (!config_.proxy_url.empty() && config_.network_manager != nullptr &&
@@ -1192,12 +1193,12 @@ void SoraSignaling::DoConnect() {
       if (config_.proxy_url.empty()) {
         ws.reset(new Websocket(Websocket::ssl_tag(), *config_.io_context,
                                config_.insecure, config_.client_cert,
-                               config_.client_key));
+                               config_.client_key, config_.ca_cert));
       } else {
         ws.reset(new Websocket(
             Websocket::https_proxy_tag(), *config_.io_context, config_.insecure,
-            config_.client_cert, config_.client_key, config_.proxy_url,
-            config_.proxy_username, config_.proxy_password));
+            config_.client_cert, config_.client_key, config_.ca_cert,
+            config_.proxy_url, config_.proxy_username, config_.proxy_password));
       }
     } else {
       ws.reset(new Websocket(*config_.io_context));

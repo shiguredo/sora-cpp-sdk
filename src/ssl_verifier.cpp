@@ -97,20 +97,22 @@ bool SSLVerifier::AddCert(const std::string& pem, X509_STORE* store) {
     RTC_LOG(LS_ERROR) << "BIO_new_mem_buf failed";
     return false;
   }
-  X509* cert = PEM_read_bio_X509(bio, nullptr, nullptr, nullptr);
-  if (cert == nullptr) {
-    BIO_free(bio);
-    RTC_LOG(LS_ERROR) << "PEM_read_bio_X509 failed";
-    return false;
-  }
-  int r = X509_STORE_add_cert(store, cert);
-  if (r == 0) {
+  while (true) {
+    X509* cert = PEM_read_bio_X509(bio, nullptr, nullptr, nullptr);
+    if (cert == nullptr) {
+      break;
+    }
+
+    int r = X509_STORE_add_cert(store, cert);
+    if (r == 0) {
+      X509_free(cert);
+      BIO_free(bio);
+      RTC_LOG(LS_ERROR) << "X509_STORE_add_cert failed";
+      return false;
+    }
     X509_free(cert);
-    BIO_free(bio);
-    RTC_LOG(LS_ERROR) << "X509_STORE_add_cert failed";
-    return false;
   }
-  X509_free(cert);
+
   BIO_free(bio);
   return true;
 }
@@ -138,7 +140,9 @@ bool SSLVerifier::LoadBuiltinSSLRootCertificates(X509_STORE* store) {
   return count_of_added_certs > 0;
 }
 
-bool SSLVerifier::VerifyX509(X509* x509, STACK_OF(X509) * chain) {
+bool SSLVerifier::VerifyX509(X509* x509,
+                             STACK_OF(X509) * chain,
+                             const std::optional<std::string>& ca_cert) {
   {
     char data[256];
     RTC_LOG(LS_INFO) << "cert:";
@@ -186,20 +190,28 @@ bool SSLVerifier::VerifyX509(X509* x509, STACK_OF(X509) * chain) {
     return false;
   }
 
-  // Let's Encrypt の証明書を追加
-  if (!AddCert(isrg_root, store)) {
-    return false;
-  }
-  if (!AddCert(lets_encrypt_r3, store)) {
-    return false;
-  }
+  if (!ca_cert) {
+    // Let's Encrypt の証明書を追加
+    if (!AddCert(isrg_root, store)) {
+      return false;
+    }
+    if (!AddCert(lets_encrypt_r3, store)) {
+      return false;
+    }
 
-  // WebRTC が用意しているルート証明書の設定
-  LoadBuiltinSSLRootCertificates(store);
-  // デフォルト証明書のパスの設定
-  X509_STORE_set_default_paths(store);
-  RTC_LOG(LS_INFO) << "default cert file: " << X509_get_default_cert_file();
-
+    // WebRTC が用意しているルート証明書の設定
+    LoadBuiltinSSLRootCertificates(store);
+    // デフォルト証明書のパスの設定
+    X509_STORE_set_default_paths(store);
+    RTC_LOG(LS_INFO) << "default cert file: " << X509_get_default_cert_file();
+  } else {
+    // ルート証明書が指定されている場合、その証明書以外は読み込まない
+    if (!AddCert(*ca_cert, store)) {
+      RTC_LOG(LS_ERROR) << "Failed to add ca_cert: ca_cert_length="
+                        << ca_cert->size();
+      return false;
+    }
+  }
   ctx = X509_STORE_CTX_new();
   if (ctx == nullptr) {
     RTC_LOG(LS_ERROR) << "X509_STORE_CTX_new failed";
