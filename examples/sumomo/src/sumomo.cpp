@@ -167,7 +167,7 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
         context_->signaling_thread()->BlockingCall([this]() {
           return context_->connection_context()->default_socket_factory();
         });
-    config_.insecure = config.insecure;
+    config.insecure = config_.insecure;
     auto load_file = [](const std::string& path) {
       std::ifstream ifs(path, std::ios::binary);
       if (!ifs) {

@@ -43,6 +43,8 @@
   - クライアント認証に関するオプション `--client-cert`, `--client-key` を追加
     - 指定できるファイルは PEM 形式
   - @melpon
+- [FIX] sumomo の SoraSignalingConfig.insecure を設定する処理を修正する
+  - @zztkm
 
 ## 2024.7.0
 
