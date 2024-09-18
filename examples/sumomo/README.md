@@ -234,9 +234,11 @@ Windows 以外の場合
 
 - `--insecure` : 安全でない接続を許可するフラグ
   - 未指定の場合は false です
+- `--ca-cert` : CA 証明書ファイル
 - `--client-cert` : クライアント証明書ファイル
 - `--client-key` : クライアント鍵ファイル
-- `--ca-cert` : CA 証明書ファイル
+
+`--ca-cert`, `--client-cert`, `--client-key` には、PEM 形式のファイルを指定してください。
 
 #### その他のオプション
 
