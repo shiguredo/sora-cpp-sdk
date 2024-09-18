@@ -236,7 +236,7 @@ Windows 以外の場合
   - 未指定の場合は、サーバー証明書の検証を行います
 - `--ca-cert` : CA 証明書ファイル
 - `--client-cert` : クライアント証明書ファイル
-- `--client-key` : クライアント鍵ファイル
+- `--client-key` : クライアントプライベートキーファイル
 
 `--ca-cert`, `--client-cert`, `--client-key` には、PEM 形式のファイルを指定してください。
 
