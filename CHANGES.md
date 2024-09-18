@@ -36,7 +36,11 @@
 
 - [UPDATE] SDL2 を 2.30.7 にあげる
   - @voluntas
-
+- [ADD] sumomo に証明書に関するオプションを追加する
+  - 安全ではない接続を許可するオプション `--insecure` を追加
+  - CA 証明書を指定するオプション `--ca-cert` を追加
+  - クライアント証明書に関するオプション `--client-cert`, `--client-key` を追加
+  - @melpon
 
 ## 2024.7.0
 
