@@ -100,6 +100,7 @@ bool SSLVerifier::AddCert(const std::string& pem, X509_STORE* store) {
   while (true) {
     X509* cert = PEM_read_bio_X509(bio, nullptr, nullptr, nullptr);
     if (cert == nullptr) {
+      ERR_get_error();
       break;
     }
 
