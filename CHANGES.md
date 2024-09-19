@@ -29,6 +29,8 @@
   - @tnoho
 - [ADD] ルート証明書を指定可能にする
   - @melpon
+- [ADD] Ubuntu 24.04 armv8 に対応する
+  - @melpon
 - [FIX] HTTP Proxy 利用時の Websocket 初期化で insecure_ メンバ変数が初期化されていなかったのを修正
   - @melpon
 
