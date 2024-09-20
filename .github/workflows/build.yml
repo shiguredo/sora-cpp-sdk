@@ -248,7 +248,9 @@ jobs:
       - name: Install deps for ${{ matrix.platform.name }}
         if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'armv8'
         run: |
-          sudo apt-get install -y software-properties-common multistrap
+          sudo apt-get -y install multistrap binutils-aarch64-linux-gnu
+          # multistrap に insecure なリポジトリからの取得を許可する設定を入れる
+          sudo sed -e 's/Apt::Get::AllowUnauthenticated=true/Apt::Get::AllowUnauthenticated=true";\n$config_str .= " -o Acquire::AllowInsecureRepositories=true/' -i /usr/sbin/multistrap
       - name: Install deps for Android
         if: matrix.platform.os == 'android'
         run: |
