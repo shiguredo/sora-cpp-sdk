@@ -160,12 +160,19 @@ jobs:
           - name: ubuntu-20.04_x86_64
             runs-on: ubuntu-20.04
             os: ubuntu
+            arch: x86_64
           - name: ubuntu-22.04_x86_64
             runs-on: ubuntu-22.04
             os: ubuntu
+            arch: x86_64
           - name: ubuntu-24.04_x86_64
             runs-on: ubuntu-24.04
             os: ubuntu
+            arch: x86_64
+          - name: ubuntu-24.04_armv8
+            runs-on: ubuntu-24.04
+            os: ubuntu
+            arch: armv8
           - name: android
             runs-on: ubuntu-22.04
             os: android
@@ -216,7 +223,7 @@ jobs:
           Pin-Priority: 990
           EOF
       - name: Install deps for ${{ matrix.platform.name }}
-        if: matrix.platform.os == 'ubuntu'
+        if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
         run: |
           source VERSION
           sudo apt-get update
@@ -238,6 +245,12 @@ jobs:
 
           # Intel Media SDK のために libva-dev, libdrm-dev を入れる
           DEBIAN_FRONTEND=noninteractive sudo apt-get -y install libva-dev libdrm-dev
+      - name: Install deps for ${{ matrix.platform.name }}
+        if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'armv8'
+        run: |
+          sudo apt-get -y install multistrap binutils-aarch64-linux-gnu
+          # multistrap に insecure なリポジトリからの取得を許可する設定を入れる
+          sudo sed -e 's/Apt::Get::AllowUnauthenticated=true/Apt::Get::AllowUnauthenticated=true";\n$config_str .= " -o Acquire::AllowInsecureRepositories=true/' -i /usr/sbin/multistrap
       - name: Install deps for Android
         if: matrix.platform.os == 'android'
         run: |
@@ -283,13 +296,13 @@ jobs:
             python3 $app/${{ matrix.platform.name }}/run.py --local-sora-cpp-sdk-dir ..
             cp _build/${{ matrix.platform.name }}/release/$app/$app examples_${{ matrix.platform.name }}
           done
-        if: matrix.platform.os == 'ubuntu'
+        if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
       - name: Upload Examples Artifact
         uses: actions/upload-artifact@v4
         with:
           name: examples_${{ matrix.platform.name }}
           path: examples/examples_${{ matrix.platform.name }}
-        if: matrix.platform.os == 'ubuntu'
+        if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
 
   create-release:
     name: Create Release
@@ -319,6 +332,9 @@ jobs:
       - uses: ./.github/actions/download
         with:
           platform: ubuntu-24.04_x86_64
+      - uses: ./.github/actions/download
+        with:
+          platform: ubuntu-24.04_armv8
       - uses: ./.github/actions/download
         with:
           platform: android
