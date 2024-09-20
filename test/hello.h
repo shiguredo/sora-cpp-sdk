@@ -6,6 +6,7 @@
 struct HelloSoraConfig {
   std::vector<std::string> signaling_urls;
   std::string channel_id;
+  std::optional<std::string> ca_cert;
   std::string role = "sendonly";
   bool video = true;
   bool audio = true;

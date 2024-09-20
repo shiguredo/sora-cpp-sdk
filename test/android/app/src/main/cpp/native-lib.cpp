@@ -25,6 +25,11 @@ void* GetAndroidApplicationContext(void* env) {
   return g_ctx;
 }
 
+// rootCA.pem を文字列 (std::string) として定義する
+static const std::string ca_cert = R"(-----BEGIN CERTIFICATE-----
+ここに CA 証明書の内容を貼り付ける
+-----END CERTIFICATE-----)";
+
 extern "C" JNIEXPORT void JNICALL
 Java_jp_shiguredo_hello_MainActivity_run(JNIEnv* env,
                                          jobject /* this */,
@@ -39,6 +44,7 @@ Java_jp_shiguredo_hello_MainActivity_run(JNIEnv* env,
     config.signaling_urls.push_back("シグナリングURL");
     config.channel_id = "チャンネルID";
     config.role = "sendonly";
+    config.ca_cert = ca_cert;
     auto hello = std::make_shared<HelloSora>(context, config);
     hello->Run();
     RTC_LOG(LS_INFO) << "Finished io_context thread";
