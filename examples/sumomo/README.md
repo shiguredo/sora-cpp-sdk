@@ -82,6 +82,7 @@ _build/macos_arm64/release/sumomo
 必要なパッケージをインストールしてください。
 
 ```shell
+sudo apt install build-essential
 sudo apt install libxext-dev
 sudo apt install libx11-dev
 sudo apt install libdrm-dev
@@ -110,6 +111,7 @@ _build/ubuntu-20.04_x86_64/release/sumomo/
 必要なパッケージをインストールしてください。
 
 ```shell
+sudo apt install build-essential
 sudo apt install libxext-dev
 sudo apt install libx11-dev
 sudo apt install libdrm-dev
@@ -128,6 +130,35 @@ python3 sumomo/ubuntu-22.04_x86_64/run.py
 
 ```
 _build/ubuntu-22.04_x86_64/release/sumomo/
+└── sumomo
+```
+
+#### Ubuntu 24.04 x86_64 向けのビルドをする
+
+##### 事前準備
+
+必要なパッケージをインストールしてください。
+
+```shell
+sudo apt install build-essential
+sudo apt install libxext-dev
+sudo apt install libx11-dev
+sudo apt install libdrm-dev
+sudo apt install libva-dev
+sudo apt install pkg-config
+sudo apt install python3
+```
+
+##### ビルド
+
+```shell
+python3 sumomo/ubuntu-24.04_x86_64/run.py
+```
+
+成功した場合、以下のファイルが作成されます。`_build/ubuntu-24.04_x86_64/release/sumomo` に `sumomo` が作成されます。
+
+```
+_build/ubuntu-24.04_x86_64/release/sumomo/
 └── sumomo
 ```
 
