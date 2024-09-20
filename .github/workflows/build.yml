@@ -245,6 +245,10 @@ jobs:
 
           # Intel Media SDK のために libva-dev, libdrm-dev を入れる
           DEBIAN_FRONTEND=noninteractive sudo apt-get -y install libva-dev libdrm-dev
+      - name: Install deps for ${{ matrix.platform.name }}
+        if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'armv8'
+        run: |
+          sudo apt-get install -y software-properties-common multistrap
       - name: Install deps for Android
         if: matrix.platform.os == 'android'
         run: |

@@ -143,7 +143,7 @@ def install_deps(
         version = read_version_file("VERSION")
 
         # multistrap を使った sysroot の構築
-        if platform.target.arch != "x86_64":
+        if platform.target.os == "ubuntu" and platform.target.arch == "armv8":
             conf = os.path.join(BASE_DIR, "multistrap", f"{platform.target.package_name}.conf")
             # conf ファイルのハッシュ値をバージョンとする
             version_md5 = hashlib.md5(open(conf, "rb").read()).hexdigest()
