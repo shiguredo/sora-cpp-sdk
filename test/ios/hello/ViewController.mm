@@ -4,6 +4,7 @@
 //
 //  Created by melpon on 2022/05/03.
 //
+#include <string>
 
 #import <thread>
 #import <memory>
@@ -25,6 +26,10 @@ void IosAudioInit(std::function<void(std::string)> on_complete) {
         }
     }];
 }
+// rootCA.pem を文字列 (std::string) として定義する
+static const std::string ca_cert = R"(-----BEGIN CERTIFICATE-----
+ここに CA 証明書の内容を貼り付ける
+-----END CERTIFICATE-----)";
 
 void Run() {
     // rtc::LogMessage::LogToDebug(rtc::LS_INFO);
@@ -41,6 +46,7 @@ void Run() {
     config.signaling_urls.push_back("シグナリングURL");
     config.channel_id = "チャンネルID";
     config.role = "sendrecv";
+    config.ca_cert = ca_cert;
     auto hello = std::make_shared<HelloSora>(context, config);
     hello->Run();
 }
