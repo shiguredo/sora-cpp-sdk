@@ -17,10 +17,10 @@
   - @voluntas
 - [UPDATE] Boost を 1.86.0 にあげる
   - @voluntas
-- [UPDATE] libwebrtc を m128.6613.2.0 にあげる
+- [UPDATE] libwebrtc を m129.6668.1.0 にあげる
   - H.265 Patch の修正に伴い、C++ SDK の H.265 に関する設定を変更
   - examples と test に `rtc::CreateRandomString` のヘッダを追加
-  - @tnoho
+  - @tnoho @torikizi
 - [UPDATE] Xcode のバージョンを 15.4 にあげる
   - @tnoho
 - [ADD] シグナリングメッセージを取得できるよう OnSignalingMessage を SoraSignalingObserver に追加する
