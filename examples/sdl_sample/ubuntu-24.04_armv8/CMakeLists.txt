@@ -13,7 +13,7 @@ set(SORA_DIR "" CACHE PATH "Sora のルートディレクトリ")
 set(SDL2_DIR "" CACHE PATH "SDL2 のルートディレクトリ")
 set(CLI11_DIR "" CACHE PATH "CLI11 のルートディレクトリ")
 
-project(sora-sumomo C CXX)
+project(sora-sdl-sample C CXX)
 
 list(APPEND CMAKE_PREFIX_PATH ${SORA_DIR} ${SDL2_DIR})
 list(APPEND CMAKE_MODULE_PATH ${SORA_DIR}/share/cmake)
@@ -25,19 +25,17 @@ find_package(WebRTC REQUIRED)
 find_package(Sora REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(Threads REQUIRED)
-find_package(Libva REQUIRED)
-find_package(Libdrm REQUIRED)
 
-add_executable(sumomo)
-set_target_properties(sumomo PROPERTIES CXX_STANDARD 20 C_STANDARD 20)
-set_target_properties(sumomo PROPERTIES POSITION_INDEPENDENT_CODE ON)
-target_sources(sumomo PRIVATE ../src/sumomo.cpp ../src/sdl_renderer.cpp)
+add_executable(sdl_sample)
+set_target_properties(sdl_sample PROPERTIES CXX_STANDARD 20 C_STANDARD 20)
+set_target_properties(sdl_sample PROPERTIES POSITION_INDEPENDENT_CODE ON)
+target_sources(sdl_sample PRIVATE ../src/sdl_sample.cpp ../src/sdl_renderer.cpp)
 
-target_compile_options(sumomo
+target_compile_options(sdl_sample
   PRIVATE
     "$<$<COMPILE_LANGUAGE:CXX>:-nostdinc++>"
     "$<$<COMPILE_LANGUAGE:CXX>:-isystem${LIBCXX_INCLUDE_DIR}>"
 )
-target_include_directories(sumomo PRIVATE ${CLI11_DIR}/include)
-target_link_libraries(sumomo PRIVATE Sora::sora SDL2::SDL2 SDL2::SDL2main)
-target_compile_definitions(sumomo PRIVATE CLI11_HAS_FILESYSTEM=0)
+target_include_directories(sdl_sample PRIVATE ${CLI11_DIR}/include)
+target_link_libraries(sdl_sample PRIVATE Sora::sora SDL2::SDL2 SDL2::SDL2main)
+target_compile_definitions(sdl_sample PRIVATE CLI11_HAS_FILESYSTEM=0)

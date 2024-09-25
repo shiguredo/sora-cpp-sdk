@@ -46,6 +46,8 @@
   - クライアント認証に関するオプション `--client-cert`, `--client-key` を追加
     - 指定できるファイルは PEM 形式
   - @melpon
+- [ADD] Ubuntu 24.04 armv8 向けの example を追加する
+  - @melpon
 
 ## 2024.7.0
 

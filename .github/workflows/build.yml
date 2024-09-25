@@ -296,7 +296,7 @@ jobs:
             python3 $app/${{ matrix.platform.name }}/run.py --local-sora-cpp-sdk-dir ..
             cp _build/${{ matrix.platform.name }}/release/$app/$app examples_${{ matrix.platform.name }}
           done
-        if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
+        if: matrix.platform.os == 'ubuntu'
       - name: Upload Examples Artifact
         uses: actions/upload-artifact@v4
         with:
