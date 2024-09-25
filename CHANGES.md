@@ -20,6 +20,7 @@
 - [UPDATE] libwebrtc を m129.6668.1.0 にあげる
   - H.265 Patch の修正に伴い、C++ SDK の H.265 に関する設定を変更
   - examples と test に `rtc::CreateRandomString` のヘッダを追加
+  - `SetRtpTimestamp` を `frame.timestamp` から `frame.rtp_timestamp` に変更
   - @tnoho @torikizi
 - [UPDATE] Xcode のバージョンを 15.4 にあげる
   - @tnoho
