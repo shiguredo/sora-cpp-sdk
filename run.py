@@ -503,6 +503,29 @@ def install_deps(
             install_catch2(**install_catch2_args)
 
 
+def check_version_file():
+    version = read_version_file(os.path.join(BASE_DIR, "VERSION"))
+    example_version = read_version_file(os.path.join(BASE_DIR, "examples", "VERSION"))
+    has_error = False
+    if version["SORA_CPP_SDK_VERSION"] != example_version["SORA_CPP_SDK_VERSION"]:
+        logging.error(
+            f"SORA_CPP_SDK_VERSION mismatch: VERSION={version['SORA_CPP_SDK_VERSION']}, example/VERSION={example_version['SORA_CPP_SDK_VERSION']}"
+        )
+        has_error = True
+    if version["WEBRTC_BUILD_VERSION"] != example_version["WEBRTC_BUILD_VERSION"]:
+        logging.error(
+            f"WEBRTC_BUILD_VERSION mismatch: VERSION={version['WEBRTC_BUILD_VERSION']}, example/VERSION={example_version['WEBRTC_BUILD_VERSION']}"
+        )
+        has_error = True
+    if version["BOOST_VERSION"] != example_version["BOOST_VERSION"]:
+        logging.error(
+            f"BOOST_VERSION mismatch: VERSION={version['BOOST_VERSION']}, example/VERSION={example_version['BOOST_VERSION']}"
+        )
+        has_error = True
+    if has_error:
+        raise Exception("VERSION mismatch")
+
+
 AVAILABLE_TARGETS = [
     "windows_x86_64",
     "macos_x86_64",
@@ -518,6 +541,8 @@ WINDOWS_SDK_VERSION = "10.0.20348.0"
 
 
 def main():
+    check_version_file()
+
     parser = argparse.ArgumentParser()
     parser.add_argument("target", choices=AVAILABLE_TARGETS)
     parser.add_argument("--debug", action="store_true")

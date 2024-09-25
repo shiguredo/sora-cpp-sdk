@@ -32,6 +32,8 @@
   - @melpon
 - [ADD] Ubuntu 24.04 armv8 に対応する
   - @melpon
+- [ADD] VERSION と examples/VERSION のバージョンをチェックする仕組みを追加
+  - @melpon
 - [FIX] HTTP Proxy 利用時の Websocket 初期化で insecure_ メンバ変数が初期化されていなかったのを修正
   - @melpon
 
