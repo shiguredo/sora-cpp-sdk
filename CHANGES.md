@@ -34,6 +34,8 @@
   - @melpon
 - [ADD] VERSION と examples/VERSION のバージョンをチェックする仕組みを追加
   - @melpon
+- [ADD] WebSocket の Close を取得できるよう SendOnWsClose を SoraSignalingObserver に追加する
+  - @tnoho
 - [FIX] HTTP Proxy 利用時の Websocket 初期化で insecure_ メンバ変数が初期化されていなかったのを修正
   - @melpon
 
