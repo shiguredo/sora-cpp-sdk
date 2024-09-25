@@ -302,7 +302,7 @@ jobs:
         with:
           name: examples_${{ matrix.platform.name }}
           path: examples/examples_${{ matrix.platform.name }}
-        if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
+        if: matrix.platform.os == 'ubuntu'
 
   create-release:
     name: Create Release
