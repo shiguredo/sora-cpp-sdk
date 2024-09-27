@@ -62,6 +62,7 @@ class SoraSignalingObserver {
   virtual void OnSignalingMessage(SoraSignalingType type,
                                   SoraSignalingDirection direction,
                                   std::string message) {}
+  virtual void OnWsClose(uint16_t code, std::string message) {}
 
   virtual void OnTrack(
       rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver) = 0;
@@ -226,6 +227,7 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
   void SendOnSignalingMessage(SoraSignalingType type,
                               SoraSignalingDirection direction,
                               std::string message);
+  void SendOnWsClose(const boost::beast::websocket::close_reason& reason);
 
   webrtc::DataBuffer ConvertToDataBuffer(const std::string& label,
                                          const std::string& input);

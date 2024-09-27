@@ -591,6 +591,7 @@ void SoraSignaling::DoInternalDisconnect(
       boost::system::error_code tec;
       self->closing_timeout_timer_.cancel(tec);
       auto ws_reason = self->ws_->reason();
+      self->SendOnWsClose(ws_reason);
       std::string message =
           "Unintended disconnect WebSocket during Disconnect process: ec=" +
           ec.message() + " wscode=" + std::to_string(ws_reason.code) +
@@ -624,6 +625,7 @@ void SoraSignaling::DoInternalDisconnect(
             boost::system::error_code tec;
             self->closing_timeout_timer_.cancel(tec);
             auto ws_reason = self->ws_->reason();
+            self->SendOnWsClose(ws_reason);
             std::string ws_reason_str =
                 " wscode=" + std::to_string(ws_reason.code) +
                 " wsreason=" + ws_reason.reason.c_str();
@@ -702,9 +704,10 @@ void SoraSignaling::DoInternalDisconnect(
           self->on_ws_close_ = [self, on_close](boost::system::error_code ec) {
             boost::system::error_code tec;
             self->closing_timeout_timer_.cancel(tec);
+            auto reason = self->ws_->reason();
+            self->SendOnWsClose(reason);
             bool ec_error = ec != boost::beast::websocket::error::closed;
             if (ec_error) {
-              auto reason = self->ws_->reason();
               on_close(false, SoraSignalingErrorCode::CLOSE_FAILED,
                        "Failed to close WebSocket: ec=" + ec.message() +
                            " wscode=" + std::to_string(reason.code) +
@@ -816,6 +819,7 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
                             ? SoraSignalingErrorCode::WEBSOCKET_ONCLOSE
                             : SoraSignalingErrorCode::WEBSOCKET_ONERROR;
       auto reason = ws_->reason();
+      SendOnWsClose(reason);
       std::string reason_str = " wscode=" + std::to_string(reason.code) +
                                " wsreason=" + reason.reason.c_str();
       SendOnDisconnect(error_code, "Failed to read WebSocket: ec=" +
@@ -1352,6 +1356,13 @@ void SoraSignaling::SendOnSignalingMessage(SoraSignalingType type,
                                            std::string message) {
   if (auto ob = config_.observer.lock(); ob) {
     ob->OnSignalingMessage(type, direction, std::move(message));
+  }
+}
+
+void SoraSignaling::SendOnWsClose(
+    const boost::beast::websocket::close_reason& reason) {
+  if (auto ob = config_.observer.lock(); ob) {
+    ob->OnWsClose(reason.code, reason.reason.c_str());
   }
 }
 
