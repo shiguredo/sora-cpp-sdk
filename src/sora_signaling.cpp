@@ -704,10 +704,10 @@ void SoraSignaling::DoInternalDisconnect(
           self->on_ws_close_ = [self, on_close](boost::system::error_code ec) {
             boost::system::error_code tec;
             self->closing_timeout_timer_.cancel(tec);
+            auto reason = self->ws_->reason();
+            self->SendOnWsClose(reason);
             bool ec_error = ec != boost::beast::websocket::error::closed;
             if (ec_error) {
-              auto reason = self->ws_->reason();
-              self->SendOnWsClose(reason);
               on_close(false, SoraSignalingErrorCode::CLOSE_FAILED,
                        "Failed to close WebSocket: ec=" + ec.message() +
                            " wscode=" + std::to_string(reason.code) +
@@ -1360,9 +1360,9 @@ void SoraSignaling::SendOnSignalingMessage(SoraSignalingType type,
 }
 
 void SoraSignaling::SendOnWsClose(
-    boost::beast::websocket::close_reason& reason) {
+    const boost::beast::websocket::close_reason& reason) {
   if (auto ob = config_.observer.lock(); ob) {
-    ob->OnWsClose(reason.code, std::string(reason.reason.c_str()));
+    ob->OnWsClose(reason.code, reason.reason.c_str());
   }
 }
 

@@ -227,7 +227,7 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
   void SendOnSignalingMessage(SoraSignalingType type,
                               SoraSignalingDirection direction,
                               std::string message);
-  void SendOnWsClose(boost::beast::websocket::close_reason& reason);
+  void SendOnWsClose(const boost::beast::websocket::close_reason& reason);
 
   webrtc::DataBuffer ConvertToDataBuffer(const std::string& label,
                                          const std::string& input);
