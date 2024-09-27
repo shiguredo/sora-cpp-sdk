@@ -19,8 +19,8 @@
 namespace sora {
 
 static std::shared_ptr<boost::asio::ssl::context> CreateSSLContext(
-    const std::string& client_cert,
-    const std::string& client_key) {
+    const std::optional<std::string>& client_cert,
+    const std::optional<std::string>& client_key) {
   // TLS 1.2 と 1.3 のみ対応
   SSL_CTX* handle = ::SSL_CTX_new(::TLS_method());
   SSL_CTX_set_min_proto_version(handle, TLS1_2_VERSION);
@@ -31,15 +31,15 @@ static std::shared_ptr<boost::asio::ssl::context> CreateSSLContext(
                    boost::asio::ssl::context::no_sslv2 |
                    boost::asio::ssl::context::no_sslv3 |
                    boost::asio::ssl::context::single_dh_use);
-  if (!client_cert.empty()) {
-    ctx->use_certificate_file(client_cert,
-                              boost::asio::ssl::context_base::file_format::pem);
-    RTC_LOG(LS_INFO) << "client_cert=" << client_cert;
+  if (client_cert) {
+    ctx->use_certificate(boost::asio::buffer(*client_cert),
+                         boost::asio::ssl::context_base::file_format::pem);
+    RTC_LOG(LS_INFO) << "client_cert=" << *client_cert;
   }
-  if (!client_key.empty()) {
-    ctx->use_private_key_file(client_key,
-                              boost::asio::ssl::context_base::file_format::pem);
-    RTC_LOG(LS_INFO) << "client_key=" << client_key;
+  if (client_key) {
+    ctx->use_private_key(boost::asio::buffer(*client_key),
+                         boost::asio::ssl::context_base::file_format::pem);
+    RTC_LOG(LS_INFO) << "client_key=" << *client_key;
   }
   return ctx;
 }
@@ -55,8 +55,8 @@ Websocket::Websocket(boost::asio::io_context& ioc)
 Websocket::Websocket(Websocket::ssl_tag,
                      boost::asio::io_context& ioc,
                      bool insecure,
-                     const std::string& client_cert,
-                     const std::string& client_key,
+                     const std::optional<std::string>& client_cert,
+                     const std::optional<std::string>& client_key,
                      const std::optional<std::string>& ca_cert)
     : resolver_(new boost::asio::ip::tcp::resolver(ioc)),
       strand_(ioc.get_executor()),
@@ -78,8 +78,8 @@ Websocket::Websocket(boost::asio::ip::tcp::socket socket)
 Websocket::Websocket(https_proxy_tag,
                      boost::asio::io_context& ioc,
                      bool insecure,
-                     const std::string& client_cert,
-                     const std::string& client_key,
+                     const std::optional<std::string>& client_cert,
+                     const std::optional<std::string>& client_key,
                      const std::optional<std::string>& ca_cert,
                      std::string proxy_url,
                      std::string proxy_username,
