@@ -11,10 +11,6 @@
 
 ## develop
 
-- [CHANGE] SoraSignalingConfig の client_cert と client_key に渡す必要がある値を、ファイルパスからファイルの内容に変更
-  - @melpon
-- [CHANGE] SoraSignalingConfig の client_cert と client_key の型を `std::string` から `std::optional<std::string>` に変更
-  - @melpon
 - [UPDATE] VPL を v2.13.0 に上げる
   - @voluntas
 - [UPDATE] CMake を 3.30.3 にあげる
@@ -39,6 +35,10 @@
 - [ADD] VERSION と examples/VERSION のバージョンをチェックする仕組みを追加
   - @melpon
 - [FIX] HTTP Proxy 利用時の Websocket 初期化で insecure_ メンバ変数が初期化されていなかったのを修正
+  - @melpon
+- [FIX] SoraSignalingConfig の client_cert と client_key に渡す必要がある値を、ファイルパスからファイルの内容に修正
+  - @melpon
+- [FIX] SoraSignalingConfig の client_cert と client_key の型を `std::string` から `std::optional<std::string>` に修正
   - @melpon
 
 ### misc
