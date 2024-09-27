@@ -133,8 +133,8 @@ struct SoraSignalingConfig {
   };
   boost::optional<ForwardingFilter> forwarding_filter;
 
-  std::string client_cert;
-  std::string client_key;
+  std::optional<std::string> client_cert;
+  std::optional<std::string> client_key;
   std::optional<std::string> ca_cert;
 
   int websocket_close_timeout = 3;

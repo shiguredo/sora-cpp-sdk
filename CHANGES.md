@@ -11,6 +11,10 @@
 
 ## develop
 
+- [CHANGE] SoraSignalingConfig の client_cert と client_key に渡す必要がある値を、ファイルパスからファイルの内容に変更
+  - @melpon
+- [CHANGE] SoraSignalingConfig の client_cert と client_key の型を `std::string` から `std::optional<std::string>` に変更
+  - @melpon
 - [UPDATE] VPL を v2.13.0 に上げる
   - @voluntas
 - [UPDATE] CMake を 3.30.3 にあげる
