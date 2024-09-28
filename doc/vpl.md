@@ -73,6 +73,34 @@ sudo apt install -y \
   mesa-vdpau-drivers mesa-vulkan-drivers va-driver-all vainfo hwinfo clinfo
 ```
 
+### Ubuntu 24.04
+
+Ubuntu 24.04 で Intel VPL を利用するためには、ライブラリをインストールする必要があります。
+デコードのみであれば標準のリポジトリからも libmfx-gen1.2 をインストール可能ですが、エンコードも行いたいため Intel の apt リポジトリより libmfxgen1 をインストールします。
+
+#### Intel VPL ランタイムをインストールする
+
+##### Intel の apt リポジトリを追加
+
+パッケージのインストールには Intel の apt リポジトリを追加する必要があります。
+
+```bash
+
+wget -qO - https://repositories.intel.com/gpu/intel-graphics.key | \
+  sudo gpg --dearmor --output /usr/share/keyrings/intel-graphics.gpg
+echo "deb [arch=amd64,i386 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/gpu/ubuntu noble client" | \
+  sudo tee /etc/apt/sources.list.d/intel-gpu-noble.list
+sudo apt update
+```
+
+##### パッケージのインストール
+
+以下の実行例のように、 libmfxgen1 をインストールしてください。
+
+```bash
+sudo apt install -y libmfxgen1
+```
+
 ##### 再起動
 
 パッケージのインストールが完了したら、再起動してください。
