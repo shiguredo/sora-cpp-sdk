@@ -40,9 +40,7 @@ Windows 11 では Intel の公式サイトからドライバーをインスト�
 
 ### Ubuntu 22.04
 
-#### Intel VPL ランタイムをインストールする
-
-##### Intel の apt リポジトリを追加
+#### Intel の apt リポジトリを追加
 
 ランタイムのインストールには Intel の apt リポジトリを追加する必要があります。
 
@@ -54,7 +52,7 @@ echo "deb [arch=amd64,i386 signed-by=/usr/share/keyrings/intel-graphics.gpg] htt
 sudo apt update
 ```
 
-##### Intel 提供パッケージの最新化
+#### Intel 提供パッケージの最新化
 
 Intel の apt リポジトリを追加することでインストール済みのパッケージも Intel から提供されている最新のものに更新できます。依存問題を起こさないため、ここで最新化を行なってください。
 
@@ -62,7 +60,7 @@ Intel の apt リポジトリを追加することでインストール済みの
 sudo apt upgrade
 ```
 
-##### ドライバとライブラリのインストール
+#### ドライバとライブラリのインストール
 
 以下のように、ドライバとライブラリをインストールしてください。
 intel-media-va-driver には無印と `non-free` 版がありますが、 `non-free` 版でしか動作しません。
@@ -75,9 +73,7 @@ sudo apt install -y intel-media-va-driver-non-free libmfxgen1
 
 デコードのみであれば標準のリポジトリからも libmfx-gen1.2 をインストール可能ですが、エンコードも行いたいため Intel の apt リポジトリより libmfxgen1 をインストールします。
 
-#### Intel VPL ランタイムをインストールする
-
-##### Intel の apt リポジトリを追加
+#### Intel の apt リポジトリを追加
 
 ランタイムのインストールには Intel の apt リポジトリを追加する必要があります。
 
@@ -90,7 +86,7 @@ echo "deb [arch=amd64,i386 signed-by=/usr/share/keyrings/intel-graphics.gpg] htt
 sudo apt update
 ```
 
-##### ライブラリのインストール
+#### ライブラリのインストール
 
 以下の実行例のように、 libmfxgen1 をインストールしてください。
 
@@ -98,17 +94,13 @@ sudo apt update
 sudo apt install -y libmfxgen1
 ```
 
-##### 再起動
-
-パッケージのインストールが完了したら、再起動してください。
-
-#### Intel Media SDK を利用する手順
+### Intel Media SDK を利用する手順
 
 Intel のチップセットの世代によって、 Intel Media SDK を利用する必要がある場合があります。
 
 以下の手順で Intel Media SDK をインストールしてください。
 
-##### Intel の apt リポジトリを追加
+#### Intel の apt リポジトリを追加
 
 ```bash
 wget -qO - https://repositories.intel.com/gpu/intel-graphics.key | \
@@ -118,7 +110,7 @@ echo "deb [arch=amd64,i386 signed-by=/usr/share/keyrings/intel-graphics.gpg] htt
 sudo apt update
 ```
 
-###### パッケージのインストール
+##### パッケージのインストール
 
 ```bash
 sudo apt install -y \
@@ -129,10 +121,16 @@ sudo apt install -y \
   mesa-vdpau-drivers mesa-vulkan-drivers va-driver-all vainfo hwinfo clinfo
 ```
 
-### Ubuntu 22.04 で環境構築ができたことを確認する手順
+## Ubuntu 22.04 で環境構築ができたことを確認する手順
 
 `vainfo` コマンドを実行します。  
 エラーが発生しなければ、 Intel VPL の実行に必要なドライバーやライブラリのインストールに成功しています。
+
+`vainfo` がインストールされていない場合は、下記のコマンドで `vainfo` をインストールします。
+
+```bash
+sudo apt install -y vainfo
+```
 
 以下は `vainfo` を実行した出力の例です。  
 対応しているプロファイルやエントリーポイントは環境によって異なります。
