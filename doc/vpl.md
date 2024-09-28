@@ -44,10 +44,9 @@ Windows 11 では Intel の公式サイトからドライバーをインスト�
 
 ##### Intel の apt リポジトリを追加
 
-パッケージのインストールには Intel の apt リポジトリを追加する必要があります。
+ランタイムのインストールには Intel の apt リポジトリを追加する必要があります。
 
 ```bash
-
 wget -qO - https://repositories.intel.com/gpu/intel-graphics.key | \
   sudo gpg --dearmor --output /usr/share/keyrings/intel-graphics.gpg
 echo "deb [arch=amd64,i386 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/gpu/ubuntu jammy client" | \
@@ -55,17 +54,21 @@ echo "deb [arch=amd64,i386 signed-by=/usr/share/keyrings/intel-graphics.gpg] htt
 sudo apt update
 ```
 
-##### パッケージのインストール
+##### Intel 提供パッケージの最新化
 
-以下のように、パッケージをインストールしてください。
+Intel の apt リポジトリを追加することでインストール済みのパッケージも Intel から提供されている最新のものに更新できます。依存問題を起こさないため、ここで最新化を行なってください。
 
 ```bash
-sudo apt install -y \
-  intel-opencl-icd intel-level-zero-gpu level-zero \
-  intel-media-va-driver-non-free libmfx1 libmfxgen1 libvpl2 \
-  libegl-mesa0 libegl1-mesa libegl1-mesa-dev libgbm1 libgl1-mesa-dev libgl1-mesa-dri \
-  libglapi-mesa libgles2-mesa-dev libglx-mesa0 libigdgmm12 libxatracker2 mesa-va-drivers \
-  mesa-vdpau-drivers mesa-vulkan-drivers va-driver-all vainfo hwinfo clinfo
+sudo apt upgrade
+```
+
+##### ドライバとライブラリのインストール
+
+以下のように、ドライバとライブラリをインストールしてください。
+intel-media-va-driver には無印と `non-free` 版がありますが、 `non-free` 版でしか動作しません。
+
+```bash
+sudo apt install -y intel-media-va-driver-non-free libmfxgen1
 ```
 
 ### Ubuntu 24.04
@@ -76,7 +79,7 @@ sudo apt install -y \
 
 ##### Intel の apt リポジトリを追加
 
-パッケージのインストールには Intel の apt リポジトリを追加する必要があります。
+ランタイムのインストールには Intel の apt リポジトリを追加する必要があります。
 
 ```bash
 
@@ -87,7 +90,7 @@ echo "deb [arch=amd64,i386 signed-by=/usr/share/keyrings/intel-graphics.gpg] htt
 sudo apt update
 ```
 
-##### パッケージのインストール
+##### ライブラリのインストール
 
 以下の実行例のように、 libmfxgen1 をインストールしてください。
 
