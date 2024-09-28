@@ -134,6 +134,11 @@ void SoraSignaling::Redirect(std::string url) {
     }
 
     auto on_close = [self, url](boost::system::error_code ec) {
+      if (!ec) {
+        self->SendOnWsClose(boost::beast::websocket::close_reason(
+            boost::beast::websocket::close_code::normal));
+      }
+
       if (self->state_ != State::Redirecting) {
         return;
       }
@@ -1143,8 +1148,14 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
     auto it = m.as_object().find("ignore_disconnect_websocket");
     if (it != m.as_object().end() && it->value().as_bool() && ws_connected_) {
       RTC_LOG(LS_INFO) << "Close WebSocket for DataChannel";
-      ws_->Close([self = shared_from_this()](boost::system::error_code) {},
-                 config_.websocket_close_timeout);
+      ws_->Close(
+          [self = shared_from_this()](boost::system::error_code ec) {
+            if (!ec) {
+              self->SendOnWsClose(boost::beast::websocket::close_reason(
+                  boost::beast::websocket::close_code::normal));
+            }
+          },
+          config_.websocket_close_timeout);
       ws_connected_ = false;
 
       return;
