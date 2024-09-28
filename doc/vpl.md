@@ -40,9 +40,6 @@ Windows 11 では Intel の公式サイトからドライバーをインスト�
 
 ### Ubuntu 22.04
 
-Ubuntu 22.04 で Intel VPL を利用するためには、ドライバーとライブラリをインストールする必要があります。
-公式ドキュメントの <https://dgpu-docs.intel.com/driver/client/overview.html> を参考に必要なドライバーとライブラリをインストールします。
-
 #### Intel VPL ランタイムをインストールする
 
 ##### Intel の apt リポジトリを追加
@@ -60,14 +57,12 @@ sudo apt update
 
 ##### パッケージのインストール
 
-公式ドキュメントでは libmfxgen1 をインストールする手順が記載されていますが、Intel VPL ランタイムを使用するには libmfx-gen1.2 が必要です。
-
-以下の実行例のように、 libmfx-gen1.2 をインストールしてください。
+以下のように、パッケージをインストールしてください。
 
 ```bash
 sudo apt install -y \
   intel-opencl-icd intel-level-zero-gpu level-zero \
-  intel-media-va-driver-non-free libmfx1 libmfx-gen1.2 libvpl2 \
+  intel-media-va-driver-non-free libmfx1 libmfxgen1 libvpl2 \
   libegl-mesa0 libegl1-mesa libegl1-mesa-dev libgbm1 libgl1-mesa-dev libgl1-mesa-dri \
   libglapi-mesa libgles2-mesa-dev libglx-mesa0 libigdgmm12 libxatracker2 mesa-va-drivers \
   mesa-vdpau-drivers mesa-vulkan-drivers va-driver-all vainfo hwinfo clinfo
@@ -75,7 +70,6 @@ sudo apt install -y \
 
 ### Ubuntu 24.04
 
-Ubuntu 24.04 で Intel VPL を利用するためには、ライブラリをインストールする必要があります。
 デコードのみであれば標準のリポジトリからも libmfx-gen1.2 をインストール可能ですが、エンコードも行いたいため Intel の apt リポジトリより libmfxgen1 をインストールします。
 
 #### Intel VPL ランタイムをインストールする
