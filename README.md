@@ -21,7 +21,8 @@ Please read <https://github.com/shiguredo/oss/blob/master/README.en.md> before u
 
 - 各プラットフォームで利用可能な HWA への対応
   - [Intel VPL](https://github.com/intel/libvpl)
-    - VP9 / AV1 / H.264 / H.265
+    - AV1 / H.264 / H.265
+      - VP9 のデコードは利用可能ですが、エンコードは現在既知の問題があります。詳細は [known_issues.md](doc/known_issues.md) をお読みください。
   - [NVIDIA Video Codec SDK](https://developer.nvidia.com/video-codec-sdk)
     - VP9 / H.264 / H.265
   - [NVIDIA JetPack SDK](https://developer.nvidia.com/embedded/jetpack) (JetPack 6)
