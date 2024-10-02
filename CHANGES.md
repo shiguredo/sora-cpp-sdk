@@ -24,6 +24,12 @@
   - @tnoho @torikizi
 - [UPDATE] Xcode のバージョンを 15.4 にあげる
   - @tnoho
+- [UPDATE] SDL を 2.30.8 に上げる
+  - @torikizi
+- [UPDATE] BLEND2D_VERSION を上げる
+  - @torikizi
+- [UPDATE] ASMJIT_VERSION を上げる
+  - @torikizi
 - [ADD] シグナリングメッセージを取得できるよう OnSignalingMessage を SoraSignalingObserver に追加する
   - @tnoho
 - [ADD] Intel VPL で AV1 エンコーダを動くようにする
