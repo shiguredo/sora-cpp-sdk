@@ -841,6 +841,7 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
                             ? SoraSignalingErrorCode::WEBSOCKET_ONCLOSE
                             : SoraSignalingErrorCode::WEBSOCKET_ONERROR;
       auto reason = ws_->reason();
+      SendOnWsClose(reason);
       std::string reason_str = " wscode=" + std::to_string(reason.code) +
                                " wsreason=" + reason.reason.c_str();
       state_ = State::Closing;
