@@ -812,14 +812,14 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
       RTC_LOG(LS_ERROR) << "OnRead: state is Closing but on_ws_close_ is null";
       return;
     }
+    auto reason = ws_->reason();
+    SendOnWsClose(reason);
     if (state_ == State::Connected && !using_datachannel_) {
       // 何かエラーが起きたので切断する
       ws_connected_ = false;
       auto error_code = ec == boost::beast::websocket::error::closed
                             ? SoraSignalingErrorCode::WEBSOCKET_ONCLOSE
                             : SoraSignalingErrorCode::WEBSOCKET_ONERROR;
-      auto reason = ws_->reason();
-      SendOnWsClose(reason);
       std::string reason_str = " wscode=" + std::to_string(reason.code) +
                                " wsreason=" + reason.reason.c_str();
       SendOnDisconnect(error_code, "Failed to read WebSocket: ec=" +
@@ -840,7 +840,6 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
       auto error_code = ec == boost::beast::websocket::error::closed
                             ? SoraSignalingErrorCode::WEBSOCKET_ONCLOSE
                             : SoraSignalingErrorCode::WEBSOCKET_ONERROR;
-      auto reason = ws_->reason();
       std::string reason_str = " wscode=" + std::to_string(reason.code) +
                                " wsreason=" + reason.reason.c_str();
       state_ = State::Closing;
