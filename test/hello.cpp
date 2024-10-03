@@ -71,6 +71,7 @@ void HelloSora::Run() {
   config.video_bit_rate = config_.video_bit_rate;
   config.multistream = true;
   config.simulcast = config_.simulcast;
+  config.data_channel_signaling = true;
   conn_ = sora::SoraSignaling::Create(config);
 
   boost::asio::executor_work_guard<boost::asio::io_context::executor_type>

@@ -49,6 +49,8 @@
   - @melpon
 - [FIX] SoraSignalingConfig の client_cert と client_key の型を `std::string` から `std::optional<std::string>` に修正
   - @melpon
+- [FIX] WS と DC が両方繋がっている時に切断した時、正常終了にも関わらずエラーが発生することがあるのを修正
+  - @melpon
 
 ### misc
 
