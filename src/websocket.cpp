@@ -32,14 +32,26 @@ static std::shared_ptr<boost::asio::ssl::context> CreateSSLContext(
                    boost::asio::ssl::context::no_sslv3 |
                    boost::asio::ssl::context::single_dh_use);
   if (client_cert) {
+    boost::system::error_code ec;
     ctx->use_certificate(boost::asio::buffer(*client_cert),
-                         boost::asio::ssl::context_base::file_format::pem);
-    RTC_LOG(LS_INFO) << "client_cert=" << *client_cert;
+                         boost::asio::ssl::context_base::file_format::pem, ec);
+    if (ec) {
+      RTC_LOG(LS_WARNING) << "client_cert is set, but use_certificate failed: "
+                          << ec.message();
+    } else {
+      RTC_LOG(LS_INFO) << "client_cert is set";
+    }
   }
   if (client_key) {
+    boost::system::error_code ec;
     ctx->use_private_key(boost::asio::buffer(*client_key),
-                         boost::asio::ssl::context_base::file_format::pem);
-    RTC_LOG(LS_INFO) << "client_key=" << *client_key;
+                         boost::asio::ssl::context_base::file_format::pem, ec);
+    if (ec) {
+      RTC_LOG(LS_WARNING) << "client_key is set, but use_certificate failed: "
+                          << ec.message();
+    } else {
+      RTC_LOG(LS_INFO) << "client_key is set";
+    }
   }
   return ctx;
 }
