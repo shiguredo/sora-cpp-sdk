@@ -138,6 +138,9 @@ void SoraSignaling::Redirect(std::string url) {
         return;
       }
 
+      // Disconnect と重複しないように Redirecting の場合のみ発火させる
+      self->SendSelfOnWsClose(ec);
+
       // close 処理に成功してても失敗してても処理は続ける
       if (ec) {
         RTC_LOG(LS_WARNING) << "Redirect error: ec=" << ec.message();
@@ -855,6 +858,7 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
                             ? SoraSignalingErrorCode::WEBSOCKET_ONCLOSE
                             : SoraSignalingErrorCode::WEBSOCKET_ONERROR;
       auto reason = ws_->reason();
+      SendOnWsClose(reason);
       std::string reason_str = " wscode=" + std::to_string(reason.code) +
                                " wsreason=" + reason.reason.c_str();
       state_ = State::Closing;
@@ -1157,8 +1161,11 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
     auto it = m.as_object().find("ignore_disconnect_websocket");
     if (it != m.as_object().end() && it->value().as_bool() && ws_connected_) {
       RTC_LOG(LS_INFO) << "Close WebSocket for DataChannel";
-      ws_->Close([self = shared_from_this()](boost::system::error_code) {},
-                 config_.websocket_close_timeout);
+      ws_->Close(
+          [self = shared_from_this()](boost::system::error_code ec) {
+            self->SendSelfOnWsClose(ec);
+          },
+          config_.websocket_close_timeout);
       ws_connected_ = false;
 
       return;
@@ -1378,6 +1385,13 @@ void SoraSignaling::SendOnWsClose(
   if (auto ob = config_.observer.lock(); ob) {
     ob->OnWsClose(reason.code, reason.reason.c_str());
   }
+}
+
+void SoraSignaling::SendSelfOnWsClose(boost::system::error_code ec) {
+  auto close_reason = boost::beast::websocket::close_reason(
+      ec ? 4999 : boost::beast::websocket::close_code::normal);
+  close_reason.reason = "SELF-CLOSED";
+  SendOnWsClose(close_reason);
 }
 
 webrtc::DataBuffer SoraSignaling::ConvertToDataBuffer(

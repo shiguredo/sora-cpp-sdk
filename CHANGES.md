@@ -13,7 +13,7 @@
 
 - [UPDATE] VPL を v2.13.0 に上げる
   - @voluntas
-- [UPDATE] CMake を 3.30.3 にあげる
+- [UPDATE] CMake を 3.30.4 にあげる
   - @voluntas
 - [UPDATE] Boost を 1.86.0 にあげる
   - @voluntas
