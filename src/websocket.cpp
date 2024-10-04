@@ -47,7 +47,7 @@ static std::shared_ptr<boost::asio::ssl::context> CreateSSLContext(
     ctx->use_private_key(boost::asio::buffer(*client_key),
                          boost::asio::ssl::context_base::file_format::pem, ec);
     if (ec) {
-      RTC_LOG(LS_WARNING) << "client_key is set, but use_certificate failed: "
+      RTC_LOG(LS_WARNING) << "client_key is set, but use_private_key failed: "
                           << ec.message();
     } else {
       RTC_LOG(LS_INFO) << "client_key is set";
