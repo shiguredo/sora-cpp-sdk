@@ -24,7 +24,7 @@ std::vector<webrtc::SdpVideoFormat> GetDefaultVideoFormats(
     }
   } else if (codec == webrtc::kVideoCodecAV1) {
     r.push_back(webrtc::SdpVideoFormat(
-        cricket::kAv1CodecName, webrtc::SdpVideoFormat::Parameters(),
+        cricket::kAv1CodecName, webrtc::CodecParameterMap(),
         webrtc::LibaomAv1EncoderSupportedScalabilityModes()));
   } else if (codec == webrtc::kVideoCodecH264) {
     r.push_back(CreateH264Format(webrtc::H264Profile::kProfileBaseline,

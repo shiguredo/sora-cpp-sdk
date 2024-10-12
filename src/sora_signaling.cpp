@@ -1595,7 +1595,7 @@ void SoraSignaling::OnMessage(
     return;
   }
 
-  boost::json::error_code ec;
+  boost::system::error_code ec;
   auto json = boost::json::parse(data, ec);
   if (ec) {
     RTC_LOG(LS_ERROR) << "JSON Parse Error ec=" << ec.message();
