@@ -11,8 +11,58 @@
 
 ## develop
 
+- [UPDATE] VPL を v2.13.0 に上げる
+  - @voluntas
+- [UPDATE] CMake を 3.30.4 にあげる
+  - @voluntas
+- [UPDATE] Boost を 1.86.0 にあげる
+  - @voluntas
+- [UPDATE] libwebrtc を m129.6668.1.0 にあげる
+  - H.265 Patch の修正に伴い、C++ SDK の H.265 に関する設定を変更
+  - examples と test に `rtc::CreateRandomString` のヘッダを追加
+  - `SetRtpTimestamp` を `frame.timestamp` から `frame.rtp_timestamp` に変更
+  - @tnoho @torikizi
+- [UPDATE] Xcode のバージョンを 15.4 にあげる
+  - @tnoho
+- [UPDATE] SDL を 2.30.8 に上げる
+  - @torikizi
+- [UPDATE] BLEND2D_VERSION を上げる
+  - @torikizi
+- [UPDATE] ASMJIT_VERSION を上げる
+  - @torikizi
+- [ADD] シグナリングメッセージを取得できるよう OnSignalingMessage を SoraSignalingObserver に追加する
+  - @tnoho
 - [ADD] Intel VPL で AV1 エンコーダを動くようにする
   - @tnoho
+- [ADD] ルート証明書を指定可能にする
+  - @melpon
+- [ADD] Ubuntu 24.04 armv8 に対応する
+  - @melpon
+- [ADD] VERSION と examples/VERSION のバージョンをチェックする仕組みを追加
+  - @melpon
+- [ADD] WebSocket の Close を取得できるよう SendOnWsClose を SoraSignalingObserver に追加する
+  - @tnoho
+- [FIX] HTTP Proxy 利用時の Websocket 初期化で insecure_ メンバ変数が初期化されていなかったのを修正
+  - @melpon
+- [FIX] SoraSignalingConfig の client_cert と client_key に渡す必要がある値を、ファイルパスからファイルの内容に修正
+  - Android の場合、jar に纏められたファイルからファイルパスが取得できないため
+  - @melpon
+- [FIX] SoraSignalingConfig の client_cert と client_key の型を `std::string` から `std::optional<std::string>` に修正
+  - @melpon
+
+### misc
+
+- [UPDATE] SDL2 を 2.30.7 にあげる
+  - @voluntas
+- [ADD] sumomo に証明書に関するオプションを追加する
+  - サーバー証明書の検証を行わないようにするオプション `--insecure` を追加
+  - CA 証明書を指定するオプション `--ca-cert` を追加
+    - 指定できるファイルは PEM 形式
+  - クライアント認証に関するオプション `--client-cert`, `--client-key` を追加
+    - 指定できるファイルは PEM 形式
+  - @melpon
+- [ADD] Ubuntu 24.04 armv8 向けの example を追加する
+  - @melpon
 
 ## 2024.7.0
 

@@ -50,6 +50,11 @@ elseif (SORA_TARGET STREQUAL "ubuntu-24.04_x86_64")
   set(SORA_TARGET_OS_VERSION "24.04")
   set(SORA_TARGET_ARCH "x86_64")
   set(SORA_TARGET_DEF "SORA_CPP_SDK_UBUNTU_2404")
+elseif (SORA_TARGET STREQUAL "ubuntu-24.04_armv8")
+  set(SORA_TARGET_OS "ubuntu")
+  set(SORA_TARGET_OS_VERSION "24.04")
+  set(SORA_TARGET_ARCH "armv8")
+  set(SORA_TARGET_DEF "SORA_CPP_SDK_UBUNTU_2404")
 endif()
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -304,6 +309,9 @@ if (SORA_TARGET_OS STREQUAL "windows")
         # VS のバージョンと _MSC_VER のリストは以下を参照:
         #   https://devblogs.microsoft.com/cppblog/msvc-toolset-minor-version-number-14-40-in-vs-2022-v17-10/
         -allow-unsupported-compiler
+        # 更に STL が CUDA 12.4 以上のバージョンを要求するため、STL のバージョンも無視する
+        # ref: https://stackoverflow.com/questions/78515942/cuda-compatibility-with-visual-studio-2022-version-17-10
+        -Xcompiler /D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH
         -Xcompiler /utf-8
         -Xcompiler /I${CMAKE_CURRENT_SOURCE_DIR}/third_party/NvCodec/include
         -Xcompiler /I${CMAKE_CURRENT_SOURCE_DIR}/third_party/NvCodec/NvCodec
@@ -490,7 +498,7 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
         third_party/NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
         third_party/NvCodec/NvCodec/NvEncoder/NvEncoderCuda.cpp
       PROPERTIES
-        COMPILE_OPTIONS "-xcuda;--cuda-gpu-arch=sm_35;-std=gnu++17"
+        COMPILE_OPTIONS "-xcuda;--cuda-gpu-arch=sm_35;-std=gnu++17;-Wno-tautological-constant-out-of-range-compare"
     )
 
     # CUDA を要求したくないので libsora.a に含める

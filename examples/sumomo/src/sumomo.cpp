@@ -58,6 +58,11 @@ struct SumomoConfig {
 
   std::string srtp_key_log_file;
 
+  bool insecure = false;
+  std::string client_cert;
+  std::string client_key;
+  std::string ca_cert;
+
   struct Size {
     int width;
     int height;
@@ -164,6 +169,24 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
         context_->signaling_thread()->BlockingCall([this]() {
           return context_->connection_context()->default_socket_factory();
         });
+    config.insecure = config_.insecure;
+    auto load_file = [](const std::string& path) {
+      std::ifstream ifs(path, std::ios::binary);
+      if (!ifs) {
+        return std::string();
+      }
+      return std::string((std::istreambuf_iterator<char>(ifs)),
+                         std::istreambuf_iterator<char>());
+    };
+    if (!config_.client_cert.empty()) {
+      config.client_cert = load_file(config_.client_cert);
+    }
+    if (!config_.client_key.empty()) {
+      config.client_key = load_file(config_.client_key);
+    }
+    if (!config_.ca_cert.empty()) {
+      config.ca_cert = load_file(config_.ca_cert);
+    }
     conn_ = sora::SoraSignaling::Create(config);
 
     boost::asio::executor_work_guard<boost::asio::io_context::executor_type>
@@ -416,6 +439,12 @@ int main(int argc, char* argv[]) {
   // SRTP keying material の出力
   app.add_option("--srtp-key-log-file", config.srtp_key_log_file,
                  "SRTP keying material output file");
+
+  // 証明書に関するオプション
+  app.add_flag("--insecure", config.insecure, "Allow insecure connection");
+  app.add_option("--client-cert", config.client_cert, "Client certificate file")->check(CLI::ExistingFile);
+  app.add_option("--client-key", config.client_key, "Client key file")->check(CLI::ExistingFile);
+  app.add_option("--ca-cert", config.ca_cert, "CA certificate file")->check(CLI::ExistingFile);
 
   // SoraClientContextConfig に関するオプション
   boost::optional<bool> use_hardware_encoder;

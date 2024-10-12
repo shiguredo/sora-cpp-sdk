@@ -41,6 +41,16 @@ enum class SoraSignalingErrorCode {
   ICE_FAILED,
 };
 
+enum class SoraSignalingType {
+  WEBSOCKET,
+  DATACHANNEL,
+};
+
+enum class SoraSignalingDirection {
+  SENT,
+  RECEIVED,
+};
+
 class SoraSignalingObserver {
  public:
   virtual void OnSetOffer(std::string offer) = 0;
@@ -49,6 +59,10 @@ class SoraSignalingObserver {
   virtual void OnPush(std::string text) = 0;
   virtual void OnMessage(std::string label, std::string data) = 0;
   virtual void OnSwitched(std::string text) {}
+  virtual void OnSignalingMessage(SoraSignalingType type,
+                                  SoraSignalingDirection direction,
+                                  std::string message) {}
+  virtual void OnWsClose(uint16_t code, std::string message) {}
 
   virtual void OnTrack(
       rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver) = 0;
@@ -121,8 +135,9 @@ struct SoraSignalingConfig {
   };
   boost::optional<ForwardingFilter> forwarding_filter;
 
-  std::string client_cert;
-  std::string client_key;
+  std::optional<std::string> client_cert;
+  std::optional<std::string> client_key;
+  std::optional<std::string> ca_cert;
 
   int websocket_close_timeout = 3;
   int websocket_connection_timeout = 30;
@@ -208,7 +223,13 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
       std::vector<webrtc::RtpEncodingParameters> encodings);
   void ResetEncodingParameters();
 
+  void WsWriteSignaling(std::string text, Websocket::write_callback_t on_write);
   void SendOnDisconnect(SoraSignalingErrorCode ec, std::string message);
+  void SendOnSignalingMessage(SoraSignalingType type,
+                              SoraSignalingDirection direction,
+                              std::string message);
+  void SendOnWsClose(const boost::beast::websocket::close_reason& reason);
+  void SendSelfOnWsClose(boost::system::error_code ec);
 
   webrtc::DataBuffer ConvertToDataBuffer(const std::string& label,
                                          const std::string& input);
