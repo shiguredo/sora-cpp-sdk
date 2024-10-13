@@ -12,6 +12,7 @@ def update_version(version_content):
     new_version = None
 
     for line in version_content:
+        line = line.strip()  # 前後の余分なスペースや改行を削除
         if line.startswith("SORA_CPP_SDK_VERSION="):
             version_match = re.match(
                 r"SORA_CPP_SDK_VERSION=(\d{4}\.\d+\.\d+)(-canary\.(\d+))?", line
