@@ -9,6 +9,7 @@ EXAMPLES_VERSION_FILE = "examples/VERSION"
 def update_version(version_content):
     updated_content = []
     sora_version_updated = False
+    new_version = None
 
     for line in version_content:
         if line.startswith("SORA_CPP_SDK_VERSION="):
@@ -34,7 +35,7 @@ def update_version(version_content):
     if not sora_version_updated:
         raise ValueError("SORA_CPP_SDK_VERSION not found in VERSION file.")
 
-    return updated_content
+    return updated_content, new_version
 
 
 def write_version_file(filename, updated_content, dry_run):
@@ -48,26 +49,24 @@ def write_version_file(filename, updated_content, dry_run):
         print(f"{filename} updated.")
 
 
-def git_operations(dry_run):
-    commands = [
-        ["git", "commit", "-am", "Update VERSION and examples/VERSION"],
-        ["git", "push"],
-        [
-            "git",
-            "tag",
-            "-a",
-            "v$(grep SORA_CPP_SDK_VERSION VERSION | cut -d '=' -f 2)",
-            "-m",
-            "Tagging new release",
-        ],
-    ]
+def git_operations(new_version, dry_run):
+    if dry_run:
+        print("Dry run: Would execute git commit -am 'Update VERSION and examples/VERSION'")
+        print(f"Dry run: Would execute git tag {new_version}")
+        print("Dry run: Would execute git push")
+        print(f"Dry run: Would execute git push origin {new_version}")
+    else:
+        print("Executing: git commit -am 'Update VERSION and examples/VERSION'")
+        subprocess.run(["git", "commit", "-am", "Update VERSION and examples/VERSION"], check=True)
 
-    for command in commands:
-        if dry_run:
-            print(f"Dry run: Would execute: {' '.join(command)}")
-        else:
-            print(f"Executing: {' '.join(command)}")
-            subprocess.run(command, check=True)
+        print(f"Executing: git tag {new_version}")
+        subprocess.run(["git", "tag", new_version], check=True)
+
+        print("Executing: git push")
+        subprocess.run(["git", "push"], check=True)
+
+        print(f"Executing: git push origin {new_version}")
+        subprocess.run(["git", "push", "origin", new_version], check=True)
 
 
 def main():
@@ -84,7 +83,7 @@ def main():
         version_content = file.readlines()
 
     # Update the VERSION content
-    updated_content = update_version(version_content)
+    updated_content, new_version = update_version(version_content)
 
     # Write updated content back to VERSION file
     write_version_file(VERSION_FILE, updated_content, args.dry_run)
@@ -93,7 +92,7 @@ def main():
     write_version_file(EXAMPLES_VERSION_FILE, updated_content, args.dry_run)
 
     # Perform git operations
-    git_operations(args.dry_run)
+    git_operations(new_version, args.dry_run)
 
 
 if __name__ == "__main__":
