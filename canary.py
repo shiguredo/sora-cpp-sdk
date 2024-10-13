@@ -6,7 +6,7 @@ VERSION_FILE = "VERSION"
 EXAMPLES_VERSION_FILE = "examples/VERSION"
 
 
-def update_version(version_content):
+def update_sora_version(version_content):
     updated_content = []
     sora_version_updated = False
     new_version = None
@@ -79,18 +79,17 @@ def main():
     )
     args = parser.parse_args()
 
-    # Read the VERSION file
+    # Read and update the VERSION file
     with open(VERSION_FILE, "r") as file:
         version_content = file.readlines()
+    updated_version_content, new_version = update_sora_version(version_content)
+    write_version_file(VERSION_FILE, updated_version_content, args.dry_run)
 
-    # Update the VERSION content
-    updated_content, new_version = update_version(version_content)
-
-    # Write updated content back to VERSION file
-    write_version_file(VERSION_FILE, updated_content, args.dry_run)
-
-    # Also update examples/VERSION
-    write_version_file(EXAMPLES_VERSION_FILE, updated_content, args.dry_run)
+    # Read and update the examples/VERSION file
+    with open(EXAMPLES_VERSION_FILE, "r") as file:
+        examples_version_content = file.readlines()
+    updated_examples_version_content, _ = update_sora_version(examples_version_content)
+    write_version_file(EXAMPLES_VERSION_FILE, updated_examples_version_content, args.dry_run)
 
     # Perform git operations
     git_operations(new_version, args.dry_run)
