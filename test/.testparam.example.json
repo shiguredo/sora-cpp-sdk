@@ -23,10 +23,34 @@
       "capture_width": 1024,
       "capture_height": 768,
       "video_bit_rate": 0,
-      "video_codec_type": "H264",
+      "video_codec_type": null,
       "simulcast": false,
       "use_hardware_encoder": true,
       "openh264": null,
+      "ignore_disconnect_websocket": null,
+      "client_id": null,
+
+      // "data_channels": [
+      //   {
+      //     // required
+      //     "label": "#test",
+      //     "direction": "sendrecv",
+      //     // optional
+      //     "ordered": null,
+      //     "max_packet_life_time": null,
+      //     "max_retransmits": null,
+      //     "protocol": null,
+      //     "compress": null,
+      //   }
+      // ],
+      "data_channels": null,
+
+      // 0 - verbose
+      // 1 - info
+      // 2 - warning
+      // 3 - error
+      // 4 - none
+      "log_level": 2,
     },
 
     "signaling_urls": ["必須"],

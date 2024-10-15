@@ -44,6 +44,7 @@ class DataChannel : public std::enable_shared_from_this<DataChannel> {
   void Close(const webrtc::DataBuffer& disconnect_message,
              std::function<void(boost::system::error_code)> on_close,
              double disconnect_wait_timeout);
+  void SetOnClose(std::function<void(boost::system::error_code)> on_close);
 
   void AddDataChannel(
       rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel);

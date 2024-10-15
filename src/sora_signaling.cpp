@@ -1644,6 +1644,23 @@ void SoraSignaling::OnMessage(
           },
           CreateIceError(
               "Failed to SetOffer in re-offer message via DataChannel"));
+    } else if (type == "close") {
+      // グレースフルシャットダウンする
+      int code = json.at("code").to_number<int>();
+      std::string reason = json.at("reason").as_string().c_str();
+      // on_close を設定しておいて、あとは DataChannel が閉じるのを待つだけ
+      dc_->SetOnClose([self = shared_from_this(), code,
+                       reason](boost::system::error_code ec) {
+        if (code == 1000) {
+          self->SendOnDisconnect(SoraSignalingErrorCode::CLOSE_SUCCEEDED,
+                                 "Succeeded to close DataChannel: reason=" + reason);
+        } else {
+          self->SendOnDisconnect(
+              SoraSignalingErrorCode::CLOSE_SUCCEEDED,
+              "Failed to close DataChannel: code=" + std::to_string(code) +
+                  " ec=" + ec.message());
+        }
+      });
     }
     return;
   }
