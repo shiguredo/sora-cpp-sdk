@@ -71,6 +71,15 @@ void HelloSora::Run() {
   config.video_bit_rate = config_.video_bit_rate;
   config.multistream = true;
   config.simulcast = config_.simulcast;
+  if (config_.ignore_disconnect_websocket) {
+    config.ignore_disconnect_websocket = *config_.ignore_disconnect_websocket;
+  }
+  if (!config_.client_id.empty()) {
+    config.client_id = config_.client_id;
+  }
+  if (!config_.data_channels.empty()) {
+    config.data_channels = config_.data_channels;
+  }
   conn_ = sora::SoraSignaling::Create(config);
 
   boost::asio::executor_work_guard<boost::asio::io_context::executor_type>
@@ -143,7 +152,8 @@ int main(int argc, char* argv[]) {
   }
   config.channel_id = v.as_object().at("channel_id").as_string().c_str();
   boost::json::value x;
-  auto get = [&v](const char* key, boost::json::value& x) -> bool {
+  auto get = [](const boost::json::value& v, const char* key,
+                boost::json::value& x) -> bool {
     if (auto it = v.as_object().find(key);
         it != v.as_object().end() && !it->value().is_null()) {
       x = it->value();
@@ -151,42 +161,70 @@ int main(int argc, char* argv[]) {
     }
     return false;
   };
-  if (get("role", x)) {
+  if (get(v, "role", x)) {
     config.role = x.as_string();
   }
-  if (get("video", x)) {
+  if (get(v, "video", x)) {
     config.video = x.as_bool();
   }
-  if (get("audio", x)) {
+  if (get(v, "audio", x)) {
     config.audio = x.as_bool();
   }
-  if (get("capture_width", x)) {
+  if (get(v, "capture_width", x)) {
     config.capture_width = x.to_number<int>();
   }
-  if (get("capture_height", x)) {
+  if (get(v, "capture_height", x)) {
     config.capture_height = x.to_number<int>();
   }
-  if (get("video_bit_rate", x)) {
+  if (get(v, "video_bit_rate", x)) {
     config.video_bit_rate = x.to_number<int>();
   }
-  if (get("video_codec_type", x)) {
+  if (get(v, "video_codec_type", x)) {
     config.video_codec_type = x.as_string();
   }
-  if (get("simulcast", x)) {
+  if (get(v, "simulcast", x)) {
     config.simulcast = x.as_bool();
   }
-  if (get("log_level", x)) {
+  if (get(v, "client_id", x)) {
+    config.client_id = x.as_string();
+  }
+  if (get(v, "ignore_disconnect_websocket", x)) {
+    config.ignore_disconnect_websocket = x.as_bool();
+  }
+  if (get(v, "data_channels", x)) {
+    for (auto&& dc : x.as_array()) {
+      sora::SoraSignalingConfig::DataChannel data_channel;
+      data_channel.label = dc.as_object().at("label").as_string();
+      data_channel.direction = dc.as_object().at("direction").as_string();
+      if (get(dc, "ordered", x)) {
+        data_channel.ordered = x.as_bool();
+      }
+      if (get(dc, "max_packet_life_time", x)) {
+        data_channel.max_packet_life_time = x.to_number<int32_t>();
+      }
+      if (get(dc, "max_retransmits", x)) {
+        data_channel.max_retransmits = x.to_number<int32_t>();
+      }
+      if (get(dc, "protocol", x)) {
+        data_channel.protocol = x.as_string().c_str();
+      }
+      if (get(dc, "compress", x)) {
+        data_channel.compress = x.as_bool();
+      }
+      config.data_channels.push_back(data_channel);
+    }
+  }
+  if (get(v, "log_level", x)) {
     rtc::LogMessage::LogToDebug((rtc::LoggingSeverity)x.to_number<int>());
   }
 
   sora::SoraClientContextConfig context_config;
   context_config.get_android_application_context = GetAndroidApplicationContext;
-  if (auto it = v.as_object().find("use_hardware_encoder");
-      it != v.as_object().end()) {
-    context_config.use_hardware_encoder = it->value().as_bool();
+  if (get(v, "use_hardware_encoder", x)) {
+    context_config.use_hardware_encoder = x.as_bool();
   }
-  if (auto it = v.as_object().find("openh264"); it != v.as_object().end()) {
-    context_config.openh264 = it->value().as_string();
+  if (get(v, "openh264", x)) {
+    context_config.openh264 = x.as_string();
   }
   auto context = sora::SoraClientContext::Create(context_config);
 

@@ -27,6 +27,24 @@
       "simulcast": false,
       "use_hardware_encoder": true,
       "openh264": null,
+      "ignore_disconnect_websocket": null,
+      "client_id": null,
+
+      // "data_channels": [
+      //   {
+      //     // required
+      //     "label": "#test",
+      //     "direction": "sendrecv",
+      //     // optional
+      //     "ordered": null,
+      //     "max_packet_life_time": null,
+      //     "max_retransmits": null,
+      //     "protocol": null,
+      //     "compress": null,
+      //   }
+      // ],
+      "data_channels": null,
+
       // 0 - verbose
       // 1 - info
       // 2 - warning
