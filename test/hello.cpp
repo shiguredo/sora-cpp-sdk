@@ -142,36 +142,41 @@ int main(int argc, char* argv[]) {
     config.signaling_urls.push_back(x.as_string().c_str());
   }
   config.channel_id = v.as_object().at("channel_id").as_string().c_str();
-  if (auto it = v.as_object().find("role"); it != v.as_object().end()) {
-    config.role = it->value().as_string();
+  boost::json::value x;
+  auto get = [&v](const char* key, boost::json::value& x) -> bool {
+    if (auto it = v.as_object().find(key);
+        it != v.as_object().end() && !it->value().is_null()) {
+      x = it->value();
+      return true;
+    }
+    return false;
+  };
+  if (get("role", x)) {
+    config.role = x.as_string();
   }
-  if (auto it = v.as_object().find("video"); it != v.as_object().end()) {
-    config.video = it->value().as_bool();
+  if (get("video", x)) {
+    config.video = x.as_bool();
   }
-  if (auto it = v.as_object().find("audio"); it != v.as_object().end()) {
-    config.audio = it->value().as_bool();
+  if (get("audio", x)) {
+    config.audio = x.as_bool();
   }
-  if (auto it = v.as_object().find("capture_width");
-      it != v.as_object().end()) {
-    config.capture_width = boost::json::value_to<int>(it->value());
+  if (get("capture_width", x)) {
+    config.capture_width = x.to_number<int>();
   }
-  if (auto it = v.as_object().find("capture_height");
-      it != v.as_object().end()) {
-    config.capture_height = boost::json::value_to<int>(it->value());
+  if (get("capture_height", x)) {
+    config.capture_height = x.to_number<int>();
   }
-  if (auto it = v.as_object().find("video_bit_rate");
-      it != v.as_object().end()) {
-    config.video_bit_rate = boost::json::value_to<int>(it->value());
+  if (get("video_bit_rate", x)) {
+    config.video_bit_rate = x.to_number<int>();
   }
-  if (auto it = v.as_object().find("video_codec_type");
-      it != v.as_object().end()) {
-    config.video_codec_type = it->value().as_string();
+  if (get("video_codec_type", x)) {
+    config.video_codec_type = x.as_string();
   }
-  if (auto it = v.as_object().find("simulcast"); it != v.as_object().end()) {
-    config.simulcast = it->value().as_bool();
+  if (get("simulcast", x)) {
+    config.simulcast = x.as_bool();
   }
-  if (auto it = v.as_object().find("log_level"); it != v.as_object().end()) {
-    rtc::LogMessage::LogToDebug((rtc::LoggingSeverity)boost::json::value_to<int>(it->value()));
+  if (get("log_level", x)) {
+    rtc::LogMessage::LogToDebug((rtc::LoggingSeverity)x.to_number<int>());
   }
 
   sora::SoraClientContextConfig context_config;
