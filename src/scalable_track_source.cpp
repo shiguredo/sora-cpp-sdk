@@ -33,7 +33,7 @@ bool ScalableVideoTrackSource::is_screencast() const {
   return false;
 }
 
-absl::optional<bool> ScalableVideoTrackSource::needs_denoising() const {
+std::optional<bool> ScalableVideoTrackSource::needs_denoising() const {
   return false;
 }
 
