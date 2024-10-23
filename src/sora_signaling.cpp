@@ -343,6 +343,9 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     if (config_.audio_bit_rate != 0) {
       m["audio"].as_object()["bit_rate"] = config_.audio_bit_rate;
     }
+    if (!config_.audio_opus_params.is_null()) {
+      m["audio"].as_object()["opus_params"] = config_.audio_opus_params;
+    }
   }
 
   if (!config_.audio_streaming_language_code.empty()) {

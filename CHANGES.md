@@ -44,6 +44,8 @@
   - @tnoho
 - [ADD] DataChannel のみの接続で type: close がやってきた場合に正しく切断されるようにする
   - @melpon
+- [ADD] SoraSignalingConfig に audio_opus_params を追加
+  - @melpon
 - [FIX] HTTP Proxy 利用時の Websocket 初期化で insecure_ メンバ変数が初期化されていなかったのを修正
   - @melpon
 - [FIX] SoraSignalingConfig の client_cert と client_key に渡す必要がある値を、ファイルパスからファイルの内容に修正
