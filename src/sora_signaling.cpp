@@ -332,9 +332,6 @@ void SoraSignaling::DoSendConnect(bool redirect) {
 
   if (!config_.audio) {
     m["audio"] = false;
-  } else if (config_.audio && config_.audio_codec_type.empty() &&
-             config_.audio_bit_rate == 0) {
-    m["audio"] = true;
   } else {
     m["audio"] = boost::json::object();
     if (!config_.audio_codec_type.empty()) {
@@ -345,6 +342,11 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     }
     if (!config_.audio_opus_params.is_null()) {
       m["audio"].as_object()["opus_params"] = config_.audio_opus_params;
+    }
+
+    // オプションの設定が行われてなければ単に true を設定
+    if (m["audio"].as_object().empty()) {
+      m["audio"] = true;
     }
   }
 
@@ -1655,8 +1657,9 @@ void SoraSignaling::OnMessage(
       dc_->SetOnClose([self = shared_from_this(), code,
                        reason](boost::system::error_code ec) {
         if (code == 1000) {
-          self->SendOnDisconnect(SoraSignalingErrorCode::CLOSE_SUCCEEDED,
-                                 "Succeeded to close DataChannel: reason=" + reason);
+          self->SendOnDisconnect(
+              SoraSignalingErrorCode::CLOSE_SUCCEEDED,
+              "Succeeded to close DataChannel: reason=" + reason);
         } else {
           self->SendOnDisconnect(
               SoraSignalingErrorCode::CLOSE_SUCCEEDED,
