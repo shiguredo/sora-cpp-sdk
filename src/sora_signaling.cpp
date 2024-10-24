@@ -759,10 +759,6 @@ void SoraSignaling::OnConnect(boost::system::error_code ec,
                      [ws](std::shared_ptr<Websocket> p) { return p == ws; }),
       connecting_wss_.end());
 
-  if (state_ == State::Closed) {
-    return;
-  }
-
   if (ec) {
     RTC_LOG(LS_WARNING) << "Failed Websocket handshake: " << ec
                         << " url=" << url << " state=" << (int)state_
@@ -779,9 +775,10 @@ void SoraSignaling::OnConnect(boost::system::error_code ec,
     return;
   }
 
-  if (state_ == State::Connected || state_ == State::Redirecting) {
+  if (state_ == State::Connected || state_ == State::Redirecting ||
+      state_ == State::Closing || state_ == State::Closed) {
     // 既に他の接続が先に完了していたので、切断する
-    ws->Close([self = shared_from_this(), ws](boost::system::error_code) {},
+    ws->Close([ws](boost::system::error_code) {},
               config_.websocket_close_timeout);
     return;
   }
