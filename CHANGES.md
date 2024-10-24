@@ -46,6 +46,8 @@
   - @melpon
 - [ADD] SoraSignalingConfig に audio_opus_params を追加
   - @melpon
+- [ADD] SoraSignalingConfig::DataChennel に header を追加
+  - @melpon
 - [FIX] HTTP Proxy 利用時の Websocket 初期化で insecure_ メンバ変数が初期化されていなかったのを修正
   - @melpon
 - [FIX] SoraSignalingConfig の client_cert と client_key に渡す必要がある値を、ファイルパスからファイルの内容に修正

@@ -211,6 +211,9 @@ int main(int argc, char* argv[]) {
       if (get(dc, "compress", x)) {
         data_channel.compress = x.as_bool();
       }
+      if (get(dc, "header", x)) {
+        data_channel.header.emplace(x.as_array().begin(), x.as_array().end());
+      }
       config.data_channels.push_back(data_channel);
     }
   }

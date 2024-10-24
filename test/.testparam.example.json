@@ -41,6 +41,9 @@
       //     "max_retransmits": null,
       //     "protocol": null,
       //     "compress": null,
+      //     "header": [
+      //       {"type": "sender_connection_id"},
+      //     ],
       //   }
       // ],
       "data_channels": null,

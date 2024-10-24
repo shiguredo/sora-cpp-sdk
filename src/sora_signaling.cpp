@@ -382,6 +382,9 @@ void SoraSignaling::DoSendConnect(bool redirect) {
       if (d.compress) {
         obj["compress"] = *d.compress;
       }
+      if (d.header) {
+        obj["header"] = boost::json::array(d.header->begin(), d.header->end());
+      }
       ar.push_back(obj);
     }
     m["data_channels"] = ar;

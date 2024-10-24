@@ -119,6 +119,7 @@ struct SoraSignalingConfig {
     boost::optional<int32_t> max_retransmits;
     boost::optional<std::string> protocol;
     boost::optional<bool> compress;
+    boost::optional<std::vector<boost::json::value>> header;
   };
   std::vector<DataChannel> data_channels;
 
