@@ -124,6 +124,8 @@ struct SoraSignalingConfig {
   std::vector<DataChannel> data_channels;
 
   struct ForwardingFilter {
+    std::optional<std::string> name;
+    std::optional<int> priority;
     boost::optional<std::string> action;
     struct Rule {
       std::string field;
@@ -134,7 +136,8 @@ struct SoraSignalingConfig {
     boost::optional<std::string> version;
     boost::optional<boost::json::value> metadata;
   };
-  boost::optional<ForwardingFilter> forwarding_filter;
+  std::optional<ForwardingFilter> forwarding_filter;
+  std::optional<std::vector<ForwardingFilter>> forwarding_filters;
 
   std::optional<std::string> client_cert;
   std::optional<std::string> client_key;

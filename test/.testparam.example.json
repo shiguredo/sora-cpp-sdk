@@ -48,6 +48,41 @@
       // ],
       "data_channels": null,
 
+      // "forwarding_filters": [{
+      //     "name": "client-id-carol-block",
+      //     "priority": 0,
+      //     "action": "allow",
+      //     "rules": [
+      //       [
+      //         {
+      //           "field": "client_id",
+      //           "operator": "is_in",
+      //           "values": [
+      //             "carol",
+      //           ]
+      //         }
+      //       ]
+      //     ]
+      //   }, {
+      //     "name": "default",
+      //     "priority": 32767,
+      //     "action": "block",
+      //     "rules": [
+      //       [
+      //         {
+      //           "field": "kind",
+      //           "operator": "is_in",
+      //           "values": [
+      //             "audio",
+      //             "video",
+      //           ]
+      //         }
+      //       ]
+      //     ]
+      //   },
+      // ],
+      "forwarding_filters": null,
+
       // 0 - verbose
       // 1 - info
       // 2 - warning

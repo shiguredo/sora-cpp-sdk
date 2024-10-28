@@ -80,6 +80,9 @@ void HelloSora::Run() {
   if (!config_.data_channels.empty()) {
     config.data_channels = config_.data_channels;
   }
+  if (!config_.forwarding_filters.empty()) {
+    config.forwarding_filters = config_.forwarding_filters;
+  }
   conn_ = sora::SoraSignaling::Create(config);
 
   boost::asio::executor_work_guard<boost::asio::io_context::executor_type>
@@ -196,25 +199,61 @@ int main(int argc, char* argv[]) {
       sora::SoraSignalingConfig::DataChannel data_channel;
       data_channel.label = dc.as_object().at("label").as_string();
       data_channel.direction = dc.as_object().at("direction").as_string();
-      if (get(dc, "ordered", x)) {
-        data_channel.ordered = x.as_bool();
+      boost::json::value y;
+      if (get(dc, "ordered", y)) {
+        data_channel.ordered = y.as_bool();
       }
-      if (get(dc, "max_packet_life_time", x)) {
-        data_channel.max_packet_life_time = x.to_number<int32_t>();
+      if (get(dc, "max_packet_life_time", y)) {
+        data_channel.max_packet_life_time = y.to_number<int32_t>();
       }
-      if (get(dc, "max_retransmits", x)) {
-        data_channel.max_retransmits = x.to_number<int32_t>();
+      if (get(dc, "max_retransmits", y)) {
+        data_channel.max_retransmits = y.to_number<int32_t>();
       }
-      if (get(dc, "protocol", x)) {
-        data_channel.protocol = x.as_string().c_str();
+      if (get(dc, "protocol", y)) {
+        data_channel.protocol = y.as_string().c_str();
       }
-      if (get(dc, "compress", x)) {
-        data_channel.compress = x.as_bool();
+      if (get(dc, "compress", y)) {
+        data_channel.compress = y.as_bool();
       }
-      if (get(dc, "header", x)) {
-        data_channel.header.emplace(x.as_array().begin(), x.as_array().end());
+      if (get(dc, "header", y)) {
+        data_channel.header.emplace(y.as_array().begin(), y.as_array().end());
       }
       config.data_channels.push_back(data_channel);
+    }
+  }
+  if (get(v, "forwarding_filters", x)) {
+    for (auto&& ff : x.as_array()) {
+      sora::SoraSignalingConfig::ForwardingFilter forwarding_filter;
+      boost::json::value y;
+      if (get(ff, "name", y)) {
+        forwarding_filter.name.emplace(y.as_string());
+      }
+      if (get(ff, "priority", y)) {
+        forwarding_filter.priority.emplace(y.to_number<int>());
+      }
+      if (get(ff, "action", y)) {
+        forwarding_filter.action.emplace(y.as_string());
+      }
+      for (auto&& rs : ff.as_object().at("rules").as_array()) {
+        std::vector<sora::SoraSignalingConfig::ForwardingFilter::Rule> rules;
+        for (auto&& r : rs.as_array()) {
+          sora::SoraSignalingConfig::ForwardingFilter::Rule rule;
+          rule.field = r.as_object().at("field").as_string();
+          rule.op = r.as_object().at("operator").as_string();
+          for (auto&& v : r.as_object().at("values").as_array()) {
+            rule.values.push_back(v.as_string().c_str());
+          }
+          rules.push_back(rule);
+        }
+        forwarding_filter.rules.push_back(rules);
+      }
+      if (get(ff, "version", y)) {
+        forwarding_filter.version.emplace(y.as_string());
+      }
+      if (get(ff, "metadata", y)) {
+        forwarding_filter.metadata = y;
+      }
+      config.forwarding_filters.push_back(forwarding_filter);
     }
   }
   if (get(v, "log_level", x)) {

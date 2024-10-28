@@ -390,9 +390,14 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     m["data_channels"] = ar;
   }
 
-  if (config_.forwarding_filter) {
+  auto forwarding_filter_to_json = [](const SoraSignalingConfig::ForwardingFilter& f) -> boost::json::value {
     boost::json::object obj;
-    auto& f = *config_.forwarding_filter;
+    if (f.name) {
+      obj["name"] = *f.name;
+    }
+    if (f.priority) {
+      obj["priority"] = *f.priority;
+    }
     if (f.action) {
       obj["action"] = *f.action;
     }
@@ -417,7 +422,19 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     if (f.metadata) {
       obj["metadata"] = *f.metadata;
     }
-    m["forwarding_filter"] = obj;
+    return obj;
+  };
+
+  if (config_.forwarding_filter) {
+    m["forwarding_filter"] = forwarding_filter_to_json(*config_.forwarding_filter);
+  }
+
+  if (config_.forwarding_filters) {
+    boost::json::array ar;
+    for (const auto& f : *config_.forwarding_filters) {
+      ar.push_back(forwarding_filter_to_json(f));
+    }
+    m["forwarding_filters"] = ar;
   }
 
   std::string text = boost::json::serialize(m);
