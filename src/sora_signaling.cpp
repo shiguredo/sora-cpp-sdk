@@ -94,7 +94,7 @@ void SoraSignaling::Disconnect() {
       return;
     }
 
-    self->DoInternalDisconnect(boost::none, "", "");
+    self->DoInternalDisconnect(std::nullopt, "", "");
   });
 }
 
@@ -590,7 +590,7 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
 }
 
 void SoraSignaling::DoInternalDisconnect(
-    boost::optional<SoraSignalingErrorCode> force_error_code,
+    std::optional<SoraSignalingErrorCode> force_error_code,
     std::string reason,
     std::string message) {
   assert(state_ == State::Connected);
@@ -601,7 +601,7 @@ void SoraSignaling::DoInternalDisconnect(
                    root_message = message](bool succeeded,
                                            SoraSignalingErrorCode error_code,
                                            std::string message) {
-    if (force_error_code == boost::none) {
+    if (force_error_code == std::nullopt) {
       self->SendOnDisconnect(error_code, message);
     } else {
       self->SendOnDisconnect(*force_error_code,
@@ -630,7 +630,7 @@ void SoraSignaling::DoInternalDisconnect(
 
   if (using_datachannel_ && ws_connected_) {
     std::string text =
-        force_error_code == boost::none
+        force_error_code == std::nullopt
             ? R"({"type":"disconnect","reason":"NO-ERROR"})"
             : R"({"type":"disconnect","reason":")" + reason + "\"}";
     webrtc::DataBuffer disconnect = ConvertToDataBuffer("signaling", text);
@@ -1236,7 +1236,7 @@ void SoraSignaling::DoConnect() {
     } else {
       ws.reset(new Websocket(*config_.io_context));
     }
-    if (config_.user_agent != boost::none) {
+    if (config_.user_agent != std::nullopt) {
       ws->SetUserAgent(*config_.user_agent);
     }
     ws->Connect(url, std::bind(&SoraSignaling::OnConnect, shared_from_this(),

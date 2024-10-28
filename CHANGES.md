@@ -11,6 +11,8 @@
 
 ## develop
 
+- [CHANGE] `boost::optional` を利用していた部分を全て `std::optional` に変更
+  - @melpon
 - [UPDATE] VPL を v2.13.0 に上げる
   - @voluntas
 - [UPDATE] CMake を 3.30.4 にあげる
