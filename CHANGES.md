@@ -15,15 +15,15 @@
   - @melpon
 - [UPDATE] VPL を v2.13.0 に上げる
   - @voluntas
-- [UPDATE] CMake を 3.30.4 にあげる
+- [UPDATE] CMake を 3.30.5 にあげる
   - @voluntas
 - [UPDATE] Boost を 1.86.0 にあげる
   - @voluntas
-- [UPDATE] libwebrtc を m129.6668.1.0 にあげる
+- [UPDATE] libwebrtc を m129.6668.1.1 にあげる
   - H.265 Patch の修正に伴い、C++ SDK の H.265 に関する設定を変更
   - examples と test に `rtc::CreateRandomString` のヘッダを追加
   - `SetRtpTimestamp` を `frame.timestamp` から `frame.rtp_timestamp` に変更
-  - @tnoho @torikizi
+  - @tnoho @torikizi @melpon
 - [UPDATE] Xcode のバージョンを 15.4 にあげる
   - @tnoho
 - [UPDATE] SDL を 2.30.8 に上げる
