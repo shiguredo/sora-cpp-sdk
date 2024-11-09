@@ -11,17 +11,19 @@
 
 ## develop
 
+- [CHANGE] `boost::optional` を利用していた部分を全て `std::optional` に変更
+  - @melpon
 - [UPDATE] VPL を v2.13.0 に上げる
   - @voluntas
-- [UPDATE] CMake を 3.30.4 にあげる
+- [UPDATE] CMake を 3.30.5 にあげる
   - @voluntas
 - [UPDATE] Boost を 1.86.0 にあげる
   - @voluntas
-- [UPDATE] libwebrtc を m129.6668.1.0 にあげる
+- [UPDATE] libwebrtc を m129.6668.1.1 にあげる
   - H.265 Patch の修正に伴い、C++ SDK の H.265 に関する設定を変更
   - examples と test に `rtc::CreateRandomString` のヘッダを追加
   - `SetRtpTimestamp` を `frame.timestamp` から `frame.rtp_timestamp` に変更
-  - @tnoho @torikizi
+  - @tnoho @torikizi @melpon
 - [UPDATE] Xcode のバージョンを 15.4 にあげる
   - @tnoho
 - [UPDATE] SDL を 2.30.8 に上げる
@@ -42,6 +44,16 @@
   - @melpon
 - [ADD] WebSocket の Close を取得できるよう SendOnWsClose を SoraSignalingObserver に追加する
   - @tnoho
+- [ADD] DataChannel のみの接続で type: close がやってきた場合に正しく切断されるようにする
+  - @melpon
+- [ADD] SoraSignalingConfig に audio_opus_params を追加
+  - @melpon
+- [ADD] SoraSignalingConfig::DataChennel に header を追加
+  - @melpon
+- [ADD] SoraSignalingConfig::ForwardingFilter に name と priority を追加
+  - @melpon
+- [ADD] SoraSignalingConfig に forwarding_filters を追加
+  - @melpon
 - [FIX] HTTP Proxy 利用時の Websocket 初期化で insecure_ メンバ変数が初期化されていなかったのを修正
   - @melpon
 - [FIX] SoraSignalingConfig の client_cert と client_key に渡す必要がある値を、ファイルパスからファイルの内容に修正

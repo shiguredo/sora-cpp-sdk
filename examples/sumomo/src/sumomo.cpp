@@ -4,14 +4,12 @@
 #include <sora/srtp_keying_material_exporter.h>
 
 #include <fstream>
+#include <optional>
 #include <regex>
 #include <sstream>
 
 // CLI11
 #include <CLI/CLI.hpp>
-
-// Boost
-#include <boost/optional/optional.hpp>
 
 // WebRTC
 #include <rtc_base/crypto_random.h>
@@ -38,13 +36,13 @@ struct SumomoConfig {
   boost::json::value video_h264_params;
   boost::json::value video_h265_params;
   boost::json::value metadata;
-  boost::optional<bool> multistream;
-  boost::optional<bool> spotlight;
+  std::optional<bool> multistream;
+  std::optional<bool> spotlight;
   int spotlight_number = 0;
-  boost::optional<bool> simulcast;
-  boost::optional<bool> simulcast_multicodec;
-  boost::optional<bool> data_channel_signaling;
-  boost::optional<bool> ignore_disconnect_websocket;
+  std::optional<bool> simulcast;
+  std::optional<bool> simulcast_multicodec;
+  std::optional<bool> data_channel_signaling;
+  std::optional<bool> ignore_disconnect_websocket;
 
   std::string proxy_url;
   std::string proxy_username;
@@ -301,7 +299,7 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
 
 void add_optional_bool(CLI::App& app,
                        const std::string& option_name,
-                       boost::optional<bool>& v,
+                       std::optional<bool>& v,
                        const std::string& help_text) {
   auto f = [&v](const std::string& input) {
     if (input == "true") {
@@ -309,7 +307,7 @@ void add_optional_bool(CLI::App& app,
     } else if (input == "false") {
       v = false;
     } else if (input == "none") {
-      v = boost::none;
+      v = std::nullopt;
     } else {
       throw CLI::ConversionError(input, "optional<bool>");
     }
@@ -447,7 +445,7 @@ int main(int argc, char* argv[]) {
   app.add_option("--ca-cert", config.ca_cert, "CA certificate file")->check(CLI::ExistingFile);
 
   // SoraClientContextConfig に関するオプション
-  boost::optional<bool> use_hardware_encoder;
+  std::optional<bool> use_hardware_encoder;
   add_optional_bool(app, "--use-hardware-encoder", use_hardware_encoder,
                     "Use hardware encoder");
   std::string openh264;
@@ -479,7 +477,7 @@ int main(int argc, char* argv[]) {
   }
 
   auto context_config = sora::SoraClientContextConfig();
-  if (use_hardware_encoder != boost::none) {
+  if (use_hardware_encoder != std::nullopt) {
     context_config.use_hardware_encoder = *use_hardware_encoder;
   }
   context_config.openh264 = openh264;

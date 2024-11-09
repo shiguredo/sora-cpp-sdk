@@ -3,6 +3,7 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -95,45 +96,50 @@ struct SoraSignalingConfig {
   boost::json::value video_av1_params;
   boost::json::value video_h264_params;
   boost::json::value video_h265_params;
+  boost::json::value audio_opus_params;
   std::string audio_streaming_language_code;
   boost::json::value metadata;
   boost::json::value signaling_notify_metadata;
   std::string role = "sendonly";
-  boost::optional<bool> multistream;
-  boost::optional<bool> spotlight;
+  std::optional<bool> multistream;
+  std::optional<bool> spotlight;
   int spotlight_number = 0;
   std::string spotlight_focus_rid;
   std::string spotlight_unfocus_rid;
-  boost::optional<bool> simulcast;
-  boost::optional<bool> simulcast_multicodec;
+  std::optional<bool> simulcast;
+  std::optional<bool> simulcast_multicodec;
   std::string simulcast_rid;
-  boost::optional<bool> data_channel_signaling;
+  std::optional<bool> data_channel_signaling;
   int data_channel_signaling_timeout = 180;
-  boost::optional<bool> ignore_disconnect_websocket;
+  std::optional<bool> ignore_disconnect_websocket;
   int disconnect_wait_timeout = 5;
   struct DataChannel {
     std::string label;
     std::string direction;
-    boost::optional<bool> ordered;
-    boost::optional<int32_t> max_packet_life_time;
-    boost::optional<int32_t> max_retransmits;
-    boost::optional<std::string> protocol;
-    boost::optional<bool> compress;
+    std::optional<bool> ordered;
+    std::optional<int32_t> max_packet_life_time;
+    std::optional<int32_t> max_retransmits;
+    std::optional<std::string> protocol;
+    std::optional<bool> compress;
+    std::optional<std::vector<boost::json::value>> header;
   };
   std::vector<DataChannel> data_channels;
 
   struct ForwardingFilter {
-    boost::optional<std::string> action;
+    std::optional<std::string> name;
+    std::optional<int> priority;
+    std::optional<std::string> action;
     struct Rule {
       std::string field;
       std::string op;
       std::vector<std::string> values;
     };
     std::vector<std::vector<Rule>> rules;
-    boost::optional<std::string> version;
-    boost::optional<boost::json::value> metadata;
+    std::optional<std::string> version;
+    std::optional<boost::json::value> metadata;
   };
-  boost::optional<ForwardingFilter> forwarding_filter;
+  std::optional<ForwardingFilter> forwarding_filter;
+  std::optional<std::vector<ForwardingFilter>> forwarding_filters;
 
   std::optional<std::string> client_cert;
   std::optional<std::string> client_key;
@@ -152,7 +158,7 @@ struct SoraSignalingConfig {
 
   bool disable_signaling_url_randomization = false;
 
-  boost::optional<http_header_value> user_agent;
+  std::optional<http_header_value> user_agent;
 };
 
 class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
@@ -203,7 +209,7 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
   // force_error_code が設定されていない場合、NO-ERROR でサーバに送信し、ユーザにはデフォルトのエラーコードとメッセージでコールバックする。reason や message は無視される。
   // force_error_code が設定されている場合、reason でサーバに送信し、指定されたエラーコードと、message にデフォルトのメッセージを追加したメッセージでコールバックする。
   void DoInternalDisconnect(
-      boost::optional<SoraSignalingErrorCode> force_error_code,
+      std::optional<SoraSignalingErrorCode> force_error_code,
       std::string reason,
       std::string message);
 
@@ -324,7 +330,6 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
     Connected,
     Closing,
     Closed,
-    Destructing,
   };
 
   State state_ = State::Init;
