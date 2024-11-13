@@ -32,6 +32,8 @@
   - @torikizi
 - [UPDATE] ASMJIT_VERSION を上げる
   - @torikizi
+- [UPDATE] OpenH264 を v2.5.0 に上げる
+  - @voluntas
 - [ADD] シグナリングメッセージを取得できるよう OnSignalingMessage を SoraSignalingObserver に追加する
   - @tnoho
 - [ADD] Intel VPL で AV1 エンコーダを動くようにする
@@ -64,6 +66,8 @@
 
 ### misc
 
+- [UPDATE] CATCH2 を v3.7.1 にあげる
+  - @voluntas
 - [UPDATE] SDL2 を 2.30.7 にあげる
   - @voluntas
 - [ADD] sumomo に証明書に関するオプションを追加する
