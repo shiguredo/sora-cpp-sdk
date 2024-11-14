@@ -71,6 +71,7 @@ void HelloSora::Run() {
   config.video_bit_rate = config_.video_bit_rate;
   config.multistream = true;
   config.simulcast = config_.simulcast;
+  config.simulcast_multicodec = config_.simulcast_multicodec;
   if (config_.ignore_disconnect_websocket) {
     config.ignore_disconnect_websocket = *config_.ignore_disconnect_websocket;
   }
@@ -258,6 +259,14 @@ int main(int argc, char* argv[]) {
   }
   if (get(v, "log_level", x)) {
     rtc::LogMessage::LogToDebug((rtc::LoggingSeverity)x.to_number<int>());
+  }
+  if (auto it = v.as_object().find("simulcast_multicodec");
+      it != v.as_object().end()) {
+    config.simulcast_multicodec = it->value().as_bool();
+  }
+  if (auto it = v.as_object().find("log_level"); it != v.as_object().end()) {
+    rtc::LogMessage::LogToDebug(
+        (rtc::LoggingSeverity)boost::json::value_to<int>(it->value()));
   }
 
   sora::SoraClientContextConfig context_config;

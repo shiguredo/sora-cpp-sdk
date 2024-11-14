@@ -52,6 +52,19 @@
             "externalConsole": false,
             "MIMode": "lldb"
         },
+        {
+            "name": "Ubuntu 24.04 デバッグビルドのデバッグ",
+            "type": "lldb-dap",
+            "request": "launch",
+            "program": "${workspaceFolder}/_build/ubuntu-24.04_x86_64/debug/test/hello",
+            "args": ["${workspaceFolder}/test/.testparam.json"],
+            "cwd": "${fileDirname}",
+            "sourceMap": [["../../../../_source/ubuntu-24.04_x86_64/webrtc/src/", "/home/melpon/dev/webrtc-build-simulcast-multicodec/_source/ubuntu-24.04_x86_64/webrtc/src/"]],
+            "initCommands": [
+                "settings append target.debug-file-search-paths /home/melpon/dev/webrtc-build-simulcast-multicodec/_build/ubuntu-24.04_x86_64/debug/webrtc/"
+            ],
+            "runInTerminal": true,
+        },
 
     ]
 }

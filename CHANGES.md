@@ -126,6 +126,8 @@
   - @melpon
 - [ADD] WebSocket での接続時に User-Agent ヘッダーを追加する
   - @melpon
+- [ADD] sumomo に --simulcast-multicodec オプションを追加
+  - @melpon
 
 ## 2024.6.1
 
@@ -151,9 +153,9 @@
 
 - [CHANGE] 別リポジトリに分かれていた Sora C++ SDK のサンプル集を examples/ 以下のディレクトリに統合する
   - @melpon
-- [UPDATE] libwebrtc を `m122.6261.1.0` にあげる
+- [UPDATE] libwebrtc を `m122.6261.1.1` にあげる
   - Ubuntu のビルドを通すために、 __assertion_handler というファイルをコピーする必要があった
-  - @miosakuma @enm10k
+  - @miosakuma @enm10k @melpon
 - [UPDATE] libvpl を v2.10.1 にあげる
   - @enm10k
 - [ADD] OpenH264 エンコーダを追加
