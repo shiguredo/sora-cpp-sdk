@@ -20,6 +20,7 @@
       "allowTrailingCommas": true,
     }
   }],
+  "lldb-dap.executable-path": "/usr/bin/lldb-dap-18",
   "files.associations": {
     "*.cs": "csharp",
     "CMakeLists.txt": "cmake",
@@ -145,6 +146,17 @@
     "__threading_support": "cpp",
     "__verbose_abort": "cpp",
     "string_view": "cpp",
-    "*.tcc": "cpp"
+    "*.tcc": "cpp",
+    "__assertion_handler": "cpp",
+    "cuchar": "cpp",
+    "propagate_const": "cpp",
+    "print": "cpp",
+    "expected": "cpp",
+    "netfwd": "cpp",
+    "rope": "cpp",
+    "slist": "cpp",
+    "spanstream": "cpp",
+    "stacktrace": "cpp",
+    "stdfloat": "cpp"
   }
 }
