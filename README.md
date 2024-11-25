@@ -60,6 +60,7 @@ _hololens2 は無視してください_
   - 動作未検証です
 - Ubuntu 22.04 x86_64
 - Ubuntu 24.04 x86_64
+- Ubuntu 24.04 arm64
 - Android 7 arm64 以降
 - iOS 13 arm64 以降
 

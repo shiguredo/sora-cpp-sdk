@@ -11,9 +11,11 @@
 
 ## develop
 
+- [CHANGE] `boost::optional` を利用していた部分を全て `std::optional` に変更
+  - @melpon
 - [UPDATE] VPL を v2.13.0 に上げる
   - @voluntas
-- [UPDATE] CMake を 3.30.4 にあげる
+- [UPDATE] CMake を 3.30.5 にあげる
   - @voluntas
 - [UPDATE] Boost を 1.86.0 にあげる
   - @voluntas
@@ -25,7 +27,7 @@
   - `nvcodec_video_decoder.h` と `vpl_video_decoder.h` に `#include <optional>` を追加
   - `nvcodec_video_decoder.cpp` と `vpl_video_decoder.cpp` の `absl::nullopt` を `std::nullopt` に変更
   - Android の test アプリの cmake バージョンを VERSION と合わせる
-  - @tnoho @torikizi
+  - @tnoho @torikizi @melpon
 - [UPDATE] Xcode のバージョンを 15.4 にあげる
   - @tnoho
 - [UPDATE] SDL を 2.30.8 に上げる
@@ -34,6 +36,8 @@
   - @torikizi
 - [UPDATE] ASMJIT_VERSION を上げる
   - @torikizi
+- [UPDATE] OpenH264 を v2.5.0 に上げる
+  - @voluntas
 - [ADD] シグナリングメッセージを取得できるよう OnSignalingMessage を SoraSignalingObserver に追加する
   - @tnoho
 - [ADD] Intel VPL で AV1 エンコーダを動くようにする
@@ -46,6 +50,16 @@
   - @melpon
 - [ADD] WebSocket の Close を取得できるよう SendOnWsClose を SoraSignalingObserver に追加する
   - @tnoho
+- [ADD] DataChannel のみの接続で type: close がやってきた場合に正しく切断されるようにする
+  - @melpon
+- [ADD] SoraSignalingConfig に audio_opus_params を追加
+  - @melpon
+- [ADD] SoraSignalingConfig::DataChennel に header を追加
+  - @melpon
+- [ADD] SoraSignalingConfig::ForwardingFilter に name と priority を追加
+  - @melpon
+- [ADD] SoraSignalingConfig に forwarding_filters を追加
+  - @melpon
 - [FIX] HTTP Proxy 利用時の Websocket 初期化で insecure_ メンバ変数が初期化されていなかったのを修正
   - @melpon
 - [FIX] SoraSignalingConfig の client_cert と client_key に渡す必要がある値を、ファイルパスからファイルの内容に修正
@@ -56,6 +70,8 @@
 
 ### misc
 
+- [UPDATE] CATCH2 を v3.7.1 にあげる
+  - @voluntas
 - [UPDATE] SDL2 を 2.30.7 にあげる
   - @voluntas
 - [ADD] sumomo に証明書に関するオプションを追加する

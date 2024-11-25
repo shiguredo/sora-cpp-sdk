@@ -125,13 +125,13 @@ std::unique_ptr<MFXVideoENCODE> VplVideoEncoderImpl::CreateEncoder(
   std::unique_ptr<MFXVideoENCODE> encoder(
       new MFXVideoENCODE(GetVplSession(session)));
 
-  mfxPlatform platform;
-  memset(&platform, 0, sizeof(platform));
-  MFXVideoCORE_QueryPlatform(GetVplSession(session), &platform);
-  RTC_LOG(LS_VERBOSE) << "--------------- codec=" << CodecToString(codec)
-                      << " CodeName=" << platform.CodeName
-                      << " DeviceId=" << platform.DeviceId
-                      << " MediaAdapterType=" << platform.MediaAdapterType;
+  // mfxPlatform platform;
+  // memset(&platform, 0, sizeof(platform));
+  // MFXVideoCORE_QueryPlatform(GetVplSession(session), &platform);
+  // RTC_LOG(LS_VERBOSE) << "--------------- codec=" << CodecToString(codec)
+  //                     << " CodeName=" << platform.CodeName
+  //                     << " DeviceId=" << platform.DeviceId
+  //                     << " MediaAdapterType=" << platform.MediaAdapterType;
 
   mfxVideoParam param;
   ExtBuffer ext;

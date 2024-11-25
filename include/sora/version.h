@@ -1,14 +1,12 @@
 #ifndef SORA_VERSION_H_
 #define SORA_VERSION_H_
 
+#include <optional>
 #include <string>
-
-// Boost
-#include <boost/optional.hpp>
 
 namespace sora {
 
-typedef boost::optional<std::string> http_header_value;
+typedef std::optional<std::string> http_header_value;
 
 class Version {
  public:

@@ -192,7 +192,7 @@ void Websocket::Connect(const std::string& url, connect_callback_t on_connect) {
 
   // ヘッダーの設定
   auto set_headers = [this](boost::beast::websocket::request_type& req) {
-    if (user_agent_ != boost::none) {
+    if (user_agent_ != std::nullopt) {
       req.set(boost::beast::http::field::user_agent, *user_agent_);
     }
   };
