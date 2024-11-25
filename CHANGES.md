@@ -19,10 +19,14 @@
   - @voluntas
 - [UPDATE] Boost を 1.86.0 にあげる
   - @voluntas
-- [UPDATE] libwebrtc を m129.6668.1.1 にあげる
+- [UPDATE] libwebrtc を m130.6723.2.0 にあげる
   - H.265 Patch の修正に伴い、C++ SDK の H.265 に関する設定を変更
   - examples と test に `rtc::CreateRandomString` のヘッダを追加
   - `SetRtpTimestamp` を `frame.timestamp` から `frame.rtp_timestamp` に変更
+  - `scalable_track_source.h` と `scalable_track_source.cpp` の `absl::optional` を `std::optional` に変更
+  - `nvcodec_video_decoder.h` と `vpl_video_decoder.h` に `#include <optional>` を追加
+  - `nvcodec_video_decoder.cpp` と `vpl_video_decoder.cpp` の `absl::nullopt` を `std::nullopt` に変更
+  - Android の test アプリの cmake バージョンを VERSION と合わせる
   - @tnoho @torikizi @melpon
 - [UPDATE] Xcode のバージョンを 15.4 にあげる
   - @tnoho
