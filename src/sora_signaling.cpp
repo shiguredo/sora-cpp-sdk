@@ -390,7 +390,8 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     m["data_channels"] = ar;
   }
 
-  auto forwarding_filter_to_json = [](const SoraSignalingConfig::ForwardingFilter& f) -> boost::json::value {
+  auto forwarding_filter_to_json =
+      [](const SoraSignalingConfig::ForwardingFilter& f) -> boost::json::value {
     boost::json::object obj;
     if (f.name) {
       obj["name"] = *f.name;
@@ -426,7 +427,8 @@ void SoraSignaling::DoSendConnect(bool redirect) {
   };
 
   if (config_.forwarding_filter) {
-    m["forwarding_filter"] = forwarding_filter_to_json(*config_.forwarding_filter);
+    m["forwarding_filter"] =
+        forwarding_filter_to_json(*config_.forwarding_filter);
   }
 
   if (config_.forwarding_filters) {
@@ -1014,18 +1016,21 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
               for (auto v : encodings_json) {
                 auto p = v.as_object();
                 webrtc::RtpEncodingParameters params;
-                // absl::optional<uint32_t> ssrc;
+                // std::optional<uint32_t> ssrc;
                 // double bitrate_priority = kDefaultBitratePriority;
-                // enum class Priority { kVeryLow, kLow, kMedium, kHigh };
                 // Priority network_priority = Priority::kLow;
-                // absl::optional<int> max_bitrate_bps;
-                // absl::optional<int> min_bitrate_bps;
-                // absl::optional<double> max_framerate;
-                // absl::optional<int> num_temporal_layers;
-                // absl::optional<double> scale_resolution_down_by;
+                // std::optional<int> max_bitrate_bps;
+                // std::optional<int> min_bitrate_bps;
+                // std::optional<double> max_framerate;
+                // std::optional<int> num_temporal_layers;
+                // std::optional<double> scale_resolution_down_by;
+                // std::optional<std::string> scalability_mode;
+                // std::optional<Resolution> requested_resolution;
                 // bool active = true;
                 // std::string rid;
+                // bool request_key_frame = false;
                 // bool adaptive_ptime = false;
+                // std::optional<RtpCodec> codec;
                 params.rid = p["rid"].as_string().c_str();
                 if (p.count("maxBitrate") != 0) {
                   params.max_bitrate_bps = p["maxBitrate"].to_number<int>();
@@ -1049,6 +1054,12 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
                 if (p.count("scalabilityMode") != 0) {
                   params.scalability_mode =
                       p["scalabilityMode"].as_string().c_str();
+                }
+                if (p.count("scaleResolutionDownTo") != 0) {
+                  auto& obj = p["scaleResolutionDownTo"].as_object();
+                  auto& v = params.requested_resolution.emplace();
+                  v.width = obj.at("maxWidth").to_number<int>();
+                  v.height = obj.at("maxHeight").to_number<int>();
                 }
                 encoding_parameters.push_back(params);
               }
