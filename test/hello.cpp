@@ -71,7 +71,7 @@ void HelloSora::Run() {
   config.video_bit_rate = config_.video_bit_rate;
   config.multistream = true;
   config.simulcast = config_.simulcast;
-  config.data_channel_signaling = true;
+  config.data_channel_signaling = config_.data_channel_signaling;
   if (config_.ignore_disconnect_websocket) {
     config.ignore_disconnect_websocket = *config_.ignore_disconnect_websocket;
   }
@@ -191,6 +191,9 @@ int main(int argc, char* argv[]) {
   }
   if (get(v, "client_id", x)) {
     config.client_id = x.as_string();
+  }
+  if (get(v, "data_channel_signaling", x)) {
+    config.data_channel_signaling = x.as_bool();
   }
   if (get(v, "ignore_disconnect_websocket", x)) {
     config.ignore_disconnect_websocket = x.as_bool();

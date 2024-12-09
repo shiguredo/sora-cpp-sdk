@@ -14,6 +14,7 @@ struct HelloSoraConfig {
   int video_bit_rate = 0;
   std::string video_codec_type = "H264";
   bool simulcast = false;
+  std::optional<bool> data_channel_signaling;
   std::optional<bool> ignore_disconnect_websocket;
   std::string client_id;
   std::vector<sora::SoraSignalingConfig::DataChannel> data_channels;
