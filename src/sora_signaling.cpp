@@ -94,7 +94,7 @@ void SoraSignaling::Disconnect() {
       return;
     }
 
-    self->DoInternalDisconnect(boost::none, "", "");
+    self->DoInternalDisconnect(std::nullopt, "", "");
   });
 }
 
@@ -332,9 +332,6 @@ void SoraSignaling::DoSendConnect(bool redirect) {
 
   if (!config_.audio) {
     m["audio"] = false;
-  } else if (config_.audio && config_.audio_codec_type.empty() &&
-             config_.audio_bit_rate == 0) {
-    m["audio"] = true;
   } else {
     m["audio"] = boost::json::object();
     if (!config_.audio_codec_type.empty()) {
@@ -342,6 +339,14 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     }
     if (config_.audio_bit_rate != 0) {
       m["audio"].as_object()["bit_rate"] = config_.audio_bit_rate;
+    }
+    if (!config_.audio_opus_params.is_null()) {
+      m["audio"].as_object()["opus_params"] = config_.audio_opus_params;
+    }
+
+    // オプションの設定が行われてなければ単に true を設定
+    if (m["audio"].as_object().empty()) {
+      m["audio"] = true;
     }
   }
 
@@ -377,14 +382,23 @@ void SoraSignaling::DoSendConnect(bool redirect) {
       if (d.compress) {
         obj["compress"] = *d.compress;
       }
+      if (d.header) {
+        obj["header"] = boost::json::array(d.header->begin(), d.header->end());
+      }
       ar.push_back(obj);
     }
     m["data_channels"] = ar;
   }
 
-  if (config_.forwarding_filter) {
+  auto forwarding_filter_to_json =
+      [](const SoraSignalingConfig::ForwardingFilter& f) -> boost::json::value {
     boost::json::object obj;
-    auto& f = *config_.forwarding_filter;
+    if (f.name) {
+      obj["name"] = *f.name;
+    }
+    if (f.priority) {
+      obj["priority"] = *f.priority;
+    }
     if (f.action) {
       obj["action"] = *f.action;
     }
@@ -409,7 +423,20 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     if (f.metadata) {
       obj["metadata"] = *f.metadata;
     }
-    m["forwarding_filter"] = obj;
+    return obj;
+  };
+
+  if (config_.forwarding_filter) {
+    m["forwarding_filter"] =
+        forwarding_filter_to_json(*config_.forwarding_filter);
+  }
+
+  if (config_.forwarding_filters) {
+    boost::json::array ar;
+    for (const auto& f : *config_.forwarding_filters) {
+      ar.push_back(forwarding_filter_to_json(f));
+    }
+    m["forwarding_filters"] = ar;
   }
 
   std::string text = boost::json::serialize(m);
@@ -565,7 +592,7 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
 }
 
 void SoraSignaling::DoInternalDisconnect(
-    boost::optional<SoraSignalingErrorCode> force_error_code,
+    std::optional<SoraSignalingErrorCode> force_error_code,
     std::string reason,
     std::string message) {
   assert(state_ == State::Connected);
@@ -576,7 +603,7 @@ void SoraSignaling::DoInternalDisconnect(
                    root_message = message](bool succeeded,
                                            SoraSignalingErrorCode error_code,
                                            std::string message) {
-    if (force_error_code == boost::none) {
+    if (force_error_code == std::nullopt) {
       self->SendOnDisconnect(error_code, message);
     } else {
       self->SendOnDisconnect(*force_error_code,
@@ -638,7 +665,7 @@ void SoraSignaling::DoInternalDisconnect(
     };
 
     std::string text =
-        force_error_code == boost::none
+        force_error_code == std::nullopt
             ? R"({"type":"disconnect","reason":"NO-ERROR"})"
             : R"({"type":"disconnect","reason":")" + reason + "\"}";
     webrtc::DataBuffer disconnect = ConvertToDataBuffer("signaling", text);
@@ -765,10 +792,6 @@ void SoraSignaling::OnConnect(boost::system::error_code ec,
                      [ws](std::shared_ptr<Websocket> p) { return p == ws; }),
       connecting_wss_.end());
 
-  if (state_ == State::Closed) {
-    return;
-  }
-
   if (ec) {
     RTC_LOG(LS_WARNING) << "Failed Websocket handshake: " << ec
                         << " url=" << url << " state=" << (int)state_
@@ -785,9 +808,10 @@ void SoraSignaling::OnConnect(boost::system::error_code ec,
     return;
   }
 
-  if (state_ == State::Connected || state_ == State::Redirecting) {
+  if (state_ == State::Connected || state_ == State::Redirecting ||
+      state_ == State::Closing || state_ == State::Closed) {
     // 既に他の接続が先に完了していたので、切断する
-    ws->Close([self = shared_from_this(), ws](boost::system::error_code) {},
+    ws->Close([ws](boost::system::error_code) {},
               config_.websocket_close_timeout);
     return;
   }
@@ -1006,18 +1030,21 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
               for (auto v : encodings_json) {
                 auto p = v.as_object();
                 webrtc::RtpEncodingParameters params;
-                // absl::optional<uint32_t> ssrc;
+                // std::optional<uint32_t> ssrc;
                 // double bitrate_priority = kDefaultBitratePriority;
-                // enum class Priority { kVeryLow, kLow, kMedium, kHigh };
                 // Priority network_priority = Priority::kLow;
-                // absl::optional<int> max_bitrate_bps;
-                // absl::optional<int> min_bitrate_bps;
-                // absl::optional<double> max_framerate;
-                // absl::optional<int> num_temporal_layers;
-                // absl::optional<double> scale_resolution_down_by;
+                // std::optional<int> max_bitrate_bps;
+                // std::optional<int> min_bitrate_bps;
+                // std::optional<double> max_framerate;
+                // std::optional<int> num_temporal_layers;
+                // std::optional<double> scale_resolution_down_by;
+                // std::optional<std::string> scalability_mode;
+                // std::optional<Resolution> requested_resolution;
                 // bool active = true;
                 // std::string rid;
+                // bool request_key_frame = false;
                 // bool adaptive_ptime = false;
+                // std::optional<RtpCodec> codec;
                 params.rid = p["rid"].as_string().c_str();
                 if (p.count("maxBitrate") != 0) {
                   params.max_bitrate_bps = p["maxBitrate"].to_number<int>();
@@ -1041,6 +1068,12 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
                 if (p.count("scalabilityMode") != 0) {
                   params.scalability_mode =
                       p["scalabilityMode"].as_string().c_str();
+                }
+                if (p.count("scaleResolutionDownTo") != 0) {
+                  auto& obj = p["scaleResolutionDownTo"].as_object();
+                  auto& v = params.requested_resolution.emplace();
+                  v.width = obj.at("maxWidth").to_number<int>();
+                  v.height = obj.at("maxHeight").to_number<int>();
                 }
                 encoding_parameters.push_back(params);
               }
@@ -1228,7 +1261,7 @@ void SoraSignaling::DoConnect() {
     } else {
       ws.reset(new Websocket(*config_.io_context));
     }
-    if (config_.user_agent != boost::none) {
+    if (config_.user_agent != std::nullopt) {
       ws->SetUserAgent(*config_.user_agent);
     }
     ws->Connect(url, std::bind(&SoraSignaling::OnConnect, shared_from_this(),
@@ -1609,7 +1642,7 @@ void SoraSignaling::OnMessage(
     return;
   }
 
-  boost::json::error_code ec;
+  boost::system::error_code ec;
   auto json = boost::json::parse(data, ec);
   if (ec) {
     RTC_LOG(LS_ERROR) << "JSON Parse Error ec=" << ec.message();
@@ -1658,6 +1691,24 @@ void SoraSignaling::OnMessage(
           },
           CreateIceError(
               "Failed to SetOffer in re-offer message via DataChannel"));
+    } else if (type == "close") {
+      // グレースフルシャットダウンする
+      int code = json.at("code").to_number<int>();
+      std::string reason = json.at("reason").as_string().c_str();
+      // on_close を設定しておいて、あとは DataChannel が閉じるのを待つだけ
+      dc_->SetOnClose([self = shared_from_this(), code,
+                       reason](boost::system::error_code ec) {
+        if (code == 1000) {
+          self->SendOnDisconnect(
+              SoraSignalingErrorCode::CLOSE_SUCCEEDED,
+              "Succeeded to close DataChannel: reason=" + reason);
+        } else {
+          self->SendOnDisconnect(
+              SoraSignalingErrorCode::CLOSE_SUCCEEDED,
+              "Failed to close DataChannel: code=" + std::to_string(code) +
+                  " ec=" + ec.message());
+        }
+      });
     }
     return;
   }

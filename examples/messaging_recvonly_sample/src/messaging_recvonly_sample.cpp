@@ -1,11 +1,10 @@
+#include <optional>
+
 // Sora
 #include <sora/sora_client_context.h>
 
 // CLI11
 #include <CLI/CLI.hpp>
-
-// Boost
-#include <boost/optional/optional.hpp>
 
 #ifdef _WIN32
 #include <rtc_base/win/scoped_com_initializer.h>
@@ -109,7 +108,7 @@ class MessagingRecvOnlySample
 
 void add_optional_bool(CLI::App& app,
                        const std::string& option_name,
-                       boost::optional<bool>& v,
+                       std::optional<bool>& v,
                        const std::string& help_text) {
   auto f = [&v](const std::string& input) {
     if (input == "true") {
@@ -117,7 +116,7 @@ void add_optional_bool(CLI::App& app,
     } else if (input == "false") {
       v = false;
     } else if (input == "none") {
-      v = boost::none;
+      v = std::nullopt;
     } else {
       throw CLI::ConversionError(input, "optional<bool>");
     }

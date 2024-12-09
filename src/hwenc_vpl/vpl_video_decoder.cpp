@@ -310,8 +310,8 @@ int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
                                            .set_video_frame_buffer(i420_buffer)
                                            .set_timestamp_rtp(pts)
                                            .build();
-    decode_complete_callback_->Decoded(decoded_image, absl::nullopt,
-                                       absl::nullopt);
+    decode_complete_callback_->Decoded(decoded_image, std::nullopt,
+                                       std::nullopt);
   }
 
   return WEBRTC_VIDEO_CODEC_OK;

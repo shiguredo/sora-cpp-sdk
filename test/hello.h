@@ -14,6 +14,10 @@ struct HelloSoraConfig {
   int video_bit_rate = 0;
   std::string video_codec_type = "H264";
   bool simulcast = false;
+  std::optional<bool> ignore_disconnect_websocket;
+  std::string client_id;
+  std::vector<sora::SoraSignalingConfig::DataChannel> data_channels;
+  std::vector<sora::SoraSignalingConfig::ForwardingFilter> forwarding_filters;
 };
 
 class HelloSora : public std::enable_shared_from_this<HelloSora>,

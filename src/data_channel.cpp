@@ -69,6 +69,10 @@ void DataChannel::Close(const webrtc::DataBuffer& disconnect_message,
   auto data_channel = it->second;
   data_channel->Send(disconnect_message);
 }
+void DataChannel::SetOnClose(
+    std::function<void(boost::system::error_code)> on_close) {
+  on_close_ = on_close;
+}
 
 void DataChannel::AddDataChannel(
     rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) {

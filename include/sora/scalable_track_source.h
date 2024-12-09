@@ -31,7 +31,7 @@ class ScalableVideoTrackSource : public rtc::AdaptedVideoTrackSource {
   virtual ~ScalableVideoTrackSource();
 
   bool is_screencast() const override;
-  absl::optional<bool> needs_denoising() const override;
+  std::optional<bool> needs_denoising() const override;
   webrtc::MediaSourceInterface::SourceState state() const override;
   bool remote() const override;
   bool OnCapturedFrame(const webrtc::VideoFrame& frame);
