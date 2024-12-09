@@ -145,6 +145,8 @@
     "__threading_support": "cpp",
     "__verbose_abort": "cpp",
     "string_view": "cpp",
-    "*.tcc": "cpp"
+    "*.tcc": "cpp",
+    "__node_handle": "cpp",
+    "expected": "cpp"
   }
 }
