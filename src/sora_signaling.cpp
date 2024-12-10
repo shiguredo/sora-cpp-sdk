@@ -834,60 +834,37 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
       RTC_LOG(LS_ERROR) << "OnRead: state is Closing but on_ws_close_ is null";
       return;
     }
-    if (state_ == State::Connected && !using_datachannel_) {
-      // 何かエラーが起きたので切断する
-      ws_connected_ = false;
-      auto error_code = ec == boost::beast::websocket::error::closed
-                            ? SoraSignalingErrorCode::WEBSOCKET_ONCLOSE
-                            : SoraSignalingErrorCode::WEBSOCKET_ONERROR;
-      auto reason = ws_->reason();
-      SendOnWsClose(reason);
-      std::string reason_str = " wscode=" + std::to_string(reason.code) +
-                               " wsreason=" + reason.reason.c_str();
-      SendOnDisconnect(error_code, "Failed to read WebSocket: ec=" +
-                                       ec.message() + reason_str);
-      return;
-    }
     if (state_ == State::Connected && using_datachannel_ && !ws_connected_) {
       // ignore_disconnect_websocket による WS 切断なので何もしない
       return;
     }
-    if (state_ == State::Connected && using_datachannel_ && ws_connected_) {
-      // DataChanel で reason: "WEBSOCKET-ONCLOSE" または "WEBSOCKET-ONERROR" を送る事を試みてから終了する
-      std::string text =
-          ec == boost::beast::websocket::error::closed
-              ? R"({"type":"disconnect","reason":"WEBSOCKET-ONCLOSE"})"
-              : R"({"type":"disconnect","reason":"WEBSOCKET-ONERROR"})";
-      webrtc::DataBuffer disconnect = ConvertToDataBuffer("signaling", text);
-      auto error_code = ec == boost::beast::websocket::error::closed
+    if (state_ == State::Connected) {
+      // 何かエラーが起きたので切断する
+      ws_connected_ = false;
+      auto reason = ws_->reason();
+      auto error_code = reason.code == 1000
+                            ? SoraSignalingErrorCode::CLOSE_SUCCEEDED
+                        : ec == boost::beast::websocket::error::closed
                             ? SoraSignalingErrorCode::WEBSOCKET_ONCLOSE
                             : SoraSignalingErrorCode::WEBSOCKET_ONERROR;
-      auto reason = ws_->reason();
       SendOnWsClose(reason);
       std::string reason_str = " wscode=" + std::to_string(reason.code) +
                                " wsreason=" + reason.reason.c_str();
-      state_ = State::Closing;
-      dc_->Close(
-          disconnect,
-          [self = shared_from_this(), ec, error_code,
-           reason_str](boost::system::error_code ec2) {
-            if (ec2) {
-              self->SendOnDisconnect(
-                  error_code,
-                  "Failed to read WebSocket and to close DataChannel: ec=" +
-                      ec.message() + " ec2=" + ec2.message() + reason_str);
-              return;
-            }
-            self->SendOnDisconnect(
-                error_code,
-                "Failed to read WebSocket and succeeded to close "
-                "DataChannel: ec=" +
-                    ec.message() + reason_str);
-          },
-          config_.disconnect_wait_timeout);
-
-      SendOnSignalingMessage(SoraSignalingType::DATACHANNEL,
-                             SoraSignalingDirection::SENT, std::move(text));
+      std::string message;
+      if (error_code == SoraSignalingErrorCode::CLOSE_SUCCEEDED) {
+        if (using_datachannel_) {
+          message =
+              "Succeeded to close WebSocket and DataChannel from server: ec=" +
+              ec.message() + reason_str;
+        } else {
+          message =
+              "Succeeded to close WebSocket from server: ec=" + ec.message() +
+              reason_str;
+        }
+      } else {
+        message = "Failed to read WebSocket: ec=" + ec.message() + reason_str;
+      }
+      SendOnDisconnect(error_code, message);
       return;
     }
 
