@@ -6,10 +6,6 @@
 #include <vpl/mfxdispatcher.h>
 #include <vpl/mfxvideo.h>
 
-#ifdef __linux__
-#include "vaapi_utils_drm.h"
-#endif
-
 namespace sora {
 
 struct VplSessionImpl : VplSession {
@@ -17,10 +13,6 @@ struct VplSessionImpl : VplSession {
 
   mfxLoader loader = nullptr;
   mfxSession session = nullptr;
-
-#ifdef __linux__
-  std::unique_ptr<DRMLibVA> libva;
-#endif
 };
 
 VplSessionImpl::~VplSessionImpl() {
@@ -47,20 +39,6 @@ std::shared_ptr<VplSession> VplSession::Create() {
     RTC_LOG(LS_VERBOSE) << "Failed to MFXCreateSession: sts=" << sts;
     return nullptr;
   }
-
-#ifdef __linux__
-  session->libva = CreateDRMLibVA();
-  if (!session->libva) {
-    return nullptr;
-  }
-
-  sts = MFXVideoCORE_SetHandle(
-      session->session, static_cast<mfxHandleType>(MFX_HANDLE_VA_DISPLAY),
-      session->libva->GetVADisplay());
-  if (sts != MFX_ERR_NONE) {
-    return nullptr;
-  }
-#endif
 
   // Query selected implementation and version
   mfxIMPL impl;
