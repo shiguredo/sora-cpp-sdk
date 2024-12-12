@@ -503,8 +503,6 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
   endif()
 
   if (USE_VPL_ENCODER)
-    find_package(Libdrm REQUIRED)
-    find_package(Libva REQUIRED)
     find_package(VPL REQUIRED)
     target_include_directories(sora PRIVATE /usr/local/cuda/include)
     target_sources(sora
@@ -512,12 +510,8 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
         src/hwenc_vpl/vpl_session_impl.cpp
         src/hwenc_vpl/vpl_video_decoder.cpp
         src/hwenc_vpl/vpl_video_encoder.cpp
-        src/hwenc_vpl/vaapi_utils_drm.cpp
-        src/hwenc_vpl/vaapi_utils.cpp
     )
     target_link_libraries(sora PRIVATE "$<BUILD_INTERFACE:VPL::dispatcher>")
-    # va と drm は依存に含める
-    target_link_libraries(sora PUBLIC Libdrm::drm Libva::va Libva::va_drm)
     # vpl を要求したくないので libsora.a に含める
     list(APPEND BUNDLE_STATIC_LIBS $<TARGET_FILE:VPL::dispatcher>)
   endif()
@@ -547,8 +541,6 @@ install(EXPORT sora-config
 install(
   FILES
     cmake/FindWebRTC.cmake
-    cmake/FindLibdrm.cmake
-    cmake/FindLibva.cmake
   DESTINATION ${CMAKE_INSTALL_DATADIR}/cmake
 )
 install(FILES LICENSE NOTICE.md

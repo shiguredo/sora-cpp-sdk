@@ -23,8 +23,6 @@ find_package(Boost REQUIRED COMPONENTS json filesystem)
 find_package(WebRTC REQUIRED)
 find_package(Sora REQUIRED)
 find_package(Threads REQUIRED)
-find_package(Libva REQUIRED)
-find_package(Libdrm REQUIRED)
 
 add_executable(messaging_recvonly_sample)
 set_target_properties(messaging_recvonly_sample PROPERTIES CXX_STANDARD 20 C_STANDARD 20)

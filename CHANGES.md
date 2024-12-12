@@ -73,6 +73,8 @@
   - @melpon
 - [FIX] Sora から切断された場合に WS reason が 1000 だったら正常終了とする
   - @melpon
+- [FIX] libdrm-dev と libva-dev の依存が不要になってたので削除
+  - @melpon
 
 ### misc
 

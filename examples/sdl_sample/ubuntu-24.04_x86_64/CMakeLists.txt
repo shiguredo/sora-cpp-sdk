@@ -25,8 +25,6 @@ find_package(WebRTC REQUIRED)
 find_package(Sora REQUIRED)
 find_package(SDL2 REQUIRED)
 find_package(Threads REQUIRED)
-find_package(Libva REQUIRED)
-find_package(Libdrm REQUIRED)
 
 add_executable(sdl_sample)
 set_target_properties(sdl_sample PROPERTIES CXX_STANDARD 20 C_STANDARD 20)
