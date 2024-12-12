@@ -84,8 +84,6 @@ _build/macos_arm64/release/messaging_recvonly_sample
 ```shell
 sudo apt install build-essential
 sudo apt install libx11-dev
-sudo apt install libdrm-dev
-sudo apt install libva-dev
 sudo apt install pkg-config
 sudo apt install python3
 ```
@@ -112,8 +110,6 @@ _build/ubuntu-20.04_x86_64/release/messaging_recvonly_sample/
 ```shell
 sudo apt install build-essential
 sudo apt install libx11-dev
-sudo apt install libdrm-dev
-sudo apt install libva-dev
 sudo apt install pkg-config
 sudo apt install python3
 ```
@@ -140,8 +136,6 @@ _build/ubuntu-22.04_x86_64/release/messaging_recvonly_sample/
 ```shell
 sudo apt install build-essential
 sudo apt install libx11-dev
-sudo apt install libdrm-dev
-sudo apt install libva-dev
 sudo apt install pkg-config
 sudo apt install python3
 ```

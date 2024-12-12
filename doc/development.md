@@ -56,11 +56,6 @@ sudo apt-get update
 # 11.8.0-1 の部分は VERSION ファイルの CUDA_VERSION を参照すること
 sudo apt-get -y install cuda=11.8.0-1
 ```
-- libva-dev
-- libdrm-dev
-```bash
-sudo apt install libva-dev libdrm-dev
-```
 
 ### ubuntu-20.04_x86_64, ubuntu-22.04_x86_64 の実行に必要な依存
 
