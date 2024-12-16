@@ -6,6 +6,8 @@
 #include <optional>
 
 // Boost
+#include <boost/asio.hpp>
+#include <boost/asio/deadline_timer.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/ssl/context.hpp>
@@ -15,6 +17,7 @@
 #include <boost/beast/core/multi_buffer.hpp>
 #include <boost/beast/websocket/ssl.hpp>
 #include <boost/beast/websocket/stream.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 #include "url_parts.h"
 #include "version.h"
