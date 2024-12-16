@@ -78,6 +78,8 @@
 
 ### misc
 
+- [CHANGE] GitHub Actions の ubuntu-latest を ubuntu-24.04 に変更
+  - @voluntas
 - [UPDATE] CATCH2 を v3.7.1 にあげる
   - @voluntas
 - [UPDATE] SDL2 を 2.30.7 にあげる
