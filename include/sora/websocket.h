@@ -16,7 +16,6 @@
 #include <boost/beast/core/multi_buffer.hpp>
 #include <boost/beast/websocket/ssl.hpp>
 #include <boost/beast/websocket/stream.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
 
 #include "url_parts.h"
 #include "version.h"
