@@ -30,7 +30,7 @@
   - @tnoho @torikizi @melpon
 - [UPDATE] Xcode のバージョンを 15.4 にあげる
   - @tnoho
-- [UPDATE] SDL を 2.30.8 に上げる
+- [UPDATE] SDL を 2.30.10 に上げる
   - @torikizi
 - [UPDATE] BLEND2D_VERSION を上げる
   - @torikizi
