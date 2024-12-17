@@ -17,8 +17,10 @@
   - @voluntas
 - [UPDATE] CMake を 3.30.5 にあげる
   - @voluntas
-- [UPDATE] Boost を 1.86.0 にあげる
-  - @voluntas
+- [UPDATE] Boost を 1.87.0 にあげる
+  - boost::asio::deadline_timer が間接的にインクルードされなくなったので、websocket.h に boost/asio/deadline_timer.hpp のインクルードを追加して利用可能にする
+  - boost::json::error_code が削除されたので boost::system::error_code に置き換える
+  - @voluntas @torikizi @melpon
 - [UPDATE] libwebrtc を m131.6778.4.0 にあげる
   - H.265 Patch の修正に伴い、C++ SDK の H.265 に関する設定を変更
   - examples と test に `rtc::CreateRandomString` のヘッダを追加
