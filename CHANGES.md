@@ -21,7 +21,7 @@
   - boost::asio::deadline_timer が間接的にインクルードされなくなったので、websocket.h に boost/asio/deadline_timer.hpp のインクルードを追加して利用可能にする
   - boost::json::error_code が削除されたので boost::system::error_code に置き換える
   - @voluntas @torikizi @melpon
-- [UPDATE] libwebrtc を m131.6778.4.0 にあげる
+- [UPDATE] libwebrtc を m132.6834.4.0 にあげる
   - H.265 Patch の修正に伴い、C++ SDK の H.265 に関する設定を変更
   - examples と test に `rtc::CreateRandomString` のヘッダを追加
   - `SetRtpTimestamp` を `frame.timestamp` から `frame.rtp_timestamp` に変更
@@ -29,6 +29,9 @@
   - `nvcodec_video_decoder.h` と `vpl_video_decoder.h` に `#include <optional>` を追加
   - `nvcodec_video_decoder.cpp` と `vpl_video_decoder.cpp` の `absl::nullopt` を `std::nullopt` に変更
   - Android の test アプリの cmake バージョンを VERSION と合わせる
+  - `requested_resolution` が `scale_resolution_down_to` に変更されたのでリネーム
+  - `ExportKeyingMaterial` が廃止されたため `ExportSrtpKeyingMaterial` に変更
+    - `ExportKeyingMaterial` は引数を 6 つ利用できたが `ExportSrtpKeyingMaterial` では 1 つしか利用できないため互換処理を追加
   - @tnoho @torikizi @melpon
 - [UPDATE] Xcode のバージョンを 15.4 にあげる
   - @tnoho
