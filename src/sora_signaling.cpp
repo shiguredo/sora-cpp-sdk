@@ -997,7 +997,7 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
                 // std::optional<int> num_temporal_layers;
                 // std::optional<double> scale_resolution_down_by;
                 // std::optional<std::string> scalability_mode;
-                // std::optional<Resolution> requested_resolution;
+                // std::optional<Resolution> scale_resolution_down_to;
                 // bool active = true;
                 // std::string rid;
                 // bool request_key_frame = false;
@@ -1029,7 +1029,7 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
                 }
                 if (p.count("scaleResolutionDownTo") != 0) {
                   auto& obj = p["scaleResolutionDownTo"].as_object();
-                  auto& v = params.requested_resolution.emplace();
+                  auto& v = params.scale_resolution_down_to.emplace();
                   v.width = obj.at("maxWidth").to_number<int>();
                   v.height = obj.at("maxHeight").to_number<int>();
                 }
