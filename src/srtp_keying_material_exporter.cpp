@@ -51,11 +51,13 @@ absl::optional<KeyingMaterial> ExportKeyingMaterial(
 
   std::vector<uint8_t> buf(key_len * 2 + salt_len * 2);
 
-  if (!dtls->ExportKeyingMaterial(kDtlsSrtpExporterLabel, nullptr, 0, false,
-                                  buf.data(), buf.size())) {
-    RTC_LOG(LS_ERROR) << "Failed to ExportKeyingMaterial";
+  rtc::ZeroOnFreeBuffer<uint8_t> keying_material(buf.size());
+  if (!dtls->ExportSrtpKeyingMaterial(keying_material)) {
+    RTC_LOG(LS_ERROR) << "Failed to ExportSrtpKeyingMaterial";
     return absl::nullopt;
-  };
+  }
+
+  std::memcpy(buf.data(), keying_material.data(), buf.size());
 
   KeyingMaterial km;
   km.client_write_key.resize(key_len);
