@@ -83,6 +83,8 @@
 
 ### misc
 
+- [UPDATE] Boost のダウンロード URL を変更する
+  - @voluntas
 - [CHANGE] GitHub Actions の ubuntu-latest を ubuntu-24.04 に変更
   - @voluntas
 - [UPDATE] CATCH2 を v3.7.1 にあげる
