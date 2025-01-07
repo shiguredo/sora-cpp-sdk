@@ -7,6 +7,10 @@ on:
       - "**.md"
       - "LICENSE"
       - "NOTICE"
+  schedule:
+    # UTC の 01:00 は JST だと 10:00 。
+    # 1-5 で 月曜日から金曜日
+    - cron: "0 1 * * 1-5"
 
 jobs:
   build-windows:

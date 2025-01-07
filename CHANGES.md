@@ -83,9 +83,11 @@
 
 ### misc
 
-- [UPDATE] Boost のダウンロード URL を変更する
-  - @voluntas
 - [CHANGE] GitHub Actions の ubuntu-latest を ubuntu-24.04 に変更
+  - @voluntas
+- [CHANGE] GitHub Actions の build に cron を設定する
+  - @voluntas
+- [UPDATE] Boost のダウンロード URL を変更する
   - @voluntas
 - [UPDATE] CATCH2 を v3.7.1 にあげる
   - @voluntas
