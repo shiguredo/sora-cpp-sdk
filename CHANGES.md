@@ -51,8 +51,6 @@
   - @melpon
 - [ADD] Ubuntu 24.04 armv8 に対応する
   - @melpon
-- [ADD] VERSION と examples/VERSION のバージョンをチェックする仕組みを追加
-  - @melpon
 - [ADD] WebSocket の Close を取得できるよう SendOnWsClose を SoraSignalingObserver に追加する
   - @tnoho
 - [ADD] DataChannel のみの接続で type: close がやってきた場合に正しく切断されるようにする
@@ -101,6 +99,8 @@
     - 指定できるファイルは PEM 形式
   - @melpon
 - [ADD] Ubuntu 24.04 armv8 向けの example を追加する
+  - @melpon
+- [ADD] VERSION と examples/VERSION のバージョンをチェックする仕組みを追加
   - @melpon
 
 ## 2024.7.0
