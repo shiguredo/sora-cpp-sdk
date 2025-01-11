@@ -11,7 +11,6 @@
 #include "sora/rtc_ssl_verifier.h"
 #include "sora/rtc_stats.h"
 #include "sora/session_description.h"
-#include "sora/srtp_keying_material_exporter.h"
 #include "sora/url_parts.h"
 #include "sora/version.h"
 #include "sora/zlib_helper.h"

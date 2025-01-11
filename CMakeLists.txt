@@ -112,7 +112,6 @@ target_sources(sora
     src/sora_signaling.cpp
     src/sora_video_decoder_factory.cpp
     src/sora_video_encoder_factory.cpp
-    src/srtp_keying_material_exporter.cpp
     src/ssl_verifier.cpp
     src/url_parts.cpp
     src/version.cpp
