@@ -1,7 +1,6 @@
 // Sora
 #include <sora/camera_device_capturer.h>
 #include <sora/sora_client_context.h>
-#include <sora/srtp_keying_material_exporter.h>
 
 #include <fstream>
 #include <optional>
