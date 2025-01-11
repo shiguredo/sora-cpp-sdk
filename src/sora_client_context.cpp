@@ -165,7 +165,9 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
       std::get<0>(recording_devices[i]) = name;
       std::get<1>(recording_devices[i]) = guid;
     }
-    adm->SetRecordingDevice(0);
+    if (recording_device_count >= 2) {
+      adm->SetRecordingDevice(0);
+    }
 
     int playout_device_count = adm->PlayoutDevices();
     playout_devices.resize(playout_device_count);
@@ -194,7 +196,9 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
       std::get<0>(playout_devices[i]) = name;
       std::get<1>(playout_devices[i]) = guid;
     }
-    adm->SetPlayoutDevice(0);
+    if (playout_device_count >= 2) {
+      adm->SetPlayoutDevice(0);
+    }
   }
 
   // オーディオデバイスを設定する
