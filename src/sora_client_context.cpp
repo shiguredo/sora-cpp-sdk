@@ -139,7 +139,10 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
   std::vector<std::tuple<std::string, std::string>> playout_devices;
   {
     int recording_device_count = adm->RecordingDevices();
-    recording_devices.resize(recording_device_count);
+    // RecordingDevices がマイナスの値を返すことがある
+    if (recording_device_count >= 0) {
+      recording_devices.resize(recording_device_count);
+    }
     for (int i = 0; i < recording_device_count; i++) {
       char name[webrtc::kAdmMaxDeviceNameSize];
       char guid[webrtc::kAdmMaxGuidSize];
@@ -170,7 +173,10 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
     }
 
     int playout_device_count = adm->PlayoutDevices();
-    playout_devices.resize(playout_device_count);
+    // PlayoutDevices がマイナスの値を返すことがある
+    if (playout_device_count >= 0) {
+      playout_devices.resize(playout_device_count);
+    }
     for (int i = 0; i < playout_device_count; i++) {
       char name[webrtc::kAdmMaxDeviceNameSize];
       char guid[webrtc::kAdmMaxGuidSize];
