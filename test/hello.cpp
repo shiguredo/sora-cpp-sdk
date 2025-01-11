@@ -84,6 +84,7 @@ void HelloSora::Run() {
   if (!config_.forwarding_filters.empty()) {
     config.forwarding_filters = config_.forwarding_filters;
   }
+  config.degradation_preference = config_.degradation_preference;
   conn_ = sora::SoraSignaling::Create(config);
 
   boost::asio::executor_work_guard<boost::asio::io_context::executor_type>
@@ -262,6 +263,19 @@ int main(int argc, char* argv[]) {
   }
   if (get(v, "log_level", x)) {
     rtc::LogMessage::LogToDebug((rtc::LoggingSeverity)x.to_number<int>());
+  }
+  if (get(v, "degradation_preference", x)) {
+    if (x.as_string() == "disabled") {
+      config.degradation_preference = webrtc::DegradationPreference::DISABLED;
+    } else if (x.as_string() == "maintain_framerate") {
+      config.degradation_preference =
+          webrtc::DegradationPreference::MAINTAIN_FRAMERATE;
+    } else if (x.as_string() == "maintain_resolution") {
+      config.degradation_preference =
+          webrtc::DegradationPreference::MAINTAIN_RESOLUTION;
+    } else if (x.as_string() == "balanced") {
+      config.degradation_preference = webrtc::DegradationPreference::BALANCED;
+    }
   }
 
   sora::SoraClientContextConfig context_config;

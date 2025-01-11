@@ -59,6 +59,8 @@ struct SumomoConfig {
   std::string client_key;
   std::string ca_cert;
 
+  std::optional<webrtc::DegradationPreference> degradation_preference;
+
   struct Size {
     int width;
     int height;
@@ -183,6 +185,7 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
     if (!config_.ca_cert.empty()) {
       config.ca_cert = load_file(config_.ca_cert);
     }
+    config.degradation_preference = config_.degradation_preference;
     conn_ = sora::SoraSignaling::Create(config);
 
     boost::asio::executor_work_guard<boost::asio::io_context::executor_type>
@@ -409,6 +412,20 @@ int main(int argc, char* argv[]) {
       ->check(CLI::ExistingFile);
   app.add_option("--ca-cert", config.ca_cert, "CA certificate file")
       ->check(CLI::ExistingFile);
+
+  // DegradationPreference に関するオプション
+  auto degradation_preference_map =
+      std::vector<std::pair<std::string, webrtc::DegradationPreference>>(
+          {{"disabled", webrtc::DegradationPreference::DISABLED},
+           {"maintain_framerate",
+            webrtc::DegradationPreference::MAINTAIN_FRAMERATE},
+           {"maintain_resolution",
+            webrtc::DegradationPreference::MAINTAIN_RESOLUTION},
+           {"balanced", webrtc::DegradationPreference::BALANCED}});
+  app.add_option("--degradation-preference", config.degradation_preference,
+                 "Degradation preference")
+      ->transform(CLI::CheckedTransformer(degradation_preference_map,
+                                          CLI::ignore_case));
 
   // SoraClientContextConfig に関するオプション
   std::string audio_recording_device;

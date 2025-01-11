@@ -1042,9 +1042,14 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
             SessionDescription::CreateAnswer(
                 self->pc_.get(),
                 [self](webrtc::SessionDescriptionInterface* desc) {
+                  if (self->config_.degradation_preference) {
+                    self->SetDegradationPreference(
+                        self->video_mid_,
+                        *self->config_.degradation_preference);
+                  }
+
                   std::string sdp;
                   desc->ToString(&sdp);
-                  //self->manager_->SetParameters();
                   boost::asio::post(*self->config_.io_context, [self, sdp]() {
                     if (!self->pc_) {
                       return;
@@ -1092,9 +1097,14 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
             SessionDescription::CreateAnswer(
                 self->pc_.get(),
                 [self, answer_type](webrtc::SessionDescriptionInterface* desc) {
+                  if (self->config_.degradation_preference) {
+                    self->SetDegradationPreference(
+                        self->video_mid_,
+                        *self->config_.degradation_preference);
+                  }
+
                   std::string sdp;
                   desc->ToString(&sdp);
-                  //self->manager_->SetParameters();
                   boost::asio::post(*self->config_.io_context,
                                     [self, sdp, answer_type]() {
                                       if (!self->pc_) {
@@ -1336,6 +1346,29 @@ void SoraSignaling::ResetEncodingParameters() {
     enc.ssrc = it->ssrc;
   }
   parameters.encodings = new_encodings;
+  sender->SetParameters(parameters);
+}
+
+void SoraSignaling::SetDegradationPreference(
+    std::string mid,
+    webrtc::DegradationPreference degradation_preference) {
+  rtc::scoped_refptr<webrtc::RtpTransceiverInterface> video_transceiver;
+  for (auto transceiver : pc_->GetTransceivers()) {
+    if (transceiver->mid() && *transceiver->mid() == mid) {
+      video_transceiver = transceiver;
+      break;
+    }
+  }
+
+  if (video_transceiver == nullptr) {
+    RTC_LOG(LS_ERROR) << "video transceiver not found";
+    return;
+  }
+
+  rtc::scoped_refptr<webrtc::RtpSenderInterface> sender =
+      video_transceiver->sender();
+  webrtc::RtpParameters parameters = sender->GetParameters();
+  parameters.degradation_preference = degradation_preference;
   sender->SetParameters(parameters);
 }
 

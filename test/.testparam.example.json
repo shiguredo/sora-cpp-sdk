@@ -30,6 +30,8 @@
       "data_channel_signaling": null,
       "ignore_disconnect_websocket": null,
       "client_id": null,
+      // disabled, maintain_framerate, maintain_resolution, balanced
+      "degradation_preference": null,
 
       // "data_channels": [
       //   {
