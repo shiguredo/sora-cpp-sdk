@@ -65,6 +65,10 @@
   - @melpon
 - [ADD] scaleResolutionDownTo に対応する
   - @melpon
+- [ADD] SoraClientContext にオーディオデバイスの設定するオプションを追加
+  - @melpon
+- [ADD] sumomo にビデオデバイスとオーディオデバイスを設定するオプションを追加
+  - @melpon
 - [FIX] HTTP Proxy 利用時の Websocket 初期化で insecure_ メンバ変数が初期化されていなかったのを修正
   - @melpon
 - [FIX] SoraSignalingConfig の client_cert と client_key に渡す必要がある値を、ファイルパスからファイルの内容に修正

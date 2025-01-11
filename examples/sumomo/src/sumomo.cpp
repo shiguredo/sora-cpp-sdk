@@ -27,6 +27,7 @@ struct SumomoConfig {
   std::string client_id;
   bool video = true;
   bool audio = true;
+  std::string video_device;
   std::string video_codec_type;
   std::string audio_codec_type;
   std::string resolution = "VGA";
@@ -108,6 +109,7 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
       cam_config.height = size.height;
       cam_config.fps = 30;
       cam_config.use_native = config_.hw_mjpeg_decoder;
+      cam_config.device_name = config_.video_device;
       auto video_source = sora::CreateCameraDeviceCapturer(cam_config);
       if (video_source == nullptr) {
         RTC_LOG(LS_ERROR) << "Failed to create video source.";
@@ -381,6 +383,7 @@ int main(int argc, char* argv[]) {
   app.add_option("--client-id", config.client_id, "Client ID");
   app.add_option("--video", config.video, "Send video to sora (default: true)");
   app.add_option("--audio", config.audio, "Send audio to sora (default: true)");
+  app.add_option("--video-device", config.video_device, "Video device name");
   app.add_option("--video-codec-type", config.video_codec_type,
                  "Video codec for send")
       ->check(CLI::IsMember({"", "VP8", "VP9", "AV1", "H264", "H265"}));
@@ -436,11 +439,20 @@ int main(int argc, char* argv[]) {
 
   // 証明書に関するオプション
   app.add_flag("--insecure", config.insecure, "Allow insecure connection");
-  app.add_option("--client-cert", config.client_cert, "Client certificate file")->check(CLI::ExistingFile);
-  app.add_option("--client-key", config.client_key, "Client key file")->check(CLI::ExistingFile);
-  app.add_option("--ca-cert", config.ca_cert, "CA certificate file")->check(CLI::ExistingFile);
+  app.add_option("--client-cert", config.client_cert, "Client certificate file")
+      ->check(CLI::ExistingFile);
+  app.add_option("--client-key", config.client_key, "Client key file")
+      ->check(CLI::ExistingFile);
+  app.add_option("--ca-cert", config.ca_cert, "CA certificate file")
+      ->check(CLI::ExistingFile);
 
   // SoraClientContextConfig に関するオプション
+  std::string audio_recording_device;
+  app.add_option("--audio-recording-device", audio_recording_device,
+                 "Recording device name");
+  std::string audio_playout_device;
+  app.add_option("--audio-playout-device", audio_playout_device,
+                 "Playout device name");
   std::optional<bool> use_hardware_encoder;
   add_optional_bool(app, "--use-hardware-encoder", use_hardware_encoder,
                     "Use hardware encoder");
@@ -473,6 +485,12 @@ int main(int argc, char* argv[]) {
   }
 
   auto context_config = sora::SoraClientContextConfig();
+  if (!audio_recording_device.empty()) {
+    context_config.audio_recording_device = audio_recording_device;
+  }
+  if (!audio_playout_device.empty()) {
+    context_config.audio_playout_device = audio_playout_device;
+  }
   if (use_hardware_encoder != std::nullopt) {
     context_config.use_hardware_encoder = *use_hardware_encoder;
   }
