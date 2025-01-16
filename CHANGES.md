@@ -113,7 +113,7 @@
 - [ADD] VERSION と examples/VERSION のバージョンをチェックする仕組みを追加
   - @melpon
 - [FIX] SDL のビルドのために `libgl-dev` をインストールを追加する
-  - SDL のビルド時に OpenGL がない場合、SDL の OpenGL 機能が無効化される仕様になっていたためインストールを追加
+  - SDL のビルド時に OpenGL がない場合、OpenGL 機能が無効化される仕様になっていたためインストールを追加
   - OpenGL 関連の機能が無効化されると SDL の画面作成ができなくなる
   - 参考リンク : [SDL の OpenGL をチェックしている場所](https://hg.libsdl.org/SDL/file/default/README-SDL.md)
   - @torikizi
