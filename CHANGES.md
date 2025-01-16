@@ -112,12 +112,10 @@
   - @melpon
 - [ADD] VERSION と examples/VERSION のバージョンをチェックする仕組みを追加
   - @melpon
-- [ADD] SDL のために `libgl-dev` をインストールする
-  - Ubuntu 24.04 環境で SDL を使用する際、SDL の画面生成に失敗していた問題を修正
-  - 問題の原因は以下の通り
-    - ビルド時に [OPENGL を有効にしていた](https://github.com/shiguredo/sora-cpp-sdk/blob/develop/buildbase.py#L1140)ものの、OpenGL がインストールされていない環境で SDL をビルドすると、SDL の OpenGL 機能が無効化される仕様になっていたため
-    - 参考リンク : [SDL の OpenGL をチェックしている場所](https://hg.libsdl.org/SDL/file/default/README-SDL.md)
-  - この問題を解決するために、 OpenGL が有効になるように `libgl-dev` をインストールする
+- [FIX] SDL のビルドのために `libgl-dev` をインストールを追加する
+  - SDL のビルド時に OpenGL がない場合、SDL の OpenGL 機能が無効化される仕様になっていたためインストールを追加
+  - OpenGL 関連の機能が無効化されると SDL の画面作成ができなくなる
+  - 参考リンク : [SDL の OpenGL をチェックしている場所](https://hg.libsdl.org/SDL/file/default/README-SDL.md)
   - @torikizi
 
 ## 2024.7.0
