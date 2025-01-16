@@ -110,6 +110,7 @@ target_sources(sora
     src/sora_client_context.cpp
     src/sora_peer_connection_factory.cpp
     src/sora_signaling.cpp
+    src/sora_signaling_whip.cpp
     src/sora_video_decoder_factory.cpp
     src/sora_video_encoder_factory.cpp
     src/ssl_verifier.cpp

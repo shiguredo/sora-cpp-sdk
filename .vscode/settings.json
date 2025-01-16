@@ -147,6 +147,8 @@
     "string_view": "cpp",
     "*.tcc": "cpp",
     "__node_handle": "cpp",
-    "expected": "cpp"
+    "expected": "cpp",
+    "__bit_reference": "cpp",
+    "__split_buffer": "cpp"
   }
 }
