@@ -112,9 +112,9 @@
   - @melpon
 - [ADD] VERSION と examples/VERSION のバージョンをチェックする仕組みを追加
   - @melpon
-- [FIX] SDL のビルドのために `libgl-dev` のインストールを追加する
-  - SDL のビルド時に OpenGL がない場合、OpenGL 機能が無効化される仕様になっていたためインストールを追加
-  - OpenGL の機能が無効化されると examples アプリの起動時に SDL の画面作成が失敗する
+- [FIX] SDL ビルド時に libgl-dev がない場合、examples アプリ起動時に SDL 画面作成が失敗する問題を修正するため、libgl-dev をインストールするように build.yml を修正する
+  - SDL のビルド時に libgl-dev がない環境では、OpenGL のヘッダーファイルがないため SDL の OpenGL レンダリング機能が有効化されず、examples アプリ起動時に SDL の画面作成が失敗する
+  - libgl-dev をインストールすることで OpenGL レンダリング機能が有効化され、examples アプリ起動時に SDL の画面作成が成功するようになる
   - 参考リンク : [SDL の OpenGL をチェックしている場所](https://hg.libsdl.org/SDL/file/default/README-SDL.md)
   - @torikizi
 
