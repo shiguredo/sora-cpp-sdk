@@ -112,6 +112,8 @@
   - @melpon
 - [ADD] VERSION と examples/VERSION のバージョンをチェックする仕組みを追加
   - @melpon
+- [ADD] SDL のために `libgl-dev` をインストールする
+  - @torikizi
 
 ## 2024.7.0
 
