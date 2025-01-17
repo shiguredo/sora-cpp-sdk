@@ -265,6 +265,23 @@ Windows 以外の場合
 
 `--ca-cert`, `--client-cert`, `--client-key` には、PEM 形式のファイルを指定してください。
 
+#### 映像と音声のデバイスに関するオプション
+
+- `--video-device`
+  - 映像デバイスの名前を指定します
+- `--audio-recording-device`
+  - 音声録音デバイスの名前を指定します
+- `--audio-playout-device`
+  - 音声再生デバイスの名前を指定します
+
+デバイスの名前はプラットフォームごとに確認する一般的な方法か、`log-level` オプションを `info` にして実行することでログに出力されます。
+
+#### 映像品質の維持優先度に関するオプション
+
+- `--degradation-preference`
+  - `disabled`, `maintain_framerate`,`maintain_resolution`, `balanced` が指定可能です。
+  - 設定可能な値の詳細は [ W3C のドキュメント](https://www.w3.org/TR/mst-content-hint/#degradation-preference-when-encoding) を参照してください。
+
 #### その他のオプション
 
 - `--help`
