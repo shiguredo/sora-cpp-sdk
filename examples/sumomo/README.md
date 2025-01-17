@@ -276,6 +276,11 @@ Windows 以外の場合
 
 デバイスはプラットフォームごとに確認する一般的な方法か、`log-level` オプションを `1` にして実行することで確認することができます。
 
+#### 映像品質に関するオプション
+
+- `--degradation-preference`
+  - `balanced`, `maintain-framerate`, `maintain-resolution`, `maintain-framerate-and-resolution` が指定可能です
+
 #### その他のオプション
 
 - `--help`
