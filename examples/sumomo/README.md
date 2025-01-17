@@ -185,7 +185,7 @@ Windows 以外の場合
 #### Sumomo 実行に関するオプション
 
 - `--log-level` : 実行時にターミナルに出力するログのレベル
-  - `verbose->0,info->1,warning->2,error->3,none->4` の値が指定可能です
+  - `verbose`,`info`,`warning`,`error`,`none` の値が指定可能です
 - `--resolution` : 映像配信する際の解像度
   - 解像度は `QVGA, VGA, HD, FHD, 4K, or [WIDTH]x[HEIGHT]` の値が指定可能です
   - 未指定の場合は `VGA` が設定されます

@@ -185,7 +185,7 @@ Windows 以外の場合
 #### SDL サンプル実行に関するオプション
 
 - `--log-level` : 実行時にターミナルに出力するログのレベル
-  - `verbose->0,info->1,warning->2,error->3,none->4` の値が指定可能です
+  - `verbose`,`info`,`warning`,`error`,`none` の値が指定可能です
 
 #### Sora に関するオプション
 
