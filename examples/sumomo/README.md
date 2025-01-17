@@ -274,12 +274,13 @@ Windows 以外の場合
 - `--audio-playout-device`
   - 音声再生デバイスの名前を指定します
 
-デバイスはプラットフォームごとに確認する一般的な方法か、`log-level` オプションを `1` にして実行することで確認することができます。
+デバイスの名前はプラットフォームごとに確認する一般的な方法か、`log-level` オプションを `1` にして実行することでログに出力されます。
 
-#### 映像品質に関するオプション
+#### 映像品質の維持優先度に関するオプション
 
 - `--degradation-preference`
-  - `balanced`, `maintain-framerate`, `maintain-resolution`, `maintain-framerate-and-resolution` が指定可能です
+  - `disabled`, `maintain_framerate`,`maintain_resolution`, `balanced` が指定可能です。
+  - 設定可能な値の詳細は [ W3C のドキュメント](https://www.w3.org/TR/mst-content-hint/#degradation-preference-when-encoding) を参照してください。
 
 #### その他のオプション
 
