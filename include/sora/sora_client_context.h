@@ -14,6 +14,10 @@ struct SoraClientContextConfig {
   // オーディオデバイスを利用するかどうか
   // false にすると一切オーディオデバイスを掴まなくなる
   bool use_audio_device = true;
+  // 録音デバイス名
+  std::optional<std::string> audio_recording_device;
+  // 再生デバイス名
+  std::optional<std::string> audio_playout_device;
   // ハードウェアエンコーダ/デコーダを利用するかどうか
   // false にするとソフトウェアエンコーダ/デコーダのみになる（H.264 は利用できない）
   bool use_hardware_encoder = true;

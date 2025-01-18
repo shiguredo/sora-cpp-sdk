@@ -72,6 +72,7 @@ void HelloSora::Run() {
   config.multistream = true;
   config.simulcast = config_.simulcast;
   config.simulcast_multicodec = config_.simulcast_multicodec;
+  config.data_channel_signaling = config_.data_channel_signaling;
   if (config_.ignore_disconnect_websocket) {
     config.ignore_disconnect_websocket = *config_.ignore_disconnect_websocket;
   }
@@ -84,6 +85,7 @@ void HelloSora::Run() {
   if (!config_.forwarding_filters.empty()) {
     config.forwarding_filters = config_.forwarding_filters;
   }
+  config.degradation_preference = config_.degradation_preference;
   conn_ = sora::SoraSignaling::Create(config);
 
   boost::asio::executor_work_guard<boost::asio::io_context::executor_type>
@@ -189,8 +191,14 @@ int main(int argc, char* argv[]) {
   if (get(v, "simulcast", x)) {
     config.simulcast = x.as_bool();
   }
+  if (get(v, "simulcast_multicodec", x)) {
+    config.simulcast_multicodec = x.as_bool();
+  }
   if (get(v, "client_id", x)) {
     config.client_id = x.as_string();
+  }
+  if (get(v, "data_channel_signaling", x)) {
+    config.data_channel_signaling = x.as_bool();
   }
   if (get(v, "ignore_disconnect_websocket", x)) {
     config.ignore_disconnect_websocket = x.as_bool();
@@ -260,13 +268,19 @@ int main(int argc, char* argv[]) {
   if (get(v, "log_level", x)) {
     rtc::LogMessage::LogToDebug((rtc::LoggingSeverity)x.to_number<int>());
   }
-  if (auto it = v.as_object().find("simulcast_multicodec");
-      it != v.as_object().end()) {
-    config.simulcast_multicodec = it->value().as_bool();
-  }
-  if (auto it = v.as_object().find("log_level"); it != v.as_object().end()) {
-    rtc::LogMessage::LogToDebug(
-        (rtc::LoggingSeverity)boost::json::value_to<int>(it->value()));
+
+  if (get(v, "degradation_preference", x)) {
+    if (x.as_string() == "disabled") {
+      config.degradation_preference = webrtc::DegradationPreference::DISABLED;
+    } else if (x.as_string() == "maintain_framerate") {
+      config.degradation_preference =
+          webrtc::DegradationPreference::MAINTAIN_FRAMERATE;
+    } else if (x.as_string() == "maintain_resolution") {
+      config.degradation_preference =
+          webrtc::DegradationPreference::MAINTAIN_RESOLUTION;
+    } else if (x.as_string() == "balanced") {
+      config.degradation_preference = webrtc::DegradationPreference::BALANCED;
+    }
   }
 
   sora::SoraClientContextConfig context_config;

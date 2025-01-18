@@ -60,6 +60,7 @@ _hololens2 は無視してください_
   - 動作未検証です
 - Ubuntu 22.04 x86_64
 - Ubuntu 24.04 x86_64
+- Ubuntu 24.04 arm64
 - Android 7 arm64 以降
 - iOS 13 arm64 以降
 
@@ -116,8 +117,8 @@ Discord へお願いします。
 Apache License 2.0
 
 ```
-Copyright 2021-2024, Wandbox LLC (Original Author)
-Copyright 2021-2024, Shiguredo Inc.
+Copyright 2021-2025, Wandbox LLC (Original Author)
+Copyright 2021-2025, Shiguredo Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

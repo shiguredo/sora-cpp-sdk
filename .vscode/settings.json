@@ -157,6 +157,9 @@
     "slist": "cpp",
     "spanstream": "cpp",
     "stacktrace": "cpp",
-    "stdfloat": "cpp"
+    "stdfloat": "cpp",
+    "__node_handle": "cpp",
+    "__bit_reference": "cpp",
+    "__split_buffer": "cpp"
   }
 }

@@ -7,6 +7,10 @@ on:
       - "**.md"
       - "LICENSE"
       - "NOTICE"
+  schedule:
+    # UTC の 01:00 は JST だと 10:00 。
+    # 1-5 で 月曜日から金曜日
+    - cron: "0 1 * * 1-5"
 
 jobs:
   build-windows:
@@ -248,9 +252,6 @@ jobs:
           wget https://apt.llvm.org/llvm.sh
           chmod a+x llvm.sh
           sudo ./llvm.sh 18
-
-          # Intel Media SDK のために libva-dev, libdrm-dev を入れる
-          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install libva-dev libdrm-dev
       - name: Install deps for ${{ matrix.platform.name }}
         if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'armv8'
         run: |
@@ -317,7 +318,7 @@ jobs:
       - build-windows
       - build-macos
       - build-ubuntu
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/download
@@ -358,7 +359,7 @@ jobs:
 
   notification:
     name: Slack Notification
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs:
       - build-windows
       - build-macos

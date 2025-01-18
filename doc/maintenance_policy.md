@@ -79,6 +79,10 @@ P1 が一番プライオリティが高いです。
   - ブランチ: `support/hololens2`
   - タグ: `{sora-cpp-sdk-version}-hololens2.{release}`
     - `2024.1.0-hololens2.0`
+- Raspberry Pi OS
+  - ブランチ: `support/raspberry-pi`
+  - タグ: `{sora-cpp-sdk-version}-raspberry-pi.{release}`
+    - `2024.1.0-raspberry-pi.0`
 
 ### 方針
 

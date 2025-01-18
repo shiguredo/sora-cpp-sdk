@@ -15,10 +15,12 @@ struct HelloSoraConfig {
   std::string video_codec_type = "H264";
   bool simulcast = false;
   bool simulcast_multicodec = false;
+  std::optional<bool> data_channel_signaling;
   std::optional<bool> ignore_disconnect_websocket;
   std::string client_id;
   std::vector<sora::SoraSignalingConfig::DataChannel> data_channels;
   std::vector<sora::SoraSignalingConfig::ForwardingFilter> forwarding_filters;
+  std::optional<webrtc::DegradationPreference> degradation_preference;
 };
 
 class HelloSora : public std::enable_shared_from_this<HelloSora>,
