@@ -93,7 +93,6 @@ Sora C++ SDK のメンテナンスポリシーにはプライオリティがあ�
 - NVIDIA Jetson JetPack 6 Jetson Orin Nano 対応
 - Raspberry Pi OS (64bit) arm64 対応
 - Windows arm64 対応
-- Ubuntu 24.04 x86_64
 - AMD 系 HWA 対応
 
 ## サポートについて
