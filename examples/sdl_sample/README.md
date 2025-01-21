@@ -6,9 +6,10 @@
 
 ## 動作環境
 
-[動作環境](../../README.md#動作環境) をご確認ください。
-
-接続先として WebRTC SFU Sora サーバ が必要です。[対応 Sora](../../README.md#対応-sora) をご確認ください。
+まずは [動作環境](../../README.md#動作環境) をご確認ください。
+本サンプルの利用には、接続先として WebRTC SFU Sora サーバ ([Sora Cloud](https://sora-cloud.shiguredo.jp/) を含む) が必要です。
+[対応 Sora](../../README.md#対応-sora) もご確認ください。
+もし動作確認をご希望であれば、[Sora Labo](https://sora-labo.shiguredo.jp/) を利用することで、無料で Sora を試すことができます。
 
 ## サンプルをビルドする
 
