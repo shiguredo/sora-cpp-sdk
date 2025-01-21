@@ -82,12 +82,7 @@ _build/macos_arm64/release/sumomo
 必要なパッケージをインストールしてください。
 
 ```shell
-sudo apt install build-essential
-sudo apt install libxext-dev
-sudo apt install libx11-dev
-sudo apt install libgl-dev
-sudo apt install pkg-config
-sudo apt install python3
+sudo apt install build-essential libxext-dev libx11-dev libgl-dev pkg-config python3
 ```
 
 ##### ビルド
@@ -110,12 +105,7 @@ _build/ubuntu-20.04_x86_64/release/sumomo/
 必要なパッケージをインストールしてください。
 
 ```shell
-sudo apt install build-essential
-sudo apt install libxext-dev
-sudo apt install libx11-dev
-sudo apt install libgl-dev
-sudo apt install pkg-config
-sudo apt install python3
+sudo apt install build-essential libxext-dev libx11-dev libgl-dev pkg-config python3
 ```
 
 ##### ビルド
@@ -138,12 +128,7 @@ _build/ubuntu-22.04_x86_64/release/sumomo/
 必要なパッケージをインストールしてください。
 
 ```shell
-sudo apt install build-essential
-sudo apt install libxext-dev
-sudo apt install libx11-dev
-sudo apt install libgl-dev
-sudo apt install pkg-config
-sudo apt install python3
+sudo apt install build-essential libxext-dev libx11-dev libgl-dev pkg-config python3
 ```
 
 ##### ビルド
