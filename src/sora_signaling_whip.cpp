@@ -7,6 +7,7 @@
 #include <boost/algorithm/string/split.hpp>
 
 // WebRTC
+#include <media/base/codec_comparators.h>
 #include <p2p/client/basic_port_allocator.h>
 #include <pc/rtp_media_utils.h>
 #include <pc/session_description.h>
@@ -84,12 +85,17 @@ void SoraSignalingWhip::Connect() {
       }
       transceiver.value()->SetCodecPreferences(codecs);
     }
+    webrtc::RtpTransceiverInit video_init;
     if (self->config_.video_source != nullptr) {
       std::string video_track_id = rtc::CreateRandomString(16);
       auto video_track = self->config_.pc_factory->CreateVideoTrack(
           self->config_.video_source, video_track_id);
-      webrtc::RtpTransceiverInit init;
+      auto& init = video_init;
       init.direction = webrtc::RtpTransceiverDirection::kSendOnly;
+      init.stream_ids = {rtc::CreateRandomString(16)};
+      if (self->config_.send_encodings) {
+        init.send_encodings = *self->config_.send_encodings;
+      }
       auto transceiver = pc->AddTransceiver(video_track, init);
       if (!transceiver.ok()) {
         RTC_LOG(LS_ERROR) << "Failed to AddTransceiver(video): error="
@@ -100,8 +106,54 @@ void SoraSignalingWhip::Connect() {
       auto cap = self->config_.pc_factory->GetRtpSenderCapabilities(
           cricket::MediaType::MEDIA_TYPE_VIDEO);
       std::vector<webrtc::RtpCodecCapability> codecs;
+      for (const auto& send_encoding : init.send_encodings) {
+        for (const webrtc::RtpCodecCapability& codec : cap.codecs) {
+          auto codec_format =
+              webrtc::SdpVideoFormat(codec.name, codec.parameters);
+          if (send_encoding.codec) {
+            auto encoding_format = webrtc::SdpVideoFormat(
+                send_encoding.codec->name, send_encoding.codec->parameters);
+            if (codec_format == encoding_format) {
+              auto it = std::find_if(
+                  codecs.begin(), codecs.end(),
+                  [&codec_format](const webrtc::RtpCodecCapability& c) {
+                    auto format = webrtc::SdpVideoFormat(c.name, c.parameters);
+                    return codec_format == format;
+                  });
+              if (it == codecs.end()) {
+                codecs.push_back(codec);
+              }
+              break;
+            }
+          }
+        }
+      }
+      //for (const webrtc::RtpCodecCapability& codec : cap.codecs) {
+      //  if (codec.name == "H264") {
+      //    codecs.push_back(codec);
+      //    break;
+      //  }
+      //}
+      //for (const webrtc::RtpCodecCapability& codec : cap.codecs) {
+      //  if (codec.name == "H265") {
+      //    codecs.push_back(codec);
+      //    break;
+      //  }
+      //}
+      //for (const webrtc::RtpCodecCapability& codec : cap.codecs) {
+      //  if (codec.name == "VP9") {
+      //    codecs.push_back(codec);
+      //    break;
+      //  }
+      //}
+      //for (const webrtc::RtpCodecCapability& codec : cap.codecs) {
+      //  if (codec.name == "AV1") {
+      //    codecs.push_back(codec);
+      //    break;
+      //  }
+      //}
       for (const webrtc::RtpCodecCapability& codec : cap.codecs) {
-        if (codec.name == "AV1") {
+        if (codec.name == "rtx") {
           codecs.push_back(codec);
           break;
         }
@@ -111,9 +163,40 @@ void SoraSignalingWhip::Connect() {
 
     pc->CreateOffer(
         CreateSessionDescriptionThunk::Create(
-            [self](webrtc::SessionDescriptionInterface* description) {
+            [self,
+             video_init](webrtc::SessionDescriptionInterface* description) {
               auto offer = std::unique_ptr<webrtc::SessionDescriptionInterface>(
                   description);
+
+              // 各 RtpEncodingParameters の利用するコーデックと payload_type を関連付ける
+              std::map<std::string, int> rid_payload_type_map;
+              auto& content = offer->description()->contents()[1];
+              auto media_desc = content.media_description();
+              for (auto& send_encoding : video_init.send_encodings) {
+                RTC_LOG(LS_WARNING)
+                    << "send_encoding: " << send_encoding.codec->name;
+                for (auto& codec : media_desc->codecs()) {
+                  RTC_LOG(LS_WARNING) << "codec: " << codec.name;
+                  if (send_encoding.codec &&
+                      webrtc::IsSameRtpCodec(codec, *send_encoding.codec)) {
+                    RTC_LOG(LS_WARNING) << "rid=" << send_encoding.rid
+                                        << " codec=" << codec.name
+                                        << " payload_type=" << codec.id;
+                    rid_payload_type_map[send_encoding.rid] = codec.id;
+                  }
+                }
+              }
+              auto& track = media_desc->mutable_streams()[0];
+              auto rids = track.rids();
+              for (auto& rid : rids) {
+                auto it = rid_payload_type_map.find(rid.rid);
+                if (it == rid_payload_type_map.end()) {
+                  continue;
+                }
+                rid.payload_types.push_back(it->second);
+              }
+              track.set_rids(rids);
+
               std::string offer_sdp;
               if (!offer->ToString(&offer_sdp)) {
                 RTC_LOG(LS_ERROR) << "Failed to get SDP";
@@ -121,7 +204,8 @@ void SoraSignalingWhip::Connect() {
               }
               RTC_LOG(LS_INFO) << "Offer SDP: " << offer_sdp;
 
-              boost::asio::post(*self->config_.io_context, [self, offer_sdp]() {
+              boost::asio::post(*self->config_.io_context, [self, offer_sdp,
+                                                            video_init]() {
                 URLParts parts;
                 if (!URLParts::Parse(self->config_.signaling_url, parts)) {
                   RTC_LOG(LS_ERROR)
@@ -130,7 +214,8 @@ void SoraSignalingWhip::Connect() {
                 }
 
                 self->req_.target(parts.path_query_fragment + "/" +
-                                  self->config_.channel_id);
+                                  self->config_.channel_id +
+                                  "?video_bit_rate=6000");
                 self->req_.method(boost::beast::http::verb::post);
                 // self->req_.set(boost::beast::http::field::authorization, "Bearer " + self->config_.secret_key);
                 self->req_.set(boost::beast::http::field::content_type,
@@ -140,8 +225,8 @@ void SoraSignalingWhip::Connect() {
                 self->req_.body() = offer_sdp;
                 self->req_.prepare_payload();
                 RTC_LOG(LS_INFO) << "Send request to: " << self->req_.target();
-                self->SendRequest([self,
-                                   offer_sdp](boost::beast::error_code ec) {
+                self->SendRequest([self, offer_sdp,
+                                   video_init](boost::beast::error_code ec) {
                   if (ec) {
                     return;
                   }
@@ -197,15 +282,27 @@ void SoraSignalingWhip::Connect() {
                       webrtc::SdpType::kOffer, offer_sdp);
                   self->pc_->SetLocalDescription(
                       SetSessionDescriptionThunk::Create(
-                          [self]() {
+                          [self, video_init]() {
                             auto answer = webrtc::CreateSessionDescription(
                                 webrtc::SdpType::kAnswer, self->res_.body());
                             self->pc_->SetRemoteDescription(
                                 SetSessionDescriptionThunk::Create(
-                                    [self]() {
+                                    [self, video_init]() {
                                       RTC_LOG(LS_INFO)
                                           << "Succeeded to "
                                              "SetRemoteDescription";
+                                      auto p = self->pc_->GetSenders()[1]
+                                                   ->GetParameters();
+                                      for (int i = 0; i < p.encodings.size();
+                                           i++) {
+                                        p.encodings[i].codec =
+                                            video_init.send_encodings[i].codec;
+                                        p.encodings[i].scalability_mode =
+                                            video_init.send_encodings[i]
+                                                .scalability_mode;
+                                      }
+                                      self->pc_->GetSenders()[1]->SetParameters(
+                                          p);
                                     },
                                     [](webrtc::RTCError error) {
                                       RTC_LOG(LS_ERROR)

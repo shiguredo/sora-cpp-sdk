@@ -31,6 +31,7 @@ struct SoraSignalingWhipConfig {
 
   std::string signaling_url;
   std::string channel_id;
+  std::optional<std::vector<webrtc::RtpEncodingParameters>> send_encodings;
   rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source;
 };
 
