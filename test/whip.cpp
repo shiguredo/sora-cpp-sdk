@@ -30,7 +30,7 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
     sora::SoraClientContextConfig context_config;
     context_config.use_audio_device = false;
     context_config.use_hardware_encoder = false;
-    context_config.openh264 = "hoge-";
+    context_config.openh264 = "...";
     context_ = sora::SoraClientContext::Create(context_config);
 
     ioc_.reset(new boost::asio::io_context(1));
@@ -44,7 +44,7 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
     sora::SoraSignalingWhipConfig config;
     config.pc_factory = context_->peer_connection_factory();
     config.io_context = ioc_.get();
-    config.signaling_url = "hoge-";
+    config.signaling_url = "...";
     config.channel_id = "sora";
     config.video_source = video_source;
 
@@ -60,9 +60,9 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
     av1_codec.kind = cricket::MEDIA_TYPE_VIDEO;
     av1_codec.name = "AV1";
     av1_codec.clock_rate = 90000;
-    av1_codec.parameters["level-idx"] = "5";
-    av1_codec.parameters["profile"] = "0";
-    av1_codec.parameters["tier"] = "0";
+    //av1_codec.parameters["level-idx"] = "5";
+    //av1_codec.parameters["profile"] = "0";
+    //av1_codec.parameters["tier"] = "0";
     h264_codec.kind = cricket::MEDIA_TYPE_VIDEO;
     h264_codec.name = "H264";
     h264_codec.clock_rate = 90000;
@@ -117,7 +117,10 @@ int main() {
 #ifdef _WIN32
   webrtc::ScopedCOMInitializer com_initializer(
       webrtc::ScopedCOMInitializer::kMTA);
-  REQUIRE(com_initializer.Succeeded());
+  if (!com_initializer.Succeeded()) {
+    std::cerr << "CoInitializeEx failed" << std::endl;
+    return 1;
+  }
 #endif
 
   rtc::LogMessage::LogToDebug(rtc::LS_INFO);

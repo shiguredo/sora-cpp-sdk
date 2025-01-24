@@ -105,8 +105,17 @@ void SoraSignalingWhip::Connect() {
 
       auto cap = self->config_.pc_factory->GetRtpSenderCapabilities(
           cricket::MediaType::MEDIA_TYPE_VIDEO);
+      for (const webrtc::RtpCodecCapability& codec : cap.codecs) {
+        RTC_LOG(LS_WARNING) << "codec: " << codec.name;
+        for (const auto& param : codec.parameters) {
+          RTC_LOG(LS_WARNING) << "  " << param.first << ": " << param.second;
+        }
+      }
       std::vector<webrtc::RtpCodecCapability> codecs;
       for (const auto& send_encoding : init.send_encodings) {
+        RTC_LOG(LS_WARNING)
+            << "send_encoding: "
+            << (send_encoding.codec ? send_encoding.codec->name : "none");
         for (const webrtc::RtpCodecCapability& codec : cap.codecs) {
           auto codec_format =
               webrtc::SdpVideoFormat(codec.name, codec.parameters);
@@ -114,6 +123,7 @@ void SoraSignalingWhip::Connect() {
             auto encoding_format = webrtc::SdpVideoFormat(
                 send_encoding.codec->name, send_encoding.codec->parameters);
             if (codec_format == encoding_format) {
+              RTC_LOG(LS_WARNING) << "match codec: " << codec.name;
               auto it = std::find_if(
                   codecs.begin(), codecs.end(),
                   [&codec_format](const webrtc::RtpCodecCapability& c) {
@@ -121,6 +131,7 @@ void SoraSignalingWhip::Connect() {
                     return codec_format == format;
                   });
               if (it == codecs.end()) {
+                RTC_LOG(LS_WARNING) << "add codec: " << codec.name;
                 codecs.push_back(codec);
               }
               break;
@@ -189,6 +200,9 @@ void SoraSignalingWhip::Connect() {
               auto& track = media_desc->mutable_streams()[0];
               auto rids = track.rids();
               for (auto& rid : rids) {
+                //if (rid.rid == "r0" || rid.rid == "r1") {
+                //  continue;
+                //}
                 auto it = rid_payload_type_map.find(rid.rid);
                 if (it == rid_payload_type_map.end()) {
                   continue;
