@@ -6,9 +6,10 @@
 
 ## 動作環境
 
-[動作環境](../../README.md#動作環境) をご確認ください。
-
-接続先として WebRTC SFU Sora サーバ が必要です。[対応 Sora](../../README.md#対応-sora) をご確認ください。
+まずは [動作環境](../../README.md#動作環境) をご確認ください。
+本サンプルの利用には、接続先として WebRTC SFU Sora サーバ ([Sora Cloud](https://sora-cloud.shiguredo.jp/) を含む) が必要です。
+[対応 Sora](../../README.md#対応-sora) もご確認ください。
+もし動作確認をご希望であれば、[Sora Labo](https://sora-labo.shiguredo.jp/) を利用することで、無料で Sora を試すことができます。
 
 ## サンプルをビルドする
 
@@ -37,7 +38,7 @@ cd sora-cpp-sdk/examples
 
 以下のツールを準備してください。
 
-- [Visual Studio 2019](https://visualstudio.microsoft.com/ja/downloads/)
+- [Visual Studio 2022](https://visualstudio.microsoft.com/ja/downloads/)
   - C++ をビルドするためのコンポーネントを入れてください。
 - Python 3.10.5
 
@@ -60,7 +61,7 @@ cd sora-cpp-sdk/examples
 
 以下のツールを準備してください。
 
-- Python 3.9.13
+- Python 3.12.4
 
 ##### ビルド
 
@@ -82,12 +83,7 @@ _build/macos_arm64/release/sdl_sample
 必要なパッケージをインストールしてください。
 
 ```shell
-sudo apt install libxext-dev
-sudo apt install libx11-dev
-sudo apt install libdrm-dev
-sudo apt install libva-dev
-sudo apt install pkg-config
-sudo apt install python3
+sudo apt install build-essential libxext-dev libx11-dev libgl-dev pkg-config python3
 ```
 
 ##### ビルド
@@ -110,12 +106,7 @@ _build/ubuntu-20.04_x86_64/release/sdl_sample/
 必要なパッケージをインストールしてください。
 
 ```shell
-sudo apt install libxext-dev
-sudo apt install libx11-dev
-sudo apt install libdrm-dev
-sudo apt install libva-dev
-sudo apt install pkg-config
-sudo apt install python3
+sudo apt install build-essential libxext-dev libx11-dev libgl-dev pkg-config python3
 ```
 
 ##### ビルド
@@ -128,6 +119,29 @@ python3 sdl_sample/ubuntu-22.04_x86_64/run.py
 
 ```
 _build/ubuntu-22.04_x86_64/release/sdl_sample/
+└── sdl_sample
+```
+
+#### Ubuntu 24.04 x86_64 向けのビルドをする
+
+##### 事前準備
+
+必要なパッケージをインストールしてください。
+
+```shell
+sudo apt install build-essential libxext-dev libx11-dev libgl-dev pkg-config python3
+```
+
+##### ビルド
+
+```shell
+python3 sdl_sample/ubuntu-24.04_x86_64/run.py
+```
+
+成功した場合、以下のファイルが作成されます。`_build/ubuntu-24.04_x86_64/release/sdl_sample` に `sdl_sample` が作成されます。
+
+```
+_build/ubuntu-24.04_x86_64/release/sdl_sample/
 └── sdl_sample
 ```
 
@@ -160,7 +174,7 @@ Windows 以外の場合
 #### SDL サンプル実行に関するオプション
 
 - `--log-level` : 実行時にターミナルに出力するログのレベル
-  - `verbose->0,info->1,warning->2,error->3,none->4` の値が指定可能です
+  - `verbose`,`info`,`warning`,`error`,`none` の値が指定可能です
 
 #### Sora に関するオプション
 

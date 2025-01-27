@@ -20,19 +20,17 @@ Please read <https://github.com/shiguredo/oss/blob/master/README.en.md> before u
 ## 特徴
 
 - 各プラットフォームで利用可能な HWA への対応
-  - NVIDIA Video Codec SDK (NVENC / NVDEC)
+  - [Intel VPL](https://github.com/intel/libvpl)
+    - AV1 / H.264 / H.265
+      - VP9 のデコードは利用可能ですが、エンコードは現在既知の問題があります。詳細は [known_issues.md](doc/known_issues.md) をお読みください。
+  - [NVIDIA Video Codec SDK](https://developer.nvidia.com/video-codec-sdk)
     - VP9 / H.264 / H.265
-  - NVIDIA Jetson Video HWA
+  - [NVIDIA JetPack SDK](https://developer.nvidia.com/embedded/jetpack) (JetPack 6)
     - VP9 / AV1 / H.264 / H.265
-  - Apple macOS / iOS Video Toolbox
+  - [Apple Video Toolbox](https://developer.apple.com/documentation/videotoolbox)
     - H.264 / H.265
   - Google Android HWA
     - VP8 / VP9 / H.264 / H.265
-  - [Intel VPL](https://github.com/intel/libvpl) (Intel Media SDK の後継)
-    - H.264 / H.265 / AV1
-    - AV1 は デコードのみ
-    - H.265 は Windows と Ubuntu 22.04 のみ
-    - Media SDK での動作は未検証です
 
 ## ライブラリのバイナリ提供について
 
@@ -48,13 +46,13 @@ _hololens2 は無視してください_
 
 ## 対応 Sora
 
-- WebRTC SFU Sora 2023.2.0 以降
+- WebRTC SFU Sora 2024.2.0 以降
 
 ## 動作環境
 
 - Windows 10.1809 x86_64 以降
 - macOS 13.5 arm64 以降
-- Ubuntu 22.04 ARMv8 Jetson (JetPack 6.0.0 以降)
+- Ubuntu 22.04 ARMv8 Jetson (JetPack 6.0 以降)
   - Jetson AGX Orin
   - Jetson Orin NX
   - 動作未検証です
@@ -62,9 +60,9 @@ _hololens2 は無視してください_
   - 動作未検証です
 - Ubuntu 22.04 x86_64
 - Ubuntu 24.04 x86_64
-  - 動作未検証です
+- Ubuntu 24.04 arm64
 - Android 7 arm64 以降
-- iOS 13 arm64 以降
+- iOS 14 arm64 以降
 
 ## 既知の問題
 
@@ -95,7 +93,6 @@ Sora C++ SDK のメンテナンスポリシーにはプライオリティがあ�
 - NVIDIA Jetson JetPack 6 Jetson Orin Nano 対応
 - Raspberry Pi OS (64bit) arm64 対応
 - Windows arm64 対応
-- Ubuntu 24.04 x86_64
 - AMD 系 HWA 対応
 
 ## サポートについて
@@ -119,8 +116,8 @@ Discord へお願いします。
 Apache License 2.0
 
 ```
-Copyright 2021-2024, Wandbox LLC (Original Author)
-Copyright 2021-2024, Shiguredo Inc.
+Copyright 2021-2025, Wandbox LLC (Original Author)
+Copyright 2021-2025, Shiguredo Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

@@ -8,7 +8,6 @@
 #include <common_video/h265/h265_bitstream_parser.h>
 #include <common_video/include/bitrate_adjuster.h>
 #include <modules/video_coding/codecs/h264/include/h264.h>
-#include <modules/video_coding/codecs/h265/include/h265_globals.h>
 #include <modules/video_coding/include/video_codec_interface.h>
 #include <modules/video_coding/include/video_error_codes.h>
 #include <rtc_base/logging.h>
@@ -101,6 +100,8 @@ class VplVideoEncoderImpl : public VplVideoEncoder {
   std::vector<uint8_t> bitstream_buffer_;
   mfxBitstream bitstream_;
   mfxFrameInfo frame_info_;
+
+  int key_frame_interval_ = 0;
 };
 
 const int kLowH264QpThreshold = 34;
@@ -126,13 +127,13 @@ std::unique_ptr<MFXVideoENCODE> VplVideoEncoderImpl::CreateEncoder(
   std::unique_ptr<MFXVideoENCODE> encoder(
       new MFXVideoENCODE(GetVplSession(session)));
 
-  mfxPlatform platform;
-  memset(&platform, 0, sizeof(platform));
-  MFXVideoCORE_QueryPlatform(GetVplSession(session), &platform);
-  RTC_LOG(LS_VERBOSE) << "--------------- codec=" << CodecToString(codec)
-                      << " CodeName=" << platform.CodeName
-                      << " DeviceId=" << platform.DeviceId
-                      << " MediaAdapterType=" << platform.MediaAdapterType;
+  // mfxPlatform platform;
+  // memset(&platform, 0, sizeof(platform));
+  // MFXVideoCORE_QueryPlatform(GetVplSession(session), &platform);
+  // RTC_LOG(LS_VERBOSE) << "--------------- codec=" << CodecToString(codec)
+  //                     << " CodeName=" << platform.CodeName
+  //                     << " DeviceId=" << platform.DeviceId
+  //                     << " MediaAdapterType=" << platform.MediaAdapterType;
 
   mfxVideoParam param;
   ExtBuffer ext;
@@ -520,14 +521,18 @@ int32_t VplVideoEncoderImpl::Encode(
             ? webrtc::VideoContentType::SCREENSHARE
             : webrtc::VideoContentType::UNSPECIFIED;
     encoded_image_.timing_.flags = webrtc::VideoSendTiming::kInvalid;
-    encoded_image_.SetRtpTimestamp(frame.timestamp());
+    encoded_image_.SetRtpTimestamp(frame.rtp_timestamp());
     encoded_image_.ntp_time_ms_ = frame.ntp_time_ms();
     encoded_image_.capture_time_ms_ = frame.render_time_ms();
     encoded_image_.rotation_ = frame.rotation();
     encoded_image_.SetColorSpace(frame.color_space());
-    if (bitstream_.FrameType == MFX_FRAMETYPE_I ||
-        bitstream_.FrameType == MFX_FRAMETYPE_IDR) {
+    key_frame_interval_ += 1;
+    if (bitstream_.FrameType & MFX_FRAMETYPE_I ||
+        bitstream_.FrameType & MFX_FRAMETYPE_IDR) {
       encoded_image_._frameType = webrtc::VideoFrameType::kVideoFrameKey;
+      RTC_LOG(LS_INFO) << "Key Frame Generated: key_frame_interval="
+                       << key_frame_interval_;
+      key_frame_interval_ = 0;
     } else {
       encoded_image_._frameType = webrtc::VideoFrameType::kVideoFrameDelta;
     }
@@ -542,8 +547,6 @@ int32_t VplVideoEncoderImpl::Encode(
       encoded_image_.qp_ = h264_bitstream_parser_.GetLastSliceQp().value_or(-1);
     } else if (codec_ == MFX_CODEC_HEVC) {
       codec_specific.codecType = webrtc::kVideoCodecH265;
-      codec_specific.codecSpecific.H265.packetization_mode =
-          webrtc::H265PacketizationMode::NonInterleaved;
 
       h265_bitstream_parser_.ParseBitstream(encoded_image_);
       encoded_image_.qp_ = h265_bitstream_parser_.GetLastSliceQp().value_or(-1);
@@ -673,13 +676,6 @@ bool VplVideoEncoder::IsSupported(std::shared_ptr<VplSession> session,
   // 実行時エラーでクラッシュするため、とりあえず VP9 だったら未サポートとして返す。
   // （VPL の問題なのか使い方の問題なのかは不明）
   if (codec == webrtc::kVideoCodecVP9) {
-    return false;
-  }
-
-  // FIXME(miosakuma): Intel Core Ultra 7 では IsSupported(AV1) == true となるが、
-  // 実際に使ってみると映像が送信されないため、一時的に AV1 だったら未サポートとして返す。
-  // （VPL の問題なのか使い方の問題なのかは不明）
-  if (codec == webrtc::kVideoCodecAV1) {
     return false;
   }
 

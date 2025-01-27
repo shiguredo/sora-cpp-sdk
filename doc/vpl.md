@@ -30,28 +30,79 @@ Intel Media SDK は既に開発が終了しており、後継の Intel VPL ラ�
 
 ### Windows
 
-Intel VPL を利用するためには Intel のディスプレイドライバーがインストールされている必要があります。  
-Windows では環境によってドライバーの有無が異なるため、以下のいずれかの手順でインストールされているドライバーを確認してください。
+Windows 11 では Intel の公式サイトからドライバーをインストールすることで VPL を利用することができます。
 
-- デバイスマネージャー > ディスプレイアダプター > インストールされているドライバーを確認
-- Win + R キーを押下 > `ファイル名を指定して実行` のダイアログが開くので `dxdiag` と入力して `OK` ボタンを押下 > DirectX 診断ツールが起動するので、 `ディスプレイ` のタブからインストールされているドライバーを確認
-
-Intel のドライバーが確認できない場合は、以下のページから適切なドライバーをインストールしてください。  
-<https://www.intel.co.jp/content/www/jp/ja/download-center/home.html>
+- Intel の公式サイトからドライバーをダウンロードします。
+  - Intel ドライバーおよびソフトウェアのダウンロード
+    - <https://www.intel.co.jp/content/www/jp/ja/download-center/home.html>
+- インストーラーに従ってインストールを行います。
+- インストール後に再起動を行います。
 
 ### Ubuntu 22.04
 
-Ubuntu 22.04 で Intel VPL を利用するためには、ドライバーとライブラリをインストールする必要があります。
-公式ドキュメントの <https://dgpu-docs.intel.com/driver/client/overview.html> を参考に必要なドライバーとライブラリをインストールします。
+#### Intel の apt リポジトリを追加
 
-#### Intel VPL ランタイムをインストールする
+ランタイムのインストールには Intel の apt リポジトリを追加する必要があります。
 
-##### Intel の apt リポジトリを追加
+```bash
+wget -qO - https://repositories.intel.com/gpu/intel-graphics.key | \
+  sudo gpg --dearmor --output /usr/share/keyrings/intel-graphics.gpg
+echo "deb [arch=amd64,i386 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/gpu/ubuntu jammy client" | \
+  sudo tee /etc/apt/sources.list.d/intel-gpu-jammy.list
+sudo apt update
+```
 
-パッケージのインストールには Intel の apt リポジトリを追加する必要があります。
+#### Intel 提供パッケージの最新化
+
+Intel の apt リポジトリを追加することでインストール済みのパッケージも Intel から提供されている最新のものに更新できます。依存問題を起こさないため、ここで最新化を行なってください。
+
+```bash
+sudo apt upgrade
+```
+
+#### ドライバとライブラリのインストール
+
+以下のように、ドライバとライブラリをインストールしてください。
+intel-media-va-driver には無印と `non-free` 版がありますが、 `non-free` 版でしか動作しません。
+
+```bash
+sudo apt install -y intel-media-va-driver-non-free libmfxgen1
+```
+
+### Ubuntu 24.04
+
+デコードのみであれば標準のリポジトリからも libmfx-gen1.2 をインストール可能ですが、エンコードも行いたいため Intel の apt リポジトリより libmfxgen1 をインストールします。
+
+#### Intel の apt リポジトリを追加
+
+ランタイムのインストールには Intel の apt リポジトリを追加する必要があります。
 
 ```bash
 
+wget -qO - https://repositories.intel.com/gpu/intel-graphics.key | \
+  sudo gpg --dearmor --output /usr/share/keyrings/intel-graphics.gpg
+echo "deb [arch=amd64,i386 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/gpu/ubuntu noble client" | \
+  sudo tee /etc/apt/sources.list.d/intel-gpu-noble.list
+sudo apt update
+```
+
+#### ライブラリのインストール
+
+以下の実行例のように、 libmfxgen1 をインストールしてください。
+
+```bash
+sudo apt install -y libmfxgen1
+```
+
+### Intel Media SDK を利用する手順
+
+Intel のチップセットの世代によって、 Intel Media SDK を利用する必要がある場合があります。
+
+以下の手順で Intel Media SDK をインストールしてください。
+
+#### Intel の apt リポジトリを追加
+
+```bash
 wget -qO - https://repositories.intel.com/gpu/intel-graphics.key | \
   sudo gpg --dearmor --output /usr/share/keyrings/intel-graphics.gpg
 echo "deb [arch=amd64,i386 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/gpu/ubuntu jammy client" | \
@@ -60,41 +111,6 @@ sudo apt update
 ```
 
 ##### パッケージのインストール
-
-公式ドキュメントでは libmfxgen1 をインストールする手順が記載されていますが、Intel VPL ランタイムを使用するには libmfx-gen1.2 が必要です。
-
-以下の実行例のように、 libmfx-gen1.2 をインストールしてください。
-
-```bash
-sudo apt install -y \
-  intel-opencl-icd intel-level-zero-gpu level-zero \
-  intel-media-va-driver-non-free libmfx1 libmfx-gen1.2 libvpl2 \
-  libegl-mesa0 libegl1-mesa libegl1-mesa-dev libgbm1 libgl1-mesa-dev libgl1-mesa-dri \
-  libglapi-mesa libgles2-mesa-dev libglx-mesa0 libigdgmm12 libxatracker2 mesa-va-drivers \
-  mesa-vdpau-drivers mesa-vulkan-drivers va-driver-all vainfo hwinfo clinfo
-```
-
-##### 再起動
-
-パッケージのインストールが完了したら、再起動してください。
-
-#### Intel Media SDK を利用する手順
-
-Intel のチップセットの世代によって、 Intel Media SDK を利用する必要がある場合があります。
-
-以下の手順で Intel Media SDK をインストールしてください。
-
-##### Intel の apt リポジトリを追加
-
-```bash
-wget -qO - https://repositories.intel.com/gpu/intel-graphics.key | \
-  sudo gpg --dearmor --output /usr/share/keyrings/intel-graphics.gpg
-echo "deb [arch=amd64,i386 signed-by=/usr/share/keyrings/intel-graphics.gpg] https://repositories.intel.com/gpu/ubuntu jammy client" | \
-  sudo tee /etc/apt/sources.list.d/intel-gpu-jammy.list
-sudo apt update
-```
-
-###### パッケージのインストール
 
 ```bash
 sudo apt install -y \
@@ -105,10 +121,16 @@ sudo apt install -y \
   mesa-vdpau-drivers mesa-vulkan-drivers va-driver-all vainfo hwinfo clinfo
 ```
 
-### Ubuntu 22.04 で環境構築ができたことを確認する手順
+## Ubuntu 22.04 で環境構築ができたことを確認する手順
 
 `vainfo` コマンドを実行します。  
 エラーが発生しなければ、 Intel VPL の実行に必要なドライバーやライブラリのインストールに成功しています。
+
+`vainfo` がインストールされていない場合は、下記のコマンドで `vainfo` をインストールします。
+
+```bash
+sudo apt install -y vainfo
+```
 
 以下は `vainfo` を実行した出力の例です。  
 対応しているプロファイルやエントリーポイントは環境によって異なります。

@@ -3,6 +3,7 @@
 #include <iostream>
 
 // WebRTC
+#include <rtc_base/crypto_random.h>
 #include <rtc_base/logging.h>
 
 #ifdef _WIN32

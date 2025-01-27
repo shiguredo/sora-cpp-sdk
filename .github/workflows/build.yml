@@ -7,6 +7,10 @@ on:
       - "**.md"
       - "LICENSE"
       - "NOTICE"
+  schedule:
+    # UTC の 01:00 は JST だと 10:00 。
+    # 1-5 で 月曜日から金曜日
+    - cron: "0 1 * * 1-5"
 
 jobs:
   build-windows:
@@ -108,8 +112,8 @@ jobs:
       TEST_MATRIX_NAME: ${{ matrix.name }}
     steps:
       - uses: actions/checkout@v4
-      - name: Select Xcode 14.3.1
-        run: sudo xcode-select --switch /Applications/Xcode_14.3.1.app/Contents/Developer
+      - name: Select Xcode 15.4
+        run: sudo xcode-select --switch /Applications/Xcode_15.4.app/Contents/Developer
       - name: Env to output
         run: |
           echo "user=`users`" >> $GITHUB_OUTPUT
@@ -160,12 +164,19 @@ jobs:
           - name: ubuntu-20.04_x86_64
             runs-on: ubuntu-20.04
             os: ubuntu
+            arch: x86_64
           - name: ubuntu-22.04_x86_64
             runs-on: ubuntu-22.04
             os: ubuntu
+            arch: x86_64
           - name: ubuntu-24.04_x86_64
             runs-on: ubuntu-24.04
             os: ubuntu
+            arch: x86_64
+          - name: ubuntu-24.04_armv8
+            runs-on: ubuntu-24.04
+            os: ubuntu
+            arch: armv8
           - name: android
             runs-on: ubuntu-22.04
             os: android
@@ -216,7 +227,7 @@ jobs:
           Pin-Priority: 990
           EOF
       - name: Install deps for ${{ matrix.platform.name }}
-        if: matrix.platform.os == 'ubuntu'
+        if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
         run: |
           source VERSION
           sudo apt-get update
@@ -225,7 +236,16 @@ jobs:
           # X11
           sudo apt-get install libx11-dev libxext-dev
 
+          # OpenGL
+          sudo apt-get install -y libgl-dev
+
           # CUDA
+          source /etc/os-release
+          # 20.04 は自前の libssl1.1 があるので不要
+          if [ $VERSION_ID != "20.04" ]; then
+            wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.0g-2ubuntu4_amd64.deb
+            sudo dpkg -i libssl1.1_1.1.0g-2ubuntu4_amd64.deb
+          fi
           wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb
           sudo dpkg -i cuda-keyring_*all.deb
           sudo apt-get update
@@ -235,9 +255,12 @@ jobs:
           wget https://apt.llvm.org/llvm.sh
           chmod a+x llvm.sh
           sudo ./llvm.sh 18
-
-          # Intel Media SDK のために libva-dev, libdrm-dev を入れる
-          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install libva-dev libdrm-dev
+      - name: Install deps for ${{ matrix.platform.name }}
+        if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'armv8'
+        run: |
+          sudo apt-get -y install multistrap binutils-aarch64-linux-gnu libgl-dev
+          # multistrap に insecure なリポジトリからの取得を許可する設定を入れる
+          sudo sed -e 's/Apt::Get::AllowUnauthenticated=true/Apt::Get::AllowUnauthenticated=true";\n$config_str .= " -o Acquire::AllowInsecureRepositories=true/' -i /usr/sbin/multistrap
       - name: Install deps for Android
         if: matrix.platform.os == 'android'
         run: |
@@ -298,7 +321,7 @@ jobs:
       - build-windows
       - build-macos
       - build-ubuntu
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/download
@@ -321,6 +344,9 @@ jobs:
           platform: ubuntu-24.04_x86_64
       - uses: ./.github/actions/download
         with:
+          platform: ubuntu-24.04_armv8
+      - uses: ./.github/actions/download
+        with:
           platform: android
       - name: Env to output
         run: |
@@ -336,7 +362,7 @@ jobs:
 
   notification:
     name: Slack Notification
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs:
       - build-windows
       - build-macos

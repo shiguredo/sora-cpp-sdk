@@ -37,7 +37,7 @@ cd sora-cpp-sdk/examples
 
 以下のツールを準備してください。
 
-- [Visual Studio 2019](https://visualstudio.microsoft.com/ja/downloads/)
+- [Visual Studio 2022](https://visualstudio.microsoft.com/ja/downloads/)
   - C++ をビルドするためのコンポーネントを入れてください。
 - Python 3.10.5
 
@@ -60,7 +60,7 @@ cd sora-cpp-sdk/examples
 
 以下のツールを準備してください。
 
-- Python 3.9.13
+- Python 3.12.4
 
 ##### ビルド
 
@@ -82,11 +82,7 @@ _build/macos_arm64/release/messaging_recvonly_sample
 必要なパッケージをインストールしてください。
 
 ```shell
-sudo apt install libx11-dev
-sudo apt install libdrm-dev
-sudo apt install libva-dev
-sudo apt install pkg-config
-sudo apt install python3
+sudo apt install build-essential libx11-dev pkg-config python3
 ```
 
 ##### ビルド
@@ -109,11 +105,7 @@ _build/ubuntu-20.04_x86_64/release/messaging_recvonly_sample/
 必要なパッケージをインストールしてください。
 
 ```shell
-sudo apt install libx11-dev
-sudo apt install libdrm-dev
-sudo apt install libva-dev
-sudo apt install pkg-config
-sudo apt install python3
+sudo apt install build-essential libx11-dev pkg-config python3
 ```
 
 ##### ビルド
@@ -126,6 +118,29 @@ python3 messaging_recvonly_sample/ubuntu-22.04_x86_64/run.py
 
 ```
 _build/ubuntu-22.04_x86_64/release/messaging_recvonly_sample/
+└── messaging_recvonly_sample
+```
+
+#### Ubuntu 24.04 x86_64 向けのビルドをする
+
+##### 事前準備
+
+必要なパッケージをインストールしてください。
+
+```shell
+sudo apt install build-essential libx11-dev pkg-config python3
+```
+
+##### ビルド
+
+```shell
+python3 messaging_recvonly_sample/ubuntu-24.04_x86_64/run.py
+```
+
+成功した場合、以下のファイルが作成されます。`_build/ubuntu-24.04_x86_64/release/messaging_recvonly_sample` に `messaging_recvonly_sample` が作成されます。
+
+```
+_build/ubuntu-24.04_x86_64/release/messaging_recvonly_sample/
 └── messaging_recvonly_sample
 ```
 

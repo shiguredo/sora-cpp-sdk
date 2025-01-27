@@ -19,8 +19,8 @@
 namespace sora {
 
 static std::shared_ptr<boost::asio::ssl::context> CreateSSLContext(
-    const std::string& client_cert,
-    const std::string& client_key) {
+    const std::optional<std::string>& client_cert,
+    const std::optional<std::string>& client_key) {
   // TLS 1.2 と 1.3 のみ対応
   SSL_CTX* handle = ::SSL_CTX_new(::TLS_method());
   SSL_CTX_set_min_proto_version(handle, TLS1_2_VERSION);
@@ -31,15 +31,27 @@ static std::shared_ptr<boost::asio::ssl::context> CreateSSLContext(
                    boost::asio::ssl::context::no_sslv2 |
                    boost::asio::ssl::context::no_sslv3 |
                    boost::asio::ssl::context::single_dh_use);
-  if (!client_cert.empty()) {
-    ctx->use_certificate_file(client_cert,
-                              boost::asio::ssl::context_base::file_format::pem);
-    RTC_LOG(LS_INFO) << "client_cert=" << client_cert;
+  if (client_cert) {
+    boost::system::error_code ec;
+    ctx->use_certificate(boost::asio::buffer(*client_cert),
+                         boost::asio::ssl::context_base::file_format::pem, ec);
+    if (ec) {
+      RTC_LOG(LS_WARNING) << "client_cert is set, but use_certificate failed: "
+                          << ec.message();
+    } else {
+      RTC_LOG(LS_INFO) << "client_cert is set";
+    }
   }
-  if (!client_key.empty()) {
-    ctx->use_private_key_file(client_key,
-                              boost::asio::ssl::context_base::file_format::pem);
-    RTC_LOG(LS_INFO) << "client_key=" << client_key;
+  if (client_key) {
+    boost::system::error_code ec;
+    ctx->use_private_key(boost::asio::buffer(*client_key),
+                         boost::asio::ssl::context_base::file_format::pem, ec);
+    if (ec) {
+      RTC_LOG(LS_WARNING) << "client_key is set, but use_private_key failed: "
+                          << ec.message();
+    } else {
+      RTC_LOG(LS_INFO) << "client_key is set";
+    }
   }
   return ctx;
 }
@@ -55,16 +67,18 @@ Websocket::Websocket(boost::asio::io_context& ioc)
 Websocket::Websocket(Websocket::ssl_tag,
                      boost::asio::io_context& ioc,
                      bool insecure,
-                     const std::string& client_cert,
-                     const std::string& client_key)
+                     const std::optional<std::string>& client_cert,
+                     const std::optional<std::string>& client_key,
+                     const std::optional<std::string>& ca_cert)
     : resolver_(new boost::asio::ip::tcp::resolver(ioc)),
       strand_(ioc.get_executor()),
       close_timeout_timer_(ioc),
       insecure_(insecure),
-      user_agent_(Version::GetDefaultUserAgent()) {
+      user_agent_(Version::GetDefaultUserAgent()),
+      ca_cert_(ca_cert) {
   ssl_ctx_ = CreateSSLContext(client_cert, client_key);
   wss_.reset(new ssl_websocket_t(ioc, *ssl_ctx_));
-  InitWss(wss_.get(), insecure);
+  InitWss(wss_.get(), insecure, ca_cert);
 }
 Websocket::Websocket(boost::asio::ip::tcp::socket socket)
     : ws_(new websocket_t(std::move(socket))),
@@ -76,14 +90,17 @@ Websocket::Websocket(boost::asio::ip::tcp::socket socket)
 Websocket::Websocket(https_proxy_tag,
                      boost::asio::io_context& ioc,
                      bool insecure,
-                     const std::string& client_cert,
-                     const std::string& client_key,
+                     const std::optional<std::string>& client_cert,
+                     const std::optional<std::string>& client_key,
+                     const std::optional<std::string>& ca_cert,
                      std::string proxy_url,
                      std::string proxy_username,
                      std::string proxy_password)
     : resolver_(new boost::asio::ip::tcp::resolver(ioc)),
       strand_(ioc.get_executor()),
       close_timeout_timer_(ioc),
+      insecure_(insecure),
+      ca_cert_(ca_cert),
       https_proxy_(true),
       proxy_socket_(new boost::asio::ip::tcp::socket(ioc)),
       proxy_url_(std::move(proxy_url)),
@@ -105,12 +122,15 @@ bool Websocket::IsSSL() const {
   return https_proxy_ || wss_ != nullptr;
 }
 
-void Websocket::InitWss(ssl_websocket_t* wss, bool insecure) {
+void Websocket::InitWss(ssl_websocket_t* wss,
+                        bool insecure,
+                        const std::optional<std::string>& ca_cert) {
   wss->write_buffer_bytes(8192);
 
   wss->next_layer().set_verify_mode(boost::asio::ssl::verify_peer);
   wss->next_layer().set_verify_callback(
-      [insecure](bool preverified, boost::asio::ssl::verify_context& ctx) {
+      [insecure, ca_cert](bool preverified,
+                          boost::asio::ssl::verify_context& ctx) {
         if (preverified) {
           return true;
         }
@@ -120,7 +140,7 @@ void Websocket::InitWss(ssl_websocket_t* wss, bool insecure) {
         }
         X509* cert = X509_STORE_CTX_get0_cert(ctx.native_handle());
         STACK_OF(X509)* chain = X509_STORE_CTX_get0_chain(ctx.native_handle());
-        return SSLVerifier::VerifyX509(cert, chain);
+        return SSLVerifier::VerifyX509(cert, chain, ca_cert);
       });
 }
 
@@ -172,7 +192,7 @@ void Websocket::Connect(const std::string& url, connect_callback_t on_connect) {
 
   // ヘッダーの設定
   auto set_headers = [this](boost::beast::websocket::request_type& req) {
-    if (user_agent_ != boost::none) {
+    if (user_agent_ != std::nullopt) {
       req.set(boost::beast::http::field::user_agent, *user_agent_);
     }
   };
@@ -411,7 +431,7 @@ void Websocket::OnReadProxy(boost::system::error_code ec,
 
   // wss を作って、あとは普通の SSL ハンドシェイクを行う
   wss_.reset(new ssl_websocket_t(std::move(*proxy_socket_), *ssl_ctx_));
-  InitWss(wss_.get(), insecure_);
+  InitWss(wss_.get(), insecure_, ca_cert_);
 
   // SNI の設定を行う
   if (!SSL_set_tlsext_host_name(wss_->next_layer().native_handle(),
