@@ -11,6 +11,10 @@
 
 ## develop
 
+## 2025.1.0
+
+**リリース日**: 2025-01-27
+
 - [CHANGE] `boost::optional` を利用していた部分を全て `std::optional` に変更
   - @melpon
 - [CHANGE] SRTP keying material を取得する機能を削除
