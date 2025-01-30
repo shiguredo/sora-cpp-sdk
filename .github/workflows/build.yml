@@ -348,6 +348,30 @@ jobs:
       - uses: ./.github/actions/download
         with:
           platform: android
+      # Examples のダウンロード
+      - name: Download Examples
+        uses: actions/download-artifact@v4
+        with:
+          pattern: examples_*
+          merge-multiple: false
+      - name: Archive Examples
+        run: |
+          for d in examples_*; do
+            mkdir -p "archive/$d"
+            mv "$d" "archive/$d/"
+            if [[ "$d" == "examples_macos_arm64" ]]; then
+              mv "archive/$d/$d/sumomo" "archive/$d/sumomo"
+              rm -rf "archive/$d/$d"
+              (cd archive && tar czf "../sumomo_macos_arm64.tar.gz" "$d")
+              echo "sumomo_macos_arm64.tar.gz" >> package_paths.env
+            elif [[ "$d" == *"windows"* ]]; then
+              (cd archive && zip -r "../sumomo_windows_x86_64.zip" "$d")
+              echo "sumomo_windows_x86_64.zip" >> package_paths.env
+            else
+              (cd archive && tar czf "../sumomo_${d#examples_}.tar.gz" "$d")
+              echo "sumomo_${d#examples_}.tar.gz" >> package_paths.env
+            fi
+          done
       - name: Env to output
         run: |
           echo "package_paths<<EOF" >> $GITHUB_OUTPUT
