@@ -44,11 +44,11 @@ struct VideoCodecCapability {
     std::optional<std::string> nvcodec_gpu_device_name;
   };
   struct Codec {
-    Codec(webrtc::VideoCodecType type, bool decoder, bool encoder)
-        : type(type), decoder(decoder), encoder(encoder) {}
+    Codec(webrtc::VideoCodecType type, bool encoder, bool decoder)
+        : type(type), encoder(encoder), decoder(decoder) {}
     webrtc::VideoCodecType type;
-    bool decoder;
     bool encoder;
+    bool decoder;
     Parameters parameters;
   };
   struct Engine {

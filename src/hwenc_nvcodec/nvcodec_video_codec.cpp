@@ -1,10 +1,17 @@
 #include "sora/hwenc_nvcodec/nvcodec_video_codec.h"
 
+#include <iostream>
+
 #include "sora/hwenc_nvcodec/nvcodec_video_decoder.h"
 #include "sora/hwenc_nvcodec/nvcodec_video_encoder.h"
 
 #include "../cuda_context_cuda.h"
 #include "nvcodec_video_codec_cuda.h"
+
+#if defined(_WIN32)
+#include <d3d11.h>
+#include <wrl.h>
+#endif
 
 namespace sora {
 
@@ -14,22 +21,15 @@ sora::VideoCodecCapability::Parameters GetParameters(
     std::shared_ptr<CudaContext> context) {
   sora::VideoCodecCapability::Parameters p;
 #if defined(_WIN32)
-  ComPtr<IDXGIFactory1> idxgi_factory;
+  Microsoft::WRL::ComPtr<IDXGIFactory1> idxgi_factory;
   if (FAILED(CreateDXGIFactory1(__uuidof(IDXGIFactory1),
                                 (void**)idxgi_factory.GetAddressOf()))) {
     return p;
   }
-  ComPtr<IDXGIAdapter> idxgi_adapter;
-  if (!FAILED(idxgi_factory->EnumAdapters(0, idxgi_adapter.GetAddressOf()))) {
+  Microsoft::WRL::ComPtr<IDXGIAdapter> idxgi_adapter;
+  if (FAILED(idxgi_factory->EnumAdapters(0, idxgi_adapter.GetAddressOf()))) {
     return p;
   }
-  if (!FAILED(D3D11CreateDevice(idxgi_adapter.Get(), D3D_DRIVER_TYPE_UNKNOWN,
-                                NULL, 0, NULL, 0, D3D11_SDK_VERSION,
-                                id3d11_device_.GetAddressOf(), NULL,
-                                id3d11_context_.GetAddressOf()))) {
-    return p;
-  }
-
   // 以下デバイス名を取得するだけの処理
   DXGI_ADAPTER_DESC adapter_desc;
   idxgi_adapter->GetDesc(&adapter_desc);
@@ -39,6 +39,10 @@ sora::VideoCodecCapability::Parameters GetParameters(
   p.nvcodec_gpu_device_name = std::string(szDesc);
 #endif
 #if defined(__linux__)
+  if (context == nullptr) {
+    return p;
+  }
+
   char name[80] = {};
   GetNvCodecGpuDeviceName(context, name, sizeof(name));
   if (name[0] != '\0') {
@@ -55,15 +59,7 @@ VideoCodecCapability::Engine GetNvCodecVideoCodecCapability(
     std::shared_ptr<CudaContext> context) {
   VideoCodecCapability::Engine engine(
       VideoCodecImplementation::kNvidiaVideoCodecSdk);
-  if (context == nullptr) {
-    return engine;
-  }
-
-  // engine.parameters.version =
-  //     std::to_string(ver.Major) + "." + std::to_string(ver.Minor);
-  // engine.parameters.vpl_impl =
-  //     impl == MFX_IMPL_SOFTWARE ? "SOFTWARE" : "HARDWARE";
-  // engine.parameters.vpl_impl_value = (int)impl;
+  engine.parameters = GetParameters(context);
 
   auto add = [&engine, &context](CudaVideoCodec type,
                                  webrtc::VideoCodecType webrtc_type) {

@@ -88,6 +88,15 @@ void tag_invoke(const boost::json::value_from_tag&,
   if (v.openh264_path) {
     jo["openh264_path"] = *v.openh264_path;
   }
+  if (v.vpl_impl) {
+    jo["vpl_impl"] = *v.vpl_impl;
+  }
+  if (v.vpl_impl_value) {
+    jo["vpl_impl_value"] = *v.vpl_impl_value;
+  }
+  if (v.nvcodec_gpu_device_name) {
+    jo["nvcodec_gpu_device_name"] = *v.nvcodec_gpu_device_name;
+  }
 }
 
 VideoCodecCapability::Parameters tag_invoke(
@@ -101,6 +110,16 @@ VideoCodecCapability::Parameters tag_invoke(
     if (jv.at("openh264_path").is_string()) {
       r.openh264_path = jv.at("openh264_path").as_string().c_str();
     }
+    if (jv.at("vpl_impl").is_string()) {
+      r.vpl_impl = jv.at("vpl_impl").as_string().c_str();
+    }
+    if (jv.at("vpl_impl_value").is_int64()) {
+      r.vpl_impl_value = (int)jv.at("vpl_impl_value").as_int64();
+    }
+    if (jv.at("nvcodec_gpu_device_name").is_string()) {
+      r.nvcodec_gpu_device_name =
+          jv.at("nvcodec_gpu_device_name").as_string().c_str();
+    }
   }
   return r;
 }
@@ -110,8 +129,8 @@ void tag_invoke(const boost::json::value_from_tag&,
                 const VideoCodecCapability::Codec& v) {
   auto& jo = jv.emplace_object();
   jo["type"] = boost::json::value_from(v.type);
-  jo["decoder"] = v.decoder;
   jo["encoder"] = v.encoder;
+  jo["decoder"] = v.decoder;
   jo["parameters"] = boost::json::value_from(v.parameters);
 }
 VideoCodecCapability::Codec tag_invoke(
@@ -124,11 +143,11 @@ VideoCodecCapability::Codec tag_invoke(
   if (jv.at("type").is_string()) {
     r.type = boost::json::value_to<webrtc::VideoCodecType>(jv.at("type"));
   }
-  if (jv.at("decoder").is_bool()) {
-    r.decoder = jv.at("decoder").as_bool();
-  }
   if (jv.at("encoder").is_bool()) {
     r.encoder = jv.at("encoder").as_bool();
+  }
+  if (jv.at("decoder").is_bool()) {
+    r.decoder = jv.at("decoder").as_bool();
   }
   if (jv.at("params").is_object()) {
     r.parameters = boost::json::value_to<VideoCodecCapability::Parameters>(
