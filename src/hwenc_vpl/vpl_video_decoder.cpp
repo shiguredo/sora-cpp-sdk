@@ -19,7 +19,7 @@
 #include <vpl/mfxvideo++.h>
 #include <vpl/mfxvp8.h>
 
-#include "vpl_session_impl.h"
+#include "../vpl_session_impl.h"
 #include "vpl_utils.h"
 
 namespace sora {

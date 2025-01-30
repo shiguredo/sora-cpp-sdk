@@ -31,8 +31,8 @@
 #include <absl/container/inlined_vector.h>
 #include <absl/strings/match.h>
 #include <absl/types/optional.h>
-#include <api/transport/rtp/dependency_descriptor.h>
 #include <api/environment/environment_factory.h>
+#include <api/transport/rtp/dependency_descriptor.h>
 #include <api/video/i420_buffer.h>
 #include <api/video/video_codec_constants.h>
 #include <api/video_codecs/scalability_mode.h>
@@ -934,6 +934,53 @@ std::unique_ptr<webrtc::VideoEncoder> CreateOpenH264VideoEncoder(
 
   return absl::make_unique<webrtc::OpenH264VideoEncoder>(
       webrtc::CreateEnvironment(), settings, std::move(openh264));
+}
+
+VideoCodecCapability::Engine GetOpenH264VideoCodecCapability(
+    std::optional<std::string> openh264_path) {
+  VideoCodecCapability::Engine engine(VideoCodecImplementation::kCiscoOpenH264);
+  engine.codecs.emplace_back(webrtc::kVideoCodecVP8, false, false);
+  engine.codecs.emplace_back(webrtc::kVideoCodecVP9, false, false);
+  engine.codecs.emplace_back(webrtc::kVideoCodecH265, false, false);
+  engine.codecs.emplace_back(webrtc::kVideoCodecAV1, false, false);
+  auto& h264 =
+      engine.codecs.emplace_back(webrtc::kVideoCodecH264, false, false);
+  if (!openh264_path) {
+    return engine;
+  }
+#if defined(_WIN32)
+  HMODULE handle = LoadLibraryA(openh264_path->c_str());
+#else
+  void* handle = ::dlopen(openh264_path->c_str(), RTLD_LAZY);
+#endif
+
+  if (handle == nullptr) {
+    return engine;
+  }
+  typedef void (*WelsGetCodecVersionExFunc)(OpenH264Version* pVersion);
+#if defined(_WIN32)
+  auto f = (WelsGetCodecVersionExFunc)::GetProcAddress(handle,
+                                                       "WelsGetCodecVersionEx");
+  if (f == nullptr) {
+    FreeLibrary(handle);
+    return engine;
+  }
+#else
+  auto f = (WelsGetCodecVersionExFunc)::dlsym(handle, "WelsGetCodecVersionEx");
+  if (f == nullptr) {
+    ::dlclose(handle);
+    return engine;
+  }
+#endif
+
+  OpenH264Version version;
+  f(&version);
+  h264.encoder = true;
+  h264.parameters.openh264_path = openh264_path;
+  h264.parameters.version = std::to_string(version.uMajor) + "." +
+                            std::to_string(version.uMinor) + "." +
+                            std::to_string(version.uRevision);
+  return engine;
 }
 
 }  // namespace sora

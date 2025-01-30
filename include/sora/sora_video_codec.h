@@ -1,0 +1,110 @@
+#ifndef SORA_SORA_VIDEO_CODEC_H_
+#define SORA_SORA_VIDEO_CODEC_H_
+
+// WebRTC
+#include <api/video/video_codec_type.h>
+
+// Boost
+#include <boost/json.hpp>
+
+#include <memory>
+#include <optional>
+#include <string>
+#include <vector>
+
+#include "cuda_context.h"
+#include "vpl_session.h"
+
+namespace webrtc {
+
+// VideoCodecType
+void tag_invoke(const boost::json::value_from_tag&,
+                boost::json::value& jv,
+                const VideoCodecType& v);
+VideoCodecType tag_invoke(const boost::json::value_to_tag<VideoCodecType>&,
+                          boost::json::value const& jv);
+
+}  // namespace webrtc
+
+namespace sora {
+
+enum class VideoCodecImplementation {
+  kInternal,
+  kCiscoOpenH264,
+  kIntelVpl,
+  kNvidiaVideoCodecSdk,
+};
+
+struct VideoCodecCapability {
+  struct Parameters {
+    std::optional<std::string> version;
+    std::optional<std::string> openh264_path;
+    std::optional<std::string> vpl_impl;
+    std::optional<int> vpl_impl_value;
+    std::optional<std::string> nvcodec_gpu_device_name;
+  };
+  struct Codec {
+    Codec(webrtc::VideoCodecType type, bool decoder, bool encoder)
+        : type(type), decoder(decoder), encoder(encoder) {}
+    webrtc::VideoCodecType type;
+    bool decoder;
+    bool encoder;
+    Parameters parameters;
+  };
+  struct Engine {
+    Engine(VideoCodecImplementation name) : name(name) {}
+    VideoCodecImplementation name;
+    std::vector<Codec> codecs;
+    Parameters parameters;
+  };
+  std::vector<Engine> engines;
+};
+
+// VideoCodecImplementation
+void tag_invoke(const boost::json::value_from_tag&,
+                boost::json::value& jv,
+                const VideoCodecImplementation& v);
+VideoCodecImplementation tag_invoke(
+    const boost::json::value_to_tag<VideoCodecImplementation>&,
+    boost::json::value const& jv);
+// VideoCodecCapability::Parameters
+void tag_invoke(const boost::json::value_from_tag&,
+                boost::json::value& jv,
+                const VideoCodecCapability::Parameters& v);
+VideoCodecCapability::Parameters tag_invoke(
+    const boost::json::value_to_tag<VideoCodecCapability::Parameters>&,
+    boost::json::value const& jv);
+// VideoCodecCapability::Codec
+void tag_invoke(const boost::json::value_from_tag&,
+                boost::json::value& jv,
+                const VideoCodecCapability::Codec& v);
+VideoCodecCapability::Codec tag_invoke(
+    const boost::json::value_to_tag<VideoCodecCapability::Codec>&,
+    boost::json::value const& jv);
+// VideoCodecCapability::Engine
+void tag_invoke(const boost::json::value_from_tag&,
+                boost::json::value& jv,
+                const VideoCodecCapability::Engine& v);
+VideoCodecCapability::Engine tag_invoke(
+    const boost::json::value_to_tag<VideoCodecCapability::Engine>&,
+    boost::json::value const& jv);
+// VideoCodecCapability
+void tag_invoke(const boost::json::value_from_tag&,
+                boost::json::value& jv,
+                const VideoCodecCapability& v);
+VideoCodecCapability tag_invoke(
+    const boost::json::value_to_tag<VideoCodecCapability>&,
+    boost::json::value const& jv);
+
+struct VideoCodecCapabilityConfig {
+  std::shared_ptr<CudaContext> cuda_context;
+  std::shared_ptr<VplSession> vpl_session;
+  std::optional<std::string> openh264_path;
+  void* jni_env = nullptr;
+};
+
+VideoCodecCapability GetVideoCodecCapability(VideoCodecCapabilityConfig config);
+
+}  // namespace sora
+
+#endif

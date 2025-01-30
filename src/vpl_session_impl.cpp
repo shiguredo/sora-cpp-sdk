@@ -1,4 +1,12 @@
-#include "sora/hwenc_vpl/vpl_session.h"
+#include "sora/vpl_session.h"
+
+#if !defined(USE_VPL_ENCODER)
+
+std::shared_ptr<VplSession> VplSession::Create() {
+  return nullptr;
+}
+
+#else
 
 #include <rtc_base/logging.h>
 
@@ -64,5 +72,7 @@ std::shared_ptr<VplSession> VplSession::Create() {
 mfxSession GetVplSession(std::shared_ptr<VplSession> session) {
   return std::static_pointer_cast<VplSessionImpl>(session)->session;
 }
+
+#endif
 
 }  // namespace sora

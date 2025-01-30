@@ -112,9 +112,11 @@ target_sources(sora
     src/sora_signaling.cpp
     src/sora_video_decoder_factory.cpp
     src/sora_video_encoder_factory.cpp
+    src/sora_video_codec.cpp
     src/ssl_verifier.cpp
     src/url_parts.cpp
     src/version.cpp
+    src/vpl_session_impl.cpp
     src/websocket.cpp
     src/zlib_helper.cpp
 )
@@ -258,6 +260,7 @@ if (SORA_TARGET_OS STREQUAL "windows")
   if (USE_NVCODEC_ENCODER)
     target_sources(sora
       PRIVATE
+        src/hwenc_nvcodec/nvcodec_video_codec.cpp
         src/hwenc_nvcodec/nvcodec_video_encoder.cpp
         third_party/NvCodec/NvCodec/NvEncoder/NvEncoder.cpp
         third_party/NvCodec/NvCodec/NvEncoder/NvEncoderD3D11.cpp
@@ -281,6 +284,7 @@ if (SORA_TARGET_OS STREQUAL "windows")
 
     set_source_files_properties(
         src/cuda_context_cuda.cpp
+        src/hwenc_nvcodec/nvcodec_video_codec_cuda.cpp
         third_party/NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
         src/hwenc_nvcodec/nvcodec_decoder_cuda.cpp
       PROPERTIES
@@ -288,6 +292,7 @@ if (SORA_TARGET_OS STREQUAL "windows")
     )
     cuda_compile(CUDA_FILES
         src/cuda_context_cuda.cpp
+        src/hwenc_nvcodec/nvcodec_video_codec_cuda.cpp
         third_party/NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
         src/hwenc_nvcodec/nvcodec_decoder_cuda.cpp
       OPTIONS
@@ -329,7 +334,7 @@ if (SORA_TARGET_OS STREQUAL "windows")
     find_package(VPL REQUIRED)
     target_sources(sora
       PRIVATE
-        src/hwenc_vpl/vpl_session_impl.cpp
+        src/hwenc_vpl/vpl_video_codec.cpp
         src/hwenc_vpl/vpl_video_decoder.cpp
         src/hwenc_vpl/vpl_video_encoder.cpp
     )
@@ -472,6 +477,8 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
     target_sources(sora
       PRIVATE
         src/cuda_context_cuda.cpp
+        src/hwenc_nvcodec/nvcodec_video_codec.cpp
+        src/hwenc_nvcodec/nvcodec_video_codec_cuda.cpp
         src/hwenc_nvcodec/nvcodec_video_encoder.cpp
         src/hwenc_nvcodec/nvcodec_v4l2_capturer.cpp
         src/hwenc_nvcodec/nvcodec_video_encoder_cuda.cpp
@@ -489,6 +496,7 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
     # これらのソースは CUDA としてコンパイルする
     set_source_files_properties(
         src/cuda_context_cuda.cpp
+        src/hwenc_nvcodec/nvcodec_video_codec_cuda.cpp
         src/hwenc_nvcodec/nvcodec_video_encoder_cuda.cpp
         src/hwenc_nvcodec/nvcodec_decoder_cuda.cpp
         third_party/NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
@@ -506,7 +514,7 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
     target_include_directories(sora PRIVATE /usr/local/cuda/include)
     target_sources(sora
       PRIVATE
-        src/hwenc_vpl/vpl_session_impl.cpp
+        src/hwenc_vpl/vpl_video_codec.cpp
         src/hwenc_vpl/vpl_video_decoder.cpp
         src/hwenc_vpl/vpl_video_encoder.cpp
     )
