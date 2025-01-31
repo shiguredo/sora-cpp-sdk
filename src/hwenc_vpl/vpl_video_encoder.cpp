@@ -593,6 +593,16 @@ webrtc::VideoEncoder::EncoderInfo VplVideoEncoderImpl::GetEncoderInfo() const {
 }
 
 int32_t VplVideoEncoderImpl::InitVpl() {
+  RTC_LOG(LS_INFO) << "InitVpl: Start";
+
+  RTC_LOG(LS_INFO) << "Calling CreateEncoder with parameters: "
+                   << "session=" << session_.get()
+                   << " codec=" << CodecToString(codec_) << " width=" << width_
+                   << " height=" << height_ << " framerate=" << framerate_
+                   << " target_kbps="
+                   << (bitrate_adjuster_.GetAdjustedBitrateBps() / 1000)
+                   << " max_kbps=" << (max_bitrate_bps_ / 1000) << " init=true";
+
   encoder_ = CreateEncoder(session_, codec_, width_, height_, framerate_,
                            bitrate_adjuster_.GetAdjustedBitrateBps() / 1000,
                            max_bitrate_bps_ / 1000, true);
