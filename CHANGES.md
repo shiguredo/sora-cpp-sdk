@@ -14,6 +14,10 @@
 - [UPDATE] CMake を 3.31.4 にあげる
   - @voluntas
 
+### misc
+
+- [ADD] リリース時に sumomo バイナリを含めるようにする
+  - @torikizi
 
 ## 2025.1.0
 
