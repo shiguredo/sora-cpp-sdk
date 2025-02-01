@@ -433,9 +433,6 @@ int main(int argc, char* argv[]) {
   std::string audio_playout_device;
   app.add_option("--audio-playout-device", audio_playout_device,
                  "Playout device name");
-  std::optional<bool> use_hardware_encoder;
-  add_optional_bool(app, "--use-hardware-encoder", use_hardware_encoder,
-                    "Use hardware encoder");
   std::string openh264;
   app.add_option("--openh264", openh264, "Path to OpenH264 library");
 
@@ -471,10 +468,8 @@ int main(int argc, char* argv[]) {
   if (!audio_playout_device.empty()) {
     context_config.audio_playout_device = audio_playout_device;
   }
-  if (use_hardware_encoder != std::nullopt) {
-    context_config.use_hardware_encoder = *use_hardware_encoder;
-  }
-  context_config.openh264 = openh264;
+  context_config.video_codec_factory_config.capability_config.openh264_path =
+      openh264;
   auto context = sora::SoraClientContext::Create(context_config);
   auto sumomo = std::make_shared<Sumomo>(context, config);
   sumomo->Run();

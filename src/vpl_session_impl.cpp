@@ -8,7 +8,7 @@ std::shared_ptr<VplSession> VplSession::Create() {
   return nullptr;
 }
 
-}
+}  // namespace sora
 
 #else
 
@@ -77,6 +77,6 @@ mfxSession GetVplSession(std::shared_ptr<VplSession> session) {
   return std::static_pointer_cast<VplSessionImpl>(session)->session;
 }
 
-#endif
-
 }  // namespace sora
+
+#endif
