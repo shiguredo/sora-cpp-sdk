@@ -124,16 +124,9 @@ struct VideoCodecPreference {
     Parameters parameters;
   };
   std::vector<Codec> codecs;
-  Codec* VP8();
-  Codec* VP9();
-  Codec* H264();
-  Codec* H265();
-  Codec* AV1();
-  const Codec* VP8() const;
-  const Codec* VP9() const;
-  const Codec* H264() const;
-  const Codec* H265() const;
-  const Codec* AV1() const;
+  Codec* Find(webrtc::VideoCodecType type);
+  const Codec* Find(webrtc::VideoCodecType type) const;
+  Codec& GetOrAdd(webrtc::VideoCodecType type);
 
   void Merge(const VideoCodecPreference& preference);
 };

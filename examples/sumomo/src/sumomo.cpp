@@ -1,6 +1,7 @@
 // Sora
 #include <sora/camera_device_capturer.h>
 #include <sora/sora_client_context.h>
+#include <sora/sora_video_codec.h>
 
 #include <fstream>
 #include <optional>
@@ -435,6 +436,65 @@ int main(int argc, char* argv[]) {
                  "Playout device name");
   std::string openh264;
   app.add_option("--openh264", openh264, "Path to OpenH264 library");
+  auto video_codec_implementation_map =
+      std::vector<std::pair<std::string, sora::VideoCodecImplementation>>(
+          {{"internal", sora::VideoCodecImplementation::kInternal},
+           {"cisco_openh264", sora::VideoCodecImplementation::kCiscoOpenH264},
+           {"intel_vpl", sora::VideoCodecImplementation::kIntelVpl},
+           {"nvidia_video_codec_sdk",
+            sora::VideoCodecImplementation::kNvidiaVideoCodecSdk}});
+  auto video_codec_description =
+      "value in {internal,cisco_openh264,intel_vpl,nvidia_video_codec_sdk}";
+  std::optional<sora::VideoCodecImplementation> vp8_encoder;
+  std::optional<sora::VideoCodecImplementation> vp8_decoder;
+  std::optional<sora::VideoCodecImplementation> vp9_encoder;
+  std::optional<sora::VideoCodecImplementation> vp9_decoder;
+  std::optional<sora::VideoCodecImplementation> h264_encoder;
+  std::optional<sora::VideoCodecImplementation> h264_decoder;
+  std::optional<sora::VideoCodecImplementation> h265_encoder;
+  std::optional<sora::VideoCodecImplementation> h265_decoder;
+  std::optional<sora::VideoCodecImplementation> av1_encoder;
+  std::optional<sora::VideoCodecImplementation> av1_decoder;
+  app.add_option("--vp8-encoder", vp8_encoder, "VP8 encoder implementation")
+      ->transform(CLI::CheckedTransformer(video_codec_implementation_map,
+                                          CLI::ignore_case)
+                      .description(video_codec_description));
+  app.add_option("--vp8-decoder", vp8_decoder, "VP8 decoder implementation")
+      ->transform(CLI::CheckedTransformer(video_codec_implementation_map,
+                                          CLI::ignore_case)
+                      .description(video_codec_description));
+  app.add_option("--vp9-encoder", vp9_encoder, "VP9 encoder implementation")
+      ->transform(CLI::CheckedTransformer(video_codec_implementation_map,
+                                          CLI::ignore_case)
+                      .description(video_codec_description));
+  app.add_option("--vp9-decoder", vp9_decoder, "VP9 decoder implementation")
+      ->transform(CLI::CheckedTransformer(video_codec_implementation_map,
+                                          CLI::ignore_case)
+                      .description(video_codec_description));
+  app.add_option("--h264-encoder", h264_encoder, "H.264 encoder implementation")
+      ->transform(CLI::CheckedTransformer(video_codec_implementation_map,
+                                          CLI::ignore_case)
+                      .description(video_codec_description));
+  app.add_option("--h264-decoder", h264_decoder, "H.264 decoder implementation")
+      ->transform(CLI::CheckedTransformer(video_codec_implementation_map,
+                                          CLI::ignore_case)
+                      .description(video_codec_description));
+  app.add_option("--h265-encoder", h265_encoder, "H.265 encoder implementation")
+      ->transform(CLI::CheckedTransformer(video_codec_implementation_map,
+                                          CLI::ignore_case)
+                      .description(video_codec_description));
+  app.add_option("--h265-decoder", h265_decoder, "H.265 decoder implementation")
+      ->transform(CLI::CheckedTransformer(video_codec_implementation_map,
+                                          CLI::ignore_case)
+                      .description(video_codec_description));
+  app.add_option("--av1-encoder", av1_encoder, "AV1 encoder implementation")
+      ->transform(CLI::CheckedTransformer(video_codec_implementation_map,
+                                          CLI::ignore_case)
+                      .description(video_codec_description));
+  app.add_option("--av1-decoder", av1_decoder, "AV1 decoder implementation")
+      ->transform(CLI::CheckedTransformer(video_codec_implementation_map,
+                                          CLI::ignore_case)
+                      .description(video_codec_description));
 
   try {
     app.parse(argc, argv);
@@ -470,6 +530,29 @@ int main(int argc, char* argv[]) {
   }
   context_config.video_codec_factory_config.capability_config.openh264_path =
       openh264;
+  context_config.video_codec_factory_config.preference = std::invoke([&]() {
+    std::optional<sora::VideoCodecPreference> preference;
+    auto add_codec_preference =
+        [&preference](webrtc::VideoCodecType type,
+                      std::optional<sora::VideoCodecImplementation> encoder,
+                      std::optional<sora::VideoCodecImplementation> decoder) {
+          if (encoder || decoder) {
+            if (!preference) {
+              preference = sora::VideoCodecPreference();
+            }
+            auto& codec = preference->GetOrAdd(type);
+            codec.encoder = encoder;
+            codec.decoder = decoder;
+          }
+        };
+    add_codec_preference(webrtc::kVideoCodecVP8, vp8_encoder, vp8_decoder);
+    add_codec_preference(webrtc::kVideoCodecVP9, vp9_encoder, vp9_decoder);
+    add_codec_preference(webrtc::kVideoCodecH264, h264_encoder, h264_decoder);
+    add_codec_preference(webrtc::kVideoCodecH265, h265_encoder, h265_decoder);
+    add_codec_preference(webrtc::kVideoCodecAV1, av1_encoder, av1_decoder);
+    return preference;
+  });
+
   auto context = sora::SoraClientContext::Create(context_config);
   auto sumomo = std::make_shared<Sumomo>(context, config);
   sumomo->Run();

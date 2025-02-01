@@ -280,10 +280,7 @@ VideoCodecCapability GetVideoCodecCapability(
   return cap;
 }
 
-namespace {
-
-const VideoCodecPreference::Codec* FindCodec(
-    const std::vector<VideoCodecPreference::Codec>& codecs,
+VideoCodecPreference::Codec* VideoCodecPreference::Find(
     webrtc::VideoCodecType type) {
   auto it = std::find_if(codecs.begin(), codecs.end(),
                          [type](const VideoCodecPreference::Codec& codec) {
@@ -294,9 +291,8 @@ const VideoCodecPreference::Codec* FindCodec(
   }
   return &*it;
 }
-VideoCodecPreference::Codec* FindCodec(
-    std::vector<VideoCodecPreference::Codec>& codecs,
-    webrtc::VideoCodecType type) {
+const VideoCodecPreference::Codec* VideoCodecPreference::Find(
+    webrtc::VideoCodecType type) const {
   auto it = std::find_if(codecs.begin(), codecs.end(),
                          [type](const VideoCodecPreference::Codec& codec) {
                            return codec.type == type;
@@ -306,42 +302,17 @@ VideoCodecPreference::Codec* FindCodec(
   }
   return &*it;
 }
-
-}  // namespace
-
-VideoCodecPreference::Codec* VideoCodecPreference::VP8() {
-  return FindCodec(codecs, webrtc::kVideoCodecVP8);
-}
-VideoCodecPreference::Codec* VideoCodecPreference::VP9() {
-  return FindCodec(codecs, webrtc::kVideoCodecVP9);
-}
-VideoCodecPreference::Codec* VideoCodecPreference::H264() {
-  return FindCodec(codecs, webrtc::kVideoCodecH264);
-}
-VideoCodecPreference::Codec* VideoCodecPreference::H265() {
-  return FindCodec(codecs, webrtc::kVideoCodecH265);
-}
-VideoCodecPreference::Codec* VideoCodecPreference::AV1() {
-  return FindCodec(codecs, webrtc::kVideoCodecAV1);
-}
-const VideoCodecPreference::Codec* VideoCodecPreference::VP8() const {
-  return FindCodec(codecs, webrtc::kVideoCodecVP8);
-}
-const VideoCodecPreference::Codec* VideoCodecPreference::VP9() const {
-  return FindCodec(codecs, webrtc::kVideoCodecVP9);
-}
-const VideoCodecPreference::Codec* VideoCodecPreference::H264() const {
-  return FindCodec(codecs, webrtc::kVideoCodecH264);
-}
-const VideoCodecPreference::Codec* VideoCodecPreference::H265() const {
-  return FindCodec(codecs, webrtc::kVideoCodecH265);
-}
-const VideoCodecPreference::Codec* VideoCodecPreference::AV1() const {
-  return FindCodec(codecs, webrtc::kVideoCodecAV1);
+VideoCodecPreference::Codec& VideoCodecPreference::GetOrAdd(
+    webrtc::VideoCodecType type) {
+  if (auto* codec = Find(type); codec != nullptr) {
+    return *codec;
+  }
+  codecs.push_back(Codec(type, std::nullopt, std::nullopt));
+  return codecs.back();
 }
 void VideoCodecPreference::Merge(const VideoCodecPreference& preference) {
   for (const auto& codec : preference.codecs) {
-    if (auto* c = FindCodec(codecs, codec.type); c != nullptr) {
+    if (auto* c = Find(codec.type); c != nullptr) {
       if (codec.encoder) {
         c->encoder = codec.encoder;
       }
