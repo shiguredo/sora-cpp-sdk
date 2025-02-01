@@ -10,10 +10,6 @@ std::shared_ptr<CudaContext> CudaContext::Create() {
   return nullptr;
 }
 
-void* CudaContext::Context() const {
-  return nullptr;
-}
-
 }  // namespace sora
 
 #else
