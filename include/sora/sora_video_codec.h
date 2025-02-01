@@ -127,6 +127,7 @@ struct VideoCodecPreference {
   Codec* Find(webrtc::VideoCodecType type);
   const Codec* Find(webrtc::VideoCodecType type) const;
   Codec& GetOrAdd(webrtc::VideoCodecType type);
+  bool HasImplementation(VideoCodecImplementation implementation) const;
 
   void Merge(const VideoCodecPreference& preference);
 };

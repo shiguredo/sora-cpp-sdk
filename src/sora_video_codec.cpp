@@ -310,6 +310,14 @@ VideoCodecPreference::Codec& VideoCodecPreference::GetOrAdd(
   codecs.push_back(Codec(type, std::nullopt, std::nullopt));
   return codecs.back();
 }
+bool VideoCodecPreference::HasImplementation(
+    VideoCodecImplementation implementation) const {
+  return std::any_of(
+      codecs.begin(), codecs.end(), [implementation](const Codec& codec) {
+        return (codec.encoder && *codec.encoder == implementation) ||
+               (codec.decoder && *codec.decoder == implementation);
+      });
+}
 void VideoCodecPreference::Merge(const VideoCodecPreference& preference) {
   for (const auto& codec : preference.codecs) {
     if (auto* c = Find(codec.type); c != nullptr) {

@@ -495,7 +495,64 @@ int main(int argc, char* argv[]) {
       ->transform(CLI::CheckedTransformer(video_codec_implementation_map,
                                           CLI::ignore_case)
                       .description(video_codec_description));
+  bool show_video_codec_capability = false;
+  app.add_flag("--show-video-codec-capability", show_video_codec_capability,
+               "Show video codec capability");
 
+  // 表示して終了する系の処理のために、まず必須のオプションをオフにしておく
+  std::vector<CLI::Option*> required_options;
+  for (const auto& option : app.get_options()) {
+    if (option->get_required()) {
+      required_options.push_back(option);
+      option->required(false);
+    }
+  }
+
+  try {
+    app.parse(argc, argv);
+  } catch (const CLI::ParseError& e) {
+    exit(app.exit(e));
+  }
+
+  // 表示して終了する系の処理はここに書く
+  if (show_video_codec_capability) {
+    sora::VideoCodecCapabilityConfig config;
+    config.vpl_session = sora::VplSession::Create();
+    config.cuda_context = sora::CudaContext::Create();
+    config.openh264_path = openh264;
+    auto capability = sora::GetVideoCodecCapability(config);
+    for (const auto& engine : capability.engines) {
+      std::cout << "Engine: "
+                << boost::json::value_from(engine.name).as_string()
+                << std::endl;
+      for (const auto& codec : engine.codecs) {
+        if (codec.encoder) {
+          std::cout << "  - " << boost::json::value_from(codec.type).as_string()
+                    << " Encoder" << std::endl;
+        }
+        if (codec.decoder) {
+          std::cout << "  - " << boost::json::value_from(codec.type).as_string()
+                    << " Decoder" << std::endl;
+        }
+        auto params = boost::json::value_from(codec.parameters);
+        if (params.as_object().size() > 0) {
+          std::cout << "    - Codec Parameters: "
+                    << boost::json::serialize(params) << std::endl;
+        }
+      }
+      auto params = boost::json::value_from(engine.parameters);
+      if (params.as_object().size() > 0) {
+        std::cout << "  - Engine Parameters: " << boost::json::serialize(params)
+                  << std::endl;
+      }
+    }
+    return 0;
+  }
+
+  // 必須のオプションを元に戻して再度パースする
+  for (const auto& option : required_options) {
+    option->required(true);
+  }
   try {
     app.parse(argc, argv);
   } catch (const CLI::ParseError& e) {
@@ -528,8 +585,6 @@ int main(int argc, char* argv[]) {
   if (!audio_playout_device.empty()) {
     context_config.audio_playout_device = audio_playout_device;
   }
-  context_config.video_codec_factory_config.capability_config.openh264_path =
-      openh264;
   context_config.video_codec_factory_config.preference = std::invoke([&]() {
     std::optional<sora::VideoCodecPreference> preference;
     auto add_codec_preference =
@@ -552,6 +607,24 @@ int main(int argc, char* argv[]) {
     add_codec_preference(webrtc::kVideoCodecAV1, av1_encoder, av1_decoder);
     return preference;
   });
+  // 指定されてる VideoCodecImplementation に必要なコンテキストのみ設定する
+  if (context_config.video_codec_factory_config.preference) {
+    if (context_config.video_codec_factory_config.preference->HasImplementation(
+            sora::VideoCodecImplementation::kCiscoOpenH264)) {
+      context_config.video_codec_factory_config.capability_config
+          .openh264_path = openh264;
+    }
+    if (context_config.video_codec_factory_config.preference->HasImplementation(
+            sora::VideoCodecImplementation::kIntelVpl)) {
+      context_config.video_codec_factory_config.capability_config.vpl_session =
+          sora::VplSession::Create();
+    }
+    if (context_config.video_codec_factory_config.preference->HasImplementation(
+            sora::VideoCodecImplementation::kNvidiaVideoCodecSdk)) {
+      context_config.video_codec_factory_config.capability_config.cuda_context =
+          sora::CudaContext::Create();
+    }
+  }
 
   auto context = sora::SoraClientContext::Create(context_config);
   auto sumomo = std::make_shared<Sumomo>(context, config);
