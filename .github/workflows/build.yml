@@ -375,15 +375,27 @@ jobs:
             # プラットフォームごとに sumomo の実行ファイルをコピー
             if [[ "$platform" == "windows_x86_64" ]]; then
               cp "${src_dir}/sumomo.exe" "$archive_dir/"
-              # Windows は zip 形式にする
-              (cd archive && zip -r "../sumomo_windows_x86_64.zip" "sumomo_${platform}")
+              # Windows は zip 形式でアーカイブするため、archive ディレクトリに移動して実行
+              cd archive
+              zip -r "../sumomo_windows_x86_64.zip" "sumomo_${platform}"
+              # アーカイブ作成後、元のディレクトリに戻る
+              cd ..
               echo "sumomo_windows_x86_64.zip" >> package_paths.env
             elif [[ "$platform" == "macos_arm64" ]]; then
               cp "${src_dir}/sumomo" "$archive_dir/"
-              (cd archive && tar czf "../sumomo_macos_arm64.tar.gz" "sumomo_${platform}")
+              # macOS は tar.gz 形式でアーカイブするため、archive ディレクトリに移動して実行
+              cd archive
+              tar czf "../sumomo_macos_arm64.tar.gz" "sumomo_${platform}"
+              # アーカイブ作成後、元のディレクトリに戻る
+              cd ..
               echo "sumomo_macos_arm64.tar.gz" >> package_paths.env
             else
               cp "${src_dir}/sumomo" "$archive_dir/"
+              # tar.gz 形式でアーカイブする
+              cd archive
+              tar czf "../sumomo_${platform}.tar.gz" "sumomo_${platform}"
+              # アーカイブ作成後、元のディレクトリに戻る
+              cd ..
               (cd archive && tar czf "../sumomo_${platform}.tar.gz" "sumomo_${platform}")
               echo "sumomo_${platform}.tar.gz" >> package_paths.env
             fi
