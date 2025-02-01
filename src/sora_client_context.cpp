@@ -1,6 +1,7 @@
 #include "sora/sora_client_context.h"
 
 // WebRTC
+#include <api/audio/builtin_audio_processing_builder.h>
 #include <api/audio_codecs/builtin_audio_decoder_factory.h>
 #include <api/audio_codecs/builtin_audio_encoder_factory.h>
 #include <api/create_peerconnection_factory.h>
@@ -97,7 +98,8 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
       std::move(codec_factory->decoder_factory);
 
   dependencies.audio_mixer = nullptr;
-  dependencies.audio_processing = webrtc::AudioProcessingBuilder().Create();
+  dependencies.audio_processing_builder =
+      std::make_unique<webrtc::BuiltinAudioProcessingBuilder>();
 
   if (c->config_.configure_dependencies) {
     c->config_.configure_dependencies(dependencies);
