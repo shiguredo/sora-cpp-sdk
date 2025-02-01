@@ -294,6 +294,13 @@ int main(int argc, char* argv[]) {
     preference.Merge(sora::CreateVideoCodecPreferenceFromImplementation(
         capability, sora::VideoCodecImplementation::kCiscoOpenH264));
   }
+  if (get(v, "video_codec_preference", x)) {
+    auto& preference =
+        context_config.video_codec_factory_config.preference.emplace();
+    preference.codecs =
+        boost::json::value_to<std::vector<sora::VideoCodecPreference::Codec>>(
+            x);
+  }
   auto context = sora::SoraClientContext::Create(context_config);
 
   auto hello = std::make_shared<HelloSora>(context, config);
