@@ -11,6 +11,23 @@
 
 ## develop
 
+- [CHANGE] `SoraClientContextConfig` から `use_hardware_encoder` を削除
+  - これにより、デフォルトで利用するエンコーダ/デコーダは全て libwebrtc の実装のものになります
+  - ハードウェアエンコーダを有効にしたい場合は `SoraVideoCodecFactoryConfig` を適切に設定して下さい
+  - @melpon
+- [CHANGE] `SoraClientContextConfig` から `force_i420_conversion_for_simulcast_adapter` を削除
+  - 代わりに `SoraVideoCodecFactoryConfig::encoder_factory_config.force_i420_conversion` を利用して下さい
+  - @melpon
+- [CHANGE] `SoraClientContextConfig` から `openh264` を削除
+  - 代わりに `SoraVideoCodecFactoryConfig::capability_config.openh264_path` を利用して下さい
+  - @melpon
+- [CHANGE] `sora/hwenc_vpl/vpl_session.h` ファイルを `sora/vpl_session.h` に移動
+  - @melpon
+- [CHANGE] `SoraVideoEncoderFactoryConfig` の `use_simulcast_adapter` を削除
+  - サイマルキャストアダプタは常に有効になります
+  - @melpon
+- [CHANGE] `SoraVideoEncoderFactoryConfig` の `force_i420_conversion_for_simulcast_adapter` を `force_i420_conversion` に変更
+  - @melpon
 - [UPDATE] CMake を 3.31.4 にあげる
   - @voluntas
 
