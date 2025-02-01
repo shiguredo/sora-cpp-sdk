@@ -25,7 +25,6 @@
       "video_bit_rate": 0,
       "video_codec_type": null,
       "simulcast": false,
-      "use_hardware_encoder": true,
       "openh264": null,
       "data_channel_signaling": null,
       "ignore_disconnect_websocket": null,

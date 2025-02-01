@@ -3,7 +3,9 @@
 // WebRTC
 #include <api/video_codecs/builtin_video_decoder_factory.h>
 #include <api/video_codecs/builtin_video_encoder_factory.h>
+#include <rtc_base/logging.h>
 
+#include "sora/java_context.h"
 #include "sora/open_h264_video_encoder.h"
 
 #if defined(SORA_CPP_SDK_IOS) || defined(SORA_CPP_SDK_MACOS)
@@ -103,23 +105,22 @@ VideoCodecCapability::Parameters tag_invoke(
     const boost::json::value_to_tag<VideoCodecCapability::Parameters>&,
     boost::json::value const& jv) {
   VideoCodecCapability::Parameters r;
-  if (jv.is_object()) {
-    if (jv.at("version").is_string()) {
-      r.version = jv.at("version").as_string().c_str();
-    }
-    if (jv.at("openh264_path").is_string()) {
-      r.openh264_path = jv.at("openh264_path").as_string().c_str();
-    }
-    if (jv.at("vpl_impl").is_string()) {
-      r.vpl_impl = jv.at("vpl_impl").as_string().c_str();
-    }
-    if (jv.at("vpl_impl_value").is_int64()) {
-      r.vpl_impl_value = (int)jv.at("vpl_impl_value").as_int64();
-    }
-    if (jv.at("nvcodec_gpu_device_name").is_string()) {
-      r.nvcodec_gpu_device_name =
-          jv.at("nvcodec_gpu_device_name").as_string().c_str();
-    }
+  const auto& jo = jv.as_object();
+  if (jo.contains("version")) {
+    r.version = jo.at("version").as_string().c_str();
+  }
+  if (jo.contains("openh264_path")) {
+    r.openh264_path = jo.at("openh264_path").as_string().c_str();
+  }
+  if (jo.contains("vpl_impl")) {
+    r.vpl_impl = jo.at("vpl_impl").as_string().c_str();
+  }
+  if (jo.contains("vpl_impl_value")) {
+    r.vpl_impl_value = (int)jo.at("vpl_impl_value").as_int64();
+  }
+  if (jo.contains("nvcodec_gpu_device_name")) {
+    r.nvcodec_gpu_device_name =
+        jo.at("nvcodec_gpu_device_name").as_string().c_str();
   }
   return r;
 }
@@ -137,22 +138,11 @@ VideoCodecCapability::Codec tag_invoke(
     const boost::json::value_to_tag<VideoCodecCapability::Codec>&,
     boost::json::value const& jv) {
   VideoCodecCapability::Codec r(webrtc::kVideoCodecGeneric, false, false);
-  if (!jv.is_object()) {
-    throw std::invalid_argument("invalid VideoCodecCapability::Codec");
-  }
-  if (jv.at("type").is_string()) {
-    r.type = boost::json::value_to<webrtc::VideoCodecType>(jv.at("type"));
-  }
-  if (jv.at("encoder").is_bool()) {
-    r.encoder = jv.at("encoder").as_bool();
-  }
-  if (jv.at("decoder").is_bool()) {
-    r.decoder = jv.at("decoder").as_bool();
-  }
-  if (jv.at("params").is_object()) {
-    r.parameters = boost::json::value_to<VideoCodecCapability::Parameters>(
-        jv.at("parameters"));
-  }
+  r.type = boost::json::value_to<webrtc::VideoCodecType>(jv.at("type"));
+  r.encoder = jv.at("encoder").as_bool();
+  r.decoder = jv.at("decoder").as_bool();
+  r.parameters = boost::json::value_to<VideoCodecCapability::Parameters>(
+      jv.at("parameters"));
   return r;
 }
 // VideoCodecCapability::Engine
@@ -171,22 +161,13 @@ VideoCodecCapability::Engine tag_invoke(
     const boost::json::value_to_tag<VideoCodecCapability::Engine>&,
     boost::json::value const& jv) {
   VideoCodecCapability::Engine r(VideoCodecImplementation::kInternal);
-  if (!jv.is_object()) {
-    throw std::invalid_argument("invalid VideoCodecCapability::Engine");
+  r.name = boost::json::value_to<VideoCodecImplementation>(jv.at("name"));
+  for (const auto& codec : jv.at("codecs").as_array()) {
+    r.codecs.push_back(
+        boost::json::value_to<VideoCodecCapability::Codec>(codec));
   }
-  if (jv.at("name").is_string()) {
-    r.name = boost::json::value_to<VideoCodecImplementation>(jv.at("name"));
-  }
-  if (jv.at("codecs").is_array()) {
-    for (const auto& codec : jv.at("codecs").as_array()) {
-      r.codecs.push_back(
-          boost::json::value_to<VideoCodecCapability::Codec>(codec));
-    }
-  }
-  if (jv.at("parameters").is_object()) {
-    r.parameters = boost::json::value_to<VideoCodecCapability::Parameters>(
-        jv.at("parameters"));
-  }
+  r.parameters = boost::json::value_to<VideoCodecCapability::Parameters>(
+      jv.at("parameters"));
   return r;
 }
 // VideoCodecCapability
@@ -203,17 +184,17 @@ VideoCodecCapability tag_invoke(
     const boost::json::value_to_tag<VideoCodecCapability>&,
     boost::json::value const& jv) {
   VideoCodecCapability r;
-  if (!jv.is_object()) {
-    throw std::invalid_argument("invalid VideoCodecCapability");
-  }
-  if (!jv.at("engines").is_array()) {
-    throw std::invalid_argument("invalid VideoCodecCapability");
-  }
   for (const auto& engine : jv.at("engines").as_array()) {
     r.engines.push_back(
         boost::json::value_to<VideoCodecCapability::Engine>(engine));
   }
   return r;
+}
+
+VideoCodecCapabilityConfig::VideoCodecCapabilityConfig() {
+#if defined(SORA_CPP_SDK_ANDROID)
+  jni_env = GetJNIEnv();
+#endif
 }
 
 VideoCodecCapability GetVideoCodecCapability(
@@ -297,6 +278,280 @@ VideoCodecCapability GetVideoCodecCapability(
                      }),
       cap.engines.end());
   return cap;
+}
+
+namespace {
+
+const VideoCodecPreference::Codec* FindCodec(
+    const std::vector<VideoCodecPreference::Codec>& codecs,
+    webrtc::VideoCodecType type) {
+  auto it = std::find_if(codecs.begin(), codecs.end(),
+                         [type](const VideoCodecPreference::Codec& codec) {
+                           return codec.type == type;
+                         });
+  if (it == codecs.end()) {
+    return nullptr;
+  }
+  return &*it;
+}
+VideoCodecPreference::Codec* FindCodec(
+    std::vector<VideoCodecPreference::Codec>& codecs,
+    webrtc::VideoCodecType type) {
+  auto it = std::find_if(codecs.begin(), codecs.end(),
+                         [type](const VideoCodecPreference::Codec& codec) {
+                           return codec.type == type;
+                         });
+  if (it == codecs.end()) {
+    return nullptr;
+  }
+  return &*it;
+}
+
+}  // namespace
+
+VideoCodecPreference::Codec* VideoCodecPreference::VP8() {
+  return FindCodec(codecs, webrtc::kVideoCodecVP8);
+}
+VideoCodecPreference::Codec* VideoCodecPreference::VP9() {
+  return FindCodec(codecs, webrtc::kVideoCodecVP9);
+}
+VideoCodecPreference::Codec* VideoCodecPreference::H264() {
+  return FindCodec(codecs, webrtc::kVideoCodecH264);
+}
+VideoCodecPreference::Codec* VideoCodecPreference::H265() {
+  return FindCodec(codecs, webrtc::kVideoCodecH265);
+}
+VideoCodecPreference::Codec* VideoCodecPreference::AV1() {
+  return FindCodec(codecs, webrtc::kVideoCodecAV1);
+}
+const VideoCodecPreference::Codec* VideoCodecPreference::VP8() const {
+  return FindCodec(codecs, webrtc::kVideoCodecVP8);
+}
+const VideoCodecPreference::Codec* VideoCodecPreference::VP9() const {
+  return FindCodec(codecs, webrtc::kVideoCodecVP9);
+}
+const VideoCodecPreference::Codec* VideoCodecPreference::H264() const {
+  return FindCodec(codecs, webrtc::kVideoCodecH264);
+}
+const VideoCodecPreference::Codec* VideoCodecPreference::H265() const {
+  return FindCodec(codecs, webrtc::kVideoCodecH265);
+}
+const VideoCodecPreference::Codec* VideoCodecPreference::AV1() const {
+  return FindCodec(codecs, webrtc::kVideoCodecAV1);
+}
+void VideoCodecPreference::Merge(const VideoCodecPreference& preference) {
+  for (const auto& codec : preference.codecs) {
+    if (auto* c = FindCodec(codecs, codec.type); c != nullptr) {
+      if (codec.encoder) {
+        c->encoder = codec.encoder;
+      }
+      if (codec.decoder) {
+        c->decoder = codec.decoder;
+      }
+      if (codec.encoder || codec.decoder) {
+        c->parameters = codec.parameters;
+      }
+    } else {
+      codecs.push_back(codec);
+    }
+  }
+}
+
+// VideoCodecPreference::Parameters
+void tag_invoke(const boost::json::value_from_tag&,
+                boost::json::value& jv,
+                const VideoCodecPreference::Parameters& v) {
+  jv.emplace_object();
+}
+VideoCodecPreference::Parameters tag_invoke(
+    const boost::json::value_to_tag<VideoCodecPreference::Parameters>&,
+    boost::json::value const& jv) {
+  VideoCodecPreference::Parameters r;
+  return r;
+}
+// VideoCodecPreference::Codec
+void tag_invoke(const boost::json::value_from_tag&,
+                boost::json::value& jv,
+                const VideoCodecPreference::Codec& v) {
+  auto& jo = jv.emplace_object();
+  jo["type"] = boost::json::value_from(v.type);
+  jo["encoder"] =
+      v.encoder ? boost::json::value_from(*v.encoder) : boost::json::value();
+  jo["decoder"] =
+      v.decoder ? boost::json::value_from(*v.decoder) : boost::json::value();
+  jo["parameters"] = boost::json::value_from(v.parameters);
+}
+VideoCodecPreference::Codec tag_invoke(
+    const boost::json::value_to_tag<VideoCodecPreference::Codec>&,
+    boost::json::value const& jv) {
+  VideoCodecPreference::Codec r;
+  r.type = boost::json::value_to<webrtc::VideoCodecType>(jv.at("type"));
+  if (jv.at("encoder").is_string()) {
+    r.encoder =
+        boost::json::value_to<VideoCodecImplementation>(jv.at("encoder"));
+  }
+  if (jv.at("encoder").is_string()) {
+    r.decoder =
+        boost::json::value_to<VideoCodecImplementation>(jv.at("decoder"));
+  }
+  r.parameters = boost::json::value_to<VideoCodecPreference::Parameters>(
+      jv.at("parameters"));
+  return r;
+}
+// VideoCodecPreference
+void tag_invoke(const boost::json::value_from_tag&,
+                boost::json::value& jv,
+                const VideoCodecPreference& v) {
+  auto& jo = jv.emplace_object();
+  auto& ja = jo["codecs"].emplace_array();
+  for (const auto& codec : v.codecs) {
+    ja.push_back(boost::json::value_from(codec));
+  }
+}
+VideoCodecPreference tag_invoke(
+    const boost::json::value_to_tag<VideoCodecPreference>&,
+    boost::json::value const& jv) {
+  VideoCodecPreference r;
+  for (const auto& codec : jv.at("codecs").as_array()) {
+    r.codecs.push_back(
+        boost::json::value_to<VideoCodecPreference::Codec>(codec));
+  }
+  return r;
+}
+
+bool ValidateVideoCodecPreference(const VideoCodecPreference& preference,
+                                  const VideoCodecCapability& capability,
+                                  std::vector<std::string>* errors) {
+  if (errors == nullptr) {
+    return false;
+  }
+  // preference に重複した type がないかチェック
+  {
+    auto get_count = [&preference](webrtc::VideoCodecType type) {
+      return std::count_if(preference.codecs.begin(), preference.codecs.end(),
+                           [type](const VideoCodecPreference::Codec& codec) {
+                             return codec.type == type;
+                           });
+    };
+    if (get_count(webrtc::kVideoCodecVP8) >= 2) {
+      errors->push_back("duplicate VP8");
+    }
+    if (get_count(webrtc::kVideoCodecVP9) >= 2) {
+      errors->push_back("duplicate VP9");
+    }
+    if (get_count(webrtc::kVideoCodecH264) >= 2) {
+      errors->push_back("duplicate H264");
+    }
+    if (get_count(webrtc::kVideoCodecH265) >= 2) {
+      errors->push_back("duplicate H265");
+    }
+    if (get_count(webrtc::kVideoCodecAV1) >= 2) {
+      errors->push_back("duplicate AV1");
+    }
+  }
+  // capability に存在しない implementation を設定してないか確認する
+  {
+    for (const auto& codec : preference.codecs) {
+      // encoder
+      if (codec.encoder) {
+        auto engine =
+            std::find_if(capability.engines.begin(), capability.engines.end(),
+                         [&codec](const VideoCodecCapability::Engine& engine) {
+                           return engine.name == *codec.encoder;
+                         });
+        if (engine == capability.engines.end()) {
+          errors->push_back(
+              "encoder implementation not found: codec_preference=" +
+              boost::json::serialize(boost::json::value_from(codec)));
+          continue;
+        }
+        auto codec_cap =
+            std::find_if(engine->codecs.begin(), engine->codecs.end(),
+                         [&codec](const VideoCodecCapability::Codec& c) {
+                           return c.type == codec.type;
+                         });
+        if (codec_cap == engine->codecs.end()) {
+          errors->push_back(
+              "codec type not found: codec_preference=" +
+              boost::json::serialize(boost::json::value_from(codec)));
+          continue;
+        }
+        if (!codec_cap->encoder) {
+          errors->push_back(
+              "encoder not supported: codec_preference=" +
+              boost::json::serialize(boost::json::value_from(codec)) +
+              ", codec_capability=" +
+              boost::json::serialize(boost::json::value_from(*codec_cap)));
+          continue;
+        }
+      }
+      // decoder
+      if (codec.decoder) {
+        auto engine =
+            std::find_if(capability.engines.begin(), capability.engines.end(),
+                         [&codec](const VideoCodecCapability::Engine& engine) {
+                           return engine.name == *codec.decoder;
+                         });
+        if (engine == capability.engines.end()) {
+          errors->push_back(
+              "decoder implementation not found: codec_preference=" +
+              boost::json::serialize(boost::json::value_from(codec)));
+          continue;
+        }
+        auto codec_cap =
+            std::find_if(engine->codecs.begin(), engine->codecs.end(),
+                         [&codec](const VideoCodecCapability::Codec& c) {
+                           return c.type == codec.type;
+                         });
+        if (codec_cap == engine->codecs.end()) {
+          errors->push_back(
+              "codec type not found: codec_preference=" +
+              boost::json::serialize(boost::json::value_from(codec)));
+          continue;
+        }
+        if (!codec_cap->decoder) {
+          errors->push_back(
+              "decoder not supported: codec_preference=" +
+              boost::json::serialize(boost::json::value_from(codec)) +
+              ", codec_capability=" +
+              boost::json::serialize(boost::json::value_from(*codec_cap)));
+          continue;
+        }
+      }
+    }
+  }
+
+  if (!errors->empty()) {
+    return false;
+  }
+
+  return true;
+}
+
+VideoCodecPreference CreateVideoCodecPreferenceFromImplementation(
+    const VideoCodecCapability& capability,
+    VideoCodecImplementation implementation) {
+  VideoCodecPreference preference;
+  auto specified_engine =
+      std::find_if(capability.engines.begin(), capability.engines.end(),
+                   [implementation](const auto& engine) {
+                     return engine.name == implementation;
+                   });
+  if (specified_engine == capability.engines.end()) {
+    return preference;
+  }
+  for (const auto& codec : specified_engine->codecs) {
+    VideoCodecPreference::Codec preference_codec;
+    preference_codec.type = codec.type;
+    if (codec.encoder) {
+      preference_codec.encoder = implementation;
+    }
+    if (codec.decoder) {
+      preference_codec.decoder = implementation;
+    }
+    preference.codecs.push_back(preference_codec);
+  }
+  return preference;
 }
 
 }  // namespace sora

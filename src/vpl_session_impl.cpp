@@ -2,8 +2,12 @@
 
 #if !defined(USE_VPL_ENCODER)
 
+namespace sora {
+
 std::shared_ptr<VplSession> VplSession::Create() {
   return nullptr;
+}
+
 }
 
 #else

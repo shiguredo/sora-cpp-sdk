@@ -113,6 +113,7 @@ target_sources(sora
     src/sora_video_decoder_factory.cpp
     src/sora_video_encoder_factory.cpp
     src/sora_video_codec.cpp
+    src/sora_video_codec_factory.cpp
     src/ssl_verifier.cpp
     src/url_parts.cpp
     src/version.cpp

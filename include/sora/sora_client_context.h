@@ -7,6 +7,7 @@
 #include <pc/connection_context.h>
 
 #include "sora/sora_signaling.h"
+#include "sora/sora_video_codec_factory.h"
 
 namespace sora {
 
@@ -18,11 +19,8 @@ struct SoraClientContextConfig {
   std::optional<std::string> audio_recording_device;
   // 再生デバイス名
   std::optional<std::string> audio_playout_device;
-  // ハードウェアエンコーダ/デコーダを利用するかどうか
-  // false にするとソフトウェアエンコーダ/デコーダのみになる（H.264 は利用できない）
-  bool use_hardware_encoder = true;
-  // SoraVideoEncoderFactoryConfig に定義されている同名の変数をアプリケーションから設定するための変数
-  bool force_i420_conversion_for_simulcast_adapter = true;
+  // VideoEncoderFactory/VideoDecoderFactory に関する設定
+  SoraVideoCodecFactoryConfig video_codec_factory_config;
 
   // PeerConnectionFactoryDependencies をカスタマイズするためのコールバック関数
   // デフォルトの値が設定された上で、PeerConnectionFactory を生成する直前に呼ばれる
@@ -34,12 +32,6 @@ struct SoraClientContextConfig {
   // で得られたオブジェクトを返す必要がある。
   // Android プラットフォームに対応しない場合は未設定でよい。
   std::function<void*(void*)> get_android_application_context;
-
-  // OpenH264 の動的ライブラリのパス
-  // 設定すると OpenH264 が H264 エンコーダの候補に含まれる。
-  // ただし configure_dependencies をカスタマイズして dependencies.video_encoder_factory を
-  // 上書きしている場合、OpenH264 が H264 エンコーダの候補に含まれない可能性があるので注意。
-  std::optional<std::string> openh264;
 };
 
 // Sora 向けクライアントを生成するためのデータを保持するクラス

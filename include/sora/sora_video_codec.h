@@ -97,6 +97,7 @@ VideoCodecCapability tag_invoke(
     boost::json::value const& jv);
 
 struct VideoCodecCapabilityConfig {
+  VideoCodecCapabilityConfig();
   std::shared_ptr<CudaContext> cuda_context;
   std::shared_ptr<VplSession> vpl_session;
   std::optional<std::string> openh264_path;
@@ -104,6 +105,69 @@ struct VideoCodecCapabilityConfig {
 };
 
 VideoCodecCapability GetVideoCodecCapability(VideoCodecCapabilityConfig config);
+
+struct VideoCodecPreference {
+  struct Parameters {};
+  struct Codec {
+    Codec() : type(webrtc::kVideoCodecGeneric) {}
+    Codec(webrtc::VideoCodecType type,
+          std::optional<VideoCodecImplementation> encoder,
+          std::optional<VideoCodecImplementation> decoder,
+          Parameters parameters = Parameters())
+        : type(type),
+          encoder(encoder),
+          decoder(decoder),
+          parameters(parameters) {}
+    webrtc::VideoCodecType type;
+    std::optional<VideoCodecImplementation> encoder;
+    std::optional<VideoCodecImplementation> decoder;
+    Parameters parameters;
+  };
+  std::vector<Codec> codecs;
+  Codec* VP8();
+  Codec* VP9();
+  Codec* H264();
+  Codec* H265();
+  Codec* AV1();
+  const Codec* VP8() const;
+  const Codec* VP9() const;
+  const Codec* H264() const;
+  const Codec* H265() const;
+  const Codec* AV1() const;
+
+  void Merge(const VideoCodecPreference& preference);
+};
+
+// VideoCodecPreference::Parameters
+void tag_invoke(const boost::json::value_from_tag&,
+                boost::json::value& jv,
+                const VideoCodecPreference::Parameters& v);
+VideoCodecPreference::Parameters tag_invoke(
+    const boost::json::value_to_tag<VideoCodecPreference::Parameters>&,
+    boost::json::value const& jv);
+// VideoCodecPreference::Codec
+void tag_invoke(const boost::json::value_from_tag&,
+                boost::json::value& jv,
+                const VideoCodecPreference::Codec& v);
+VideoCodecPreference::Codec tag_invoke(
+    const boost::json::value_to_tag<VideoCodecPreference::Codec>&,
+    boost::json::value const& jv);
+// VideoCodecPreference
+void tag_invoke(const boost::json::value_from_tag&,
+                boost::json::value& jv,
+                const VideoCodecPreference& v);
+VideoCodecPreference tag_invoke(
+    const boost::json::value_to_tag<VideoCodecPreference>&,
+    boost::json::value const& jv);
+
+bool ValidateVideoCodecPreference(const VideoCodecPreference& preference,
+                                  const VideoCodecCapability& capability,
+                                  std::vector<std::string>* errors);
+
+// implementation で指定されたコーデックのみの preference を作る
+VideoCodecPreference CreateVideoCodecPreferenceFromImplementation(
+    const VideoCodecCapability& capability,
+    VideoCodecImplementation implementation);
 
 }  // namespace sora
 
