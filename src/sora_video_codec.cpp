@@ -61,22 +61,17 @@ void tag_invoke(const boost::json::value_from_tag&,
 VideoCodecImplementation tag_invoke(
     const boost::json::value_to_tag<VideoCodecImplementation>&,
     boost::json::value const& jv) {
-  if (jv.is_string()) {
-    std::string s = jv.as_string().c_str();
-    if (s == "internal") {
-      return VideoCodecImplementation::kInternal;
-    }
-    if (s == "cisco_openh264") {
-      return VideoCodecImplementation::kCiscoOpenH264;
-    }
-    if (s == "intel_vpl") {
-      return VideoCodecImplementation::kIntelVpl;
-    }
-    if (s == "nvidia_video_codec_sdk") {
-      return VideoCodecImplementation::kNvidiaVideoCodecSdk;
-    }
+  std::string s = jv.as_string().c_str();
+  if (s == "internal") {
+    return VideoCodecImplementation::kInternal;
+  } else if (s == "cisco_openh264") {
+    return VideoCodecImplementation::kCiscoOpenH264;
+  } else if (s == "intel_vpl") {
+    return VideoCodecImplementation::kIntelVpl;
+  } else if (s == "nvidia_video_codec_sdk") {
+    return VideoCodecImplementation::kNvidiaVideoCodecSdk;
   }
-  throw std::invalid_argument("invalid VideoCodecImplementation");
+  throw std::invalid_argument("Invalid VideoCodecImplementation");
 }
 
 // VideoCodecCapability::Parameters

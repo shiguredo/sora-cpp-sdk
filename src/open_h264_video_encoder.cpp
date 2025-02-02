@@ -980,6 +980,13 @@ VideoCodecCapability::Engine GetOpenH264VideoCodecCapability(
   h264.parameters.version = std::to_string(version.uMajor) + "." +
                             std::to_string(version.uMinor) + "." +
                             std::to_string(version.uRevision);
+
+#if defined(_WIN32)
+  FreeLibrary(handle);
+#else
+  ::dlclose(handle);
+#endif
+
   return engine;
 }
 

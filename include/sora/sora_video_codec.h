@@ -104,6 +104,7 @@ struct VideoCodecCapabilityConfig {
   void* jni_env = nullptr;
 };
 
+// 利用可能なエンコーダ/デコーダ実装の一覧を取得する
 VideoCodecCapability GetVideoCodecCapability(VideoCodecCapabilityConfig config);
 
 struct VideoCodecPreference {
@@ -154,6 +155,7 @@ VideoCodecPreference tag_invoke(
     const boost::json::value_to_tag<VideoCodecPreference>&,
     boost::json::value const& jv);
 
+// 指定された preference が capability に対して妥当かどうかを検証する
 bool ValidateVideoCodecPreference(const VideoCodecPreference& preference,
                                   const VideoCodecCapability& capability,
                                   std::vector<std::string>* errors);

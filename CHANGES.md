@@ -13,7 +13,7 @@
 
 - [CHANGE] `SoraClientContextConfig` から `use_hardware_encoder` を削除
   - これにより、デフォルトで利用するエンコーダ/デコーダは全て libwebrtc の実装のものになります
-  - ハードウェアエンコーダを有効にしたい場合は `SoraVideoCodecFactoryConfig::video_codec_factory_config` を適切に設定して下さい
+  - ハードウェアエンコーダを有効にしたい場合は `SoraClientContextConfig::video_codec_factory_config` を適切に設定して下さい
   - @melpon
 - [CHANGE] `SoraClientContextConfig` から `force_i420_conversion_for_simulcast_adapter` を削除
   - 代わりに `SoraClientContextConfig::video_codec_factory_config.encoder_factory_config.force_i420_conversion` を利用して下さい
