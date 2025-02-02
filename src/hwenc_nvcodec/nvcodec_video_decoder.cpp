@@ -150,4 +150,10 @@ void NvCodecVideoDecoder::ReleaseNvCodec() {
   decoder_.reset();
 }
 
+std::unique_ptr<NvCodecVideoDecoder> NvCodecVideoDecoder::Create(
+    std::shared_ptr<CudaContext> context,
+    CudaVideoCodec codec) {
+  return std::make_unique<NvCodecVideoDecoder>(context, codec);
+}
+
 }  // namespace sora

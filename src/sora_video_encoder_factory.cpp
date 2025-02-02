@@ -45,9 +45,8 @@ namespace sora {
 SoraVideoEncoderFactory::SoraVideoEncoderFactory(
     SoraVideoEncoderFactoryConfig config)
     : config_(config) {
-  if (config.use_simulcast_adapter) {
+  if (!config.is_internal) {
     auto config2 = config;
-    config2.use_simulcast_adapter = false;
     config2.is_internal = true;
     internal_encoder_factory_.reset(new SoraVideoEncoderFactory(config2));
   }
@@ -132,7 +131,7 @@ std::unique_ptr<webrtc::VideoEncoder> SoraVideoEncoderFactory::Create(
         std::make_unique<webrtc::SimulcastEncoderAdapter>(
             env, internal_encoder_factory_.get(), nullptr, format);
 
-    if (config_.force_i420_conversion_for_simulcast_adapter) {
+    if (config_.force_i420_conversion) {
       encoder = std::make_unique<I420EncoderAdapter>(std::move(encoder));
     }
 

@@ -82,6 +82,8 @@
                 "${workspaceFolder}/_install/ubuntu-24.04_x86_64/release/openh264/include",
                 "${workspaceFolder}/_install/ubuntu-24.04_x86_64/release/vpl/include",
                 "${workspaceFolder}/_install/ubuntu-24.04_x86_64/release/blend2d/include",
+                "${workspaceFolder}/examples/_install/ubuntu-24.04_x86_64/release/cli11/include",
+                "${workspaceFolder}/examples/_install/ubuntu-24.04_x86_64/release/sdl2/include",
                 "${workspaceFolder}/_build/ubuntu-24.04_x86_64/release/sora",
                 "${workspaceFolder}/third_party/NvCodec/include",
                 "${workspaceFolder}/third_party/NvCodec/NvCodec",

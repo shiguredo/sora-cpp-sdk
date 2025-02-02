@@ -1,6 +1,7 @@
 #include "sora/sora_client_context.h"
 
 // WebRTC
+#include <api/audio/builtin_audio_processing_builder.h>
 #include <api/audio_codecs/builtin_audio_decoder_factory.h>
 #include <api/audio_codecs/builtin_audio_encoder_factory.h>
 #include <api/create_peerconnection_factory.h>
@@ -85,34 +86,20 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
   dependencies.audio_decoder_factory =
       webrtc::CreateBuiltinAudioDecoderFactory();
 
-  std::shared_ptr<sora::CudaContext> cuda_context;
-  if (c->config_.use_hardware_encoder) {
-    cuda_context = sora::CudaContext::Create();
+  auto codec_factory =
+      CreateVideoCodecFactory(c->config_.video_codec_factory_config);
+  if (!codec_factory) {
+    RTC_LOG(LS_ERROR) << "Failed to create VideoCodecFactory";
+    return nullptr;
   }
-
-  {
-    auto config = c->config_.use_hardware_encoder
-                      ? sora::GetDefaultVideoEncoderFactoryConfig(
-                            cuda_context, env, c->config_.openh264)
-                      : sora::GetSoftwareOnlyVideoEncoderFactoryConfig(
-                            c->config_.openh264);
-    config.use_simulcast_adapter = true;
-    config.force_i420_conversion_for_simulcast_adapter =
-        c->config_.force_i420_conversion_for_simulcast_adapter;
-    dependencies.video_encoder_factory =
-        absl::make_unique<sora::SoraVideoEncoderFactory>(std::move(config));
-  }
-  {
-    auto config =
-        c->config_.use_hardware_encoder
-            ? sora::GetDefaultVideoDecoderFactoryConfig(cuda_context, env)
-            : sora::GetSoftwareOnlyVideoDecoderFactoryConfig();
-    dependencies.video_decoder_factory =
-        absl::make_unique<sora::SoraVideoDecoderFactory>(std::move(config));
-  }
+  dependencies.video_encoder_factory =
+      std::move(codec_factory->encoder_factory);
+  dependencies.video_decoder_factory =
+      std::move(codec_factory->decoder_factory);
 
   dependencies.audio_mixer = nullptr;
-  dependencies.audio_processing = webrtc::AudioProcessingBuilder().Create();
+  dependencies.audio_processing_builder =
+      std::make_unique<webrtc::BuiltinAudioProcessingBuilder>();
 
   if (c->config_.configure_dependencies) {
     c->config_.configure_dependencies(dependencies);
