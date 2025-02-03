@@ -63,7 +63,15 @@ SoraVideoEncoderFactory::GetSupportedFormats() const {
     // どちらも無ければ codec ごとのデフォルト設定を利用する
     std::vector<webrtc::SdpVideoFormat> formats;
     if (enc.factory != nullptr) {
-      formats = enc.factory->GetSupportedFormats();
+      if (enc.codec == webrtc::kVideoCodecGeneric) {
+        formats = enc.factory->GetSupportedFormats();
+      } else {
+        for (const auto& f : enc.factory->GetSupportedFormats()) {
+          if (f.name == webrtc::CodecTypeToPayloadString(enc.codec)) {
+            formats.push_back(f);
+          }
+        }
+      }
     } else if (enc.get_supported_formats != nullptr) {
       formats = enc.get_supported_formats();
     } else {

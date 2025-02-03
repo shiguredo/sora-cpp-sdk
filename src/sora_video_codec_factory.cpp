@@ -114,7 +114,7 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
     if (codec.encoder) {
       if (*codec.encoder == VideoCodecImplementation::kInternal) {
         encoder_factory_config.encoders.push_back(
-            VideoEncoderConfig(builtin_encoder_factory));
+            VideoEncoderConfig(codec.type, builtin_encoder_factory));
       } else if (*codec.encoder == VideoCodecImplementation::kCiscoOpenH264) {
         assert(config.capability_config.openh264_path);
         auto create_video_encoder =
@@ -161,7 +161,7 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
     if (codec.decoder) {
       if (*codec.decoder == VideoCodecImplementation::kInternal) {
         decoder_factory_config.decoders.push_back(
-            VideoDecoderConfig(builtin_decoder_factory));
+            VideoDecoderConfig(codec.type, builtin_decoder_factory));
       } else if (*codec.decoder == VideoCodecImplementation::kCiscoOpenH264) {
         assert(config.capability_config.openh264_path);
         auto create_video_decoder =
