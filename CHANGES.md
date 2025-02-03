@@ -33,6 +33,8 @@
 - [ADD] 利用するエンコーダ/デコーダの実装を細かく指定するためのクラス `VideoCodecPreference` を追加
   - `SoraClientContextConfig::video_codec_factory_config.preference` 経由で利用できます
   - @melpon
+- [ADD] OpenH264 デコーダに対応する
+  - @melpon
 - [UPDATE] CMake を 3.31.4 にあげる
   - @voluntas
 
