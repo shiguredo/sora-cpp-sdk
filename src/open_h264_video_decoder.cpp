@@ -215,10 +215,14 @@ const char* OpenH264VideoDecoder::ImplementationName() const {
   return "OpenH264";
 }
 
+}  // namespace webrtc
+
+namespace sora {
+
 std::unique_ptr<webrtc::VideoDecoder> CreateOpenH264VideoDecoder(
     const webrtc::SdpVideoFormat& format,
     std::string openh264) {
-  return OpenH264VideoDecoder::Create(std::move(openh264));
+  return webrtc::OpenH264VideoDecoder::Create(std::move(openh264));
 }
 
-}  // namespace webrtc
+}  // namespace sora
