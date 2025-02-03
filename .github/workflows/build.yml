@@ -348,6 +348,58 @@ jobs:
       - uses: ./.github/actions/download
         with:
           platform: android
+      # Examples のダウンロード
+      - name: Download Examples
+        uses: actions/download-artifact@v4
+        with:
+          pattern: examples_*
+          merge-multiple: false
+      # sumomo のみを抜き出して、アーカイブにする
+      - name: Archive Examples
+        run: |
+          # アーカイブ用の親ディレクトリを作成
+          mkdir -p archive
+          # プラットフォームごとに処理を実行
+          for platform in \
+              windows_x86_64 \
+              macos_arm64 \
+              ubuntu-20.04_x86_64 \
+              ubuntu-22.04_x86_64 \
+              ubuntu-24.04_x86_64 \
+              ubuntu-24.04_armv8; do
+            # ダウンロード済みの artifact ディレクトリ
+            src_dir="examples_${platform}"
+            # アーカイブ用のディレクトリは、sumomo_<platform> とする
+            archive_dir="archive/sumomo_${platform}"
+            mkdir -p "$archive_dir"
+            # プラットフォームごとに sumomo の実行ファイルをコピー
+            if [[ "$platform" == "windows_x86_64" ]]; then
+              cp "${src_dir}/sumomo.exe" "$archive_dir/"
+              # Windows は zip 形式でアーカイブするため、archive ディレクトリに移動して実行
+              cd archive
+              zip -r "../sumomo_windows_x86_64.zip" "sumomo_${platform}"
+              # アーカイブ作成後、元のディレクトリに戻る
+              cd ..
+              echo "sumomo_windows_x86_64.zip" >> package_paths.env
+            elif [[ "$platform" == "macos_arm64" ]]; then
+              cp "${src_dir}/sumomo" "$archive_dir/"
+              # macOS は tar.gz 形式でアーカイブするため、archive ディレクトリに移動して実行
+              cd archive
+              tar czf "../sumomo_macos_arm64.tar.gz" "sumomo_${platform}"
+              # アーカイブ作成後、元のディレクトリに戻る
+              cd ..
+              echo "sumomo_macos_arm64.tar.gz" >> package_paths.env
+            else
+              cp "${src_dir}/sumomo" "$archive_dir/"
+              # tar.gz 形式でアーカイブする
+              cd archive
+              tar czf "../sumomo_${platform}.tar.gz" "sumomo_${platform}"
+              # アーカイブ作成後、元のディレクトリに戻る
+              cd ..
+              (cd archive && tar czf "../sumomo_${platform}.tar.gz" "sumomo_${platform}")
+              echo "sumomo_${platform}.tar.gz" >> package_paths.env
+            fi
+          done
       - name: Env to output
         run: |
           echo "package_paths<<EOF" >> $GITHUB_OUTPUT
