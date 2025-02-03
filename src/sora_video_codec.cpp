@@ -6,7 +6,7 @@
 #include <rtc_base/logging.h>
 
 #include "sora/java_context.h"
-#include "sora/open_h264_video_encoder.h"
+#include "sora/open_h264_video_codec.h"
 
 #if defined(SORA_CPP_SDK_IOS) || defined(SORA_CPP_SDK_MACOS)
 #include "sora/mac/mac_video_factory.h"
