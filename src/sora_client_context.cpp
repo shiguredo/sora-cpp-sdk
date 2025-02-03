@@ -80,6 +80,7 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
     return sora::CreateAudioDeviceModule(config);
   });
   dependencies.adm = adm;
+  c->worker_thread_->BlockingCall([&] { adm = nullptr; });
 
   dependencies.audio_encoder_factory =
       webrtc::CreateBuiltinAudioEncoderFactory();
@@ -90,6 +91,7 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
       CreateVideoCodecFactory(c->config_.video_codec_factory_config);
   if (!codec_factory) {
     RTC_LOG(LS_ERROR) << "Failed to create VideoCodecFactory";
+    c->worker_thread_->BlockingCall([&] { dependencies.adm = nullptr; });
     return nullptr;
   }
   dependencies.video_encoder_factory =
