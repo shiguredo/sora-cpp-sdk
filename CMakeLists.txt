@@ -102,6 +102,8 @@ target_sources(sora
     src/device_video_capturer.cpp
     src/i420_encoder_adapter.cpp
     src/java_context.cpp
+    src/open_h264_video_codec.cpp
+    src/open_h264_video_decoder.cpp
     src/open_h264_video_encoder.cpp
     src/rtc_ssl_verifier.cpp
     src/rtc_stats.cpp
