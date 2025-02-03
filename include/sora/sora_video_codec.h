@@ -111,10 +111,11 @@ struct VideoCodecPreference {
   struct Parameters {};
   struct Codec {
     Codec() : type(webrtc::kVideoCodecGeneric) {}
-    Codec(webrtc::VideoCodecType type,
-          std::optional<VideoCodecImplementation> encoder,
-          std::optional<VideoCodecImplementation> decoder,
-          Parameters parameters = Parameters())
+    explicit Codec(
+        webrtc::VideoCodecType type,
+        std::optional<VideoCodecImplementation> encoder = std::nullopt,
+        std::optional<VideoCodecImplementation> decoder = std::nullopt,
+        Parameters parameters = Parameters())
         : type(type),
           encoder(encoder),
           decoder(decoder),
@@ -124,6 +125,8 @@ struct VideoCodecPreference {
     std::optional<VideoCodecImplementation> decoder;
     Parameters parameters;
   };
+  VideoCodecPreference() = default;
+  explicit VideoCodecPreference(std::vector<Codec> codecs) : codecs(codecs) {}
   std::vector<Codec> codecs;
   Codec* Find(webrtc::VideoCodecType type);
   const Codec* Find(webrtc::VideoCodecType type) const;
