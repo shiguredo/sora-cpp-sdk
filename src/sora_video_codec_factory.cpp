@@ -33,6 +33,7 @@
 #include "default_video_formats.h"
 #include "sora/aligned_encoder_adapter.h"
 #include "sora/i420_encoder_adapter.h"
+#include "sora/open_h264_video_decoder.h"
 #include "sora/open_h264_video_encoder.h"
 #include "sora/sora_video_codec.h"
 
@@ -162,16 +163,14 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
         decoder_factory_config.decoders.push_back(
             VideoDecoderConfig(builtin_decoder_factory));
       } else if (*codec.decoder == VideoCodecImplementation::kCiscoOpenH264) {
-        // TODO(melpon): そのうち OpenH264 デコーダも実装する
-
-        // assert(config.capability_config.openh264_path);
-        // auto create_video_decoder =
-        //     [openh264_path = *config.capability_config.openh264_path](
-        //         const webrtc::SdpVideoFormat& format) {
-        //       return CreateOpenH264VideoDecoder(format, openh264_path);
-        //     };
-        // decoder_factory_config.decoders.push_back(
-        //     VideoDecoderConfig(codec.type, create_video_decoder));
+        assert(config.capability_config.openh264_path);
+        auto create_video_decoder =
+            [openh264_path = *config.capability_config.openh264_path](
+                const webrtc::SdpVideoFormat& format) {
+              return CreateOpenH264VideoDecoder(format, openh264_path);
+            };
+        decoder_factory_config.decoders.push_back(
+            VideoDecoderConfig(codec.type, create_video_decoder));
       } else if (*codec.decoder == VideoCodecImplementation::kIntelVpl) {
 #if defined(USE_VPL_ENCODER)
         assert(config.capability_config.vpl_session);
@@ -187,7 +186,8 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
       } else if (*codec.decoder ==
                  VideoCodecImplementation::kNvidiaVideoCodecSdk) {
 #if defined(USE_NVCODEC_ENCODER)
-        assert(config.capability_config.cuda_context);
+        // CudaContext は必須ではない（Windows エンコーダでは DirectX を利用する）ので assert しない
+        // assert(config.capability_config.cuda_context);
         auto create_video_decoder = [cuda_context =
                                          config.capability_config.cuda_context](
                                         const webrtc::SdpVideoFormat& format) {
