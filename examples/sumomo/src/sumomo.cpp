@@ -517,7 +517,6 @@ int main(int argc, char* argv[]) {
   // 表示して終了する系の処理はここに書く
   if (show_video_codec_capability) {
     sora::VideoCodecCapabilityConfig config;
-    config.vpl_session = sora::VplSession::Create();
     config.cuda_context = sora::CudaContext::Create();
     config.openh264_path = openh264;
     auto capability = sora::GetVideoCodecCapability(config);
@@ -613,11 +612,6 @@ int main(int argc, char* argv[]) {
             sora::VideoCodecImplementation::kCiscoOpenH264)) {
       context_config.video_codec_factory_config.capability_config
           .openh264_path = openh264;
-    }
-    if (context_config.video_codec_factory_config.preference->HasImplementation(
-            sora::VideoCodecImplementation::kIntelVpl)) {
-      context_config.video_codec_factory_config.capability_config.vpl_session =
-          sora::VplSession::Create();
     }
     if (context_config.video_codec_factory_config.preference->HasImplementation(
             sora::VideoCodecImplementation::kNvidiaVideoCodecSdk)) {

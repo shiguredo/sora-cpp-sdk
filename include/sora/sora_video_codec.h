@@ -99,7 +99,6 @@ VideoCodecCapability tag_invoke(
 struct VideoCodecCapabilityConfig {
   VideoCodecCapabilityConfig();
   std::shared_ptr<CudaContext> cuda_context;
-  std::shared_ptr<VplSession> vpl_session;
   std::optional<std::string> openh264_path;
   void* jni_env = nullptr;
 };

@@ -254,7 +254,7 @@ VideoCodecCapability GetVideoCodecCapability(
   cap.engines.push_back(GetOpenH264VideoCodecCapability(config.openh264_path));
 
 #if defined(USE_VPL_ENCODER)
-  cap.engines.push_back(GetVplVideoCodecCapability(config.vpl_session));
+  cap.engines.push_back(GetVplVideoCodecCapability(VplSession::Create()));
 #endif
 
 #if defined(USE_NVCODEC_ENCODER)

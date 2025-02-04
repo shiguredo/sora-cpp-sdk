@@ -126,12 +126,10 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
             VideoEncoderConfig(codec.type, create_video_encoder, 16));
       } else if (*codec.encoder == VideoCodecImplementation::kIntelVpl) {
 #if defined(USE_VPL_ENCODER)
-        assert(config.capability_config.vpl_session);
-        auto create_video_encoder = [vpl_session =
-                                         config.capability_config.vpl_session](
-                                        const webrtc::SdpVideoFormat& format) {
+        auto create_video_encoder = [](const webrtc::SdpVideoFormat& format) {
           return VplVideoEncoder::Create(
-              vpl_session, webrtc::PayloadStringToCodecType(format.name));
+              VplSession::Create(),
+              webrtc::PayloadStringToCodecType(format.name));
         };
         encoder_factory_config.encoders.push_back(
             VideoEncoderConfig(codec.type, create_video_encoder, 16));
@@ -173,12 +171,10 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
             VideoDecoderConfig(codec.type, create_video_decoder));
       } else if (*codec.decoder == VideoCodecImplementation::kIntelVpl) {
 #if defined(USE_VPL_ENCODER)
-        assert(config.capability_config.vpl_session);
-        auto create_video_decoder = [vpl_session =
-                                         config.capability_config.vpl_session](
-                                        const webrtc::SdpVideoFormat& format) {
+        auto create_video_decoder = [](const webrtc::SdpVideoFormat& format) {
           return VplVideoDecoder::Create(
-              vpl_session, webrtc::PayloadStringToCodecType(format.name));
+              VplSession::Create(),
+              webrtc::PayloadStringToCodecType(format.name));
         };
         decoder_factory_config.decoders.push_back(
             VideoDecoderConfig(codec.type, create_video_decoder));
