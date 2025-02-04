@@ -123,7 +123,7 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
               return CreateOpenH264VideoEncoder(format, openh264_path);
             };
         encoder_factory_config.encoders.push_back(
-            VideoEncoderConfig(codec.type, create_video_encoder));
+            VideoEncoderConfig(codec.type, create_video_encoder, 16));
       } else if (*codec.encoder == VideoCodecImplementation::kIntelVpl) {
 #if defined(USE_VPL_ENCODER)
         assert(config.capability_config.vpl_session);
@@ -134,7 +134,7 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
               vpl_session, webrtc::PayloadStringToCodecType(format.name));
         };
         encoder_factory_config.encoders.push_back(
-            VideoEncoderConfig(codec.type, create_video_encoder));
+            VideoEncoderConfig(codec.type, create_video_encoder, 16));
 #endif
       } else if (*codec.encoder ==
                  VideoCodecImplementation::kNvidiaVideoCodecSdk) {
@@ -154,7 +154,7 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
           return NvCodecVideoEncoder::Create(cuda_context, cuda_type);
         };
         encoder_factory_config.encoders.push_back(
-            VideoEncoderConfig(codec.type, create_video_encoder));
+            VideoEncoderConfig(codec.type, create_video_encoder, 16));
 #endif
       }
     }
