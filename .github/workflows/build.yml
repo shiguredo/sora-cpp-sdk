@@ -82,20 +82,6 @@ jobs:
         with:
           name: ${{ matrix.name }}.env
           path: _package/${{ matrix.name }}/release/sora.env
-      # Examples のビルド
-      - name: Build Examples
-        run: |
-          cd examples
-          mkdir examples_${{ matrix.name }}
-          foreach ($app in @('sdl_sample', 'sumomo', 'messaging_recvonly_sample')) {
-            python3 "$app\${{ matrix.name }}\run.py" --local-sora-cpp-sdk-dir ..
-            cp "_build\${{ matrix.name }}\release\$app\Release\$app.exe" "examples_${{ matrix.name }}"
-          }
-      - name: Upload Examples Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: examples_${{ matrix.name }}
-          path: examples/examples_${{ matrix.name }}
   build-macos:
     strategy:
       fail-fast: false
@@ -140,22 +126,6 @@ jobs:
         with:
           name: ${{ matrix.name }}.env
           path: _package/${{ matrix.name }}/release/sora.env
-      # Examples のビルド
-      - name: Build Examples
-        run: |
-          cd examples
-          mkdir examples_${{ matrix.name }}
-          for app in sdl_sample sumomo messaging_recvonly_sample; do
-            python3 $app/${{ matrix.name }}/run.py --local-sora-cpp-sdk-dir ..
-            cp _build/${{ matrix.name }}/release/$app/$app examples_${{ matrix.name }}
-          done
-        if: matrix.name == 'macos_arm64'
-      - name: Upload Examples Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: examples_${{ matrix.name }}
-          path: examples/examples_${{ matrix.name }}
-        if: matrix.name == 'macos_arm64'
   build-ubuntu:
     strategy:
       fail-fast: false
@@ -297,22 +267,6 @@ jobs:
         with:
           name: ${{ matrix.platform.name }}.env
           path: _package/${{ matrix.platform.name }}/release/sora.env
-      # Examples のビルド
-      - name: Build Examples
-        run: |
-          cd examples
-          mkdir examples_${{ matrix.platform.name }}
-          for app in sdl_sample sumomo messaging_recvonly_sample; do
-            python3 $app/${{ matrix.platform.name }}/run.py --local-sora-cpp-sdk-dir ..
-            cp _build/${{ matrix.platform.name }}/release/$app/$app examples_${{ matrix.platform.name }}
-          done
-        if: matrix.platform.os == 'ubuntu'
-      - name: Upload Examples Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: examples_${{ matrix.platform.name }}
-          path: examples/examples_${{ matrix.platform.name }}
-        if: matrix.platform.os == 'ubuntu'
 
   create-release:
     name: Create Release
@@ -348,58 +302,6 @@ jobs:
       - uses: ./.github/actions/download
         with:
           platform: android
-      # Examples のダウンロード
-      - name: Download Examples
-        uses: actions/download-artifact@v4
-        with:
-          pattern: examples_*
-          merge-multiple: false
-      # sumomo のみを抜き出して、アーカイブにする
-      - name: Archive Examples
-        run: |
-          # アーカイブ用の親ディレクトリを作成
-          mkdir -p archive
-          # プラットフォームごとに処理を実行
-          for platform in \
-              windows_x86_64 \
-              macos_arm64 \
-              ubuntu-20.04_x86_64 \
-              ubuntu-22.04_x86_64 \
-              ubuntu-24.04_x86_64 \
-              ubuntu-24.04_armv8; do
-            # ダウンロード済みの artifact ディレクトリ
-            src_dir="examples_${platform}"
-            # アーカイブ用のディレクトリは、sumomo_<platform> とする
-            archive_dir="archive/sumomo_${platform}"
-            mkdir -p "$archive_dir"
-            # プラットフォームごとに sumomo の実行ファイルをコピー
-            if [[ "$platform" == "windows_x86_64" ]]; then
-              cp "${src_dir}/sumomo.exe" "$archive_dir/"
-              # Windows は zip 形式でアーカイブするため、archive ディレクトリに移動して実行
-              cd archive
-              zip -r "../sumomo_windows_x86_64.zip" "sumomo_${platform}"
-              # アーカイブ作成後、元のディレクトリに戻る
-              cd ..
-              echo "sumomo_windows_x86_64.zip" >> package_paths.env
-            elif [[ "$platform" == "macos_arm64" ]]; then
-              cp "${src_dir}/sumomo" "$archive_dir/"
-              # macOS は tar.gz 形式でアーカイブするため、archive ディレクトリに移動して実行
-              cd archive
-              tar czf "../sumomo_macos_arm64.tar.gz" "sumomo_${platform}"
-              # アーカイブ作成後、元のディレクトリに戻る
-              cd ..
-              echo "sumomo_macos_arm64.tar.gz" >> package_paths.env
-            else
-              cp "${src_dir}/sumomo" "$archive_dir/"
-              # tar.gz 形式でアーカイブする
-              cd archive
-              tar czf "../sumomo_${platform}.tar.gz" "sumomo_${platform}"
-              # アーカイブ作成後、元のディレクトリに戻る
-              cd ..
-              (cd archive && tar czf "../sumomo_${platform}.tar.gz" "sumomo_${platform}")
-              echo "sumomo_${platform}.tar.gz" >> package_paths.env
-            fi
-          done
       - name: Env to output
         run: |
           echo "package_paths<<EOF" >> $GITHUB_OUTPUT
@@ -411,6 +313,176 @@ jobs:
         with:
           files: ${{ steps.env.outputs.package_paths }}
           prerelease: ${{ contains(github.ref, 'canary') }}
+
+  # Windows の Examples ビルド
+  build-windows-examples:
+    needs: create-release
+    runs-on: windows-2022
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}/examples
+    strategy:
+      matrix:
+        example:
+            - name: sumomo
+    steps:
+        - uses: actions/checkout@v4
+        - name: Build Example
+          run: |
+            python3 "${{ matrix.example.name }}/windows_x86_64/run.py"
+        - name: Package Binary
+          run: |
+            # アップロード用のディレクトリ作成してバイナリをコピー
+            mkdir -p ${{ matrix.example.name }}_windows_x86_64
+            cp _build/windows_x86_64/release/${{ matrix.example.name }}/Release/sumomo.exe sumomo_windows_x86_64/sumomo.exe
+            # PowerShell のコマンドを使って zip 作成する
+            Compress-Archive -Path sumomo_windows_x86_64 -DestinationPath sumomo_windows_x86_64.zip
+        - name: Upload Examples Artifact
+          uses: actions/upload-artifact@v4
+          with:
+             # .zip まで含めないとアップロード時には設定されない
+             name: ${{ matrix.example.name }}_windows_x86_64.zip
+             path: examples/${{ matrix.example.name }}_windows_x86_64.zip
+
+  # macOS の Examples ビルド
+  build-macos-examples:
+    needs: create-release
+    runs-on: macos-14
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}/examples
+    strategy:
+      matrix:
+        example:
+            - name: sumomo
+    steps:
+        - uses: actions/checkout@v4
+        # Select Xcode 15.4（build-macosと同じバージョンを使う）
+        - name: Select Xcode 15.4
+          run: sudo xcode-select --switch /Applications/Xcode_15.4.app/Contents/Developer
+        - name: Build Example
+          run: |
+            python3 "${{ matrix.example.name }}/macos_arm64/run.py"
+        - name: Package Binary
+          run: |
+            # アップロード用のディレクトリ作成してバイナリをコピー
+            mkdir -p sumomo_macos_arm64
+            cp _build/macos_arm64/release/${{ matrix.example.name }}/${{ matrix.example.name }} sumomo_macos_arm64/sumomo
+            tar -czf sumomo_macos_arm64.tar.gz sumomo_macos_arm64
+        - name: Upload Examples Artifact
+          uses: actions/upload-artifact@v4
+          with:
+             # .tar.gz まで含めないとアップロード時には設定されない
+             name: ${{ matrix.example.name }}_macos_arm64.tar.gz
+             path: examples/${{ matrix.example.name }}_macos_arm64.tar.gz
+
+  # Ubuntu の Examples ビルド
+  build-ubuntu-examples:
+    needs: create-release
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - name: ubuntu-20.04_x86_64
+            runs-on: ubuntu-20.04
+            os: ubuntu
+            arch: x86_64
+            example:
+              - name: sumomo
+          - name: ubuntu-22.04_x86_64
+            runs-on: ubuntu-22.04
+            os: ubuntu
+            arch: x86_64
+            example:
+              - name: sumomo
+          - name: ubuntu-24.04_x86_64
+            runs-on: ubuntu-24.04
+            os: ubuntu
+            arch: x86_64
+            example:
+              - name: sumomo
+          - name: ubuntu-24.04_armv8
+            runs-on: ubuntu-24.04
+            os: ubuntu
+            arch: armv8
+            example:
+              - name: sumomo
+    name: Build Examples for ${{ matrix.platform.name }}
+    runs-on: ${{ matrix.platform.runs-on }}
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}/examples
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgl-dev
+      # Ubuntu 24.04 x86_64 向けの依存関係をインストール
+      - name: Install deps for Ubuntu 24.04 x86_64
+        if: matrix.platform.name == 'ubuntu-24.04_x86_64'
+        run: |
+          sudo apt-get install -y libx11-dev libxext-dev
+      # Ubuntu 24.04 ARM 向けの依存関係をインストール
+      - name: Install deps for Ubuntu 24.04 ARM
+        if: matrix.platform.name == 'ubuntu-24.04_armv8'
+        run: |
+          sudo apt-get install -y multistrap binutils-aarch64-linux-gnu libx11-dev libxext-dev
+          # multistrap に insecure なリポジトリからの取得を許可する設定を入れる
+          sudo sed -e 's/Apt::Get::AllowUnauthenticated=true/Apt::Get::AllowUnauthenticated=true";\n$config_str .= " -o Acquire::AllowInsecureRepositories=true/' -i /usr/sbin/multistrap
+      - name: Build Example
+        run: |
+          pwd
+          python3 "${{ matrix.platform.example[0].name }}/${{ matrix.platform.name }}/run.py"
+      - name: Package Binary
+        run: |
+          # アップロード用のディレクトリ作成してバイナリをコピー
+          mkdir -p sumomo_${{ matrix.platform.name }}
+          cp _build/${{ matrix.platform.name }}/release/${{ matrix.platform.example[0].name }}/${{ matrix.platform.example[0].name }} sumomo_${{ matrix.platform.name }}/sumomo
+          tar -czf sumomo_${{ matrix.platform.name }}.tar.gz sumomo_${{ matrix.platform.name }}
+      # ビルドしたexamplesをアップロード
+      - name: Upload Examples Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sumomo_${{ matrix.platform.name }}.tar.gz
+          path: examples/sumomo_${{ matrix.platform.name }}.tar.gz
+
+  # Examples をリリース
+  create-release-example:
+      name: Create Release Examples
+      needs: 
+        - build-windows-examples
+        - build-macos-examples
+        - build-ubuntu-examples
+      runs-on: ubuntu-24.04
+      strategy:
+        matrix:
+          platform:
+            - name: windows_x86_64
+              file_ext: zip
+            - name: macos_arm64
+              file_ext: tar.gz
+            - name: ubuntu-20.04_x86_64
+              file_ext: tar.gz
+            - name: ubuntu-22.04_x86_64
+              file_ext: tar.gz
+            - name: ubuntu-24.04_x86_64
+              file_ext: tar.gz
+            - name: ubuntu-24.04_armv8
+              file_ext: tar.gz
+          file_name:
+            - sumomo
+      steps:
+        - uses: actions/checkout@v4
+        # ビルドした Examples のアーティファクトをダウンロード
+        - uses: actions/download-artifact@v4
+          with:
+            name: ${{ matrix.file_name }}_${{ matrix.platform.name }}.${{ matrix.platform.file_ext }}
+        # GitHub Releaseを作成し、Examplesをアップロード
+        - name: Release Examples
+          uses: softprops/action-gh-release@v2
+          with:
+            files: ${{ matrix.file_name }}_${{ matrix.platform.name }}.${{ matrix.platform.file_ext }}
 
   notification:
     name: Slack Notification
