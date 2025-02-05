@@ -16,6 +16,11 @@
 
 ### misc
 
+- [CHANGE] SDK ビルドと examples をビルドを分ける
+  - push 時に実行していた examples のビルドをリリース時にのみ実行するように変更
+  - @torikizi
+- [CHANGE] examples のビルドを sumomo だけにする
+  - @torikizi
 - [ADD] リリース時に sumomo バイナリを含めるようにする
   - @torikizi
 
