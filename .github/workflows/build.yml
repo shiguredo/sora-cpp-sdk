@@ -332,7 +332,8 @@ jobs:
             python3 ${{ matrix.example.name }}/windows_x86_64/run.py
         - name: Package Binary
           run: |
-            # アップロード用のディレクトリ作成してバイナリをコピー
+            # アップロード用にディレクトリを作って、その中にバイナリをコピーする
+            # sumomo_windows_x86_64.zip を作ってアップロードする
             mkdir -p ${{ matrix.example.name }}_windows_x86_64
             cp _build/windows_x86_64/release/${{ matrix.example.name }}/Release/${{ matrix.example.name }}.exe ${{ matrix.example.name }}_windows_x86_64/${{ matrix.example.name }}.exe
             Compress-Archive -Path ${{ matrix.example.name }}_windows_x86_64 -DestinationPath ${{ matrix.example.name }}_windows_x86_64.zip
@@ -361,10 +362,11 @@ jobs:
           run: sudo xcode-select --switch /Applications/Xcode_15.4.app/Contents/Developer
         - name: Build Example
           run: |
-            python3 "${{ matrix.example.name }}/macos_arm64/run.py"
+            python3 ${{ matrix.example.name }}/macos_arm64/run.py
         - name: Package Binary
           run: |
-            # アップロード用のディレクトリ作成してバイナリをコピー
+            # アップロード用に、ディレクトリを作って、その中にバイナリをコピーする
+            # sumomo_macos_arm64.tar.gz を作ってアップロードする
             mkdir -p ${{ matrix.example.name }}_macos_arm64
             cp _build/macos_arm64/release/${{ matrix.example.name }}/${{ matrix.example.name }} ${{ matrix.example.name }}_macos_arm64/${{ matrix.example.name }}
             tar -czf ${{ matrix.example.name }}_macos_arm64.tar.gz ${{ matrix.example.name }}_macos_arm64
@@ -381,6 +383,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        example:
+          - name: sumomo
         platform:
           - name: ubuntu-20.04_x86_64
             runs-on: ubuntu-20.04
@@ -390,8 +394,6 @@ jobs:
             runs-on: ubuntu-24.04
           - name: ubuntu-24.04_armv8
             runs-on: ubuntu-24.04
-        example:
-          - name: sumomo
     name: Build Examples for ${{ matrix.platform.name }}
     runs-on: ${{ matrix.platform.runs-on }}
     defaults:
@@ -403,31 +405,33 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libgl-dev
-      # Ubuntu 24.04 の x86_64 と armv8 でそれぞれ必要なパッケージがあるのでインストール
-      - name: Install Ubuntu 24.04 x86_64 specific deps
+      # Ubuntu 24.04 のみ追加で必要なパッケージがあるのでインストール
+      - name: Install deps Ubuntu 24.04
         if: matrix.platform.runs-on == 'ubuntu-24.04'
         run: |
           sudo apt-get install -y libx11-dev libxext-dev
-      - name: Install deps for Ubuntu 24.04 ARM
+      # ARM の場合はさらに追加のパッケージが必要なのでインストール
+      - name: Install deps Ubuntu 24.04 ARM
         if: matrix.platform.name == 'ubuntu-24.04_armv8'
         run: |
-          sudo apt-get install -y multistrap binutils-aarch64-linux-gnu libx11-dev libxext-dev
+          sudo apt-get install -y multistrap binutils-aarch64-linux-gnu
           # multistrap に insecure なリポジトリからの取得を許可する設定を入れる
           sudo sed -e 's/Apt::Get::AllowUnauthenticated=true/Apt::Get::AllowUnauthenticated=true";\n$config_str .= " -o Acquire::AllowInsecureRepositories=true/' -i /usr/sbin/multistrap
       - name: Build Example
         run: |
-          pwd
-          python3 "${{ matrix.example.name }}/${{ matrix.platform.name }}/run.py"
+          python3 ${{ matrix.example.name }}/${{ matrix.platform.name }}/run.py
       - name: Package Binary
         run: |
-          # アップロード用のディレクトリ作成してバイナリをコピー
+          # アップロード用にディレクトリを作って、その中にバイナリをコピーする
+          # ubuntu-24.04_x86_64 の場合 sumomo_ubuntu-24.04_x86_64.tar.gz を作ってアップロードする
           mkdir -p ${{ matrix.example.name }}_${{ matrix.platform.name }}
           cp _build/${{ matrix.platform.name }}/release/${{ matrix.example.name }}/${{ matrix.example.name }} ${{ matrix.example.name }}_${{ matrix.platform.name }}/${{ matrix.example.name }}
           tar -czf ${{ matrix.example.name }}_${{ matrix.platform.name }}.tar.gz ${{ matrix.example.name }}_${{ matrix.platform.name }}
       - name: Upload Examples Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: sumomo_${{ matrix.platform.name }}.tar.gz
+          # .tar.gz まで含めないとアップロード時には設定されない
+          name: ${{ matrix.example.name }}_${{ matrix.platform.name }}.tar.gz
           path: examples/${{ matrix.example.name }}_${{ matrix.platform.name }}.tar.gz
 
   # Examples をリリース
@@ -440,6 +444,8 @@ jobs:
       runs-on: ubuntu-24.04
       strategy:
         matrix:
+          example:
+            - name: sumomo
           platform:
             - name: windows_x86_64
               file_ext: zip
@@ -453,8 +459,6 @@ jobs:
               file_ext: tar.gz
             - name: ubuntu-24.04_armv8
               file_ext: tar.gz
-          example:
-            - name: sumomo
       steps:
         - uses: actions/checkout@v4
         # ビルドした Examples のアーティファクトをダウンロード
