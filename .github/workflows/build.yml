@@ -329,14 +329,13 @@ jobs:
         - uses: actions/checkout@v4
         - name: Build Example
           run: |
-            python3 "${{ matrix.example.name }}/windows_x86_64/run.py"
+            python3 ${{ matrix.example.name }}/windows_x86_64/run.py
         - name: Package Binary
           run: |
             # アップロード用のディレクトリ作成してバイナリをコピー
             mkdir -p ${{ matrix.example.name }}_windows_x86_64
-            cp _build/windows_x86_64/release/${{ matrix.example.name }}/Release/sumomo.exe sumomo_windows_x86_64/sumomo.exe
-            # PowerShell のコマンドを使って zip 作成する
-            Compress-Archive -Path sumomo_windows_x86_64 -DestinationPath sumomo_windows_x86_64.zip
+            cp _build/windows_x86_64/release/${{ matrix.example.name }}/Release/${{ matrix.example.name }}.exe ${{ matrix.example.name }}_windows_x86_64/${{ matrix.example.name }}.exe
+            Compress-Archive -Path ${{ matrix.example.name }}_windows_x86_64 -DestinationPath ${{ matrix.example.name }}_windows_x86_64.zip
         - name: Upload Examples Artifact
           uses: actions/upload-artifact@v4
           with:
@@ -366,9 +365,9 @@ jobs:
         - name: Package Binary
           run: |
             # アップロード用のディレクトリ作成してバイナリをコピー
-            mkdir -p sumomo_macos_arm64
-            cp _build/macos_arm64/release/${{ matrix.example.name }}/${{ matrix.example.name }} sumomo_macos_arm64/sumomo
-            tar -czf sumomo_macos_arm64.tar.gz sumomo_macos_arm64
+            mkdir -p ${{ matrix.example.name }}_macos_arm64
+            cp _build/macos_arm64/release/${{ matrix.example.name }}/${{ matrix.example.name }} ${{ matrix.example.name }}_macos_arm64/${{ matrix.example.name }}
+            tar -czf ${{ matrix.example.name }}_macos_arm64.tar.gz ${{ matrix.example.name }}_macos_arm64
         - name: Upload Examples Artifact
           uses: actions/upload-artifact@v4
           with:
@@ -385,28 +384,14 @@ jobs:
         platform:
           - name: ubuntu-20.04_x86_64
             runs-on: ubuntu-20.04
-            os: ubuntu
-            arch: x86_64
-            example:
-              - name: sumomo
           - name: ubuntu-22.04_x86_64
             runs-on: ubuntu-22.04
-            os: ubuntu
-            arch: x86_64
-            example:
-              - name: sumomo
           - name: ubuntu-24.04_x86_64
             runs-on: ubuntu-24.04
-            os: ubuntu
-            arch: x86_64
-            example:
-              - name: sumomo
           - name: ubuntu-24.04_armv8
             runs-on: ubuntu-24.04
-            os: ubuntu
-            arch: armv8
-            example:
-              - name: sumomo
+        example:
+          - name: sumomo
     name: Build Examples for ${{ matrix.platform.name }}
     runs-on: ${{ matrix.platform.runs-on }}
     defaults:
@@ -418,12 +403,11 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libgl-dev
-      # Ubuntu 24.04 x86_64 向けの依存関係をインストール
-      - name: Install deps for Ubuntu 24.04 x86_64
+      # Ubuntu 24.04 の x86_64 と armv8 でそれぞれ必要なパッケージがあるのでインストール
+      - name: Install Ubuntu 24.04 x86_64 specific deps
         if: matrix.platform.name == 'ubuntu-24.04_x86_64'
         run: |
           sudo apt-get install -y libx11-dev libxext-dev
-      # Ubuntu 24.04 ARM 向けの依存関係をインストール
       - name: Install deps for Ubuntu 24.04 ARM
         if: matrix.platform.name == 'ubuntu-24.04_armv8'
         run: |
@@ -433,14 +417,13 @@ jobs:
       - name: Build Example
         run: |
           pwd
-          python3 "${{ matrix.platform.example[0].name }}/${{ matrix.platform.name }}/run.py"
+          python3 "${{ matrix.example.name }}/${{ matrix.platform.name }}/run.py"
       - name: Package Binary
         run: |
           # アップロード用のディレクトリ作成してバイナリをコピー
-          mkdir -p sumomo_${{ matrix.platform.name }}
-          cp _build/${{ matrix.platform.name }}/release/${{ matrix.platform.example[0].name }}/${{ matrix.platform.example[0].name }} sumomo_${{ matrix.platform.name }}/sumomo
-          tar -czf sumomo_${{ matrix.platform.name }}.tar.gz sumomo_${{ matrix.platform.name }}
-      # ビルドしたexamplesをアップロード
+          mkdir -p ${{ matrix.example.name }}_${{ matrix.platform.name }}
+          cp _build/${{ matrix.platform.name }}/release/${{ matrix.example.name }}/${{ matrix.example.name }} ${{ matrix.example.name }}_${{ matrix.platform.name }}/${{ matrix.example.name }}
+          tar -czf ${{ matrix.example.name }}_${{ matrix.platform.name }}.tar.gz ${{ matrix.example.name }}_${{ matrix.platform.name }}
       - name: Upload Examples Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -470,19 +453,19 @@ jobs:
               file_ext: tar.gz
             - name: ubuntu-24.04_armv8
               file_ext: tar.gz
-          file_name:
-            - sumomo
+          example:
+            - name: sumomo
       steps:
         - uses: actions/checkout@v4
         # ビルドした Examples のアーティファクトをダウンロード
         - uses: actions/download-artifact@v4
           with:
-            name: ${{ matrix.file_name }}_${{ matrix.platform.name }}.${{ matrix.platform.file_ext }}
+            name: ${{ matrix.example.name }}_${{ matrix.platform.name }}.${{ matrix.platform.file_ext }}
         # GitHub Releaseを作成し、Examplesをアップロード
         - name: Release Examples
           uses: softprops/action-gh-release@v2
           with:
-            files: ${{ matrix.file_name }}_${{ matrix.platform.name }}.${{ matrix.platform.file_ext }}
+            files: ${{ matrix.example.name }}_${{ matrix.platform.name }}.${{ matrix.platform.file_ext }}
 
   notification:
     name: Slack Notification
