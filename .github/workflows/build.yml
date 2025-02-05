@@ -380,6 +380,10 @@ jobs:
   # Ubuntu の Examples ビルド
   build-ubuntu-examples:
     needs: create-release
+    runs-on: ${{ matrix.platform.runs-on }}
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}/examples
     strategy:
       fail-fast: false
       matrix:
@@ -394,11 +398,6 @@ jobs:
             runs-on: ubuntu-24.04
           - name: ubuntu-24.04_armv8
             runs-on: ubuntu-24.04
-    name: Build Examples for ${{ matrix.platform.name }}
-    runs-on: ${{ matrix.platform.runs-on }}
-    defaults:
-      run:
-        working-directory: ${{ github.workspace }}/examples
     steps:
       - uses: actions/checkout@v4
       - name: Install deps
@@ -479,6 +478,10 @@ jobs:
       - build-macos
       - build-ubuntu
       - create-release
+      - build-windows-examples
+      - build-macos-examples
+      - build-ubuntu-examples
+      - create-release-example
     if: always()
     steps:
       - uses: rtCamp/action-slack-notify@v2
@@ -486,7 +489,11 @@ jobs:
           needs.build-windows.result == 'failure' ||
           needs.build-macos.result == 'failure' ||
           needs.build-ubuntu.result == 'failure' ||
-          needs.create-release.result == 'failure'
+          needs.create-release.result == 'failure' ||
+          needs.build-windows-examples.result == 'failure' ||
+          needs.build-macos-examples.result == 'failure' ||
+          needs.build-ubuntu-examples.result == 'failure' ||
+          needs.create-release-example.result == 'failure'
         env:
           SLACK_CHANNEL: sora-cpp-sdk
           SLACK_COLOR: danger
