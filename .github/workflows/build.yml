@@ -428,7 +428,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: sumomo_${{ matrix.platform.name }}.tar.gz
-          path: examples/sumomo_${{ matrix.platform.name }}.tar.gz
+          path: examples/${{ matrix.example.name }}_${{ matrix.platform.name }}.tar.gz
 
   # Examples をリリース
   create-release-example:
