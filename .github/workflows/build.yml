@@ -112,8 +112,6 @@ jobs:
       TEST_MATRIX_NAME: ${{ matrix.name }}
     steps:
       - uses: actions/checkout@v4
-      - name: Select Xcode 15.4
-        run: sudo xcode-select --switch /Applications/Xcode_15.4.app/Contents/Developer
       - name: Env to output
         run: |
           echo "user=`users`" >> $GITHUB_OUTPUT
@@ -402,9 +400,6 @@ jobs:
             - name: sumomo
     steps:
         - uses: actions/checkout@v4
-        # Select Xcode 15.4（build-macosと同じバージョンを使う）
-        - name: Select Xcode 15.4
-          run: sudo xcode-select --switch /Applications/Xcode_15.4.app/Contents/Developer
         - name: Build Example
           run: |
             python3 ${{ matrix.example.name }}/macos_arm64/run.py
