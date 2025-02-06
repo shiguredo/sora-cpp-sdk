@@ -13,7 +13,7 @@ set(SORA_DIR "" CACHE PATH "Sora のルートディレクトリ")
 set(SDL2_DIR "" CACHE PATH "SDL2 のルートディレクトリ")
 set(CLI11_DIR "" CACHE PATH "CLI11 のルートディレクトリ")
 
-project(sora-sdl-sample C CXX)
+project(sora-sumomo C CXX)
 
 list(APPEND CMAKE_PREFIX_PATH ${SORA_DIR} ${SDL2_DIR})
 list(APPEND CMAKE_MODULE_PATH ${SORA_DIR}/share/cmake)

@@ -7,7 +7,9 @@
 
 namespace sora {
 
-RTCSSLVerifier::RTCSSLVerifier(bool insecure) : insecure_(insecure) {}
+RTCSSLVerifier::RTCSSLVerifier(bool insecure,
+                               std::optional<std::string> ca_cert)
+    : insecure_(insecure), ca_cert_(ca_cert) {}
 
 bool RTCSSLVerifier::Verify(const rtc::SSLCertificate& certificate) {
   // insecure の場合は証明書をチェックしない
@@ -17,7 +19,7 @@ bool RTCSSLVerifier::Verify(const rtc::SSLCertificate& certificate) {
   SSL* ssl = static_cast<const rtc::BoringSSLCertificate&>(certificate).ssl();
   X509* x509 = SSL_get_peer_certificate(ssl);
   STACK_OF(X509)* chain = SSL_get_peer_cert_chain(ssl);
-  return SSLVerifier::VerifyX509(x509, chain);
+  return SSLVerifier::VerifyX509(x509, chain, ca_cert_);
 }
 
-}
+}  // namespace sora

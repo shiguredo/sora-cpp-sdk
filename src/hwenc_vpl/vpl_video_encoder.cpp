@@ -100,6 +100,8 @@ class VplVideoEncoderImpl : public VplVideoEncoder {
   std::vector<uint8_t> bitstream_buffer_;
   mfxBitstream bitstream_;
   mfxFrameInfo frame_info_;
+
+  int key_frame_interval_ = 0;
 };
 
 const int kLowH264QpThreshold = 34;
@@ -125,13 +127,13 @@ std::unique_ptr<MFXVideoENCODE> VplVideoEncoderImpl::CreateEncoder(
   std::unique_ptr<MFXVideoENCODE> encoder(
       new MFXVideoENCODE(GetVplSession(session)));
 
-  mfxPlatform platform;
-  memset(&platform, 0, sizeof(platform));
-  MFXVideoCORE_QueryPlatform(GetVplSession(session), &platform);
-  RTC_LOG(LS_VERBOSE) << "--------------- codec=" << CodecToString(codec)
-                      << " CodeName=" << platform.CodeName
-                      << " DeviceId=" << platform.DeviceId
-                      << " MediaAdapterType=" << platform.MediaAdapterType;
+  // mfxPlatform platform;
+  // memset(&platform, 0, sizeof(platform));
+  // MFXVideoCORE_QueryPlatform(GetVplSession(session), &platform);
+  // RTC_LOG(LS_VERBOSE) << "--------------- codec=" << CodecToString(codec)
+  //                     << " CodeName=" << platform.CodeName
+  //                     << " DeviceId=" << platform.DeviceId
+  //                     << " MediaAdapterType=" << platform.MediaAdapterType;
 
   mfxVideoParam param;
   ExtBuffer ext;
@@ -519,14 +521,18 @@ int32_t VplVideoEncoderImpl::Encode(
             ? webrtc::VideoContentType::SCREENSHARE
             : webrtc::VideoContentType::UNSPECIFIED;
     encoded_image_.timing_.flags = webrtc::VideoSendTiming::kInvalid;
-    encoded_image_.SetRtpTimestamp(frame.timestamp());
+    encoded_image_.SetRtpTimestamp(frame.rtp_timestamp());
     encoded_image_.ntp_time_ms_ = frame.ntp_time_ms();
     encoded_image_.capture_time_ms_ = frame.render_time_ms();
     encoded_image_.rotation_ = frame.rotation();
     encoded_image_.SetColorSpace(frame.color_space());
+    key_frame_interval_ += 1;
     if (bitstream_.FrameType & MFX_FRAMETYPE_I ||
         bitstream_.FrameType & MFX_FRAMETYPE_IDR) {
       encoded_image_._frameType = webrtc::VideoFrameType::kVideoFrameKey;
+      RTC_LOG(LS_INFO) << "Key Frame Generated: key_frame_interval="
+                       << key_frame_interval_;
+      key_frame_interval_ = 0;
     } else {
       encoded_image_._frameType = webrtc::VideoFrameType::kVideoFrameDelta;
     }

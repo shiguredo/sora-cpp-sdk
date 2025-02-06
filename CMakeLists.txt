@@ -54,6 +54,11 @@ elseif (SORA_TARGET STREQUAL "ubuntu-24.04_x86_64")
   set(SORA_TARGET_OS_VERSION "24.04")
   set(SORA_TARGET_ARCH "x86_64")
   set(SORA_TARGET_DEF "SORA_CPP_SDK_UBUNTU_2404")
+elseif (SORA_TARGET STREQUAL "ubuntu-24.04_armv8")
+  set(SORA_TARGET_OS "ubuntu")
+  set(SORA_TARGET_OS_VERSION "24.04")
+  set(SORA_TARGET_ARCH "armv8")
+  set(SORA_TARGET_DEF "SORA_CPP_SDK_UBUNTU_2404")
 endif()
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -111,7 +116,6 @@ target_sources(sora
     src/sora_signaling.cpp
     src/sora_video_decoder_factory.cpp
     src/sora_video_encoder_factory.cpp
-    src/srtp_keying_material_exporter.cpp
     src/ssl_verifier.cpp
     src/url_parts.cpp
     src/version.cpp
@@ -518,7 +522,7 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
         third_party/NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
         third_party/NvCodec/NvCodec/NvEncoder/NvEncoderCuda.cpp
       PROPERTIES
-        COMPILE_OPTIONS "-xcuda;--cuda-gpu-arch=sm_35;-std=gnu++17"
+        COMPILE_OPTIONS "-xcuda;--cuda-gpu-arch=sm_35;-std=gnu++17;-Wno-tautological-constant-out-of-range-compare"
     )
 
     # CUDA を要求したくないので libsora.a に含める
@@ -526,8 +530,6 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
   endif()
 
   if (USE_VPL_ENCODER)
-    find_package(Libdrm REQUIRED)
-    find_package(Libva REQUIRED)
     find_package(VPL REQUIRED)
     target_include_directories(sora PRIVATE /usr/local/cuda/include)
     target_sources(sora
@@ -535,12 +537,8 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
         src/hwenc_vpl/vpl_session_impl.cpp
         src/hwenc_vpl/vpl_video_decoder.cpp
         src/hwenc_vpl/vpl_video_encoder.cpp
-        src/hwenc_vpl/vaapi_utils_drm.cpp
-        src/hwenc_vpl/vaapi_utils.cpp
     )
     target_link_libraries(sora PRIVATE "$<BUILD_INTERFACE:VPL::dispatcher>")
-    # va と drm は依存に含める
-    target_link_libraries(sora PUBLIC Libdrm::drm Libva::va Libva::va_drm)
     # vpl を要求したくないので libsora.a に含める
     list(APPEND BUNDLE_STATIC_LIBS $<TARGET_FILE:VPL::dispatcher>)
   endif()
@@ -570,8 +568,6 @@ install(EXPORT sora-config
 install(
   FILES
     cmake/FindWebRTC.cmake
-    cmake/FindLibdrm.cmake
-    cmake/FindLibva.cmake
   DESTINATION ${CMAKE_INSTALL_DATADIR}/cmake
 )
 install(FILES LICENSE NOTICE.md

@@ -1,4 +1,5 @@
 import argparse
+import hashlib
 import multiprocessing
 import os
 import sys
@@ -23,6 +24,8 @@ from buildbase import (  # noqa: E402
     get_webrtc_info,
     install_cli11,
     install_cmake,
+    install_llvm,
+    install_rootfs,
     install_sdl2,
     install_sora_and_deps,
     install_webrtc,
@@ -44,6 +47,18 @@ def install_deps(
     with cd(BASE_DIR):
         version = read_version_file("VERSION")
 
+        # multistrap を使った sysroot の構築
+        conf = os.path.join(BASE_DIR, "multistrap", "ubuntu-24.04_armv8.conf")
+        # conf ファイルのハッシュ値をバージョンとする
+        version_md5 = hashlib.md5(open(conf, "rb").read()).hexdigest()
+        install_rootfs_args = {
+            "version": version_md5,
+            "version_file": os.path.join(install_dir, "rootfs.version"),
+            "install_dir": install_dir,
+            "conf": conf,
+        }
+        install_rootfs(**install_rootfs_args)
+
         # WebRTC
         if local_webrtc_build_dir is None:
             install_webrtc_args = {
@@ -51,30 +66,59 @@ def install_deps(
                 "version_file": os.path.join(install_dir, "webrtc.version"),
                 "source_dir": source_dir,
                 "install_dir": install_dir,
-                "platform": "windows_x86_64",
+                "platform": "ubuntu-24.04_armv8",
             }
             install_webrtc(**install_webrtc_args)
         else:
             build_webrtc_args = {
-                "platform": "windows_x86_64",
+                "platform": "ubuntu-24.04_armv8",
                 "local_webrtc_build_dir": local_webrtc_build_dir,
                 "local_webrtc_build_args": local_webrtc_build_args,
                 "debug": debug,
             }
             build_webrtc(**build_webrtc_args)
 
+        webrtc_info = get_webrtc_info(
+            "ubuntu-24.04_armv8", local_webrtc_build_dir, install_dir, debug
+        )
+
+        if local_webrtc_build_dir is None:
+            webrtc_version = read_version_file(webrtc_info.version_file)
+
+            # LLVM
+            tools_url = webrtc_version["WEBRTC_SRC_TOOLS_URL"]
+            tools_commit = webrtc_version["WEBRTC_SRC_TOOLS_COMMIT"]
+            libcxx_url = webrtc_version["WEBRTC_SRC_THIRD_PARTY_LIBCXX_SRC_URL"]
+            libcxx_commit = webrtc_version["WEBRTC_SRC_THIRD_PARTY_LIBCXX_SRC_COMMIT"]
+            buildtools_url = webrtc_version["WEBRTC_SRC_BUILDTOOLS_URL"]
+            buildtools_commit = webrtc_version["WEBRTC_SRC_BUILDTOOLS_COMMIT"]
+            install_llvm_args = {
+                "version": f"{tools_url}.{tools_commit}."
+                f"{libcxx_url}.{libcxx_commit}."
+                f"{buildtools_url}.{buildtools_commit}",
+                "version_file": os.path.join(install_dir, "llvm.version"),
+                "install_dir": install_dir,
+                "tools_url": tools_url,
+                "tools_commit": tools_commit,
+                "libcxx_url": libcxx_url,
+                "libcxx_commit": libcxx_commit,
+                "buildtools_url": buildtools_url,
+                "buildtools_commit": buildtools_commit,
+            }
+            install_llvm(**install_llvm_args)
+
         # Sora C++ SDK, Boost
         if local_sora_cpp_sdk_dir is None:
             install_sora_and_deps(
                 version["SORA_CPP_SDK_VERSION"],
                 version["BOOST_VERSION"],
-                "windows_x86_64",
+                "ubuntu-24.04_armv8",
                 source_dir,
                 install_dir,
             )
         else:
             build_sora(
-                "windows_x86_64",
+                "ubuntu-24.04_armv8",
                 local_sora_cpp_sdk_dir,
                 local_sora_cpp_sdk_args,
                 debug,
@@ -87,13 +131,14 @@ def install_deps(
             "version_file": os.path.join(install_dir, "cmake.version"),
             "source_dir": source_dir,
             "install_dir": install_dir,
-            "platform": "windows-x86_64",
-            "ext": "zip",
+            "platform": "linux-x86_64",
+            "ext": "tar.gz",
         }
         install_cmake(**install_cmake_args)
         add_path(os.path.join(install_dir, "cmake", "bin"))
 
         # SDL2
+        sysroot = os.path.join(install_dir, "rootfs")
         install_sdl2_args = {
             "version": version["SDL2_VERSION"],
             "version_file": os.path.join(install_dir, "sdl2.version"),
@@ -101,8 +146,21 @@ def install_deps(
             "build_dir": build_dir,
             "install_dir": install_dir,
             "debug": debug,
-            "platform": "windows",
-            "cmake_args": [],
+            "platform": "linux",
+            "cmake_args": [
+                f"-DCMAKE_C_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang')}",
+                f"-DCMAKE_CXX_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang++')}",
+                "-DCMAKE_SYSTEM_NAME=Linux",
+                "-DCMAKE_SYSTEM_PROCESSOR=aarch64",
+                f"-DCMAKE_SYSROOT={sysroot}",
+                "-DCMAKE_C_COMPILER_TARGET=aarch64-linux-gnu",
+                "-DCMAKE_CXX_COMPILER_TARGET=aarch64-linux-gnu",
+                f"-DCMAKE_FIND_ROOT_PATH={sysroot}",
+                "-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER",
+                "-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY",
+                "-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY",
+                "-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY",
+            ],
         }
         install_sdl2(**install_sdl2_args)
 
@@ -118,14 +176,13 @@ def install_deps(
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", action="store_true")
-    parser.add_argument("--relwithdebinfo", action="store_true")
     add_webrtc_build_arguments(parser)
     add_sora_arguments(parser)
 
     args = parser.parse_args()
 
     configuration_dir = "debug" if args.debug else "release"
-    platform = "windows_x86_64"
+    platform = "ubuntu-24.04_armv8"
     source_dir = os.path.join(BASE_DIR, "_source", platform, configuration_dir)
     build_dir = os.path.join(BASE_DIR, "_build", platform, configuration_dir)
     install_dir = os.path.join(BASE_DIR, "_install", platform, configuration_dir)
@@ -144,17 +201,13 @@ def main():
         args.local_sora_cpp_sdk_args,
     )
 
-    configuration = "Release"
-    if args.debug:
-        configuration = "Debug"
-    if args.relwithdebinfo:
-        configuration = "RelWithDebInfo"
+    configuration = "Debug" if args.debug else "Release"
 
-    sample_build_dir = os.path.join(build_dir, "sumomo")
+    sample_build_dir = os.path.join(build_dir, "sdl_sample")
     mkdir_p(sample_build_dir)
     with cd(sample_build_dir):
         webrtc_info = get_webrtc_info(
-            "windows_x86_64", args.local_webrtc_build_dir, install_dir, args.debug
+            "ubuntu-24.04_armv8", args.local_webrtc_build_dir, install_dir, args.debug
         )
         sora_info = get_sora_info(platform, args.local_sora_cpp_sdk_dir, install_dir, args.debug)
 
@@ -166,6 +219,26 @@ def main():
         cmake_args.append(f"-DSORA_DIR={cmake_path(sora_info.sora_install_dir)}")
         cmake_args.append(f"-DCLI11_DIR={cmake_path(os.path.join(install_dir, 'cli11'))}")
         cmake_args.append(f"-DSDL2_DIR={cmake_path(os.path.join(install_dir, 'sdl2'))}")
+
+        # クロスコンパイルの設定。
+        # 本来は toolchain ファイルに書く内容
+        sysroot = os.path.join(install_dir, "rootfs")
+        cmake_args += [
+            f"-DCMAKE_C_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang')}",
+            f"-DCMAKE_CXX_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang++')}",
+            f"-DLIBCXX_INCLUDE_DIR={os.path.join(webrtc_info.libcxx_dir, 'include')}",
+            "-DCMAKE_SYSTEM_NAME=Linux",
+            "-DCMAKE_SYSTEM_PROCESSOR=aarch64",
+            f"-DCMAKE_SYSROOT={sysroot}",
+            "-DCMAKE_C_COMPILER_TARGET=aarch64-linux-gnu",
+            "-DCMAKE_CXX_COMPILER_TARGET=aarch64-linux-gnu",
+            f"-DCMAKE_FIND_ROOT_PATH={sysroot}",
+            "-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER",
+            "-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH",
+            "-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH",
+            "-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH",
+        ]
+
         cmd(["cmake", os.path.join(PROJECT_DIR)] + cmake_args)
         cmd(
             ["cmake", "--build", ".", f"-j{multiprocessing.cpu_count()}", "--config", configuration]

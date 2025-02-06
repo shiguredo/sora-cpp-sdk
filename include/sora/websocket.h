@@ -3,8 +3,10 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 
 // Boost
+#include <boost/asio/deadline_timer.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/ssl/context.hpp>
@@ -51,14 +53,16 @@ class Websocket {
   Websocket(ssl_tag,
             boost::asio::io_context& ioc,
             bool insecure,
-            const std::string& client_cert,
-            const std::string& client_key);
+            const std::optional<std::string>& client_cert,
+            const std::optional<std::string>& client_key,
+            const std::optional<std::string>& ca_cert);
   // HTTP Proxy + SSL
   Websocket(https_proxy_tag,
             boost::asio::io_context& ioc,
             bool insecure,
-            const std::string& client_cert,
-            const std::string& client_key,
+            const std::optional<std::string>& client_cert,
+            const std::optional<std::string>& client_key,
+            const std::optional<std::string>& ca_cert,
             std::string proxy_url,
             std::string proxy_username,
             std::string proxy_password);
@@ -89,7 +93,9 @@ class Websocket {
 
  private:
   bool IsSSL() const;
-  void InitWss(ssl_websocket_t* wss, bool insecure);
+  void InitWss(ssl_websocket_t* wss,
+               bool insecure,
+               const std::optional<std::string>& ca_cert);
 
   void OnResolve(std::string host,
                  std::string port,
@@ -161,6 +167,8 @@ class Websocket {
       boost::beast::http::response_parser<boost::beast::http::empty_body>>
       proxy_resp_parser_;
   boost::beast::flat_buffer proxy_buffer_;
+
+  std::optional<std::string> ca_cert_;
 };
 
 }  // namespace sora

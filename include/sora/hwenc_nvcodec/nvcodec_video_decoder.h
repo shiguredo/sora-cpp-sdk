@@ -1,6 +1,8 @@
 #ifndef SORA_HWENC_NVCODEC_NVCODEC_VIDEO_DECODER_H_
 #define SORA_HWENC_NVCODEC_NVCODEC_VIDEO_DECODER_H_
 
+#include <optional>
+
 // WebRTC
 #include <api/video_codecs/video_decoder.h>
 #include <common_video/include/video_frame_buffer_pool.h>

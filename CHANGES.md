@@ -11,14 +11,116 @@
 
 ## develop
 
-- [UPDATE] libwebrtc を m128.6613.2.0 にあげる
+## 2025.1.0
+
+**リリース日**: 2025-01-27
+
+- [CHANGE] `boost::optional` を利用していた部分を全て `std::optional` に変更
+  - @melpon
+- [CHANGE] SRTP keying material を取得する機能を削除
+  - @melpon
+- [UPDATE] VPL を v2.13.0 に上げる
+  - @voluntas
+- [UPDATE] CMake を 3.30.5 にあげる
+  - @voluntas
+- [UPDATE] Boost を 1.87.0 にあげる
+  - boost::asio::deadline_timer が間接的にインクルードされなくなったので、websocket.h に boost/asio/deadline_timer.hpp のインクルードを追加して利用可能にする
+  - boost::json::error_code が削除されたので boost::system::error_code に置き換える
+  - @voluntas @torikizi @melpon
+- [UPDATE] libwebrtc を m132.6834.5.2 にあげる
   - H.265 Patch の修正に伴い、C++ SDK の H.265 に関する設定を変更
   - examples と test に `rtc::CreateRandomString` のヘッダを追加
-  - @tnoho
+  - `SetRtpTimestamp` を `frame.timestamp` から `frame.rtp_timestamp` に変更
+  - `scalable_track_source.h` と `scalable_track_source.cpp` の `absl::optional` を `std::optional` に変更
+  - `nvcodec_video_decoder.h` と `vpl_video_decoder.h` に `#include <optional>` を追加
+  - `nvcodec_video_decoder.cpp` と `vpl_video_decoder.cpp` の `absl::nullopt` を `std::nullopt` に変更
+  - Android の test アプリの cmake バージョンを VERSION と合わせる
+  - `requested_resolution` が `scale_resolution_down_to` に変更されたのでリネーム
+  - `ExportKeyingMaterial` が廃止されたため `ExportSrtpKeyingMaterial` に変更
+    - `ExportKeyingMaterial` は引数を 6 つ利用できたが `ExportSrtpKeyingMaterial` では 1 つしか利用できないため互換処理を追加
+  - @tnoho @torikizi @melpon
 - [UPDATE] Xcode のバージョンを 15.4 にあげる
+  - @tnoho
+- [UPDATE] SDL を 2.30.11 に上げる
+  - @torikizi
+- [UPDATE] BLEND2D_VERSION を上げる
+  - @torikizi
+- [UPDATE] ASMJIT_VERSION を上げる
+  - @torikizi
+- [UPDATE] OpenH264 を v2.5.0 に上げる
+  - @voluntas
+- [ADD] シグナリングメッセージを取得できるよう OnSignalingMessage を SoraSignalingObserver に追加する
   - @tnoho
 - [ADD] Intel VPL で AV1 エンコーダを動くようにする
   - @tnoho
+- [ADD] ルート証明書を指定可能にする
+  - @melpon
+- [ADD] Ubuntu 24.04 armv8 に対応する
+  - @melpon
+- [ADD] WebSocket の Close を取得できるよう SendOnWsClose を SoraSignalingObserver に追加する
+  - @tnoho
+- [ADD] DataChannel のみの接続で type: close がやってきた場合に正しく切断されるようにする
+  - @melpon
+- [ADD] SoraSignalingConfig に audio_opus_params を追加
+  - @melpon
+- [ADD] SoraSignalingConfig::DataChennel に header を追加
+  - @melpon
+- [ADD] SoraSignalingConfig::ForwardingFilter に name と priority を追加
+  - @melpon
+- [ADD] SoraSignalingConfig に forwarding_filters を追加
+  - @melpon
+- [ADD] scaleResolutionDownTo に対応する
+  - @melpon
+- [ADD] SoraClientContext にオーディオデバイスの設定するオプションを追加
+  - @melpon
+- [ADD] sumomo にビデオデバイスとオーディオデバイスを設定するオプションを追加
+  - @melpon
+- [ADD] SoraSignalingConfig に degradation_preference を追加 
+  - @melpon
+- [ADD] sumomo と test/hello に degradation_preference を設定するオプションを追加
+  - @melpon
+- [FIX] HTTP Proxy 利用時の Websocket 初期化で insecure_ メンバ変数が初期化されていなかったのを修正
+  - @melpon
+- [FIX] SoraSignalingConfig の client_cert と client_key に渡す必要がある値を、ファイルパスからファイルの内容に修正
+  - Android の場合、jar に纏められたファイルからファイルパスが取得できないため
+  - @melpon
+- [FIX] SoraSignalingConfig の client_cert と client_key の型を `std::string` から `std::optional<std::string>` に修正
+  - @melpon
+- [FIX] WS と DC が両方繋がっている時に切断した時、正常終了にも関わらずエラーが発生することがあるのを修正
+  - @melpon
+- [FIX] Sora から切断された場合に WS reason が 1000 だったら正常終了とする
+  - @melpon
+- [FIX] libdrm-dev と libva-dev の依存が不要になってたので削除
+  - @melpon
+
+### misc
+
+- [CHANGE] GitHub Actions の ubuntu-latest を ubuntu-24.04 に変更
+  - @voluntas
+- [CHANGE] GitHub Actions の build に cron を設定する
+  - @voluntas
+- [UPDATE] Boost のダウンロード URL を変更する
+  - @voluntas
+- [UPDATE] CATCH2 を v3.7.1 にあげる
+  - @voluntas
+- [UPDATE] SDL2 を 2.30.7 にあげる
+  - @voluntas
+- [ADD] sumomo に証明書に関するオプションを追加する
+  - サーバー証明書の検証を行わないようにするオプション `--insecure` を追加
+  - CA 証明書を指定するオプション `--ca-cert` を追加
+    - 指定できるファイルは PEM 形式
+  - クライアント認証に関するオプション `--client-cert`, `--client-key` を追加
+    - 指定できるファイルは PEM 形式
+  - @melpon
+- [ADD] Ubuntu 24.04 armv8 向けの example を追加する
+  - @melpon
+- [ADD] VERSION と examples/VERSION のバージョンをチェックする仕組みを追加
+  - @melpon
+- [FIX] examples のビルド時に libgl-dev がない環境で SDL の画面作成が失敗する問題を解消するために、build.yml を修正して libgl-dev のインストールを追加する
+  - SDL のビルド時に libgl-dev がない環境では、SDL の OpenGL 機能が有効化されず、examples アプリ起動時に SDL の画面作成が失敗する
+  - libgl-dev をインストールすることで OpenGL 機能が有効化され、examples アプリ起動時に SDL の画面作成が成功するようになる
+  - 参考リンク : [SDL の OpenGL をチェックしている場所](https://github.com/libsdl-org/SDL/blob/2c7b7d1d33748b6c27eaf57cc5d96ce6c4c64a87/cmake/sdlchecks.cmake#L722-L733)
+  - @torikizi
 
 ## 2024.7.0
 

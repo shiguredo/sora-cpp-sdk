@@ -1,4 +1,5 @@
 import argparse
+import hashlib
 import logging
 import multiprocessing
 import os
@@ -31,6 +32,7 @@ from buildbase import (
     install_cuda_windows,
     install_llvm,
     install_openh264,
+    install_rootfs,
     install_vpl,
     install_webrtc,
     mkdir_p,
@@ -80,12 +82,20 @@ def get_common_cmake_args(
             args.append("-DCMAKE_C_COMPILER=clang-18")
             args.append("-DCMAKE_CXX_COMPILER=clang++-18")
         else:
+            sysroot = os.path.join(install_dir, "rootfs")
             args.append(
                 f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}"
             )
             args.append(
                 f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}"
             )
+            args.append("-DCMAKE_SYSTEM_NAME=Linux")
+            args.append("-DCMAKE_SYSTEM_PROCESSOR=aarch64")
+            args.append(f"-DCMAKE_SYSROOT={sysroot}")
+            args.append("-DCMAKE_C_COMPILER_TARGET=aarch64-linux-gnu")
+            args.append("-DCMAKE_CXX_COMPILER_TARGET=aarch64-linux-gnu")
+            args.append(f"-DCMAKE_FIND_ROOT_PATH={sysroot}")
+            args.append("-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER")
         path = cmake_path(os.path.join(webrtc_info.libcxx_dir, "include"))
         args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
         cxxflags = ["-nostdinc++", "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE"]
@@ -131,6 +141,19 @@ def install_deps(
 ):
     with cd(BASE_DIR):
         version = read_version_file("VERSION")
+
+        # multistrap を使った sysroot の構築
+        if platform.target.os == "ubuntu" and platform.target.arch == "armv8":
+            conf = os.path.join(BASE_DIR, "multistrap", f"{platform.target.package_name}.conf")
+            # conf ファイルのハッシュ値をバージョンとする
+            version_md5 = hashlib.md5(open(conf, "rb").read()).hexdigest()
+            install_rootfs_args = {
+                "version": version_md5,
+                "version_file": os.path.join(install_dir, "rootfs.version"),
+                "install_dir": install_dir,
+                "conf": conf,
+            }
+            install_rootfs(**install_rootfs_args)
 
         # Android NDK
         if platform.target.os == "android":
@@ -305,10 +328,28 @@ def install_deps(
                 "-D_LIBCPP_DISABLE_AVAILABILITY",
                 "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE",
                 "-nostdinc++",
+                "-std=gnu++17",
                 f"-isystem{os.path.join(webrtc_info.libcxx_dir, 'include')}",
                 "-fPIC",
             ]
             install_boost_args["toolset"] = "clang"
+            if platform.target.arch == "armv8":
+                sysroot = os.path.join(install_dir, "rootfs")
+                install_boost_args["cflags"] += [
+                    f"--sysroot={sysroot}",
+                    "--target=aarch64-linux-gnu",
+                    f"-I{os.path.join(sysroot, 'usr', 'include', 'aarch64-linux-gnu')}",
+                ]
+                install_boost_args["cxxflags"] += [
+                    f"--sysroot={sysroot}",
+                    "--target=aarch64-linux-gnu",
+                    f"-I{os.path.join(sysroot, 'usr', 'include', 'aarch64-linux-gnu')}",
+                ]
+                install_boost_args["linkflags"] += [
+                    f"-L{os.path.join(sysroot, 'usr', 'lib', 'aarch64-linux-gnu')}",
+                    f"-B{os.path.join(sysroot, 'usr', 'lib', 'aarch64-linux-gnu')}",
+                ]
+                install_boost_args["architecture"] = "arm"
 
         build_and_install_boost(**install_boost_args)
 
@@ -467,6 +508,29 @@ def install_deps(
             install_catch2(**install_catch2_args)
 
 
+def check_version_file():
+    version = read_version_file(os.path.join(BASE_DIR, "VERSION"))
+    example_version = read_version_file(os.path.join(BASE_DIR, "examples", "VERSION"))
+    has_error = False
+    if version["SORA_CPP_SDK_VERSION"] != example_version["SORA_CPP_SDK_VERSION"]:
+        logging.error(
+            f"SORA_CPP_SDK_VERSION mismatch: VERSION={version['SORA_CPP_SDK_VERSION']}, example/VERSION={example_version['SORA_CPP_SDK_VERSION']}"
+        )
+        has_error = True
+    if version["WEBRTC_BUILD_VERSION"] != example_version["WEBRTC_BUILD_VERSION"]:
+        logging.error(
+            f"WEBRTC_BUILD_VERSION mismatch: VERSION={version['WEBRTC_BUILD_VERSION']}, example/VERSION={example_version['WEBRTC_BUILD_VERSION']}"
+        )
+        has_error = True
+    if version["BOOST_VERSION"] != example_version["BOOST_VERSION"]:
+        logging.error(
+            f"BOOST_VERSION mismatch: VERSION={version['BOOST_VERSION']}, example/VERSION={example_version['BOOST_VERSION']}"
+        )
+        has_error = True
+    if has_error:
+        raise Exception("VERSION mismatch")
+
+
 AVAILABLE_TARGETS = [
     "windows_x86_64",
     "windows_hololens2",
@@ -475,6 +539,7 @@ AVAILABLE_TARGETS = [
     "ubuntu-20.04_x86_64",
     "ubuntu-22.04_x86_64",
     "ubuntu-24.04_x86_64",
+    "ubuntu-24.04_armv8",
     "ios",
     "android",
 ]
@@ -482,6 +547,8 @@ WINDOWS_SDK_VERSION = "10.0.20348.0"
 
 
 def main():
+    check_version_file()
+
     parser = argparse.ArgumentParser()
     parser.add_argument("target", choices=AVAILABLE_TARGETS)
     parser.add_argument("--debug", action="store_true")
@@ -506,6 +573,8 @@ def main():
         platform = Platform("ubuntu", "22.04", "x86_64")
     elif args.target == "ubuntu-24.04_x86_64":
         platform = Platform("ubuntu", "24.04", "x86_64")
+    elif args.target == "ubuntu-24.04_armv8":
+        platform = Platform("ubuntu", "24.04", "armv8")
     elif args.target == "ios":
         platform = Platform("ios", None, None)
     elif args.target == "android":
@@ -585,12 +654,20 @@ def main():
                 cmake_args.append("-DCMAKE_C_COMPILER=clang-18")
                 cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-18")
             else:
+                sysroot = os.path.join(install_dir, "rootfs")
                 cmake_args.append(
                     f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}"
                 )
                 cmake_args.append(
                     f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}"
                 )
+                cmake_args.append("-DCMAKE_SYSTEM_NAME=Linux")
+                cmake_args.append("-DCMAKE_SYSTEM_PROCESSOR=aarch64")
+                cmake_args.append(f"-DCMAKE_SYSROOT={sysroot}")
+                cmake_args.append("-DCMAKE_C_COMPILER_TARGET=aarch64-linux-gnu")
+                cmake_args.append("-DCMAKE_CXX_COMPILER_TARGET=aarch64-linux-gnu")
+                cmake_args.append(f"-DCMAKE_FIND_ROOT_PATH={sysroot}")
+                cmake_args.append("-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER")
             cmake_args.append("-DUSE_LIBCXX=ON")
             cmake_args.append(
                 f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}"
@@ -697,7 +774,7 @@ def main():
                 os.path.join(sora_build_dir, "bundled", "sora.lib"),
                 os.path.join(install_dir, "sora", "lib", "sora.lib"),
             )
-        elif platform.target.os == "ubuntu":
+        elif platform.target.os == "ubuntu" and platform.target.arch == "x86_64":
             shutil.copyfile(
                 os.path.join(sora_build_dir, "bundled", "libsora.a"),
                 os.path.join(install_dir, "sora", "lib", "libsora.a"),
@@ -795,12 +872,23 @@ def main():
                         cmake_args.append("-DCMAKE_C_COMPILER=clang-18")
                         cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-18")
                     else:
+                        sysroot = os.path.join(install_dir, "rootfs")
                         cmake_args.append(
                             f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}"
                         )
                         cmake_args.append(
                             f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}"
                         )
+                        cmake_args.append("-DCMAKE_SYSTEM_NAME=Linux")
+                        cmake_args.append("-DCMAKE_SYSTEM_PROCESSOR=aarch64")
+                        cmake_args.append(f"-DCMAKE_SYSROOT={sysroot}")
+                        cmake_args.append("-DCMAKE_C_COMPILER_TARGET=aarch64-linux-gnu")
+                        cmake_args.append("-DCMAKE_CXX_COMPILER_TARGET=aarch64-linux-gnu")
+                        cmake_args.append(f"-DCMAKE_FIND_ROOT_PATH={sysroot}")
+                        cmake_args.append("-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER")
+                        cmake_args.append("-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH")
+                        cmake_args.append("-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH")
+                        cmake_args.append("-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH")
                     cmake_args.append("-DUSE_LIBCXX=ON")
                     cmake_args.append(
                         f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}"

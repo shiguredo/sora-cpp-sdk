@@ -6,9 +6,10 @@
 
 ## 動作環境
 
-[動作環境](../../README.md#動作環境) をご確認ください。
-
-接続先として WebRTC SFU Sora サーバ ([Sora Labo](https://sora-labo.shiguredo.app/) / [Sora Cloud](https://sora-cloud.shiguredo.jp/) を含む) が必要です。[対応 Sora](../../README.md#対応-sora) もご確認ください。
+まずは [動作環境](../../README.md#動作環境) をご確認ください。
+本サンプルの利用には、接続先として WebRTC SFU Sora サーバ ([Sora Cloud](https://sora-cloud.shiguredo.jp/) を含む) が必要です。
+[対応 Sora](../../README.md#対応-sora) もご確認ください。
+もし動作確認をご希望であれば、[Sora Labo](https://sora-labo.shiguredo.jp/) を利用することで、無料で Sora を試すことができます。
 
 ## サンプルをビルドする
 
@@ -82,12 +83,7 @@ _build/macos_arm64/release/sumomo
 必要なパッケージをインストールしてください。
 
 ```shell
-sudo apt install libxext-dev
-sudo apt install libx11-dev
-sudo apt install libdrm-dev
-sudo apt install libva-dev
-sudo apt install pkg-config
-sudo apt install python3
+sudo apt install build-essential libxext-dev libx11-dev libgl-dev pkg-config python3
 ```
 
 ##### ビルド
@@ -110,12 +106,7 @@ _build/ubuntu-20.04_x86_64/release/sumomo/
 必要なパッケージをインストールしてください。
 
 ```shell
-sudo apt install libxext-dev
-sudo apt install libx11-dev
-sudo apt install libdrm-dev
-sudo apt install libva-dev
-sudo apt install pkg-config
-sudo apt install python3
+sudo apt install build-essential libxext-dev libx11-dev libgl-dev pkg-config python3
 ```
 
 ##### ビルド
@@ -128,6 +119,29 @@ python3 sumomo/ubuntu-22.04_x86_64/run.py
 
 ```
 _build/ubuntu-22.04_x86_64/release/sumomo/
+└── sumomo
+```
+
+#### Ubuntu 24.04 x86_64 向けのビルドをする
+
+##### 事前準備
+
+必要なパッケージをインストールしてください。
+
+```shell
+sudo apt install build-essential libxext-dev libx11-dev libgl-dev pkg-config python3
+```
+
+##### ビルド
+
+```shell
+python3 sumomo/ubuntu-24.04_x86_64/run.py
+```
+
+成功した場合、以下のファイルが作成されます。`_build/ubuntu-24.04_x86_64/release/sumomo` に `sumomo` が作成されます。
+
+```
+_build/ubuntu-24.04_x86_64/release/sumomo/
 └── sumomo
 ```
 
@@ -160,7 +174,7 @@ Windows 以外の場合
 #### Sumomo 実行に関するオプション
 
 - `--log-level` : 実行時にターミナルに出力するログのレベル
-  - `verbose->0,info->1,warning->2,error->3,none->4` の値が指定可能です
+  - `verbose`,`info`,`warning`,`error`,`none` の値が指定可能です
 - `--resolution` : 映像配信する際の解像度
   - 解像度は `QVGA, VGA, HD, FHD, 4K, or [WIDTH]x[HEIGHT]` の値が指定可能です
   - 未指定の場合は `VGA` が設定されます
@@ -170,7 +184,6 @@ Windows 以外の場合
 - `--use-hardware-encoder` : ハードウェアエンコーダーの利用 (true/false)
 - `--openh264` : openh264 ライブラリのパスをフルパスで指定します
   - デコードには対応していません
-
 
 #### Sora に関するオプション
 
@@ -230,6 +243,33 @@ Windows 以外の場合
   - 映像を表示するウインドウをフルスクリーンにします
 - `--show-me`
   - 送信している自分の映像を表示します
+
+#### 証明書に関するオプション
+
+- `--insecure` : サーバー証明書の検証を行わないようにするフラグ
+  - 未指定の場合は、サーバー証明書の検証を行います
+- `--ca-cert` : CA 証明書ファイル
+- `--client-cert` : クライアント証明書ファイル
+- `--client-key` : クライアントプライベートキーファイル
+
+`--ca-cert`, `--client-cert`, `--client-key` には、PEM 形式のファイルを指定してください。
+
+#### 映像と音声のデバイスに関するオプション
+
+- `--video-device`
+  - 映像デバイスの名前を指定します
+- `--audio-recording-device`
+  - 音声録音デバイスの名前を指定します
+- `--audio-playout-device`
+  - 音声再生デバイスの名前を指定します
+
+デバイスの名前はプラットフォームごとに確認する一般的な方法か、`log-level` オプションを `info` にして実行することでログに出力されます。
+
+#### 映像品質の維持優先度に関するオプション
+
+- `--degradation-preference`
+  - `disabled`, `maintain_framerate`,`maintain_resolution`, `balanced` が指定可能です。
+  - 設定可能な値の詳細は [ W3C のドキュメント](https://www.w3.org/TR/mst-content-hint/#degradation-preference-when-encoding) を参照してください。
 
 #### その他のオプション
 

@@ -21,7 +21,8 @@ Please read <https://github.com/shiguredo/oss/blob/master/README.en.md> before u
 
 - 各プラットフォームで利用可能な HWA への対応
   - [Intel VPL](https://github.com/intel/libvpl)
-    - VP9 / AV1 / H.264 / H.265
+    - AV1 / H.264 / H.265
+      - VP9 のデコードは利用可能ですが、エンコードは現在既知の問題があります。詳細は [known_issues.md](doc/known_issues.md) をお読みください。
   - [NVIDIA Video Codec SDK](https://developer.nvidia.com/video-codec-sdk)
     - VP9 / H.264 / H.265
   - [NVIDIA JetPack SDK](https://developer.nvidia.com/embedded/jetpack) (JetPack 6)
@@ -45,7 +46,7 @@ _hololens2 は無視してください_
 
 ## 対応 Sora
 
-- WebRTC SFU Sora 2023.2.0 以降
+- WebRTC SFU Sora 2024.2.0 以降
 
 ## 動作環境
 
@@ -59,8 +60,9 @@ _hololens2 は無視してください_
   - 動作未検証です
 - Ubuntu 22.04 x86_64
 - Ubuntu 24.04 x86_64
+- Ubuntu 24.04 arm64
 - Android 7 arm64 以降
-- iOS 13 arm64 以降
+- iOS 14 arm64 以降
 
 ## 既知の問題
 
@@ -91,7 +93,6 @@ Sora C++ SDK のメンテナンスポリシーにはプライオリティがあ�
 - NVIDIA Jetson JetPack 6 Jetson Orin Nano 対応
 - Raspberry Pi OS (64bit) arm64 対応
 - Windows arm64 対応
-- Ubuntu 24.04 x86_64
 - AMD 系 HWA 対応
 
 ## サポートについて
@@ -115,8 +116,8 @@ Discord へお願いします。
 Apache License 2.0
 
 ```
-Copyright 2021-2024, Wandbox LLC (Original Author)
-Copyright 2021-2024, Shiguredo Inc.
+Copyright 2021-2025, Wandbox LLC (Original Author)
+Copyright 2021-2025, Shiguredo Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.

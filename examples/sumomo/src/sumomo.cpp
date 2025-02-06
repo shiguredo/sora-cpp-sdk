@@ -1,17 +1,14 @@
 // Sora
 #include <sora/camera_device_capturer.h>
 #include <sora/sora_client_context.h>
-#include <sora/srtp_keying_material_exporter.h>
 
 #include <fstream>
+#include <optional>
 #include <regex>
 #include <sstream>
 
 // CLI11
 #include <CLI/CLI.hpp>
-
-// Boost
-#include <boost/optional/optional.hpp>
 
 // WebRTC
 #include <rtc_base/crypto_random.h>
@@ -29,6 +26,7 @@ struct SumomoConfig {
   std::string client_id;
   bool video = true;
   bool audio = true;
+  std::string video_device;
   std::string video_codec_type;
   std::string audio_codec_type;
   std::string resolution = "VGA";
@@ -38,12 +36,12 @@ struct SumomoConfig {
   boost::json::value video_h264_params;
   boost::json::value video_h265_params;
   boost::json::value metadata;
-  boost::optional<bool> multistream;
-  boost::optional<bool> spotlight;
+  std::optional<bool> multistream;
+  std::optional<bool> spotlight;
   int spotlight_number = 0;
-  boost::optional<bool> simulcast;
-  boost::optional<bool> data_channel_signaling;
-  boost::optional<bool> ignore_disconnect_websocket;
+  std::optional<bool> simulcast;
+  std::optional<bool> data_channel_signaling;
+  std::optional<bool> ignore_disconnect_websocket;
 
   std::string proxy_url;
   std::string proxy_username;
@@ -55,7 +53,12 @@ struct SumomoConfig {
   bool show_me = false;
   bool fullscreen = false;
 
-  std::string srtp_key_log_file;
+  bool insecure = false;
+  std::string client_cert;
+  std::string client_key;
+  std::string ca_cert;
+
+  std::optional<webrtc::DegradationPreference> degradation_preference;
 
   struct Size {
     int width;
@@ -105,6 +108,7 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
       cam_config.height = size.height;
       cam_config.fps = 30;
       cam_config.use_native = config_.hw_mjpeg_decoder;
+      cam_config.device_name = config_.video_device;
       auto video_source = sora::CreateCameraDeviceCapturer(cam_config);
       if (video_source == nullptr) {
         RTC_LOG(LS_ERROR) << "Failed to create video source.";
@@ -162,6 +166,25 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
         context_->signaling_thread()->BlockingCall([this]() {
           return context_->connection_context()->default_socket_factory();
         });
+    config.insecure = config_.insecure;
+    auto load_file = [](const std::string& path) {
+      std::ifstream ifs(path, std::ios::binary);
+      if (!ifs) {
+        return std::string();
+      }
+      return std::string((std::istreambuf_iterator<char>(ifs)),
+                         std::istreambuf_iterator<char>());
+    };
+    if (!config_.client_cert.empty()) {
+      config.client_cert = load_file(config_.client_cert);
+    }
+    if (!config_.client_key.empty()) {
+      config.client_key = load_file(config_.client_key);
+    }
+    if (!config_.ca_cert.empty()) {
+      config.ca_cert = load_file(config_.ca_cert);
+    }
+    config.degradation_preference = config_.degradation_preference;
     conn_ = sora::SoraSignaling::Create(config);
 
     boost::asio::executor_work_guard<boost::asio::io_context::executor_type>
@@ -204,36 +227,7 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
     ioc_->stop();
   }
   void OnNotify(std::string text) override {
-    auto json = boost::json::parse(text);
-    if (json.at("event_type").as_string() == "connection.created") {
-      if (!config_.srtp_key_log_file.empty() && !key_exported_) {
-        auto km = sora::ExportKeyingMaterial(conn_->GetPeerConnection(),
-                                             conn_->GetVideoMid());
-        if (!km) {
-          RTC_LOG(LS_ERROR) << "Failed to ExportKeyingMaterial";
-          return;
-        }
-        auto to_hex = [](const std::vector<uint8_t>& buf) {
-          std::string str;
-          const char hex[] = "0123456789abcdef";
-          for (auto n : buf) {
-            str += hex[(n >> 3) & 0xf];
-            str += hex[n & 0xe];
-          }
-          return str;
-        };
-        std::stringstream ss;
-        ss << "SRTP_CLIENT_KEY " << to_hex(km->client_write_key) << "\n";
-        ss << "SRTP_CLIENT_SALT " << to_hex(km->client_write_salt) << "\n";
-        ss << "SRTP_SERVER_KEY " << to_hex(km->server_write_key) << "\n";
-        ss << "SRTP_SERVER_SALT " << to_hex(km->server_write_salt) << "\n";
-        std::ofstream ofs(config_.srtp_key_log_file, std::ios::app);
-        if (ofs) {
-          ofs.write(ss.str().c_str(), ss.str().size());
-        }
-        key_exported_ = true;
-      }
-    }
+    RTC_LOG(LS_INFO) << "OnNotify: " << text;
   }
   void OnPush(std::string text) override {}
   void OnMessage(std::string label, std::string data) override {}
@@ -271,12 +265,11 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
   std::shared_ptr<sora::SoraSignaling> conn_;
   std::unique_ptr<boost::asio::io_context> ioc_;
   std::unique_ptr<SDLRenderer> renderer_;
-  bool key_exported_ = false;
 };
 
 void add_optional_bool(CLI::App& app,
                        const std::string& option_name,
-                       boost::optional<bool>& v,
+                       std::optional<bool>& v,
                        const std::string& help_text) {
   auto f = [&v](const std::string& input) {
     if (input == "true") {
@@ -284,7 +277,7 @@ void add_optional_bool(CLI::App& app,
     } else if (input == "false") {
       v = false;
     } else if (input == "none") {
-      v = boost::none;
+      v = std::nullopt;
     } else {
       throw CLI::ConversionError(input, "optional<bool>");
     }
@@ -326,7 +319,7 @@ int main(int argc, char* argv[]) {
 
   auto is_json = CLI::Validator(
       [](std::string input) -> std::string {
-        boost::json::error_code ec;
+        boost::system::error_code ec;
         boost::json::parse(input, ec);
         if (ec) {
           return "Value " + input + " is not JSON Value";
@@ -360,6 +353,7 @@ int main(int argc, char* argv[]) {
   app.add_option("--client-id", config.client_id, "Client ID");
   app.add_option("--video", config.video, "Send video to sora (default: true)");
   app.add_option("--audio", config.audio, "Send audio to sora (default: true)");
+  app.add_option("--video-device", config.video_device, "Video device name");
   app.add_option("--video-codec-type", config.video_codec_type,
                  "Video codec for send")
       ->check(CLI::IsMember({"", "VP8", "VP9", "AV1", "H264", "H265"}));
@@ -409,12 +403,37 @@ int main(int argc, char* argv[]) {
                "Use fullscreen window for videos");
   app.add_flag("--show-me", config.show_me, "Show self video");
 
-  // SRTP keying material の出力
-  app.add_option("--srtp-key-log-file", config.srtp_key_log_file,
-                 "SRTP keying material output file");
+  // 証明書に関するオプション
+  app.add_flag("--insecure", config.insecure, "Allow insecure connection");
+  app.add_option("--client-cert", config.client_cert, "Client certificate file")
+      ->check(CLI::ExistingFile);
+  app.add_option("--client-key", config.client_key, "Client key file")
+      ->check(CLI::ExistingFile);
+  app.add_option("--ca-cert", config.ca_cert, "CA certificate file")
+      ->check(CLI::ExistingFile);
+
+  // DegradationPreference に関するオプション
+  auto degradation_preference_map =
+      std::vector<std::pair<std::string, webrtc::DegradationPreference>>(
+          {{"disabled", webrtc::DegradationPreference::DISABLED},
+           {"maintain_framerate",
+            webrtc::DegradationPreference::MAINTAIN_FRAMERATE},
+           {"maintain_resolution",
+            webrtc::DegradationPreference::MAINTAIN_RESOLUTION},
+           {"balanced", webrtc::DegradationPreference::BALANCED}});
+  app.add_option("--degradation-preference", config.degradation_preference,
+                 "Degradation preference")
+      ->transform(CLI::CheckedTransformer(degradation_preference_map,
+                                          CLI::ignore_case));
 
   // SoraClientContextConfig に関するオプション
-  boost::optional<bool> use_hardware_encoder;
+  std::string audio_recording_device;
+  app.add_option("--audio-recording-device", audio_recording_device,
+                 "Recording device name");
+  std::string audio_playout_device;
+  app.add_option("--audio-playout-device", audio_playout_device,
+                 "Playout device name");
+  std::optional<bool> use_hardware_encoder;
   add_optional_bool(app, "--use-hardware-encoder", use_hardware_encoder,
                     "Use hardware encoder");
   std::string openh264;
@@ -446,7 +465,13 @@ int main(int argc, char* argv[]) {
   }
 
   auto context_config = sora::SoraClientContextConfig();
-  if (use_hardware_encoder != boost::none) {
+  if (!audio_recording_device.empty()) {
+    context_config.audio_recording_device = audio_recording_device;
+  }
+  if (!audio_playout_device.empty()) {
+    context_config.audio_playout_device = audio_playout_device;
+  }
+  if (use_hardware_encoder != std::nullopt) {
     context_config.use_hardware_encoder = *use_hardware_encoder;
   }
   context_config.openh264 = openh264;

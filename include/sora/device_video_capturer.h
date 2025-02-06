@@ -11,6 +11,7 @@
 #define SORA_DEVICE_VIDEO_CAPTURER_H_
 
 #include <memory>
+#include <optional>
 #include <vector>
 
 // Boost
@@ -36,7 +37,7 @@ struct DeviceVideoCapturerConfig : ScalableVideoTrackSourceConfig {
   std::string device_name;
   // これが非noneならデバイスインデックスから検索する
   // device_name と device_index どちらも指定が無い場合は 0 番から順に作成していく
-  boost::optional<int> device_index = 0;
+  std::optional<int> device_index = 0;
 #if defined(SORA_CPP_SDK_HOLOLENS2)
   std::shared_ptr<webrtc::MrcVideoEffectDefinition> mrc;
 #endif

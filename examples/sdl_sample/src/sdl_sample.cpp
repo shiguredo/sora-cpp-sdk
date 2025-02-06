@@ -1,12 +1,11 @@
+#include <optional>
+
 // Sora
 #include <sora/camera_device_capturer.h>
 #include <sora/sora_client_context.h>
 
 // CLI11
 #include <CLI/CLI.hpp>
-
-// Boost
-#include <boost/optional/optional.hpp>
 
 // WebRTC
 #include <rtc_base/crypto_random.h>
@@ -25,7 +24,7 @@ struct SDLSampleConfig {
   std::string role;
   std::string video_codec_type;
   std::string audio_codec_type;
-  boost::optional<bool> multistream;
+  std::optional<bool> multistream;
   int width = 640;
   int height = 480;
   boost::json::value metadata;
@@ -155,7 +154,7 @@ class SDLSample : public std::enable_shared_from_this<SDLSample>,
 
 void add_optional_bool(CLI::App& app,
                        const std::string& option_name,
-                       boost::optional<bool>& v,
+                       std::optional<bool>& v,
                        const std::string& help_text) {
   auto f = [&v](const std::string& input) {
     if (input == "true") {
@@ -163,7 +162,7 @@ void add_optional_bool(CLI::App& app,
     } else if (input == "false") {
       v = false;
     } else if (input == "none") {
-      v = boost::none;
+      v = std::nullopt;
     } else {
       throw CLI::ConversionError(input, "optional<bool>");
     }
@@ -185,7 +184,7 @@ int main(int argc, char* argv[]) {
 
   auto is_json = CLI::Validator(
       [](std::string input) -> std::string {
-        boost::json::error_code ec;
+        boost::system::error_code ec;
         boost::json::parse(input, ec);
         if (ec) {
           return "Value " + input + " is not JSON Value";
