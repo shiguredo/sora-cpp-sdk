@@ -340,7 +340,6 @@ jobs:
         - name: Upload Examples Artifact
           uses: actions/upload-artifact@v4
           with:
-             # .zip まで含めないとアップロード時には設定されない
              name: ${{ matrix.example.name }}_windows_x86_64.zip
              path: examples/${{ matrix.example.name }}_windows_x86_64.zip
 
@@ -373,7 +372,6 @@ jobs:
         - name: Upload Examples Artifact
           uses: actions/upload-artifact@v4
           with:
-             # .tar.gz まで含めないとアップロード時には設定されない
              name: ${{ matrix.example.name }}_macos_arm64.tar.gz
              path: examples/${{ matrix.example.name }}_macos_arm64.tar.gz
 
@@ -429,7 +427,6 @@ jobs:
       - name: Upload Examples Artifact
         uses: actions/upload-artifact@v4
         with:
-          # .tar.gz まで含めないとアップロード時には設定されない
           name: ${{ matrix.example.name }}_${{ matrix.platform.name }}.tar.gz
           path: examples/${{ matrix.example.name }}_${{ matrix.platform.name }}.tar.gz
 
@@ -460,11 +457,10 @@ jobs:
               file_ext: tar.gz
       steps:
         - uses: actions/checkout@v4
-        # ビルドした Examples のアーティファクトをダウンロード
+        # ビルドした Examples のアーティファクトのダウンロードとリリース
         - uses: actions/download-artifact@v4
           with:
             name: ${{ matrix.example.name }}_${{ matrix.platform.name }}.${{ matrix.platform.file_ext }}
-        # GitHub Releaseを作成し、Examplesをアップロード
         - name: Release Examples
           uses: softprops/action-gh-release@v2
           with:
