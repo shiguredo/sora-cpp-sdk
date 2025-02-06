@@ -13,19 +13,10 @@
 
 - [UPDATE] CMake を 3.31.4 にあげる
   - @voluntas
-
-### misc
-
-- [CHANGE] SDK ビルドと examples をビルドを分ける
-  - push 時に実行していた examples のビルドをリリース時にのみ実行するように変更
-  - 修正が入ったら canary リリースをするため、push 時に examples のビルドは行わないようにする
-  - @torikizi
-- [CHANGE] examples のビルドを sumomo だけにする
-  - sumomo / sdl_sample / messaging_sample の 3 つのサンプルが存在している
-  - sdl_sample にある機能は全て sumomo にもあるため、sdl_sample のビルドを削除する
-  - messaging_sample は sumomo にはない機能があるが、今後 sumomo にも追加する予定があるため、このタイミングで削除する
-  - @torikizi
 - [ADD] リリース時に sumomo バイナリを含めるようにする
+  - リアルタイムメッセージング以外の機能がほぼ全て含まれている sumomo をリリース時に含めるようにする
+  - sumomo はリリースバイナリを使用してビルドする
+  - リリースバイナリに含まれることで、ローカルビルドをせず機能確認をすることができるようになる
   - @torikizi
 
 ## 2025.1.0
