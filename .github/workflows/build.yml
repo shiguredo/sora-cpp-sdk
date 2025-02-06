@@ -442,12 +442,13 @@ jobs:
       - name: Install deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgl-dev
-      # Ubuntu 24.04 のみ追加で必要なパッケージがあるのでインストール
-      - name: Install deps Ubuntu 24.04
-        if: matrix.platform.runs-on == 'ubuntu-24.04'
-        run: |
+
+           # X11
           sudo apt-get install -y libx11-dev libxext-dev
+
+          # OpenGL
+          sudo apt-get install -y libgl-dev
+
       # ARM の場合はさらに追加のパッケージが必要なのでインストール
       - name: Install deps Ubuntu 24.04 ARM
         if: matrix.platform.name == 'ubuntu-24.04_armv8'
