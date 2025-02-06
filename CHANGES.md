@@ -11,8 +11,11 @@
 
 ## develop
 
+- [CHANGE] macOS ビルド時に Xcode のバージョンを指定していたのを削除
+  - libwebrtc の制約で Xcode のバージョンを指定していたが、最新では制約がなくなり、指定しなくてもビルドできるようになったため
+  - @torikizi
 - [UPDATE] CMake を 3.31.4 にあげる
-  - @voluntas
+  - @voluntas 
 - [ADD] リリース時に sumomo バイナリを含めるようにする
   - リアルタイムメッセージング以外の機能がほぼ全て含まれている sumomo をリリース時に含めるようにする
   - sumomo はリリースバイナリを使用してビルドする
