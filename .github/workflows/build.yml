@@ -361,74 +361,70 @@ jobs:
 
   build-windows-examples:
     needs: create-release
-    runs-on: windows-2022
     defaults:
       run:
         working-directory: ${{ github.workspace }}/examples
     strategy:
       matrix:
         example:
-          - name: sumomo
+          - sumomo
+    runs-on: windows-2022
     steps:
         - uses: actions/checkout@v4
         - name: Build Example
           run: |
-            python3 ${{ matrix.example.name }}/windows_x86_64/run.py
+            python3 ${{ matrix.example }}/windows_x86_64/run.py
         - name: Package Binary
           run: |
             # アップロード用のディレクトリを作成する
-            mkdir -p ${{ matrix.example.name }}_windows_x86_64
+            mkdir -p ${{ matrix.example }}_windows_x86_64
             # バイナリをアップロード用のディレクトリにコピーする
-            cp _build/windows_x86_64/release/${{ matrix.example.name }}/Release/${{ matrix.example.name }}.exe ${{ matrix.example.name }}_windows_x86_64/${{ matrix.example.name }}.exe
+            cp _build/windows_x86_64/release/${{ matrix.example }}/Release/${{ matrix.example }}.exe ${{ matrix.example }}_windows_x86_64/${{ matrix.example }}.exe
             # バイナリを圧縮する
             # 例: sumomo_windows_x86_64.zip
-            Compress-Archive -Path ${{ matrix.example.name }}_windows_x86_64 -DestinationPath ${{ matrix.example.name }}_windows_x86_64.zip
+            Compress-Archive -Path ${{ matrix.example }}_windows_x86_64 -DestinationPath ${{ matrix.example }}_windows_x86_64.zip
         - name: Upload Examples Artifact
           uses: actions/upload-artifact@v4
           with:
-             name: ${{ matrix.example.name }}_windows_x86_64.zip
-             path: examples/${{ matrix.example.name }}_windows_x86_64.zip
+             name: ${{ matrix.example }}_windows_x86_64.zip
+             path: examples/${{ matrix.example }}_windows_x86_64.zip
 
   build-macos-examples:
     needs: create-release
-    runs-on: macos-14
     defaults:
       run:
         working-directory: ${{ github.workspace }}/examples
     strategy:
       matrix:
         example:
-          - name: sumomo
+          - sumomo
+    runs-on: macos-14
     steps:
         - uses: actions/checkout@v4
         - name: Build Example
           run: |
-            python3 ${{ matrix.example.name }}/macos_arm64/run.py
+            python3 ${{ matrix.example }}/macos_arm64/run.py
         - name: Package Binary
           run: |
             # アップロード用のディレクトリを作成する
-            mkdir -p ${{ matrix.example.name }}_macos_arm64
-            cp _build/macos_arm64/release/${{ matrix.example.name }}/${{ matrix.example.name }} ${{ matrix.example.name }}_macos_arm64/${{ matrix.example.name }}
+            mkdir -p ${{ matrix.example }}_macos_arm64
+            cp _build/macos_arm64/release/${{ matrix.example }}/${{ matrix.example }} ${{ matrix.example }}_macos_arm64/${{ matrix.example }}
             # バイナリを圧縮する
             # 例: sumomo_macos_arm64.tar.gz
-            tar -czf ${{ matrix.example.name }}_macos_arm64.tar.gz ${{ matrix.example.name }}_macos_arm64
+            tar -czf ${{ matrix.example }}_macos_arm64.tar.gz ${{ matrix.example }}_macos_arm64
         - name: Upload Examples Artifact
           uses: actions/upload-artifact@v4
           with:
-             name: ${{ matrix.example.name }}_macos_arm64.tar.gz
-             path: examples/${{ matrix.example.name }}_macos_arm64.tar.gz
+             name: ${{ matrix.example }}_macos_arm64.tar.gz
+             path: examples/${{ matrix.example }}_macos_arm64.tar.gz
 
   build-ubuntu-examples:
     needs: create-release
-    runs-on: ${{ matrix.platform.runs-on }}
-    defaults:
-      run:
-        working-directory: ${{ github.workspace }}/examples
     strategy:
       fail-fast: false
       matrix:
         example:
-          - name: sumomo
+          - sumomo
         platform:
           - name: ubuntu-20.04_x86_64
             runs-on: ubuntu-20.04
@@ -438,6 +434,10 @@ jobs:
             runs-on: ubuntu-24.04
           - name: ubuntu-24.04_armv8
             runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}/examples
+    runs-on: ${{ matrix.platform.runs-on }}
     steps:
       - uses: actions/checkout@v4
       - name: Install deps
@@ -459,21 +459,21 @@ jobs:
           sudo sed -e 's/Apt::Get::AllowUnauthenticated=true/Apt::Get::AllowUnauthenticated=true";\n$config_str .= " -o Acquire::AllowInsecureRepositories=true/' -i /usr/sbin/multistrap
       - name: Build Example
         run: |
-          python3 ${{ matrix.example.name }}/${{ matrix.platform.name }}/run.py
+          python3 ${{ matrix.example }}/${{ matrix.platform.name }}/run.py
       - name: Package Binary
         run: |
           # アップロード用のディレクトリを作成する
-          mkdir -p ${{ matrix.example.name }}_${{ matrix.platform.name }}
+          mkdir -p ${{ matrix.example }}_${{ matrix.platform.name }}
           # バイナリをアップロード用のディレクトリにコピーする
-          cp _build/${{ matrix.platform.name }}/release/${{ matrix.example.name }}/${{ matrix.example.name }} ${{ matrix.example.name }}_${{ matrix.platform.name }}/${{ matrix.example.name }}
+          cp _build/${{ matrix.platform.name }}/release/${{ matrix.example }}/${{ matrix.example }} ${{ matrix.example }}_${{ matrix.platform.name }}/${{ matrix.example }}
           # バイナリを圧縮する
           # 例: sumomo_ubuntu-24.04_x86_64.tar.gz
-          tar -czf ${{ matrix.example.name }}_${{ matrix.platform.name }}.tar.gz ${{ matrix.example.name }}_${{ matrix.platform.name }}
+          tar -czf ${{ matrix.example }}_${{ matrix.platform }}.tar.gz ${{ matrix.example }}_${{ matrix.platform }}
       - name: Upload Examples Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.example.name }}_${{ matrix.platform.name }}.tar.gz
-          path: examples/${{ matrix.example.name }}_${{ matrix.platform.name }}.tar.gz
+          name: ${{ matrix.example }}_${{ matrix.platform.name }}.tar.gz
+          path: examples/${{ matrix.example }}_${{ matrix.platform.name }}.tar.gz
 
   create-release-example:
       name: Create Release Examples
