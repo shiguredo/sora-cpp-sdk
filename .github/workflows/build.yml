@@ -387,7 +387,6 @@ jobs:
              name: ${{ matrix.example.name }}_windows_x86_64.zip
              path: examples/${{ matrix.example.name }}_windows_x86_64.zip
 
-  # macOS の Examples ビルド
   build-macos-examples:
     needs: create-release
     runs-on: macos-14
@@ -416,7 +415,6 @@ jobs:
              name: ${{ matrix.example.name }}_macos_arm64.tar.gz
              path: examples/${{ matrix.example.name }}_macos_arm64.tar.gz
 
-  # Ubuntu の Examples ビルド
   build-ubuntu-examples:
     needs: create-release
     runs-on: ${{ matrix.platform.runs-on }}
@@ -472,7 +470,6 @@ jobs:
           name: ${{ matrix.example.name }}_${{ matrix.platform.name }}.tar.gz
           path: examples/${{ matrix.example.name }}_${{ matrix.platform.name }}.tar.gz
 
-  # Examples をリリース
   create-release-example:
       name: Create Release Examples
       needs: 
