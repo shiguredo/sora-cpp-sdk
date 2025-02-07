@@ -82,7 +82,6 @@ jobs:
         with:
           name: ${{ matrix.name }}.env
           path: _package/${{ matrix.name }}/release/sora.env
-      # Examples のビルド
       - name: Build Examples
         run: |
           cd examples
@@ -139,7 +138,6 @@ jobs:
         with:
           name: ${{ matrix.name }}.env
           path: _package/${{ matrix.name }}/release/sora.env
-      # Examples のビルド
       - name: Build Examples
         run: |
           cd examples
@@ -481,7 +479,6 @@ jobs:
         - build-windows-examples
         - build-macos-examples
         - build-ubuntu-examples
-      runs-on: ubuntu-24.04
       strategy:
         matrix:
           example:
@@ -493,6 +490,7 @@ jobs:
             - ubuntu-22.04_x86_64.tar.gz
             - ubuntu-24.04_x86_64.tar.gz
             - ubuntu-24.04_armv8.tar.gz
+      runs-on: ubuntu-24.04
       steps:
         - uses: actions/checkout@v4
         - uses: actions/download-artifact@v4
