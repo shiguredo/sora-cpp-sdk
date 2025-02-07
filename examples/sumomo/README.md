@@ -271,6 +271,41 @@ Windows 以外の場合
   - `disabled`, `maintain_framerate`,`maintain_resolution`, `balanced` が指定可能です。
   - 設定可能な値の詳細は [ W3C のドキュメント](https://www.w3.org/TR/mst-content-hint/#degradation-preference-when-encoding) を参照してください。
 
+#### エンコーダー / デコーダーの設定に関するオプション
+
+- `--vp8-encoder`
+  - VP8 エンコーダーを指定します
+- `--vp8-decoder` 
+  - VP8 デコーダーを指定します
+- `--vp9-encoder`
+  - VP9 エンコーダーを指定します
+- `--vp9-decoder`
+  - VP9 デコーダーを指定します
+- `--h264-encoder`
+  - H.264 エンコーダーを指定します
+- `--h264-decoder`
+  - H.264 デコーダーを指定します
+- `--h265-encoder`
+  - H.265 エンコーダーを指定します
+- `--h265-decoder`
+  - H.265 デコーダーを指定します
+- `--av1-encoder`
+  - AV1 エンコーダーを指定します
+- `--av1-decoder`
+  - AV1 デコーダーを指定します
+- `--show-video-codec-capability`
+  - 利用可能なエンコーダーとデコーダーを表示します
+
+設定可能な値は以下の通りです。
+ - `internal`
+ - `cisco_openh264`
+ - `intel_vpl`
+ - `nvidia_video_codec_sdk`
+
+> [!NOTE]
+> H.264 と H.265 は `internal` または未指定では利用できません。
+> 必ずエンコーダーまたはデコーダーを指定してください。
+
 #### その他のオプション
 
 - `--help`
