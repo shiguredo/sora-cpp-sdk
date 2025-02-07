@@ -486,28 +486,22 @@ jobs:
         matrix:
           example:
             - name: sumomo
-          platform:
-            - name: windows_x86_64
-              file_ext: zip
-            - name: macos_arm64
-              file_ext: tar.gz
-            - name: ubuntu-20.04_x86_64
-              file_ext: tar.gz
-            - name: ubuntu-22.04_x86_64
-              file_ext: tar.gz
-            - name: ubuntu-24.04_x86_64
-              file_ext: tar.gz
-            - name: ubuntu-24.04_armv8
-              file_ext: tar.gz
+          archive:
+            - windows_x86_64.zip
+            - macos_arm64.tar.gz
+            - ubuntu-20.04_x86_64.tar.gz
+            - ubuntu-22.04_x86_64.tar.gz
+            - ubuntu-24.04_x86_64.tar.gz
+            - ubuntu-24.04_armv8.tar.gz
       steps:
         - uses: actions/checkout@v4
         - uses: actions/download-artifact@v4
           with:
-            name: ${{ matrix.example.name }}_${{ matrix.platform.name }}.${{ matrix.platform.file_ext }}
+            name: ${{ matrix.example.name }}_${{ matrix.archive.name }}
         - name: Release Examples
           uses: softprops/action-gh-release@v2
           with:
-            files: ${{ matrix.example.name }}_${{ matrix.platform.name }}.${{ matrix.platform.file_ext }}
+            files: ${{ matrix.example.name }}_${{ matrix.archive.name }}
 
   notification:
     name: Slack Notification
