@@ -28,11 +28,11 @@
   - @melpon
 - [CHANGE] `SoraVideoEncoderFactoryConfig` の `force_i420_conversion_for_simulcast_adapter` を `force_i420_conversion` に変更
   - @melpon
-- [CHANGE] macOS ビルド時に Xcode のバージョンを指定していたのを削除
-  - libwebrtc の制約で Xcode のバージョンを指定していたが、最新では制約がなくなり、指定しなくてもビルドできるようになったため
+- [CHANGE] GitHub Actions で macOS 向けビルドで Xcode のバージョンを指定したのを削除する  
+  - libwebrtc の制約で Xcode のバージョンを指定していたが、 m132.6834.5.5 の時点では制約がなくなり、指定しなくてもビルドできるようになったため
   - @torikizi
 - [UPDATE] CMake を 3.31.4 にあげる
-  - @voluntas 
+  - @voluntas
 - [ADD] 有効なエンコーダの一覧を取得する `GetVideoCodecCapability()` 関数を追加
   - @melpon
 - [ADD] 利用するエンコーダ/デコーダの実装を細かく指定するためのクラス `VideoCodecPreference` を追加
@@ -40,10 +40,9 @@
   - @melpon
 - [ADD] OpenH264 デコーダに対応する
   - @melpon
-- [ADD] リリース時に sumomo バイナリを含めるようにする
+- [ADD] タグが打たれた場合に sumomo バイナリを Release に追加する
   - リアルタイムメッセージング以外の機能がほぼ全て含まれている sumomo をリリース時に含めるようにする
-  - sumomo はリリースバイナリを使用してビルドする
-  - リリースバイナリに含まれることで、ローカルビルドをせず機能確認をすることができるようになる
+  - Release 用の sumomo は C++ SDK のリリースバイナリを使用してビルドする  
   - @torikizi
 
 ## 2025.1.0
@@ -110,7 +109,7 @@
   - @melpon
 - [ADD] sumomo にビデオデバイスとオーディオデバイスを設定するオプションを追加
   - @melpon
-- [ADD] SoraSignalingConfig に degradation_preference を追加 
+- [ADD] SoraSignalingConfig に degradation_preference を追加
   - @melpon
 - [ADD] sumomo と test/hello に degradation_preference を設定するオプションを追加
   - @melpon

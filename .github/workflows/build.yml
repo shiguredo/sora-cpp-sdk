@@ -376,10 +376,12 @@ jobs:
             python3 ${{ matrix.example.name }}/windows_x86_64/run.py
         - name: Package Binary
           run: |
-            # アップロード用にディレクトリを作って、その中にバイナリをコピーする
-            # sumomo_windows_x86_64.zip を作ってアップロードする
+            # アップロード用のディレクトリを作成する
             mkdir -p ${{ matrix.example.name }}_windows_x86_64
+            # バイナリをアップロード用のディレクトリにコピーする
             cp _build/windows_x86_64/release/${{ matrix.example.name }}/Release/${{ matrix.example.name }}.exe ${{ matrix.example.name }}_windows_x86_64/${{ matrix.example.name }}.exe
+            # バイナリを圧縮する
+            # 例: sumomo_windows_x86_64.zip
             Compress-Archive -Path ${{ matrix.example.name }}_windows_x86_64 -DestinationPath ${{ matrix.example.name }}_windows_x86_64.zip
         - name: Upload Examples Artifact
           uses: actions/upload-artifact@v4
@@ -404,10 +406,11 @@ jobs:
             python3 ${{ matrix.example.name }}/macos_arm64/run.py
         - name: Package Binary
           run: |
-            # アップロード用に、ディレクトリを作って、その中にバイナリをコピーする
-            # sumomo_macos_arm64.tar.gz を作ってアップロードする
+            # アップロード用のディレクトリを作成する
             mkdir -p ${{ matrix.example.name }}_macos_arm64
             cp _build/macos_arm64/release/${{ matrix.example.name }}/${{ matrix.example.name }} ${{ matrix.example.name }}_macos_arm64/${{ matrix.example.name }}
+            # バイナリを圧縮する
+            # 例: sumomo_macos_arm64.tar.gz
             tar -czf ${{ matrix.example.name }}_macos_arm64.tar.gz ${{ matrix.example.name }}_macos_arm64
         - name: Upload Examples Artifact
           uses: actions/upload-artifact@v4
@@ -459,10 +462,12 @@ jobs:
           python3 ${{ matrix.example.name }}/${{ matrix.platform.name }}/run.py
       - name: Package Binary
         run: |
-          # アップロード用にディレクトリを作って、その中にバイナリをコピーする
-          # ubuntu-24.04_x86_64 の場合 sumomo_ubuntu-24.04_x86_64.tar.gz を作ってアップロードする
+          # アップロード用のディレクトリを作成する
           mkdir -p ${{ matrix.example.name }}_${{ matrix.platform.name }}
+          # バイナリをアップロード用のディレクトリにコピーする
           cp _build/${{ matrix.platform.name }}/release/${{ matrix.example.name }}/${{ matrix.example.name }} ${{ matrix.example.name }}_${{ matrix.platform.name }}/${{ matrix.example.name }}
+          # バイナリを圧縮する
+          # 例: sumomo_ubuntu-24.04_x86_64.tar.gz
           tar -czf ${{ matrix.example.name }}_${{ matrix.platform.name }}.tar.gz ${{ matrix.example.name }}_${{ matrix.platform.name }}
       - name: Upload Examples Artifact
         uses: actions/upload-artifact@v4
