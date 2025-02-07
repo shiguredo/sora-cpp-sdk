@@ -10,10 +10,6 @@ std::shared_ptr<CudaContext> CudaContext::Create() {
   return nullptr;
 }
 
-void* CudaContext::Context() const {
-  return nullptr;
-}
-
 }  // namespace sora
 
 #else
@@ -31,11 +27,7 @@ simplelogger::Logger* logger =
 
 namespace sora {
 
-CUcontext GetCudaContext(std::shared_ptr<CudaContext> ctx) {
-  return static_cast<CUcontext>(ctx->Context());
-}
-
-struct CudaContextImpl {
+struct CudaContextImpl : CudaContext {
   CUdevice device;
   CUcontext context;
   ~CudaContextImpl() { dyn::cuCtxDestroy(context); }
@@ -46,7 +38,6 @@ struct CudaContextImpl {
   throw std::exception()
 
 std::shared_ptr<CudaContext> CudaContext::Create() {
-  std::shared_ptr<CudaContext> ctx;
   try {
     CUdevice device;
     CUcontext context;
@@ -62,21 +53,21 @@ std::shared_ptr<CudaContext> CudaContext::Create() {
     //RTC_LOG(LS_INFO) << "GPU in use: " << device_name;
     ckerror(dyn::cuCtxCreate(&context, 0, device));
 
-    std::shared_ptr<CudaContextImpl> impl(new CudaContextImpl());
+    auto impl = std::make_shared<CudaContextImpl>();
     impl->device = device;
     impl->context = context;
-
-    ctx.reset(new CudaContext());
-    ctx->impl_ = impl;
+    return impl;
   } catch (std::exception&) {
     return nullptr;
   }
-
-  return ctx;
 }
 
-void* CudaContext::Context() const {
-  return std::static_pointer_cast<CudaContextImpl>(impl_)->context;
+CUdevice GetCudaDevice(std::shared_ptr<CudaContext> ctx) {
+  return std::static_pointer_cast<CudaContextImpl>(ctx)->device;
+}
+
+CUcontext GetCudaContext(std::shared_ptr<CudaContext> ctx) {
+  return std::static_pointer_cast<CudaContextImpl>(ctx)->context;
 }
 
 }  // namespace sora

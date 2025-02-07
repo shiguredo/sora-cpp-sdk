@@ -44,7 +44,6 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
   void Run() {
     sora::SoraClientContextConfig context_config;
     context_config.use_audio_device = false;
-    context_config.use_hardware_encoder = false;
     auto context = sora::SoraClientContext::Create(context_config);
     auto pc_factory = context->peer_connection_factory();
     context_ = context;
