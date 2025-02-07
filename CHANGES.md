@@ -33,6 +33,8 @@
   - @torikizi
 - [UPDATE] CMake を 3.31.4 にあげる
   - @voluntas
+- [UPDATE] libwebrtc を m132.6834.5.8 にあげる
+  - @melpon
 - [ADD] 有効なエンコーダの一覧を取得する `GetVideoCodecCapability()` 関数を追加
   - @melpon
 - [ADD] 利用するエンコーダ/デコーダの実装を細かく指定するためのクラス `VideoCodecPreference` を追加
