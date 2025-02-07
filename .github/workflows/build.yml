@@ -485,7 +485,7 @@ jobs:
       strategy:
         matrix:
           example:
-            - name: sumomo
+            - sumomo
           archive:
             - windows_x86_64.zip
             - macos_arm64.tar.gz
@@ -497,11 +497,11 @@ jobs:
         - uses: actions/checkout@v4
         - uses: actions/download-artifact@v4
           with:
-            name: ${{ matrix.example.name }}_${{ matrix.archive.name }}
+            name: ${{ matrix.example }}_${{ matrix.archive }}
         - name: Release Examples
           uses: softprops/action-gh-release@v2
           with:
-            files: ${{ matrix.example.name }}_${{ matrix.archive.name }}
+            files: ${{ matrix.example }}_${{ matrix.archive }}
 
   notification:
     name: Slack Notification
