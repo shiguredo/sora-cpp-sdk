@@ -302,6 +302,10 @@ Windows 以外の場合
  - `intel_vpl`
  - `nvidia_video_codec_sdk`
 
+> [!NOTE]
+> H.264 と H.265 は `internal` または未指定では利用できません。
+> 必ず `--h264-encoder` または `--h264-decoder` または `--h265-encoder` または `--h265-decoder` でエンコーダーまたはデコーダーを指定してください。
+
 #### その他のオプション
 
 - `--help`
