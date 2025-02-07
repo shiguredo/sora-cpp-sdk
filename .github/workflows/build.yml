@@ -449,7 +449,7 @@ jobs:
           # OpenGL
           sudo apt-get install -y libgl-dev
 
-      # ARM の場合はさらに追加のパッケージが必要なのでインストール
+      # ARM はクロスコンパイルのために追加のパッケージが必要なのでインストールする
       - name: Install deps Ubuntu 24.04 ARM
         if: matrix.platform.name == 'ubuntu-24.04_armv8'
         run: |
@@ -499,7 +499,6 @@ jobs:
               file_ext: tar.gz
       steps:
         - uses: actions/checkout@v4
-        # ビルドした Examples のアーティファクトのダウンロードとリリース
         - uses: actions/download-artifact@v4
           with:
             name: ${{ matrix.example.name }}_${{ matrix.platform.name }}.${{ matrix.platform.file_ext }}
