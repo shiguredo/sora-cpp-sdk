@@ -33,6 +33,7 @@
 #include "default_video_formats.h"
 #include "sora/aligned_encoder_adapter.h"
 #include "sora/i420_encoder_adapter.h"
+#include "sora/open_h264_video_decoder.h"
 #include "sora/open_h264_video_encoder.h"
 #include "sora/sora_video_codec.h"
 
@@ -113,7 +114,7 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
     if (codec.encoder) {
       if (*codec.encoder == VideoCodecImplementation::kInternal) {
         encoder_factory_config.encoders.push_back(
-            VideoEncoderConfig(builtin_encoder_factory));
+            VideoEncoderConfig(codec.type, builtin_encoder_factory));
       } else if (*codec.encoder == VideoCodecImplementation::kCiscoOpenH264) {
         assert(config.capability_config.openh264_path);
         auto create_video_encoder =
@@ -122,18 +123,16 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
               return CreateOpenH264VideoEncoder(format, openh264_path);
             };
         encoder_factory_config.encoders.push_back(
-            VideoEncoderConfig(codec.type, create_video_encoder));
+            VideoEncoderConfig(codec.type, create_video_encoder, 16));
       } else if (*codec.encoder == VideoCodecImplementation::kIntelVpl) {
 #if defined(USE_VPL_ENCODER)
-        assert(config.capability_config.vpl_session);
-        auto create_video_encoder = [vpl_session =
-                                         config.capability_config.vpl_session](
-                                        const webrtc::SdpVideoFormat& format) {
+        auto create_video_encoder = [](const webrtc::SdpVideoFormat& format) {
           return VplVideoEncoder::Create(
-              vpl_session, webrtc::PayloadStringToCodecType(format.name));
+              VplSession::Create(),
+              webrtc::PayloadStringToCodecType(format.name));
         };
         encoder_factory_config.encoders.push_back(
-            VideoEncoderConfig(codec.type, create_video_encoder));
+            VideoEncoderConfig(codec.type, create_video_encoder, 16));
 #endif
       } else if (*codec.encoder ==
                  VideoCodecImplementation::kNvidiaVideoCodecSdk) {
@@ -153,33 +152,29 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
           return NvCodecVideoEncoder::Create(cuda_context, cuda_type);
         };
         encoder_factory_config.encoders.push_back(
-            VideoEncoderConfig(codec.type, create_video_encoder));
+            VideoEncoderConfig(codec.type, create_video_encoder, 16));
 #endif
       }
     }
     if (codec.decoder) {
       if (*codec.decoder == VideoCodecImplementation::kInternal) {
         decoder_factory_config.decoders.push_back(
-            VideoDecoderConfig(builtin_decoder_factory));
+            VideoDecoderConfig(codec.type, builtin_decoder_factory));
       } else if (*codec.decoder == VideoCodecImplementation::kCiscoOpenH264) {
-        // TODO(melpon): そのうち OpenH264 デコーダも実装する
-
-        // assert(config.capability_config.openh264_path);
-        // auto create_video_decoder =
-        //     [openh264_path = *config.capability_config.openh264_path](
-        //         const webrtc::SdpVideoFormat& format) {
-        //       return CreateOpenH264VideoDecoder(format, openh264_path);
-        //     };
-        // decoder_factory_config.decoders.push_back(
-        //     VideoDecoderConfig(codec.type, create_video_decoder));
+        assert(config.capability_config.openh264_path);
+        auto create_video_decoder =
+            [openh264_path = *config.capability_config.openh264_path](
+                const webrtc::SdpVideoFormat& format) {
+              return CreateOpenH264VideoDecoder(format, openh264_path);
+            };
+        decoder_factory_config.decoders.push_back(
+            VideoDecoderConfig(codec.type, create_video_decoder));
       } else if (*codec.decoder == VideoCodecImplementation::kIntelVpl) {
 #if defined(USE_VPL_ENCODER)
-        assert(config.capability_config.vpl_session);
-        auto create_video_decoder = [vpl_session =
-                                         config.capability_config.vpl_session](
-                                        const webrtc::SdpVideoFormat& format) {
+        auto create_video_decoder = [](const webrtc::SdpVideoFormat& format) {
           return VplVideoDecoder::Create(
-              vpl_session, webrtc::PayloadStringToCodecType(format.name));
+              VplSession::Create(),
+              webrtc::PayloadStringToCodecType(format.name));
         };
         decoder_factory_config.decoders.push_back(
             VideoDecoderConfig(codec.type, create_video_decoder));
@@ -187,7 +182,8 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
       } else if (*codec.decoder ==
                  VideoCodecImplementation::kNvidiaVideoCodecSdk) {
 #if defined(USE_NVCODEC_ENCODER)
-        assert(config.capability_config.cuda_context);
+        // CudaContext は必須ではない（Windows エンコーダでは DirectX を利用する）ので assert しない
+        // assert(config.capability_config.cuda_context);
         auto create_video_decoder = [cuda_context =
                                          config.capability_config.cuda_context](
                                         const webrtc::SdpVideoFormat& format) {

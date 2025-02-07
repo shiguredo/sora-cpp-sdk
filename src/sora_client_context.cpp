@@ -90,6 +90,10 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
       CreateVideoCodecFactory(c->config_.video_codec_factory_config);
   if (!codec_factory) {
     RTC_LOG(LS_ERROR) << "Failed to create VideoCodecFactory";
+    c->worker_thread_->BlockingCall([&] {
+      adm = nullptr;
+      dependencies.adm = nullptr;
+    });
     return nullptr;
   }
   dependencies.video_encoder_factory =
@@ -111,6 +115,10 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
       std::move(dependencies), c->connection_context_);
 
   if (c->factory_ == nullptr) {
+    c->worker_thread_->BlockingCall([&] {
+      adm = nullptr;
+      dependencies.adm = nullptr;
+    });
     RTC_LOG(LS_ERROR) << "Failed to create PeerConnectionFactory";
     return nullptr;
   }

@@ -37,6 +37,10 @@ struct VideoEncoderConfig {
   // 指定した factory を使ってエンコーダを設定する
   VideoEncoderConfig(std::shared_ptr<webrtc::VideoEncoderFactory> factory)
       : factory(std::move(factory)) {}
+  // 指定した codec の場合のみ指定した factory を使ってエンコーダを設定する
+  VideoEncoderConfig(webrtc::VideoCodecType codec,
+                     std::shared_ptr<webrtc::VideoEncoderFactory> factory)
+      : codec(codec), factory(std::move(factory)) {}
 
   webrtc::VideoCodecType codec = webrtc::VideoCodecType::kVideoCodecGeneric;
   std::function<std::vector<webrtc::SdpVideoFormat>()> get_supported_formats;

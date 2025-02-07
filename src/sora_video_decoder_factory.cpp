@@ -45,17 +45,25 @@ SoraVideoDecoderFactory::GetSupportedFormats() const {
   formats_.clear();
 
   std::vector<webrtc::SdpVideoFormat> r;
-  for (auto& enc : config_.decoders) {
+  for (auto& dec : config_.decoders) {
     // factory が定義されてればそれを使う
     // get_supported_formats が定義されてればそれを使う
     // どちらも無ければ codec ごとのデフォルト設定を利用する
     std::vector<webrtc::SdpVideoFormat> formats;
-    if (enc.factory != nullptr) {
-      formats = enc.factory->GetSupportedFormats();
-    } else if (enc.get_supported_formats != nullptr) {
-      formats = enc.get_supported_formats();
+    if (dec.factory != nullptr) {
+      if (dec.codec == webrtc::kVideoCodecGeneric) {
+        formats = dec.factory->GetSupportedFormats();
+      } else {
+        for (const auto& f : dec.factory->GetSupportedFormats()) {
+          if (f.name == webrtc::CodecTypeToPayloadString(dec.codec)) {
+            formats.push_back(f);
+          }
+        }
+      }
+    } else if (dec.get_supported_formats != nullptr) {
+      formats = dec.get_supported_formats();
     } else {
-      formats = GetDefaultVideoFormats(enc.codec);
+      formats = GetDefaultVideoFormats(dec.codec);
     }
     r.insert(r.end(), formats.begin(), formats.end());
     formats_.push_back(formats);
@@ -71,7 +79,7 @@ std::unique_ptr<webrtc::VideoDecoder> SoraVideoDecoderFactory::Create(
       webrtc::PayloadStringToCodecType(format.name);
 
   int n = 0;
-  for (auto& enc : config_.decoders) {
+  for (auto& dec : config_.decoders) {
     // 対応していないフォーマットを CreateVideoDecoder に渡した時の挙動は未定義なので
     // 確実に対応してるフォーマットのみを CreateVideoDecoder に渡すようにする。
 
@@ -80,13 +88,13 @@ std::unique_ptr<webrtc::VideoDecoder> SoraVideoDecoderFactory::Create(
         create_video_decoder;
     std::vector<webrtc::SdpVideoFormat> supported_formats = formats_[n++];
 
-    if (enc.factory != nullptr) {
-      create_video_decoder = [factory = enc.factory.get(),
+    if (dec.factory != nullptr) {
+      create_video_decoder = [factory = dec.factory.get(),
                               env](const webrtc::SdpVideoFormat& format) {
         return factory->Create(env, format);
       };
-    } else if (enc.create_video_decoder != nullptr) {
-      create_video_decoder = enc.create_video_decoder;
+    } else if (dec.create_video_decoder != nullptr) {
+      create_video_decoder = dec.create_video_decoder;
     }
 
     std::unique_ptr<webrtc::VideoDecoder> r;

@@ -6,7 +6,7 @@
 #include <rtc_base/logging.h>
 
 #include "sora/java_context.h"
-#include "sora/open_h264_video_encoder.h"
+#include "sora/open_h264_video_codec.h"
 
 #if defined(SORA_CPP_SDK_IOS) || defined(SORA_CPP_SDK_MACOS)
 #include "sora/mac/mac_video_factory.h"
@@ -254,7 +254,7 @@ VideoCodecCapability GetVideoCodecCapability(
   cap.engines.push_back(GetOpenH264VideoCodecCapability(config.openh264_path));
 
 #if defined(USE_VPL_ENCODER)
-  cap.engines.push_back(GetVplVideoCodecCapability(config.vpl_session));
+  cap.engines.push_back(GetVplVideoCodecCapability(VplSession::Create()));
 #endif
 
 #if defined(USE_NVCODEC_ENCODER)
