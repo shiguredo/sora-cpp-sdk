@@ -361,13 +361,13 @@ jobs:
 
   build-windows-examples:
     needs: create-release
-    defaults:
-      run:
-        working-directory: ${{ github.workspace }}/examples
     strategy:
       matrix:
         example:
           - sumomo
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}/examples
     runs-on: windows-2022
     steps:
         - uses: actions/checkout@v4
@@ -391,13 +391,13 @@ jobs:
 
   build-macos-examples:
     needs: create-release
-    defaults:
-      run:
-        working-directory: ${{ github.workspace }}/examples
     strategy:
       matrix:
         example:
           - sumomo
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}/examples
     runs-on: macos-14
     steps:
         - uses: actions/checkout@v4
