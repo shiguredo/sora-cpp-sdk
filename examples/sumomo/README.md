@@ -181,7 +181,6 @@ Windows 以外の場合
 - `--hw-mjpeg-decoder` : HW MJPEG デコーダーの利用 (true/false)
   - 未指定の場合は false が設定されます
   - NVIDIA Jetson のみで利用できます
-- `--use-hardware-encoder` : ハードウェアエンコーダーの利用 (true/false)
 - `--openh264` : openh264 ライブラリのパスをフルパスで指定します
   - デコードには対応していません
 
