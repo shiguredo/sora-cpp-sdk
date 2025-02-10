@@ -7,36 +7,35 @@
 
 ## Intel VPL ランタイムについて
 
-Intel VPL には Intel VPL (ライブラリの Intel VPL と区別するために、以後は Intel VPL ランタイムと表記します) と Intel Media SDK の 2 つのランタイムがあり、チップの世代によって利用できるランタイムが異なります。
+Intel VPL (ライブラリの Intel VPL と区別するために、以後は Intel VPL ランタイムと表記します) は第 11 世代以降のチップで利用することができます。
 
-第 11 世代 以降のチップを利用している場合は、 Intel VPL ランタイムを利用することができます。
-
-Intel Media SDK は既に開発が終了しており、後継の Intel VPL ランタイムに開発が移行しているため、
-これから VPL を利用する場合は、 Intel VPL ランタイムに対応したチップを利用することを推奨します。
-
-<https://www.intel.com/content/www/us/en/developer/tools/vpl/overview.html#gs.73uoi4> の Specifications のセクションより、ランタイムと対応するチップの一覧を以下に引用します。
-
-- [Intel VPL](https://github.com/oneapi-src/oneVPL-intel-gpu)
-  - Intel® Iris® Xe graphics
-  - Intel Iris Xe MAX graphics
-  - Intel® Arc™ Graphics
-  - Intel Data Center GPU Flex Series
-  - 11th generation Intel® Core™ processors and newer using integrated graphics
-- [Intel Media SDK](https://github.com/Intel-Media-SDK/MediaSDK)
-  - Intel® Server GPU
-  - 5th to 11th generation Intel Core processors using integrated graphics
+Intel VPL が利用できるチップセットは、Intel の公式サイトから、<https://www.intel.com/content/www/us/en/developer/tools/vpl/overview.html#gs.73uoi4> の Specifications のセクションに記載されています。
 
 ## 環境構築
 
 ### Windows
 
-Windows 11 では Intel の公式サイトからドライバーをインストールすることで VPL を利用することができます。
+Windows では Windows Update によりドライバーが提供され利用することが可能です。
 
-- Intel の公式サイトからドライバーをダウンロードします。
-  - Intel ドライバーおよびソフトウェアのダウンロード
-    - <https://www.intel.co.jp/content/www/jp/ja/download-center/home.html>
-- インストーラーに従ってインストールを行います。
-- インストール後に再起動を行います。
+しかし、最新版のドライバーが提供されていない場合があるため、Intel の公式サイトからドライバーをダウンロードしてインストールすることをお勧めします。
+
+Intel の公式サイトからドライバーをダウンロードする方法は 2 種類あります。
+
+1. インテル® ドライバー & サポート・アシスタント を利用する方法
+  インテル® ドライバー & サポート・アシスタントを利用することで、自動的に環境に合った最新のドライバーをダウンロードしてインストールすることができます。
+  - Intel の公式サイトからインテル® ドライバー & サポート・アシスタントをダウンロードします。
+    - インテル® ドライバー & サポート・アシスタント
+      - <https://www.intel.co.jp/content/www/jp/ja/support/detect.html>
+  - インストーラーに従ってインストールを行います。
+  - インストール後に再起動を行います。
+
+2. インテルの公式サイトから直接ダウンロードする方法
+  すでに環境で必要なドライバーがわかっている場合は、直接ダウンロードしてインストールすることができます。
+  - Intel の公式サイトから直接ドライバーをダウンロードします。
+    - インテル® Arc™ & Iris® Xe Graphics - Windows*
+      - <https://www.intel.co.jp/content/www/jp/ja/download/785597/intel-arc-iris-xe-graphics-windows.html>
+  - ダウンロードしたファイルを実行し、インストールを行います。
+  - インストール後に再起動を行います。
 
 ### Ubuntu 22.04
 
