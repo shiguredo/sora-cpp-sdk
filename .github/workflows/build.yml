@@ -82,7 +82,6 @@ jobs:
         with:
           name: ${{ matrix.name }}.env
           path: _package/${{ matrix.name }}/release/sora.env
-      # Examples のビルド
       - name: Build Examples
         run: |
           cd examples
@@ -96,6 +95,7 @@ jobs:
         with:
           name: examples_${{ matrix.name }}
           path: examples/examples_${{ matrix.name }}
+
   build-macos:
     strategy:
       fail-fast: false
@@ -112,8 +112,6 @@ jobs:
       TEST_MATRIX_NAME: ${{ matrix.name }}
     steps:
       - uses: actions/checkout@v4
-      - name: Select Xcode 15.4
-        run: sudo xcode-select --switch /Applications/Xcode_15.4.app/Contents/Developer
       - name: Env to output
         run: |
           echo "user=`users`" >> $GITHUB_OUTPUT
@@ -140,7 +138,6 @@ jobs:
         with:
           name: ${{ matrix.name }}.env
           path: _package/${{ matrix.name }}/release/sora.env
-      # Examples のビルド
       - name: Build Examples
         run: |
           cd examples
@@ -156,6 +153,7 @@ jobs:
           name: examples_${{ matrix.name }}
           path: examples/examples_${{ matrix.name }}
         if: matrix.name == 'macos_arm64'
+
   build-ubuntu:
     strategy:
       fail-fast: false
@@ -297,7 +295,6 @@ jobs:
         with:
           name: ${{ matrix.platform.name }}.env
           path: _package/${{ matrix.platform.name }}/release/sora.env
-      # Examples のビルド
       - name: Build Examples
         run: |
           cd examples
@@ -360,6 +357,150 @@ jobs:
           files: ${{ steps.env.outputs.package_paths }}
           prerelease: ${{ contains(github.ref, 'canary') }}
 
+  build-windows-examples:
+    needs: create-release
+    strategy:
+      matrix:
+        example:
+          - sumomo
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}/examples
+    runs-on: windows-2022
+    steps:
+        - uses: actions/checkout@v4
+        - name: Build Example
+          run: |
+            python3 ${{ matrix.example }}/windows_x86_64/run.py
+        - name: Package Binary
+          run: |
+            # アップロード用のディレクトリを作成する
+            mkdir -p ${{ matrix.example }}_windows_x86_64
+            # バイナリをアップロード用のディレクトリにコピーする
+            cp _build/windows_x86_64/release/${{ matrix.example }}/Release/${{ matrix.example }}.exe ${{ matrix.example }}_windows_x86_64/${{ matrix.example }}.exe
+            # バイナリを圧縮する
+            # 例: sumomo_windows_x86_64.zip
+            Compress-Archive -Path ${{ matrix.example }}_windows_x86_64 -DestinationPath ${{ matrix.example }}_windows_x86_64.zip
+        - name: Upload Examples Artifact
+          uses: actions/upload-artifact@v4
+          with:
+             name: ${{ matrix.example }}_windows_x86_64.zip
+             path: examples/${{ matrix.example }}_windows_x86_64.zip
+
+  build-macos-examples:
+    needs: create-release
+    strategy:
+      matrix:
+        example:
+          - sumomo
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}/examples
+    runs-on: macos-14
+    steps:
+        - uses: actions/checkout@v4
+        - name: Build Example
+          run: |
+            python3 ${{ matrix.example }}/macos_arm64/run.py
+        - name: Package Binary
+          run: |
+            # アップロード用のディレクトリを作成する
+            mkdir -p ${{ matrix.example }}_macos_arm64
+            cp _build/macos_arm64/release/${{ matrix.example }}/${{ matrix.example }} ${{ matrix.example }}_macos_arm64/${{ matrix.example }}
+            # バイナリを圧縮する
+            # 例: sumomo_macos_arm64.tar.gz
+            tar -czf ${{ matrix.example }}_macos_arm64.tar.gz ${{ matrix.example }}_macos_arm64
+        - name: Upload Examples Artifact
+          uses: actions/upload-artifact@v4
+          with:
+             name: ${{ matrix.example }}_macos_arm64.tar.gz
+             path: examples/${{ matrix.example }}_macos_arm64.tar.gz
+
+  build-ubuntu-examples:
+    needs: create-release
+    strategy:
+      fail-fast: false
+      matrix:
+        example:
+          - sumomo
+        platform:
+          - name: ubuntu-20.04_x86_64
+            runs-on: ubuntu-20.04
+          - name: ubuntu-22.04_x86_64
+            runs-on: ubuntu-22.04
+          - name: ubuntu-24.04_x86_64
+            runs-on: ubuntu-24.04
+          - name: ubuntu-24.04_armv8
+            runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}/examples
+    runs-on: ${{ matrix.platform.runs-on }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: |
+          sudo apt-get update
+
+           # X11
+          sudo apt-get install -y libx11-dev libxext-dev
+
+          # OpenGL
+          sudo apt-get install -y libgl-dev
+
+      # ARM はクロスコンパイルのために追加のパッケージが必要なのでインストールする
+      - name: Install deps Ubuntu 24.04 ARM
+        if: matrix.platform.name == 'ubuntu-24.04_armv8'
+        run: |
+          sudo apt-get install -y multistrap binutils-aarch64-linux-gnu
+          # multistrap に insecure なリポジトリからの取得を許可する設定を入れる
+          sudo sed -e 's/Apt::Get::AllowUnauthenticated=true/Apt::Get::AllowUnauthenticated=true";\n$config_str .= " -o Acquire::AllowInsecureRepositories=true/' -i /usr/sbin/multistrap
+      - name: Build Example
+        run: |
+          python3 ${{ matrix.example }}/${{ matrix.platform.name }}/run.py
+      - name: Package Binary
+        run: |
+          # アップロード用のディレクトリを作成する
+          mkdir -p ${{ matrix.example }}_${{ matrix.platform.name }}
+          # バイナリをアップロード用のディレクトリにコピーする
+          cp _build/${{ matrix.platform.name }}/release/${{ matrix.example }}/${{ matrix.example }} ${{ matrix.example }}_${{ matrix.platform.name }}/${{ matrix.example }}
+          # バイナリを圧縮する
+          # 例: sumomo_ubuntu-24.04_x86_64.tar.gz
+          tar -czf ${{ matrix.example }}_${{ matrix.platform.name }}.tar.gz ${{ matrix.example }}_${{ matrix.platform.name }}
+      - name: Upload Examples Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.example }}_${{ matrix.platform.name }}.tar.gz
+          path: examples/${{ matrix.example }}_${{ matrix.platform.name }}.tar.gz
+
+  create-release-example:
+      name: Create Release Examples
+      needs: 
+        - build-windows-examples
+        - build-macos-examples
+        - build-ubuntu-examples
+      strategy:
+        matrix:
+          example:
+            - sumomo
+          archive:
+            - windows_x86_64.zip
+            - macos_arm64.tar.gz
+            - ubuntu-20.04_x86_64.tar.gz
+            - ubuntu-22.04_x86_64.tar.gz
+            - ubuntu-24.04_x86_64.tar.gz
+            - ubuntu-24.04_armv8.tar.gz
+      runs-on: ubuntu-24.04
+      steps:
+        - uses: actions/checkout@v4
+        - uses: actions/download-artifact@v4
+          with:
+            name: ${{ matrix.example }}_${{ matrix.archive }}
+        - name: Release Examples
+          uses: softprops/action-gh-release@v2
+          with:
+            files: ${{ matrix.example }}_${{ matrix.archive }}
+
   notification:
     name: Slack Notification
     runs-on: ubuntu-24.04
@@ -368,6 +509,10 @@ jobs:
       - build-macos
       - build-ubuntu
       - create-release
+      - build-windows-examples
+      - build-macos-examples
+      - build-ubuntu-examples
+      - create-release-example
     if: always()
     steps:
       - uses: rtCamp/action-slack-notify@v2
@@ -375,7 +520,11 @@ jobs:
           needs.build-windows.result == 'failure' ||
           needs.build-macos.result == 'failure' ||
           needs.build-ubuntu.result == 'failure' ||
-          needs.create-release.result == 'failure'
+          needs.create-release.result == 'failure' ||
+          needs.build-windows-examples.result == 'failure' ||
+          needs.build-macos-examples.result == 'failure' ||
+          needs.build-ubuntu-examples.result == 'failure' ||
+          needs.create-release-example.result == 'failure'
         env:
           SLACK_CHANNEL: sora-cpp-sdk
           SLACK_COLOR: danger

@@ -11,9 +11,41 @@
 
 ## develop
 
+- [CHANGE] `SoraClientContextConfig` から `use_hardware_encoder` を削除
+  - これにより、デフォルトで利用するエンコーダ/デコーダは全て libwebrtc の実装のものになります
+  - ハードウェアエンコーダを有効にしたい場合は `SoraClientContextConfig::video_codec_factory_config` を適切に設定して下さい
+  - @melpon
+- [CHANGE] `SoraClientContextConfig` から `force_i420_conversion_for_simulcast_adapter` を削除
+  - 代わりに `SoraClientContextConfig::video_codec_factory_config.encoder_factory_config.force_i420_conversion` を利用して下さい
+  - @melpon
+- [CHANGE] `SoraClientContextConfig` から `openh264` を削除
+  - 代わりに `SoraClientContextConfig::video_codec_factory_config.::capability_config.openh264_path` を利用して下さい
+  - @melpon
+- [CHANGE] `sora/hwenc_vpl/vpl_session.h` ファイルを `sora/vpl_session.h` に移動
+  - @melpon
+- [CHANGE] `SoraVideoEncoderFactoryConfig` の `use_simulcast_adapter` を削除
+  - サイマルキャストアダプタは常に有効になります
+  - @melpon
+- [CHANGE] `SoraVideoEncoderFactoryConfig` の `force_i420_conversion_for_simulcast_adapter` を `force_i420_conversion` に変更
+  - @melpon
+- [CHANGE] GitHub Actions で macOS 向けビルドで Xcode のバージョンを指定したのを削除する  
+  - libwebrtc の制約で Xcode のバージョンを指定していたが、 m132.6834.5.5 の時点では制約がなくなり、指定しなくてもビルドできるようになったため
+  - @torikizi
 - [UPDATE] CMake を 3.31.4 にあげる
   - @voluntas
-
+- [UPDATE] libwebrtc を m132.6834.5.8 にあげる
+  - @melpon
+- [ADD] 有効なエンコーダの一覧を取得する `GetVideoCodecCapability()` 関数を追加
+  - @melpon
+- [ADD] 利用するエンコーダ/デコーダの実装を細かく指定するためのクラス `VideoCodecPreference` を追加
+  - `SoraClientContextConfig::video_codec_factory_config.preference` 経由で利用できます
+  - @melpon
+- [ADD] OpenH264 デコーダに対応する
+  - @melpon
+- [ADD] タグが打たれた場合に sumomo バイナリを Release に追加する
+  - Release 用の sumomo は C++ SDK のリリースバイナリを使用してビルドする  
+  - リアルタイムメッセージング以外の機能がほぼ全て含まれている sumomo をリリース時に含めるようにする
+  - @torikizi
 
 ## 2025.1.0
 
@@ -79,7 +111,7 @@
   - @melpon
 - [ADD] sumomo にビデオデバイスとオーディオデバイスを設定するオプションを追加
   - @melpon
-- [ADD] SoraSignalingConfig に degradation_preference を追加 
+- [ADD] SoraSignalingConfig に degradation_preference を追加
   - @melpon
 - [ADD] sumomo と test/hello に degradation_preference を設定するオプションを追加
   - @melpon
