@@ -31,6 +31,8 @@ Please read <https://github.com/shiguredo/oss/blob/master/README.en.md> before u
     - H.264 / H.265
   - Google Android HWA
     - VP8 / VP9 / H.264 / H.265
+- [Cisco OpenH264](https://www.openh264.org/) への対応
+  - Ubuntu x86_64,arm64 / macOS arm64 / Windows x86_64
 
 ## ライブラリのバイナリ提供について
 
