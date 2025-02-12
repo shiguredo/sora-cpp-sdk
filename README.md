@@ -48,16 +48,12 @@ _hololens2 は無視してください_
 
 ## 対応 Sora
 
-- WebRTC SFU Sora 2024.2.0 以降
+- WebRTC SFU Sora 2024.1.0 以降
 
 ## 動作環境
 
 - Windows 10.1809 x86_64 以降
 - macOS 13.5 arm64 以降
-- Ubuntu 22.04 ARMv8 Jetson (JetPack 6.0 以降)
-  - Jetson AGX Orin
-  - Jetson Orin NX
-  - 動作未検証です
 - Ubuntu 20.04 x86_64
   - 動作未検証です
 - Ubuntu 22.04 x86_64
@@ -65,6 +61,10 @@ _hololens2 は無視してください_
 - Ubuntu 24.04 arm64
 - Android 7 arm64 以降
 - iOS 14 arm64 以降
+- Ubuntu 22.04 ARMv8 Jetson (JetPack 6.0 以降)
+  - Jetson AGX Orin
+  - Jetson Orin NX
+  - 動作未検証です
 
 ## 既知の問題
 
