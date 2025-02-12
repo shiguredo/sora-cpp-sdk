@@ -53,7 +53,7 @@ _hololens2 は無視してください_
 ## 動作環境
 
 - Windows 10.1809 x86_64 以降
-- macOS 13.5 arm64 以降
+- macOS 14 arm64 以降
 - Ubuntu 20.04 x86_64
   - 動作未検証です
 - Ubuntu 22.04 x86_64
@@ -64,7 +64,7 @@ _hololens2 は無視してください_
 - Ubuntu 22.04 ARMv8 Jetson (JetPack 6.0 以降)
   - Jetson AGX Orin
   - Jetson Orin NX
-  - 動作未検証です
+    - 動作未検証です
 
 ## 既知の問題
 
@@ -95,7 +95,7 @@ Sora C++ SDK のメンテナンスポリシーにはプライオリティがあ�
 - NVIDIA Jetson JetPack 6 Jetson Orin Nano 対応
 - Raspberry Pi OS (64bit) arm64 対応
 - Windows arm64 対応
-- AMD 系 HWA 対応
+- AMD AMD 対応
 
 ## サポートについて
 
@@ -117,7 +117,7 @@ Discord へお願いします。
 
 Apache License 2.0
 
-```
+```text
 Copyright 2021-2025, Wandbox LLC (Original Author)
 Copyright 2021-2025, Shiguredo Inc.
 
@@ -138,6 +138,6 @@ limitations under the License.
 
 <https://www.openh264.org/BINARY_LICENSE.txt>
 
-```
+```text
 "OpenH264 Video Codec provided by Cisco Systems, Inc."
 ```
