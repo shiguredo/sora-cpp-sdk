@@ -212,6 +212,17 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
                                },
                                16));
   }
+  if (NvCodecVideoEncoder::IsSupported(cuda_context, CudaVideoCodec::AV1)) {
+    config.encoders.insert(config.encoders.begin(),
+                           VideoEncoderConfig(
+                               webrtc::kVideoCodecAV1,
+                               [cuda_context = cuda_context](auto format)
+                                   -> std::unique_ptr<webrtc::VideoEncoder> {
+                                 return NvCodecVideoEncoder::Create(
+                                     cuda_context, CudaVideoCodec::AV1);
+                               },
+                               16));
+  }
 #endif
 
 #if defined(USE_VPL_ENCODER)

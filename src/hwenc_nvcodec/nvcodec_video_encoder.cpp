@@ -390,6 +390,8 @@ int32_t NvCodecVideoEncoderImpl::Encode(
 
       h265_bitstream_parser_.ParseBitstream(encoded_image_);
       encoded_image_.qp_ = h265_bitstream_parser_.GetLastSliceQp().value_or(-1);
+    } else if (codec_ == CudaVideoCodec::AV1) {
+      codec_specific.codecType = webrtc::kVideoCodecAV1;
     }
 
     webrtc::EncodedImageCallback::Result result =
@@ -544,6 +546,10 @@ std::unique_ptr<NvEncoder> NvCodecVideoEncoderImpl::CreateEncoder(
       encoder->CreateDefaultEncoderParams(
           &initialize_params, NV_ENC_CODEC_HEVC_GUID, NV_ENC_PRESET_P2_GUID,
           NV_ENC_TUNING_INFO_LOW_LATENCY);
+    } else if (codec == CudaVideoCodec::AV1) {
+      encoder->CreateDefaultEncoderParams(
+          &initialize_params, NV_ENC_CODEC_AV1_GUID, NV_ENC_PRESET_P2_GUID,
+          NV_ENC_TUNING_INFO_LOW_LATENCY);
     }
 
     //initialize_params.enablePTD = 1;
@@ -582,6 +588,12 @@ std::unique_ptr<NvEncoder> NvCodecVideoEncoderImpl::CreateEncoder(
       encode_config.encodeCodecConfig.hevcConfig.repeatSPSPPS = 1;
       encode_config.encodeCodecConfig.hevcConfig.sliceMode = 0;
       encode_config.encodeCodecConfig.hevcConfig.sliceModeData = 0;
+    } else if (codec == CudaVideoCodec::AV1) {
+      encode_config.encodeCodecConfig.av1Config.keyFrameMode =
+          NV_ENC_AV1_KEY_FRAME_MODE_AUTO;
+      encode_config.encodeCodecConfig.av1Config.qpMapMode =
+          NV_ENC_AV1_QP_MAP_MODE_AUTO;
+      encode_config.encodeCodecConfig.av1Config.qpMapData = nullptr;
     }
 
     encoder->CreateEncoder(&initialize_params);
