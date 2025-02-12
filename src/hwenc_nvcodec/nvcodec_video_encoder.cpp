@@ -589,11 +589,9 @@ std::unique_ptr<NvEncoder> NvCodecVideoEncoderImpl::CreateEncoder(
       encode_config.encodeCodecConfig.hevcConfig.sliceMode = 0;
       encode_config.encodeCodecConfig.hevcConfig.sliceModeData = 0;
     } else if (codec == CudaVideoCodec::AV1) {
-      encode_config.encodeCodecConfig.av1Config.keyFrameMode =
-          NV_ENC_AV1_KEY_FRAME_MODE_AUTO;
-      encode_config.encodeCodecConfig.av1Config.qpMapMode =
-          NV_ENC_AV1_QP_MAP_MODE_AUTO;
-      encode_config.encodeCodecConfig.av1Config.qpMapData = nullptr;
+      encode_config.encodeCodecConfig.av1Config.idrPeriod =
+          NVENC_INFINITE_GOPLENGTH;
+      encode_config.encodeCodecConfig.av1Config.repeatSeqHdr = 1;
     }
 
     encoder->CreateEncoder(&initialize_params);
