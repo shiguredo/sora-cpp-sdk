@@ -75,7 +75,7 @@ _build/macos_arm64/release/messaging_recvonly_sample
 └── messaging_recvonly_sample
 ```
 
-#### Ubuntu 20.04 x86_64 向けのビルドをする
+#### Ubuntu 20.04 x86_64 Desktop 向けのビルドをする
 
 ##### 事前準備
 
@@ -98,7 +98,7 @@ _build/ubuntu-20.04_x86_64/release/messaging_recvonly_sample/
 └── messaging_recvonly_sample
 ```
 
-#### Ubuntu 22.04 x86_64 向けのビルドをする
+#### Ubuntu 22.04 x86_64 Desktop 向けのビルドをする
 
 ##### 事前準備
 
@@ -121,7 +121,7 @@ _build/ubuntu-22.04_x86_64/release/messaging_recvonly_sample/
 └── messaging_recvonly_sample
 ```
 
-#### Ubuntu 24.04 x86_64 向けのビルドをする
+#### Ubuntu 24.04 x86_64 Desktop 向けのビルドをする
 
 ##### 事前準備
 
