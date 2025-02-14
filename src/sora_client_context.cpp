@@ -129,9 +129,15 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
   factory_options.crypto_options.srtp.enable_gcm_crypto_suites = true;
   c->factory_->SetOptions(factory_options);
 
+#if defined(SORA_CPP_SDK_ANDROID)
+  // Android はデバイスの数が１個として返される上に、
+  // RecordingDeviceName() や PlayoutDeviceName() を呼び出すとクラッシュする実装になっているので
+  // オーディオデバイスの列挙と設定を行わない。
+  // ref: https://source.chromium.org/chromium/chromium/src/+/main:third_party/webrtc/sdk/android/src/jni/audio_device/audio_device_module.cc;l=145-161;drc=d4937d3336bcf86f2fb3363cb6a64a0eb1a36576
+#else
   // オーディオデバイス名を列挙して名前を覚える
-  std::vector<std::tuple<std::string, std::string>> recording_devices;
-  std::vector<std::tuple<std::string, std::string>> playout_devices;
+  std::vector<std::tuple<std::string, std::string> > recording_devices;
+  std::vector<std::tuple<std::string, std::string> > playout_devices;
   {
     int recording_device_count = adm->RecordingDevices();
     // RecordingDevices がマイナスの値を返すことがある
@@ -258,6 +264,7 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
                         << " name=" << name << " guid=" << guid;
     }
   }
+#endif
 
   return c;
 }
