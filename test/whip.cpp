@@ -29,8 +29,16 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
   void Run() {
     sora::SoraClientContextConfig context_config;
     context_config.use_audio_device = false;
-    context_config.use_hardware_encoder = false;
-    context_config.openh264 = "...";
+    context_config.video_codec_factory_config.capability_config.openh264_path =
+        "...";
+    auto& preference =
+        context_config.video_codec_factory_config.preference.emplace();
+    auto capability = sora::GetVideoCodecCapability(
+        context_config.video_codec_factory_config.capability_config);
+    preference.Merge(sora::CreateVideoCodecPreferenceFromImplementation(
+        capability, sora::VideoCodecImplementation::kInternal));
+    preference.Merge(sora::CreateVideoCodecPreferenceFromImplementation(
+        capability, sora::VideoCodecImplementation::kCiscoOpenH264));
     context_ = sora::SoraClientContext::Create(context_config);
 
     ioc_.reset(new boost::asio::io_context(1));
