@@ -11,6 +11,48 @@
 
 ## develop
 
+- [CHANGE] `SoraClientContextConfig` から `use_hardware_encoder` を削除
+  - これにより、デフォルトで利用するエンコーダ/デコーダは全て libwebrtc の実装のものになります
+  - ハードウェアエンコーダを有効にしたい場合は `SoraClientContextConfig::video_codec_factory_config` を適切に設定して下さい
+  - @melpon
+- [CHANGE] `SoraClientContextConfig` から `force_i420_conversion_for_simulcast_adapter` を削除
+  - 代わりに `SoraClientContextConfig::video_codec_factory_config.encoder_factory_config.force_i420_conversion` を利用して下さい
+  - @melpon
+- [CHANGE] `SoraClientContextConfig` から `openh264` を削除
+  - 代わりに `SoraClientContextConfig::video_codec_factory_config.::capability_config.openh264_path` を利用して下さい
+  - @melpon
+- [CHANGE] `sora/hwenc_vpl/vpl_session.h` ファイルを `sora/vpl_session.h` に移動
+  - @melpon
+- [CHANGE] `SoraVideoEncoderFactoryConfig` の `use_simulcast_adapter` を削除
+  - サイマルキャストアダプタは常に有効になります
+  - @melpon
+- [CHANGE] `SoraVideoEncoderFactoryConfig` の `force_i420_conversion_for_simulcast_adapter` を `force_i420_conversion` に変更
+  - @melpon
+- [CHANGE] GitHub Actions で macOS 向けビルドで Xcode のバージョンを指定したのを削除する  
+  - libwebrtc の制約で Xcode のバージョンを指定していたが、 m132.6834.5.5 の時点では制約がなくなり、指定しなくてもビルドできるようになったため
+  - @torikizi
+- [UPDATE] CMake を 3.31.4 にあげる
+  - @voluntas
+- [UPDATE] libwebrtc を m132.6834.5.8 にあげる
+  - @melpon
+- [UPDATE] OpenH264 を v2.6.0 に上げる
+  - @torikizi
+- [ADD] 有効なエンコーダの一覧を取得する `GetVideoCodecCapability()` 関数を追加
+  - @melpon
+- [ADD] 利用するエンコーダ/デコーダの実装を細かく指定するためのクラス `VideoCodecPreference` を追加
+  - `SoraClientContextConfig::video_codec_factory_config.preference` 経由で利用できます
+  - @melpon
+- [ADD] OpenH264 デコーダに対応する
+  - @melpon
+- [ADD] タグが打たれた場合に sumomo バイナリを Release に追加する
+  - Release 用の sumomo は C++ SDK のリリースバイナリを使用してビルドする  
+  - リアルタイムメッセージング以外の機能がほぼ全て含まれている sumomo をリリース時に含めるようにする
+  - @torikizi
+
+## 2025.1.0
+
+**リリース日**: 2025-01-27
+
 - [CHANGE] `boost::optional` を利用していた部分を全て `std::optional` に変更
   - @melpon
 - [CHANGE] SRTP keying material を取得する機能を削除
@@ -23,7 +65,7 @@
   - boost::asio::deadline_timer が間接的にインクルードされなくなったので、websocket.h に boost/asio/deadline_timer.hpp のインクルードを追加して利用可能にする
   - boost::json::error_code が削除されたので boost::system::error_code に置き換える
   - @voluntas @torikizi @melpon
-- [UPDATE] libwebrtc を m132.6834.4.0 にあげる
+- [UPDATE] libwebrtc を m132.6834.5.2 にあげる
   - H.265 Patch の修正に伴い、C++ SDK の H.265 に関する設定を変更
   - examples と test に `rtc::CreateRandomString` のヘッダを追加
   - `SetRtpTimestamp` を `frame.timestamp` から `frame.rtp_timestamp` に変更
@@ -71,7 +113,7 @@
   - @melpon
 - [ADD] sumomo にビデオデバイスとオーディオデバイスを設定するオプションを追加
   - @melpon
-- [ADD] SoraSignalingConfig に degradation_preference を追加 
+- [ADD] SoraSignalingConfig に degradation_preference を追加
   - @melpon
 - [ADD] sumomo と test/hello に degradation_preference を設定するオプションを追加
   - @melpon
@@ -114,6 +156,11 @@
   - @melpon
 - [ADD] VERSION と examples/VERSION のバージョンをチェックする仕組みを追加
   - @melpon
+- [FIX] examples のビルド時に libgl-dev がない環境で SDL の画面作成が失敗する問題を解消するために、build.yml を修正して libgl-dev のインストールを追加する
+  - SDL のビルド時に libgl-dev がない環境では、SDL の OpenGL 機能が有効化されず、examples アプリ起動時に SDL の画面作成が失敗する
+  - libgl-dev をインストールすることで OpenGL 機能が有効化され、examples アプリ起動時に SDL の画面作成が成功するようになる
+  - 参考リンク : [SDL の OpenGL をチェックしている場所](https://github.com/libsdl-org/SDL/blob/2c7b7d1d33748b6c27eaf57cc5d96ce6c4c64a87/cmake/sdlchecks.cmake#L722-L733)
+  - @torikizi
 
 ## 2024.7.0
 

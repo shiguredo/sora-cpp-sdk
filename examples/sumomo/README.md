@@ -6,9 +6,10 @@
 
 ## 動作環境
 
-[動作環境](../../README.md#動作環境) をご確認ください。
-
-接続先として WebRTC SFU Sora サーバ ([Sora Labo](https://sora-labo.shiguredo.app/) / [Sora Cloud](https://sora-cloud.shiguredo.jp/) を含む) が必要です。[対応 Sora](../../README.md#対応-sora) もご確認ください。
+まずは [動作環境](../../README.md#動作環境) をご確認ください。
+本サンプルの利用には、接続先として WebRTC SFU Sora サーバ ([Sora Cloud](https://sora-cloud.shiguredo.jp/) を含む) が必要です。
+[対応 Sora](../../README.md#対応-sora) もご確認ください。
+もし動作確認をご希望であれば、[Sora Labo](https://sora-labo.shiguredo.jp/) を利用することで、無料で Sora を試すことができます。
 
 ## サンプルをビルドする
 
@@ -75,18 +76,14 @@ _build/macos_arm64/release/sumomo
 └── sumomo
 ```
 
-#### Ubuntu 20.04 x86_64 向けのビルドをする
+#### Ubuntu 20.04 x86_64 Desktop 向けのビルドをする
 
 ##### 事前準備
 
 必要なパッケージをインストールしてください。
 
 ```shell
-sudo apt install build-essential
-sudo apt install libxext-dev
-sudo apt install libx11-dev
-sudo apt install pkg-config
-sudo apt install python3
+sudo apt install build-essential libxext-dev libx11-dev libgl-dev pkg-config python3
 ```
 
 ##### ビルド
@@ -102,18 +99,14 @@ _build/ubuntu-20.04_x86_64/release/sumomo/
 └── sumomo
 ```
 
-#### Ubuntu 22.04 x86_64 向けのビルドをする
+#### Ubuntu 22.04 x86_64 Desktop 向けのビルドをする
 
 ##### 事前準備
 
 必要なパッケージをインストールしてください。
 
 ```shell
-sudo apt install build-essential
-sudo apt install libxext-dev
-sudo apt install libx11-dev
-sudo apt install pkg-config
-sudo apt install python3
+sudo apt install build-essential libxext-dev libx11-dev libgl-dev pkg-config python3
 ```
 
 ##### ビルド
@@ -129,18 +122,14 @@ _build/ubuntu-22.04_x86_64/release/sumomo/
 └── sumomo
 ```
 
-#### Ubuntu 24.04 x86_64 向けのビルドをする
+#### Ubuntu 24.04 x86_64 Desktop 向けのビルドをする
 
 ##### 事前準備
 
 必要なパッケージをインストールしてください。
 
 ```shell
-sudo apt install build-essential
-sudo apt install libxext-dev
-sudo apt install libx11-dev
-sudo apt install pkg-config
-sudo apt install python3
+sudo apt install build-essential libxext-dev libx11-dev libgl-dev pkg-config python3
 ```
 
 ##### ビルド
@@ -185,14 +174,13 @@ Windows 以外の場合
 #### Sumomo 実行に関するオプション
 
 - `--log-level` : 実行時にターミナルに出力するログのレベル
-  - `verbose->0,info->1,warning->2,error->3,none->4` の値が指定可能です
+  - `verbose`,`info`,`warning`,`error`,`none` の値が指定可能です
 - `--resolution` : 映像配信する際の解像度
   - 解像度は `QVGA, VGA, HD, FHD, 4K, or [WIDTH]x[HEIGHT]` の値が指定可能です
   - 未指定の場合は `VGA` が設定されます
 - `--hw-mjpeg-decoder` : HW MJPEG デコーダーの利用 (true/false)
   - 未指定の場合は false が設定されます
   - NVIDIA Jetson のみで利用できます
-- `--use-hardware-encoder` : ハードウェアエンコーダーの利用 (true/false)
 - `--openh264` : openh264 ライブラリのパスをフルパスで指定します
   - デコードには対応していません
 
@@ -264,6 +252,58 @@ Windows 以外の場合
 - `--client-key` : クライアントプライベートキーファイル
 
 `--ca-cert`, `--client-cert`, `--client-key` には、PEM 形式のファイルを指定してください。
+
+#### 映像と音声のデバイスに関するオプション
+
+- `--video-device`
+  - 映像デバイスの名前を指定します
+- `--audio-recording-device`
+  - 音声録音デバイスの名前を指定します
+- `--audio-playout-device`
+  - 音声再生デバイスの名前を指定します
+
+デバイスの名前はプラットフォームごとに確認する一般的な方法か、`log-level` オプションを `info` にして実行することでログに出力されます。
+
+#### 映像品質の維持優先度に関するオプション
+
+- `--degradation-preference`
+  - `disabled`, `maintain_framerate`,`maintain_resolution`, `balanced` が指定可能です。
+  - 設定可能な値の詳細は [ W3C のドキュメント](https://www.w3.org/TR/mst-content-hint/#degradation-preference-when-encoding) を参照してください。
+
+#### エンコーダー / デコーダーの設定に関するオプション
+
+- `--vp8-encoder`
+  - VP8 エンコーダーを指定します
+- `--vp8-decoder` 
+  - VP8 デコーダーを指定します
+- `--vp9-encoder`
+  - VP9 エンコーダーを指定します
+- `--vp9-decoder`
+  - VP9 デコーダーを指定します
+- `--h264-encoder`
+  - H.264 エンコーダーを指定します
+- `--h264-decoder`
+  - H.264 デコーダーを指定します
+- `--h265-encoder`
+  - H.265 エンコーダーを指定します
+- `--h265-decoder`
+  - H.265 デコーダーを指定します
+- `--av1-encoder`
+  - AV1 エンコーダーを指定します
+- `--av1-decoder`
+  - AV1 デコーダーを指定します
+- `--show-video-codec-capability`
+  - 利用可能なエンコーダーとデコーダーを表示します
+
+設定可能な値は以下の通りです。
+ - `internal`
+ - `cisco_openh264`
+ - `intel_vpl`
+ - `nvidia_video_codec_sdk`
+
+> [!NOTE]
+> H.264 と H.265 は `internal` または未指定では利用できません。
+> 必ずエンコーダーまたはデコーダーを指定してください。
 
 #### その他のオプション
 

@@ -142,7 +142,7 @@ void ShowEncoderCapability() {
 
 NvCodecVideoEncoderCudaImpl::NvCodecVideoEncoderCudaImpl(
     std::shared_ptr<CudaContext> ctx) {
-  ShowEncoderCapability();
+  //ShowEncoderCapability();
   cuda_context_ = ctx;
 }
 NvCodecVideoEncoderCudaImpl::~NvCodecVideoEncoderCudaImpl() {}
