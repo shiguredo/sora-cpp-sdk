@@ -333,6 +333,11 @@ int32_t NvCodecVideoEncoderImpl::Encode(
   }
 #endif
 
+  RTC_LOG(LS_ERROR) << "Before EncodeFrame - "
+                    << "Size: " << width_ << "x" << height_ << " ForceIDR: "
+                    << ((pic_params.encodePicFlags & NV_ENC_PIC_FLAG_FORCEIDR)
+                            ? "Yes"
+                            : "No");
   try {
     nv_encoder_->EncodeFrame(v_packet_, &pic_params);
   } catch (const NVENCException& e) {
@@ -394,8 +399,27 @@ int32_t NvCodecVideoEncoderImpl::Encode(
       codec_specific.codecType = webrtc::kVideoCodecAV1;
     }
 
+    RTC_LOG(LS_ERROR) << "Debug Encode - "
+                      << "Width: " << encoded_image_._encodedWidth
+                      << " Height: " << encoded_image_._encodedHeight
+                      << " Size: " << packet.size()
+                      << " QP: " << encoded_image_.qp_ << " FrameType: "
+                      << (encoded_image_._frameType ==
+                                  webrtc::VideoFrameType::kVideoFrameKey
+                              ? "Key"
+                              : "Delta");
+    RTC_LOG(LS_ERROR) << "Pre OnEncodedImage - Buffer: "
+                      << encoded_image_buffer->size() << " KeyFrame: "
+                      << (encoded_image_._frameType ==
+                                  webrtc::VideoFrameType::kVideoFrameKey
+                              ? "Yes"
+                              : "No")
+                      << " QP: " << encoded_image_.qp_;
     webrtc::EncodedImageCallback::Result result =
         callback_->OnEncodedImage(encoded_image_, &codec_specific);
+    RTC_LOG(LS_ERROR) << "OnEncodedImage Raw Result - "
+                      << "Error: " << result.error
+                      << " Frame: " << result.frame_id;
     if (result.error != webrtc::EncodedImageCallback::Result::OK) {
       RTC_LOG(LS_ERROR) << __FUNCTION__
                         << " OnEncodedImage failed error:" << result.error;
@@ -419,8 +443,15 @@ void NvCodecVideoEncoderImpl::SetRates(
     return;
   }
 
+  RTC_LOG(LS_ERROR) << "Raw framerate_fps: " << parameters.framerate_fps
+                    << " Raw bitrate_bps: " << parameters.bitrate.get_sum_bps();
+
   uint32_t new_framerate = (uint32_t)parameters.framerate_fps;
   uint32_t new_bitrate = parameters.bitrate.get_sum_bps();
+
+  RTC_LOG(LS_ERROR) << "After cast - new_framerate: " << new_framerate
+                    << " new_bitrate: " << new_bitrate;
+
   RTC_LOG(LS_INFO) << __FUNCTION__ << " framerate_:" << framerate_
                    << " new_framerate: " << new_framerate
                    << " target_bitrate_bps_:" << target_bitrate_bps_
@@ -497,6 +528,11 @@ std::unique_ptr<NvEncoder> NvCodecVideoEncoderImpl::CreateEncoder(
     bool is_nv12
 #endif
 ) {
+  RTC_LOG(LS_ERROR) << "Encoder Initialize - "
+                    << "Width: " << width << " Height: " << height
+                    << " Target Bitrate: " << target_bitrate_bps
+                    << " Max Bitrate: " << max_bitrate_bps
+                    << " Framerate: " << framerate;
   std::unique_ptr<NvEncoder> encoder;
 
 #ifdef _WIN32
