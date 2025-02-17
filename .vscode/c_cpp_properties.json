@@ -108,6 +108,44 @@
             "intelliSenseMode": "linux-clang-x64"
         },
         {
+            "name": "ubuntu-24.04_x86_64 Debug",
+            "includePath": [
+                "${workspaceFolder}/_install/ubuntu-24.04_x86_64/debug/boost/include",
+                "${workspaceFolder}/../webrtc-build/_source/ubuntu-24.04_x86_64/webrtc/src",
+                "${workspaceFolder}/../webrtc-build/_source/ubuntu-24.04_x86_64/webrtc/src/third_party/abseil-cpp",
+                "${workspaceFolder}/../webrtc-build/_source/ubuntu-24.04_x86_64/webrtc/src/third_party/boringssl/src/include",
+                "${workspaceFolder}/../webrtc-build/_source/ubuntu-24.04_x86_64/webrtc/src/third_party/libyuv/include",
+                "${workspaceFolder}/../webrtc-build/_source/ubuntu-24.04_x86_64/webrtc/src/third_party/zlib",
+                "${workspaceFolder}/../webrtc-build/_source/ubuntu-24.04_x86_64/webrtc/src/third_party/libc++/src/include",
+                "${workspaceFolder}/_install/ubuntu-24.04_x86_64/debug/openh264/include",
+                "${workspaceFolder}/_install/ubuntu-24.04_x86_64/debug/vpl/include",
+                "${workspaceFolder}/_install/ubuntu-24.04_x86_64/debug/blend2d/include",
+                "${workspaceFolder}/examples/_install/ubuntu-24.04_x86_64/debug/cli11/include",
+                "${workspaceFolder}/examples/_install/ubuntu-24.04_x86_64/debug/sdl2/include",
+                "${workspaceFolder}/_build/ubuntu-24.04_x86_64/debug/sora",
+                "${workspaceFolder}/third_party/NvCodec/include",
+                "${workspaceFolder}/third_party/NvCodec/NvCodec",
+                "${workspaceFolder}/include",
+                "/usr/local/cuda/include"
+            ],
+            "defines": [
+                "WEBRTC_POSIX",
+                "_LIBCPP_ABI_UNSTABLE",
+                "_LIBCPP_DISABLE_AVAILABILITY",
+                "OPENSSL_IS_BORINGSSL",
+                "SORA_CPP_SDK_UBUNTU_2204",
+                "USE_NVCODEC_ENCODER",
+                "USE_VPL_ENCODER",
+                "RTC_ENABLE_H265"
+            ],
+            // "compilerPath": "${workspaceFolder}/_install/ubuntu-24.04_x86_64/release/llvm/clang/bin/clang++",
+            "compilerPath": "/usr/bin/clang++-18",
+            "compilerArgs": ["-nostdinc++"],
+            "cStandard": "gnu17",
+            "cppStandard": "gnu++17",
+            "intelliSenseMode": "linux-clang-x64"
+        },
+        {
             "name": "android Release",
             "includePath": [
                 "${workspaceFolder}/_install/android/release/boost/include",
