@@ -37,6 +37,8 @@
   - @melpon
 - [UPDATE] OpenH264 を v2.6.0 に上げる
   - @torikizi
+- [UPDATE] VPL_VERSION を 2.14.0 に上げる
+  - @torikizi
 - [ADD] 有効なエンコーダの一覧を取得する `GetVideoCodecCapability()` 関数を追加
   - @melpon
 - [ADD] 利用するエンコーダ/デコーダの実装を細かく指定するためのクラス `VideoCodecPreference` を追加
