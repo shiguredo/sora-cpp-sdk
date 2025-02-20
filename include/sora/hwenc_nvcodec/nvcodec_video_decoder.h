@@ -18,6 +18,9 @@ class NvCodecVideoDecoder : public webrtc::VideoDecoder {
   NvCodecVideoDecoder(std::shared_ptr<CudaContext> context,
                       CudaVideoCodec codec);
   ~NvCodecVideoDecoder() override;
+  static std::unique_ptr<NvCodecVideoDecoder> Create(
+      std::shared_ptr<CudaContext> context,
+      CudaVideoCodec codec);
 
   static bool IsSupported(std::shared_ptr<CudaContext> context,
                           CudaVideoCodec codec);

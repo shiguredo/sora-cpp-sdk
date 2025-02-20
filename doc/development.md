@@ -59,10 +59,5 @@ sudo apt-get -y install cuda=11.8.0-1
 
 ### ubuntu-20.04_x86_64, ubuntu-22.04_x86_64 の実行に必要な依存
 
-- libva2
-- libdrm2
-```bash
-sudo apt install libva2 libdrm2
-```
 - （Intel VPL の Intel Media SDK を利用したいなら）libmfx1
 - （Intel VPL の Intel VPL ランタイムを利用したいなら）libmfx-gen1.2 （Ubuntu 22.04 のみ利用可）

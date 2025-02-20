@@ -26,7 +26,6 @@
       "video_codec_type": null,
       "simulcast": false,
       "simulcast_multicodec": false,
-      "use_hardware_encoder": true,
       "openh264": null,
       "data_channel_signaling": null,
       "ignore_disconnect_websocket": null,
@@ -93,6 +92,19 @@
       // 3 - error
       // 4 - none
       "log_level": 2,
+
+      // "video_codec_preference": [{
+      //   "type": "VP8",
+      //   "encoder": "internal",
+      //   "decoder": null,
+      //   "parameters": {}
+      // }, {
+      //   "type": "H264",
+      //   "encoder": "cisco_openh264",
+      //   "decoder": null,
+      //   "parameters": {}
+      // }]
+      "video_codec_preference": null,
     },
 
     "signaling_urls": ["必須"],

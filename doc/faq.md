@@ -2,7 +2,7 @@
 
 ## ドキュメント
 
-Sora C++ SDK にドキュメントはありません。サンプルを参考にしてください。
+Sora C++ SDK にドキュメントはありません。Sora C++ SDK サンプル集を参考にしてください。
 
 不明点などあれば時雨堂の Discord <https://discord.gg/shiguredo> の `#sora-sdk-faq` にてご相談ください。
 
@@ -50,4 +50,4 @@ Sora C++ SDK は 4K@30fps での映像の配信に対応していますが、
 
 ## Intel VPL を使ってみたい
 
-Intel VPL の使い方については[Intel VPL](doc/vpl.md) をご確認ください。
+Intel VPL の使い方については[Intel VPL](vpl.md) をご確認ください。

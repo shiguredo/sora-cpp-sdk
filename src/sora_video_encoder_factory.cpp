@@ -45,9 +45,8 @@ namespace sora {
 SoraVideoEncoderFactory::SoraVideoEncoderFactory(
     SoraVideoEncoderFactoryConfig config)
     : config_(config) {
-  if (config.use_simulcast_adapter) {
+  if (!config.is_internal) {
     auto config2 = config;
-    config2.use_simulcast_adapter = false;
     config2.is_internal = true;
     internal_encoder_factory_.reset(new SoraVideoEncoderFactory(config2));
   }
@@ -64,7 +63,15 @@ SoraVideoEncoderFactory::GetSupportedFormats() const {
     // どちらも無ければ codec ごとのデフォルト設定を利用する
     std::vector<webrtc::SdpVideoFormat> formats;
     if (enc.factory != nullptr) {
-      formats = enc.factory->GetSupportedFormats();
+      if (enc.codec == webrtc::kVideoCodecGeneric) {
+        formats = enc.factory->GetSupportedFormats();
+      } else {
+        for (const auto& f : enc.factory->GetSupportedFormats()) {
+          if (f.name == webrtc::CodecTypeToPayloadString(enc.codec)) {
+            formats.push_back(f);
+          }
+        }
+      }
     } else if (enc.get_supported_formats != nullptr) {
       formats = enc.get_supported_formats();
     } else {
@@ -99,7 +106,7 @@ SoraVideoEncoderFactory::CreateInternalVideoEncoder(
     std::vector<webrtc::SdpVideoFormat> supported_formats = formats_[n++];
 
     if (enc.factory != nullptr) {
-      create_video_encoder = [factory = enc.factory.get()](
+      create_video_encoder = [factory = enc.factory](
                                  const webrtc::Environment& env,
                                  const webrtc::SdpVideoFormat& format) {
         return factory->Create(env, format);
@@ -132,7 +139,7 @@ std::unique_ptr<webrtc::VideoEncoder> SoraVideoEncoderFactory::Create(
         std::make_unique<webrtc::SimulcastEncoderAdapter>(
             env, internal_encoder_factory_.get(), nullptr, format);
 
-    if (config_.force_i420_conversion_for_simulcast_adapter) {
+    if (config_.force_i420_conversion) {
       encoder = std::make_unique<I420EncoderAdapter>(std::move(encoder));
     }
 

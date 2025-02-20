@@ -192,7 +192,6 @@ int main(int argc, char* argv[]) {
 
   sora::SoraClientContextConfig context_config;
   context_config.use_audio_device = false;
-  context_config.use_hardware_encoder = false;
   auto context = sora::SoraClientContext::Create(context_config);
 
   auto messaging_recvonly_sample =
