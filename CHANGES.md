@@ -50,6 +50,8 @@
   - Release 用の sumomo は C++ SDK のリリースバイナリを使用してビルドする  
   - リアルタイムメッセージング以外の機能がほぼ全て含まれている sumomo をリリース時に含めるようにする
   - @torikizi
+- [ADD] NVIDIA VIDEO CODEC SDK を AV1 エンコーダー/デコーダーに対応する
+  - @melpon
 
 ## 2025.1.0
 
