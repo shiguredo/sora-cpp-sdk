@@ -137,7 +137,7 @@ int32_t NvCodecVideoDecoder::Release() {
 }
 
 const char* NvCodecVideoDecoder::ImplementationName() const {
-  return "NVIDIA VIDEO CODEC SDK";
+  return "NvCodec";
 }
 
 bool NvCodecVideoDecoder::InitNvCodec() {
