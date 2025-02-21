@@ -349,8 +349,12 @@ int32_t NvCodecVideoEncoderImpl::Encode(
         p += 32;
         size -= 32;
       }
-      p + 12;
+      p += 12;
       size - 12;
+
+      if (p[2] == 0x0a) {
+        encoded_image_._frameType = webrtc::VideoFrameType::kVideoFrameKey;
+      }
     }
     auto encoded_image_buffer = webrtc::EncodedImageBuffer::Create(p, size);
     encoded_image_.SetEncodedData(encoded_image_buffer);
