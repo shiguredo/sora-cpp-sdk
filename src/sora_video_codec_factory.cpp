@@ -137,7 +137,8 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
       } else if (*codec.encoder ==
                  VideoCodecImplementation::kNvidiaVideoCodecSdk) {
 #if defined(USE_NVCODEC_ENCODER)
-        assert(config.capability_config.cuda_context);
+        // CudaContext は必須ではない（Windows エンコーダでは DirectX を利用する）ので assert しない
+        // assert(config.capability_config.cuda_context);
         auto create_video_encoder = [cuda_context =
                                          config.capability_config.cuda_context](
                                         const webrtc::SdpVideoFormat& format) {

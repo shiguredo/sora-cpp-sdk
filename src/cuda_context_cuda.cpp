@@ -9,6 +9,9 @@ namespace sora {
 std::shared_ptr<CudaContext> CudaContext::Create() {
   return nullptr;
 }
+bool CudaContext::CanCreate() {
+  return false;
+}
 
 }  // namespace sora
 
@@ -60,6 +63,36 @@ std::shared_ptr<CudaContext> CudaContext::Create() {
   } catch (std::exception&) {
     return nullptr;
   }
+}
+
+// Create() と同じことをするけど、エラーログを出さないようにする
+bool CudaContext::CanCreate() {
+  CUdevice device;
+  CUcontext context;
+
+  if (!dyn::DynModule::Instance().IsLoadable(dyn::CUDA_SO)) {
+    return false;
+  }
+
+  CUresult r;
+  r = dyn::cuInit(0);
+  if (r != CUDA_SUCCESS) {
+    return false;
+  }
+
+  r = dyn::cuDeviceGet(&device, 0);
+  if (r != CUDA_SUCCESS) {
+    return false;
+  }
+
+  r = dyn::cuCtxCreate(&context, 0, device);
+  if (r != CUDA_SUCCESS) {
+    return false;
+  }
+
+  dyn::cuCtxDestroy(context);
+
+  return true;
 }
 
 CUdevice GetCudaDevice(std::shared_ptr<CudaContext> ctx) {

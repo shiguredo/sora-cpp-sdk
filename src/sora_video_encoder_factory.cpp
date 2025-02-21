@@ -194,7 +194,7 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
     config.encoders.insert(config.encoders.begin(),
                            VideoEncoderConfig(
                                webrtc::kVideoCodecH264,
-                               [cuda_context = cuda_context](auto format)
+                               [cuda_context](auto format)
                                    -> std::unique_ptr<webrtc::VideoEncoder> {
                                  return NvCodecVideoEncoder::Create(
                                      cuda_context, CudaVideoCodec::H264);
@@ -205,10 +205,21 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
     config.encoders.insert(config.encoders.begin(),
                            VideoEncoderConfig(
                                webrtc::kVideoCodecH265,
-                               [cuda_context = cuda_context](auto format)
+                               [cuda_context](auto format)
                                    -> std::unique_ptr<webrtc::VideoEncoder> {
                                  return NvCodecVideoEncoder::Create(
                                      cuda_context, CudaVideoCodec::H265);
+                               },
+                               16));
+  }
+  if (NvCodecVideoEncoder::IsSupported(cuda_context, CudaVideoCodec::AV1)) {
+    config.encoders.insert(config.encoders.begin(),
+                           VideoEncoderConfig(
+                               webrtc::kVideoCodecAV1,
+                               [cuda_context](auto format)
+                                   -> std::unique_ptr<webrtc::VideoEncoder> {
+                                 return NvCodecVideoEncoder::Create(
+                                     cuda_context, CudaVideoCodec::AV1);
                                },
                                16));
   }

@@ -364,7 +364,7 @@ VideoCodecPreference::Codec tag_invoke(
     r.encoder =
         boost::json::value_to<VideoCodecImplementation>(jv.at("encoder"));
   }
-  if (jv.at("encoder").is_string()) {
+  if (jv.at("decoder").is_string()) {
     r.decoder =
         boost::json::value_to<VideoCodecImplementation>(jv.at("decoder"));
   }

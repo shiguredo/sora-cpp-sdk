@@ -521,7 +521,9 @@ int main(int argc, char* argv[]) {
   // 表示して終了する系の処理はここに書く
   if (show_video_codec_capability) {
     sora::VideoCodecCapabilityConfig config;
-    config.cuda_context = sora::CudaContext::Create();
+    if (sora::CudaContext::CanCreate()) {
+      config.cuda_context = sora::CudaContext::Create();
+    }
     config.openh264_path = openh264;
     auto capability = sora::GetVideoCodecCapability(config);
     for (const auto& engine : capability.engines) {
@@ -619,8 +621,10 @@ int main(int argc, char* argv[]) {
     }
     if (context_config.video_codec_factory_config.preference->HasImplementation(
             sora::VideoCodecImplementation::kNvidiaVideoCodecSdk)) {
-      context_config.video_codec_factory_config.capability_config.cuda_context =
-          sora::CudaContext::Create();
+      if (sora::CudaContext::CanCreate()) {
+        context_config.video_codec_factory_config.capability_config
+            .cuda_context = sora::CudaContext::Create();
+      }
     }
   }
 

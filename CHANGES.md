@@ -37,6 +37,8 @@
   - @melpon
 - [UPDATE] OpenH264 を v2.6.0 に上げる
   - @torikizi
+- [UPDATE] VPL_VERSION を 2.14.0 に上げる
+  - @torikizi
 - [ADD] 有効なエンコーダの一覧を取得する `GetVideoCodecCapability()` 関数を追加
   - @melpon
 - [ADD] 利用するエンコーダ/デコーダの実装を細かく指定するためのクラス `VideoCodecPreference` を追加
@@ -47,6 +49,13 @@
 - [ADD] タグが打たれた場合に sumomo バイナリを Release に追加する
   - Release 用の sumomo は C++ SDK のリリースバイナリを使用してビルドする  
   - リアルタイムメッセージング以外の機能がほぼ全て含まれている sumomo をリリース時に含めるようにする
+  - @torikizi
+- [ADD] NVIDIA VIDEO CODEC SDK を AV1 エンコーダー/デコーダーに対応する
+  - @melpon
+- [ADD] `CudaContext::CanCreate()` を追加
+  - @melpon
+- [FIX] `NvCodecVideoDecoder` の `ImplementationName` を `NvCodec` に修正する
+  - NvCodecVideoEncoder の `ImplementationName` は `NvCodec` になっているので、合わせる
   - @torikizi
 
 ## 2025.1.0
