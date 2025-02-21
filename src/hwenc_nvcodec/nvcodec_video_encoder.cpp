@@ -20,6 +20,8 @@
 #include <modules/video_coding/codecs/h264/include/h264.h>
 #include <modules/video_coding/include/video_codec_interface.h>
 #include <modules/video_coding/include/video_error_codes.h>
+#include <modules/video_coding/svc/create_scalability_structure.h>
+#include <modules/video_coding/svc/scalable_video_controller.h>
 #include <rtc_base/logging.h>
 
 // libyuv
@@ -125,6 +127,10 @@ class NvCodecVideoEncoderImpl : public NvCodecVideoEncoder {
   NV_ENC_INITIALIZE_PARAMS initialize_params_;
   std::vector<std::vector<uint8_t>> v_packet_;
   webrtc::EncodedImage encoded_image_;
+
+  // AV1 用
+  std::unique_ptr<webrtc::ScalableVideoController> svc_controller_;
+  webrtc::ScalabilityMode scalability_mode_;
 };
 
 NvCodecVideoEncoderImpl::NvCodecVideoEncoderImpl(
@@ -178,6 +184,18 @@ int32_t NvCodecVideoEncoderImpl::InitEncode(
   mode_ = codec_settings->mode;
 
   RTC_LOG(LS_INFO) << "InitEncode " << target_bitrate_bps_ << "bit/sec";
+
+  if (codec_settings->codecType == webrtc::kVideoCodecAV1) {
+    auto scalability_mode = codec_settings->GetScalabilityMode();
+    if (!scalability_mode) {
+      RTC_LOG(LS_WARNING) << "Scalability mode is not set, using 'L1T1'.";
+      scalability_mode = webrtc::ScalabilityMode::kL1T1;
+    }
+    RTC_LOG(LS_INFO) << "InitEncode scalability_mode:"
+                     << (int)*scalability_mode;
+    svc_controller_ = webrtc::CreateScalabilityStructure(*scalability_mode);
+    scalability_mode_ = *scalability_mode;
+  }
 
   return InitNvEnc();
 }
@@ -350,13 +368,10 @@ int32_t NvCodecVideoEncoderImpl::Encode(
         size -= 32;
       }
       p += 12;
-      size - 12;
-
-      if (p[2] == 0x0a) {
-        encoded_image_._frameType = webrtc::VideoFrameType::kVideoFrameKey;
-      }
+      size -= 12;
     }
     auto encoded_image_buffer = webrtc::EncodedImageBuffer::Create(p, size);
+
     encoded_image_.SetEncodedData(encoded_image_buffer);
     encoded_image_._encodedWidth = width_;
     encoded_image_._encodedHeight = height_;
@@ -392,7 +407,11 @@ int32_t NvCodecVideoEncoderImpl::Encode(
         }
       }
     } else if (codec_ == CudaVideoCodec::AV1) {
-      // なんとかしてキーフレームを判定する
+      // 最初の 2 バイトは 0x12 0x00 で、これは OBU_TEMPORAL_DELIMITER なのでこれは無視して、その次の OBU を見る
+      // 0x0a は OBU_SEQUENCE_HEADER なのでキーフレームと判断する
+      if (p[2] == 0x0a) {
+        encoded_image_._frameType = webrtc::VideoFrameType::kVideoFrameKey;
+      }
     }
 
     webrtc::CodecSpecificInfo codec_specific;
@@ -410,6 +429,22 @@ int32_t NvCodecVideoEncoderImpl::Encode(
       encoded_image_.qp_ = h265_bitstream_parser_.GetLastSliceQp().value_or(-1);
     } else if (codec_ == CudaVideoCodec::AV1) {
       codec_specific.codecType = webrtc::kVideoCodecAV1;
+
+      bool is_key =
+          encoded_image_._frameType == webrtc::VideoFrameType::kVideoFrameKey;
+      std::vector<webrtc::ScalableVideoController::LayerFrameConfig>
+          layer_frames = svc_controller_->NextFrameConfig(is_key);
+      codec_specific.end_of_picture = true;
+      codec_specific.scalability_mode = scalability_mode_;
+      codec_specific.generic_frame_info =
+          svc_controller_->OnEncodeDone(layer_frames[0]);
+      if (is_key && codec_specific.generic_frame_info) {
+        codec_specific.template_structure =
+            svc_controller_->DependencyStructure();
+        auto& resolutions = codec_specific.template_structure->resolutions;
+        resolutions = {webrtc::RenderResolution(encoded_image_._encodedWidth,
+                                                encoded_image_._encodedHeight)};
+      }
     }
 
     webrtc::EncodedImageCallback::Result result =
@@ -437,14 +472,12 @@ void NvCodecVideoEncoderImpl::SetRates(
     return;
   }
 
-  RTC_LOG(LS_ERROR) << "Raw framerate_fps: " << parameters.framerate_fps
-                    << " Raw bitrate_bps: " << parameters.bitrate.get_sum_bps();
+  if (svc_controller_) {
+    svc_controller_->OnRatesUpdated(parameters.bitrate);
+  }
 
   uint32_t new_framerate = (uint32_t)parameters.framerate_fps;
   uint32_t new_bitrate = parameters.bitrate.get_sum_bps();
-
-  RTC_LOG(LS_ERROR) << "After cast - new_framerate: " << new_framerate
-                    << " new_bitrate: " << new_bitrate;
 
   RTC_LOG(LS_INFO) << __FUNCTION__ << " framerate_:" << framerate_
                    << " new_framerate: " << new_framerate
