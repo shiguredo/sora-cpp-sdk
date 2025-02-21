@@ -478,7 +478,6 @@ void NvCodecVideoEncoderImpl::SetRates(
 
   uint32_t new_framerate = (uint32_t)parameters.framerate_fps;
   uint32_t new_bitrate = parameters.bitrate.get_sum_bps();
-
   RTC_LOG(LS_INFO) << __FUNCTION__ << " framerate_:" << framerate_
                    << " new_framerate: " << new_framerate
                    << " target_bitrate_bps_:" << target_bitrate_bps_
