@@ -333,11 +333,6 @@ int32_t NvCodecVideoEncoderImpl::Encode(
   }
 #endif
 
-  RTC_LOG(LS_ERROR) << "Before EncodeFrame - "
-                    << "Size: " << width_ << "x" << height_ << " ForceIDR: "
-                    << ((pic_params.encodePicFlags & NV_ENC_PIC_FLAG_FORCEIDR)
-                            ? "Yes"
-                            : "No");
   try {
     nv_encoder_->EncodeFrame(v_packet_, &pic_params);
   } catch (const NVENCException& e) {
@@ -346,8 +341,18 @@ int32_t NvCodecVideoEncoderImpl::Encode(
   }
 
   for (std::vector<uint8_t>& packet : v_packet_) {
-    auto encoded_image_buffer =
-        webrtc::EncodedImageBuffer::Create(packet.data(), packet.size());
+    uint8_t* p = packet.data();
+    size_t size = packet.size();
+    if (codec_ == CudaVideoCodec::AV1) {
+      // IVF ヘッダーが付いてるので取り除く
+      if ((p[0] == 'D') && (p[1] == 'K') && (p[2] == 'I') && (p[3] == 'F')) {
+        p += 32;
+        size -= 32;
+      }
+      p + 12;
+      size - 12;
+    }
+    auto encoded_image_buffer = webrtc::EncodedImageBuffer::Create(p, size);
     encoded_image_.SetEncodedData(encoded_image_buffer);
     encoded_image_._encodedWidth = width_;
     encoded_image_._encodedHeight = height_;
@@ -363,23 +368,27 @@ int32_t NvCodecVideoEncoderImpl::Encode(
     encoded_image_.SetColorSpace(frame.color_space());
     encoded_image_._frameType = webrtc::VideoFrameType::kVideoFrameDelta;
 
-    uint8_t zero_count = 0;
-    size_t nal_start_idx = 0;
-    for (size_t i = 0; i < packet.size(); i++) {
-      uint8_t data = packet.data()[i];
-      if ((i != 0) && (i == nal_start_idx)) {
-        if ((data & 0x1F) == 0x05) {
-          encoded_image_._frameType = webrtc::VideoFrameType::kVideoFrameKey;
+    if (codec_ == CudaVideoCodec::H264 || codec_ == CudaVideoCodec::H265) {
+      uint8_t zero_count = 0;
+      size_t nal_start_idx = 0;
+      for (size_t i = 0; i < packet.size(); i++) {
+        uint8_t data = packet.data()[i];
+        if ((i != 0) && (i == nal_start_idx)) {
+          if ((data & 0x1F) == 0x05) {
+            encoded_image_._frameType = webrtc::VideoFrameType::kVideoFrameKey;
+          }
+        }
+        if (data == 0x01 && zero_count >= 2) {
+          nal_start_idx = i + 1;
+        }
+        if (data == 0x00) {
+          zero_count++;
+        } else {
+          zero_count = 0;
         }
       }
-      if (data == 0x01 && zero_count >= 2) {
-        nal_start_idx = i + 1;
-      }
-      if (data == 0x00) {
-        zero_count++;
-      } else {
-        zero_count = 0;
-      }
+    } else if (codec_ == CudaVideoCodec::AV1) {
+      // なんとかしてキーフレームを判定する
     }
 
     webrtc::CodecSpecificInfo codec_specific;
@@ -399,27 +408,8 @@ int32_t NvCodecVideoEncoderImpl::Encode(
       codec_specific.codecType = webrtc::kVideoCodecAV1;
     }
 
-    RTC_LOG(LS_ERROR) << "Debug Encode - "
-                      << "Width: " << encoded_image_._encodedWidth
-                      << " Height: " << encoded_image_._encodedHeight
-                      << " Size: " << packet.size()
-                      << " QP: " << encoded_image_.qp_ << " FrameType: "
-                      << (encoded_image_._frameType ==
-                                  webrtc::VideoFrameType::kVideoFrameKey
-                              ? "Key"
-                              : "Delta");
-    RTC_LOG(LS_ERROR) << "Pre OnEncodedImage - Buffer: "
-                      << encoded_image_buffer->size() << " KeyFrame: "
-                      << (encoded_image_._frameType ==
-                                  webrtc::VideoFrameType::kVideoFrameKey
-                              ? "Yes"
-                              : "No")
-                      << " QP: " << encoded_image_.qp_;
     webrtc::EncodedImageCallback::Result result =
         callback_->OnEncodedImage(encoded_image_, &codec_specific);
-    RTC_LOG(LS_ERROR) << "OnEncodedImage Raw Result - "
-                      << "Error: " << result.error
-                      << " Frame: " << result.frame_id;
     if (result.error != webrtc::EncodedImageCallback::Result::OK) {
       RTC_LOG(LS_ERROR) << __FUNCTION__
                         << " OnEncodedImage failed error:" << result.error;
@@ -528,11 +518,6 @@ std::unique_ptr<NvEncoder> NvCodecVideoEncoderImpl::CreateEncoder(
     bool is_nv12
 #endif
 ) {
-  RTC_LOG(LS_ERROR) << "Encoder Initialize - "
-                    << "Width: " << width << " Height: " << height
-                    << " Target Bitrate: " << target_bitrate_bps
-                    << " Max Bitrate: " << max_bitrate_bps
-                    << " Framerate: " << framerate;
   std::unique_ptr<NvEncoder> encoder;
 
 #ifdef _WIN32

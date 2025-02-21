@@ -15,6 +15,10 @@
             "environment": [],
             "console": "externalTerminal",
             //"preLaunchTask": "C/C++: cl.exe アクティブなファイルのビルド"
+            "sourceFileMap": {
+                ".\\..\\..\\..\\..\\_source\\windows_x86_64\\webrtc\\src": "D:\\dev\\webrtc-build\\_source\\windows_x86_64\\webrtc\\src",
+                "../../../../_source/windows_x86_64/webrtc/src": "D:\\dev\\webrtc-build\\_source\\windows_x86_64\\webrtc\\src",
+            }
         },
         {
             "name": "[hello] Windows RelWithDebInfo ビルドのデバッグ",
