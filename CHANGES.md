@@ -52,6 +52,8 @@
   - @torikizi
 - [ADD] NVIDIA VIDEO CODEC SDK を AV1 エンコーダー/デコーダーに対応する
   - @melpon
+- [ADD] `CudaContext::CanCreate()` を追加
+  - @melpon
 
 ## 2025.1.0
 
