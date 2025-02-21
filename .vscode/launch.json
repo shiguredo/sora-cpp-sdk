@@ -21,6 +21,28 @@
             }
         },
         {
+            "name": "[sumomo][debug] Windows",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}\\examples\\_build\\windows_x86_64\\debug\\sumomo\\Debug\\sumomo.exe",
+            "args": [
+                "--signaling-url=wss://example.com/signaling",
+                "--channel-id=sora",
+                "--role=recvonly",
+                "--use-sdl",
+                "--av1-decoder=nvidia_video_codec_sdk",
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "console": "externalTerminal",
+            //"preLaunchTask": "C/C++: cl.exe アクティブなファイルのビルド"
+            "sourceFileMap": {
+                ".\\..\\..\\..\\..\\_source\\windows_x86_64\\webrtc\\src": "D:\\dev\\webrtc-build\\_source\\windows_x86_64\\webrtc\\src",
+                "../../../../_source/windows_x86_64/webrtc/src": "D:\\dev\\webrtc-build\\_source\\windows_x86_64\\webrtc\\src",
+            }
+        },
+        {
             "name": "[hello] Windows RelWithDebInfo ビルドのデバッグ",
             "type": "cppvsdbg",
             "request": "launch",
