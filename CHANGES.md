@@ -31,8 +31,8 @@
 - [CHANGE] GitHub Actions で macOS 向けビルドで Xcode のバージョンを指定したのを削除する  
   - libwebrtc の制約で Xcode のバージョンを指定していたが、 m132.6834.5.5 の時点では制約がなくなり、指定しなくてもビルドできるようになったため
   - @torikizi
-- [UPDATE] CMake を 3.31.4 にあげる
-  - @voluntas
+- [UPDATE] CMake を 3.31.5 にあげる
+  - @voluntas @torikizi
 - [UPDATE] libwebrtc を m132.6834.5.8 にあげる
   - @melpon
 - [UPDATE] OpenH264 を v2.6.0 に上げる
