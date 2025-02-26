@@ -1090,27 +1090,27 @@ def install_cmake(version, source_dir, install_dir, platform: str, ext):
 
 
 @versioned
-def install_sdl2(
+def install_sdl3(
     version, source_dir, build_dir, install_dir, debug: bool, platform: str, cmake_args: List[str]
 ):
-    url = f"http://www.libsdl.org/release/SDL2-{version}.zip"
+    url = f"https://www.libsdl.org/release/sdl3-{version}.zip"
     path = download(url, source_dir)
-    sdl2_source_dir = os.path.join(source_dir, "sdl2")
-    sdl2_build_dir = os.path.join(build_dir, "sdl2")
-    sdl2_install_dir = os.path.join(install_dir, "sdl2")
-    rm_rf(sdl2_source_dir)
-    rm_rf(sdl2_build_dir)
-    rm_rf(sdl2_install_dir)
-    extract(path, source_dir, "sdl2")
+    sdl3_source_dir = os.path.join(source_dir, "sdl3")
+    sdl3_build_dir = os.path.join(build_dir, "sdl3")
+    sdl3_install_dir = os.path.join(install_dir, "sdl3")
+    rm_rf(sdl3_source_dir)
+    rm_rf(sdl3_build_dir)
+    rm_rf(sdl3_install_dir)
+    extract(path, source_dir, "sdl3")
 
-    mkdir_p(sdl2_build_dir)
-    with cd(sdl2_build_dir):
+    mkdir_p(sdl3_build_dir)
+    with cd(sdl3_build_dir):
         configuration = "Debug" if debug else "Release"
         cmake_args = cmake_args[:]
         cmake_args += [
-            sdl2_source_dir,
+            sdl3_source_dir,
             f"-DCMAKE_BUILD_TYPE={configuration}",
-            f"-DCMAKE_INSTALL_PREFIX={cmake_path(sdl2_install_dir)}",
+            f"-DCMAKE_INSTALL_PREFIX={cmake_path(sdl3_install_dir)}",
             "-DBUILD_SHARED_LIBS=OFF",
         ]
         if platform == "windows":

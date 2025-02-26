@@ -26,7 +26,7 @@ from buildbase import (  # noqa: E402
     install_cmake,
     install_llvm,
     install_rootfs,
-    install_sdl2,
+    install_sdl3,
     install_sora_and_deps,
     install_webrtc,
     mkdir_p,
@@ -139,9 +139,9 @@ def install_deps(
 
         # SDL2
         sysroot = os.path.join(install_dir, "rootfs")
-        install_sdl2_args = {
-            "version": version["SDL2_VERSION"],
-            "version_file": os.path.join(install_dir, "sdl2.version"),
+        install_sdl3_args = {
+            "version": version["SDL3_VERSION"],
+            "version_file": os.path.join(install_dir, "sdl3.version"),
             "source_dir": source_dir,
             "build_dir": build_dir,
             "install_dir": install_dir,
@@ -162,7 +162,7 @@ def install_deps(
                 "-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY",
             ],
         }
-        install_sdl2(**install_sdl2_args)
+        install_sdl3(**install_sdl3_args)
 
         # CLI11
         install_cli11_args = {
@@ -218,7 +218,7 @@ def main():
         cmake_args.append(f"-DWEBRTC_LIBRARY_DIR={cmake_path(webrtc_info.webrtc_library_dir)}")
         cmake_args.append(f"-DSORA_DIR={cmake_path(sora_info.sora_install_dir)}")
         cmake_args.append(f"-DCLI11_DIR={cmake_path(os.path.join(install_dir, 'cli11'))}")
-        cmake_args.append(f"-DSDL2_DIR={cmake_path(os.path.join(install_dir, 'sdl2'))}")
+        cmake_args.append(f"-DSDL2_DIR={cmake_path(os.path.join(install_dir, 'sdl3'))}")
 
         # クロスコンパイルの設定。
         # 本来は toolchain ファイルに書く内容
