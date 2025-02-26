@@ -33,5 +33,5 @@ set_target_properties(sdl_sample PROPERTIES CXX_VISIBILITY_PRESET hidden)
 target_sources(sdl_sample PRIVATE ../src/sdl_sample.cpp ../src/sdl_renderer.cpp)
 
 target_include_directories(sdl_sample PRIVATE ${CLI11_DIR}/include)
-target_link_libraries(sdl_sample PRIVATE Sora::sora SDL3::SDL3 SDL3::SDL3main)
+target_link_libraries(sdl_sample PRIVATE Sora::sora SDL3::SDL3)
 target_compile_definitions(sdl_sample PRIVATE CLI11_HAS_FILESYSTEM=0)

@@ -11,6 +11,9 @@
 
 ## develop
 
+- [CHANGE] examples の VERSION の SDL2_VERSION を SDL3_VERSION に変更する
+- [CHANGE] sdl を 3.2.4 に上げる
+  - @volunats
 - [CHANGE] `SoraClientContextConfig` から `use_hardware_encoder` を削除
   - これにより、デフォルトで利用するエンコーダ/デコーダは全て libwebrtc の実装のものになります
   - ハードウェアエンコーダを有効にしたい場合は `SoraClientContextConfig::video_codec_factory_config` を適切に設定して下さい
@@ -88,7 +91,7 @@
   - @tnoho @torikizi @melpon
 - [UPDATE] Xcode のバージョンを 15.4 にあげる
   - @tnoho
-- [UPDATE] SDL を 2.30.11 に上げる
+- [update] sdl を 2.30.11 に上げる
   - @torikizi
 - [UPDATE] BLEND2D_VERSION を上げる
   - @torikizi
