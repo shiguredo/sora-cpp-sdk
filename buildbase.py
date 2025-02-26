@@ -1094,7 +1094,6 @@ def install_sdl3(
     version, source_dir, build_dir, install_dir, debug: bool, platform: str, cmake_args: List[str]
 ):
     url = f"https://www.libsdl.org/release/SDL3-{version}.zip"
-    print(url)
     path = download(url, source_dir)
     sdl3_source_dir = os.path.join(source_dir, "sdl3")
     sdl3_build_dir = os.path.join(build_dir, "sdl3")
