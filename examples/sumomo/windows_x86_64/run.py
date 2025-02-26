@@ -93,7 +93,7 @@ def install_deps(
         install_cmake(**install_cmake_args)
         add_path(os.path.join(install_dir, "cmake", "bin"))
 
-        # SDL2
+        # SDL3
         install_sdl3_args = {
             "version": version["SDL3_VERSION"],
             "version_file": os.path.join(install_dir, "sdl3.version"),
@@ -165,7 +165,7 @@ def main():
         cmake_args.append(f"-DWEBRTC_LIBRARY_DIR={cmake_path(webrtc_info.webrtc_library_dir)}")
         cmake_args.append(f"-DSORA_DIR={cmake_path(sora_info.sora_install_dir)}")
         cmake_args.append(f"-DCLI11_DIR={cmake_path(os.path.join(install_dir, 'cli11'))}")
-        cmake_args.append(f"-DSDL2_DIR={cmake_path(os.path.join(install_dir, 'sdl3'))}")
+        cmake_args.append(f"-DSDL3_DIR={cmake_path(os.path.join(install_dir, 'sdl3'))}")
         cmd(["cmake", os.path.join(PROJECT_DIR)] + cmake_args)
         cmd(
             ["cmake", "--build", ".", f"-j{multiprocessing.cpu_count()}", "--config", configuration]
