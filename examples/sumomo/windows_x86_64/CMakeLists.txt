@@ -32,7 +32,7 @@ set_target_properties(sumomo PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_sources(sumomo PRIVATE ../src/sumomo.cpp ../src/sdl_renderer.cpp)
 
 target_include_directories(sumomo PRIVATE ${CLI11_DIR}/include)
-target_link_libraries(sumomo PRIVATE Sora::sora SDL3::SDL3 SDL3::SDL3main)
+target_link_libraries(sumomo PRIVATE Sora::sora SDL3::SDL3)
 
 # 文字コードを utf-8 として扱うのと、シンボルテーブル数を増やす
 target_compile_options(sumomo PRIVATE /utf-8 /bigobj)

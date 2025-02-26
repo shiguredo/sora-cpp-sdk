@@ -37,5 +37,5 @@ target_compile_options(sdl_sample
     "$<$<COMPILE_LANGUAGE:CXX>:-isystem${LIBCXX_INCLUDE_DIR}>"
 )
 target_include_directories(sdl_sample PRIVATE ${CLI11_DIR}/include)
-target_link_libraries(sdl_sample PRIVATE Sora::sora SDL3::SDL3 SDL3::SDL3main)
+target_link_libraries(sdl_sample PRIVATE Sora::sora SDL3::SDL3)
 target_compile_definitions(sdl_sample PRIVATE CLI11_HAS_FILESYSTEM=0)

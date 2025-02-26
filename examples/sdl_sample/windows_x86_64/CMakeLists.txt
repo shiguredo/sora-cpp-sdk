@@ -32,7 +32,7 @@ set_target_properties(sdl_sample PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_sources(sdl_sample PRIVATE ../src/sdl_sample.cpp ../src/sdl_renderer.cpp)
 
 target_include_directories(sdl_sample PRIVATE ${CLI11_DIR}/include)
-target_link_libraries(sdl_sample PRIVATE Sora::sora SDL3::SDL3 SDL3::SDL3main)
+target_link_libraries(sdl_sample PRIVATE Sora::sora SDL3::SDL3)
 
 # 文字コードを utf-8 として扱うのと、シンボルテーブル数を増やす
 target_compile_options(sdl_sample PRIVATE /utf-8 /bigobj)
