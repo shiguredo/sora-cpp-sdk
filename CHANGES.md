@@ -62,6 +62,11 @@
   - NvCodecVideoEncoder の `ImplementationName` は `NvCodec` になっているので、合わせる
   - @torikizi
 
+### misc
+
+- [CHANGE] buildbase.py の sdl2 を sdl3 に変更する
+  - @voluntas
+
 ## 2025.1.0
 
 **リリース日**: 2025-01-27
