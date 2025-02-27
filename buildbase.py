@@ -1117,7 +1117,7 @@ def install_sdl3(
             cmake_args += [
                 "-DSDL_FORCE_STATIC_VCRT=ON",
                 "-DHAVE_LIBC=ON",
-                "-DL_JOYSTICK_GDK=OFF",
+                "-DSDL_JOYSTICK_GDK=OFF",
             ]
         elif platform == "macos":
             # システムでインストール済みかによって ON/OFF が切り替わってしまうため、
