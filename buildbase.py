@@ -1117,6 +1117,7 @@ def install_sdl3(
             cmake_args += [
                 "-DSDL_FORCE_STATIC_VCRT=ON",
                 "-DHAVE_LIBC=ON",
+                # FIXME: これは不要に思える
                 "-DSDL_JOYSTICK_GDK=OFF",
             ]
         elif platform == "macos":
