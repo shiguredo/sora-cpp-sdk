@@ -63,6 +63,7 @@
 - [FIX] GitHub Actions の Windows でのビルドが失敗する問題を修正
   - Github Actions のランナーアップデートによって MSVC のバージョンが変わり、ビルドが失敗する問題が発生していた
   - Boost.Process の v1 を利用するように修正
+  - Boost.Process の v1 を利用することでなくなった `chrono` をインクルードするように修正
   - @torikizi
 
 ## 2025.1.0
