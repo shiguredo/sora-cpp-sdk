@@ -15,7 +15,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 // Boost.Process
-#include <boost/process/v1/env.hpp>
+#include <boost/process/v2/environment.hpp>
 
 // Sora
 #include <sora/audio_device_module.h>
