@@ -57,6 +57,9 @@
 - [FIX] `NvCodecVideoDecoder` の `ImplementationName` を `NvCodec` に修正する
   - NvCodecVideoEncoder の `ImplementationName` は `NvCodec` になっているので、合わせる
   - @torikizi
+- [FIX] Ubuntu-24.04_armv8 でビルドが失敗する問題を修正
+  - `apt-get install` で `binutils-aarch64-linux-gnu` のパッケージが 404 エラーになったため build.yml に `apt-get update` を追加
+  - @torikizi
 
 ### misc
 
