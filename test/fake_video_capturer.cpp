@@ -1,5 +1,6 @@
 #include "fake_video_capturer.h"
 
+#include <chrono>
 #include <memory>
 #include <thread>
 
