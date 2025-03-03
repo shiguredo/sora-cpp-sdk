@@ -58,6 +58,11 @@
   - NvCodecVideoEncoder の `ImplementationName` は `NvCodec` になっているので、合わせる
   - @torikizi
 
+### misc
+
+- [FIX] test/e2e.cpp の利用していない include を削除する
+  - @torikizi
+
 ## 2025.1.0
 
 **リリース日**: 2025-01-27

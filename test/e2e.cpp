@@ -14,9 +14,6 @@
 // Catch2
 #include <catch2/catch_test_macros.hpp>
 
-// Boost.Process
-#include <boost/process/env.hpp>
-
 // Sora
 #include <sora/audio_device_module.h>
 #include <sora/camera_device_capturer.h>
