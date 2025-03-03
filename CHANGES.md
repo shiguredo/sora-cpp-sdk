@@ -64,6 +64,8 @@
   - Microsoft Visual C++ のバージョン `14.42.34438` 以降では `<chrono>` ヘッダの明示的なインクルードが必要となったため、ビルドエラーが発生していた
   - `<chrono>` をインクルードするように修正
   - @torikizi
+- [FIX] test/e2e.cpp の利用していない include を削除する
+  - @torikizi
 
 ## 2025.1.0
 
