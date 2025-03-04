@@ -3,6 +3,9 @@
 #include "sora/hwenc_amf/amf_video_decoder.h"
 #include "sora/hwenc_amf/amf_video_encoder.h"
 
+// AMF
+#include "public/include/core/Version.h"
+
 #include "../amf_context_impl.h"
 
 namespace sora {
@@ -10,8 +13,21 @@ namespace sora {
 VideoCodecCapability::Engine GetAMFVideoCodecCapability(
     std::shared_ptr<AMFContext> context) {
   VideoCodecCapability::Engine engine(VideoCodecImplementation::kAmdAmf);
+  if (context == nullptr) {
+    return engine;
+  }
+
+  auto runtime_version = GetAMFFactoryHelper(context)->AMFQueryVersion();
   engine.parameters.amf_runtime_version =
-      GetAMFFactoryHelper(context)->AMFQueryVersion();
+      std::to_string(AMF_GET_MAJOR_VERSION(runtime_version)) + "." +
+      std::to_string(AMF_GET_MINOR_VERSION(runtime_version)) + "." +
+      std::to_string(AMF_GET_SUBMINOR_VERSION(runtime_version)) + "." +
+      std::to_string(AMF_GET_BUILD_VERSION(runtime_version));
+  engine.parameters.amf_embedded_version =
+      std::to_string(AMF_VERSION_MAJOR) + "." +
+      std::to_string(AMF_VERSION_MINOR) + "." +
+      std::to_string(AMF_VERSION_RELEASE) + "." +
+      std::to_string(AMF_VERSION_BUILD_NUM);
 
   auto add = [&engine, &context](webrtc::VideoCodecType type) {
     engine.codecs.emplace_back(type,

@@ -584,12 +584,6 @@ int main(int argc, char* argv[]) {
     config.metadata = boost::json::parse(metadata);
   }
 
-  if (log_level != rtc::LS_NONE) {
-    rtc::LogMessage::LogToDebug((rtc::LoggingSeverity)log_level);
-    rtc::LogMessage::LogTimestamps();
-    rtc::LogMessage::LogThreads();
-  }
-
   auto context_config = sora::SoraClientContextConfig();
   if (!audio_recording_device.empty()) {
     context_config.audio_recording_device = audio_recording_device;

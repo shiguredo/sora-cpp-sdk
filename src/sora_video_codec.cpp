@@ -106,6 +106,9 @@ void tag_invoke(const boost::json::value_from_tag&,
   if (v.amf_runtime_version) {
     jo["amf_runtime_version"] = *v.amf_runtime_version;
   }
+  if (v.amf_embedded_version) {
+    jo["amf_embedded_version"] = *v.amf_embedded_version;
+  }
 }
 
 VideoCodecCapability::Parameters tag_invoke(
@@ -130,7 +133,10 @@ VideoCodecCapability::Parameters tag_invoke(
         jo.at("nvcodec_gpu_device_name").as_string().c_str();
   }
   if (jo.contains("amf_runtime_version")) {
-    r.vpl_impl_value = jo.at("amf_runtime_version").as_uint64();
+    r.amf_runtime_version = jo.at("amf_runtime_version").as_string().c_str();
+  }
+  if (jo.contains("amf_embedded_version")) {
+    r.amf_embedded_version = jo.at("amf_embedded_version").as_string().c_str();
   }
   return r;
 }

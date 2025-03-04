@@ -44,7 +44,8 @@ struct VideoCodecCapability {
     std::optional<std::string> vpl_impl;
     std::optional<int> vpl_impl_value;
     std::optional<std::string> nvcodec_gpu_device_name;
-    std::optional<uint64_t> amf_runtime_version;
+    std::optional<std::string> amf_runtime_version;
+    std::optional<std::string> amf_embedded_version;
   };
   struct Codec {
     Codec(webrtc::VideoCodecType type, bool encoder, bool decoder)
