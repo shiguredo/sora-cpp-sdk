@@ -45,6 +45,7 @@
                 "${workspaceFolder}/_install/ubuntu-22.04_x86_64/release/llvm/libcxx/include",
                 "${workspaceFolder}/_install/ubuntu-22.04_x86_64/release/openh264/include",
                 "${workspaceFolder}/_install/ubuntu-22.04_x86_64/release/vpl/include",
+                "${workspaceFolder}/_install/ubuntu-22.04_x86_64/release/amf/amf",
                 "${workspaceFolder}/_install/ubuntu-22.04_x86_64/release/blend2d/include",
                 "${workspaceFolder}/_build/ubuntu-22.04_x86_64/release/sora",
                 "${workspaceFolder}/third_party/NvCodec/include",
@@ -60,6 +61,7 @@
                 "SORA_CPP_SDK_UBUNTU_2204",
                 "USE_NVCODEC_ENCODER",
                 "USE_VPL_ENCODER",
+                "USE_AMF_ENCODER",
                 "RTC_ENABLE_H265"
             ],
             // "compilerPath": "${workspaceFolder}/_install/ubuntu-22.04_x86_64/release/llvm/clang/bin/clang++",
@@ -81,6 +83,7 @@
                 "${workspaceFolder}/_install/ubuntu-24.04_x86_64/release/llvm/libcxx/include",
                 "${workspaceFolder}/_install/ubuntu-24.04_x86_64/release/openh264/include",
                 "${workspaceFolder}/_install/ubuntu-24.04_x86_64/release/vpl/include",
+                "${workspaceFolder}/_install/ubuntu-24.04_x86_64/release/amf/amf",
                 "${workspaceFolder}/_install/ubuntu-24.04_x86_64/release/blend2d/include",
                 "${workspaceFolder}/examples/_install/ubuntu-24.04_x86_64/release/cli11/include",
                 "${workspaceFolder}/examples/_install/ubuntu-24.04_x86_64/release/sdl2/include",
@@ -98,6 +101,7 @@
                 "SORA_CPP_SDK_UBUNTU_2204",
                 "USE_NVCODEC_ENCODER",
                 "USE_VPL_ENCODER",
+                "USE_AMF_ENCODER",
                 "RTC_ENABLE_H265"
             ],
             // "compilerPath": "${workspaceFolder}/_install/ubuntu-24.04_x86_64/release/llvm/clang/bin/clang++",
@@ -119,6 +123,7 @@
                 "${workspaceFolder}/../webrtc-build/_source/ubuntu-24.04_x86_64/webrtc/src/third_party/libc++/src/include",
                 "${workspaceFolder}/_install/ubuntu-24.04_x86_64/debug/openh264/include",
                 "${workspaceFolder}/_install/ubuntu-24.04_x86_64/debug/vpl/include",
+                "${workspaceFolder}/_install/ubuntu-24.04_x86_64/debug/amf/amf",
                 "${workspaceFolder}/_install/ubuntu-24.04_x86_64/debug/blend2d/include",
                 "${workspaceFolder}/examples/_install/ubuntu-24.04_x86_64/debug/cli11/include",
                 "${workspaceFolder}/examples/_install/ubuntu-24.04_x86_64/debug/sdl2/include",
@@ -136,6 +141,7 @@
                 "SORA_CPP_SDK_UBUNTU_2204",
                 "USE_NVCODEC_ENCODER",
                 "USE_VPL_ENCODER",
+                "USE_AMF_ENCODER",
                 "RTC_ENABLE_H265"
             ],
             // "compilerPath": "${workspaceFolder}/_install/ubuntu-24.04_x86_64/release/llvm/clang/bin/clang++",
@@ -207,6 +213,7 @@
                 "${workspaceFolder}/_install/windows_x86_64/release/boost/include",
                 "${workspaceFolder}/_install/windows_x86_64/release/cuda/nvcc/include",
                 "${workspaceFolder}/_install/windows_x86_64/release/vpl/include",
+                "${workspaceFolder}/_install/windows_x86_64/release/amf/amf",
                 "${workspaceFolder}/_install/windows_x86_64/release/webrtc/include",
                 "${workspaceFolder}/_install/windows_x86_64/release/webrtc/include/third_party/abseil-cpp",
                 "${workspaceFolder}/_install/windows_x86_64/release/webrtc/include/third_party/boringssl/src/include",
@@ -223,6 +230,7 @@
                 "WEBRTC_WIN",
                 "USE_NVCODEC_ENCODER",
                 "USE_VPL_ENCODER",
+                "USE_AMF_ENCODER",
                 "RTC_ENABLE_H265"
             ],
             "cStandard": "gnu17",

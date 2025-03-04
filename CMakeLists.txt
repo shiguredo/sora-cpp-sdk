@@ -160,6 +160,7 @@ target_compile_definitions(sora
   PRIVATE
     $<$<BOOL:${USE_NVCODEC_ENCODER}>:USE_NVCODEC_ENCODER>
     $<$<BOOL:${USE_VPL_ENCODER}>:USE_VPL_ENCODER>
+    $<$<BOOL:${USE_AMF_ENCODER}>:USE_AMF_ENCODER>
 )
 
 # OpenH264
@@ -346,6 +347,25 @@ if (SORA_TARGET_OS STREQUAL "windows")
     list(APPEND BUNDLE_STATIC_LIBS ${VPL_ROOT_DIR}/lib/vpl$<$<CONFIG:Debug>:d>.lib)
   endif()
 
+  if (USE_AMF_ENCODER)
+    target_include_directories(sora PRIVATE ${AMF_ROOT_DIR}/amf)
+    target_sources(sora
+      PRIVATE
+        ${AMF_ROOT_DIR}/amf/public/common/AMFFactory.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/AMFSTL.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/DataStreamFactory.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/DataStreamFile.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/DataStreamMemory.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/Thread.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/TraceAdapter.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/Windows/ThreadWindows.cpp
+        src/hwenc_amf/amf_video_codec.cpp
+        src/hwenc_amf/amf_video_decoder.cpp
+        src/hwenc_amf/amf_video_encoder.cpp
+        src/amf_context_impl.cpp
+    )
+  endif()
+
 elseif (SORA_TARGET_OS STREQUAL "macos")
   enable_language(OBJCXX)
 
@@ -524,6 +544,25 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
     target_link_libraries(sora PRIVATE "$<BUILD_INTERFACE:VPL::dispatcher>")
     # vpl を要求したくないので libsora.a に含める
     list(APPEND BUNDLE_STATIC_LIBS $<TARGET_FILE:VPL::dispatcher>)
+  endif()
+
+  if (USE_AMF_ENCODER)
+    target_include_directories(sora PRIVATE ${AMF_ROOT_DIR}/amf)
+    target_sources(sora
+      PRIVATE
+        ${AMF_ROOT_DIR}/amf/public/common/AMFFactory.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/AMFSTL.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/DataStreamFactory.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/DataStreamFile.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/DataStreamMemory.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/Thread.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/TraceAdapter.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/Linux/ThreadLinux.cpp
+        src/hwenc_amf/amf_video_codec.cpp
+        src/hwenc_amf/amf_video_decoder.cpp
+        src/hwenc_amf/amf_video_encoder.cpp
+        src/amf_context_impl.cpp
+    )
   endif()
 
 endif()

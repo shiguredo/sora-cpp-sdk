@@ -282,6 +282,9 @@ int main(int argc, char* argv[]) {
 
   sora::SoraClientContextConfig context_config;
   context_config.get_android_application_context = GetAndroidApplicationContext;
+  if (get(v, "use_audio_device", x)) {
+    context_config.use_audio_device = x.as_bool();
+  }
   if (get(v, "openh264", x)) {
     context_config.video_codec_factory_config.capability_config.openh264_path =
         x.as_string();
@@ -300,7 +303,22 @@ int main(int argc, char* argv[]) {
     preference.codecs =
         boost::json::value_to<std::vector<sora::VideoCodecPreference::Codec>>(
             x);
+
+    if (preference.HasImplementation(
+            sora::VideoCodecImplementation::kNvidiaVideoCodecSdk)) {
+      if (sora::CudaContext::CanCreate()) {
+        context_config.video_codec_factory_config.capability_config
+            .cuda_context = sora::CudaContext::Create();
+      }
+    }
+    if (preference.HasImplementation(sora::VideoCodecImplementation::kAmdAmf)) {
+      if (sora::AMFContext::CanCreate()) {
+        context_config.video_codec_factory_config.capability_config
+            .amf_context = sora::AMFContext::Create();
+      }
+    }
   }
+
   auto context = sora::SoraClientContext::Create(context_config);
 
   auto hello = std::make_shared<HelloSora>(context, config);

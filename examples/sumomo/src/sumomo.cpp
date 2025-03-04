@@ -442,9 +442,11 @@ int main(int argc, char* argv[]) {
            {"cisco_openh264", sora::VideoCodecImplementation::kCiscoOpenH264},
            {"intel_vpl", sora::VideoCodecImplementation::kIntelVpl},
            {"nvidia_video_codec_sdk",
-            sora::VideoCodecImplementation::kNvidiaVideoCodecSdk}});
+            sora::VideoCodecImplementation::kNvidiaVideoCodecSdk},
+           {"amd_amf", sora::VideoCodecImplementation::kAmdAmf}});
   auto video_codec_description =
-      "value in {internal,cisco_openh264,intel_vpl,nvidia_video_codec_sdk}";
+      "value in "
+      "{internal,cisco_openh264,intel_vpl,nvidia_video_codec_sdk,amd_amf}";
   std::optional<sora::VideoCodecImplementation> vp8_encoder;
   std::optional<sora::VideoCodecImplementation> vp8_decoder;
   std::optional<sora::VideoCodecImplementation> vp9_encoder;
@@ -514,11 +516,20 @@ int main(int argc, char* argv[]) {
     exit(app.exit(e));
   }
 
+  if (log_level != rtc::LS_NONE) {
+    rtc::LogMessage::LogToDebug((rtc::LoggingSeverity)log_level);
+    rtc::LogMessage::LogTimestamps();
+    rtc::LogMessage::LogThreads();
+  }
+
   // 表示して終了する系の処理はここに書く
   if (show_video_codec_capability) {
     sora::VideoCodecCapabilityConfig config;
     if (sora::CudaContext::CanCreate()) {
       config.cuda_context = sora::CudaContext::Create();
+    }
+    if (sora::AMFContext::CanCreate()) {
+      config.amf_context = sora::AMFContext::Create();
     }
     config.openh264_path = openh264;
     auto capability = sora::GetVideoCodecCapability(config);
@@ -620,6 +631,13 @@ int main(int argc, char* argv[]) {
       if (sora::CudaContext::CanCreate()) {
         context_config.video_codec_factory_config.capability_config
             .cuda_context = sora::CudaContext::Create();
+      }
+    }
+    if (context_config.video_codec_factory_config.preference->HasImplementation(
+            sora::VideoCodecImplementation::kAmdAmf)) {
+      if (sora::AMFContext::CanCreate()) {
+        context_config.video_codec_factory_config.capability_config
+            .amf_context = sora::AMFContext::Create();
       }
     }
   }
