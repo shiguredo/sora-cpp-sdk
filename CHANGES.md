@@ -54,6 +54,8 @@
   - @melpon
 - [ADD] `CudaContext::CanCreate()` を追加
   - @melpon
+- [ADD] AMD の AMF に対応する
+  - @melpon
 - [FIX] `NvCodecVideoDecoder` の `ImplementationName` を `NvCodec` に修正する
   - NvCodecVideoEncoder の `ImplementationName` は `NvCodec` になっているので、合わせる
   - @torikizi
