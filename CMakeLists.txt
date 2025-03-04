@@ -93,6 +93,7 @@ target_include_directories(sora PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_sources(sora
   PRIVATE
     src/aligned_encoder_adapter.cpp
+    src/amf_context_impl.cpp
     src/audio_device_module.cpp
     src/audio_output_helper.cpp
     src/camera_device_capturer.cpp
@@ -362,7 +363,6 @@ if (SORA_TARGET_OS STREQUAL "windows")
         src/hwenc_amf/amf_video_codec.cpp
         src/hwenc_amf/amf_video_decoder.cpp
         src/hwenc_amf/amf_video_encoder.cpp
-        src/amf_context_impl.cpp
     )
   endif()
 
@@ -561,7 +561,6 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
         src/hwenc_amf/amf_video_codec.cpp
         src/hwenc_amf/amf_video_decoder.cpp
         src/hwenc_amf/amf_video_encoder.cpp
-        src/amf_context_impl.cpp
     )
   endif()
 
