@@ -85,6 +85,10 @@
       // ],
       "forwarding_filters": null,
 
+      // オーディオデバイスが存在しない環境だと audio: false でもエラーになるので
+      // その場合は use_audio_device: false にするのが良い
+      "use_audio_device": null,
+
       // 0 - verbose
       // 1 - info
       // 2 - warning

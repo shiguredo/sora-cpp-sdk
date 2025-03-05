@@ -1770,6 +1770,17 @@ def install_ninja(version, source_dir, install_dir, platform):
     extract(path, install_dir, "ninja")
 
 
+@versioned
+def install_amf(version, install_dir):
+    # AMF はライブラリというよりは便利関数＋サンプルコードという感じなので
+    # ここではソースだけダウンロードをして、必要に応じて利用者側でファイルを参照してインクルード/コンパイルする
+    amf_install_dir = os.path.join(install_dir, "amf")
+    rm_rf(amf_install_dir)
+    git_clone_shallow(
+        "https://github.com/GPUOpen-LibrariesAndSDKs/AMF.git", version, amf_install_dir
+    )
+
+
 class PlatformTarget(object):
     def __init__(self, os, osver, arch, extra=None):
         self.os = os

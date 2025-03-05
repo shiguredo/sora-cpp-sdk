@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 
+#include "amf_context.h"
 #include "cuda_context.h"
 #include "vpl_session.h"
 
@@ -33,6 +34,7 @@ enum class VideoCodecImplementation {
   kCiscoOpenH264,
   kIntelVpl,
   kNvidiaVideoCodecSdk,
+  kAmdAmf,
 };
 
 struct VideoCodecCapability {
@@ -42,6 +44,8 @@ struct VideoCodecCapability {
     std::optional<std::string> vpl_impl;
     std::optional<int> vpl_impl_value;
     std::optional<std::string> nvcodec_gpu_device_name;
+    std::optional<std::string> amf_runtime_version;
+    std::optional<std::string> amf_embedded_version;
   };
   struct Codec {
     Codec(webrtc::VideoCodecType type, bool encoder, bool decoder)
@@ -99,6 +103,7 @@ VideoCodecCapability tag_invoke(
 struct VideoCodecCapabilityConfig {
   VideoCodecCapabilityConfig();
   std::shared_ptr<CudaContext> cuda_context;
+  std::shared_ptr<AMFContext> amf_context;
   std::optional<std::string> openh264_path;
   void* jni_env = nullptr;
 };
