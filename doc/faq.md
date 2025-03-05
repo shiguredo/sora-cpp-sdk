@@ -19,7 +19,7 @@ GitHub Actions のビルドが失敗していたり、
 
 ## NVIDIA Jetson Orin (Ubuntu 22.04 arm64) でビルドできません
 
-Ubuntu 20.04 x86_64 でクロスコンパイルしたバイナリを利用するようにしてください。
+Ubuntu 22.04 x86_64 でクロスコンパイルしたバイナリを利用するようにしてください。
 
 ## NVIDIA 搭載の Windows で width height のいずれかが 128 未満のサイズの VP9 の映像を受信できません
 
@@ -44,9 +44,9 @@ Sora の設定については [Sora のドキュメント](https://sora-doc.shig
 Sora C++ SDK は 4K@30fps での映像の配信に対応していますが、
 一部の環境では 4K@30fps で映像を配信できない場合があります。
 
-その場合、 `SoraVideoEncoderFactoryConfig` という構造体の `force_i420_conversion_for_simulcast_adapter` フラグを `false` にすることで、4K@30fps で映像を配信できる場合があります。
+その場合、 `SoraVideoEncoderFactoryConfig` という構造体の `force_i420_conversion` フラグを `false` にすることで、4K@30fps で映像を配信できる場合があります。
 
-かなり内部的な話なので詳細については [コードのコメント](https://github.com/shiguredo/sora-cpp-sdk/blob/8f6dba9218e0cda7cdefafe64a37c1af9d5e5c9e/include/sora/sora_video_encoder_factory.h#L57-L71) をご確認ください。
+かなり内部的な話なので詳細については [コードのコメント](https://github.com/shiguredo/sora-cpp-sdk/blob/c29d3d6ec721ddc3d625275296506750a63460d4/include/sora/sora_video_encoder_factory.h#L59-L73) をご確認ください。
 
 ## Intel VPL を使ってみたい
 

@@ -31,6 +31,8 @@
 - [CHANGE] GitHub Actions で macOS 向けビルドで Xcode のバージョンを指定したのを削除する  
   - libwebrtc の制約で Xcode のバージョンを指定していたが、 m132.6834.5.5 の時点では制約がなくなり、指定しなくてもビルドできるようになったため
   - @torikizi
+- [CHANGE] Ubuntu 20.04 x86_64 の対応を削除
+  - @melpon
 - [UPDATE] CMake を 3.31.6 にあげる
   - @voluntas @torikizi
 - [UPDATE] libwebrtc を m132.6834.5.8 にあげる
