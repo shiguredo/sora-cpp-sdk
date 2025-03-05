@@ -76,7 +76,6 @@ def get_common_cmake_args(
         args.append(f"-DCMAKE_SYSROOT={sysroot}")
     if platform.target.os == "ubuntu":
         if platform.target.package_name in (
-            "ubuntu-20.04_x86_64",
             "ubuntu-22.04_x86_64",
             "ubuntu-24.04_x86_64",
         ):
@@ -540,7 +539,6 @@ AVAILABLE_TARGETS = [
     "windows_x86_64",
     "macos_x86_64",
     "macos_arm64",
-    "ubuntu-20.04_x86_64",
     "ubuntu-22.04_x86_64",
     "ubuntu-24.04_x86_64",
     "ubuntu-24.04_armv8",
@@ -569,8 +567,6 @@ def main():
         platform = Platform("macos", get_macos_osver(), "x86_64")
     elif args.target == "macos_arm64":
         platform = Platform("macos", get_macos_osver(), "arm64")
-    elif args.target == "ubuntu-20.04_x86_64":
-        platform = Platform("ubuntu", "20.04", "x86_64")
     elif args.target == "ubuntu-22.04_x86_64":
         platform = Platform("ubuntu", "22.04", "x86_64")
     elif args.target == "ubuntu-24.04_x86_64":
@@ -644,7 +640,6 @@ def main():
             cmake_args.append(f"-DCMAKE_SYSTEM_VERSION={WINDOWS_SDK_VERSION}")
         if platform.target.os == "ubuntu":
             if platform.target.package_name in (
-                "ubuntu-20.04_x86_64",
                 "ubuntu-22.04_x86_64",
                 "ubuntu-24.04_x86_64",
             ):
@@ -862,7 +857,6 @@ def main():
                     cmake_args.append(f"-DCMAKE_SYSROOT={sysroot}")
                 if platform.target.os == "ubuntu":
                     if platform.target.package_name in (
-                        "ubuntu-20.04_x86_64",
                         "ubuntu-22.04_x86_64",
                         "ubuntu-24.04_x86_64",
                     ):

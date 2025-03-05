@@ -54,8 +54,6 @@ _hololens2 は無視してください_
 
 - Windows 10.1809 x86_64 以降
 - macOS 14 arm64 以降
-- Ubuntu 20.04 x86_64
-  - 動作未検証です
 - Ubuntu 22.04 x86_64
 - Ubuntu 24.04 x86_64
 - Ubuntu 24.04 arm64
