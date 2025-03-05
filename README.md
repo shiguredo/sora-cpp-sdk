@@ -22,8 +22,7 @@ Please read <https://github.com/shiguredo/oss/blob/master/README.en.md> before u
 - 各プラットフォームで利用可能な HWA への対応
   - [Intel VPL](https://github.com/intel/libvpl)
     - VP9 / AV1 / H.264 / H.265
-      - VP9 のデコードのみの対応です
-      - エンコードについては [既知の問題](doc/known_issues.md) をご確認ください
+      - VP9 はエンコードのみの対応です、詳細は [既知の問題](doc/known_issues.md) をご確認ください
   - [NVIDIA Video Codec SDK](https://developer.nvidia.com/video-codec-sdk)
     - VP8 / VP9 / AV1 / H.264 / H.265
       - VP8 / VP9 はチップセットが対応していないため、デコードのみの対応です
@@ -31,6 +30,7 @@ Please read <https://github.com/shiguredo/oss/blob/master/README.en.md> before u
     - VP9 / AV1 / H.264 / H.265
   - [AMD AMF](https://github.com/GPUOpen-LibrariesAndSDKs/AMF)
     - VP8 / VP9 / AV1 / H.264 / H.265
+      - AV1 はエンコードのみの対応です、詳細は [既知の問題](doc/known_issues.md) をご確認ください
       - VP8 / VP9 はチップセットが対応していないため、デコードのみの対応です
   - [Apple Video Toolbox](https://developer.apple.com/documentation/videotoolbox)
     - H.264 / H.265
