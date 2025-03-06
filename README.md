@@ -30,7 +30,7 @@ Please read <https://github.com/shiguredo/oss/blob/master/README.en.md> before u
     - VP9 / AV1 / H.264 / H.265
   - [AMD AMF](https://github.com/GPUOpen-LibrariesAndSDKs/AMF)
     - VP8 / VP9 / AV1 / H.264 / H.265
-      - AV1 はエンコードのみの対応です、詳細は [既知の問題](doc/known_issues.md) をご確認ください
+      - AV1 は Ubuntu x86_64 ではドライバーがデコードには対応していません
       - VP8 / VP9 はチップセットが対応していないため、デコードのみの対応です
   - [Apple Video Toolbox](https://developer.apple.com/documentation/videotoolbox)
     - H.264 / H.265
