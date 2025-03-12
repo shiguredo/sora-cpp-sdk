@@ -475,6 +475,9 @@ AMF_RESULT AMFVideoEncoderImpl::ProcessBuffer(amf::AMFBufferPtr buffer,
         encoded_image_._frameType == webrtc::VideoFrameType::kVideoFrameKey;
     std::vector<webrtc::ScalableVideoController::LayerFrameConfig>
         layer_frames = svc_controller_->NextFrameConfig(is_key);
+    if (layer_frames.empty()) {
+      return AMF_OK;
+    }
     codec_specific.end_of_picture = true;
     codec_specific.scalability_mode = scalability_mode_;
     codec_specific.generic_frame_info =
