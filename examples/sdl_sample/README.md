@@ -76,30 +76,7 @@ _build/macos_arm64/release/sdl_sample
 └── sdl_sample
 ```
 
-#### Ubuntu 20.04 x86_64 向けのビルドをする
-
-##### 事前準備
-
-必要なパッケージをインストールしてください。
-
-```shell
-sudo apt install build-essential libxext-dev libx11-dev libgl-dev pkg-config python3
-```
-
-##### ビルド
-
-```shell
-python3 sdl_sample/ubuntu-20.04_x86_64/run.py
-```
-
-成功した場合、`_build/ubuntu-20.04_x86_64/release/sdl_sample` に `sdl_sample` が作成されます。
-
-```
-_build/ubuntu-20.04_x86_64/release/sdl_sample/
-└── sdl_sample
-```
-
-#### Ubuntu 22.04 x86_64 向けのビルドをする
+#### Ubuntu 22.04 x86_64 Desktop 向けのビルドをする
 
 ##### 事前準備
 
@@ -122,7 +99,7 @@ _build/ubuntu-22.04_x86_64/release/sdl_sample/
 └── sdl_sample
 ```
 
-#### Ubuntu 24.04 x86_64 向けのビルドをする
+#### Ubuntu 24.04 x86_64 Desktop 向けのビルドをする
 
 ##### 事前準備
 

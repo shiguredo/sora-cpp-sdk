@@ -15,6 +15,7 @@
 #include <sora/audio_device_module.h>
 #include <sora/camera_device_capturer.h>
 #include <sora/java_context.h>
+#include <sora/sora_video_codec.h>
 #include <sora/sora_video_decoder_factory.h>
 #include <sora/sora_video_encoder_factory.h>
 
@@ -151,6 +152,7 @@ int main(int argc, char* argv[]) {
     opt.allow_trailing_commas = true;
     v = boost::json::parse(js, {}, opt);
   }
+
   HelloSoraConfig config;
   for (auto&& x : v.as_object().at("signaling_urls").as_array()) {
     config.signaling_urls.push_back(x.as_string().c_str());
@@ -280,12 +282,43 @@ int main(int argc, char* argv[]) {
 
   sora::SoraClientContextConfig context_config;
   context_config.get_android_application_context = GetAndroidApplicationContext;
-  if (get(v, "use_hardware_encoder", x)) {
-    context_config.use_hardware_encoder = x.as_bool();
+  if (get(v, "use_audio_device", x)) {
+    context_config.use_audio_device = x.as_bool();
   }
   if (get(v, "openh264", x)) {
-    context_config.openh264 = x.as_string();
+    context_config.video_codec_factory_config.capability_config.openh264_path =
+        x.as_string();
+    auto& preference =
+        context_config.video_codec_factory_config.preference.emplace();
+    auto capability = sora::GetVideoCodecCapability(
+        context_config.video_codec_factory_config.capability_config);
+    preference.Merge(sora::CreateVideoCodecPreferenceFromImplementation(
+        capability, sora::VideoCodecImplementation::kInternal));
+    preference.Merge(sora::CreateVideoCodecPreferenceFromImplementation(
+        capability, sora::VideoCodecImplementation::kCiscoOpenH264));
   }
+  if (get(v, "video_codec_preference", x)) {
+    auto& preference =
+        context_config.video_codec_factory_config.preference.emplace();
+    preference.codecs =
+        boost::json::value_to<std::vector<sora::VideoCodecPreference::Codec>>(
+            x);
+
+    if (preference.HasImplementation(
+            sora::VideoCodecImplementation::kNvidiaVideoCodecSdk)) {
+      if (sora::CudaContext::CanCreate()) {
+        context_config.video_codec_factory_config.capability_config
+            .cuda_context = sora::CudaContext::Create();
+      }
+    }
+    if (preference.HasImplementation(sora::VideoCodecImplementation::kAmdAmf)) {
+      if (sora::AMFContext::CanCreate()) {
+        context_config.video_codec_factory_config.capability_config
+            .amf_context = sora::AMFContext::Create();
+      }
+    }
+  }
+
   auto context = sora::SoraClientContext::Create(context_config);
 
   auto hello = std::make_shared<HelloSora>(context, config);

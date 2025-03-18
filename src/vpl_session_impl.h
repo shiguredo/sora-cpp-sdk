@@ -1,17 +1,21 @@
-#ifndef SORA_HWENC_VPL_VPL_SESSION_IMPL_H_
-#define SORA_HWENC_VPL_VPL_SESSION_IMPL_H_
+#ifndef SORA_VPL_SESSION_IMPL_H_
+#define SORA_VPL_SESSION_IMPL_H_
+
+#if defined(USE_VPL_ENCODER)
 
 #include <iostream>
 
 // Intel VPL
 #include <vpl/mfxvideo++.h>
 
-#include "sora/hwenc_vpl/vpl_session.h"
+#include "sora/vpl_session.h"
 
 namespace sora {
 
 mfxSession GetVplSession(std::shared_ptr<VplSession> session);
 
 }  // namespace sora
+
+#endif
 
 #endif

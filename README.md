@@ -21,16 +21,23 @@ Please read <https://github.com/shiguredo/oss/blob/master/README.en.md> before u
 
 - 各プラットフォームで利用可能な HWA への対応
   - [Intel VPL](https://github.com/intel/libvpl)
-    - AV1 / H.264 / H.265
-      - VP9 のデコードは利用可能ですが、エンコードは現在既知の問題があります。詳細は [known_issues.md](doc/known_issues.md) をお読みください。
+    - VP9 / AV1 / H.264 / H.265
+      - VP9 はエンコードのみの対応です、詳細は [既知の問題](doc/known_issues.md) をご確認ください
   - [NVIDIA Video Codec SDK](https://developer.nvidia.com/video-codec-sdk)
-    - VP9 / H.264 / H.265
+    - VP8 / VP9 / AV1 / H.264 / H.265
+      - VP8 / VP9 はチップセットが対応していないため、デコードのみの対応です
   - [NVIDIA JetPack SDK](https://developer.nvidia.com/embedded/jetpack) (JetPack 6)
     - VP9 / AV1 / H.264 / H.265
+  - [AMD AMF](https://github.com/GPUOpen-LibrariesAndSDKs/AMF)
+    - VP8 / VP9 / AV1 / H.264 / H.265
+      - AV1 は Ubuntu x86_64 ではドライバーがデコードには対応していません
+      - VP8 / VP9 はチップセットが対応していないため、デコードのみの対応です
   - [Apple Video Toolbox](https://developer.apple.com/documentation/videotoolbox)
     - H.264 / H.265
   - Google Android HWA
     - VP8 / VP9 / H.264 / H.265
+- [Cisco OpenH264](https://www.openh264.org/) への対応
+  - Ubuntu x86_64 / Ubuntu arm64 / macOS arm64 / Windows x86_64
 
 ## ライブラリのバイナリ提供について
 
@@ -46,23 +53,21 @@ _hololens2 は無視してください_
 
 ## 対応 Sora
 
-- WebRTC SFU Sora 2024.2.0 以降
+- WebRTC SFU Sora 2024.1.0 以降
 
 ## 動作環境
 
 - Windows 10.1809 x86_64 以降
-- macOS 13.5 arm64 以降
-- Ubuntu 22.04 ARMv8 Jetson (JetPack 6.0 以降)
-  - Jetson AGX Orin
-  - Jetson Orin NX
-  - 動作未検証です
-- Ubuntu 20.04 x86_64
-  - 動作未検証です
+- macOS 14 arm64 以降
 - Ubuntu 22.04 x86_64
 - Ubuntu 24.04 x86_64
 - Ubuntu 24.04 arm64
 - Android 7 arm64 以降
 - iOS 14 arm64 以降
+- Ubuntu 22.04 ARMv8 Jetson (JetPack 6.0 以降)
+  - Jetson AGX Orin
+  - Jetson Orin NX
+    - 動作未検証です
 
 ## 既知の問題
 
@@ -93,7 +98,6 @@ Sora C++ SDK のメンテナンスポリシーにはプライオリティがあ�
 - NVIDIA Jetson JetPack 6 Jetson Orin Nano 対応
 - Raspberry Pi OS (64bit) arm64 対応
 - Windows arm64 対応
-- AMD 系 HWA 対応
 
 ## サポートについて
 
@@ -115,7 +119,7 @@ Discord へお願いします。
 
 Apache License 2.0
 
-```
+```text
 Copyright 2021-2025, Wandbox LLC (Original Author)
 Copyright 2021-2025, Shiguredo Inc.
 
@@ -136,6 +140,6 @@ limitations under the License.
 
 <https://www.openh264.org/BINARY_LICENSE.txt>
 
-```
+```text
 "OpenH264 Video Codec provided by Cisco Systems, Inc."
 ```

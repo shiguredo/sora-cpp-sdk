@@ -1,6 +1,7 @@
 #include "sora/sora_client_context.h"
 
 // WebRTC
+#include <api/audio/builtin_audio_processing_builder.h>
 #include <api/audio_codecs/builtin_audio_decoder_factory.h>
 #include <api/audio_codecs/builtin_audio_encoder_factory.h>
 #include <api/create_peerconnection_factory.h>
@@ -85,34 +86,24 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
   dependencies.audio_decoder_factory =
       webrtc::CreateBuiltinAudioDecoderFactory();
 
-  std::shared_ptr<sora::CudaContext> cuda_context;
-  if (c->config_.use_hardware_encoder) {
-    cuda_context = sora::CudaContext::Create();
+  auto codec_factory =
+      CreateVideoCodecFactory(c->config_.video_codec_factory_config);
+  if (!codec_factory) {
+    RTC_LOG(LS_ERROR) << "Failed to create VideoCodecFactory";
+    c->worker_thread_->BlockingCall([&] {
+      adm = nullptr;
+      dependencies.adm = nullptr;
+    });
+    return nullptr;
   }
-
-  {
-    auto config = c->config_.use_hardware_encoder
-                      ? sora::GetDefaultVideoEncoderFactoryConfig(
-                            cuda_context, env, c->config_.openh264)
-                      : sora::GetSoftwareOnlyVideoEncoderFactoryConfig(
-                            c->config_.openh264);
-    config.use_simulcast_adapter = true;
-    config.force_i420_conversion_for_simulcast_adapter =
-        c->config_.force_i420_conversion_for_simulcast_adapter;
-    dependencies.video_encoder_factory =
-        absl::make_unique<sora::SoraVideoEncoderFactory>(std::move(config));
-  }
-  {
-    auto config =
-        c->config_.use_hardware_encoder
-            ? sora::GetDefaultVideoDecoderFactoryConfig(cuda_context, env)
-            : sora::GetSoftwareOnlyVideoDecoderFactoryConfig();
-    dependencies.video_decoder_factory =
-        absl::make_unique<sora::SoraVideoDecoderFactory>(std::move(config));
-  }
+  dependencies.video_encoder_factory =
+      std::move(codec_factory->encoder_factory);
+  dependencies.video_decoder_factory =
+      std::move(codec_factory->decoder_factory);
 
   dependencies.audio_mixer = nullptr;
-  dependencies.audio_processing = webrtc::AudioProcessingBuilder().Create();
+  dependencies.audio_processing_builder =
+      std::make_unique<webrtc::BuiltinAudioProcessingBuilder>();
 
   if (c->config_.configure_dependencies) {
     c->config_.configure_dependencies(dependencies);
@@ -124,6 +115,10 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
       std::move(dependencies), c->connection_context_);
 
   if (c->factory_ == nullptr) {
+    c->worker_thread_->BlockingCall([&] {
+      adm = nullptr;
+      dependencies.adm = nullptr;
+    });
     RTC_LOG(LS_ERROR) << "Failed to create PeerConnectionFactory";
     return nullptr;
   }
@@ -134,135 +129,157 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
   factory_options.crypto_options.srtp.enable_gcm_crypto_suites = true;
   c->factory_->SetOptions(factory_options);
 
-  // オーディオデバイス名を列挙して名前を覚える
-  std::vector<std::tuple<std::string, std::string>> recording_devices;
-  std::vector<std::tuple<std::string, std::string>> playout_devices;
-  {
-    int recording_device_count = adm->RecordingDevices();
-    // RecordingDevices がマイナスの値を返すことがある
-    if (recording_device_count >= 0) {
-      recording_devices.resize(recording_device_count);
-    }
-    for (int i = 0; i < recording_device_count; i++) {
-      char name[webrtc::kAdmMaxDeviceNameSize];
-      char guid[webrtc::kAdmMaxGuidSize];
-      if (adm->SetRecordingDevice(i) != 0) {
-        RTC_LOG(LS_WARNING) << "Failed to SetRecordingDevice: index=" << i;
-        continue;
-      }
-      bool available = false;
-      if (adm->RecordingIsAvailable(&available) != 0) {
-        RTC_LOG(LS_WARNING) << "Failed to RecordingIsAvailable: index=" << i;
-        continue;
-      }
+#if defined(SORA_CPP_SDK_ANDROID)
+  // Android はデバイスの数が１個として返される上に、
+  // RecordingDeviceName() や PlayoutDeviceName() を呼び出すとクラッシュする実装になっているので
+  // オーディオデバイスの列挙と設定を行わない。
+  // ref: https://source.chromium.org/chromium/chromium/src/+/main:third_party/webrtc/sdk/android/src/jni/audio_device/audio_device_module.cc;l=145-161;drc=d4937d3336bcf86f2fb3363cb6a64a0eb1a36576
+#else
+  auto r = c->worker_thread_->BlockingCall(
+      [&]() -> std::shared_ptr<SoraClientContext> {
+        // オーディオデバイス名を列挙して名前を覚える
+        std::vector<std::tuple<std::string, std::string> > recording_devices;
+        std::vector<std::tuple<std::string, std::string> > playout_devices;
+        {
+          int recording_device_count = adm->RecordingDevices();
+          // RecordingDevices がマイナスの値を返すことがある
+          if (recording_device_count >= 0) {
+            recording_devices.resize(recording_device_count);
+          }
+          for (int i = 0; i < recording_device_count; i++) {
+            char name[webrtc::kAdmMaxDeviceNameSize];
+            char guid[webrtc::kAdmMaxGuidSize];
+            if (adm->SetRecordingDevice(i) != 0) {
+              RTC_LOG(LS_WARNING)
+                  << "Failed to SetRecordingDevice: index=" << i;
+              continue;
+            }
+            bool available = false;
+            if (adm->RecordingIsAvailable(&available) != 0) {
+              RTC_LOG(LS_WARNING)
+                  << "Failed to RecordingIsAvailable: index=" << i;
+              continue;
+            }
 
-      if (!available) {
-        continue;
-      }
-      if (adm->RecordingDeviceName(i, name, guid) != 0) {
-        RTC_LOG(LS_WARNING) << "Failed to RecordingDeviceName: index=" << i;
-        continue;
-      }
-      RTC_LOG(LS_INFO) << "RecordingDevice: index=" << i << " name=" << name
-                       << " guid=" << guid;
-      std::get<0>(recording_devices[i]) = name;
-      std::get<1>(recording_devices[i]) = guid;
-    }
-    if (recording_device_count >= 2) {
-      adm->SetRecordingDevice(0);
-    }
+            if (!available) {
+              continue;
+            }
+            if (adm->RecordingDeviceName(i, name, guid) != 0) {
+              RTC_LOG(LS_WARNING)
+                  << "Failed to RecordingDeviceName: index=" << i;
+              continue;
+            }
+            RTC_LOG(LS_INFO) << "RecordingDevice: index=" << i
+                             << " name=" << name << " guid=" << guid;
+            std::get<0>(recording_devices[i]) = name;
+            std::get<1>(recording_devices[i]) = guid;
+          }
+          if (recording_device_count >= 2) {
+            adm->SetRecordingDevice(0);
+          }
 
-    int playout_device_count = adm->PlayoutDevices();
-    // PlayoutDevices がマイナスの値を返すことがある
-    if (playout_device_count >= 0) {
-      playout_devices.resize(playout_device_count);
-    }
-    for (int i = 0; i < playout_device_count; i++) {
-      char name[webrtc::kAdmMaxDeviceNameSize];
-      char guid[webrtc::kAdmMaxGuidSize];
-      if (adm->SetPlayoutDevice(i) != 0) {
-        RTC_LOG(LS_WARNING) << "Failed to SetPlayoutDevice: index=" << i;
-        continue;
-      }
-      bool available = false;
-      if (adm->PlayoutIsAvailable(&available) != 0) {
-        RTC_LOG(LS_WARNING) << "Failed to PlayoutIsAvailable: index=" << i;
-        continue;
-      }
+          int playout_device_count = adm->PlayoutDevices();
+          // PlayoutDevices がマイナスの値を返すことがある
+          if (playout_device_count >= 0) {
+            playout_devices.resize(playout_device_count);
+          }
+          for (int i = 0; i < playout_device_count; i++) {
+            char name[webrtc::kAdmMaxDeviceNameSize];
+            char guid[webrtc::kAdmMaxGuidSize];
+            if (adm->SetPlayoutDevice(i) != 0) {
+              RTC_LOG(LS_WARNING) << "Failed to SetPlayoutDevice: index=" << i;
+              continue;
+            }
+            bool available = false;
+            if (adm->PlayoutIsAvailable(&available) != 0) {
+              RTC_LOG(LS_WARNING)
+                  << "Failed to PlayoutIsAvailable: index=" << i;
+              continue;
+            }
 
-      if (!available) {
-        continue;
-      }
-      if (adm->PlayoutDeviceName(i, name, guid) != 0) {
-        RTC_LOG(LS_WARNING) << "Failed to PlayoutDeviceName: index=" << i;
-        continue;
-      }
-      RTC_LOG(LS_INFO) << "PlayoutDevice: index=" << i << " name=" << name
-                       << " guid=" << guid;
-      std::get<0>(playout_devices[i]) = name;
-      std::get<1>(playout_devices[i]) = guid;
-    }
-    if (playout_device_count >= 2) {
-      adm->SetPlayoutDevice(0);
-    }
+            if (!available) {
+              continue;
+            }
+            if (adm->PlayoutDeviceName(i, name, guid) != 0) {
+              RTC_LOG(LS_WARNING) << "Failed to PlayoutDeviceName: index=" << i;
+              continue;
+            }
+            RTC_LOG(LS_INFO) << "PlayoutDevice: index=" << i << " name=" << name
+                             << " guid=" << guid;
+            std::get<0>(playout_devices[i]) = name;
+            std::get<1>(playout_devices[i]) = guid;
+          }
+          if (playout_device_count >= 2) {
+            adm->SetPlayoutDevice(0);
+          }
+        }
+
+        // オーディオデバイスを設定する
+        if (c->config_.audio_recording_device) {
+          int index = -1;
+          for (int i = 0; i < recording_devices.size(); i++) {
+            const auto& name = std::get<0>(recording_devices[i]);
+            const auto& guid = std::get<1>(recording_devices[i]);
+            if (*c->config_.audio_recording_device == name ||
+                *c->config_.audio_recording_device == guid) {
+              index = i;
+              break;
+            }
+          }
+          if (index == -1) {
+            RTC_LOG(LS_ERROR) << "No recording device found: name="
+                              << *c->config_.audio_recording_device;
+            return nullptr;
+          }
+
+          const auto& name = std::get<0>(recording_devices[index]);
+          const auto& guid = std::get<1>(recording_devices[index]);
+          if (adm->SetRecordingDevice(index) == 0) {
+            RTC_LOG(LS_INFO) << "Succeeded SetRecordingDevice: index=" << index
+                             << " name=" << name << " name=" << guid;
+          } else {
+            RTC_LOG(LS_ERROR) << "Failed to SetRecordingDevice: index=" << index
+                              << " name=" << name << " guid=" << guid;
+          }
+        }
+
+        if (c->config_.audio_playout_device) {
+          int index = -1;
+          for (int i = 0; i < playout_devices.size(); i++) {
+            const auto& name = std::get<0>(playout_devices[i]);
+            const auto& guid = std::get<1>(playout_devices[i]);
+            if (*c->config_.audio_playout_device == name ||
+                *c->config_.audio_playout_device == guid) {
+              index = i;
+              break;
+            }
+          }
+          if (index == -1) {
+            RTC_LOG(LS_ERROR) << "No playout device found: name="
+                              << *c->config_.audio_playout_device;
+            return nullptr;
+          }
+
+          const auto& name = std::get<0>(playout_devices[index]);
+          const auto& guid = std::get<1>(playout_devices[index]);
+          if (adm->SetPlayoutDevice(index) == 0) {
+            RTC_LOG(LS_INFO) << "Succeeded SetPlayoutDevice: index=" << index
+                             << " name=" << name << " guid=" << guid;
+          } else {
+            RTC_LOG(LS_ERROR) << "Failed to SetPlayoutDevice: index=" << index
+                              << " name=" << name << " guid=" << guid;
+          }
+        }
+        return c;
+      });
+  if (r == nullptr) {
+    c->worker_thread_->BlockingCall([&] {
+      adm = nullptr;
+      dependencies.adm = nullptr;
+    });
+    return nullptr;
   }
-
-  // オーディオデバイスを設定する
-  if (c->config_.audio_recording_device) {
-    int index = -1;
-    for (int i = 0; i < recording_devices.size(); i++) {
-      const auto& name = std::get<0>(recording_devices[i]);
-      const auto& guid = std::get<1>(recording_devices[i]);
-      if (*c->config_.audio_recording_device == name ||
-          *c->config_.audio_recording_device == guid) {
-        index = i;
-        break;
-      }
-    }
-    if (index == -1) {
-      RTC_LOG(LS_ERROR) << "No recording device found: name="
-                        << *c->config_.audio_recording_device;
-      return nullptr;
-    }
-
-    const auto& name = std::get<0>(recording_devices[index]);
-    const auto& guid = std::get<1>(recording_devices[index]);
-    if (adm->SetRecordingDevice(index) == 0) {
-      RTC_LOG(LS_INFO) << "Succeeded SetRecordingDevice: index=" << index
-                       << " name=" << name << " name=" << guid;
-    } else {
-      RTC_LOG(LS_ERROR) << "Failed to SetRecordingDevice: index=" << index
-                        << " name=" << name << " guid=" << guid;
-    }
-  }
-
-  if (c->config_.audio_playout_device) {
-    int index = -1;
-    for (int i = 0; i < playout_devices.size(); i++) {
-      const auto& name = std::get<0>(playout_devices[i]);
-      const auto& guid = std::get<1>(playout_devices[i]);
-      if (*c->config_.audio_playout_device == name ||
-          *c->config_.audio_playout_device == guid) {
-        index = i;
-        break;
-      }
-    }
-    if (index == -1) {
-      RTC_LOG(LS_ERROR) << "No playout device found: name="
-                        << *c->config_.audio_playout_device;
-      return nullptr;
-    }
-
-    const auto& name = std::get<0>(playout_devices[index]);
-    const auto& guid = std::get<1>(playout_devices[index]);
-    if (adm->SetPlayoutDevice(index) == 0) {
-      RTC_LOG(LS_INFO) << "Succeeded SetPlayoutDevice: index=" << index
-                       << " name=" << name << " guid=" << guid;
-    } else {
-      RTC_LOG(LS_ERROR) << "Failed to SetPlayoutDevice: index=" << index
-                        << " name=" << name << " guid=" << guid;
-    }
-  }
+#endif
 
   return c;
 }

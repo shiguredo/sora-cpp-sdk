@@ -14,6 +14,6 @@ std::unique_ptr<webrtc::VideoEncoder> CreateOpenH264VideoEncoder(
     const webrtc::SdpVideoFormat& format,
     std::string openh264);
 
-}
+}  // namespace sora
 
 #endif

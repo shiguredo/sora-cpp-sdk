@@ -137,7 +137,7 @@ int32_t NvCodecVideoDecoder::Release() {
 }
 
 const char* NvCodecVideoDecoder::ImplementationName() const {
-  return "NVIDIA VIDEO CODEC SDK";
+  return "NvCodec";
 }
 
 bool NvCodecVideoDecoder::InitNvCodec() {
@@ -148,6 +148,12 @@ bool NvCodecVideoDecoder::InitNvCodec() {
 
 void NvCodecVideoDecoder::ReleaseNvCodec() {
   decoder_.reset();
+}
+
+std::unique_ptr<NvCodecVideoDecoder> NvCodecVideoDecoder::Create(
+    std::shared_ptr<CudaContext> context,
+    CudaVideoCodec codec) {
+  return std::make_unique<NvCodecVideoDecoder>(context, codec);
 }
 
 }  // namespace sora

@@ -15,13 +15,7 @@
 
 ```bash
 # ../webrtc-build に shiguredo-webrtc-build/webrtc-build がある場合
-python3 run.py ubuntu-20.04_x86_64 --local-webrtc-build-dir ../webrtc-build
-```
-
-webrtc-build に引数を渡してビルドする場合、以下のようにする。
-
-```bash
-python3 run.py ubuntu-20.04_x86_64 --local-webrtc-build-dir ../webrtc-build --local-webrtc-build-args='--webrtc-fetch'
+python3 run.py ubuntu-24.04_x86_64 --local-webrtc-build-dir ../webrtc-build
 ```
 
 この時、VERSION に指定している WEBRTC_BUILD_VERSION に関係なく、現在 webrtc-build リポジトリでチェックアウトされている内容でビルドするため、バージョンの不整合に注意すること。
@@ -32,14 +26,14 @@ C++ SDK をデバッグビルドするには、libwebrtc も含めて、依存�
 しかし libwebrtc のバイナリはリリースビルドであるため、libwebrtc のデバッグバイナリを作るにはローカルの webrtc-build を利用する必要がある。
 
 ```bash
-python3 run.py ubuntu-20.04_x86_64 --debug --local-webrtc-build-dir ../webrtc-build
+python3 run.py ubuntu-24.04_x86_64 --debug --local-webrtc-build-dir ../webrtc-build
 ```
 
 このように `--debug` を付けると、C++ SDK だけでなく、ローカルの webrtc-build を含む全ての依存ライブラリもデバッグビルドを行う。
 
 ## メモ
 
-### ubuntu-20.04_x86_64, ubuntu-22.04_x86_64 のビルドに必要な依存
+### ubuntu-22.04_x86_64, ubuntu-24.04_x86_64 のビルドに必要な依存
 
 - clang-18
 - CUDA
@@ -56,8 +50,3 @@ sudo apt-get update
 # 11.8.0-1 の部分は VERSION ファイルの CUDA_VERSION を参照すること
 sudo apt-get -y install cuda=11.8.0-1
 ```
-
-### ubuntu-20.04_x86_64, ubuntu-22.04_x86_64 の実行に必要な依存
-
-- （Intel VPL の Intel Media SDK を利用したいなら）libmfx1
-- （Intel VPL の Intel VPL ランタイムを利用したいなら）libmfx-gen1.2 （Ubuntu 22.04 のみ利用可）

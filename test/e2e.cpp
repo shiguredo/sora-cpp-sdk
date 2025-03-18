@@ -14,9 +14,6 @@
 // Catch2
 #include <catch2/catch_test_macros.hpp>
 
-// Boost.Process
-#include <boost/process/env.hpp>
-
 // Sora
 #include <sora/audio_device_module.h>
 #include <sora/camera_device_capturer.h>
@@ -44,7 +41,6 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
   void Run() {
     sora::SoraClientContextConfig context_config;
     context_config.use_audio_device = false;
-    context_config.use_hardware_encoder = false;
     auto context = sora::SoraClientContext::Create(context_config);
     auto pc_factory = context->peer_connection_factory();
     context_ = context;

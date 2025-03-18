@@ -7,8 +7,9 @@
 
 namespace sora {
 
+CUdevice GetCudaDevice(std::shared_ptr<CudaContext> ctx);
 CUcontext GetCudaContext(std::shared_ptr<CudaContext> ctx);
 
-}
+}  // namespace sora
 
 #endif

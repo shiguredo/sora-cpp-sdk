@@ -24,6 +24,7 @@ from buildbase import (
     get_webrtc_info,
     get_webrtc_platform,
     get_windows_osver,
+    install_amf,
     install_android_ndk,
     install_android_sdk_cmdline_tools,
     install_blend2d,
@@ -75,7 +76,6 @@ def get_common_cmake_args(
         args.append(f"-DCMAKE_SYSROOT={sysroot}")
     if platform.target.os == "ubuntu":
         if platform.target.package_name in (
-            "ubuntu-20.04_x86_64",
             "ubuntu-22.04_x86_64",
             "ubuntu-24.04_x86_64",
         ):
@@ -427,6 +427,15 @@ def install_deps(
                 install_vpl_args["cmake_args"] += cmake_args
             install_vpl(**install_vpl_args)
 
+        # AMF
+        if platform.target.os in ("windows", "ubuntu") and platform.target.arch == "x86_64":
+            install_amf_args = {
+                "version": version["AMF_VERSION"],
+                "version_file": os.path.join(install_dir, "amf.version"),
+                "install_dir": install_dir,
+            }
+            install_amf(**install_amf_args)
+
         # OpenH264
         install_openh264_args = {
             "version": version["OPENH264_VERSION"],
@@ -530,7 +539,6 @@ AVAILABLE_TARGETS = [
     "windows_x86_64",
     "macos_x86_64",
     "macos_arm64",
-    "ubuntu-20.04_x86_64",
     "ubuntu-22.04_x86_64",
     "ubuntu-24.04_x86_64",
     "ubuntu-24.04_armv8",
@@ -559,8 +567,6 @@ def main():
         platform = Platform("macos", get_macos_osver(), "x86_64")
     elif args.target == "macos_arm64":
         platform = Platform("macos", get_macos_osver(), "arm64")
-    elif args.target == "ubuntu-20.04_x86_64":
-        platform = Platform("ubuntu", "20.04", "x86_64")
     elif args.target == "ubuntu-22.04_x86_64":
         platform = Platform("ubuntu", "22.04", "x86_64")
     elif args.target == "ubuntu-24.04_x86_64":
@@ -634,7 +640,6 @@ def main():
             cmake_args.append(f"-DCMAKE_SYSTEM_VERSION={WINDOWS_SDK_VERSION}")
         if platform.target.os == "ubuntu":
             if platform.target.package_name in (
-                "ubuntu-20.04_x86_64",
                 "ubuntu-22.04_x86_64",
                 "ubuntu-24.04_x86_64",
             ):
@@ -713,9 +718,15 @@ def main():
                     f"-DCUDA_TOOLKIT_ROOT_DIR={cmake_path(os.path.join(install_dir, 'cuda'))}"
                 )
 
+        # VPL
         if platform.target.os in ("windows", "ubuntu") and platform.target.arch == "x86_64":
             cmake_args.append("-DUSE_VPL_ENCODER=ON")
             cmake_args.append(f"-DVPL_ROOT_DIR={cmake_path(os.path.join(install_dir, 'vpl'))}")
+
+        # AMF
+        if platform.target.os in ("windows", "ubuntu") and platform.target.arch == "x86_64":
+            cmake_args.append("-DUSE_AMF_ENCODER=ON")
+            cmake_args.append(f"-DAMF_ROOT_DIR={cmake_path(os.path.join(install_dir, 'amf'))}")
 
         # バンドルされたライブラリを消しておく
         # （CMake でうまく依存関係を解消できなくて更新されないため）
@@ -846,7 +857,6 @@ def main():
                     cmake_args.append(f"-DCMAKE_SYSROOT={sysroot}")
                 if platform.target.os == "ubuntu":
                     if platform.target.package_name in (
-                        "ubuntu-20.04_x86_64",
                         "ubuntu-22.04_x86_64",
                         "ubuntu-24.04_x86_64",
                     ):

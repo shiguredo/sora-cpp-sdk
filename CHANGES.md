@@ -11,6 +11,70 @@
 
 ## develop
 
+## 2025.2.0
+
+**リリース日**: 2025-03-18
+
+- [CHANGE] `SoraClientContextConfig` から `use_hardware_encoder` を削除
+  - これにより、デフォルトで利用するエンコーダ/デコーダは全て libwebrtc の実装のものになります
+  - ハードウェアエンコーダを有効にしたい場合は `SoraClientContextConfig::video_codec_factory_config` を適切に設定して下さい
+  - @melpon
+- [CHANGE] `SoraClientContextConfig` から `force_i420_conversion_for_simulcast_adapter` を削除
+  - 代わりに `SoraClientContextConfig::video_codec_factory_config.encoder_factory_config.force_i420_conversion` を利用して下さい
+  - @melpon
+- [CHANGE] `SoraClientContextConfig` から `openh264` を削除
+  - 代わりに `SoraClientContextConfig::video_codec_factory_config.::capability_config.openh264_path` を利用して下さい
+  - @melpon
+- [CHANGE] `sora/hwenc_vpl/vpl_session.h` ファイルを `sora/vpl_session.h` に移動
+  - @melpon
+- [CHANGE] `SoraVideoEncoderFactoryConfig` の `use_simulcast_adapter` を削除
+  - サイマルキャストアダプタは常に有効になります
+  - @melpon
+- [CHANGE] `SoraVideoEncoderFactoryConfig` の `force_i420_conversion_for_simulcast_adapter` を `force_i420_conversion` に変更
+  - @melpon
+- [CHANGE] GitHub Actions で macOS 向けビルドで Xcode のバージョンを指定したのを削除する  
+  - libwebrtc の制約で Xcode のバージョンを指定していたが、 m132.6834.5.5 の時点では制約がなくなり、指定しなくてもビルドできるようになったため
+  - @torikizi
+- [CHANGE] Ubuntu 20.04 x86_64 の対応を削除
+  - @melpon
+- [UPDATE] CMake を 3.31.6 にあげる
+  - @voluntas @torikizi
+- [UPDATE] libwebrtc を m132.6834.5.8 にあげる
+  - @melpon
+- [UPDATE] OpenH264 を v2.6.0 に上げる
+  - @torikizi
+- [UPDATE] VPL_VERSION を 2.14.0 に上げる
+  - @torikizi
+- [ADD] 有効なエンコーダの一覧を取得する `GetVideoCodecCapability()` 関数を追加
+  - @melpon
+- [ADD] 利用するエンコーダ/デコーダの実装を細かく指定するためのクラス `VideoCodecPreference` を追加
+  - `SoraClientContextConfig::video_codec_factory_config.preference` 経由で利用できます
+  - @melpon
+- [ADD] OpenH264 デコーダに対応する
+  - @melpon
+- [ADD] タグが打たれた場合に sumomo バイナリを Release に追加する
+  - Release 用の sumomo は C++ SDK のリリースバイナリを使用してビルドする  
+  - リアルタイムメッセージング以外の機能がほぼ全て含まれている sumomo をリリース時に含めるようにする
+  - @torikizi
+- [ADD] NVIDIA Video Codec SDK を AV1 エンコーダー/デコーダーに対応する
+  - @melpon
+- [ADD] `CudaContext::CanCreate()` を追加
+  - @melpon
+- [ADD] AMD の AMF に対応する
+  - @melpon
+- [FIX] `NvCodecVideoDecoder` の `ImplementationName` を `NvCodec` に修正する
+  - NvCodecVideoEncoder の `ImplementationName` は `NvCodec` になっているので、合わせる
+  - @torikizi
+
+### misc
+
+- [FIX] GitHub Actions の Windows でのビルドが失敗する問題を修正
+  - Microsoft Visual C++ のバージョン `14.42.34438` 以降では `<chrono>` ヘッダの明示的なインクルードが必要となったため、ビルドエラーが発生していた
+  - `<chrono>` をインクルードするように修正
+  - @torikizi
+- [FIX] test/e2e.cpp の利用していない include を削除する
+  - @torikizi
+
 ## 2025.1.0
 
 **リリース日**: 2025-01-27
@@ -75,7 +139,7 @@
   - @melpon
 - [ADD] sumomo にビデオデバイスとオーディオデバイスを設定するオプションを追加
   - @melpon
-- [ADD] SoraSignalingConfig に degradation_preference を追加 
+- [ADD] SoraSignalingConfig に degradation_preference を追加
   - @melpon
 - [ADD] sumomo と test/hello に degradation_preference を設定するオプションを追加
   - @melpon

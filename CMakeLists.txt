@@ -35,11 +35,6 @@ elseif (SORA_TARGET STREQUAL "ios")
 elseif (SORA_TARGET STREQUAL "android")
   set(SORA_TARGET_OS "android")
   set(SORA_TARGET_DEF "SORA_CPP_SDK_ANDROID")
-elseif (SORA_TARGET STREQUAL "ubuntu-20.04_x86_64")
-  set(SORA_TARGET_OS "ubuntu")
-  set(SORA_TARGET_OS_VERSION "20.04")
-  set(SORA_TARGET_ARCH "x86_64")
-  set(SORA_TARGET_DEF "SORA_CPP_SDK_UBUNTU_2004")
 elseif (SORA_TARGET STREQUAL "ubuntu-22.04_x86_64")
   set(SORA_TARGET_OS "ubuntu")
   set(SORA_TARGET_OS_VERSION "22.04")
@@ -93,6 +88,7 @@ target_include_directories(sora PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_sources(sora
   PRIVATE
     src/aligned_encoder_adapter.cpp
+    src/amf_context_impl.cpp
     src/audio_device_module.cpp
     src/audio_output_helper.cpp
     src/camera_device_capturer.cpp
@@ -102,6 +98,8 @@ target_sources(sora
     src/device_video_capturer.cpp
     src/i420_encoder_adapter.cpp
     src/java_context.cpp
+    src/open_h264_video_codec.cpp
+    src/open_h264_video_decoder.cpp
     src/open_h264_video_encoder.cpp
     src/rtc_ssl_verifier.cpp
     src/rtc_stats.cpp
@@ -110,11 +108,14 @@ target_sources(sora
     src/sora_client_context.cpp
     src/sora_peer_connection_factory.cpp
     src/sora_signaling.cpp
+    src/sora_video_codec.cpp
+    src/sora_video_codec_factory.cpp
     src/sora_video_decoder_factory.cpp
     src/sora_video_encoder_factory.cpp
     src/ssl_verifier.cpp
     src/url_parts.cpp
     src/version.cpp
+    src/vpl_session_impl.cpp
     src/websocket.cpp
     src/zlib_helper.cpp
 )
@@ -155,6 +156,7 @@ target_compile_definitions(sora
   PRIVATE
     $<$<BOOL:${USE_NVCODEC_ENCODER}>:USE_NVCODEC_ENCODER>
     $<$<BOOL:${USE_VPL_ENCODER}>:USE_VPL_ENCODER>
+    $<$<BOOL:${USE_AMF_ENCODER}>:USE_AMF_ENCODER>
 )
 
 # OpenH264
@@ -258,6 +260,7 @@ if (SORA_TARGET_OS STREQUAL "windows")
   if (USE_NVCODEC_ENCODER)
     target_sources(sora
       PRIVATE
+        src/hwenc_nvcodec/nvcodec_video_codec.cpp
         src/hwenc_nvcodec/nvcodec_video_encoder.cpp
         third_party/NvCodec/NvCodec/NvEncoder/NvEncoder.cpp
         third_party/NvCodec/NvCodec/NvEncoder/NvEncoderD3D11.cpp
@@ -281,6 +284,7 @@ if (SORA_TARGET_OS STREQUAL "windows")
 
     set_source_files_properties(
         src/cuda_context_cuda.cpp
+        src/hwenc_nvcodec/nvcodec_video_codec_cuda.cpp
         third_party/NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
         src/hwenc_nvcodec/nvcodec_decoder_cuda.cpp
       PROPERTIES
@@ -288,6 +292,7 @@ if (SORA_TARGET_OS STREQUAL "windows")
     )
     cuda_compile(CUDA_FILES
         src/cuda_context_cuda.cpp
+        src/hwenc_nvcodec/nvcodec_video_codec_cuda.cpp
         third_party/NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
         src/hwenc_nvcodec/nvcodec_decoder_cuda.cpp
       OPTIONS
@@ -329,13 +334,31 @@ if (SORA_TARGET_OS STREQUAL "windows")
     find_package(VPL REQUIRED)
     target_sources(sora
       PRIVATE
-        src/hwenc_vpl/vpl_session_impl.cpp
+        src/hwenc_vpl/vpl_video_codec.cpp
         src/hwenc_vpl/vpl_video_decoder.cpp
         src/hwenc_vpl/vpl_video_encoder.cpp
     )
     target_link_libraries(sora PRIVATE "$<BUILD_INTERFACE:VPL::dispatcher>")
     # vpl を要求したくないので sora.lib に含める
     list(APPEND BUNDLE_STATIC_LIBS ${VPL_ROOT_DIR}/lib/vpl$<$<CONFIG:Debug>:d>.lib)
+  endif()
+
+  if (USE_AMF_ENCODER)
+    target_include_directories(sora PRIVATE ${AMF_ROOT_DIR}/amf)
+    target_sources(sora
+      PRIVATE
+        ${AMF_ROOT_DIR}/amf/public/common/AMFFactory.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/AMFSTL.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/DataStreamFactory.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/DataStreamFile.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/DataStreamMemory.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/Thread.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/TraceAdapter.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/Windows/ThreadWindows.cpp
+        src/hwenc_amf/amf_video_codec.cpp
+        src/hwenc_amf/amf_video_decoder.cpp
+        src/hwenc_amf/amf_video_encoder.cpp
+    )
   endif()
 
 elseif (SORA_TARGET_OS STREQUAL "macos")
@@ -472,6 +495,8 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
     target_sources(sora
       PRIVATE
         src/cuda_context_cuda.cpp
+        src/hwenc_nvcodec/nvcodec_video_codec.cpp
+        src/hwenc_nvcodec/nvcodec_video_codec_cuda.cpp
         src/hwenc_nvcodec/nvcodec_video_encoder.cpp
         src/hwenc_nvcodec/nvcodec_v4l2_capturer.cpp
         src/hwenc_nvcodec/nvcodec_video_encoder_cuda.cpp
@@ -489,6 +514,7 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
     # これらのソースは CUDA としてコンパイルする
     set_source_files_properties(
         src/cuda_context_cuda.cpp
+        src/hwenc_nvcodec/nvcodec_video_codec_cuda.cpp
         src/hwenc_nvcodec/nvcodec_video_encoder_cuda.cpp
         src/hwenc_nvcodec/nvcodec_decoder_cuda.cpp
         third_party/NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
@@ -506,13 +532,31 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
     target_include_directories(sora PRIVATE /usr/local/cuda/include)
     target_sources(sora
       PRIVATE
-        src/hwenc_vpl/vpl_session_impl.cpp
+        src/hwenc_vpl/vpl_video_codec.cpp
         src/hwenc_vpl/vpl_video_decoder.cpp
         src/hwenc_vpl/vpl_video_encoder.cpp
     )
     target_link_libraries(sora PRIVATE "$<BUILD_INTERFACE:VPL::dispatcher>")
     # vpl を要求したくないので libsora.a に含める
     list(APPEND BUNDLE_STATIC_LIBS $<TARGET_FILE:VPL::dispatcher>)
+  endif()
+
+  if (USE_AMF_ENCODER)
+    target_include_directories(sora PRIVATE ${AMF_ROOT_DIR}/amf)
+    target_sources(sora
+      PRIVATE
+        ${AMF_ROOT_DIR}/amf/public/common/AMFFactory.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/AMFSTL.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/DataStreamFactory.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/DataStreamFile.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/DataStreamMemory.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/Thread.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/TraceAdapter.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/Linux/ThreadLinux.cpp
+        src/hwenc_amf/amf_video_codec.cpp
+        src/hwenc_amf/amf_video_decoder.cpp
+        src/hwenc_amf/amf_video_encoder.cpp
+    )
   endif()
 
 endif()

@@ -76,30 +76,7 @@ _build/macos_arm64/release/sumomo
 └── sumomo
 ```
 
-#### Ubuntu 20.04 x86_64 向けのビルドをする
-
-##### 事前準備
-
-必要なパッケージをインストールしてください。
-
-```shell
-sudo apt install build-essential libxext-dev libx11-dev libgl-dev pkg-config python3
-```
-
-##### ビルド
-
-```shell
-python3 sumomo/ubuntu-20.04_x86_64/run.py
-```
-
-成功した場合、`_build/ubuntu-20.04_x86_64/release/sumomo` に `sumomo` が作成されます。
-
-```
-_build/ubuntu-20.04_x86_64/release/sumomo/
-└── sumomo
-```
-
-#### Ubuntu 22.04 x86_64 向けのビルドをする
+#### Ubuntu 22.04 x86_64 Desktop 向けのビルドをする
 
 ##### 事前準備
 
@@ -122,7 +99,7 @@ _build/ubuntu-22.04_x86_64/release/sumomo/
 └── sumomo
 ```
 
-#### Ubuntu 24.04 x86_64 向けのビルドをする
+#### Ubuntu 24.04 x86_64 Desktop 向けのビルドをする
 
 ##### 事前準備
 
@@ -181,7 +158,6 @@ Windows 以外の場合
 - `--hw-mjpeg-decoder` : HW MJPEG デコーダーの利用 (true/false)
   - 未指定の場合は false が設定されます
   - NVIDIA Jetson のみで利用できます
-- `--use-hardware-encoder` : ハードウェアエンコーダーの利用 (true/false)
 - `--openh264` : openh264 ライブラリのパスをフルパスで指定します
   - デコードには対応していません
 
@@ -270,6 +246,42 @@ Windows 以外の場合
 - `--degradation-preference`
   - `disabled`, `maintain_framerate`,`maintain_resolution`, `balanced` が指定可能です。
   - 設定可能な値の詳細は [ W3C のドキュメント](https://www.w3.org/TR/mst-content-hint/#degradation-preference-when-encoding) を参照してください。
+
+#### エンコーダー / デコーダーの設定に関するオプション
+
+- `--vp8-encoder`
+  - VP8 エンコーダーを指定します
+- `--vp8-decoder` 
+  - VP8 デコーダーを指定します
+- `--vp9-encoder`
+  - VP9 エンコーダーを指定します
+- `--vp9-decoder`
+  - VP9 デコーダーを指定します
+- `--h264-encoder`
+  - H.264 エンコーダーを指定します
+- `--h264-decoder`
+  - H.264 デコーダーを指定します
+- `--h265-encoder`
+  - H.265 エンコーダーを指定します
+- `--h265-decoder`
+  - H.265 デコーダーを指定します
+- `--av1-encoder`
+  - AV1 エンコーダーを指定します
+- `--av1-decoder`
+  - AV1 デコーダーを指定します
+- `--show-video-codec-capability`
+  - 利用可能なエンコーダーとデコーダーを表示します
+
+設定可能な値は以下の通りです。
+ - `internal`
+ - `cisco_openh264`
+ - `intel_vpl`
+ - `nvidia_video_codec_sdk`
+ - `amd_amf`
+
+> [!NOTE]
+> H.264 と H.265 は `internal` または未指定では利用できません。
+> 必ずエンコーダーまたはデコーダーを指定してください。
 
 #### その他のオプション
 
