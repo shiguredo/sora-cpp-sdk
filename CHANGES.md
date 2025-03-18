@@ -11,6 +11,10 @@
 
 ## develop
 
+## 2025.2.0
+
+**リリース日**: 2025-03-18
+
 - [CHANGE] `SoraClientContextConfig` から `use_hardware_encoder` を削除
   - これにより、デフォルトで利用するエンコーダ/デコーダは全て libwebrtc の実装のものになります
   - ハードウェアエンコーダを有効にしたい場合は `SoraClientContextConfig::video_codec_factory_config` を適切に設定して下さい
