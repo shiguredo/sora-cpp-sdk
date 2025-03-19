@@ -71,7 +71,7 @@ NvEncoder::NvEncoder(NV_ENC_DEVICE_TYPE eDeviceType, void *pDevice, uint32_t nWi
     m_hEncoder = hEncoder;
 }
 
-void NvEncoder::TryLoadNvEncApi() {
+    void NvEncoder::TryLoadNvEncApi() {
     #if defined(_WIN32)
     #if defined(_WIN64)
       HMODULE hModule = LoadLibrary(TEXT("nvEncodeAPI64.dll"));
@@ -126,7 +126,7 @@ void NvEncoder::TryLoadNvEncApi() {
       dlclose(hModule);
     #endif
     }
-    
+
     void NvEncoder::LoadNvEncApi() {
     #if defined(_WIN32)
     #if defined(_WIN64)
@@ -193,21 +193,6 @@ void NvEncoder::TryLoadNvEncApi() {
       NVENC_API_CALL(NvEncodeAPICreateInstance(&m_nvenc));
     }
 
-void NvEncoder::LoadNvEncApi()
-{
-
-    uint32_t version = 0;
-    uint32_t currentVersion = (NVENCAPI_MAJOR_VERSION << 4) | NVENCAPI_MINOR_VERSION;
-    NVENC_API_CALL(NvEncodeAPIGetMaxSupportedVersion(&version));
-    if (currentVersion > version)
-    {
-        NVENC_THROW_ERROR("Current Driver Version does not support this NvEncodeAPI version, please upgrade driver", NV_ENC_ERR_INVALID_VERSION);
-    }
-
-
-    m_nvenc = { NV_ENCODE_API_FUNCTION_LIST_VER };
-    NVENC_API_CALL(NvEncodeAPICreateInstance(&m_nvenc));
-}
 
 NvEncoder::~NvEncoder()
 {

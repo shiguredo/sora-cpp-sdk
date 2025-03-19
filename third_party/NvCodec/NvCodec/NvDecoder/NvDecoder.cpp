@@ -212,8 +212,7 @@ int NvDecoder::HandleVideoSequence(CUVIDEOFORMAT *pVideoFormat)
 
     CUDA_DRVAPI_CALL(dyn::cuCtxPushCurrent(m_cuContext));
     NVDEC_API_CALL(dyn::cuvidGetDecoderCaps(&decodecaps));
-    // <memo> nullptr から NULL に変更
-    CUDA_DRVAPI_CALL(dyn::cuCtxPopCurrent(NULL));
+    CUDA_DRVAPI_CALL(dyn::cuCtxPopCurrent(nullptr));
 
     if(!decodecaps.bIsSupported){
         NVDEC_THROW_ERROR("Codec not supported on this GPU", CUDA_ERROR_NOT_SUPPORTED);
@@ -363,9 +362,8 @@ int NvDecoder::HandleVideoSequence(CUVIDEOFORMAT *pVideoFormat)
     m_videoInfo << std::endl;
 
     CUDA_DRVAPI_CALL(dyn::cuCtxPushCurrent(m_cuContext));
-    NVDEC_API_CALL(dyn::uvidCreateDecoder(&m_hDecoder, &videoDecodeCreateInfo));
-    // <memo> nullptr から NULL に変更
-    CUDA_DRVAPI_CALL(dyn::cuCtxPopCurrent(NULL));
+    NVDEC_API_CALL(dyn::cuvidCreateDecoder(&m_hDecoder, &videoDecodeCreateInfo));
+    CUDA_DRVAPI_CALL(dyn::cuCtxPopCurrent(nullptr));
     STOP_TIMER("Session Initialization Time: ");
     NvDecoder::addDecoderSessionOverHead(getDecoderSessionID(), elapsedTime);
     return nDecodeSurface;
@@ -476,8 +474,7 @@ int NvDecoder::ReconfigureDecoder(CUVIDEOFORMAT *pVideoFormat)
     START_TIMER
     CUDA_DRVAPI_CALL(dyn::cuCtxPushCurrent(m_cuContext));
     NVDEC_API_CALL(dyn::cuvidReconfigureDecoder(m_hDecoder, &reconfigParams));
-    // <memo> nullptr を NULL に変更
-    CUDA_DRVAPI_CALL(dyn::cuCtxPopCurrent(NULL));
+    CUDA_DRVAPI_CALL(dyn::cuCtxPopCurrent(nullptr));
     STOP_TIMER("Session Reconfigure Time: ");
 
     return nDecodeSurface;
@@ -515,8 +512,7 @@ int NvDecoder::setReconfigParams(const Rect *pCropRect, const Dim *pResizeDim)
         {
             CUDA_DRVAPI_CALL(dyn::cuCtxPushCurrent(m_cuContext));
             CUDA_DRVAPI_CALL(dyn::cuMemFree((CUdeviceptr)pFrame));
-            // <memo> nullptr から NULL に変更
-            CUDA_DRVAPI_CALL(dyn::cuCtxPopCurrent(NULL));
+            CUDA_DRVAPI_CALL(dyn::cuCtxPopCurrent(nullptr));
         }
         else
         {
@@ -548,8 +544,7 @@ int NvDecoder::HandlePictureDecode(CUVIDPICPARAMS *pPicParams) {
         dispInfo.top_field_first = pPicParams->bottom_field_flag ^ 1;
         HandlePictureDisplay(&dispInfo);
     }
-    // <memo> nullptr から NULL に変更
-    CUDA_DRVAPI_CALL(dyn::cuCtxPopCurrent(NULL));
+    CUDA_DRVAPI_CALL(dyn::cuCtxPopCurrent(nullptr));
     return 1;
 }
 
@@ -674,8 +669,7 @@ int NvDecoder::HandlePictureDisplay(CUVIDPARSERDISPINFO *pDispInfo) {
         CUDA_DRVAPI_CALL(dyn::cuMemcpy2DAsync(&m, m_cuvidStream));
     }
     CUDA_DRVAPI_CALL(dyn::cuStreamSynchronize(m_cuvidStream));
-    // <memo> nullptr から NULL に変更
-    CUDA_DRVAPI_CALL(dyn::cuCtxPopCurrent(NULL));
+    CUDA_DRVAPI_CALL(dyn::cuCtxPopCurrent(nullptr));
 
     if ((int)m_vTimestamp.size() < m_nDecodedFrame) {
         m_vTimestamp.resize(m_vpFrame.size());
@@ -796,8 +790,7 @@ NvDecoder::~NvDecoder() {
             delete[] pFrame;
         }
     }
-    // <memo> nullptr から NULL に変更
-    dyn::cuCtxPopCurrent(NULL);
+    dyn::cuCtxPopCurrent(nullptr);
 
     dyn::cuvidCtxLockDestroy(m_ctxLock);
 

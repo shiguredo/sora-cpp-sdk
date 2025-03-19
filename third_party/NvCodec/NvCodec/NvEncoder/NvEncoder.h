@@ -470,4 +470,5 @@ private:
     std::vector<NV_ENC_OUTPUT_PTR> m_vMVDataOutputBuffer;
     uint32_t m_nMaxEncodeWidth = 0;
     uint32_t m_nMaxEncodeHeight = 0;
+    void* m_hModule = nullptr;
 };

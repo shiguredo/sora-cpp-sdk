@@ -55,8 +55,7 @@ inline bool check(CUresult e, int iLine, const char* szFile) {
   if (e != CUDA_SUCCESS) {
     const char* szErrName = NULL;
     dyn::cuGetErrorName(e, &szErrName);
-    // <memo> ERROR が FATAL になっている
-    LOG(FATAL) << "CUDA driver API error " << szErrName << " at line " << iLine
+    LOG(ERROR) << "CUDA driver API error " << szErrName << " at line " << iLine
                << " in file " << szFile;
     return false;
   }
@@ -67,8 +66,7 @@ inline bool check(CUresult e, int iLine, const char* szFile) {
 #ifdef __CUDA_RUNTIME_H__
 inline bool check(cudaError_t e, int iLine, const char* szFile) {
   if (e != cudaSuccess) {
-    // <memo> ERROR が FATAL になっている
-    LOG(FATAL) << "CUDA runtime API error " << cudaGetErrorName(e)
+    LOG(ERROR) << "CUDA runtime API error " << cudaGetErrorName(e)
                << " at line " << iLine << " in file " << szFile;
     return false;
   }
@@ -107,8 +105,7 @@ inline bool check(NVENCSTATUS e, int iLine, const char* szFile) {
       "NV_ENC_ERR_RESOURCE_NOT_MAPPED",
   };
   if (e != NV_ENC_SUCCESS) {
-    // <memo> ERROR が FATAL になっている
-    LOG(FATAL) << "NVENC error " << aszErrName[e] << " at line " << iLine
+    LOG(ERROR) << "NVENC error " << aszErrName[e] << " at line " << iLine
                << " in file " << szFile;
     return false;
   }
@@ -121,8 +118,7 @@ inline bool check(HRESULT e, int iLine, const char* szFile) {
   if (e != S_OK) {
     std::stringstream stream;
     stream << std::hex << std::uppercase << e;
-    // <memo> ERROR が FATAL になっている
-    LOG(FATAL) << "HRESULT error 0x" << stream.str() << " at line " << iLine
+    LOG(ERROR) << "HRESULT error 0x" << stream.str() << " at line " << iLine
                << " in file " << szFile;
     return false;
   }

@@ -77,8 +77,7 @@ void NvEncoderCuda::AllocateInputBuffers(int32_t numInputBuffers)
                 GetMaxEncodeHeight() + chromaHeight, 16));
             inputFrames.push_back((void*)pDeviceFrame);
         }
-        // <memo> nullptr を NULL に変更
-        CUDA_DRVAPI_CALL(dyn::cuCtxPopCurrent(NULL));
+        CUDA_DRVAPI_CALL(dyn::cuCtxPopCurrent(nullptr));
 
         RegisterInputResources(inputFrames,
             NV_ENC_INPUT_RESOURCE_TYPE_CUDADEVICEPTR,
@@ -134,8 +133,7 @@ void NvEncoderCuda::ReleaseCudaResources()
     }
     m_vReferenceFrames.clear();
 
-    // <memo> nullptr を NULL に変更
-    dyn::cuCtxPopCurrent(NULL);
+    dyn::cuCtxPopCurrent(nullptr);
     m_cuContext = nullptr;
 }
 
@@ -221,8 +219,7 @@ void NvEncoderCuda::CopyToDeviceFrame(CUcontext device,
             }
         }
     }
-    // <memo> nullptr を NULL に変更
-    CUDA_DRVAPI_CALL(dyn::cuCtxPopCurrent(NULL));
+    CUDA_DRVAPI_CALL(dyn::cuCtxPopCurrent(nullptr));
 }
 
 void NvEncoderCuda::CopyToDeviceFrame(CUcontext device,
