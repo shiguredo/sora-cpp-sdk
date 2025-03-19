@@ -1,7 +1,7 @@
 /*
  * This copyright notice applies to this header file only:
  *
- * Copyright (c) 2010-2022 NVIDIA Corporation
+ * Copyright (c) 2010-2023 NVIDIA Corporation
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -796,7 +796,7 @@ typedef struct _CUVIDAV1PICPARAMS {
       enable_interintra_compound : 1;  // interintra, 0 : not present 1: present
   unsigned int
       enable_masked_compound : 1;  // 1: mode info for inter blocks may contain the syntax element compound_type.
-      // 0: syntax element compound_type will not be present
+  // 0: syntax element compound_type will not be present
   unsigned int
       enable_dual_filter : 1;  // vertical and horiz filter selection, 1: enable and 0: disable
   unsigned int
