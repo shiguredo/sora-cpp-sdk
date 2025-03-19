@@ -303,5 +303,5 @@ void NvEncoderCuda::CopyToDeviceFrame(CUcontext device,
             }
         }
     }
-    CUDA_DRVAPI_CALL(dyn::cuCtxPopCurrent(NULL));
+    CUDA_DRVAPI_CALL(dyn::cuCtxPopCurrent(nullptr));
 }
