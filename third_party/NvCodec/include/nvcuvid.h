@@ -345,9 +345,9 @@ typedef struct _CUVIDSOURCEPARAMS {
   void*
       pUserData; /**< IN: User private data passed in to the data handlers   */
   PFNVIDSOURCECALLBACK
-      pfnVideoDataHandler; /**< IN: Called to deliver video packets                    */
+  pfnVideoDataHandler; /**< IN: Called to deliver video packets                    */
   PFNVIDSOURCECALLBACK
-      pfnAudioDataHandler; /**< IN: Called to deliver audio packets.                   */
+  pfnAudioDataHandler; /**< IN: Called to deliver audio packets.                   */
   void* pvReserved2
       [8]; /**< Reserved for future use - set to NULL                  */
 } CUVIDSOURCEPARAMS;
@@ -498,16 +498,16 @@ typedef struct _CUVIDPARSERPARAMS {
   void*
       pUserData; /**< IN: User data for callbacks                                             */
   PFNVIDSEQUENCECALLBACK
-      pfnSequenceCallback; /**< IN: Called before decoding frames and/or whenever there is a fmt change */
+  pfnSequenceCallback; /**< IN: Called before decoding frames and/or whenever there is a fmt change */
   PFNVIDDECODECALLBACK
-      pfnDecodePicture; /**< IN: Called when a picture is ready to be decoded (decode order)         */
+  pfnDecodePicture; /**< IN: Called when a picture is ready to be decoded (decode order)         */
   PFNVIDDISPLAYCALLBACK
-      pfnDisplayPicture; /**< IN: Called whenever a picture is ready to be displayed (display order)  */
+  pfnDisplayPicture; /**< IN: Called whenever a picture is ready to be displayed (display order)  */
   PFNVIDOPPOINTCALLBACK
-      pfnGetOperatingPoint; /**< IN: Called from AV1 sequence header to get operating point of a AV1 
+  pfnGetOperatingPoint; /**< IN: Called from AV1 sequence header to get operating point of a AV1 
                                                          scalable bitstream                                                  */
   PFNVIDSEIMSGCALLBACK
-      pfnGetSEIMsg; /**< IN: Called when all SEI messages are parsed for particular frame        */
+  pfnGetSEIMsg; /**< IN: Called when all SEI messages are parsed for particular frame        */
   void* pvReserved2
       [5]; /**< Reserved for future use - set to NULL                                   */
   CUVIDEOFORMATEX*
