@@ -11,6 +11,9 @@
 
 ## develop
 
+- [UPDATE] libwebrtc を m134.6998.1.0 にあげる
+  - @miosakuma
+
 ## 2025.2.0
 
 **リリース日**: 2025-03-18
