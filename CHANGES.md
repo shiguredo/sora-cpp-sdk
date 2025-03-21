@@ -12,10 +12,43 @@
 ## develop
 
 - [UPDATE] NVIDIA Video Codec SDK を 12.1 に上げる
+  - [Video Codec SDK Archive](https://developer.nvidia.com/video-codec-sdk-archive) から取得した `Video Codec SDK 12.1` を `third_party/NvCodec` に適用
+  - Sora C++ SDK のための修正を `Video Codec SDK 12.1` にアップデートした `third_party/NvCodec` に適用
+    - `Utils/NvCodecUtils.h` を修正
+      - `#include "sora/dyn/cuda.h"` を追加
+      - `cuGetErrorName` を `dyn::cuGetErrorName` に変更
+    - `NvDecoder/NvDecoder.h` を修正
+      - `#include "sora/dyn/nvcuvid.h"` を追加
+    - `NvDecoder/NvDecoder.cpp` を修正
+      - `#include "sora/fix_cuda_noinline_macro_error.h"` を追加
+      - `#include "sora/dyn/cuda.h"` を追加
+      - `#include "sora/dyn/nvcuvid.h"` を追加
+      - `#include "../../../Interface/nvcuvid.h"` を削除
+      - `sora/dyn` を利用するように `dyn::` を CUDA の関数に追加する
+    - `NvEncoder/NvEncoderCuda.h` を修正
+      - `cuGetErrorName` に `dyn::` を追加
+    - `NvEncoder/NvEncoderCuda.cpp` を修正
+      - `#include "sora/fix_cuda_noinline_macro_error.h"` を追加
+      - `#include "sora/dyn/cuda.h"` を追加
+      - `sora/dyn` を利用するように `dyn::` を CUDA の関数に追加する
+    - `NvEncoder/NvEncoder.h` を修正
+      - `#include "../Utils/NvCodecUtils.h"` を追加
+      - Windows 以外のプラットフォームで `#include <dlfcn.h>` をするように修正
+      - `class NvEncoder` に `static void TryLoadNvEncApi();` を追加
+      - 末尾に `void* m_hModule = nullptr;` を追加
+    - `NvEncoder/NvEncoder.cpp` を修正
+      - `void NvEncoder::TryLoadNvEncApi()` を追加
+      - `void NvEncoder::LoadNvEncApi()` へ `_WIN32` と `_WIN64` の条件を追加し、ロードする API を分岐するように修正
+      - `NvEncoder::~NvEncoder()` に `m_hModule` のリソース解放処理を追加
+  - @torikizi
+
+### misc
+
+- [UPDATE] `third_party` の運用方針を見直し
   - `third_party/NvCodec/` に適用されていたフォーマッタを今回から適用しない
     - `third_party` 以下のファイルは外部から取得したコードが含まれているためフォーマッタを適用しない方針となった
   - `third_party/NvCodec/NvCodec/` に配置していた `.clang-format` を `third_party` の直下に移動
-    - `third_party` 全体にコードフォーマッタを適用しない方針になるように修正
+    - `third_party` 全体にコードフォーマッタを適用しないように修正
   - `third_party` に README を追加
     - `third_party` の運用方針を追加
   - @torikizi
