@@ -32,9 +32,7 @@
  #include <chrono>
  #include <cmath>
  
- #include "../../../Interface/nvcuvid.h"
  #include "NvDecoder/NvDecoder.h"
-
  #include "sora/dyn/cuda.h"
  #include "sora/dyn/nvcuvid.h"
 
