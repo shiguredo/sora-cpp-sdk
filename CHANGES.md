@@ -16,6 +16,7 @@
 - [UPDATE] `third_party` の運用方針を見直し
   - `third_party/NvCodec/` に適用されていたフォーマッタを今回から適用しない
     - `third_party` 以下のファイルは外部から取得したコードが含まれているためフォーマッタを適用しない方針となった
+  - フォーマッタをかけない方針を受けて改行コードも LF から CRLF に変更となった
   - `third_party/NvCodec/NvCodec/` に配置していた `.clang-format` を `third_party` の直下に移動
     - `third_party` 全体にコードフォーマッタを適用しないように修正
   - `third_party` に README を追加
