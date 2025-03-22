@@ -19,7 +19,11 @@
 #include <iostream>
 #include <sstream>
 #include <string.h>
-#include "NvCodecUtils.h"
+#include "../Utils/NvCodecUtils.h"
+#include "nvEncodeAPI.h"
+#if !defined(_WIN32)
+#include <dlfcn.h>
+#endif
 
 /**
 * @brief Exception class for error reporting from NvEncodeAPI calls.
@@ -86,6 +90,8 @@ struct NvEncInputFrame
 class NvEncoder
 {
 public:
+    static void TryLoadNvEncApi();
+
     /**
     *  @brief This function is used to initialize the encoder session.
     *  Application must call this function to initialize the encoder, before
@@ -444,4 +450,5 @@ private:
     std::vector<NV_ENC_OUTPUT_PTR> m_vMVDataOutputBuffer;
     uint32_t m_nMaxEncodeWidth = 0;
     uint32_t m_nMaxEncodeHeight = 0;
+    void* m_hModule = nullptr;
 };

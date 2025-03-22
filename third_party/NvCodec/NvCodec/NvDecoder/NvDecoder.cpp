@@ -9,13 +9,16 @@
  *
  */
 
+#include "sora/fix_cuda_noinline_macro_error.h"
+
 #include <iostream>
 #include <algorithm>
 #include <chrono>
 #include <cmath>
 
-#include "../../../Interface/nvcuvid.h"
 #include "NvDecoder/NvDecoder.h"
+#include "sora/dyn/cuda.h"
+#include "sora/dyn/nvcuvid.h"
 
 #define START_TIMER auto start = std::chrono::high_resolution_clock::now();
 
