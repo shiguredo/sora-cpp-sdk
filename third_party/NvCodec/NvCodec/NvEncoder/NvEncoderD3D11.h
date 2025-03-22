@@ -11,49 +11,45 @@
 
 #pragma once
 
-#include <d3d11.h>
+#include <vector>
 #include <stdint.h>
 #include <mutex>
 #include <unordered_map>
-#include <vector>
+#include <d3d11.h>
 #include "NvEncoder.h"
 
-class NvEncoderD3D11 : public NvEncoder {
- public:
-  NvEncoderD3D11(ID3D11Device* pD3D11Device,
-                 uint32_t nWidth,
-                 uint32_t nHeight,
-                 NV_ENC_BUFFER_FORMAT eBufferFormat,
-                 uint32_t nExtraOutputDelay = 3,
-                 bool bMotionEstimationOnly = false,
-                 bool bOPInVideoMemory = false);
-  virtual ~NvEncoderD3D11();
+class NvEncoderD3D11 : public NvEncoder
+{
+public:
+    NvEncoderD3D11(ID3D11Device* pD3D11Device, uint32_t nWidth, uint32_t nHeight, NV_ENC_BUFFER_FORMAT eBufferFormat, 
+        uint32_t nExtraOutputDelay = 3, bool bMotionEstimationOnly = false,  bool bOPInVideoMemory = false);
+    virtual ~NvEncoderD3D11();
 
- protected:
-  /**
+protected:
+    /**
     *  @brief This function is used to release the input buffers allocated for encoding.
     *  This function is an override of virtual function NvEncoder::ReleaseInputBuffers().
     */
-  virtual void ReleaseInputBuffers() override;
+    virtual void ReleaseInputBuffers() override;
 
- private:
-  /**
+private:
+    /**
     *  @brief This function is used to allocate input buffers for encoding.
     *  This function is an override of virtual function NvEncoder::AllocateInputBuffers().
     *  This function creates ID3D11Texture2D textures which is used to accept input data.
     *  To obtain handle to input buffers application must call NvEncoder::GetNextInputFrame()
     */
-  virtual void AllocateInputBuffers(int32_t numInputBuffers) override;
+    virtual void AllocateInputBuffers(int32_t numInputBuffers) override;
 
- private:
-  /**
+private:
+    /**
     *  @brief This is a private function to release ID3D11Texture2D textures used for encoding.
     */
-  void ReleaseD3D11Resources();
+    void ReleaseD3D11Resources();
 
- protected:
-  ID3D11Device* m_pD3D11Device = nullptr;
+protected:
+    ID3D11Device *m_pD3D11Device = nullptr;
 
- private:
-  ID3D11DeviceContext* m_pD3D11DeviceContext = nullptr;
+private:
+    ID3D11DeviceContext* m_pD3D11DeviceContext = nullptr;
 };
