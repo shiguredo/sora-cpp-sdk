@@ -742,7 +742,7 @@ NvDecoder::NvDecoder(CUcontext cuContext, bool bUseDeviceFrame, cudaVideoCodec e
 
     NVDEC_API_CALL(dyn::cuvidCtxLockCreate(&m_ctxLock, cuContext));
 
-    ck(dyn::cuStreamCreate(&m_cuvidStream, CU_STREAM_DEFAULT));
+    // ck(dyn::cuStreamCreate(&m_cuvidStream, CU_STREAM_DEFAULT));
 
     decoderSessionID = 0;
 

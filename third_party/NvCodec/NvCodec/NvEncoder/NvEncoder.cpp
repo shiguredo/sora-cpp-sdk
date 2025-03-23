@@ -131,6 +131,8 @@ void NvEncoder::LoadNvEncApi()
             NV_ENC_ERR_NO_ENCODE_DEVICE);
       }
     
+      m_hModule = hModule;
+
       typedef NVENCSTATUS(NVENCAPI *
                           NvEncodeAPIGetMaxSupportedVersion_Type)(uint32_t*);
     #if defined(_WIN32)
