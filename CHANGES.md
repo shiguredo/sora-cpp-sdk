@@ -16,7 +16,7 @@
 - [UPDATE] `third_party` の運用方針を見直し
   - `third_party/` は外部から取得したコードであり、アップデート時に変更の追従が困難になるためフォーマッタを今回から適用しない
   - `third_party/NvCodec/NvCodec/` に配置していた `.clang-format` を `third_party` の直下に移動
-    - `third_party` 全体にコードフォーマッタを適用しないように修正
+    - clang-format を適用しない対象を `third_party` 以下全体にするため
   - `third_party` に README を追加
     - `third_party` の運用方針を追加
   - @torikizi
