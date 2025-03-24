@@ -20,6 +20,8 @@
   - `third_party` に README を追加
     - `third_party` の運用方針を追加
   - @torikizi
+- [UPDATE] `third_party/NvCodec` のコードをフォーマッタを適用しない状態に戻す
+  - @torikizi
 
 ## 2025.2.0
 
