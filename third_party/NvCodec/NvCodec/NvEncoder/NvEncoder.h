@@ -20,7 +20,6 @@
 #include <sstream>
 #include <string.h>
 #include "../Utils/NvCodecUtils.h"
-#include "nvEncodeAPI.h"
 #if !defined(_WIN32)
 #include <dlfcn.h>
 #endif
