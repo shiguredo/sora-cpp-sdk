@@ -616,7 +616,6 @@ std::unique_ptr<NvEncoder> NvCodecVideoEncoderImpl::CreateEncoder(
     initialize_params.maxEncodeHeight = height;
 
     //encode_config.profileGUID = NV_ENC_H264_PROFILE_BASELINE_GUID;
-    //encode_config.rcParams.rateControlMode = NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ;
     encode_config.rcParams.averageBitRate = target_bitrate_bps;
     encode_config.rcParams.maxBitRate = max_bitrate_bps;
 
