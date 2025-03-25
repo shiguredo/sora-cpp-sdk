@@ -18,8 +18,9 @@
   - NOTICE の更新
     - `cuviddec.h / nvEncodeAPI.h / nvcuvid.h` を更新
     - `NvDecoder / NvEncoder` のライセンスを更新
-  - `nvcodec_video_encoder.cpp` でコメントアウトしていた箇所を削除
-    - すでに利用していないことと `NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ` が削除されたため
+  - `nvcodec_video_encoder.cpp` の未使用コードを削除
+    - NvCodec からの `NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ` 削除に伴い、コメントアウトされていたコードを削除
+    - 未使用かつコメントアウトされていた `NV_ENC_H264_PROFILE_BASELINE_GUID` のコードも削除
   - @torikizi
 
 ### misc
