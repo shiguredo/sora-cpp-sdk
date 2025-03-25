@@ -25,6 +25,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
+ #include "sora/fix_cuda_noinline_macro_error.h"
+
 #include <iostream>
 #include <algorithm>
 #include <chrono>
