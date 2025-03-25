@@ -11,6 +11,18 @@
 
 ## develop
 
+- [UPDATE] `third_party/NvCodec` を 12.1 にアップデート
+  - README の更新
+    - ライセンスバージョンを更新
+    - ライセンスのリンクを追加
+  - NOTICE の更新
+    - `cuviddec.h / nvEncodeAPI.h / nvcuvid.h` を更新
+    - `NvDecoder / NvEncoder` のライセンスを更新
+  - `nvcodec_video_encoder.cpp` の未使用コードを削除
+    - NvCodec からの `NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ` 削除に伴い、コメントアウトされていたコードを削除
+    - 未使用かつコメントアウトされていた `NV_ENC_H264_PROFILE_BASELINE_GUID` のコードも削除
+  - @torikizi
+
 ### misc
 
 - [UPDATE] `third_party` の運用方針を見直し

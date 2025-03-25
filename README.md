@@ -144,10 +144,13 @@ limitations under the License.
 "OpenH264 Video Codec provided by Cisco Systems, Inc."
 ```
 
-## NVDIA Video Codec SDK
+## NVIDIA Video Codec SDK
 
-<https://docs.nvidia.com/video-technologies/video-codec-sdk/12.0/index.html>
+<https://docs.nvidia.com/video-technologies/video-codec-sdk/12.1/index.html>
 
-```test
+
+<https://docs.nvidia.com/video-technologies/video-codec-sdk/12.1/license/index.html>
+
+```text
 “This software contains source code provided by NVIDIA Corporation.”
 ```
