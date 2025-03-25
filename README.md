@@ -151,6 +151,6 @@ limitations under the License.
 
 <https://docs.nvidia.com/video-technologies/video-codec-sdk/12.1/license/index.html>
 
-```test
+```text
 “This software contains source code provided by NVIDIA Corporation.”
 ```
