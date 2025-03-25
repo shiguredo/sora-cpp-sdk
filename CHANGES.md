@@ -10,6 +10,7 @@
   - バグ修正
 
 ## develop
+
 - [UPDATE] `third_party/NvCodec` を 12.2 にアップデート
   - NOTICE の更新
     - `cuviddec.h / nvEncodeAPI.h / nvcuvid.h` を更新
