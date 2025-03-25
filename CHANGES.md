@@ -11,20 +11,17 @@
 
 ## develop
 
-- [UPDATE] `third_party/NvCodec` を 12.1 にアップデート
-  - README の更新
-    - ライセンスバージョンを更新
-    - ライセンスのリンクを追加
-  - NOTICE の更新
-    - `cuviddec.h / nvEncodeAPI.h / nvcuvid.h` を更新
-    - `NvDecoder / NvEncoder` のライセンスを更新
-  - `nvcodec_video_encoder.cpp` の未使用コードを削除
-    - NvCodec からの `NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ` 削除に伴い、コメントアウトされていたコードを削除
-    - 未使用かつコメントアウトされていた `NV_ENC_H264_PROFILE_BASELINE_GUID` のコードも削除
+- [UPDATE] `NVIDIA Video Codec SDK` を [12.1](https://docs.nvidia.com/video-technologies/video-codec-sdk/12.1/index.html) にアップデートする
+  - SDK からサンプルコードやヘッダーファイルのライセンスが NVIDIA's EULA から MIT に変更されたため NOTICE を変更する
+    - <https://docs.nvidia.com/video-technologies/video-codec-sdk/12.1/read-me/index.html#release-notes-v10__whats-new>
+  - SDK から `NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ` が削除されたため追従する
+    - <https://docs.nvidia.com/video-technologies/video-codec-sdk/12.1/deprecation-notices/index.html#deprecation-notices__section_imd_y1f_nlb>
   - @torikizi
 
 ### misc
 
+- [CHANGE] NVIDIA Video Codec SDK でコメントアウトしていた `NV_ENC_H264_PROFILE_BASELINE_GUID` を削除する
+  - @torikizi
 - [UPDATE] `third_party` の運用方針を見直し
   - `third_party/` は外部から取得したコードであり、アップデート時に変更の追従が困難になるためフォーマッタを今回から適用しない
   - `third_party/NvCodec/NvCodec/` に配置していた `.clang-format` を `third_party` の直下に移動
