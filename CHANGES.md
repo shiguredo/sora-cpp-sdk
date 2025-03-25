@@ -13,6 +13,7 @@
 
 - [UPDATE] `third_party/NvCodec` を 12.1 にアップデート
   - README のライセンスバージョンを更新
+  - README にライセンスのリンクを追加
   - NOTICE の `cuviddec.h / nvEncodeAPI.h / nvcuvid.h` を更新
   - `nvcodec_video_encoder.cpp` でコメントアウトしていた箇所を削除
     - すでに利用していないことと `NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ` が削除されたため
