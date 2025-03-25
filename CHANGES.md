@@ -20,8 +20,6 @@
 
 ### misc
 
-- [CHANGE] NVIDIA Video Codec SDK でコメントアウトしていた `NV_ENC_H264_PROFILE_BASELINE_GUID` を削除する
-  - @torikizi
 - [UPDATE] `third_party` の運用方針を見直し
   - `third_party/` は外部から取得したコードであり、アップデート時に変更の追従が困難になるためフォーマッタを今回から適用しない
   - `third_party/NvCodec/NvCodec/` に配置していた `.clang-format` を `third_party` の直下に移動
