@@ -26,12 +26,12 @@
   - @torikizi
 - [UPDATE] `third_party` の運用方針を見直し
   - `third_party/` は外部から取得したコードであり、アップデート時に変更の追従が困難になるためフォーマッタを今回から適用しない
-  - `third_party/NvCodec/NvCodec/` に配置していた `.clang-format` を `third_party` の直下に移動
+  - `third_party/NvCodec/NvCodec/` に配置していた `.clang-format` を `third_party` の直下に移動する
     - clang-format を適用しない対象を `third_party` 以下全体にするため
-  - clang-fomat 13.0 以降で `SortIncludes: false` は不要となったため設定を削除
+  - clang-fomat 13.0 以降で `SortIncludes: false` は不要となったため設定を削除する
     - 参考: [clang-format still formatting with `DisableFormat: true`](https://stackoverflow.com/questions/55833838/clang-format-still-formatting-with-disableformat-true/55833839#55833839)
-  - `third_party` に README を追加
-    - `third_party` の運用方針を追加
+  - `third_party` に README を追加する
+    - `third_party` の運用方針を追加する
   - @torikizi
 - [UPDATE] `third_party/NvCodec` のコードをフォーマッタを適用しない状態に戻す
   - @torikizi
