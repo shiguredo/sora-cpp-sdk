@@ -79,8 +79,8 @@ def get_common_cmake_args(
             "ubuntu-22.04_x86_64",
             "ubuntu-24.04_x86_64",
         ):
-            args.append("-DCMAKE_C_COMPILER=clang-18")
-            args.append("-DCMAKE_CXX_COMPILER=clang++-18")
+            args.append("-DCMAKE_C_COMPILER=clang-20")
+            args.append("-DCMAKE_CXX_COMPILER=clang++-20")
         else:
             sysroot = os.path.join(install_dir, "rootfs")
             args.append(
@@ -409,8 +409,8 @@ def install_deps(
                 install_vpl_args["cmake_args"].append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
             if platform.target.os == "ubuntu":
                 cmake_args = []
-                cmake_args.append("-DCMAKE_C_COMPILER=clang-18")
-                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-18")
+                cmake_args.append("-DCMAKE_C_COMPILER=clang-20")
+                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-20")
                 path = cmake_path(os.path.join(webrtc_info.libcxx_dir, "include"))
                 cmake_args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
                 flags = [
@@ -643,8 +643,8 @@ def main():
                 "ubuntu-22.04_x86_64",
                 "ubuntu-24.04_x86_64",
             ):
-                cmake_args.append("-DCMAKE_C_COMPILER=clang-18")
-                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-18")
+                cmake_args.append("-DCMAKE_C_COMPILER=clang-20")
+                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-20")
             else:
                 sysroot = os.path.join(install_dir, "rootfs")
                 cmake_args.append(
@@ -860,8 +860,8 @@ def main():
                         "ubuntu-22.04_x86_64",
                         "ubuntu-24.04_x86_64",
                     ):
-                        cmake_args.append("-DCMAKE_C_COMPILER=clang-18")
-                        cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-18")
+                        cmake_args.append("-DCMAKE_C_COMPILER=clang-20")
+                        cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-20")
                     else:
                         sysroot = os.path.join(install_dir, "rootfs")
                         cmake_args.append(
