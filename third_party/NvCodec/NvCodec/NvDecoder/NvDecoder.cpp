@@ -516,7 +516,7 @@ int NvDecoder::ReconfigureDecoder(CUVIDEOFORMAT *pVideoFormat)
 
     START_TIMER
     CUDA_DRVAPI_CALL(dyn::cuCtxPushCurrent(m_cuContext));
-    NVDEC_API_CALL(dyn::cuvidReconfigureDecoder(m_hDecoder, &reconfigParams));
+    CUresult result = dyn::cuvidReconfigureDecoder(m_hDecoder, &reconfigParams);
     CUDA_DRVAPI_CALL(dyn::cuCtxPopCurrent(nullptr));
     STOP_TIMER("Session Reconfigure Time: ");
 
