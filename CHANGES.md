@@ -11,7 +11,7 @@
 
 ## develop
 
-- [UPDATE] `NVIDIA Video Codec SDK` を [12.2](https://docs.nvidia.com/video-technologies/video-codec-sdk/12.2/index.html) にアップデートする
+- [UPDATE] `NVIDIA Video Codec SDK` を [13.0](https://docs.nvidia.com/video-technologies/video-codec-sdk/13.0/index.html) にアップデートする
   - SDK のサンプルコードやヘッダーファイルのライセンスが NVIDIA's EULA から MIT に変更されたため NOTICE を変更する
     - <https://docs.nvidia.com/video-technologies/video-codec-sdk/12.1/read-me/index.html#release-notes-v10__whats-new>
   - SDK から `NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ` が削除されたため追従する
