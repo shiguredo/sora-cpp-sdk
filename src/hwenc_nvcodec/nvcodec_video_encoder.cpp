@@ -358,7 +358,7 @@ int32_t NvCodecVideoEncoderImpl::Encode(
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
-  for (auto& output : v_packet_) {
+  for (NvEncOutputFrame& output : v_packet_) {
     std::vector<uint8_t>& packet = output.frame; 
     uint8_t* p = packet.data();
     size_t size = packet.size();
