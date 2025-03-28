@@ -16,6 +16,7 @@
     - <https://docs.nvidia.com/video-technologies/video-codec-sdk/12.1/read-me/index.html#release-notes-v10__whats-new>
   - SDK から `NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ` が削除されたため追従する
     - <https://docs.nvidia.com/video-technologies/video-codec-sdk/12.1/deprecation-notices/index.html#deprecation-notices__section_imd_y1f_nlb>
+  - `std::vector<uint8_t>` が `NvEncOutputFrame` に集約されたため、そちらを使用するように修正
   - @torikizi
 
 ### misc
