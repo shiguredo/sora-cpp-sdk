@@ -125,7 +125,7 @@ class NvCodecVideoEncoderImpl : public NvCodecVideoEncoder {
   uint32_t framerate_ = 0;
   webrtc::VideoCodecMode mode_ = webrtc::VideoCodecMode::kRealtimeVideo;
   NV_ENC_INITIALIZE_PARAMS initialize_params_;
-  std::vector<std::vector<uint8_t>> v_packet_;
+  std::vector<NvEncOutputFrame> v_packet_;
   webrtc::EncodedImage encoded_image_;
 
   // AV1 用
@@ -358,7 +358,8 @@ int32_t NvCodecVideoEncoderImpl::Encode(
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
-  for (std::vector<uint8_t>& packet : v_packet_) {
+  for (auto& output : v_packet_) {
+    std::vector<uint8_t>& packet = output.frame; 
     uint8_t* p = packet.data();
     size_t size = packet.size();
     if (codec_ == CudaVideoCodec::AV1) {
