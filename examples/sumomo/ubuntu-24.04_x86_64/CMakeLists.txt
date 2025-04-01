@@ -39,3 +39,4 @@ target_compile_options(sumomo
 target_include_directories(sumomo PRIVATE ${CLI11_DIR}/include)
 target_link_libraries(sumomo PRIVATE Sora::sora SDL2::SDL2 SDL2::SDL2main)
 target_compile_definitions(sumomo PRIVATE CLI11_HAS_FILESYSTEM=0)
+target_link_options(messaging_recvonly_sample PRIVATE -fuse-ld=lld)

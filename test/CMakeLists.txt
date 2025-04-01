@@ -41,6 +41,7 @@ function (init_target target)
   target_compile_definitions(${target} PRIVATE BL_STATIC=1)
   target_include_directories(${target} PRIVATE ${BLEND2D_ROOT_DIR}/include)
   target_link_libraries(${target} PRIVATE Sora::sora ${Blend2D_LIBRARY})
+  target_link_options(${target} PRIVATE -fuse-ld=lld)
 
   if (USE_LIBCXX)
     target_compile_options(${target}
