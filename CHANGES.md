@@ -20,6 +20,7 @@
     - `v_packet_` を `std::vector<std::vector<uint8_t>>` から `std::vector<NvEncOutputFrame>` に変更する  
     - `for (std::vector<uint8_t>& packet : v_packet_)` を `for (NvEncOutputFrame& output : v_packet_)` に変更する  
     - ループ内に `std::vector<uint8_t>& packet = output.frame;` を追加し、既存処理との互換性を維持する
+    - コーデックごとに実行していたキーフレーム判定を NvEncOutputFrame のフレーム情報を利用して行うように変更する
   - @torikizi
 
 ### misc
