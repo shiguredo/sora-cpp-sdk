@@ -19,6 +19,12 @@
   - @torikizi
 - [UPDATE] CMake を 4.0.0 にあげる
   - @torikizi
+- [UPDATE] 以下の関数を deprecated にする
+  - `GetDefaultVideoEncoderFactoryConfig()`
+  - `GetSoftwareOnlyVideoEncoderFactoryConfig()`
+  - `GetDefaultVideoDecoderFactoryConfig()`
+  - `GetSoftwareOnlyVideoDecoderFactoryConfig()`
+  - 代わりに Sora C++ SDK 2025.2.0 でリリースされた `VideoCodecCapability` や `VideoCodecPreference` を利用して下さい
 
 ### misc
 
