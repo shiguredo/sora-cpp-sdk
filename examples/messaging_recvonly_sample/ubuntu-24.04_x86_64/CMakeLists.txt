@@ -37,4 +37,3 @@ target_compile_options(messaging_recvonly_sample
 target_include_directories(messaging_recvonly_sample PRIVATE ${CLI11_DIR}/include)
 target_link_libraries(messaging_recvonly_sample PRIVATE Sora::sora)
 target_compile_definitions(messaging_recvonly_sample PRIVATE CLI11_HAS_FILESYSTEM=0)
-target_link_options(messaging_recvonly_sample PRIVATE -fuse-ld=lld)
