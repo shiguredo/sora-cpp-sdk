@@ -19,9 +19,9 @@
   - @torikizi
 - [UPDATE] CMake を 4.0.0 にあげる
   - @torikizi
-- [UPDATE] Blend2D のバージョンを `ca5403c1d02b2bc9d2de581e4cb13e5e80f33860` に上げる
+- [UPDATE] Blend2D のバージョンを `717cbf4bc0f2ca164cf2f0c48f0497779241b6c5` に上げる
   - @miosakuma
-- [UPDATE] AsmJit のバージョンを `2e93826348d6cd1325a8b1f7629e193c58332da9` に上げる
+- [UPDATE] AsmJit のバージョンを `e8c8e2e48a1a38154c8e8864eb3bc61db80a1e31` に上げる
   - @miosakuma
 
 ### misc
