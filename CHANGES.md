@@ -27,6 +27,10 @@
   - @torikizi
 - [UPDATE] CMake を 4.0.0 にあげる
   - @torikizi
+- [UPDATE] Blend2D のバージョンを `717cbf4bc0f2ca164cf2f0c48f0497779241b6c5` に上げる
+  - @miosakuma
+- [UPDATE] AsmJit のバージョンを `e8c8e2e48a1a38154c8e8864eb3bc61db80a1e31` に上げる
+  - @miosakuma
 - [UPDATE] 以下の関数を deprecated にする
   - `GetDefaultVideoEncoderFactoryConfig()`
   - `GetSoftwareOnlyVideoEncoderFactoryConfig()`
