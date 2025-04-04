@@ -388,7 +388,7 @@ int32_t NvCodecVideoEncoderImpl::Encode(
     encoded_image_.SetColorSpace(frame.color_space());
     encoded_image_._frameType = webrtc::VideoFrameType::kVideoFrameDelta;
 
-    // IDR フレームまたは I フレーム（またはその両方）はキーフレームとして扱う
+    // IDR フレームまたは I フレームはキーフレームとして扱う
     if (output.pictureType == NV_ENC_PIC_TYPE_IDR ||
         output.pictureType == NV_ENC_PIC_TYPE_I) {
       encoded_image_._frameType = webrtc::VideoFrameType::kVideoFrameKey;
