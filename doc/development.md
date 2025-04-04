@@ -35,13 +35,13 @@ python3 run.py ubuntu-24.04_x86_64 --debug --local-webrtc-build-dir ../webrtc-bu
 
 ### ubuntu-22.04_x86_64, ubuntu-24.04_x86_64 のビルドに必要な依存
 
-- clang-18
+- clang-20
 - CUDA
 ```bash
-# clang-18
+# clang-20
 wget https://apt.llvm.org/llvm.sh
 chmod a+x llvm.sh
-sudo ./llvm.sh 18
+sudo ./llvm.sh 20
 
 # CUDA
 wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb

@@ -32,7 +32,7 @@
                 "RTC_ENABLE_H265"
             ],
             // "compilerPath": "${workspaceFolder}/_install/ubuntu-22.04_x86_64/release/llvm/clang/bin/clang++",
-            "compilerPath": "/usr/bin/clang++-18",
+            "compilerPath": "/usr/bin/clang++-20",
             "compilerArgs": ["-nostdinc++"],
             "cStandard": "gnu17",
             "cppStandard": "gnu++17",
@@ -72,7 +72,7 @@
                 "RTC_ENABLE_H265"
             ],
             // "compilerPath": "${workspaceFolder}/_install/ubuntu-24.04_x86_64/release/llvm/clang/bin/clang++",
-            "compilerPath": "/usr/bin/clang++-18",
+            "compilerPath": "/usr/bin/clang++-20",
             "compilerArgs": ["-nostdinc++"],
             "cStandard": "gnu17",
             "cppStandard": "gnu++17",
@@ -112,7 +112,7 @@
                 "RTC_ENABLE_H265"
             ],
             // "compilerPath": "${workspaceFolder}/_install/ubuntu-24.04_x86_64/release/llvm/clang/bin/clang++",
-            "compilerPath": "/usr/bin/clang++-18",
+            "compilerPath": "/usr/bin/clang++-20",
             "compilerArgs": ["-nostdinc++"],
             "cStandard": "gnu17",
             "cppStandard": "gnu++17",
