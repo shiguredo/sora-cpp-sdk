@@ -101,11 +101,15 @@ class SoraVideoEncoderFactory : public webrtc::VideoEncoderFactory {
 };
 
 // ハードウェアエンコーダを出来るだけ使おうとして、見つからなければソフトウェアエンコーダを使う設定を返す
+[[deprecated(
+    "代わりに VideoCodecCapability, VideoCodecPreference を利用して下さい。")]]
 SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
     std::shared_ptr<CudaContext> cuda_context = nullptr,
     void* env = nullptr,
     std::optional<std::string> openh264 = std::nullopt);
 // ソフトウェアエンコーダのみを使う設定を返す
+[[deprecated(
+    "代わりに VideoCodecCapability, VideoCodecPreference を利用して下さい。")]]
 SoraVideoEncoderFactoryConfig GetSoftwareOnlyVideoEncoderFactoryConfig(
     std::optional<std::string> openh264 = std::nullopt);
 
