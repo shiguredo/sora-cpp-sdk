@@ -14,6 +14,34 @@
 - [UPDATE] libwebrtc を m134.6998.1.1 にあげる
   - Ubuntu で使用する clang のバージョンを 20 にアップデートする
   - @miosakuma @torikizi @melpon
+- [UPDATE] `NVIDIA Video Codec SDK` を [12.2](https://docs.nvidia.com/video-technologies/video-codec-sdk/12.2/index.html) にアップデートする
+  - SDK のサンプルコードやヘッダーファイルのライセンスが NVIDIA's EULA から MIT に変更されたため NOTICE を変更する
+    - <https://docs.nvidia.com/video-technologies/video-codec-sdk/12.1/read-me/index.html#release-notes-v10__whats-new>
+  - SDK から `NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ` が削除されたため追従する
+    - <https://docs.nvidia.com/video-technologies/video-codec-sdk/12.1/deprecation-notices/index.html#deprecation-notices__section_imd_y1f_nlb>
+  - @torikizi
+- [UPDATE] CMake を 4.0.0 にあげる
+  - @torikizi
+- [UPDATE] 以下の関数を deprecated にする
+  - `GetDefaultVideoEncoderFactoryConfig()`
+  - `GetSoftwareOnlyVideoEncoderFactoryConfig()`
+  - `GetDefaultVideoDecoderFactoryConfig()`
+  - `GetSoftwareOnlyVideoDecoderFactoryConfig()`
+  - 代わりに Sora C++ SDK 2025.2.0 でリリースされた `VideoCodecCapability` や `VideoCodecPreference` を利用して下さい
+
+### misc
+
+- [UPDATE] `third_party` の運用方針を見直し
+  - `third_party/` は外部から取得したコードであり、アップデート時に変更の追従が困難になるためフォーマッタを今回から適用しない
+  - `third_party/NvCodec/NvCodec/` に配置していた `.clang-format` を `third_party` の直下に移動する
+    - clang-format を適用しない対象を `third_party` 以下全体にするため
+  - clang-fomat 13.0 以降で `SortIncludes: false` は不要となったため設定を削除する
+    - 参考: [clang-format still formatting with `DisableFormat: true`](https://stackoverflow.com/questions/55833838/clang-format-still-formatting-with-disableformat-true/55833839#55833839)
+  - `third_party` に README を追加する
+    - `third_party` の運用方針を追加する
+  - @torikizi
+- [UPDATE] `third_party/NvCodec` のコードをフォーマッタを適用しない状態に戻す
+  - @torikizi
 
 ## 2025.2.0
 
