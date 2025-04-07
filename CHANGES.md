@@ -52,6 +52,9 @@
   - @torikizi
 - [UPDATE] `third_party/NvCodec` のコードをフォーマッタを適用しない状態に戻す
   - @torikizi
+- [UPDATE] test の Android ビルドで C++ 20 を利用するように変更
+  - cppFlags を `'-std=gnu++20'` にアップデートする
+  - @torikizi
 
 ## 2025.2.0
 
