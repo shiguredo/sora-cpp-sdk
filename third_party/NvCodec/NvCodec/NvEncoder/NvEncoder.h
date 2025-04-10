@@ -99,13 +99,6 @@ struct NvEncInputFrame
     NV_ENC_INPUT_RESOURCE_TYPE resourceType;
 };
 
-struct NvEncOutputFrame
-{
-    std::vector<uint8_t> frame;
-    NV_ENC_PIC_TYPE pictureType;
-    uint64_t timeStamp;
-};
-
 /**
 * @brief Shared base class for different encoder interfaces.
 */
@@ -144,7 +137,7 @@ public:
     *  input buffer and then call EncodeFrame() function to encode it.
     */
     const NvEncInputFrame* GetNextInputFrame();
-    const NvEncInputFrame* GetNextInputFrame(uint32_t frameIdx);
+
 
     /**
     *  @brief  This function is used to encode a frame.
@@ -152,7 +145,7 @@ public:
     *  data, which has been copied to an input buffer obtained from the
     *  GetNextInputFrame() function.
     */
-    virtual void EncodeFrame(std::vector<NvEncOutputFrame> &vPacket, NV_ENC_PIC_PARAMS *pPicParams = nullptr);
+    virtual void EncodeFrame(std::vector<std::vector<uint8_t>> &vPacket, NV_ENC_PIC_PARAMS *pPicParams = nullptr);
 
     /**
     *  @brief  This function to flush the encoder queue.
@@ -161,7 +154,7 @@ public:
     *  from the encoder. The application must call this function before destroying
     *  an encoder session.
     */
-    virtual void EndEncode(std::vector<NvEncOutputFrame> &vPacket);
+    virtual void EndEncode(std::vector<std::vector<uint8_t>> &vPacket);
 
     /**
     *  @brief  This function is used to query hardware encoder capabilities.
@@ -287,12 +280,6 @@ public:
     * @brief This function returns initializeParams(width, height, fps etc).
     */
     NV_ENC_INITIALIZE_PARAMS GetinitializeParams() const { return m_initializeParams; }
-
-    /**
-    *  @brief This function returns mvhevc is enabled or not.
-    */
-    uint32_t IsMVHEVC() const { return m_enableStereoMVHEVC; };
-
 protected:
 
     /**
@@ -398,7 +385,7 @@ private:
     *  This is called by DoEncode() function. If there is buffering enabled,
     *  this may return without any output data.
     */
-    void GetEncodedPacket(std::vector<NV_ENC_OUTPUT_PTR> &vOutputBuffer, std::vector<NvEncOutputFrame> &vPacket, bool bOutputDelay);
+    void GetEncodedPacket(std::vector<NV_ENC_OUTPUT_PTR> &vOutputBuffer, std::vector<std::vector<uint8_t>> &vPacket, bool bOutputDelay);
 
     /**
     *  @brief This is a private function which is used to initialize the bitstream buffers.
@@ -469,24 +456,19 @@ protected:
     IVFUtils m_IVFUtils;
     bool m_bWriteIVFFileHeader = true;
     bool m_bUseIVFContainer = true;
-    std::vector<NV_ENC_OUTPUT_PTR> m_vBitstreamOutputBuffer;
+
+private:
     uint32_t m_nWidth;
     uint32_t m_nHeight;
     NV_ENC_BUFFER_FORMAT m_eBufferFormat;
+    void *m_pDevice;
+    NV_ENC_DEVICE_TYPE m_eDeviceType;
     NV_ENC_CONFIG m_encodeConfig = {};
     bool m_bEncoderInitialized = false;
     uint32_t m_nExtraOutputDelay = 3; // To ensure encode and graphics can work in parallel, m_nExtraOutputDelay should be set to at least 1
-    
-    
+    std::vector<NV_ENC_OUTPUT_PTR> m_vBitstreamOutputBuffer;
+    std::vector<NV_ENC_OUTPUT_PTR> m_vMVDataOutputBuffer;
     uint32_t m_nMaxEncodeWidth = 0;
     uint32_t m_nMaxEncodeHeight = 0;
-private:
-    uint32_t m_enableStereoMVHEVC = 0;
-    uint32_t m_viewId = 0;
-    uint32_t m_outputHevc3DReferenceDisplayInfo = 0;
-	uint64_t m_nInputTimeStamp = 0;
-	void *m_pDevice;
-	NV_ENC_DEVICE_TYPE m_eDeviceType;
-	std::vector<NV_ENC_OUTPUT_PTR> m_vMVDataOutputBuffer;
     void* m_hModule = nullptr;
 };
