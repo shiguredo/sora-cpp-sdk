@@ -121,7 +121,7 @@ public:
     NvDecoder(CUcontext cuContext, bool bUseDeviceFrame, cudaVideoCodec eCodec, bool bLowLatency = false,
               bool bDeviceFramePitched = false, const Rect *pCropRect = NULL, const Dim *pResizeDim = NULL,
               bool extract_user_SEI_Message = false, int maxWidth = 0, int maxHeight = 0, unsigned int clkRate = 1000,
-              bool force_zero_latency = false);
+              bool force_zero_latency = false, unsigned int initial_dec_surfaces = 0, CUstream custream=NULL);
     ~NvDecoder();
 
     /**
@@ -131,9 +131,10 @@ public:
 
     /**
     *  @brief  This function is used to get the output frame width.
-    *  NV12/P016 output format width is 2 byte aligned because of U and V interleave
+    *  NV12/P016/NV16/P216 output format width is 2 byte aligned because of U and V interleave
     */
-    int GetWidth() { assert(m_nWidth); return (m_eOutputFormat == cudaVideoSurfaceFormat_NV12 || m_eOutputFormat == cudaVideoSurfaceFormat_P016) 
+    int GetWidth() { assert(m_nWidth); return (m_eOutputFormat == cudaVideoSurfaceFormat_NV12 || m_eOutputFormat == cudaVideoSurfaceFormat_P016
+                                               || m_eOutputFormat == cudaVideoSurfaceFormat_NV16 || m_eOutputFormat == cudaVideoSurfaceFormat_P216) 
                                                 ? (m_nWidth + 1) & ~1 : m_nWidth; }
 
     /**
@@ -192,9 +193,19 @@ public:
     cudaVideoSurfaceFormat GetOutputFormat() { return m_eOutputFormat; }
 
     /**
+    *   @brief This function is used to get the output surface chroma format
+    */
+    cudaVideoChromaFormat GetOutputChromaFormat() { return GetChromaFormat(m_eOutputFormat); }
+    
+    /**
     *   @brief  This function is used to get information about the video stream (codec, display parameters etc)
     */
     CUVIDEOFORMAT GetVideoFormatInfo() { assert(m_nWidth); return m_videoFormat; }
+
+    /**
+    *   @brief This function is used to get the chroma format from surface format
+    */
+    cudaVideoChromaFormat GetChromaFormat(cudaVideoSurfaceFormat);
 
     /**
     *   @brief  This function is used to get codec string from codec id
@@ -346,12 +357,13 @@ private:
     int m_nDecodedFrame = 0, m_nDecodedFrameReturned = 0;
     int m_nDecodePicCnt = 0, m_nPicNumInDecodeOrder[MAX_FRM_CNT];
     CUVIDSEIMESSAGEINFO *m_pCurrSEIMessage = NULL;
-    CUVIDSEIMESSAGEINFO m_SEIMessagesDisplayOrder[MAX_FRM_CNT];
+    CUVIDSEIMESSAGEINFO m_SEIMessagesDisplayOrder[MAX_FRM_CNT][2];
     FILE *m_fpSEI = NULL;
     bool m_bEndDecodeDone = false;
     std::mutex m_mtxVPFrame;
     int m_nFrameAlloc = 0;
     CUstream m_cuvidStream = 0;
+    bool m_bExternalStream = 0;
     bool m_bDeviceFramePitched = false;
     size_t m_nDeviceFramePitch = 0;
     Rect m_cropRect = {};
@@ -361,6 +373,7 @@ private:
     unsigned int m_nMaxWidth = 0, m_nMaxHeight = 0;
     bool m_bReconfigExternal = false;
     bool m_bReconfigExtPPChange = false;
+    bool m_bNumSurfacesChange = false;
     StopWatch m_stDecode_time;
 
     unsigned int m_nOperatingPoint = 0;
@@ -372,4 +385,9 @@ private:
     // the display callback immediately after the decode callback.
     bool m_bForce_zero_latency = false;
     bool m_bExtractSEIMessage = false;
+
+    // Memory optimization : Allocate less number of decode surfaces,
+    // increase the surfaces through ReconfigureDecoder api if needed
+    bool m_bMemoryOptimize = false;
+    int m_nNumDecSurfaces = 0;
 };

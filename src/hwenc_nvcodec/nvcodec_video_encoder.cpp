@@ -125,7 +125,7 @@ class NvCodecVideoEncoderImpl : public NvCodecVideoEncoder {
   uint32_t framerate_ = 0;
   webrtc::VideoCodecMode mode_ = webrtc::VideoCodecMode::kRealtimeVideo;
   NV_ENC_INITIALIZE_PARAMS initialize_params_;
-  std::vector<std::vector<uint8_t>> v_packet_;
+  std::vector<NvEncOutputFrame> v_packet_;
   webrtc::EncodedImage encoded_image_;
 
   // AV1 用
@@ -358,7 +358,8 @@ int32_t NvCodecVideoEncoderImpl::Encode(
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
-  for (std::vector<uint8_t>& packet : v_packet_) {
+  for (NvEncOutputFrame& output : v_packet_) {
+    std::vector<uint8_t>& packet = output.frame;
     uint8_t* p = packet.data();
     size_t size = packet.size();
     if (codec_ == CudaVideoCodec::AV1) {
@@ -387,31 +388,10 @@ int32_t NvCodecVideoEncoderImpl::Encode(
     encoded_image_.SetColorSpace(frame.color_space());
     encoded_image_._frameType = webrtc::VideoFrameType::kVideoFrameDelta;
 
-    if (codec_ == CudaVideoCodec::H264 || codec_ == CudaVideoCodec::H265) {
-      uint8_t zero_count = 0;
-      size_t nal_start_idx = 0;
-      for (size_t i = 0; i < packet.size(); i++) {
-        uint8_t data = packet.data()[i];
-        if ((i != 0) && (i == nal_start_idx)) {
-          if ((data & 0x1F) == 0x05) {
-            encoded_image_._frameType = webrtc::VideoFrameType::kVideoFrameKey;
-          }
-        }
-        if (data == 0x01 && zero_count >= 2) {
-          nal_start_idx = i + 1;
-        }
-        if (data == 0x00) {
-          zero_count++;
-        } else {
-          zero_count = 0;
-        }
-      }
-    } else if (codec_ == CudaVideoCodec::AV1) {
-      // 最初の 2 バイトは 0x12 0x00 で、これは OBU_TEMPORAL_DELIMITER なのでこれは無視して、その次の OBU を見る
-      // 0x0a は OBU_SEQUENCE_HEADER なのでキーフレームと判断する
-      if (p[2] == 0x0a) {
-        encoded_image_._frameType = webrtc::VideoFrameType::kVideoFrameKey;
-      }
+    // IDR フレームまたは I フレームはキーフレームとして扱う
+    if (output.pictureType == NV_ENC_PIC_TYPE_IDR ||
+        output.pictureType == NV_ENC_PIC_TYPE_I) {
+      encoded_image_._frameType = webrtc::VideoFrameType::kVideoFrameKey;
     }
 
     webrtc::CodecSpecificInfo codec_specific;

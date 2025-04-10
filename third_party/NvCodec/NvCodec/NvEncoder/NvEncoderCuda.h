@@ -121,7 +121,5 @@ private:
 
 protected:
     CUcontext m_cuContext;
-
-private:
     size_t m_cudaPitch = 0;
 };
