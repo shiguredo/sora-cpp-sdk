@@ -20,7 +20,7 @@
   - SDK から `NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ` が削除されたため追従する
     - <https://docs.nvidia.com/video-technologies/video-codec-sdk/12.1/deprecation-notices/index.html#deprecation-notices__section_imd_y1f_nlb>
   - @torikizi
-- [UPDATE] CMake を 4.0.0 にあげる
+- [UPDATE] CMake を 4.0.1 にあげる
   - @torikizi
 - [UPDATE] Blend2D のバージョンを `717cbf4bc0f2ca164cf2f0c48f0497779241b6c5` に上げる
   - @miosakuma
