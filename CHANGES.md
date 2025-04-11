@@ -32,6 +32,8 @@
   - `GetDefaultVideoDecoderFactoryConfig()`
   - `GetSoftwareOnlyVideoDecoderFactoryConfig()`
   - 代わりに Sora C++ SDK 2025.2.0 でリリースされた `VideoCodecCapability` や `VideoCodecPreference` を利用して下さい
+- [UPDATE] Boost を 1.88.0 にあげる
+  - @torikizi
 
 ### misc
 
