@@ -11,7 +11,7 @@
 
 ## develop
 
-- [UPDATE] libwebrtc を m134.6998.1.1 にあげる
+- [UPDATE] libwebrtc を m134.6998.1.2 にあげる
   - Ubuntu で使用する clang のバージョンを 20 にアップデートする
   - @miosakuma @torikizi @melpon
 - [UPDATE] `NVIDIA Video Codec SDK` を [12.2](https://docs.nvidia.com/video-technologies/video-codec-sdk/12.2/index.html) にアップデートする
