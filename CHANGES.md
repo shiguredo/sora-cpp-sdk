@@ -11,7 +11,7 @@
 
 ## develop
 
-- [UPDATE] libwebrtc を m134.6998.1.2 にあげる
+- [UPDATE] libwebrtc を m135.7049.3.1 にあげる
   - Ubuntu で使用する clang のバージョンを 20 にアップデートする
   - @miosakuma @torikizi @melpon
 - [UPDATE] `NVIDIA Video Codec SDK` を [12.2](https://docs.nvidia.com/video-technologies/video-codec-sdk/12.2/index.html) にアップデートする
@@ -47,6 +47,9 @@
     - `third_party` の運用方針を追加する
   - @torikizi
 - [UPDATE] `third_party/NvCodec` のコードをフォーマッタを適用しない状態に戻す
+  - @torikizi
+- [UPDATE] test の Android ビルドで C++ 20 を利用するように変更
+  - cppFlags を `'-std=gnu++20'` にアップデートする
   - @torikizi
 
 ## 2025.2.0
