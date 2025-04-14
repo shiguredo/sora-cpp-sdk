@@ -22,6 +22,10 @@
 #include "sora/hwenc_nvcodec/nvcodec_video_codec.h"
 #endif
 
+#if defined(USE_AMF_ENCODER)
+#include "sora/hwenc_amf/amf_video_codec.h"
+#endif
+
 namespace webrtc {
 
 // VideoCodecType
@@ -56,6 +60,9 @@ void tag_invoke(const boost::json::value_from_tag&,
     case VideoCodecImplementation::kNvidiaVideoCodecSdk:
       jv = "nvidia_video_codec_sdk";
       break;
+    case VideoCodecImplementation::kAmdAmf:
+      jv = "amd_amf";
+      break;
   }
 }
 VideoCodecImplementation tag_invoke(
@@ -70,6 +77,8 @@ VideoCodecImplementation tag_invoke(
     return VideoCodecImplementation::kIntelVpl;
   } else if (s == "nvidia_video_codec_sdk") {
     return VideoCodecImplementation::kNvidiaVideoCodecSdk;
+  } else if (s == "amd_amf") {
+    return VideoCodecImplementation::kAmdAmf;
   }
   throw std::invalid_argument("Invalid VideoCodecImplementation");
 }
@@ -94,6 +103,12 @@ void tag_invoke(const boost::json::value_from_tag&,
   if (v.nvcodec_gpu_device_name) {
     jo["nvcodec_gpu_device_name"] = *v.nvcodec_gpu_device_name;
   }
+  if (v.amf_runtime_version) {
+    jo["amf_runtime_version"] = *v.amf_runtime_version;
+  }
+  if (v.amf_embedded_version) {
+    jo["amf_embedded_version"] = *v.amf_embedded_version;
+  }
 }
 
 VideoCodecCapability::Parameters tag_invoke(
@@ -116,6 +131,12 @@ VideoCodecCapability::Parameters tag_invoke(
   if (jo.contains("nvcodec_gpu_device_name")) {
     r.nvcodec_gpu_device_name =
         jo.at("nvcodec_gpu_device_name").as_string().c_str();
+  }
+  if (jo.contains("amf_runtime_version")) {
+    r.amf_runtime_version = jo.at("amf_runtime_version").as_string().c_str();
+  }
+  if (jo.contains("amf_embedded_version")) {
+    r.amf_embedded_version = jo.at("amf_embedded_version").as_string().c_str();
   }
   return r;
 }
@@ -259,6 +280,10 @@ VideoCodecCapability GetVideoCodecCapability(
 
 #if defined(USE_NVCODEC_ENCODER)
   cap.engines.push_back(GetNvCodecVideoCodecCapability(config.cuda_context));
+#endif
+
+#if defined(USE_AMF_ENCODER)
+  cap.engines.push_back(GetAMFVideoCodecCapability(config.amf_context));
 #endif
 
   // 全て false のエンジンを削除

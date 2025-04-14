@@ -35,11 +35,6 @@ elseif (SORA_TARGET STREQUAL "ios")
 elseif (SORA_TARGET STREQUAL "android")
   set(SORA_TARGET_OS "android")
   set(SORA_TARGET_DEF "SORA_CPP_SDK_ANDROID")
-elseif (SORA_TARGET STREQUAL "ubuntu-20.04_x86_64")
-  set(SORA_TARGET_OS "ubuntu")
-  set(SORA_TARGET_OS_VERSION "20.04")
-  set(SORA_TARGET_ARCH "x86_64")
-  set(SORA_TARGET_DEF "SORA_CPP_SDK_UBUNTU_2004")
 elseif (SORA_TARGET STREQUAL "ubuntu-22.04_x86_64")
   set(SORA_TARGET_OS "ubuntu")
   set(SORA_TARGET_OS_VERSION "22.04")
@@ -93,6 +88,7 @@ target_include_directories(sora PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_sources(sora
   PRIVATE
     src/aligned_encoder_adapter.cpp
+    src/amf_context_impl.cpp
     src/audio_device_module.cpp
     src/audio_output_helper.cpp
     src/camera_device_capturer.cpp
@@ -161,6 +157,7 @@ target_compile_definitions(sora
   PRIVATE
     $<$<BOOL:${USE_NVCODEC_ENCODER}>:USE_NVCODEC_ENCODER>
     $<$<BOOL:${USE_VPL_ENCODER}>:USE_VPL_ENCODER>
+    $<$<BOOL:${USE_AMF_ENCODER}>:USE_AMF_ENCODER>
 )
 
 # OpenH264
@@ -347,6 +344,24 @@ if (SORA_TARGET_OS STREQUAL "windows")
     list(APPEND BUNDLE_STATIC_LIBS ${VPL_ROOT_DIR}/lib/vpl$<$<CONFIG:Debug>:d>.lib)
   endif()
 
+  if (USE_AMF_ENCODER)
+    target_include_directories(sora PRIVATE ${AMF_ROOT_DIR}/amf)
+    target_sources(sora
+      PRIVATE
+        ${AMF_ROOT_DIR}/amf/public/common/AMFFactory.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/AMFSTL.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/DataStreamFactory.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/DataStreamFile.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/DataStreamMemory.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/Thread.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/TraceAdapter.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/Windows/ThreadWindows.cpp
+        src/hwenc_amf/amf_video_codec.cpp
+        src/hwenc_amf/amf_video_decoder.cpp
+        src/hwenc_amf/amf_video_encoder.cpp
+    )
+  endif()
+
 elseif (SORA_TARGET_OS STREQUAL "macos")
   enable_language(OBJCXX)
 
@@ -528,6 +543,24 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
     target_link_libraries(sora PRIVATE "$<BUILD_INTERFACE:VPL::dispatcher>")
     # vpl を要求したくないので libsora.a に含める
     list(APPEND BUNDLE_STATIC_LIBS $<TARGET_FILE:VPL::dispatcher>)
+  endif()
+
+  if (USE_AMF_ENCODER)
+    target_include_directories(sora PRIVATE ${AMF_ROOT_DIR}/amf)
+    target_sources(sora
+      PRIVATE
+        ${AMF_ROOT_DIR}/amf/public/common/AMFFactory.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/AMFSTL.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/DataStreamFactory.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/DataStreamFile.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/DataStreamMemory.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/Thread.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/TraceAdapter.cpp
+        ${AMF_ROOT_DIR}/amf/public/common/Linux/ThreadLinux.cpp
+        src/hwenc_amf/amf_video_codec.cpp
+        src/hwenc_amf/amf_video_decoder.cpp
+        src/hwenc_amf/amf_video_encoder.cpp
+    )
   endif()
 
 endif()

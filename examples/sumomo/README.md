@@ -76,29 +76,6 @@ _build/macos_arm64/release/sumomo
 └── sumomo
 ```
 
-#### Ubuntu 20.04 x86_64 Desktop 向けのビルドをする
-
-##### 事前準備
-
-必要なパッケージをインストールしてください。
-
-```shell
-sudo apt install build-essential libxext-dev libx11-dev libgl-dev pkg-config python3
-```
-
-##### ビルド
-
-```shell
-python3 sumomo/ubuntu-20.04_x86_64/run.py
-```
-
-成功した場合、`_build/ubuntu-20.04_x86_64/release/sumomo` に `sumomo` が作成されます。
-
-```
-_build/ubuntu-20.04_x86_64/release/sumomo/
-└── sumomo
-```
-
 #### Ubuntu 22.04 x86_64 Desktop 向けのビルドをする
 
 ##### 事前準備
@@ -300,6 +277,7 @@ Windows 以外の場合
  - `cisco_openh264`
  - `intel_vpl`
  - `nvidia_video_codec_sdk`
+ - `amd_amf`
 
 > [!NOTE]
 > H.264 と H.265 は `internal` または未指定では利用できません。

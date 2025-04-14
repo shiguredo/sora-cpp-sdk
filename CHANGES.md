@@ -11,6 +11,48 @@
 
 ## develop
 
+- [UPDATE] libwebrtc を m134.6998.1.2 にあげる
+  - Ubuntu で使用する clang のバージョンを 20 にアップデートする
+  - @miosakuma @torikizi @melpon
+- [UPDATE] `NVIDIA Video Codec SDK` を [12.2](https://docs.nvidia.com/video-technologies/video-codec-sdk/12.2/index.html) にアップデートする
+  - SDK のサンプルコードやヘッダーファイルのライセンスが NVIDIA's EULA から MIT に変更されたため NOTICE を変更する
+    - <https://docs.nvidia.com/video-technologies/video-codec-sdk/12.1/read-me/index.html#release-notes-v10__whats-new>
+  - SDK から `NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ` が削除されたため追従する
+    - <https://docs.nvidia.com/video-technologies/video-codec-sdk/12.1/deprecation-notices/index.html#deprecation-notices__section_imd_y1f_nlb>
+  - @torikizi
+- [UPDATE] CMake を 4.0.1 にあげる
+  - @torikizi
+- [UPDATE] Blend2D のバージョンを `717cbf4bc0f2ca164cf2f0c48f0497779241b6c5` に上げる
+  - @miosakuma
+- [UPDATE] AsmJit のバージョンを `e8c8e2e48a1a38154c8e8864eb3bc61db80a1e31` に上げる
+  - @miosakuma
+- [UPDATE] 以下の関数を deprecated にする
+  - `GetDefaultVideoEncoderFactoryConfig()`
+  - `GetSoftwareOnlyVideoEncoderFactoryConfig()`
+  - `GetDefaultVideoDecoderFactoryConfig()`
+  - `GetSoftwareOnlyVideoDecoderFactoryConfig()`
+  - 代わりに Sora C++ SDK 2025.2.0 でリリースされた `VideoCodecCapability` や `VideoCodecPreference` を利用して下さい
+- [UPDATE] Boost を 1.88.0 にあげる
+  - @torikizi
+
+### misc
+
+- [UPDATE] `third_party` の運用方針を見直し
+  - `third_party/` は外部から取得したコードであり、アップデート時に変更の追従が困難になるためフォーマッタを今回から適用しない
+  - `third_party/NvCodec/NvCodec/` に配置していた `.clang-format` を `third_party` の直下に移動する
+    - clang-format を適用しない対象を `third_party` 以下全体にするため
+  - clang-fomat 13.0 以降で `SortIncludes: false` は不要となったため設定を削除する
+    - 参考: [clang-format still formatting with `DisableFormat: true`](https://stackoverflow.com/questions/55833838/clang-format-still-formatting-with-disableformat-true/55833839#55833839)
+  - `third_party` に README を追加する
+    - `third_party` の運用方針を追加する
+  - @torikizi
+- [UPDATE] `third_party/NvCodec` のコードをフォーマッタを適用しない状態に戻す
+  - @torikizi
+
+## 2025.2.0
+
+**リリース日**: 2025-03-18
+
 - [CHANGE] `SoraClientContextConfig` から `use_hardware_encoder` を削除
   - これにより、デフォルトで利用するエンコーダ/デコーダは全て libwebrtc の実装のものになります
   - ハードウェアエンコーダを有効にしたい場合は `SoraClientContextConfig::video_codec_factory_config` を適切に設定して下さい
@@ -31,8 +73,10 @@
 - [CHANGE] GitHub Actions で macOS 向けビルドで Xcode のバージョンを指定したのを削除する  
   - libwebrtc の制約で Xcode のバージョンを指定していたが、 m132.6834.5.5 の時点では制約がなくなり、指定しなくてもビルドできるようになったため
   - @torikizi
-- [UPDATE] CMake を 3.31.4 にあげる
-  - @voluntas
+- [CHANGE] Ubuntu 20.04 x86_64 の対応を削除
+  - @melpon
+- [UPDATE] CMake を 3.31.6 にあげる
+  - @voluntas @torikizi
 - [UPDATE] libwebrtc を m132.6834.5.8 にあげる
   - @melpon
 - [UPDATE] OpenH264 を v2.6.0 に上げる
@@ -50,12 +94,23 @@
   - Release 用の sumomo は C++ SDK のリリースバイナリを使用してビルドする  
   - リアルタイムメッセージング以外の機能がほぼ全て含まれている sumomo をリリース時に含めるようにする
   - @torikizi
-- [ADD] NVIDIA VIDEO CODEC SDK を AV1 エンコーダー/デコーダーに対応する
+- [ADD] NVIDIA Video Codec SDK を AV1 エンコーダー/デコーダーに対応する
   - @melpon
 - [ADD] `CudaContext::CanCreate()` を追加
   - @melpon
+- [ADD] AMD の AMF に対応する
+  - @melpon
 - [FIX] `NvCodecVideoDecoder` の `ImplementationName` を `NvCodec` に修正する
   - NvCodecVideoEncoder の `ImplementationName` は `NvCodec` になっているので、合わせる
+  - @torikizi
+
+### misc
+
+- [FIX] GitHub Actions の Windows でのビルドが失敗する問題を修正
+  - Microsoft Visual C++ のバージョン `14.42.34438` 以降では `<chrono>` ヘッダの明示的なインクルードが必要となったため、ビルドエラーが発生していた
+  - `<chrono>` をインクルードするように修正
+  - @torikizi
+- [FIX] test/e2e.cpp の利用していない include を削除する
   - @torikizi
 
 ## 2025.1.0

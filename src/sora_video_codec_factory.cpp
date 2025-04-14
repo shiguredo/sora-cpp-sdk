@@ -30,6 +30,11 @@
 #include "sora/hwenc_vpl/vpl_video_encoder.h"
 #endif
 
+#if defined(USE_AMF_ENCODER)
+#include "sora/hwenc_amf/amf_video_decoder.h"
+#include "sora/hwenc_amf/amf_video_encoder.h"
+#endif
+
 #include "default_video_formats.h"
 #include "sora/aligned_encoder_adapter.h"
 #include "sora/i420_encoder_adapter.h"
@@ -155,6 +160,18 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
         encoder_factory_config.encoders.push_back(
             VideoEncoderConfig(codec.type, create_video_encoder, 16));
 #endif
+      } else if (*codec.encoder == VideoCodecImplementation::kAmdAmf) {
+#if defined(USE_AMF_ENCODER)
+        assert(config.capability_config.amf_context);
+        auto create_video_encoder = [amf_context =
+                                         config.capability_config.amf_context](
+                                        const webrtc::SdpVideoFormat& format) {
+          auto type = webrtc::PayloadStringToCodecType(format.name);
+          return AMFVideoEncoder::Create(amf_context, type);
+        };
+        encoder_factory_config.encoders.push_back(
+            VideoEncoderConfig(codec.type, create_video_encoder, 16));
+#endif
       }
     }
     if (codec.decoder) {
@@ -197,6 +214,18 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
               : type == webrtc::kVideoCodecAV1  ? CudaVideoCodec::AV1
                                                 : CudaVideoCodec::JPEG;
           return NvCodecVideoDecoder::Create(cuda_context, cuda_type);
+        };
+        decoder_factory_config.decoders.push_back(
+            VideoDecoderConfig(codec.type, create_video_decoder));
+#endif
+      } else if (*codec.decoder == VideoCodecImplementation::kAmdAmf) {
+#if defined(USE_AMF_ENCODER)
+        assert(config.capability_config.amf_context);
+        auto create_video_decoder = [amf_context =
+                                         config.capability_config.amf_context](
+                                        const webrtc::SdpVideoFormat& format) {
+          auto type = webrtc::PayloadStringToCodecType(format.name);
+          return AMFVideoDecoder::Create(amf_context, type);
         };
         decoder_factory_config.decoders.push_back(
             VideoDecoderConfig(codec.type, create_video_decoder));
