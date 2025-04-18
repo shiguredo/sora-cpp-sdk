@@ -20,7 +20,7 @@
       "allowTrailingCommas": true,
     }
   }],
-  "lldb-dap.executable-path": "/usr/bin/lldb-dap-18",
+  "lldb-dap.executable-path": "/home/melpon/dev/bin/llvm-20.1.1/bin/lldb-dap",
   "files.associations": {
     "*.cs": "csharp",
     "CMakeLists.txt": "cmake",

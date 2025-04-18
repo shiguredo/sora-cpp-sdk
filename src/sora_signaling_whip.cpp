@@ -189,7 +189,8 @@ void SoraSignalingWhip::Connect() {
                 for (auto& codec : media_desc->codecs()) {
                   RTC_LOG(LS_WARNING) << "codec: " << codec.name;
                   if (send_encoding.codec &&
-                      webrtc::IsSameRtpCodec(codec, *send_encoding.codec)) {
+                      webrtc::IsSameRtpCodecIgnoringLevel(
+                          codec, *send_encoding.codec)) {
                     RTC_LOG(LS_WARNING) << "rid=" << send_encoding.rid
                                         << " codec=" << codec.name
                                         << " payload_type=" << codec.id;
@@ -207,6 +208,7 @@ void SoraSignalingWhip::Connect() {
                 if (it == rid_payload_type_map.end()) {
                   continue;
                 }
+                rid.payload_types.clear();
                 rid.payload_types.push_back(it->second);
               }
               track.set_rids(rids);
