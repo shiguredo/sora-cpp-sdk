@@ -559,6 +559,18 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
     )
   endif()
 
+  if (USE_XCODER_ENCODER)
+    target_include_directories(sora PRIVATE ${XCODER_ROOT_DIR}/include)
+    target_sources(sora
+      PRIVATE
+        src/hwenc_xcoder/xcoder_video_codec.cpp
+        src/hwenc_xcoder/xcoder_video_decoder.cpp
+        src/hwenc_xcoder/xcoder_video_encoder.cpp
+    )
+    target_link_libraries(sora PRIVATE $<BUILD_INTERFACE:${XCODER_ROOT_DIR}/lib/libxcoder.a>)
+    # xcoder を要求したくないので libsora.a に含める
+    list(APPEND BUNDLE_STATIC_LIBS ${XCODER_ROOT_DIR}/lib/libxcoder.a)
+  endif()
 endif()
 
 # 静的ライブラリを sora.lib に含める

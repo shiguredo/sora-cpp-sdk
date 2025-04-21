@@ -1781,6 +1781,38 @@ def install_amf(version, install_dir):
     )
 
 
+@versioned
+def install_xcoder(
+    version, source_dir, install_dir, configure_args: List[str], envs: Dict[str, str]
+):
+    xcoder_source_dir = os.path.join(source_dir, "xcoder")
+    xcoder_install_dir = os.path.join(install_dir, "xcoder")
+    rm_rf(xcoder_source_dir)
+    rm_rf(xcoder_install_dir)
+    git_clone_shallow(
+        "https://github.com/NETINT-Technologies/netint_libxcoder.git", version, xcoder_source_dir
+    )
+    with cd(xcoder_source_dir):
+        env = dict([*os.environ.items(), *envs.items()])
+        cmd(
+            [
+                "bash",
+                "configure",
+                f"--prefix={xcoder_install_dir}",
+                *configure_args,
+            ],
+            env=env,
+        )
+        cmd(
+            ["make"],
+            env=env,
+        )
+        cmd(
+            ["make", "install"],
+            env=env,
+        )
+
+
 class PlatformTarget(object):
     def __init__(self, os, osver, arch, extra=None):
         self.os = os

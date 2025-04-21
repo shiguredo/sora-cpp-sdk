@@ -35,6 +35,7 @@ enum class VideoCodecImplementation {
   kIntelVpl,
   kNvidiaVideoCodecSdk,
   kAmdAmf,
+  kNetintLibxcoder,
 };
 
 struct VideoCodecCapability {

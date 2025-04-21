@@ -14,6 +14,7 @@
                 "${workspaceFolder}/_install/ubuntu-22.04_x86_64/release/vpl/include",
                 "${workspaceFolder}/_install/ubuntu-22.04_x86_64/release/amf/amf",
                 "${workspaceFolder}/_install/ubuntu-22.04_x86_64/release/blend2d/include",
+                "${workspaceFolder}/_install/ubuntu-22.04_x86_64/release/xcoder/include",
                 "${workspaceFolder}/_build/ubuntu-22.04_x86_64/release/sora",
                 "${workspaceFolder}/third_party/NvCodec/include",
                 "${workspaceFolder}/third_party/NvCodec/NvCodec",
@@ -29,6 +30,7 @@
                 "USE_NVCODEC_ENCODER",
                 "USE_VPL_ENCODER",
                 "USE_AMF_ENCODER",
+                "USE_XCODER_ENCODER",
                 "RTC_ENABLE_H265"
             ],
             // "compilerPath": "${workspaceFolder}/_install/ubuntu-22.04_x86_64/release/llvm/clang/bin/clang++",
@@ -52,6 +54,7 @@
                 "${workspaceFolder}/_install/ubuntu-24.04_x86_64/release/vpl/include",
                 "${workspaceFolder}/_install/ubuntu-24.04_x86_64/release/amf/amf",
                 "${workspaceFolder}/_install/ubuntu-24.04_x86_64/release/blend2d/include",
+                "${workspaceFolder}/_install/ubuntu-24.04_x86_64/release/xcoder/include",
                 "${workspaceFolder}/examples/_install/ubuntu-24.04_x86_64/release/cli11/include",
                 "${workspaceFolder}/examples/_install/ubuntu-24.04_x86_64/release/sdl2/include",
                 "${workspaceFolder}/_build/ubuntu-24.04_x86_64/release/sora",
@@ -69,6 +72,7 @@
                 "USE_NVCODEC_ENCODER",
                 "USE_VPL_ENCODER",
                 "USE_AMF_ENCODER",
+                "USE_XCODER_ENCODER",
                 "RTC_ENABLE_H265"
             ],
             // "compilerPath": "${workspaceFolder}/_install/ubuntu-24.04_x86_64/release/llvm/clang/bin/clang++",

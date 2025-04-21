@@ -26,6 +26,10 @@
 #include "sora/hwenc_amf/amf_video_codec.h"
 #endif
 
+#if defined(USE_XCODER_ENCODER)
+#include "sora/hwenc_xcoder/xcoder_video_codec.h"
+#endif
+
 namespace webrtc {
 
 // VideoCodecType
@@ -63,6 +67,9 @@ void tag_invoke(const boost::json::value_from_tag&,
     case VideoCodecImplementation::kAmdAmf:
       jv = "amd_amf";
       break;
+    case VideoCodecImplementation::kNetintLibxcoder:
+      jv = "netint_libxcoder";
+      break;
   }
 }
 VideoCodecImplementation tag_invoke(
@@ -79,6 +86,8 @@ VideoCodecImplementation tag_invoke(
     return VideoCodecImplementation::kNvidiaVideoCodecSdk;
   } else if (s == "amd_amf") {
     return VideoCodecImplementation::kAmdAmf;
+  } else if (s == "netint_libxcoder") {
+    return VideoCodecImplementation::kNetintLibxcoder;
   }
   throw std::invalid_argument("Invalid VideoCodecImplementation");
 }
@@ -284,6 +293,10 @@ VideoCodecCapability GetVideoCodecCapability(
 
 #if defined(USE_AMF_ENCODER)
   cap.engines.push_back(GetAMFVideoCodecCapability(config.amf_context));
+#endif
+
+#if defined(USE_XCODER_ENCODER)
+  cap.engines.push_back(GetLibxcoderVideoCodecCapability());
 #endif
 
   // 全て false のエンジンを削除

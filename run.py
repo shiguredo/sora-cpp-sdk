@@ -36,6 +36,7 @@ from buildbase import (
     install_rootfs,
     install_vpl,
     install_webrtc,
+    install_xcoder,
     mkdir_p,
     read_version_file,
     rm_rf,
@@ -436,6 +437,22 @@ def install_deps(
             }
             install_amf(**install_amf_args)
 
+        # NETINT Libxcoder
+        if platform.target.os in ("ubuntu",) and platform.target.arch == "x86_64":
+            install_xcoder_args = {
+                "version": version["XCODER_VERSION"],
+                "version_file": os.path.join(install_dir, "xcoder.version"),
+                "source_dir": source_dir,
+                "install_dir": install_dir,
+                "configure_args": [],
+                "envs": dict(
+                    [
+                        ("CC", "clang-20"),
+                    ]
+                ),
+            }
+            install_xcoder(**install_xcoder_args)
+
         # OpenH264
         install_openh264_args = {
             "version": version["OPENH264_VERSION"],
@@ -711,12 +728,12 @@ def main():
             )
 
         # NvCodec
-        if platform.target.os in ("windows", "ubuntu") and platform.target.arch == "x86_64":
-            cmake_args.append("-DUSE_NVCODEC_ENCODER=ON")
-            if platform.target.os == "windows":
-                cmake_args.append(
-                    f"-DCUDA_TOOLKIT_ROOT_DIR={cmake_path(os.path.join(install_dir, 'cuda'))}"
-                )
+        # if platform.target.os in ("windows", "ubuntu") and platform.target.arch == "x86_64":
+        #     cmake_args.append("-DUSE_NVCODEC_ENCODER=ON")
+        #     if platform.target.os == "windows":
+        #         cmake_args.append(
+        #             f"-DCUDA_TOOLKIT_ROOT_DIR={cmake_path(os.path.join(install_dir, 'cuda'))}"
+        #         )
 
         # VPL
         if platform.target.os in ("windows", "ubuntu") and platform.target.arch == "x86_64":
@@ -727,6 +744,13 @@ def main():
         if platform.target.os in ("windows", "ubuntu") and platform.target.arch == "x86_64":
             cmake_args.append("-DUSE_AMF_ENCODER=ON")
             cmake_args.append(f"-DAMF_ROOT_DIR={cmake_path(os.path.join(install_dir, 'amf'))}")
+
+        # NETINT Libxcoder
+        if platform.target.os in ("ubuntu",) and platform.target.arch == "x86_64":
+            cmake_args.append("-DUSE_XCODER_ENCODER=ON")
+            cmake_args.append(
+                f"-DXCODER_ROOT_DIR={cmake_path(os.path.join(install_dir, 'xcoder'))}"
+            )
 
         # バンドルされたライブラリを消しておく
         # （CMake でうまく依存関係を解消できなくて更新されないため）
