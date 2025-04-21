@@ -39,6 +39,9 @@
 
 - [UPDATE] SDL2 のダウンロード先を GitHub に変更する
   - @voluntas
+- [UPDATE] Boost のダウンロード先を時雨堂の R2 ミラーに変更する
+  - 公式サイトに負荷をかけないための施策
+  - @voluntas
 - [UPDATE] `third_party` の運用方針を見直し
   - `third_party/` は外部から取得したコードであり、アップデート時に変更の追従が困難になるためフォーマッタを今回から適用しない
   - `third_party/NvCodec/NvCodec/` に配置していた `.clang-format` を `third_party` の直下に移動する
