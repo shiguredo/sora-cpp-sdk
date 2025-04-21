@@ -11,7 +11,7 @@
 
 ## develop
 
-- [UPDATE] libwebrtc を m134.6998.1.1 にあげる
+- [UPDATE] libwebrtc を m136.7103.0.0 にあげる
   - Ubuntu で使用する clang のバージョンを 20 にアップデートする
   - @miosakuma @torikizi @melpon
 - [UPDATE] `NVIDIA Video Codec SDK` を [12.2](https://docs.nvidia.com/video-technologies/video-codec-sdk/12.2/index.html) にアップデートする
@@ -20,7 +20,7 @@
   - SDK から `NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ` が削除されたため追従する
     - <https://docs.nvidia.com/video-technologies/video-codec-sdk/12.1/deprecation-notices/index.html#deprecation-notices__section_imd_y1f_nlb>
   - @torikizi
-- [UPDATE] CMake を 4.0.0 にあげる
+- [UPDATE] CMake を 4.0.1 にあげる
   - @torikizi
 - [UPDATE] Blend2D のバージョンを `717cbf4bc0f2ca164cf2f0c48f0497779241b6c5` に上げる
   - @miosakuma
@@ -32,6 +32,8 @@
   - `GetDefaultVideoDecoderFactoryConfig()`
   - `GetSoftwareOnlyVideoDecoderFactoryConfig()`
   - 代わりに Sora C++ SDK 2025.2.0 でリリースされた `VideoCodecCapability` や `VideoCodecPreference` を利用して下さい
+- [UPDATE] Boost を 1.88.0 にあげる
+  - @torikizi
 
 ### misc
 
@@ -45,6 +47,13 @@
     - `third_party` の運用方針を追加する
   - @torikizi
 - [UPDATE] `third_party/NvCodec` のコードをフォーマッタを適用しない状態に戻す
+  - @torikizi
+- [UPDATE] test の Android ビルドで C++ 20 を利用するように変更
+  - cppFlags を `'-std=gnu++20'` にアップデートする
+  - @torikizi
+- [UPDATE] examples の cli11 を 2.5.0 にアップデートする
+  - @torikizi
+- [UPDATE] SDL を 2.32.4 に上げる
   - @torikizi
 
 ## 2025.2.0
