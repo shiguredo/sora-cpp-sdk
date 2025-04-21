@@ -37,6 +37,8 @@
 
 ### misc
 
+- [UPDATE] SDL2 のダウンロード先を GitHub に変更する
+  - @voluntas
 - [UPDATE] Boost のダウンロード先を時雨堂の R2 ミラーに変更する
   - 公式サイトに負荷をかけないための施策
   - @voluntas
