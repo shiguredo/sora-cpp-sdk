@@ -53,6 +53,8 @@
   - @torikizi
 - [UPDATE] examples の cli11 を 2.5.0 にアップデートする
   - @torikizi
+- [UPDATE] SDL を 2.32.4 に上げる
+  - @torikizi
 
 ## 2025.2.0
 
