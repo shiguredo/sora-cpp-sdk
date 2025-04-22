@@ -11,7 +11,7 @@
 
 ## develop
 
-- [UPDATE] libwebrtc を m135.7049.3.1 にあげる
+- [UPDATE] libwebrtc を m136.7103.0.0 にあげる
   - Ubuntu で使用する clang のバージョンを 20 にアップデートする
   - @miosakuma @torikizi @melpon
 - [UPDATE] `NVIDIA Video Codec SDK` を [12.2](https://docs.nvidia.com/video-technologies/video-codec-sdk/12.2/index.html) にアップデートする
@@ -39,6 +39,11 @@
 
 ### misc
 
+- [UPDATE] SDL2 のダウンロード先を GitHub に変更する
+  - @voluntas
+- [UPDATE] Boost のダウンロード先を時雨堂の R2 ミラーに変更する
+  - 公式サイトに負荷をかけないための施策
+  - @voluntas
 - [UPDATE] `third_party` の運用方針を見直し
   - `third_party/` は外部から取得したコードであり、アップデート時に変更の追従が困難になるためフォーマッタを今回から適用しない
   - `third_party/NvCodec/NvCodec/` に配置していた `.clang-format` を `third_party` の直下に移動する
@@ -54,6 +59,8 @@
   - cppFlags を `'-std=gnu++20'` にアップデートする
   - @torikizi
 - [UPDATE] examples の cli11 を 2.5.0 にアップデートする
+  - @torikizi
+- [UPDATE] SDL を 2.32.4 に上げる
   - @torikizi
 
 ## 2025.2.0
