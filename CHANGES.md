@@ -36,6 +36,17 @@
   - @torikizi
 - [UPDATE] VPL_VERSION を 2.15.0 にあげる
   - @torikizi
+- [ADD] `VideoCodecPreference` にカスタムエンコーダ/デコーダを指定できる機能を追加する
+  - `VideoCodecImplementation` に `kCustom_1` ～ `kCustom_9` を追加
+  - `IsCustomImplementation()` 関数を追加
+    - kCustom_1 ～ kCustom_9 の値だったら true を返す関数です
+  - `sora::VideoCodecCapability::Parameters` に `custom_engine_name` と `custom_engine_description` フィールドを追加
+    - カスタムエンコーダ/デコーダの情報を入れるためのフィールド。ユーザーが見やすいようにするための値であって、この値を見て何かしたりはしない。
+  - `VideoCodecCapabilityConfig` に `get_custom_engines` フィールドを追加
+    - カスタムエンコーダ/デコーダを利用したい場合、`get_custom_engines` にそれぞれのカスタムエンコーダ/デコーダが何のコーデックに対応しているのかを返す関数を設定する
+    - 利用できる `VideoCodecImplementation` は `kCustom_1` ～ `kCustom_9` のみ。既存の実装を上書きはできない
+  - `SoraVideoCodecFactoryConfig` に `create_video_encoder` と `create_video_decoder` フィールドを追加
+    - 実際にカスタムエンコーダ/デコーダのクラスを生成する関数
 
 ### misc
 
