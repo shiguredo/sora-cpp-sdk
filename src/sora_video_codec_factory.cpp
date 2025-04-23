@@ -172,6 +172,18 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
         encoder_factory_config.encoders.push_back(
             VideoEncoderConfig(codec.type, create_video_encoder, 16));
 #endif
+      } else if (IsCustomImplementation(*codec.encoder)) {
+        auto create_video_encoder = [create_video_encoder =
+                                         config.create_video_encoder,
+                                     implementation = *codec.encoder,
+                                     capability_config =
+                                         config.capability_config](
+                                        const webrtc::SdpVideoFormat& format) {
+          auto type = webrtc::PayloadStringToCodecType(format.name);
+          return create_video_encoder(implementation, capability_config, type);
+        };
+        encoder_factory_config.encoders.push_back(
+            VideoEncoderConfig(codec.type, create_video_encoder, 16));
       }
     }
     if (codec.decoder) {
@@ -230,6 +242,18 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
         decoder_factory_config.decoders.push_back(
             VideoDecoderConfig(codec.type, create_video_decoder));
 #endif
+      } else if (IsCustomImplementation(*codec.decoder)) {
+        auto create_video_decoder = [create_video_decoder =
+                                         config.create_video_decoder,
+                                     implementation = *codec.decoder,
+                                     capability_config =
+                                         config.capability_config](
+                                        const webrtc::SdpVideoFormat& format) {
+          auto type = webrtc::PayloadStringToCodecType(format.name);
+          return create_video_decoder(implementation, capability_config, type);
+        };
+        decoder_factory_config.decoders.push_back(
+            VideoDecoderConfig(codec.type, create_video_decoder));
       }
     }
   }
