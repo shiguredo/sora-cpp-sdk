@@ -20,6 +20,20 @@ struct SoraVideoCodecFactoryConfig {
   // 例えば Intel VPL を利用したい場合、capability_config.vpl_session に値を設定する必要がある
   VideoCodecCapabilityConfig capability_config;
 
+  // カスタムエンコーダ/デコーダを生成するための関数
+  //
+  // カスタムエンコーダ/デコーダを利用する場合には必ず設定する必要がある
+  std::function<std::unique_ptr<webrtc::VideoEncoder>(
+      VideoCodecImplementation,
+      const VideoCodecCapabilityConfig&,
+      webrtc::VideoCodecType)>
+      create_video_encoder;
+  std::function<std::unique_ptr<webrtc::VideoDecoder>(
+      VideoCodecImplementation,
+      const VideoCodecCapabilityConfig&,
+      webrtc::VideoCodecType)>
+      create_video_decoder;
+
   // エンコーダ/デコーダファクトリの設定
   //
   // encoder_factory_config.encoders と decoder_factory_config.decoders は
