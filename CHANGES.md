@@ -73,6 +73,8 @@
   - @torikizi
 - [UPDATE] SDL を 2.32.4 に上げる
   - @torikizi
+- [UPDATE] Catch2 を 3.8.1 に上げる
+  - @voluntas
 
 ## 2025.2.0
 
