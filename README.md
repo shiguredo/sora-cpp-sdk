@@ -53,7 +53,7 @@ _hololens2 は無視してください_
 
 ## 対応 Sora
 
-- WebRTC SFU Sora 2024.1.0 以降
+- WebRTC SFU Sora 2024.2.0 以降
 
 ## 動作環境
 
