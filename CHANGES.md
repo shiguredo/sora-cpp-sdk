@@ -32,6 +32,7 @@
   - `GetDefaultVideoDecoderFactoryConfig()`
   - `GetSoftwareOnlyVideoDecoderFactoryConfig()`
   - 代わりに Sora C++ SDK 2025.2.0 でリリースされた `VideoCodecCapability` や `VideoCodecPreference` を利用して下さい
+  - @melpon
 - [UPDATE] Boost を 1.88.0 にあげる
   - @torikizi
 - [UPDATE] VPL_VERSION を 2.15.0 にあげる
@@ -47,6 +48,7 @@
     - 利用できる `VideoCodecImplementation` は `kCustom_1` ～ `kCustom_9` のみ。既存の実装を上書きはできない
   - `SoraVideoCodecFactoryConfig` に `create_video_encoder` と `create_video_decoder` フィールドを追加
     - 実際にカスタムエンコーダ/デコーダのクラスを生成する関数
+  - @melpon
 
 ### misc
 
