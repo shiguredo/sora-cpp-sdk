@@ -53,7 +53,7 @@ _hololens2 は無視してください_
 
 ## 対応 Sora
 
-- WebRTC SFU Sora 2024.1.0 以降
+- WebRTC SFU Sora 2024.2.0 以降
 
 ## 動作環境
 
@@ -142,4 +142,15 @@ limitations under the License.
 
 ```text
 "OpenH264 Video Codec provided by Cisco Systems, Inc."
+```
+
+## NVIDIA Video Codec SDK
+
+<https://docs.nvidia.com/video-technologies/video-codec-sdk/12.2/index.html>
+
+
+<https://docs.nvidia.com/video-technologies/video-codec-sdk/12.2/license/index.html>
+
+```text
+“This software contains source code provided by NVIDIA Corporation.”
 ```

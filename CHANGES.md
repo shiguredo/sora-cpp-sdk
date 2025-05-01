@@ -11,6 +11,77 @@
 
 ## develop
 
+## 2025.3.0
+
+**リリース日**: 2025-05-01
+
+- [UPDATE] libwebrtc を m136.7103.0.0 にあげる
+  - Ubuntu で使用する clang のバージョンを 20 にアップデートする
+  - @miosakuma @torikizi @melpon
+- [UPDATE] `NVIDIA Video Codec SDK` を [12.2](https://docs.nvidia.com/video-technologies/video-codec-sdk/12.2/index.html) にアップデートする
+  - SDK のサンプルコードやヘッダーファイルのライセンスが NVIDIA's EULA から MIT に変更されたため NOTICE を変更する
+    - <https://docs.nvidia.com/video-technologies/video-codec-sdk/12.1/read-me/index.html#release-notes-v10__whats-new>
+  - SDK から `NV_ENC_PARAMS_RC_CBR_LOWDELAY_HQ` が削除されたため追従する
+    - <https://docs.nvidia.com/video-technologies/video-codec-sdk/12.1/deprecation-notices/index.html#deprecation-notices__section_imd_y1f_nlb>
+  - @torikizi
+- [UPDATE] CMake を 4.0.1 にあげる
+  - @torikizi
+- [UPDATE] Blend2D のバージョンを `717cbf4bc0f2ca164cf2f0c48f0497779241b6c5` に上げる
+  - @miosakuma
+- [UPDATE] AsmJit のバージョンを `e8c8e2e48a1a38154c8e8864eb3bc61db80a1e31` に上げる
+  - @miosakuma
+- [UPDATE] 以下の関数を deprecated にする
+  - `GetDefaultVideoEncoderFactoryConfig()`
+  - `GetSoftwareOnlyVideoEncoderFactoryConfig()`
+  - `GetDefaultVideoDecoderFactoryConfig()`
+  - `GetSoftwareOnlyVideoDecoderFactoryConfig()`
+  - 代わりに Sora C++ SDK 2025.2.0 でリリースされた `VideoCodecCapability` や `VideoCodecPreference` を利用して下さい
+  - @melpon
+- [UPDATE] Boost を 1.88.0 にあげる
+  - @torikizi
+- [UPDATE] VPL_VERSION を 2.15.0 にあげる
+  - @torikizi
+- [ADD] `VideoCodecPreference` にカスタムエンコーダ/デコーダを指定できる機能を追加する
+  - `VideoCodecImplementation` に `kCustom_1` ～ `kCustom_9` を追加
+  - `IsCustomImplementation()` 関数を追加
+    - kCustom_1 ～ kCustom_9 の値だったら true を返す関数です
+  - `sora::VideoCodecCapability::Parameters` に `custom_engine_name` と `custom_engine_description` フィールドを追加
+    - カスタムエンコーダ/デコーダの情報を入れるためのフィールド。ユーザーが見やすいようにするための値であって、この値を見て何かしたりはしない。
+  - `VideoCodecCapabilityConfig` に `get_custom_engines` フィールドを追加
+    - カスタムエンコーダ/デコーダを利用したい場合、`get_custom_engines` にそれぞれのカスタムエンコーダ/デコーダが何のコーデックに対応しているのかを返す関数を設定する
+    - 利用できる `VideoCodecImplementation` は `kCustom_1` ～ `kCustom_9` のみ。既存の実装を上書きはできない
+  - `SoraVideoCodecFactoryConfig` に `create_video_encoder` と `create_video_decoder` フィールドを追加
+    - 実際にカスタムエンコーダ/デコーダのクラスを生成する関数
+  - @melpon
+
+### misc
+
+- [UPDATE] SDL2 のダウンロード先を GitHub に変更する
+  - @voluntas
+- [UPDATE] Boost のダウンロード先を時雨堂の R2 ミラーに変更する
+  - 公式サイトに負荷をかけないための施策
+  - @voluntas
+- [UPDATE] `third_party` の運用方針を見直し
+  - `third_party/` は外部から取得したコードであり、アップデート時に変更の追従が困難になるためフォーマッタを今回から適用しない
+  - `third_party/NvCodec/NvCodec/` に配置していた `.clang-format` を `third_party` の直下に移動する
+    - clang-format を適用しない対象を `third_party` 以下全体にするため
+  - clang-fomat 13.0 以降で `SortIncludes: false` は不要となったため設定を削除する
+    - 参考: [clang-format still formatting with `DisableFormat: true`](https://stackoverflow.com/questions/55833838/clang-format-still-formatting-with-disableformat-true/55833839#55833839)
+  - `third_party` に README を追加する
+    - `third_party` の運用方針を追加する
+  - @torikizi
+- [UPDATE] `third_party/NvCodec` のコードをフォーマッタを適用しない状態に戻す
+  - @torikizi
+- [UPDATE] test の Android ビルドで C++ 20 を利用するように変更
+  - cppFlags を `'-std=gnu++20'` にアップデートする
+  - @torikizi
+- [UPDATE] examples の cli11 を 2.5.0 にアップデートする
+  - @torikizi
+- [UPDATE] SDL を 2.32.4 に上げる
+  - @torikizi
+- [UPDATE] Catch2 を 3.8.1 に上げる
+  - @voluntas
+
 ## 2025.2.0
 
 **リリース日**: 2025-03-18

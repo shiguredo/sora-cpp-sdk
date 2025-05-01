@@ -694,7 +694,10 @@ def build_and_install_boost(
 ):
     version_underscore = version.replace(".", "_")
     archive = download(
-        f"https://archives.boost.io/release/{version}/source/boost_{version_underscore}.tar.gz",
+        # 公式サイトに負荷をかけないための時雨堂による R2 ミラー
+        f"https://pub-31f2ce80536a4322af33196843feefc2.r2.dev/boost_{version_underscore}.tar.gz",
+        # Boost 公式のミラー
+        # f"https://archives.boost.io/release/{version}/source/boost_{version_underscore}.tar.gz",
         source_dir,
     )
     extract(archive, output_dir=build_dir, output_dirname="boost")
@@ -1110,7 +1113,10 @@ def install_cmake(version, source_dir, install_dir, platform: str, ext):
 def install_sdl2(
     version, source_dir, build_dir, install_dir, debug: bool, platform: str, cmake_args: List[str]
 ):
-    url = f"http://www.libsdl.org/release/SDL2-{version}.zip"
+    url = (
+        f"https://github.com/libsdl-org/SDL/releases/download/release-{version}/SDL2-{version}.zip"
+    )
+    # url = f"http://www.libsdl.org/release/SDL2-{version}.zip"
     path = download(url, source_dir)
     sdl2_source_dir = os.path.join(source_dir, "sdl2")
     sdl2_build_dir = os.path.join(build_dir, "sdl2")

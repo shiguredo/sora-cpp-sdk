@@ -15,7 +15,7 @@ android {
 
         externalNativeBuild {
             cmake {
-                cppFlags '-std=gnu++17'
+                cppFlags '-std=gnu++20'
                 //arguments "-DSORA_DIR=$projectDir/../../../_install/android/debug/sora",
                 //    "-DCMAKE_BUILD_TYPE=Debug",
                 //    "-DBOOST_ROOT=$projectDir/../../../_install/android/debug/boost",
@@ -65,7 +65,7 @@ android {
     externalNativeBuild {
         cmake {
             path file('src/main/cpp/CMakeLists.txt')
-            version '3.31.6'
+            version '4.0.1'
         }
     }
     buildFeatures {
