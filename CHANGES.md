@@ -11,6 +11,10 @@
 
 ## develop
 
+## 2025.3.0
+
+**リリース日**: 2025-05-01
+
 - [UPDATE] libwebrtc を m136.7103.0.0 にあげる
   - Ubuntu で使用する clang のバージョンを 20 にアップデートする
   - @miosakuma @torikizi @melpon
