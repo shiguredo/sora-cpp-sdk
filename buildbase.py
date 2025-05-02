@@ -411,7 +411,7 @@ def apply_patch_text(patch_text, dir, depth):
                     "--ignore-space-change",
                     "--ignore-whitespace",
                     "--whitespace=nowarn",
-                    "--reject,",
+                    "--reject",
                     f"--directory={directory}",
                     "-",
                 ],
@@ -1774,6 +1774,15 @@ def install_ninja(version, source_dir, install_dir, platform):
     ninja_install_dir = os.path.join(install_dir, "ninja")
     rm_rf(ninja_install_dir)
     extract(path, install_dir, "ninja")
+
+
+@versioned
+def install_vswhere(version, install_dir):
+    url = f"https://github.com/microsoft/vswhere/releases/download/{version}/vswhere.exe"
+    vswhere_install_dir = os.path.join(install_dir, "vswhere")
+    rm_rf(vswhere_install_dir)
+    mkdir_p(vswhere_install_dir)
+    download(url, vswhere_install_dir)
 
 
 @versioned
