@@ -104,3 +104,7 @@ if (TEST_E2E)
   init_target(e2e)
   target_link_libraries(e2e PRIVATE Catch2::Catch2WithMain Catch2::Catch2)
 endif()
+
+add_executable(whip)
+target_sources(whip PRIVATE whip.cpp)
+init_target(whip)

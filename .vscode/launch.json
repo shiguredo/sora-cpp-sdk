@@ -67,7 +67,7 @@
             //"preLaunchTask": "C/C++: cl.exe アクティブなファイルのビルド"
         },
         {
-            "name": "macOS リリースビルドのデバッグ",
+            "name": "[hello] macOS リリースビルドのデバッグ",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/_build/macos_x86_64/release/test/hello",
@@ -77,6 +77,35 @@
             "environment": [],
             "externalConsole": false,
             "MIMode": "lldb"
+        },
+        {
+            "name": "[hello][debug] Ubuntu 24.04 x86_64",
+            "type": "lldb-dap",
+            "request": "launch",
+            "program": "${workspaceFolder}/_build/ubuntu-24.04_x86_64/debug/test/hello",
+            "args": ["${workspaceFolder}/test/.testparam.json"],
+            "cwd": "${workspaceFolder}/_build/ubuntu-24.04_x86_64/debug/test",
+            "sourceMap": [["../../../../_source/ubuntu-24.04_x86_64/webrtc/src/", "/home/melpon/dev/webrtc-build/_source/ubuntu-24.04_x86_64/webrtc/src/"]],
+            "initCommands": [
+                "settings append target.debug-file-search-paths /home/melpon/dev/webrtc-build/_build/ubuntu-24.04_x86_64/debug/webrtc/"
+            ],
+            "runInTerminal": true,
+        },
+        {
+            "name": "[whip][debug] Ubuntu 24.04 x86_64",
+            "type": "lldb-dap",
+            "request": "launch",
+            "program": "${workspaceFolder}/_build/ubuntu-24.04_x86_64/debug/test/whip",
+            // "args": ["${workspaceFolder}/test/.testparam.json"],
+            "args": [],
+            "initCommands": [
+                "settings set target.debug-file-search-paths ${workspaceRoot}/../webrtc-build/_build/ubuntu-24.04_x86_64/debug/webrtc",
+            ],
+            "sourceMap": [
+                ["../../../../_source/ubuntu-24.04_x86_64/webrtc", "${workspaceRoot}/../webrtc-build/_source/ubuntu-24.04_x86_64/webrtc"],
+            ],
+            "cwd": "${workspaceRoot}",
+            "runInTerminal": true
         },
 
     ]
