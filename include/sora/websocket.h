@@ -84,7 +84,7 @@ class Websocket {
   void Read(read_callback_t on_read);
   void WriteText(std::string text, write_callback_t on_write = nullptr);
   void Close(close_callback_t on_close, int timeout_seconds);
-  void CloseSocket();
+  void CloseSocket(boost::system::error_code& ec);
   void Cancel();
 
   websocket_t& NativeSocket();

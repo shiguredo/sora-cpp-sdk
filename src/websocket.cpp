@@ -536,8 +536,7 @@ void Websocket::Close(close_callback_t on_close, int timeout_seconds) {
                                        std::move(on_close), timeout_seconds));
 }
 
-void Websocket::CloseSocket() {
-  boost::system::error_code ec;
+void Websocket::CloseSocket(boost::system::error_code& ec) {
   if (IsSSL()) {
     wss_->next_layer().next_layer().close(ec);
   } else {
