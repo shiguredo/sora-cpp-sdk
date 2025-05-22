@@ -536,12 +536,22 @@ void Websocket::Close(close_callback_t on_close, int timeout_seconds) {
                                        std::move(on_close), timeout_seconds));
 }
 
+void Websocket::CloseSocket(boost::system::error_code& ec) {
+  if (IsSSL()) {
+    wss_->next_layer().next_layer().close(ec);
+  } else {
+    ws_->next_layer().close(ec);
+  }
+}
+
 void Websocket::DoClose(close_callback_t on_close, int timeout_seconds) {
   if (IsSSL()) {
+    RTC_LOG(LS_INFO) << "DoClose wss this=" << (void*)this;
     wss_->async_close(
         boost::beast::websocket::close_code::normal,
         std::bind(&Websocket::OnClose, this, on_close, std::placeholders::_1));
   } else {
+    RTC_LOG(LS_INFO) << "DoClose ws this=" << (void*)this;
     ws_->async_close(
         boost::beast::websocket::close_code::normal,
         std::bind(&Websocket::OnClose, this, on_close, std::placeholders::_1));
