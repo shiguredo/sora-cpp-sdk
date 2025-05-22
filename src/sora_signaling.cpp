@@ -1161,11 +1161,8 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
     auto it = m.as_object().find("ignore_disconnect_websocket");
     if (it != m.as_object().end() && it->value().as_bool() && ws_connected_) {
       RTC_LOG(LS_INFO) << "Close WebSocket for DataChannel";
-      ws_->Close(
-          [self = shared_from_this()](boost::system::error_code ec) {
-            self->SendSelfOnWsClose(ec);
-          },
-          config_.websocket_close_timeout);
+      ws_->CloseSocket(ec);
+      SendSelfOnWsClose(ec);
       ws_connected_ = false;
 
       return;
