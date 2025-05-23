@@ -28,6 +28,7 @@ from buildbase import (  # noqa: E402
     install_sora_and_deps,
     install_webrtc,
     mkdir_p,
+    read_deps_file,
     read_version_file,
 )
 
@@ -44,11 +45,12 @@ def install_deps(
 ):
     with cd(BASE_DIR):
         version = read_version_file("VERSION")
+        deps = read_deps_file("DEPS")
 
         # WebRTC
         if local_webrtc_build_dir is None:
             install_webrtc_args = {
-                "version": version["WEBRTC_BUILD_VERSION"],
+                "version": deps["WEBRTC_BUILD_VERSION"],
                 "version_file": os.path.join(install_dir, "webrtc.version"),
                 "source_dir": source_dir,
                 "install_dir": install_dir,
@@ -69,8 +71,8 @@ def install_deps(
         # Sora C++ SDK, Boost
         if local_sora_cpp_sdk_dir is None:
             install_sora_and_deps(
-                version["SORA_CPP_SDK_VERSION"],
-                version["BOOST_VERSION"],
+                version,
+                deps["BOOST_VERSION"],
                 "macos_arm64",
                 source_dir,
                 install_dir,
@@ -86,7 +88,7 @@ def install_deps(
 
         # CMake
         install_cmake_args = {
-            "version": version["CMAKE_VERSION"],
+            "version": deps["CMAKE_VERSION"],
             "version_file": os.path.join(install_dir, "cmake.version"),
             "source_dir": source_dir,
             "install_dir": install_dir,
@@ -98,7 +100,7 @@ def install_deps(
 
         # SDL2
         install_sdl2_args = {
-            "version": version["SDL2_VERSION"],
+            "version": deps["SDL2_VERSION"],
             "version_file": os.path.join(install_dir, "sdl2.version"),
             "source_dir": source_dir,
             "build_dir": build_dir,
@@ -119,7 +121,7 @@ def install_deps(
 
         # CLI11
         install_cli11_args = {
-            "version": version["CLI11_VERSION"],
+            "version": deps["CLI11_VERSION"],
             "version_file": os.path.join(install_dir, "cli11.version"),
             "install_dir": install_dir,
         }
