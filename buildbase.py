@@ -169,7 +169,11 @@ def download(url: str, output_dir: Optional[str] = None, filename: Optional[str]
     return output_path
 
 
-def read_version_file(path: str) -> Dict[str, str]:
+def read_version_file(path: str) -> str:
+    return open(path, encoding="utf-8").read().strip()
+
+
+def read_deps_file(path: str) -> Dict[str, str]:
     versions = {}
 
     lines = open(path, encoding="utf-8").readlines()

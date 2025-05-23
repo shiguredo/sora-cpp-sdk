@@ -37,6 +37,7 @@ from buildbase import (
     install_vpl,
     install_webrtc,
     mkdir_p,
+    read_deps_file,
     read_version_file,
     rm_rf,
 )
@@ -56,7 +57,7 @@ def get_common_cmake_args(
 ):
     args = []
 
-    webrtc_deps = read_version_file(webrtc_info.deps_file)
+    webrtc_deps = read_deps_file(webrtc_info.deps_file)
 
     if platform.target.os == "windows":
         cxxflags = ["/EHsc", "/D_ITERATOR_DEBUG_LEVEL=0"]
@@ -140,7 +141,8 @@ def install_deps(
     local_webrtc_build_args: List[str],
 ):
     with cd(BASE_DIR):
-        version = read_version_file("VERSION")
+        sdk_version = read_version_file("VERSION")
+        deps = read_deps_file("DEPS")
 
         # multistrap を使った sysroot の構築
         if platform.target.os == "ubuntu" and platform.target.arch == "armv8":
@@ -158,7 +160,7 @@ def install_deps(
         # Android NDK
         if platform.target.os == "android":
             install_android_ndk_args = {
-                "version": version["ANDROID_NDK_VERSION"],
+                "version": deps["ANDROID_NDK_VERSION"],
                 "version_file": os.path.join(install_dir, "android-ndk.version"),
                 "source_dir": source_dir,
                 "install_dir": install_dir,
@@ -172,7 +174,7 @@ def install_deps(
                 pass
             else:
                 install_android_sdk_cmdline_tools_args = {
-                    "version": version["ANDROID_SDK_CMDLINE_TOOLS_VERSION"],
+                    "version": deps["ANDROID_SDK_CMDLINE_TOOLS_VERSION"],
                     "version_file": os.path.join(install_dir, "android-sdk-cmdline-tools.version"),
                     "source_dir": source_dir,
                     "install_dir": install_dir,
@@ -190,7 +192,7 @@ def install_deps(
 
         if local_webrtc_build_dir is None:
             install_webrtc_args = {
-                "version": version["WEBRTC_BUILD_VERSION"],
+                "version": deps["WEBRTC_BUILD_VERSION"],
                 "version_file": os.path.join(install_dir, "webrtc.version"),
                 "source_dir": source_dir,
                 "install_dir": install_dir,
@@ -209,8 +211,8 @@ def install_deps(
             build_webrtc(**build_webrtc_args)
 
         webrtc_info = get_webrtc_info(webrtc_platform, local_webrtc_build_dir, install_dir, debug)
-        webrtc_version = read_version_file(webrtc_info.version_file)
-        webrtc_deps = read_version_file(webrtc_info.deps_file)
+        webrtc_version = read_deps_file(webrtc_info.version_file)
+        webrtc_deps = read_deps_file(webrtc_info.deps_file)
 
         # Windows は MSVC を使うので不要
         # macOS と iOS は Apple Clang を使うので不要
@@ -239,7 +241,7 @@ def install_deps(
 
         # Boost
         install_boost_args = {
-            "version": version["BOOST_VERSION"],
+            "version": deps["BOOST_VERSION"],
             "version_file": os.path.join(install_dir, "boost.version"),
             "source_dir": source_dir,
             "build_dir": build_dir,
@@ -313,7 +315,7 @@ def install_deps(
             ]
             install_boost_args["toolset"] = "clang"
             install_boost_args["android_ndk"] = os.path.join(install_dir, "android-ndk")
-            install_boost_args["native_api_level"] = version["ANDROID_NATIVE_API_LEVEL"]
+            install_boost_args["native_api_level"] = deps["ANDROID_NATIVE_API_LEVEL"]
         else:
             install_boost_args["target_os"] = "linux"
             install_boost_args["cxx"] = os.path.join(webrtc_info.clang_dir, "bin", "clang++")
@@ -350,7 +352,7 @@ def install_deps(
 
         # CMake
         install_cmake_args = {
-            "version": version["CMAKE_VERSION"],
+            "version": deps["CMAKE_VERSION"],
             "version_file": os.path.join(install_dir, "cmake.version"),
             "source_dir": source_dir,
             "install_dir": install_dir,
@@ -378,7 +380,7 @@ def install_deps(
         # CUDA
         if platform.target.os == "windows":
             install_cuda_args = {
-                "version": version["CUDA_VERSION"],
+                "version": deps["CUDA_VERSION"],
                 "version_file": os.path.join(install_dir, "cuda.version"),
                 "source_dir": source_dir,
                 "build_dir": build_dir,
@@ -389,7 +391,7 @@ def install_deps(
         # Intel VPL
         if platform.target.os in ("windows", "ubuntu") and platform.target.arch == "x86_64":
             install_vpl_args = {
-                "version": version["VPL_VERSION"],
+                "version": deps["VPL_VERSION"],
                 "version_file": os.path.join(install_dir, "vpl.version"),
                 "configuration": "Debug" if debug else "Release",
                 "source_dir": source_dir,
@@ -430,7 +432,7 @@ def install_deps(
         # AMF
         if platform.target.os in ("windows", "ubuntu") and platform.target.arch == "x86_64":
             install_amf_args = {
-                "version": version["AMF_VERSION"],
+                "version": deps["AMF_VERSION"],
                 "version_file": os.path.join(install_dir, "amf.version"),
                 "install_dir": install_dir,
             }
@@ -438,7 +440,7 @@ def install_deps(
 
         # OpenH264
         install_openh264_args = {
-            "version": version["OPENH264_VERSION"],
+            "version": deps["OPENH264_VERSION"],
             "version_file": os.path.join(install_dir, "openh264.version"),
             "source_dir": source_dir,
             "install_dir": install_dir,
@@ -478,19 +480,19 @@ def install_deps(
 
         # Blend2D
         install_blend2d_args = {
-            "version": version["BLEND2D_VERSION"] + "-" + version["ASMJIT_VERSION"],
+            "version": deps["BLEND2D_VERSION"] + "-" + deps["ASMJIT_VERSION"],
             "version_file": os.path.join(install_dir, "blend2d.version"),
             "configuration": "Debug" if debug else "Release",
             "source_dir": source_dir,
             "build_dir": build_dir,
             "install_dir": install_dir,
-            "blend2d_version": version["BLEND2D_VERSION"],
-            "asmjit_version": version["ASMJIT_VERSION"],
+            "blend2d_version": deps["BLEND2D_VERSION"],
+            "asmjit_version": deps["ASMJIT_VERSION"],
             "ios": platform.target.package_name == "ios",
             "cmake_args": [],
         }
         install_blend2d_args["cmake_args"] = get_common_cmake_args(
-            platform, version, webrtc_info, install_dir, debug
+            platform, deps, webrtc_info, install_dir, debug
         )
         install_blend2d(**install_blend2d_args)
 
@@ -498,7 +500,7 @@ def install_deps(
         if platform.build.os == platform.target.os and platform.build.arch == platform.target.arch:
             # Catch2
             install_catch2_args = {
-                "version": version["CATCH2_VERSION"],
+                "version": deps["CATCH2_VERSION"],
                 "version_file": os.path.join(install_dir, "catch2.version"),
                 "source_dir": source_dir,
                 "build_dir": build_dir,
@@ -507,28 +509,30 @@ def install_deps(
                 "cmake_args": [],
             }
             install_catch2_args["cmake_args"] = get_common_cmake_args(
-                platform, version, webrtc_info, install_dir, debug
+                platform, deps, webrtc_info, install_dir, debug
             )
             install_catch2(**install_catch2_args)
 
 
 def check_version_file():
     version = read_version_file(os.path.join(BASE_DIR, "VERSION"))
+    deps = read_deps_file(os.path.join(BASE_DIR, "DEPS"))
     example_version = read_version_file(os.path.join(BASE_DIR, "examples", "VERSION"))
+    example_deps = read_deps_file(os.path.join(BASE_DIR, "examples", "DEPS"))
     has_error = False
-    if version["SORA_CPP_SDK_VERSION"] != example_version["SORA_CPP_SDK_VERSION"]:
+    if version != example_version:
         logging.error(
-            f"SORA_CPP_SDK_VERSION mismatch: VERSION={version['SORA_CPP_SDK_VERSION']}, example/VERSION={example_version['SORA_CPP_SDK_VERSION']}"
+            f"SORA_CPP_SDK_VERSION mismatch: VERSION={version}, example/VERSION={example_version}"
         )
         has_error = True
-    if version["WEBRTC_BUILD_VERSION"] != example_version["WEBRTC_BUILD_VERSION"]:
+    if deps["WEBRTC_BUILD_VERSION"] != example_deps["WEBRTC_BUILD_VERSION"]:
         logging.error(
-            f"WEBRTC_BUILD_VERSION mismatch: VERSION={version['WEBRTC_BUILD_VERSION']}, example/VERSION={example_version['WEBRTC_BUILD_VERSION']}"
+            f"WEBRTC_BUILD_VERSION mismatch: VERSION={version}, example/VERSION={example_version}"
         )
         has_error = True
-    if version["BOOST_VERSION"] != example_version["BOOST_VERSION"]:
+    if deps["BOOST_VERSION"] != example_deps["BOOST_VERSION"]:
         logging.error(
-            f"BOOST_VERSION mismatch: VERSION={version['BOOST_VERSION']}, example/VERSION={example_version['BOOST_VERSION']}"
+            f"BOOST_VERSION mismatch: VERSION={version}, example/VERSION={example_version}"
         )
         has_error = True
     if has_error:
@@ -620,13 +624,14 @@ def main():
         webrtc_info = get_webrtc_info(
             webrtc_platform, args.local_webrtc_build_dir, install_dir, args.debug
         )
-        webrtc_version = read_version_file(webrtc_info.version_file)
-        webrtc_deps = read_version_file(webrtc_info.deps_file)
+        webrtc_version = read_deps_file(webrtc_info.version_file)
+        webrtc_deps = read_deps_file(webrtc_info.deps_file)
         with cd(BASE_DIR):
             version = read_version_file("VERSION")
-            sora_cpp_sdk_version = version["SORA_CPP_SDK_VERSION"]
+            deps = read_deps_file("DEPS")
+            sora_cpp_sdk_version = version
             sora_cpp_sdk_commit = cmdcap(["git", "rev-parse", "HEAD"])
-            android_native_api_level = version["ANDROID_NATIVE_API_LEVEL"]
+            android_native_api_level = deps["ANDROID_NATIVE_API_LEVEL"]
         cmake_args.append(f"-DWEBRTC_INCLUDE_DIR={cmake_path(webrtc_info.webrtc_include_dir)}")
         cmake_args.append(f"-DWEBRTC_LIBRARY_DIR={cmake_path(webrtc_info.webrtc_library_dir)}")
         cmake_args.append(f"-DSORA_CPP_SDK_VERSION={sora_cpp_sdk_version}")
@@ -924,8 +929,9 @@ def main():
 
         with cd(BASE_DIR):
             version = read_version_file("VERSION")
-            sora_cpp_sdk_version = version["SORA_CPP_SDK_VERSION"]
-            boost_version = version["BOOST_VERSION"]
+            deps = read_deps_file("DEPS")
+            sora_cpp_sdk_version = version
+            boost_version = deps["BOOST_VERSION"]
 
         def archive(archive_path, files, is_windows):
             if is_windows:
