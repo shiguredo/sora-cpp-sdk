@@ -13,6 +13,8 @@
 
 - [CHANGE] OnDataChannel コールバックで、`#` で始まっていないラベルも Open 状態になったことを通知する
   - @melpon
+- [ADD] rpc ラベルにメッセージが来た時に OnRpc コールバックを呼び出す
+  - @melpon
 
 ## 2025.3.1
 

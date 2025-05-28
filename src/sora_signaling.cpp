@@ -1616,7 +1616,8 @@ void SoraSignaling::OnMessage(
 
   // ハンドリングする必要のあるラベル以外は何もしない
   if (label != "signaling" && label != "stats" && label != "push" &&
-      label != "notify" && (label.empty() || label[0] != '#')) {
+      label != "notify" && label != "rpc" &&
+      (label.empty() || label[0] != '#')) {
     return;
   }
 
@@ -1625,6 +1626,14 @@ void SoraSignaling::OnMessage(
     auto ob = config_.observer.lock();
     if (ob != nullptr) {
       ob->OnMessage(std::move(label), std::move(data));
+    }
+    return;
+  }
+  // rpc ラベルはユーザー定義のラベルと同じような処理をする
+  if (label == "rpc") {
+    auto ob = config_.observer.lock();
+    if (ob != nullptr) {
+      ob->OnRpc(std::move(data));
     }
     return;
   }
