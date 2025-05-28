@@ -1588,7 +1588,7 @@ void SoraSignaling::OnStateChange(
   auto ob = config_.observer.lock();
   if (ob != nullptr) {
     for (auto& kv : dc_labels_) {
-      if (kv.first[0] == '#' && !kv.second.notified && dc_->IsOpen(kv.first)) {
+      if (!kv.second.notified && dc_->IsOpen(kv.first)) {
         ob->OnDataChannel(kv.first);
         kv.second.notified = true;
       }
