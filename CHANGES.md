@@ -20,6 +20,8 @@
 
 - [UPDATE] CMake を 4.0.2 にあげる
   - @voluntas
+- [UPDATE] SDL を 2.32.6 に上げる
+  - @voluntas
 
 ## 2025.3.1
 
