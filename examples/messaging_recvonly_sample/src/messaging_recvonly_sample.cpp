@@ -92,10 +92,10 @@ class MessagingRecvOnlySample
               << " bytes" << std::endl;
   }
 
-  void OnTrack(rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
+  void OnTrack(webrtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
       override {}
   void OnRemoveTrack(
-      rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override {}
+      webrtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override {}
 
   void OnDataChannel(std::string label) override {}
 

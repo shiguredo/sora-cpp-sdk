@@ -8,10 +8,10 @@
 
 namespace sora {
 
-rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
+webrtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
 CreateModularPeerConnectionFactoryWithContext(
     webrtc::PeerConnectionFactoryDependencies dependencies,
-    rtc::scoped_refptr<webrtc::ConnectionContext>& context);
+    webrtc::scoped_refptr<webrtc::ConnectionContext>& context);
 
 }
 #endif

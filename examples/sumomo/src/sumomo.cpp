@@ -120,7 +120,7 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
       std::string video_track_id = rtc::CreateRandomString(16);
       audio_track_ = context_->peer_connection_factory()->CreateAudioTrack(
           audio_track_id, context_->peer_connection_factory()
-                              ->CreateAudioSource(cricket::AudioOptions())
+                              ->CreateAudioSource(webrtc::AudioOptions())
                               .get());
       video_track_ = context_->peer_connection_factory()->CreateVideoTrack(
           video_source, video_track_id);
@@ -211,12 +211,12 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
   void OnSetOffer(std::string offer) override {
     std::string stream_id = rtc::CreateRandomString(16);
     if (audio_track_ != nullptr) {
-      webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpSenderInterface>>
+      webrtc::RTCErrorOr<webrtc::scoped_refptr<webrtc::RtpSenderInterface>>
           audio_result =
               conn_->GetPeerConnection()->AddTrack(audio_track_, {stream_id});
     }
     if (video_track_ != nullptr) {
-      webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpSenderInterface>>
+      webrtc::RTCErrorOr<webrtc::scoped_refptr<webrtc::RtpSenderInterface>>
           video_result =
               conn_->GetPeerConnection()->AddTrack(video_track_, {stream_id});
     }
@@ -233,7 +233,7 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
   void OnPush(std::string text) override {}
   void OnMessage(std::string label, std::string data) override {}
 
-  void OnTrack(rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
+  void OnTrack(webrtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
       override {
     if (renderer_ == nullptr) {
       return;
@@ -245,7 +245,7 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
     }
   }
   void OnRemoveTrack(
-      rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override {
+      webrtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override {
     if (renderer_ == nullptr) {
       return;
     }
@@ -261,8 +261,8 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
  private:
   std::shared_ptr<sora::SoraClientContext> context_;
   SumomoConfig config_;
-  rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track_;
-  rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track_;
+  webrtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track_;
+  webrtc::scoped_refptr<webrtc::VideoTrackInterface> video_track_;
   std::shared_ptr<sora::SoraSignaling> conn_;
   std::unique_ptr<boost::asio::io_context> ioc_;
   std::unique_ptr<SDLRenderer> renderer_;

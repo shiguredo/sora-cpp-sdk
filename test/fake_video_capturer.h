@@ -17,7 +17,7 @@ class FakeVideoCapturer : public sora::ScalableVideoTrackSource {
   virtual void StopCapture() = 0;
 };
 
-rtc::scoped_refptr<FakeVideoCapturer> CreateFakeVideoCapturer(
+webrtc::scoped_refptr<FakeVideoCapturer> CreateFakeVideoCapturer(
     FakeVideoCapturerConfig config);
 
 #endif

@@ -21,7 +21,7 @@ class CreateSessionDescriptionThunk
   typedef OnSessionCreateSuccessFunc OnSuccessFunc;
   typedef OnSessionCreateFailureFunc OnFailureFunc;
 
-  static rtc::scoped_refptr<CreateSessionDescriptionThunk> Create(
+  static webrtc::scoped_refptr<CreateSessionDescriptionThunk> Create(
       OnSuccessFunc on_success,
       OnFailureFunc on_failure);
 
@@ -43,7 +43,7 @@ class SetSessionDescriptionThunk
   typedef OnSessionSetSuccessFunc OnSuccessFunc;
   typedef OnSessionSetFailureFunc OnFailureFunc;
 
-  static rtc::scoped_refptr<SetSessionDescriptionThunk> Create(
+  static webrtc::scoped_refptr<SetSessionDescriptionThunk> Create(
       OnSuccessFunc on_success,
       OnFailureFunc on_failure);
 

@@ -103,10 +103,10 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
     RTC_LOG(LS_INFO) << "OnSwitched: " << text;
   }
 
-  void OnTrack(rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
+  void OnTrack(webrtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
       override {}
   void OnRemoveTrack(
-      rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override {}
+      webrtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override {}
 
   void OnDataChannel(std::string label) override {
     bool result = conn_->SendDataChannel(label, label);
@@ -124,7 +124,7 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
   }
 
  private:
-  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> pc_factory() {
+  webrtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> pc_factory() {
     return context_->peer_connection_factory();
   }
 

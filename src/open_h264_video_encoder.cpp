@@ -125,7 +125,7 @@ class OpenH264VideoEncoder : public VideoEncoder {
 
   std::vector<ISVCEncoder*> encoders_;
   std::vector<SSourcePicture> pictures_;
-  std::vector<rtc::scoped_refptr<I420Buffer>> downscaled_buffers_;
+  std::vector<webrtc::scoped_refptr<I420Buffer>> downscaled_buffers_;
   std::vector<LayerConfig> configurations_;
   std::vector<EncodedImage> encoded_images_;
   std::vector<std::unique_ptr<ScalableVideoController>> svc_controllers_;
@@ -605,7 +605,7 @@ int32_t OpenH264VideoEncoder::Encode(
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
 
-  rtc::scoped_refptr<I420BufferInterface> frame_buffer =
+  webrtc::scoped_refptr<I420BufferInterface> frame_buffer =
       input_frame.video_frame_buffer()->ToI420();
   if (!frame_buffer) {
     RTC_LOG(LS_ERROR) << "Failed to convert "
@@ -921,7 +921,7 @@ std::unique_ptr<webrtc::VideoEncoder> CreateOpenH264VideoEncoder(
     const webrtc::SdpVideoFormat& format,
     std::string openh264) {
   webrtc::H264EncoderSettings settings;
-  if (auto it = format.parameters.find(cricket::kH264FmtpPacketizationMode);
+  if (auto it = format.parameters.find(webrtc::kH264FmtpPacketizationMode);
       it != format.parameters.end()) {
     if (it->second == "0") {
       settings.packetization_mode =

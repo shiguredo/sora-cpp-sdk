@@ -67,16 +67,16 @@ class SoraSignalingObserver {
   virtual void OnWsClose(uint16_t code, std::string message) {}
 
   virtual void OnTrack(
-      rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver) = 0;
+      webrtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver) = 0;
   virtual void OnRemoveTrack(
-      rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) = 0;
+      webrtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) = 0;
 
   virtual void OnDataChannel(std::string label) = 0;
 };
 
 struct SoraSignalingConfig {
   boost::asio::io_context* io_context;
-  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> pc_factory;
+  webrtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> pc_factory;
   std::weak_ptr<SoraSignalingObserver> observer;
 
   std::vector<std::string> signaling_urls;
@@ -153,8 +153,8 @@ struct SoraSignalingConfig {
   std::string proxy_password;
   std::string proxy_agent;
   // proxy を設定する場合は必須
-  rtc::NetworkManager* network_manager = nullptr;
-  rtc::PacketSocketFactory* socket_factory = nullptr;
+  webrtc::NetworkManager* network_manager = nullptr;
+  webrtc::PacketSocketFactory* socket_factory = nullptr;
 
   bool disable_signaling_url_randomization = false;
 
@@ -172,7 +172,7 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
   ~SoraSignaling();
   static std::shared_ptr<SoraSignaling> Create(
       const SoraSignalingConfig& config);
-  rtc::scoped_refptr<webrtc::PeerConnectionInterface> GetPeerConnection() const;
+  webrtc::scoped_refptr<webrtc::PeerConnectionInterface> GetPeerConnection() const;
   std::string GetVideoMid() const;
   std::string GetAudioMid() const;
 
@@ -200,10 +200,10 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
   void DoSendConnect(bool redirect);
   void DoSendPong();
   void DoSendPong(
-      const rtc::scoped_refptr<const webrtc::RTCStatsReport>& report);
+      const webrtc::scoped_refptr<const webrtc::RTCStatsReport>& report);
   void DoSendUpdate(const std::string& sdp, std::string type);
 
-  rtc::scoped_refptr<webrtc::PeerConnectionInterface> CreatePeerConnection(
+  webrtc::scoped_refptr<webrtc::PeerConnectionInterface> CreatePeerConnection(
       boost::json::value jconfig);
 
  private:
@@ -252,7 +252,7 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
   void OnSignalingChange(
       webrtc::PeerConnectionInterface::SignalingState new_state) override {}
   void OnDataChannel(
-      rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) override;
+      webrtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) override;
   void OnStandardizedIceConnectionChange(
       webrtc::PeerConnectionInterface::IceConnectionState new_state) override;
   void OnConnectionChange(
@@ -266,15 +266,15 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
                            int error_code,
                            const std::string& error_text) override;
   void OnTrack(
-      rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver) override;
+      webrtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver) override;
   void OnRemoveTrack(
-      rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override;
+      webrtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override;
 
   // DataChannelObserver の実装
  private:
   void OnStateChange(
-      rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) override;
-  void OnMessage(rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel,
+      webrtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) override;
+  void OnMessage(webrtc::scoped_refptr<webrtc::DataChannelInterface> data_channel,
                  const webrtc::DataBuffer& buffer) override;
 
  private:
@@ -315,7 +315,7 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
   };
   std::map<std::string, DataChannelInfo> dc_labels_;
 
-  rtc::scoped_refptr<webrtc::PeerConnectionInterface> pc_;
+  webrtc::scoped_refptr<webrtc::PeerConnectionInterface> pc_;
   std::vector<webrtc::RtpEncodingParameters> encodings_;
   std::string video_mid_;
   std::string audio_mid_;

@@ -9,10 +9,10 @@
 
 namespace sora {
 
-class RTCSSLVerifier : public rtc::SSLCertificateVerifier {
+class RTCSSLVerifier : public webrtc::SSLCertificateVerifier {
  public:
   RTCSSLVerifier(bool insecure, std::optional<std::string> ca_cert);
-  bool Verify(const rtc::SSLCertificate& certificate) override;
+  bool Verify(const webrtc::SSLCertificate& certificate) override;
 
  private:
   bool insecure_;

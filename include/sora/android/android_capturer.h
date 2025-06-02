@@ -18,7 +18,7 @@ class AndroidCapturer : public webrtc::jni::AndroidVideoTrackSource {
 
   void Stop();
 
-  static rtc::scoped_refptr<AndroidCapturer> Create(
+  static webrtc::scoped_refptr<AndroidCapturer> Create(
       JNIEnv* env,
       jobject context,
       rtc::Thread* signaling_thread,

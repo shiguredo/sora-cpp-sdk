@@ -75,7 +75,7 @@ void DataChannel::SetOnClose(
 }
 
 void DataChannel::AddDataChannel(
-    rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) {
+    webrtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) {
   boost::asio::post(*ioc_, [self = shared_from_this(), data_channel]() {
     std::shared_ptr<Thunk> thunk(new Thunk());
     thunk->p = self.get();

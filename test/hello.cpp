@@ -55,7 +55,7 @@ void HelloSora::Run() {
   std::string audio_track_id = rtc::CreateRandomString(16);
   audio_track_ = pc_factory()->CreateAudioTrack(
       audio_track_id,
-      pc_factory()->CreateAudioSource(cricket::AudioOptions()).get());
+      pc_factory()->CreateAudioSource(webrtc::AudioOptions()).get());
 
   ioc_.reset(new boost::asio::io_context(1));
 
@@ -101,11 +101,11 @@ void HelloSora::Run() {
 
 void HelloSora::OnSetOffer(std::string offer) {
   std::string stream_id = rtc::CreateRandomString(16);
-  webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpSenderInterface>>
+  webrtc::RTCErrorOr<webrtc::scoped_refptr<webrtc::RtpSenderInterface>>
       audio_result =
           conn_->GetPeerConnection()->AddTrack(audio_track_, {stream_id});
   if (video_track_ != nullptr) {
-    webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpSenderInterface>>
+    webrtc::RTCErrorOr<webrtc::scoped_refptr<webrtc::RtpSenderInterface>>
         video_result =
             conn_->GetPeerConnection()->AddTrack(video_track_, {stream_id});
   }

@@ -49,7 +49,7 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
     std::string video_track_id = rtc::CreateRandomString(16);
     audio_track_ = pc_factory()->CreateAudioTrack(
         audio_track_id,
-        pc_factory()->CreateAudioSource(cricket::AudioOptions()).get());
+        pc_factory()->CreateAudioSource(webrtc::AudioOptions()).get());
     video_track_ =
         pc_factory()->CreateVideoTrack(video_source_, video_track_id);
 
@@ -88,10 +88,10 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
 
   void OnSetOffer(std::string offer) override {
     std::string stream_id = rtc::CreateRandomString(16);
-    webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpSenderInterface>>
+    webrtc::RTCErrorOr<webrtc::scoped_refptr<webrtc::RtpSenderInterface>>
         audio_result =
             conn_->GetPeerConnection()->AddTrack(audio_track_, {stream_id});
-    webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpSenderInterface>>
+    webrtc::RTCErrorOr<webrtc::scoped_refptr<webrtc::RtpSenderInterface>>
         video_result =
             conn_->GetPeerConnection()->AddTrack(video_track_, {stream_id});
   }
@@ -104,24 +104,24 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
   void OnPush(std::string text) override {}
   void OnMessage(std::string label, std::string data) override {}
 
-  void OnTrack(rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
+  void OnTrack(webrtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
       override {}
   void OnRemoveTrack(
-      rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override {}
+      webrtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override {}
 
   void OnDataChannel(std::string label) override {}
 
  private:
-  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> pc_factory() {
+  webrtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> pc_factory() {
     return context_->peer_connection_factory();
   }
 
  private:
   std::shared_ptr<sora::SoraClientContext> context_;
   SoraClientConfig config_;
-  rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source_;
-  rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track_;
-  rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track_;
+  webrtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source_;
+  webrtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track_;
+  webrtc::scoped_refptr<webrtc::VideoTrackInterface> video_track_;
   std::shared_ptr<sora::SoraSignaling> conn_;
   std::unique_ptr<boost::asio::io_context> ioc_;
   std::unique_ptr<boost::asio::deadline_timer> timer_;

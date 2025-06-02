@@ -233,7 +233,7 @@ int32_t AMFVideoEncoderImpl::Encode(
     amf::AMFPlane* py = surface_->GetPlane(amf::AMF_PLANE_Y);
     amf::AMFPlane* pu = surface_->GetPlane(amf::AMF_PLANE_U);
     amf::AMFPlane* pv = surface_->GetPlane(amf::AMF_PLANE_V);
-    rtc::scoped_refptr<const webrtc::I420BufferInterface> src =
+    webrtc::scoped_refptr<const webrtc::I420BufferInterface> src =
         frame.video_frame_buffer()->ToI420();
     libyuv::I420Copy(src->DataY(), src->StrideY(), src->DataU(), src->StrideU(),
                      src->DataV(), src->StrideV(), (uint8_t*)py->GetNative(),

@@ -135,10 +135,10 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
   void OnMessage(std::string label, std::string data) override {}
   void OnSwitched(std::string text) override {}
 
-  void OnTrack(rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
+  void OnTrack(webrtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
       override {}
   void OnRemoveTrack(
-      rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override {}
+      webrtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override {}
 
   void OnDataChannel(std::string label) override {}
 
@@ -147,8 +147,8 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
   std::shared_ptr<sora::SoraSignaling> conn_;
   std::unique_ptr<boost::asio::io_context> ioc_;
   std::unique_ptr<boost::asio::deadline_timer> timer_;
-  rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source_;
-  rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track_;
+  webrtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source_;
+  webrtc::scoped_refptr<webrtc::VideoTrackInterface> video_track_;
   std::atomic<bool> ok_{false};
   std::string connection_id_;
 };

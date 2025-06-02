@@ -37,7 +37,7 @@ struct V4L2VideoCapturerConfig : ScalableVideoTrackSourceConfig {
 
 class V4L2VideoCapturer : public ScalableVideoTrackSource {
  public:
-  static rtc::scoped_refptr<V4L2VideoCapturer> Create(
+  static webrtc::scoped_refptr<V4L2VideoCapturer> Create(
       const V4L2VideoCapturerConfig& config);
   static void LogDeviceList(
       webrtc::VideoCaptureModule::DeviceInfo* device_info);
@@ -65,7 +65,7 @@ class V4L2VideoCapturer : public ScalableVideoTrackSource {
   Buffer* _pool;
 
  private:
-  static rtc::scoped_refptr<V4L2VideoCapturer> Create(
+  static webrtc::scoped_refptr<V4L2VideoCapturer> Create(
       webrtc::VideoCaptureModule::DeviceInfo* device_info,
       const V4L2VideoCapturerConfig& config,
       size_t capture_device_index);
