@@ -15,6 +15,10 @@
   - @melpon
 - [ADD] rpc ラベルにメッセージが来た時に OnRpc コールバックを呼び出す
   - @melpon
+- [UPDATE] libwebrtc を m137.7151.0.0 にあげる
+  - `rtc::revive::` を　`webrtc::revive::` に変更する
+  - BasicPortAllocator の引数追加に伴い、`config_.env` を追加する
+  - @miosakuma @torikizi
 
 ### misc
 

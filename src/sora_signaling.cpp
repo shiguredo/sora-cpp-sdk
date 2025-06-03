@@ -480,7 +480,7 @@ void SoraSignaling::DoSendUpdate(const std::string& sdp, std::string type) {
   }
 }
 
-class RawCryptString : public rtc::revive::CryptStringImpl {
+class RawCryptString : public webrtc::revive::CryptStringImpl {
  public:
   RawCryptString(const std::string& str) : str_(str) {}
   size_t GetLength() const override { return str_.size(); }
@@ -545,7 +545,7 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
   if (!config_.proxy_url.empty() && config_.network_manager != nullptr &&
       config_.socket_factory) {
     dependencies.allocator.reset(new webrtc::BasicPortAllocator(
-        config_.network_manager, config_.socket_factory,
+        *config_.env, config_.network_manager, config_.socket_factory,
         rtc_config.turn_customizer));
     dependencies.allocator->SetPortRange(
         rtc_config.port_allocator_config.min_port,
@@ -553,11 +553,11 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
     dependencies.allocator->set_flags(rtc_config.port_allocator_config.flags);
 
     RTC_LOG(LS_INFO) << "Set Proxy: type="
-                     << rtc::revive::ProxyToString(rtc::revive::PROXY_HTTPS)
+                     << webrtc::revive::ProxyToString(webrtc::revive::PROXY_HTTPS)
                      << " url=" << config_.proxy_url
                      << " username=" << config_.proxy_username;
-    rtc::revive::ProxyInfo pi;
-    pi.type = rtc::revive::PROXY_HTTPS;
+    webrtc::revive::ProxyInfo pi;
+    pi.type = webrtc::revive::PROXY_HTTPS;
     URLParts parts;
     if (!URLParts::Parse(config_.proxy_url, parts)) {
       RTC_LOG(LS_ERROR) << "Failed to parse: proxy_url=" << config_.proxy_url;
@@ -569,7 +569,7 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
     }
     if (!config_.proxy_password.empty()) {
       pi.password =
-          rtc::revive::CryptString(RawCryptString(config_.proxy_password));
+          webrtc::revive::CryptString(RawCryptString(config_.proxy_password));
     }
     std::string proxy_agent = "Sora C++ SDK";
     if (!config_.proxy_agent.empty()) {
