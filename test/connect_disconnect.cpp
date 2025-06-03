@@ -45,8 +45,8 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
     cam_config.fps = 30;
     video_source_ = sora::CreateCameraDeviceCapturer(cam_config);
 
-    std::string audio_track_id = rtc::CreateRandomString(16);
-    std::string video_track_id = rtc::CreateRandomString(16);
+    std::string audio_track_id = webrtc::CreateRandomString(16);
+    std::string video_track_id = webrtc::CreateRandomString(16);
     audio_track_ = pc_factory()->CreateAudioTrack(
         audio_track_id,
         pc_factory()->CreateAudioSource(webrtc::AudioOptions()).get());
@@ -87,7 +87,7 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
   }
 
   void OnSetOffer(std::string offer) override {
-    std::string stream_id = rtc::CreateRandomString(16);
+    std::string stream_id = webrtc::CreateRandomString(16);
     webrtc::RTCErrorOr<webrtc::scoped_refptr<webrtc::RtpSenderInterface>>
         audio_result =
             conn_->GetPeerConnection()->AddTrack(audio_track_, {stream_id});
@@ -142,9 +142,9 @@ int main(int argc, char* argv[]) {
   }
 #endif
 
-  //rtc::LogMessage::LogToDebug(rtc::LS_VERBOSE);
-  //rtc::LogMessage::LogTimestamps();
-  //rtc::LogMessage::LogThreads();
+  //webrtc::LogMessage::LogToDebug(rtc::LS_VERBOSE);
+  //webrtc::LogMessage::LogTimestamps();
+  //webrtc::LogMessage::LogThreads();
 
   auto context =
       sora::SoraClientContext::Create(sora::SoraClientContextConfig());

@@ -153,7 +153,7 @@ int main(int argc, char* argv[]) {
   app.set_help_all_flag("--help-all",
                         "Print help message for all modes and exit");
 
-  int log_level = (int)rtc::LS_ERROR;
+  int log_level = (int)webrtc::LS_ERROR;
   auto log_level_map = std::vector<std::pair<std::string, int>>(
       {{"verbose", 0}, {"info", 1}, {"warning", 2}, {"error", 3}, {"none", 4}});
   app.add_option("--log-level", log_level, "Log severity level threshold")
@@ -184,10 +184,10 @@ int main(int argc, char* argv[]) {
     config.data_channels = boost::json::parse(default_data_channels);
   }
 
-  if (log_level != rtc::LS_NONE) {
-    rtc::LogMessage::LogToDebug((rtc::LoggingSeverity)log_level);
-    rtc::LogMessage::LogTimestamps();
-    rtc::LogMessage::LogThreads();
+  if (log_level != webrtc::LS_NONE) {
+    webrtc::LogMessage::LogToDebug((webrtc::LoggingSeverity)log_level);
+    webrtc::LogMessage::LogTimestamps();
+    webrtc::LogMessage::LogThreads();
   }
 
   sora::SoraClientContextConfig context_config;

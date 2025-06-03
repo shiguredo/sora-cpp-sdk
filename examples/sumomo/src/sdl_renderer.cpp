@@ -198,7 +198,7 @@ SDLRenderer::Sink::Sink(SDLRenderer* renderer,
       scaled_(false),
       width_(0),
       height_(0) {
-  track_->AddOrUpdateSink(this, rtc::VideoSinkWants());
+  track_->AddOrUpdateSink(this, webrtc::VideoSinkWants());
 }
 
 SDLRenderer::Sink::~Sink() {

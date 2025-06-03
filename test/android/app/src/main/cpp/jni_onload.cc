@@ -21,9 +21,9 @@ namespace webrtc {
 namespace jni {
 
 extern "C" jint JNIEXPORT JNICALL JNI_OnLoad(JavaVM* jvm, void* reserved) {
-  // rtc::LogMessage::LogToDebug(rtc::LS_INFO);
-  // rtc::LogMessage::LogTimestamps();
-  // rtc::LogMessage::LogThreads();
+  // webrtc::LogMessage::LogToDebug(rtc::LS_INFO);
+  // webrtc::LogMessage::LogTimestamps();
+  // webrtc::LogMessage::LogThreads();
 
   jint ret = InitGlobalJniVariables(jvm);
   RTC_DCHECK_GE(ret, 0);

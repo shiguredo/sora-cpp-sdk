@@ -26,6 +26,8 @@
   - @voluntas
 - [UPDATE] SDL を 2.32.6 に上げる
   - @voluntas
+- [UPDATE] test と examples の `rtc::` を `webrtc::` に変更する
+  - @torikizi
 
 ## 2025.3.1
 

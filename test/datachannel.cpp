@@ -153,9 +153,9 @@ int main(int argc, char* argv[]) {
   }
 #endif
 
-  rtc::LogMessage::LogToDebug(rtc::LS_ERROR);
-  rtc::LogMessage::LogTimestamps();
-  rtc::LogMessage::LogThreads();
+  webrtc::LogMessage::LogToDebug(rtc::LS_ERROR);
+  webrtc::LogMessage::LogTimestamps();
+  webrtc::LogMessage::LogThreads();
 
   sora::SoraClientContextConfig context_config;
   context_config.use_audio_device = false;

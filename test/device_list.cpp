@@ -23,9 +23,9 @@ int main(int argc, char* argv[]) {
   }
 #endif
 
-  rtc::LogMessage::LogToDebug(rtc::LS_WARNING);
-  rtc::LogMessage::LogTimestamps();
-  rtc::LogMessage::LogThreads();
+  webrtc::LogMessage::LogToDebug(rtc::LS_WARNING);
+  webrtc::LogMessage::LogTimestamps();
+  webrtc::LogMessage::LogThreads();
 
   // デバイス一覧の取得
   std::string last_device_name;

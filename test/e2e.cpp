@@ -52,7 +52,7 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
     fake_config.height = 480;
     fake_config.fps = 30;
     video_source_ = CreateFakeVideoCapturer(fake_config);
-    std::string video_track_id = rtc::CreateRandomString(16);
+    std::string video_track_id = webrtc::CreateRandomString(16);
     video_track_ = pc_factory->CreateVideoTrack(video_source_, video_track_id);
 
     sora::SoraSignalingConfig config;
@@ -160,9 +160,9 @@ TEST_CASE("Sora に接続して切断するだけ") {
   REQUIRE(com_initializer.Succeeded());
 #endif
 
-  rtc::LogMessage::LogToDebug(rtc::LS_ERROR);
-  rtc::LogMessage::LogTimestamps();
-  rtc::LogMessage::LogThreads();
+  webrtc::LogMessage::LogToDebug(rtc::LS_ERROR);
+  webrtc::LogMessage::LogTimestamps();
+  webrtc::LogMessage::LogThreads();
 
   auto client = std::make_shared<SoraClient>();
   client->Run();

@@ -116,8 +116,8 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
         return;
       }
 
-      std::string audio_track_id = rtc::CreateRandomString(16);
-      std::string video_track_id = rtc::CreateRandomString(16);
+      std::string audio_track_id = webrtc::CreateRandomString(16);
+      std::string video_track_id = webrtc::CreateRandomString(16);
       audio_track_ = context_->peer_connection_factory()->CreateAudioTrack(
           audio_track_id, context_->peer_connection_factory()
                               ->CreateAudioSource(webrtc::AudioOptions())
@@ -209,7 +209,7 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
   }
 
   void OnSetOffer(std::string offer) override {
-    std::string stream_id = rtc::CreateRandomString(16);
+    std::string stream_id = webrtc::CreateRandomString(16);
     if (audio_track_ != nullptr) {
       webrtc::RTCErrorOr<webrtc::scoped_refptr<webrtc::RtpSenderInterface>>
           audio_result =
@@ -331,7 +331,7 @@ int main(int argc, char* argv[]) {
 
   CLI::App app("Momo Sample for Sora C++ SDK");
 
-  int log_level = (int)rtc::LS_ERROR;
+  int log_level = (int)webrtc::LS_ERROR;
   auto log_level_map = std::vector<std::pair<std::string, int>>(
       {{"verbose", 0}, {"info", 1}, {"warning", 2}, {"error", 3}, {"none", 4}});
   app.add_option("--log-level", log_level, "Log severity level threshold")
@@ -516,10 +516,10 @@ int main(int argc, char* argv[]) {
     exit(app.exit(e));
   }
 
-  if (log_level != rtc::LS_NONE) {
-    rtc::LogMessage::LogToDebug((rtc::LoggingSeverity)log_level);
-    rtc::LogMessage::LogTimestamps();
-    rtc::LogMessage::LogThreads();
+  if (log_level != webrtc::LS_NONE) {
+    webrtc::LogMessage::LogToDebug((webrtc::LoggingSeverity)log_level);
+    webrtc::LogMessage::LogTimestamps();
+    webrtc::LogMessage::LogThreads();
   }
 
   // 表示して終了する系の処理はここに書く
