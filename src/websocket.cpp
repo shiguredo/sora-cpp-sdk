@@ -4,8 +4,7 @@
 
 // WebRTC
 #include <rtc_base/logging.h>
-
-#include "absl/strings/escaping.h"
+#include <rtc_base/base64.h>
 
 // Boost
 #include <boost/asio/bind_executor.hpp>
@@ -395,7 +394,7 @@ void Websocket::OnConnectProxy(boost::system::error_code ec) {
   proxy_req_.set(boost::beast::http::field::host, target);
   proxy_req_.set(
       boost::beast::http::field::proxy_authorization,
-      "Basic " + absl::Base64Escape(proxy_username_ + ":" + proxy_password_));
+      "Basic " + webrtc::Base64Encode(proxy_username_ + ":" + proxy_password_));
   boost::beast::http::async_write(
       *proxy_socket_, proxy_req_,
       std::bind(&Websocket::OnWriteProxy, this, std::placeholders::_1,
