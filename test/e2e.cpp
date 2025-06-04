@@ -160,7 +160,7 @@ TEST_CASE("Sora に接続して切断するだけ") {
   REQUIRE(com_initializer.Succeeded());
 #endif
 
-  webrtc::LogMessage::LogToDebug(rtc::LS_ERROR);
+  webrtc::LogMessage::LogToDebug(webrtc::LS_ERROR);
   webrtc::LogMessage::LogTimestamps();
   webrtc::LogMessage::LogThreads();
 

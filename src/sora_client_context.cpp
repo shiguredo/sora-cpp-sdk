@@ -38,7 +38,7 @@ SoraClientContext::~SoraClientContext() {
   worker_thread_->Stop();
   signaling_thread_->Stop();
 
-  //rtc::CleanupSSL();
+  //webrtc::CleanupSSL();
 }
 
 std::shared_ptr<SoraClientContext> SoraClientContext::Create(

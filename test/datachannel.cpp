@@ -153,7 +153,7 @@ int main(int argc, char* argv[]) {
   }
 #endif
 
-  webrtc::LogMessage::LogToDebug(rtc::LS_ERROR);
+  webrtc::LogMessage::LogToDebug(webrtc::LS_ERROR);
   webrtc::LogMessage::LogTimestamps();
   webrtc::LogMessage::LogThreads();
 

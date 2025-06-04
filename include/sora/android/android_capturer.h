@@ -13,7 +13,7 @@ namespace sora {
 
 class AndroidCapturer : public webrtc::jni::AndroidVideoTrackSource {
  public:
-  AndroidCapturer(JNIEnv* env, rtc::Thread* signaling_thread);
+  AndroidCapturer(JNIEnv* env, webrtc::Thread* signaling_thread);
   ~AndroidCapturer();
 
   void Stop();
@@ -21,7 +21,7 @@ class AndroidCapturer : public webrtc::jni::AndroidVideoTrackSource {
   static webrtc::scoped_refptr<AndroidCapturer> Create(
       JNIEnv* env,
       jobject context,
-      rtc::Thread* signaling_thread,
+      webrtc::Thread* signaling_thread,
       size_t width,
       size_t height,
       size_t target_fps,
@@ -56,7 +56,7 @@ class AndroidCapturer : public webrtc::jni::AndroidVideoTrackSource {
 
   bool Init(JNIEnv* env,
             jobject context,
-            rtc::Thread* signaling_thread,
+            webrtc::Thread* signaling_thread,
             size_t width,
             size_t height,
             size_t target_fps,

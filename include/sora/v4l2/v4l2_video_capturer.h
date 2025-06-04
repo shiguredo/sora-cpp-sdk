@@ -76,7 +76,7 @@ class V4L2VideoCapturer : public ScalableVideoTrackSource {
   static void CaptureThread(void*);
   bool CaptureProcess();
 
-  rtc::PlatformThread _captureThread;
+  webrtc::PlatformThread _captureThread;
   webrtc::Mutex capture_lock_;
   bool quit_ RTC_GUARDED_BY(capture_lock_);
   std::string _videoDevice;

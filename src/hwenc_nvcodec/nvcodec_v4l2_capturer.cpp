@@ -113,7 +113,7 @@ void NvCodecV4L2Capturer::OnCaptured(uint8_t* data, uint32_t bytesused) {
     OnFrame(webrtc::VideoFrame::Builder()
                 .set_video_frame_buffer(buf)
                 .set_timestamp_rtp(0)
-                .set_timestamp_ms(rtc::TimeMillis())
+                .set_timestamp_ms(webrtc::TimeMillis())
                 .set_timestamp_us(webrtc::TimeMicros())
                 .set_rotation(webrtc::kVideoRotation_0)
                 .build());

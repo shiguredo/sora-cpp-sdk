@@ -323,9 +323,9 @@ int32_t V4L2VideoCapturer::StartCapture(const V4L2VideoCapturerConfig& config) {
   // start capture thread;
   if (_captureThread.empty()) {
     quit_ = false;
-    _captureThread = rtc::PlatformThread::SpawnJoinable(
+    _captureThread = webrtc::PlatformThread::SpawnJoinable(
         std::bind(V4L2VideoCapturer::CaptureThread, this), "CaptureThread",
-        rtc::ThreadAttributes().SetPriority(rtc::ThreadPriority::kHigh));
+        webrtc::ThreadAttributes().SetPriority(webrtc::ThreadPriority::kHigh));
   }
 
   // Needed to start UVC camera - from the uvcview application
@@ -539,7 +539,7 @@ void V4L2VideoCapturer::OnCaptured(uint8_t* data, uint32_t bytesused) {
     webrtc::VideoFrame video_frame = webrtc::VideoFrame::Builder()
                                          .set_video_frame_buffer(dst_buffer)
                                          .set_timestamp_rtp(0)
-                                         .set_timestamp_ms(rtc::TimeMillis())
+                                         .set_timestamp_ms(webrtc::TimeMillis())
                                          .set_timestamp_us(webrtc::TimeMicros())
                                          .set_rotation(webrtc::kVideoRotation_0)
                                          .build();

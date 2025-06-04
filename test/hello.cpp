@@ -137,7 +137,7 @@ int main(int argc, char* argv[]) {
   }
 #endif
 
-  webrtc::LogMessage::LogToDebug(rtc::LS_WARNING);
+  webrtc::LogMessage::LogToDebug(webrtc::LS_WARNING);
   webrtc::LogMessage::LogTimestamps();
   webrtc::LogMessage::LogThreads();
 

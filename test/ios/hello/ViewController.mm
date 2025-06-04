@@ -27,7 +27,7 @@ void IosAudioInit(std::function<void(std::string)> on_complete) {
 }
 
 void Run() {
-    // webrtc::LogMessage::LogToDebug(rtc::LS_INFO);
+    // webrtc::LogMessage::LogToDebug(webrtc::LS_INFO);
     // webrtc::LogMessage::LogTimestamps();
     // webrtc::LogMessage::LogThreads();
 
