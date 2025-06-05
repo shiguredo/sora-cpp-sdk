@@ -1,6 +1,7 @@
 #include "sora/sora_signaling.h"
 
 // WebRTC
+#include <api/environment/environment_factory.h>
 #include <p2p/client/basic_port_allocator.h>
 #include <pc/rtp_media_utils.h>
 #include <pc/session_description.h>
@@ -538,22 +539,24 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
   // その中に Let's Encrypt の証明書が無いため、接続先によっては接続できないことがある。
   //
   // それを解消するために tls_cert_verifier を設定して自前で検証を行う。
-  dependencies.tls_cert_verifier = std::unique_ptr<webrtc::SSLCertificateVerifier>(
-      new RTCSSLVerifier(config_.insecure, config_.ca_cert));
+  dependencies.tls_cert_verifier =
+      std::unique_ptr<webrtc::SSLCertificateVerifier>(
+          new RTCSSLVerifier(config_.insecure, config_.ca_cert));
 
   // Proxy を設定する
   if (!config_.proxy_url.empty() && config_.network_manager != nullptr &&
       config_.socket_factory) {
     dependencies.allocator.reset(new webrtc::BasicPortAllocator(
-        *config_.env, config_.network_manager, config_.socket_factory,
-        rtc_config.turn_customizer));
+        webrtc::CreateEnvironment(), config_.network_manager,
+        config_.socket_factory, rtc_config.turn_customizer));
     dependencies.allocator->SetPortRange(
         rtc_config.port_allocator_config.min_port,
         rtc_config.port_allocator_config.max_port);
     dependencies.allocator->set_flags(rtc_config.port_allocator_config.flags);
 
     RTC_LOG(LS_INFO) << "Set Proxy: type="
-                     << webrtc::revive::ProxyToString(webrtc::revive::PROXY_HTTPS)
+                     << webrtc::revive::ProxyToString(
+                            webrtc::revive::PROXY_HTTPS)
                      << " url=" << config_.proxy_url
                      << " username=" << config_.proxy_username;
     webrtc::revive::ProxyInfo pi;

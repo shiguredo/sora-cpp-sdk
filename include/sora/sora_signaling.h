@@ -153,7 +153,6 @@ struct SoraSignalingConfig {
   std::string proxy_password;
   std::string proxy_agent;
   // proxy を設定する場合は必須
-  webrtc::Environment* env = nullptr;
   webrtc::NetworkManager* network_manager = nullptr;
   webrtc::PacketSocketFactory* socket_factory = nullptr;
 

@@ -17,7 +17,6 @@
   - @melpon
 - [UPDATE] libwebrtc を m137.7151.0.0 にあげる
   - `rtc::revive::` を　`webrtc::revive::` に変更する
-  - BasicPortAllocator の引数追加に伴い、`config_.env` を追加する
   - m137 で `rtc_base/third_party/base64/base64.h` が削除されたため、websocket.cpp で `rtc_base/base64.h` をインクルードするように変更する
   - `webrtc::Base64::Encode` から `webrtc::Base64Encode` に変更する
   - Android ビルドに利用するコンパイラを Android NDK に内包されている clang ではなく、libwebrtc の clang に変更する
