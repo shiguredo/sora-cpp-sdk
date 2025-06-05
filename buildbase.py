@@ -793,6 +793,7 @@ def build_and_install_boost(
                     )
         elif target_os == "android":
             # Android の場合、android-ndk を使ってビルドする
+            # ただし cxx が指定されてた場合はそちらを優先する
             with open("project-config.jam", "w", encoding="utf-8") as f:
                 bin = os.path.join(
                     android_ndk, "toolchains", "llvm", "prebuilt", android_build_platform, "bin"
@@ -807,7 +808,7 @@ def build_and_install_boost(
                 f.write(
                     f"using clang \
                     : android \
-                    : {escape(os.path.join(bin, 'clang++'))} \
+                    : {escape(cxx if len(cxx) != 0 else os.path.join(bin, 'clang++'))} \
                       --target=aarch64-none-linux-android{native_api_level} \
                       --sysroot={escape(sysroot)} \
                     : <archiver>{escape(os.path.join(bin, 'llvm-ar'))} \
