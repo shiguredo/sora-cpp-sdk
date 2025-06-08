@@ -27,6 +27,12 @@
   - 16KB ページサイズに対応するため
     - ref: https://developer.android.com/guide/practices/page-sizes
   - @melpon
+- [UPDATE] Gradle のバージョンを 8.14.2 にあげる
+  - @melpon
+- [UPDATE] Android Gradle Plugin のバージョンを 8.10.0 にあげる
+  - @melpon
+- [UPDATE] Android SDK Command-line tools のバージョンを 13114758 にあげる
+  - @melpon
 
 ### misc
 
