@@ -49,13 +49,13 @@ void HelloSora::Run() {
   fake_config.height = config_.capture_height;
   fake_config.fps = 30;
   video_source_ = CreateFakeVideoCapturer(fake_config);
-  std::string video_track_id = rtc::CreateRandomString(16);
+  std::string video_track_id = webrtc::CreateRandomString(16);
   video_track_ = pc_factory()->CreateVideoTrack(video_source_, video_track_id);
 
-  std::string audio_track_id = rtc::CreateRandomString(16);
+  std::string audio_track_id = webrtc::CreateRandomString(16);
   audio_track_ = pc_factory()->CreateAudioTrack(
       audio_track_id,
-      pc_factory()->CreateAudioSource(cricket::AudioOptions()).get());
+      pc_factory()->CreateAudioSource(webrtc::AudioOptions()).get());
 
   ioc_.reset(new boost::asio::io_context(1));
 
@@ -100,12 +100,12 @@ void HelloSora::Run() {
 }
 
 void HelloSora::OnSetOffer(std::string offer) {
-  std::string stream_id = rtc::CreateRandomString(16);
-  webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpSenderInterface>>
+  std::string stream_id = webrtc::CreateRandomString(16);
+  webrtc::RTCErrorOr<webrtc::scoped_refptr<webrtc::RtpSenderInterface>>
       audio_result =
           conn_->GetPeerConnection()->AddTrack(audio_track_, {stream_id});
   if (video_track_ != nullptr) {
-    webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpSenderInterface>>
+    webrtc::RTCErrorOr<webrtc::scoped_refptr<webrtc::RtpSenderInterface>>
         video_result =
             conn_->GetPeerConnection()->AddTrack(video_track_, {stream_id});
   }
@@ -137,9 +137,9 @@ int main(int argc, char* argv[]) {
   }
 #endif
 
-  rtc::LogMessage::LogToDebug(rtc::LS_WARNING);
-  rtc::LogMessage::LogTimestamps();
-  rtc::LogMessage::LogThreads();
+  webrtc::LogMessage::LogToDebug(webrtc::LS_WARNING);
+  webrtc::LogMessage::LogTimestamps();
+  webrtc::LogMessage::LogThreads();
 
   boost::json::value v;
   {
@@ -264,7 +264,7 @@ int main(int argc, char* argv[]) {
     }
   }
   if (get(v, "log_level", x)) {
-    rtc::LogMessage::LogToDebug((rtc::LoggingSeverity)x.to_number<int>());
+    webrtc::LogMessage::LogToDebug((webrtc::LoggingSeverity)x.to_number<int>());
   }
   if (get(v, "degradation_preference", x)) {
     if (x.as_string() == "disabled") {

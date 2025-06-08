@@ -12,13 +12,13 @@ namespace sora {
 class RTCStatsCallback : public webrtc::RTCStatsCollectorCallback {
  public:
   typedef std::function<void(
-      const rtc::scoped_refptr<const webrtc::RTCStatsReport>& report)>
+      const webrtc::scoped_refptr<const webrtc::RTCStatsReport>& report)>
       ResultCallback;
 
-  static rtc::scoped_refptr<RTCStatsCallback> Create(
+  static webrtc::scoped_refptr<RTCStatsCallback> Create(
       ResultCallback result_callback);
   void OnStatsDelivered(
-      const rtc::scoped_refptr<const webrtc::RTCStatsReport>& report) override;
+      const webrtc::scoped_refptr<const webrtc::RTCStatsReport>& report) override;
 
  protected:
   RTCStatsCallback(ResultCallback result_callback);

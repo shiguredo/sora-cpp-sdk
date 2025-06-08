@@ -32,13 +32,13 @@ struct CameraDeviceCapturerConfig {
   // Android の場合のみ必要かつ必須
   void* jni_env = nullptr;
   void* application_context = nullptr;
-  rtc::Thread* signaling_thread = nullptr;
+  webrtc::Thread* signaling_thread = nullptr;
 };
 
 // カメラデバイスを使ったキャプチャラを生成する。
 // カメラデバイスが存在するならどのプラットフォームでも動作する。
 // カメラデバイスが存在しなければ nullptr を返す。
-rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>
+webrtc::scoped_refptr<webrtc::VideoTrackSourceInterface>
 CreateCameraDeviceCapturer(const CameraDeviceCapturerConfig& config);
 
 }  // namespace sora

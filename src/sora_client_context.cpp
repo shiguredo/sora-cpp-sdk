@@ -38,21 +38,21 @@ SoraClientContext::~SoraClientContext() {
   worker_thread_->Stop();
   signaling_thread_->Stop();
 
-  //rtc::CleanupSSL();
+  //webrtc::CleanupSSL();
 }
 
 std::shared_ptr<SoraClientContext> SoraClientContext::Create(
     const SoraClientContextConfig& config) {
-  rtc::InitializeSSL();
+  webrtc::InitializeSSL();
 
   std::shared_ptr<SoraClientContext> c = std::make_shared<SoraClientContext>();
 
   c->config_ = config;
-  c->network_thread_ = rtc::Thread::CreateWithSocketServer();
+  c->network_thread_ = webrtc::Thread::CreateWithSocketServer();
   c->network_thread_->Start();
-  c->worker_thread_ = rtc::Thread::Create();
+  c->worker_thread_ = webrtc::Thread::Create();
   c->worker_thread_->Start();
-  c->signaling_thread_ = rtc::Thread::Create();
+  c->signaling_thread_ = webrtc::Thread::Create();
   c->signaling_thread_->Start();
 
   webrtc::PeerConnectionFactoryDependencies dependencies;
@@ -125,7 +125,7 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
 
   webrtc::PeerConnectionFactoryInterface::Options factory_options;
   factory_options.disable_encryption = false;
-  factory_options.ssl_max_version = rtc::SSL_PROTOCOL_DTLS_12;
+  factory_options.ssl_max_version = webrtc::SSL_PROTOCOL_DTLS_12;
   factory_options.crypto_options.srtp.enable_gcm_crypto_suites = true;
   c->factory_->SetOptions(factory_options);
 

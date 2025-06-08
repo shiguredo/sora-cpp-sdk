@@ -13,8 +13,16 @@
 
 - [CHANGE] OnDataChannel コールバックで、`#` で始まっていないラベルも Open 状態になったことを通知する
   - @melpon
+- [CHANGE] Android ビルドに利用するコンパイラを Android NDK に内包されている clang ではなく、libwebrtc の clang に変更する
+  - @melpon
 - [ADD] rpc ラベルにメッセージが来た時に OnRpc コールバックを呼び出す
   - @melpon
+- [UPDATE] libwebrtc を m137.7151.0.0 にあげる
+  - `rtc::revive::` を　`webrtc::revive::` に変更する
+  - m137 で `rtc_base/third_party/base64/base64.h` が削除されたため、websocket.cpp で `rtc_base/base64.h` をインクルードするように変更する
+  - `webrtc::Base64::Encode` から `webrtc::Base64Encode` に変更する
+  - Android ビルドに利用するコンパイラを Android NDK に内包されている clang ではなく、libwebrtc の clang に変更する
+  - @miosakuma @torikizi @melpon
 
 ### misc
 
@@ -22,6 +30,8 @@
   - @voluntas
 - [UPDATE] SDL を 2.32.6 に上げる
   - @voluntas
+- [UPDATE] test と examples の `rtc::` を `webrtc::` に変更する
+  - @torikizi
 
 ## 2025.3.1
 

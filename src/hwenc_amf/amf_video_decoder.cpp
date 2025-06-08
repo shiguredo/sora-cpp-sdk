@@ -188,7 +188,7 @@ AMF_RESULT AMFVideoDecoderImpl::ProcessSurface(amf::AMFSurfacePtr surface) {
   auto pu = surface->GetPlane(amf::AMF_PLANE_U);
   auto pv = surface->GetPlane(amf::AMF_PLANE_V);
 
-  rtc::scoped_refptr<webrtc::I420Buffer> i420_buffer =
+  webrtc::scoped_refptr<webrtc::I420Buffer> i420_buffer =
       buffer_pool_.CreateI420Buffer(py->GetWidth(), py->GetHeight());
   libyuv::I420Copy((const uint8_t*)py->GetNative(), py->GetHPitch(),
                    (const uint8_t*)pu->GetNative(), pu->GetHPitch(),

@@ -11,7 +11,7 @@
 
 namespace sora {
 
-rtc::scoped_refptr<webrtc::AudioDeviceModule> CreateAudioDeviceModule(
+webrtc::scoped_refptr<webrtc::AudioDeviceModule> CreateAudioDeviceModule(
     const AudioDeviceModuleConfig& config) {
   if (config.audio_layer == webrtc::AudioDeviceModule::kDummyAudio) {
     return webrtc::AudioDeviceModule::Create(

@@ -28,9 +28,9 @@
 
 - (void)capturer:(RTCVideoCapturer*)capturer
     didCaptureVideoFrame:(RTCVideoFrame*)frame {
-  const int64_t timestamp_us = frame.timeStampNs / rtc::kNumNanosecsPerMicrosec;
-  rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer =
-      rtc::make_ref_counted<webrtc::ObjCFrameBuffer>(frame.buffer);
+  const int64_t timestamp_us = frame.timeStampNs / webrtc::kNumNanosecsPerMicrosec;
+  webrtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer =
+      webrtc::make_ref_counted<webrtc::ObjCFrameBuffer>(frame.buffer);
   _capturer->OnFrame(webrtc::VideoFrame::Builder()
                          .set_video_frame_buffer(buffer)
                          .set_rotation((webrtc::VideoRotation)frame.rotation)
@@ -78,7 +78,7 @@ MacCapturer::MacCapturer(const MacCapturerConfig& config) : ScalableVideoTrackSo
   [capturer_ startCaptureWithDevice:config.device format:format fps:config.target_fps];
 }
 
-rtc::scoped_refptr<MacCapturer> MacCapturer::Create(const MacCapturerConfig& config) {
+webrtc::scoped_refptr<MacCapturer> MacCapturer::Create(const MacCapturerConfig& config) {
   MacCapturerConfig c = config;
   if (c.device == nullptr) {
     AVCaptureDevice* device = FindVideoDevice(c.device_name);
@@ -88,7 +88,7 @@ rtc::scoped_refptr<MacCapturer> MacCapturer::Create(const MacCapturerConfig& con
     }
     c.device = device;
   }
-  return rtc::make_ref_counted<MacCapturer>(c);
+  return webrtc::make_ref_counted<MacCapturer>(c);
 }
 
 static NSArray<AVCaptureDevice*>* captureDevices() {
@@ -179,7 +179,7 @@ AVCaptureDevice* MacCapturer::FindVideoDevice(
 }
 
 void MacCapturer::Stop() {
-  rtc::scoped_refptr<MacCapturer> self(this);
+  webrtc::scoped_refptr<MacCapturer> self(this);
   RTC_LOG(LS_INFO) << "MacCapturer::Stop()";
   [capturer_ stopCaptureWithCompletionHandler:^{
     // self を参照することで、stopCaptureWithCompletionHandler が完了するまで

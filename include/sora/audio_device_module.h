@@ -18,7 +18,7 @@ struct AudioDeviceModuleConfig {
 
 // オーディオデバイスを使った ADM を生成する。
 // マイクからの録音と、スピーカーからの再生ができるようになる。
-rtc::scoped_refptr<webrtc::AudioDeviceModule> CreateAudioDeviceModule(
+webrtc::scoped_refptr<webrtc::AudioDeviceModule> CreateAudioDeviceModule(
     const AudioDeviceModuleConfig& config);
 
 }  // namespace sora

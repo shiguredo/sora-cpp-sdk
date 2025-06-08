@@ -18,9 +18,9 @@ class DataChannelObserver {
  public:
   ~DataChannelObserver() {}
   virtual void OnStateChange(
-      rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) = 0;
+      webrtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) = 0;
   virtual void OnMessage(
-      rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel,
+      webrtc::scoped_refptr<webrtc::DataChannelInterface> data_channel,
       const webrtc::DataBuffer& buffer) = 0;
 };
 
@@ -29,7 +29,7 @@ class DataChannel : public std::enable_shared_from_this<DataChannel> {
   struct Thunk : webrtc::DataChannelObserver,
                  std::enable_shared_from_this<Thunk> {
     DataChannel* p;
-    rtc::scoped_refptr<webrtc::DataChannelInterface> dc;
+    webrtc::scoped_refptr<webrtc::DataChannelInterface> dc;
     void OnStateChange() override;
     void OnMessage(const webrtc::DataBuffer& buffer) override;
     void OnBufferedAmountChange(uint64_t previous_amount) override;
@@ -47,7 +47,7 @@ class DataChannel : public std::enable_shared_from_this<DataChannel> {
   void SetOnClose(std::function<void(boost::system::error_code)> on_close);
 
   void AddDataChannel(
-      rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel);
+      webrtc::scoped_refptr<webrtc::DataChannelInterface> data_channel);
 
  private:
   void OnStateChange(std::shared_ptr<Thunk> thunk);
@@ -59,9 +59,9 @@ class DataChannel : public std::enable_shared_from_this<DataChannel> {
  private:
   boost::asio::io_context* ioc_;
   std::map<std::shared_ptr<Thunk>,
-           rtc::scoped_refptr<webrtc::DataChannelInterface>>
+           webrtc::scoped_refptr<webrtc::DataChannelInterface>>
       thunks_;
-  std::map<std::string, rtc::scoped_refptr<webrtc::DataChannelInterface>>
+  std::map<std::string, webrtc::scoped_refptr<webrtc::DataChannelInterface>>
       labels_;
   std::weak_ptr<DataChannelObserver> observer_;
   std::function<void(boost::system::error_code)> on_close_;

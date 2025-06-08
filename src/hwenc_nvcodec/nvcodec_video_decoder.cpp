@@ -98,7 +98,7 @@ int32_t NvCodecVideoDecoder::Decode(const webrtc::EncodedImage& input_image,
   for (int i = 0; i < frame_count; i++) {
     auto* frame = decoder_->GetLockedFrame();
     // NV12 から I420 に変換
-    rtc::scoped_refptr<webrtc::I420Buffer> i420_buffer =
+    webrtc::scoped_refptr<webrtc::I420Buffer> i420_buffer =
         buffer_pool_.CreateI420Buffer(decoder_->GetWidth(),
                                       decoder_->GetHeight());
     libyuv::NV12ToI420(
