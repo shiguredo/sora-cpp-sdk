@@ -23,6 +23,10 @@
   - `webrtc::Base64::Encode` から `webrtc::Base64Encode` に変更する
   - Android ビルドに利用するコンパイラを Android NDK に内包されている clang ではなく、libwebrtc の clang に変更する
   - @miosakuma @torikizi @melpon
+- [UPDATE] Android NDK を r28b にあげる
+  - 16KB ページサイズに対応するため
+    - ref: https://developer.android.com/guide/practices/page-sizes
+  - @melpon
 
 ### misc
 
