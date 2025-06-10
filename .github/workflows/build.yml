@@ -342,11 +342,23 @@ jobs:
           cat package_paths.env >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
         id: env
+      - name: Release (Prerelease)
+        if: contains(github.ref, 'canary')
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --prerelease \
+            --title "${{ github.ref_name }}" \
+            ${{ steps.env.outputs.package_paths }}
+        env:
+          GH_TOKEN: ${{ github.token }}
       - name: Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: ${{ steps.env.outputs.package_paths }}
-          prerelease: ${{ contains(github.ref, 'canary') }}
+        if: ${{ !contains(github.ref, 'canary') }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "${{ github.ref_name }}" \
+            ${{ steps.env.outputs.package_paths }}
+        env:
+          GH_TOKEN: ${{ github.token }}
 
   build-windows-examples:
     needs: create-release
@@ -485,9 +497,12 @@ jobs:
           with:
             name: ${{ matrix.example }}_${{ matrix.archive }}
         - name: Release Examples
-          uses: softprops/action-gh-release@v2
-          with:
-            files: ${{ matrix.example }}_${{ matrix.archive }}
+          run: |
+            gh release upload "${{ github.ref_name }}" \
+              "${{ matrix.example }}_${{ matrix.archive }}" \
+              --clobber
+          env:
+            GH_TOKEN: ${{ github.token }}
 
   notification:
     name: Slack Notification
