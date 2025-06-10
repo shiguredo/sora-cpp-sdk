@@ -338,9 +338,9 @@ jobs:
           platform: android
       - name: Env to output
         run: |
-          echo "package_paths<<EOF" >> $GITHUB_OUTPUT
-          cat package_paths.env >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          # package_paths.env の内容を空白区切りに変換
+          PACKAGE_PATHS=$(tr '\n' ' ' < package_paths.env)
+          echo "package_paths=${PACKAGE_PATHS}" >> $GITHUB_OUTPUT
         id: env
       - name: Release (Prerelease)
         if: contains(github.ref, 'canary')

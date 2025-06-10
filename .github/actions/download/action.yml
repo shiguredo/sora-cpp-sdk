@@ -21,8 +21,8 @@ runs:
         source ${{ inputs.platform }}.env/sora.env
         echo "package_name=$PACKAGE_NAME" >> $GITHUB_OUTPUT
         echo "boost_package_name=$BOOST_PACKAGE_NAME" >> $GITHUB_OUTPUT
-        echo "$PACKAGE_NAME/$PACKAGE_NAME" >> package_paths.env
-        echo "$BOOST_PACKAGE_NAME/$BOOST_PACKAGE_NAME" >> package_paths.env
+        echo "$PACKAGE_NAME" >> package_paths.env
+        echo "$BOOST_PACKAGE_NAME" >> package_paths.env
       id: env
     - uses: actions/download-artifact@v4
       with:
