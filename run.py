@@ -160,6 +160,7 @@ def install_deps(
     debug: bool,
     local_webrtc_build_dir: Optional[str],
     local_webrtc_build_args: List[str],
+    disable_cuda: bool,
 ):
     with cd(BASE_DIR):
         version = read_version_file("VERSION")
@@ -399,7 +400,7 @@ def install_deps(
             add_path(os.path.join(install_dir, "cmake", "bin"))
 
         # CUDA
-        if platform.target.os == "windows":
+        if not disable_cuda and platform.target.os == "windows":
             install_cuda_args = {
                 "version": version["CUDA_VERSION"],
                 "version_file": os.path.join(install_dir, "cuda.version"),
@@ -578,6 +579,7 @@ def main():
     parser.add_argument("target", choices=AVAILABLE_TARGETS)
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--relwithdebinfo", action="store_true")
+    parser.add_argument("--disable-cuda", action="store_true")
     add_webrtc_build_arguments(parser)
     parser.add_argument("--test", action="store_true")
     parser.add_argument("--run-e2e-test", action="store_true")
@@ -624,6 +626,7 @@ def main():
         args.debug,
         local_webrtc_build_dir=args.local_webrtc_build_dir,
         local_webrtc_build_args=args.local_webrtc_build_args,
+        disable_cuda=args.disable_cuda,
     )
 
     configuration = "Release"
@@ -758,12 +761,13 @@ def main():
             cmake_args.append(f"-DCMAKE_EXE_LINKER_FLAGS={' '.join(ldflags)}")
 
         # NvCodec
-        if platform.target.os in ("windows", "ubuntu") and platform.target.arch == "x86_64":
-            cmake_args.append("-DUSE_NVCODEC_ENCODER=ON")
-            if platform.target.os == "windows":
-                cmake_args.append(
-                    f"-DCUDA_TOOLKIT_ROOT_DIR={cmake_path(os.path.join(install_dir, 'cuda'))}"
-                )
+        if not args.disable_cuda:
+            if platform.target.os in ("windows", "ubuntu") and platform.target.arch == "x86_64":
+                cmake_args.append("-DUSE_NVCODEC_ENCODER=ON")
+                if platform.target.os == "windows":
+                    cmake_args.append(
+                        f"-DCUDA_TOOLKIT_ROOT_DIR={cmake_path(os.path.join(install_dir, 'cuda'))}"
+                    )
 
         # VPL
         if platform.target.os in ("windows", "ubuntu") and platform.target.arch == "x86_64":
