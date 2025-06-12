@@ -584,6 +584,7 @@ install(EXPORT sora-config
 install(
   FILES
     cmake/FindWebRTC.cmake
+    cmake/android.toolchain.cmake
   DESTINATION ${CMAKE_INSTALL_DATADIR}/cmake
 )
 install(FILES LICENSE NOTICE.md
