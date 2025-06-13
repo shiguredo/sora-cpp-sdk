@@ -47,7 +47,3 @@ Sora C++ SDK は 4K@30fps での映像の配信に対応していますが、
 その場合、 `SoraVideoEncoderFactoryConfig` という構造体の `force_i420_conversion` フラグを `false` にすることで、4K@30fps で映像を配信できる場合があります。
 
 かなり内部的な話なので詳細については [コードのコメント](https://github.com/shiguredo/sora-cpp-sdk/blob/c29d3d6ec721ddc3d625275296506750a63460d4/include/sora/sora_video_encoder_factory.h#L59-L73) をご確認ください。
-
-## Intel VPL を使ってみたい
-
-Intel VPL の使い方については[Intel VPL](vpl.md) をご確認ください。

@@ -411,7 +411,7 @@ def apply_patch_text(patch_text, dir, depth):
                     "--ignore-space-change",
                     "--ignore-whitespace",
                     "--whitespace=nowarn",
-                    "--reject,",
+                    "--reject",
                     f"--directory={directory}",
                     "-",
                 ],
@@ -694,7 +694,10 @@ def build_and_install_boost(
 ):
     version_underscore = version.replace(".", "_")
     archive = download(
-        f"https://archives.boost.io/release/{version}/source/boost_{version_underscore}.tar.gz",
+        # 公式サイトに負荷をかけないための時雨堂によるミラー
+        f"https://oss-mirrors.shiguredo.jp/boost_{version_underscore}.tar.gz",
+        # Boost 公式のミラー
+        # f"https://archives.boost.io/release/{version}/source/boost_{version_underscore}.tar.gz",
         source_dir,
     )
     extract(archive, output_dir=build_dir, output_dirname="boost")
@@ -1110,7 +1113,10 @@ def install_cmake(version, source_dir, install_dir, platform: str, ext):
 def install_sdl2(
     version, source_dir, build_dir, install_dir, debug: bool, platform: str, cmake_args: List[str]
 ):
-    url = f"http://www.libsdl.org/release/SDL2-{version}.zip"
+    url = (
+        f"https://github.com/libsdl-org/SDL/releases/download/release-{version}/SDL2-{version}.zip"
+    )
+    # url = f"http://www.libsdl.org/release/SDL2-{version}.zip"
     path = download(url, source_dir)
     sdl2_source_dir = os.path.join(source_dir, "sdl2")
     sdl2_build_dir = os.path.join(build_dir, "sdl2")
@@ -1768,6 +1774,15 @@ def install_ninja(version, source_dir, install_dir, platform):
     ninja_install_dir = os.path.join(install_dir, "ninja")
     rm_rf(ninja_install_dir)
     extract(path, install_dir, "ninja")
+
+
+@versioned
+def install_vswhere(version, install_dir):
+    url = f"https://github.com/microsoft/vswhere/releases/download/{version}/vswhere.exe"
+    vswhere_install_dir = os.path.join(install_dir, "vswhere")
+    rm_rf(vswhere_install_dir)
+    mkdir_p(vswhere_install_dir)
+    download(url, vswhere_install_dir)
 
 
 @versioned

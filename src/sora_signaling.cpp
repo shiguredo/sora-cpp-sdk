@@ -1197,11 +1197,8 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
     auto it = m.as_object().find("ignore_disconnect_websocket");
     if (it != m.as_object().end() && it->value().as_bool() && ws_connected_) {
       RTC_LOG(LS_INFO) << "Close WebSocket for DataChannel";
-      ws_->Close(
-          [self = shared_from_this()](boost::system::error_code ec) {
-            self->SendSelfOnWsClose(ec);
-          },
-          config_.websocket_close_timeout);
+      ws_->CloseSocket(ec);
+      SendSelfOnWsClose(ec);
       ws_connected_ = false;
 
       return;
@@ -1627,7 +1624,7 @@ void SoraSignaling::OnStateChange(
   auto ob = config_.observer.lock();
   if (ob != nullptr) {
     for (auto& kv : dc_labels_) {
-      if (kv.first[0] == '#' && !kv.second.notified && dc_->IsOpen(kv.first)) {
+      if (!kv.second.notified && dc_->IsOpen(kv.first)) {
         ob->OnDataChannel(kv.first);
         kv.second.notified = true;
       }
@@ -1655,7 +1652,8 @@ void SoraSignaling::OnMessage(
 
   // ハンドリングする必要のあるラベル以外は何もしない
   if (label != "signaling" && label != "stats" && label != "push" &&
-      label != "notify" && (label.empty() || label[0] != '#')) {
+      label != "notify" && label != "rpc" &&
+      (label.empty() || label[0] != '#')) {
     return;
   }
 
@@ -1664,6 +1662,14 @@ void SoraSignaling::OnMessage(
     auto ob = config_.observer.lock();
     if (ob != nullptr) {
       ob->OnMessage(std::move(label), std::move(data));
+    }
+    return;
+  }
+  // rpc ラベルはユーザー定義のラベルと同じような処理をする
+  if (label == "rpc") {
+    auto ob = config_.observer.lock();
+    if (ob != nullptr) {
+      ob->OnRpc(std::move(data));
     }
     return;
   }

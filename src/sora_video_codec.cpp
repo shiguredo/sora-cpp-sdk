@@ -43,6 +43,10 @@ VideoCodecType tag_invoke(const boost::json::value_to_tag<VideoCodecType>&,
 
 namespace sora {
 
+bool IsCustomImplementation(VideoCodecImplementation implementation) {
+  return (int)implementation >= (int)VideoCodecImplementation::kCustom_1;
+}
+
 // VideoCodecImplementation
 void tag_invoke(const boost::json::value_from_tag&,
                 boost::json::value& jv,
@@ -63,6 +67,33 @@ void tag_invoke(const boost::json::value_from_tag&,
     case VideoCodecImplementation::kAmdAmf:
       jv = "amd_amf";
       break;
+    case VideoCodecImplementation::kCustom_1:
+      jv = "custom_1";
+      break;
+    case VideoCodecImplementation::kCustom_2:
+      jv = "custom_2";
+      break;
+    case VideoCodecImplementation::kCustom_3:
+      jv = "custom_3";
+      break;
+    case VideoCodecImplementation::kCustom_4:
+      jv = "custom_4";
+      break;
+    case VideoCodecImplementation::kCustom_5:
+      jv = "custom_5";
+      break;
+    case VideoCodecImplementation::kCustom_6:
+      jv = "custom_6";
+      break;
+    case VideoCodecImplementation::kCustom_7:
+      jv = "custom_7";
+      break;
+    case VideoCodecImplementation::kCustom_8:
+      jv = "custom_8";
+      break;
+    case VideoCodecImplementation::kCustom_9:
+      jv = "custom_9";
+      break;
   }
 }
 VideoCodecImplementation tag_invoke(
@@ -79,6 +110,24 @@ VideoCodecImplementation tag_invoke(
     return VideoCodecImplementation::kNvidiaVideoCodecSdk;
   } else if (s == "amd_amf") {
     return VideoCodecImplementation::kAmdAmf;
+  } else if (s == "custom_1") {
+    return VideoCodecImplementation::kCustom_1;
+  } else if (s == "custom_2") {
+    return VideoCodecImplementation::kCustom_2;
+  } else if (s == "custom_3") {
+    return VideoCodecImplementation::kCustom_3;
+  } else if (s == "custom_4") {
+    return VideoCodecImplementation::kCustom_4;
+  } else if (s == "custom_5") {
+    return VideoCodecImplementation::kCustom_5;
+  } else if (s == "custom_6") {
+    return VideoCodecImplementation::kCustom_6;
+  } else if (s == "custom_7") {
+    return VideoCodecImplementation::kCustom_7;
+  } else if (s == "custom_8") {
+    return VideoCodecImplementation::kCustom_8;
+  } else if (s == "custom_9") {
+    return VideoCodecImplementation::kCustom_9;
   }
   throw std::invalid_argument("Invalid VideoCodecImplementation");
 }
@@ -109,6 +158,12 @@ void tag_invoke(const boost::json::value_from_tag&,
   if (v.amf_embedded_version) {
     jo["amf_embedded_version"] = *v.amf_embedded_version;
   }
+  if (v.custom_engine_name) {
+    jo["custom_engine_name"] = *v.custom_engine_name;
+  }
+  if (v.custom_engine_description) {
+    jo["custom_engine_description"] = *v.custom_engine_description;
+  }
 }
 
 VideoCodecCapability::Parameters tag_invoke(
@@ -137,6 +192,13 @@ VideoCodecCapability::Parameters tag_invoke(
   }
   if (jo.contains("amf_embedded_version")) {
     r.amf_embedded_version = jo.at("amf_embedded_version").as_string().c_str();
+  }
+  if (jo.contains("custom_engine_name")) {
+    r.custom_engine_name = jo.at("custom_engine_name").as_string().c_str();
+  }
+  if (jo.contains("custom_engine_description")) {
+    r.custom_engine_description =
+        jo.at("custom_engine_description").as_string().c_str();
   }
   return r;
 }
@@ -285,6 +347,20 @@ VideoCodecCapability GetVideoCodecCapability(
 #if defined(USE_AMF_ENCODER)
   cap.engines.push_back(GetAMFVideoCodecCapability(config.amf_context));
 #endif
+
+  if (config.get_custom_engines) {
+    auto engines = config.get_custom_engines();
+    for (const auto& engine : engines) {
+      if (!IsCustomImplementation(engine.name)) {
+        RTC_LOG(LS_WARNING)
+            << "Invalid implementation name: "
+            << boost::json::value_from(engine.name).as_string().c_str()
+            << ". Only kCustom_X can be specified here.";
+        continue;
+      }
+      cap.engines.insert(cap.engines.end(), engines.begin(), engines.end());
+    }
+  }
 
   // 全て false のエンジンを削除
   cap.engines.erase(
