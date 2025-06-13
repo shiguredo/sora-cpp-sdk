@@ -66,8 +66,7 @@ void SoraSignalingWhip::Connect() {
     {
       webrtc::RtpTransceiverInit init;
       init.direction = webrtc::RtpTransceiverDirection::kSendOnly;
-      auto transceiver =
-          pc->AddTransceiver(cricket::MediaType::MEDIA_TYPE_AUDIO, init);
+      auto transceiver = pc->AddTransceiver(webrtc::MediaType::AUDIO, init);
       if (!transceiver.ok()) {
         RTC_LOG(LS_ERROR) << "Failed to AddTransceiver(audio): error="
                           << transceiver.error().message();
@@ -75,7 +74,7 @@ void SoraSignalingWhip::Connect() {
       }
 
       auto cap = self->config_.pc_factory->GetRtpSenderCapabilities(
-          cricket::MediaType::MEDIA_TYPE_AUDIO);
+          webrtc::MediaType::AUDIO);
       std::vector<webrtc::RtpCodecCapability> codecs;
       for (const webrtc::RtpCodecCapability& codec : cap.codecs) {
         if (codec.name == "OPUS") {
@@ -104,7 +103,7 @@ void SoraSignalingWhip::Connect() {
       }
 
       auto cap = self->config_.pc_factory->GetRtpSenderCapabilities(
-          cricket::MediaType::MEDIA_TYPE_VIDEO);
+          webrtc::MediaType::VIDEO);
       for (const webrtc::RtpCodecCapability& codec : cap.codecs) {
         RTC_LOG(LS_WARNING) << "codec: " << codec.name;
         for (const auto& param : codec.parameters) {
@@ -179,37 +178,37 @@ void SoraSignalingWhip::Connect() {
               auto offer = std::unique_ptr<webrtc::SessionDescriptionInterface>(
                   description);
 
-              // 各 RtpEncodingParameters の利用するコーデックと payload_type を関連付ける
-              std::map<std::string, int> rid_payload_type_map;
+              // 各 RtpEncodingParameters の利用するコーデックを設定する
               auto& content = offer->description()->contents()[1];
               auto media_desc = content.media_description();
-              for (auto& send_encoding : video_init.send_encodings) {
-                RTC_LOG(LS_WARNING)
-                    << "send_encoding: " << send_encoding.codec->name;
-                for (auto& codec : media_desc->codecs()) {
-                  RTC_LOG(LS_WARNING) << "codec: " << codec.name;
-                  if (send_encoding.codec &&
-                      webrtc::IsSameRtpCodecIgnoringLevel(
-                          codec, *send_encoding.codec)) {
-                    RTC_LOG(LS_WARNING) << "rid=" << send_encoding.rid
-                                        << " codec=" << codec.name
-                                        << " payload_type=" << codec.id;
-                    rid_payload_type_map[send_encoding.rid] = codec.id;
-                  }
-                }
-              }
               auto& track = media_desc->mutable_streams()[0];
               auto rids = track.rids();
               for (auto& rid : rids) {
-                //if (rid.rid == "r0" || rid.rid == "r1") {
-                //  continue;
-                //}
-                auto it = rid_payload_type_map.find(rid.rid);
-                if (it == rid_payload_type_map.end()) {
+                auto send_encoding = std::find_if(
+                    video_init.send_encodings.begin(),
+                    video_init.send_encodings.end(),
+                    [&rid](const webrtc::RtpEncodingParameters& encoding) {
+                      return encoding.rid == rid.rid;
+                    });
+                if (send_encoding == video_init.send_encodings.end() ||
+                    !send_encoding->codec) {
                   continue;
                 }
-                rid.payload_types.clear();
-                rid.payload_types.push_back(it->second);
+                auto codec = std::find_if(
+                    media_desc->codecs().begin(), media_desc->codecs().end(),
+                    [&send_encoding](const cricket::Codec& codec) {
+                      return webrtc::IsSameRtpCodecIgnoringLevel(
+                          codec, *send_encoding->codec);
+                    });
+                if (codec == media_desc->codecs().end()) {
+                  continue;
+                }
+
+                RTC_LOG(LS_WARNING)
+                    << "rid=" << send_encoding->rid << " codec=" << codec->name
+                    << " payload_type=" << codec->id;
+                rid.codecs.clear();
+                rid.codecs.push_back(*codec);
               }
               track.set_rids(rids);
 
