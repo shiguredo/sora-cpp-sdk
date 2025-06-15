@@ -40,8 +40,8 @@
 
 ### misc
 
-- [UPDATE] CMake を 4.0.2 にあげる
-  - @voluntas
+- [UPDATE] CMake を 4.0.3 にあげる
+  - @voluntas @torikizi
 - [UPDATE] SDL を 2.32.6 に上げる
   - @voluntas
 - [UPDATE] test と examples の `rtc::` を `webrtc::` に変更する
