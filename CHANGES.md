@@ -15,6 +15,8 @@
   - @melpon
 - [CHANGE] Android ビルドに利用するコンパイラを Android NDK に内包されている clang ではなく、libwebrtc の clang に変更する
   - @melpon
+- [ADD] ubuntu-22.04_armv8 を追加
+  - @melpon
 - [ADD] rpc ラベルにメッセージが来た時に OnRpc コールバックを呼び出す
   - @melpon
 - [ADD] run.py の引数に `--disable-cuda` を追加
