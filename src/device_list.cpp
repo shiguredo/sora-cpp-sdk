@@ -1,6 +1,8 @@
 #include "sora/device_list.h"
 
 // webrtc
+#include <api/audio/create_audio_device_module.h>
+#include <api/environment/environment_factory.h>
 #include <api/task_queue/default_task_queue_factory.h>
 #include <modules/audio_device/include/audio_device.h>
 #include <modules/audio_device/include/audio_device_factory.h>
@@ -31,9 +33,9 @@ bool DeviceList::EnumVideoCapturer(
 
 #elif defined(SORA_CPP_SDK_ANDROID)
 
-  auto env = (JNIEnv*)sora::GetJNIEnv();
+  auto jni_env = (JNIEnv*)sora::GetJNIEnv();
   return sora::AndroidCapturer::EnumVideoDevice(
-      env, (jobject)android_application_context, f);
+      jni_env, (jobject)android_application_context, f);
 
 #else
 
@@ -65,7 +67,7 @@ bool DeviceList::EnumVideoCapturer(
 
 bool DeviceList::EnumAudioRecording(
     std::function<void(std::string, std::string)> f) {
-  auto task_queue_factory = webrtc::CreateDefaultTaskQueueFactory();
+  auto env = webrtc::CreateEnvironment();
 #if defined(SORA_CPP_SDK_ANDROID) || defined(SORA_CPP_SDK_IOS)
   // Android や iOS の場合常に１個しかなく、かつ adm->RecordingDeviceName() を呼ぶと fatal error が起きるので
   // 適当な名前で１回だけコールバックする
@@ -74,12 +76,11 @@ bool DeviceList::EnumAudioRecording(
 #else
 
 #if defined(SORA_CPP_SDK_WINDOWS)
-  auto adm =
-      webrtc::CreateWindowsCoreAudioAudioDeviceModule(task_queue_factory.get());
+  auto adm = webrtc::CreateWindowsCoreAudioAudioDeviceModule(
+      &env.task_queue_factory());
 #else
-  auto adm = webrtc::AudioDeviceModule::Create(
-      webrtc::AudioDeviceModule::kPlatformDefaultAudio,
-      task_queue_factory.get());
+  auto adm = webrtc::CreateAudioDeviceModule(
+      env, webrtc::AudioDeviceModule::kPlatformDefaultAudio);
 #endif
   if (adm->Init() != 0) {
     RTC_LOG(LS_WARNING) << "Failed to ADM Init";
@@ -118,7 +119,7 @@ bool DeviceList::EnumAudioRecording(
 
 bool DeviceList::EnumAudioPlayout(
     std::function<void(std::string, std::string)> f) {
-  auto task_queue_factory = webrtc::CreateDefaultTaskQueueFactory();
+  auto env = webrtc::CreateEnvironment();
 #if defined(SORA_CPP_SDK_ANDROID) || defined(SORA_CPP_SDK_IOS)
   // Android や iOS の場合常に１個しかなく、かつ adm->PlayoutDeviceName() を呼ぶと fatal error が起きるので
   // 適当な名前で１回だけコールバックする
@@ -127,12 +128,11 @@ bool DeviceList::EnumAudioPlayout(
 #else
 
 #if defined(SORA_CPP_SDK_WINDOWS)
-  auto adm =
-      webrtc::CreateWindowsCoreAudioAudioDeviceModule(task_queue_factory.get());
+  auto adm = webrtc::CreateWindowsCoreAudioAudioDeviceModule(
+      &env.task_queue_factory());
 #else
-  auto adm = webrtc::AudioDeviceModule::Create(
-      webrtc::AudioDeviceModule::kPlatformDefaultAudio,
-      task_queue_factory.get());
+  auto adm = webrtc::CreateAudioDeviceModule(
+      env, webrtc::AudioDeviceModule::kPlatformDefaultAudio);
 #endif
   if (adm->Init() != 0) {
     RTC_LOG(LS_WARNING) << "Failed to ADM Init";

@@ -56,22 +56,20 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
   c->signaling_thread_->Start();
 
   webrtc::PeerConnectionFactoryDependencies dependencies;
+  auto env = webrtc::CreateEnvironment();
   dependencies.network_thread = c->network_thread_.get();
   dependencies.worker_thread = c->worker_thread_.get();
   dependencies.signaling_thread = c->signaling_thread_.get();
-  dependencies.task_queue_factory = webrtc::CreateDefaultTaskQueueFactory();
   dependencies.event_log_factory =
       absl::make_unique<webrtc::RtcEventLogFactory>(
           dependencies.task_queue_factory.get());
-
-  void* env = sora::GetJNIEnv();
 
   auto adm = c->worker_thread_->BlockingCall([&] {
     sora::AudioDeviceModuleConfig config;
     if (!c->config_.use_audio_device) {
       config.audio_layer = webrtc::AudioDeviceModule::kDummyAudio;
     }
-    config.task_queue_factory = dependencies.task_queue_factory.get();
+    config.env = env;
     config.jni_env = sora::GetJNIEnv();
     if (c->config_.get_android_application_context) {
       config.application_context =
