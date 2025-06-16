@@ -29,6 +29,7 @@
   - `webrtc::Base64::Encode` から `webrtc::Base64Encode` に変更する
   - Android ビルドに利用するコンパイラを Android NDK に内包されている clang ではなく、libwebrtc の clang に変更する
   - `sora::AudioDeviceModuleConfig` から `task_queue_factory` を削除して `env` を追加する
+  - `webrtc::CreateOpenSLESAudioDeviceModule` を `webrtc::CreateJavaAudioDeviceModule` に変更する
   - @miosakuma @torikizi @melpon
 - [UPDATE] Android NDK を r28b にあげる
   - 16KB ページサイズに対応するため
