@@ -301,13 +301,13 @@ jobs:
             python3 $app/${{ matrix.platform.name }}/run.py --local-sora-cpp-sdk-dir ..
             cp _build/${{ matrix.platform.name }}/release/$app/$app examples_${{ matrix.platform.name }}
           done
-        if: matrix.platform.os == 'ubuntu'
+        if: matrix.platform.os == 'ubuntu' && matrix.platform.name != 'ubuntu-22.04_armv8'
       - name: Upload Examples Artifact
         uses: actions/upload-artifact@v4
         with:
           name: examples_${{ matrix.platform.name }}
           path: examples/examples_${{ matrix.platform.name }}
-        if: matrix.platform.os == 'ubuntu'
+        if: matrix.platform.os == 'ubuntu' && matrix.platform.name != 'ubuntu-22.04_armv8'
 
   create-release:
     name: Create Release
