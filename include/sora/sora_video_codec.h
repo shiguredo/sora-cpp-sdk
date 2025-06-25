@@ -35,7 +35,20 @@ enum class VideoCodecImplementation {
   kIntelVpl,
   kNvidiaVideoCodecSdk,
   kAmdAmf,
+  // 連番になってて微妙だが、ユーザー側でカスタムエンコーダ/デコーダを実現しつつ、現在の
+  // capability, preference の機能に乗せるならこのようにするのが一番分かりやすい
+  kCustom_1 = 100,
+  kCustom_2,
+  kCustom_3,
+  kCustom_4,
+  kCustom_5,
+  kCustom_6,
+  kCustom_7,
+  kCustom_8,
+  kCustom_9,
 };
+
+bool IsCustomImplementation(VideoCodecImplementation implementation);
 
 struct VideoCodecCapability {
   struct Parameters {
@@ -46,6 +59,8 @@ struct VideoCodecCapability {
     std::optional<std::string> nvcodec_gpu_device_name;
     std::optional<std::string> amf_runtime_version;
     std::optional<std::string> amf_embedded_version;
+    std::optional<std::string> custom_engine_name;
+    std::optional<std::string> custom_engine_description;
   };
   struct Codec {
     Codec(webrtc::VideoCodecType type, bool encoder, bool decoder)
@@ -106,6 +121,7 @@ struct VideoCodecCapabilityConfig {
   std::shared_ptr<AMFContext> amf_context;
   std::optional<std::string> openh264_path;
   void* jni_env = nullptr;
+  std::function<std::vector<VideoCodecCapability::Engine>()> get_custom_engines;
 };
 
 // 利用可能なエンコーダ/デコーダ実装の一覧を取得する

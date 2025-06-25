@@ -52,7 +52,7 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
     fake_config.height = 480;
     fake_config.fps = 30;
     video_source_ = CreateFakeVideoCapturer(fake_config);
-    std::string video_track_id = rtc::CreateRandomString(16);
+    std::string video_track_id = webrtc::CreateRandomString(16);
     video_track_ = pc_factory->CreateVideoTrack(video_source_, video_track_id);
 
     sora::SoraSignalingConfig config;
@@ -135,10 +135,10 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
   void OnMessage(std::string label, std::string data) override {}
   void OnSwitched(std::string text) override {}
 
-  void OnTrack(rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
+  void OnTrack(webrtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
       override {}
   void OnRemoveTrack(
-      rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override {}
+      webrtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override {}
 
   void OnDataChannel(std::string label) override {}
 
@@ -147,8 +147,8 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
   std::shared_ptr<sora::SoraSignaling> conn_;
   std::unique_ptr<boost::asio::io_context> ioc_;
   std::unique_ptr<boost::asio::deadline_timer> timer_;
-  rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source_;
-  rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track_;
+  webrtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source_;
+  webrtc::scoped_refptr<webrtc::VideoTrackInterface> video_track_;
   std::atomic<bool> ok_{false};
   std::string connection_id_;
 };
@@ -160,9 +160,9 @@ TEST_CASE("Sora に接続して切断するだけ") {
   REQUIRE(com_initializer.Succeeded());
 #endif
 
-  rtc::LogMessage::LogToDebug(rtc::LS_ERROR);
-  rtc::LogMessage::LogTimestamps();
-  rtc::LogMessage::LogThreads();
+  webrtc::LogMessage::LogToDebug(webrtc::LS_ERROR);
+  webrtc::LogMessage::LogTimestamps();
+  webrtc::LogMessage::LogThreads();
 
   auto client = std::make_shared<SoraClient>();
   client->Run();

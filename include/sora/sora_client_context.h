@@ -56,14 +56,14 @@ class SoraClientContext {
 
   ~SoraClientContext();
 
-  rtc::Thread* network_thread() const { return network_thread_.get(); }
-  rtc::Thread* worker_thread() const { return worker_thread_.get(); }
-  rtc::Thread* signaling_thread() const { return signaling_thread_.get(); }
-  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
+  webrtc::Thread* network_thread() const { return network_thread_.get(); }
+  webrtc::Thread* worker_thread() const { return worker_thread_.get(); }
+  webrtc::Thread* signaling_thread() const { return signaling_thread_.get(); }
+  webrtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
   peer_connection_factory() const {
     return factory_;
   }
-  rtc::scoped_refptr<webrtc::ConnectionContext> connection_context() const {
+  webrtc::scoped_refptr<webrtc::ConnectionContext> connection_context() const {
     return connection_context_;
   }
   const SoraClientContextConfig& config() const { return config_; }
@@ -75,11 +75,11 @@ class SoraClientContext {
 
  private:
   SoraClientContextConfig config_;
-  std::unique_ptr<rtc::Thread> network_thread_;
-  std::unique_ptr<rtc::Thread> worker_thread_;
-  std::unique_ptr<rtc::Thread> signaling_thread_;
-  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> factory_;
-  rtc::scoped_refptr<webrtc::ConnectionContext> connection_context_;
+  std::unique_ptr<webrtc::Thread> network_thread_;
+  std::unique_ptr<webrtc::Thread> worker_thread_;
+  std::unique_ptr<webrtc::Thread> signaling_thread_;
+  webrtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> factory_;
+  webrtc::scoped_refptr<webrtc::ConnectionContext> connection_context_;
 };
 
 }  // namespace sora

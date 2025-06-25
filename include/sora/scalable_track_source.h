@@ -25,7 +25,7 @@ struct ScalableVideoTrackSourceConfig {
   std::function<void(const webrtc::VideoFrame&)> on_frame;
 };
 
-class ScalableVideoTrackSource : public rtc::AdaptedVideoTrackSource {
+class ScalableVideoTrackSource : public webrtc::AdaptedVideoTrackSource {
  public:
   ScalableVideoTrackSource(ScalableVideoTrackSourceConfig config);
   virtual ~ScalableVideoTrackSource();
@@ -38,7 +38,7 @@ class ScalableVideoTrackSource : public rtc::AdaptedVideoTrackSource {
 
  private:
   ScalableVideoTrackSourceConfig config_;
-  rtc::TimestampAligner timestamp_aligner_;
+  webrtc::TimestampAligner timestamp_aligner_;
 };
 
 }  // namespace sora

@@ -20,6 +20,8 @@ from buildbase import (
     cmd,
     cmdcap,
     enum_all_files,
+    fix_clang_version,
+    get_clang_version,
     get_macos_osver,
     get_webrtc_info,
     get_webrtc_platform,
@@ -51,6 +53,7 @@ def get_common_cmake_args(
     platform: Platform,
     version: Dict[str, str],
     webrtc_info: WebrtcInfo,
+    base_dir: str,
     install_dir: str,
     debug: bool,
 ):
@@ -108,11 +111,23 @@ def get_common_cmake_args(
         args.append("-DCMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH=NO")
         args.append("-DBLEND2D_NO_JIT=ON")
     if platform.target.os == "android":
-        toolchain_file = os.path.join(
-            install_dir, "android-ndk", "build", "cmake", "android.toolchain.cmake"
+        android_ndk = os.path.join(install_dir, "android-ndk")
+        toolchain_file = os.path.join(base_dir, "cmake", "android.toolchain.cmake")
+        override_toolchain_file = os.path.join(
+            os.path.join(android_ndk, "build", "cmake", "android.toolchain.cmake")
         )
+        override_c_compiler = os.path.join(webrtc_info.clang_dir, "bin", "clang")
+        override_cxx_compiler = os.path.join(webrtc_info.clang_dir, "bin", "clang++")
+        android_clang_dir = os.path.join(
+            android_ndk, "toolchains", "llvm", "prebuilt", "linux-x86_64"
+        )
+        sysroot = os.path.join(android_clang_dir, "sysroot")
         android_native_api_level = version["ANDROID_NATIVE_API_LEVEL"]
-        args.append(f"-DCMAKE_TOOLCHAIN_FILE={toolchain_file}")
+        args.append(f"-DANDROID_OVERRIDE_TOOLCHAIN_FILE={cmake_path(override_toolchain_file)}")
+        args.append(f"-DANDROID_OVERRIDE_C_COMPILER={cmake_path(override_c_compiler)}")
+        args.append(f"-DANDROID_OVERRIDE_CXX_COMPILER={cmake_path(override_cxx_compiler)}")
+        args.append(f"-DCMAKE_SYSROOT={cmake_path(sysroot)}")
+        args.append(f"-DCMAKE_TOOLCHAIN_FILE={cmake_path(toolchain_file)}")
         args.append(f"-DANDROID_NATIVE_API_LEVEL={android_native_api_level}")
         args.append(f"-DANDROID_PLATFORM={android_native_api_level}")
         args.append("-DANDROID_ABI=arm64-v8a")
@@ -126,6 +141,13 @@ def get_common_cmake_args(
         args.append("-DANDROID_NDK=OFF")
         cxxflags = ["-nostdinc++", "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE"]
         args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
+        clang_version = fix_clang_version(
+            android_clang_dir, get_clang_version(os.path.join(android_clang_dir, "bin", "clang++"))
+        )
+        ldflags = [
+            f"-L{cmake_path(os.path.join(android_clang_dir, 'lib', 'clang', clang_version, 'lib', 'linux', 'aarch64'))}"
+        ]
+        args.append(f"-DCMAKE_EXE_LINKER_FLAGS={' '.join(ldflags)}")
 
     return args
 
@@ -138,6 +160,7 @@ def install_deps(
     debug: bool,
     local_webrtc_build_dir: Optional[str],
     local_webrtc_build_args: List[str],
+    disable_cuda: bool,
 ):
     with cd(BASE_DIR):
         version = read_version_file("VERSION")
@@ -300,6 +323,7 @@ def install_deps(
             install_boost_args["cflags"] = [
                 "-fPIC",
             ]
+            install_boost_args["cxx"] = os.path.join(webrtc_info.clang_dir, "bin", "clang++")
             install_boost_args["cxxflags"] = [
                 "-fPIC",
                 "-D_LIBCPP_ABI_NAMESPACE=Cr",
@@ -376,7 +400,7 @@ def install_deps(
             add_path(os.path.join(install_dir, "cmake", "bin"))
 
         # CUDA
-        if platform.target.os == "windows":
+        if not disable_cuda and platform.target.os == "windows":
             install_cuda_args = {
                 "version": version["CUDA_VERSION"],
                 "version_file": os.path.join(install_dir, "cuda.version"),
@@ -490,7 +514,7 @@ def install_deps(
             "cmake_args": [],
         }
         install_blend2d_args["cmake_args"] = get_common_cmake_args(
-            platform, version, webrtc_info, install_dir, debug
+            platform, version, webrtc_info, BASE_DIR, install_dir, debug
         )
         install_blend2d(**install_blend2d_args)
 
@@ -507,7 +531,7 @@ def install_deps(
                 "cmake_args": [],
             }
             install_catch2_args["cmake_args"] = get_common_cmake_args(
-                platform, version, webrtc_info, install_dir, debug
+                platform, version, webrtc_info, BASE_DIR, install_dir, debug
             )
             install_catch2(**install_catch2_args)
 
@@ -541,6 +565,7 @@ AVAILABLE_TARGETS = [
     "macos_arm64",
     "ubuntu-22.04_x86_64",
     "ubuntu-24.04_x86_64",
+    "ubuntu-22.04_armv8",
     "ubuntu-24.04_armv8",
     "ios",
     "android",
@@ -555,6 +580,7 @@ def main():
     parser.add_argument("target", choices=AVAILABLE_TARGETS)
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--relwithdebinfo", action="store_true")
+    parser.add_argument("--disable-cuda", action="store_true")
     add_webrtc_build_arguments(parser)
     parser.add_argument("--test", action="store_true")
     parser.add_argument("--run-e2e-test", action="store_true")
@@ -571,6 +597,8 @@ def main():
         platform = Platform("ubuntu", "22.04", "x86_64")
     elif args.target == "ubuntu-24.04_x86_64":
         platform = Platform("ubuntu", "24.04", "x86_64")
+    elif args.target == "ubuntu-22.04_armv8":
+        platform = Platform("ubuntu", "22.04", "armv8")
     elif args.target == "ubuntu-24.04_armv8":
         platform = Platform("ubuntu", "24.04", "armv8")
     elif args.target == "ios":
@@ -601,6 +629,7 @@ def main():
         args.debug,
         local_webrtc_build_dir=args.local_webrtc_build_dir,
         local_webrtc_build_args=args.local_webrtc_build_args,
+        disable_cuda=args.disable_cuda,
     )
 
     configuration = "Release"
@@ -689,10 +718,26 @@ def main():
             )
             cmake_args.append("-DCMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH=NO")
         if platform.target.os == "android":
-            toolchain_file = os.path.join(
-                install_dir, "android-ndk", "build", "cmake", "android.toolchain.cmake"
+            android_ndk = os.path.join(install_dir, "android-ndk")
+            toolchain_file = os.path.join(BASE_DIR, "cmake", "android.toolchain.cmake")
+            override_toolchain_file = os.path.join(
+                os.path.join(android_ndk, "build", "cmake", "android.toolchain.cmake")
             )
-            cmake_args.append(f"-DCMAKE_TOOLCHAIN_FILE={toolchain_file}")
+            override_c_compiler = os.path.join(webrtc_info.clang_dir, "bin", "clang")
+            override_cxx_compiler = os.path.join(webrtc_info.clang_dir, "bin", "clang++")
+            android_clang_dir = os.path.join(
+                android_ndk, "toolchains", "llvm", "prebuilt", "linux-x86_64"
+            )
+            sysroot = os.path.join(android_clang_dir, "sysroot")
+            cmake_args.append(
+                f"-DANDROID_OVERRIDE_TOOLCHAIN_FILE={cmake_path(override_toolchain_file)}"
+            )
+            cmake_args.append(f"-DANDROID_OVERRIDE_C_COMPILER={cmake_path(override_c_compiler)}")
+            cmake_args.append(
+                f"-DANDROID_OVERRIDE_CXX_COMPILER={cmake_path(override_cxx_compiler)}"
+            )
+            cmake_args.append(f"-DCMAKE_SYSROOT={cmake_path(sysroot)}")
+            cmake_args.append(f"-DCMAKE_TOOLCHAIN_FILE={cmake_path(toolchain_file)}")
             cmake_args.append(f"-DANDROID_NATIVE_API_LEVEL={android_native_api_level}")
             cmake_args.append(f"-DANDROID_PLATFORM={android_native_api_level}")
             cmake_args.append("-DANDROID_ABI=arm64-v8a")
@@ -709,14 +754,23 @@ def main():
             cmake_args.append(
                 f"-DSORA_WEBRTC_LDFLAGS={os.path.join(install_dir, 'webrtc.ldflags')}"
             )
+            clang_version = fix_clang_version(
+                android_clang_dir,
+                get_clang_version(os.path.join(android_clang_dir, "bin", "clang++")),
+            )
+            ldflags = [
+                f"-L{cmake_path(os.path.join(android_clang_dir, 'lib', 'clang', clang_version, 'lib', 'linux', 'aarch64'))}"
+            ]
+            cmake_args.append(f"-DCMAKE_EXE_LINKER_FLAGS={' '.join(ldflags)}")
 
         # NvCodec
-        if platform.target.os in ("windows", "ubuntu") and platform.target.arch == "x86_64":
-            cmake_args.append("-DUSE_NVCODEC_ENCODER=ON")
-            if platform.target.os == "windows":
-                cmake_args.append(
-                    f"-DCUDA_TOOLKIT_ROOT_DIR={cmake_path(os.path.join(install_dir, 'cuda'))}"
-                )
+        if not args.disable_cuda:
+            if platform.target.os in ("windows", "ubuntu") and platform.target.arch == "x86_64":
+                cmake_args.append("-DUSE_NVCODEC_ENCODER=ON")
+                if platform.target.os == "windows":
+                    cmake_args.append(
+                        f"-DCUDA_TOOLKIT_ROOT_DIR={cmake_path(os.path.join(install_dir, 'cuda'))}"
+                    )
 
         # VPL
         if platform.target.os in ("windows", "ubuntu") and platform.target.arch == "x86_64":

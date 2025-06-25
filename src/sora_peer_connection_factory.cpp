@@ -19,32 +19,32 @@ class PeerConnectionFactoryWithContext : public webrtc::PeerConnectionFactory {
                                               &dependencies),
             &dependencies) {}
   PeerConnectionFactoryWithContext(
-      rtc::scoped_refptr<webrtc::ConnectionContext> context,
+      webrtc::scoped_refptr<webrtc::ConnectionContext> context,
       webrtc::PeerConnectionFactoryDependencies* dependencies)
       : conn_context_(context),
         webrtc::PeerConnectionFactory(context, dependencies) {}
 
-  static rtc::scoped_refptr<PeerConnectionFactoryWithContext> Create(
+  static webrtc::scoped_refptr<PeerConnectionFactoryWithContext> Create(
       webrtc::PeerConnectionFactoryDependencies dependencies) {
-    return rtc::make_ref_counted<PeerConnectionFactoryWithContext>(
+    return webrtc::make_ref_counted<PeerConnectionFactoryWithContext>(
         std::move(dependencies));
   }
 
-  rtc::scoped_refptr<webrtc::ConnectionContext> GetContext() const {
+  webrtc::scoped_refptr<webrtc::ConnectionContext> GetContext() const {
     return conn_context_;
   }
 
  private:
-  rtc::scoped_refptr<webrtc::ConnectionContext> conn_context_;
+  webrtc::scoped_refptr<webrtc::ConnectionContext> conn_context_;
 };
 
-rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
+webrtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>
 CreateModularPeerConnectionFactoryWithContext(
     webrtc::PeerConnectionFactoryDependencies dependencies,
-    rtc::scoped_refptr<webrtc::ConnectionContext>& context) {
+    webrtc::scoped_refptr<webrtc::ConnectionContext>& context) {
   using result_type =
-      std::pair<rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>,
-                rtc::scoped_refptr<webrtc::ConnectionContext>>;
+      std::pair<webrtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface>,
+                webrtc::scoped_refptr<webrtc::ConnectionContext>>;
   auto p = dependencies.signaling_thread->BlockingCall([&dependencies]() {
     auto factory =
         PeerConnectionFactoryWithContext::Create(std::move(dependencies));

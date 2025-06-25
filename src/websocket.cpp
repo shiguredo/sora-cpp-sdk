@@ -4,7 +4,7 @@
 
 // WebRTC
 #include <rtc_base/logging.h>
-#include <rtc_base/third_party/base64/base64.h>
+#include <rtc_base/base64.h>
 
 // Boost
 #include <boost/asio/bind_executor.hpp>
@@ -394,7 +394,7 @@ void Websocket::OnConnectProxy(boost::system::error_code ec) {
   proxy_req_.set(boost::beast::http::field::host, target);
   proxy_req_.set(
       boost::beast::http::field::proxy_authorization,
-      "Basic " + rtc::Base64::Encode(proxy_username_ + ":" + proxy_password_));
+      "Basic " + webrtc::Base64Encode(proxy_username_ + ":" + proxy_password_));
   boost::beast::http::async_write(
       *proxy_socket_, proxy_req_,
       std::bind(&Websocket::OnWriteProxy, this, std::placeholders::_1,
@@ -536,12 +536,22 @@ void Websocket::Close(close_callback_t on_close, int timeout_seconds) {
                                        std::move(on_close), timeout_seconds));
 }
 
+void Websocket::CloseSocket(boost::system::error_code& ec) {
+  if (IsSSL()) {
+    wss_->next_layer().next_layer().close(ec);
+  } else {
+    ws_->next_layer().close(ec);
+  }
+}
+
 void Websocket::DoClose(close_callback_t on_close, int timeout_seconds) {
   if (IsSSL()) {
+    RTC_LOG(LS_INFO) << "DoClose wss this=" << (void*)this;
     wss_->async_close(
         boost::beast::websocket::close_code::normal,
         std::bind(&Websocket::OnClose, this, on_close, std::placeholders::_1));
   } else {
+    RTC_LOG(LS_INFO) << "DoClose ws this=" << (void*)this;
     ws_->async_close(
         boost::beast::websocket::close_code::normal,
         std::bind(&Websocket::OnClose, this, on_close, std::placeholders::_1));
