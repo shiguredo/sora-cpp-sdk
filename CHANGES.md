@@ -33,6 +33,13 @@
   - @melpon
 - [UPDATE] Android SDK Command-line tools のバージョンを 13114758 にあげる
   - @melpon
+- [UPDATE] `NVIDIA Video Codec SDK` を [13.0](https://docs.nvidia.com/video-technologies/video-codec-sdk/13.0/index.html) にアップデートする
+  - NVIDIA Video Codec SDK で新たに追加された `NvEncOutputFrame` 構造体に対応する  
+    - `v_packet_` を `std::vector<std::vector<uint8_t>>` から `std::vector<NvEncOutputFrame>` に変更する  
+    - `for (std::vector<uint8_t>& packet : v_packet_)` を `for (NvEncOutputFrame& output : v_packet_)` に変更する  
+    - ループ内に `std::vector<uint8_t>& packet = output.frame;` を追加し、既存処理との互換性を維持する
+    - コーデックごとに実行していたキーフレーム判定を NvEncOutputFrame のフレーム情報を利用して行うように変更する
+  - @torikizi
 - [ADD] ubuntu-22.04_armv8 を追加
   - @melpon
 - [ADD] rpc ラベルにメッセージが来た時に OnRpc コールバックを呼び出す
