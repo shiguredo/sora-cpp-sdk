@@ -378,6 +378,7 @@ def git_clone_shallow(url, hash, dir, submodule=False):
 
 
 def apply_patch(patch, dir, depth):
+    patch = os.path.abspath(patch)
     with cd(dir):
         logging.info(f"patch -p{depth} < {patch}")
         if platform.system() == "Windows":
@@ -522,6 +523,7 @@ class WebrtcInfo(NamedTuple):
     webrtc_library_dir: str
     clang_dir: str
     libcxx_dir: str
+    libcxxabi_dir: str
 
 
 def get_webrtc_info(
@@ -538,6 +540,9 @@ def get_webrtc_info(
             webrtc_library_dir=os.path.join(webrtc_install_dir, "lib"),
             clang_dir=os.path.join(install_dir, "llvm", "clang"),
             libcxx_dir=os.path.join(install_dir, "llvm", "libcxx"),
+            libcxxabi_dir=os.path.join(
+                webrtc_install_dir, "include", "third_party", "libc++abi", "src"
+            ),
         )
     else:
         webrtc_build_source_dir = os.path.join(
@@ -558,6 +563,9 @@ def get_webrtc_info(
                 webrtc_build_source_dir, "src", "third_party", "llvm-build", "Release+Asserts"
             ),
             libcxx_dir=os.path.join(webrtc_build_source_dir, "src", "third_party", "libc++", "src"),
+            libcxxabi_dir=os.path.join(
+                webrtc_build_source_dir, "src", "third_party", "libc++abi", "src"
+            ),
         )
 
 
@@ -1741,6 +1749,7 @@ def install_opus(
                 "cmake",
                 f"-DCMAKE_INSTALL_PREFIX={cmake_path(opus_install_dir)}",
                 f"-DCMAKE_BUILD_TYPE={configuration}",
+                "-DCMAKE_POSITION_INDEPENDENT_CODE=ON",
                 "-DOPUS_BUILD_SHARED_LIBRARY=OFF",
                 "-DOPUS_BUILD_TESTING=OFF",
                 "-DOPUS_BUILD_PROGRAMS=OFF",
@@ -1795,6 +1804,163 @@ def install_amf(version, install_dir):
     git_clone_shallow(
         "https://github.com/GPUOpen-LibrariesAndSDKs/AMF.git", version, amf_install_dir
     )
+
+
+@versioned
+def install_mbedtls(version, source_dir, build_dir, install_dir, debug, cmake_args):
+    rm_rf(os.path.join(source_dir, "mbedtls"))
+    rm_rf(os.path.join(build_dir, "mbedtls"))
+    rm_rf(os.path.join(install_dir, "mbedtls"))
+    git_clone_shallow(
+        "https://github.com/Mbed-TLS/mbedtls.git",
+        version,
+        os.path.join(source_dir, "mbedtls"),
+    )
+    with cd(os.path.join(source_dir, "mbedtls")):
+        configuration = "Debug" if debug else "Release"
+        cmd(["python3", "scripts/config.py", "set", "MBEDTLS_SSL_DTLS_SRTP"])
+        cmd(
+            [
+                "cmake",
+                f"-DCMAKE_INSTALL_PREFIX={cmake_path(os.path.join(install_dir, 'mbedtls'))}",
+                f"-DCMAKE_BUILD_TYPE={configuration}",
+                "-DCMAKE_POSITION_INDEPENDENT_CODE=ON",
+                "-B",
+                os.path.join(build_dir, "mbedtls"),
+            ]
+            + cmake_args
+        )
+        cmd(
+            [
+                "cmake",
+                "--build",
+                os.path.join(build_dir, "mbedtls"),
+                f"-j{multiprocessing.cpu_count()}",
+                "--config",
+                "Release",
+            ]
+        )
+        cmd(["cmake", "--install", os.path.join(build_dir, "mbedtls")])
+
+
+@versioned
+def install_libjpeg_turbo(version, source_dir, build_dir, install_dir, configuration, cmake_args):
+    libjpeg_source_dir = os.path.join(source_dir, "libjpeg-turbo")
+    libjpeg_build_dir = os.path.join(build_dir, "libjpeg-turbo")
+    libjpeg_install_dir = os.path.join(install_dir, "libjpeg-turbo")
+    rm_rf(libjpeg_source_dir)
+    rm_rf(libjpeg_build_dir)
+    rm_rf(libjpeg_install_dir)
+    git_clone_shallow(
+        "https://github.com/libjpeg-turbo/libjpeg-turbo.git",
+        version,
+        libjpeg_source_dir,
+    )
+    mkdir_p(libjpeg_build_dir)
+    with cd(libjpeg_build_dir):
+        cmd(
+            [
+                "cmake",
+                libjpeg_source_dir,
+                f"-DCMAKE_INSTALL_PREFIX={libjpeg_install_dir}",
+                f"-DCMAKE_BUILD_TYPE={configuration}",
+                "-DENABLE_SHARED=FALSE",
+                "-DENABLE_STATIC=TRUE",
+                "-DCMAKE_BUILD_TYPE=Release",
+                "-DCMAKE_POSITION_INDEPENDENT_CODE=ON",
+            ]
+            + cmake_args
+        )
+        cmd(
+            [
+                "cmake",
+                "--build",
+                libjpeg_build_dir,
+                f"-j{multiprocessing.cpu_count()}",
+                "--config",
+                "Release",
+            ]
+        )
+        cmd(["cmake", "--install", libjpeg_build_dir])
+
+
+@versioned
+def install_libyuv(
+    version, source_dir, build_dir, install_dir, libjpeg_turbo_dir, configuration, cmake_args
+):
+    libyuv_source_dir = os.path.join(source_dir, "libyuv")
+    libyuv_build_dir = os.path.join(build_dir, "libyuv")
+    libyuv_install_dir = os.path.join(install_dir, "libyuv")
+    rm_rf(libyuv_source_dir)
+    rm_rf(libyuv_build_dir)
+    rm_rf(libyuv_install_dir)
+    git_clone_shallow(
+        "https://chromium.googlesource.com/libyuv/libyuv",
+        version,
+        libyuv_source_dir,
+    )
+    mkdir_p(libyuv_build_dir)
+    with cd(libyuv_build_dir):
+        cmd(
+            [
+                "cmake",
+                libyuv_source_dir,
+                f"-DCMAKE_INSTALL_PREFIX={cmake_path(libyuv_install_dir)}",
+                f"-DCMAKE_BUILD_TYPE={configuration}",
+                f"-DCMAKE_PREFIX_PATH={cmake_path(libjpeg_turbo_dir)}",
+                *cmake_args,
+            ]
+        )
+        cmd(
+            [
+                "cmake",
+                "--build",
+                libyuv_build_dir,
+                f"-j{multiprocessing.cpu_count()}",
+                "--config",
+                "Release",
+            ]
+        )
+        cmd(["cmake", "--install", libyuv_build_dir])
+
+
+@versioned
+def install_aom(version, source_dir, build_dir, install_dir, configuration, cmake_args):
+    aom_source_dir = os.path.join(source_dir, "aom")
+    aom_build_dir = os.path.join(build_dir, "aom")
+    aom_install_dir = os.path.join(install_dir, "aom")
+    rm_rf(aom_source_dir)
+    rm_rf(aom_build_dir)
+    rm_rf(aom_install_dir)
+    git_clone_shallow(
+        "https://aomedia.googlesource.com/aom",
+        version,
+        aom_source_dir,
+    )
+    with cd(aom_source_dir):
+        cmd(
+            [
+                "cmake",
+                "-B",
+                aom_build_dir,
+                f"-DCMAKE_INSTALL_PREFIX={cmake_path(aom_install_dir)}",
+                f"-DCMAKE_BUILD_TYPE={configuration}",
+                "-DENABLE_DOCS=OFF",
+                "-DENABLE_TESTS=OFF",
+                *cmake_args,
+            ]
+        )
+        cmd(
+            [
+                "cmake",
+                "--build",
+                aom_build_dir,
+                f"-j{multiprocessing.cpu_count()}",
+                "--config",
+                "Release",
+            ]
+        )
+        cmd(["cmake", "--install", aom_build_dir])
 
 
 class PlatformTarget(object):
