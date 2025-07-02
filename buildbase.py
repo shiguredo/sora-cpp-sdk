@@ -1310,6 +1310,33 @@ def install_vpl(version, configuration, source_dir, build_dir, install_dir, cmak
 
 
 @versioned
+def install_blend2d_official(
+    version,
+    configuration,
+    source_dir,
+    build_dir,
+    install_dir,
+    ios,
+    cmake_args,
+):
+    rm_rf(os.path.join(source_dir, "blend2d"))
+    rm_rf(os.path.join(build_dir, "blend2d"))
+    rm_rf(os.path.join(install_dir, "blend2d"))
+
+    url = f"https://blend2d.com/download/blend2d-{version}.tar.gz"
+    path = download(url, source_dir)
+    extract(path, source_dir, "blend2d")
+    _build_blend2d(
+        configuration=configuration,
+        source_dir=source_dir,
+        build_dir=build_dir,
+        install_dir=install_dir,
+        ios=ios,
+        cmake_args=cmake_args,
+    )
+
+
+@versioned
 def install_blend2d(
     version,
     configuration,
@@ -1334,7 +1361,17 @@ def install_blend2d(
         asmjit_version,
         os.path.join(source_dir, "blend2d", "3rdparty", "asmjit"),
     )
+    _build_blend2d(
+        configuration=configuration,
+        source_dir=source_dir,
+        build_dir=build_dir,
+        install_dir=install_dir,
+        ios=ios,
+        cmake_args=cmake_args,
+    )
 
+
+def _build_blend2d(configuration, source_dir, build_dir, install_dir, ios, cmake_args):
     mkdir_p(os.path.join(build_dir, "blend2d"))
     with cd(os.path.join(build_dir, "blend2d")):
         cmd(

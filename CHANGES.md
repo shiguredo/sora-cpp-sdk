@@ -40,6 +40,9 @@
     - ループ内に `std::vector<uint8_t>& packet = output.frame;` を追加し、既存処理との互換性を維持する
     - コーデックごとに実行していたキーフレーム判定を NvEncOutputFrame のフレーム情報を利用して行うように変更する
   - @torikizi
+- [UPDATE] Blend2D を公式サイトからダウンロードするように変更する
+  - 今までは現時点の master のコミットハッシュを使っていたが、asmjit と一緒にバージョンを管理しないといけなかった
+  - 公式サイトからのダウンロードだと asmjit を内包してるのでこっちの方が管理が楽そうという判断
 - [ADD] ubuntu-22.04_armv8 を追加
   - @melpon
 - [ADD] rpc ラベルにメッセージが来た時に OnRpc コールバックを呼び出す

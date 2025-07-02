@@ -29,7 +29,7 @@ from buildbase import (
     install_amf,
     install_android_ndk,
     install_android_sdk_cmdline_tools,
-    install_blend2d,
+    install_blend2d_official,
     install_catch2,
     install_cmake,
     install_cuda_windows,
@@ -502,21 +502,19 @@ def install_deps(
 
         # Blend2D
         install_blend2d_args = {
-            "version": version["BLEND2D_VERSION"] + "-" + version["ASMJIT_VERSION"],
+            "version": version["BLEND2D_VERSION"],
             "version_file": os.path.join(install_dir, "blend2d.version"),
             "configuration": "Debug" if debug else "Release",
             "source_dir": source_dir,
             "build_dir": build_dir,
             "install_dir": install_dir,
-            "blend2d_version": version["BLEND2D_VERSION"],
-            "asmjit_version": version["ASMJIT_VERSION"],
             "ios": platform.target.package_name == "ios",
             "cmake_args": [],
         }
         install_blend2d_args["cmake_args"] = get_common_cmake_args(
             platform, version, webrtc_info, BASE_DIR, install_dir, debug
         )
-        install_blend2d(**install_blend2d_args)
+        install_blend2d_official(**install_blend2d_args)
 
         # テストできる環境だけ入れる
         if platform.build.os == platform.target.os and platform.build.arch == platform.target.arch:
