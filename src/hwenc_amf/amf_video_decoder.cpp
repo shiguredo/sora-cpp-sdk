@@ -155,6 +155,11 @@ int32_t AMFVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
       // queue is full; sleep, try to get ready surfaces  in polling thread and repeat submission
       amf_sleep(1);
       continue;
+    } else if (res == AMF_RESOLUTION_CHANGED || res == AMF_RESOLUTION_UPDATED) {
+      // デコードするサイズが変わったらデコーダを作り直す
+      ReleaseAMF();
+      InitAMF();
+      continue;
     } else {
       RETURN_IF_FAILED(res, L"Failed to SubmitInput()");
       break;
@@ -182,12 +187,17 @@ AMF_RESULT AMFVideoDecoderImpl::ProcessSurface(amf::AMFSurfacePtr surface) {
   RETURN_IF_FAILED(res, "Failed to Convert()");
 
   uint32_t pts = surface->GetPts();
-  RTC_LOG(LS_ERROR) << "pts=" << pts;
 
   auto py = surface->GetPlane(amf::AMF_PLANE_Y);
   auto pu = surface->GetPlane(amf::AMF_PLANE_U);
   auto pv = surface->GetPlane(amf::AMF_PLANE_V);
 
+  // RTC_LOG(LS_ERROR) << "AMFVideoDecoderImpl::ProcessSurface: "
+  //                   << "pts=" << pts << ", width=" << py->GetWidth()
+  //                   << ", height=" << py->GetHeight()
+  //                   << ", pitch_y=" << py->GetHPitch()
+  //                   << ", pitch_u=" << pu->GetHPitch()
+  //                   << ", pitch_v=" << pv->GetHPitch();
   webrtc::scoped_refptr<webrtc::I420Buffer> i420_buffer =
       buffer_pool_.CreateI420Buffer(py->GetWidth(), py->GetHeight());
   libyuv::I420Copy((const uint8_t*)py->GetNative(), py->GetHPitch(),
