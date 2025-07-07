@@ -22,7 +22,7 @@ Please read <https://github.com/shiguredo/oss/blob/master/README.en.md> before u
 - 各プラットフォームで利用可能な HWA への対応
   - [Intel VPL](https://github.com/intel/libvpl)
     - VP9 / AV1 / H.264 / H.265
-      - VP9 はエンコードのみの対応です、詳細は [既知の問題](doc/known_issues.md) をご確認ください
+      - VP9 はエンコードのみの対応です
   - [NVIDIA Video Codec SDK](https://developer.nvidia.com/video-codec-sdk)
     - VP8 / VP9 / AV1 / H.264 / H.265
       - VP8 / VP9 はチップセットが対応していないため、デコードのみの対応です
@@ -53,7 +53,7 @@ _hololens2 は無視してください_
 
 ## 対応 Sora
 
-- WebRTC SFU Sora 2024.2.0 以降
+- WebRTC SFU Sora 2025.1.0 以降
 
 ## 動作環境
 
@@ -71,7 +71,7 @@ _hololens2 は無視してください_
 
 ## 既知の問題
 
-[known_issues.md](doc/known_issues.md) をお読みください。
+[known_issues.md](doc/known_issues.md) をご確認ください。
 
 ## FAQ
 
