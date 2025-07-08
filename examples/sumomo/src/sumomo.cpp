@@ -15,6 +15,7 @@
 #include <rtc_base/crypto_random.h>
 
 #include "sdl_renderer.h"
+#include "sixel_renderer.h"
 
 #ifdef _WIN32
 #include <rtc_base/win/scoped_com_initializer.h>
@@ -53,6 +54,11 @@ struct SumomoConfig {
   int window_height = 480;
   bool show_me = false;
   bool fullscreen = false;
+
+  bool use_sixel = false;
+  int sixel_width = 320;
+  int sixel_height = 240;
+  bool sixel_clear_screen = true;
 
   bool insecure = false;
   std::string client_cert;
@@ -101,6 +107,11 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
       renderer_.reset(new SDLRenderer(
           config_.window_width, config_.window_height, config_.fullscreen));
     }
+    
+    if (config_.use_sixel) {
+      sixel_renderer_.reset(new SixelRenderer(
+          config_.sixel_width, config_.sixel_height, config_.sixel_clear_screen));
+    }
 
     auto size = config_.GetSize();
     if (config_.role != "recvonly") {
@@ -126,6 +137,9 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
           video_source, video_track_id);
       if (config_.use_sdl && config_.show_me) {
         renderer_->AddTrack(video_track_.get());
+      }
+      if (config_.use_sixel && config_.show_me) {
+        sixel_renderer_->AddTrack(video_track_.get());
       }
     }
 
@@ -225,6 +239,7 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
                     std::string message) override {
     RTC_LOG(LS_INFO) << "OnDisconnect: " << message;
     renderer_.reset();
+    sixel_renderer_.reset();
     ioc_->stop();
   }
   void OnNotify(std::string text) override {
@@ -235,24 +250,30 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
 
   void OnTrack(webrtc::scoped_refptr<webrtc::RtpTransceiverInterface>
                    transceiver) override {
-    if (renderer_ == nullptr) {
-      return;
-    }
     auto track = transceiver->receiver()->track();
     if (track->kind() == webrtc::MediaStreamTrackInterface::kVideoKind) {
-      renderer_->AddTrack(
-          static_cast<webrtc::VideoTrackInterface*>(track.get()));
+      if (renderer_) {
+        renderer_->AddTrack(
+            static_cast<webrtc::VideoTrackInterface*>(track.get()));
+      }
+      if (sixel_renderer_) {
+        sixel_renderer_->AddTrack(
+            static_cast<webrtc::VideoTrackInterface*>(track.get()));
+      }
     }
   }
   void OnRemoveTrack(
       webrtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override {
-    if (renderer_ == nullptr) {
-      return;
-    }
     auto track = receiver->track();
     if (track->kind() == webrtc::MediaStreamTrackInterface::kVideoKind) {
-      renderer_->RemoveTrack(
-          static_cast<webrtc::VideoTrackInterface*>(track.get()));
+      if (renderer_) {
+        renderer_->RemoveTrack(
+            static_cast<webrtc::VideoTrackInterface*>(track.get()));
+      }
+      if (sixel_renderer_) {
+        sixel_renderer_->RemoveTrack(
+            static_cast<webrtc::VideoTrackInterface*>(track.get()));
+      }
     }
   }
 
@@ -266,6 +287,7 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
   std::shared_ptr<sora::SoraSignaling> conn_;
   std::unique_ptr<boost::asio::io_context> ioc_;
   std::unique_ptr<SDLRenderer> renderer_;
+  std::unique_ptr<SixelRenderer> sixel_renderer_;
 };
 
 void add_optional_bool(CLI::App& app,
@@ -403,6 +425,13 @@ int main(int argc, char* argv[]) {
   app.add_flag("--fullscreen", config.fullscreen,
                "Use fullscreen window for videos");
   app.add_flag("--show-me", config.show_me, "Show self video");
+
+  // Sixel に関するオプション
+  app.add_flag("--use-sixel", config.use_sixel, "Show video using Sixel");
+  app.add_option("--sixel-width", config.sixel_width, "Sixel output width");
+  app.add_option("--sixel-height", config.sixel_height, "Sixel output height");
+  app.add_flag("--sixel-clear-screen", config.sixel_clear_screen,
+               "Clear screen before Sixel output");
 
   // 証明書に関するオプション
   app.add_flag("--insecure", config.insecure, "Allow insecure connection");
