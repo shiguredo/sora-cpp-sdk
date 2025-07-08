@@ -29,7 +29,12 @@ find_package(Threads REQUIRED)
 add_executable(sumomo)
 set_target_properties(sumomo PROPERTIES CXX_STANDARD 20 C_STANDARD 20)
 set_target_properties(sumomo PROPERTIES POSITION_INDEPENDENT_CODE ON)
-target_sources(sumomo PRIVATE ../src/sumomo.cpp ../src/sdl_renderer.cpp)
+target_sources(sumomo
+  PRIVATE
+    ../src/sumomo.cpp
+    ../src/base_renderer.cpp
+    ../src/sdl_renderer.cpp
+    ../src/sixel_renderer.cpp)
 
 target_compile_options(sumomo
   PRIVATE

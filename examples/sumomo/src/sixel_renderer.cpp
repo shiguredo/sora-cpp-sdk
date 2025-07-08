@@ -19,87 +19,29 @@
 
 #define FRAME_INTERVAL (1000 / 10)  // 10 FPS for terminal display
 
-SixelRenderer::SixelRenderer(int width, int height, bool clear_screen)
-    : running_(true),
-      dispatch_(nullptr),
-      width_(width),
-      height_(height),
-      clear_screen_(clear_screen) {
+SixelRenderer::SixelRenderer(int width, int height)
+    : BaseRenderer(width, height) {
   InitializeColorLookupTable();
-
-  if (clear_screen_) {
-    ClearScreen();
-  }
-
-  thread_ = std::make_unique<std::thread>([this]() { RenderThread(); });
+  Start();
 }
 
-SixelRenderer::~SixelRenderer() {
-  running_ = false;
-  render_cv_.notify_all();
-  if (thread_ && thread_->joinable()) {
-    thread_->join();
+SixelRenderer::~SixelRenderer() {}
+
+void SixelRenderer::RenderThreadStarted() {}
+void SixelRenderer::RenderThreadFinished() {}
+void SixelRenderer::Render(uint8_t* image,
+                           int width,
+                           int height,
+                           const std::vector<SinkInfo>& sink_infos) {
+  MoveCursorToTop();
+  // オリジナルサイズを表示
+  for (const auto& sink_info : sink_infos) {
+    std::cout << "\033[2K" << "(" << sink_info.offset_x << ","
+              << sink_info.offset_y << ")"
+              << " の元のサイズ: " << sink_info.input_width << "x"
+              << sink_info.input_height << std::endl;
   }
-  if (clear_screen_) {
-    ClearScreen();
-  }
-}
-
-void SixelRenderer::SetDispatchFunction(
-    std::function<void(std::function<void()>)> dispatch) {
-  webrtc::MutexLock lock(&sinks_lock_);
-  dispatch_ = std::move(dispatch);
-}
-
-void SixelRenderer::RenderThread() {
-  RTC_LOG(LS_INFO) << "Sixelレンダラースレッドを開始しました";
-
-  auto start_time = std::chrono::steady_clock::now();
-
-  while (running_) {
-    auto frame_start = std::chrono::steady_clock::now();
-
-    {
-      webrtc::MutexLock lock(&sinks_lock_);
-
-      // 最初のトラックからフレームを取得して表示
-      if (!sinks_.empty()) {
-        Sink* sink = sinks_[0].second.get();
-        webrtc::MutexLock frame_lock(sink->GetMutex());
-
-        if (sink->HasNewFrame()) {
-          int width = sink->GetFrameWidth();
-          int height = sink->GetFrameHeight();
-          int original_width = sink->GetOriginalWidth();
-          int original_height = sink->GetOriginalHeight();
-
-          if (width > 0 && height > 0) {
-            uint8_t* image = sink->GetImage();
-            if (image) {
-              MoveCursorToTop();
-              // オリジナルサイズを表示（行をクリア）
-              std::cout << "\033[2K元のサイズ: " << original_width << " x "
-                        << original_height << std::endl;
-              OutputSixel(image, width, height);
-              sink->ResetNewFrame();
-            }
-          }
-        }
-      }
-    }
-
-    // フレームレート制御
-    auto frame_end = std::chrono::steady_clock::now();
-    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-                       frame_end - frame_start)
-                       .count();
-    if (elapsed < FRAME_INTERVAL) {
-      std::this_thread::sleep_for(
-          std::chrono::milliseconds(FRAME_INTERVAL - elapsed));
-    }
-  }
-
-  RTC_LOG(LS_INFO) << "Sixelレンダラースレッドを終了しました";
+  OutputSixel(image, width, height);
 }
 
 void SixelRenderer::ClearScreen() {
@@ -264,136 +206,4 @@ void SixelRenderer::OutputSixel(const uint8_t* rgb_data,
 
   // Sixel終了
   std::cout << "\033\\" << std::flush;
-}
-
-SixelRenderer::Sink::Sink(SixelRenderer* renderer,
-                          webrtc::VideoTrackInterface* track)
-    : renderer_(renderer),
-      track_(track),
-      input_width_(0),
-      input_height_(0),
-      original_width_(0),
-      original_height_(0),
-      scaled_width_(0),
-      scaled_height_(0),
-      has_new_frame_(false) {
-  track_->AddOrUpdateSink(this, webrtc::VideoSinkWants());
-}
-
-SixelRenderer::Sink::~Sink() {
-  track_->RemoveSink(this);
-}
-
-void SixelRenderer::Sink::OnFrame(const webrtc::VideoFrame& frame) {
-  if (frame.width() == 0 || frame.height() == 0)
-    return;
-
-  webrtc::MutexLock lock(&frame_params_lock_);
-
-  // オリジナルサイズを記録
-  original_width_ = frame.width();
-  original_height_ = frame.height();
-
-  // アスペクト比を保ってwidth_, height_にスケーリング
-  float original_aspect =
-      static_cast<float>(frame.width()) / static_cast<float>(frame.height());
-  float target_aspect = static_cast<float>(renderer_->width_) /
-                        static_cast<float>(renderer_->height_);
-
-  if (original_aspect > target_aspect) {
-    // 横長の場合、幅を基準にスケーリング
-    scaled_width_ = renderer_->width_;
-    scaled_height_ = static_cast<int>(renderer_->width_ / original_aspect);
-  } else {
-    // 縦長の場合、高さを基準にスケーリング
-    scaled_height_ = renderer_->height_;
-    scaled_width_ = static_cast<int>(renderer_->height_ * original_aspect);
-  }
-
-  // 画像サイズが変更された場合はバッファを再確保
-  if (scaled_width_ != input_width_ || scaled_height_ != input_height_) {
-    input_width_ = scaled_width_;
-    input_height_ = scaled_height_;
-    image_.reset(new uint8_t[input_width_ * input_height_ * 4]);
-    RTC_LOG(LS_INFO) << "Sixelレンダラー: フレームサイズ変更 "
-                     << original_width_ << "x" << original_height_ << " → "
-                     << input_width_ << "x" << input_height_;
-  }
-
-  // フレームをI420に変換
-  webrtc::scoped_refptr<webrtc::I420BufferInterface> buffer_if =
-      frame.video_frame_buffer()->ToI420();
-
-  // スケーリング用のI420バッファを作成
-  webrtc::scoped_refptr<webrtc::I420Buffer> scaled_buffer =
-      webrtc::I420Buffer::Create(scaled_width_, scaled_height_);
-
-  // libyuvを使ってスケーリング
-  libyuv::I420Scale(buffer_if->DataY(), buffer_if->StrideY(),
-                    buffer_if->DataU(), buffer_if->StrideU(),
-                    buffer_if->DataV(), buffer_if->StrideV(),
-                    buffer_if->width(), buffer_if->height(),
-                    scaled_buffer->MutableDataY(), scaled_buffer->StrideY(),
-                    scaled_buffer->MutableDataU(), scaled_buffer->StrideU(),
-                    scaled_buffer->MutableDataV(), scaled_buffer->StrideV(),
-                    scaled_width_, scaled_height_, libyuv::kFilterBilinear);
-
-  // スケーリングしたフレームをARGB形式に変換
-  libyuv::ConvertFromI420(scaled_buffer->DataY(), scaled_buffer->StrideY(),
-                          scaled_buffer->DataU(), scaled_buffer->StrideU(),
-                          scaled_buffer->DataV(), scaled_buffer->StrideV(),
-                          image_.get(), input_width_ * 4, scaled_width_,
-                          scaled_height_, libyuv::FOURCC_ARGB);
-
-  has_new_frame_ = true;
-}
-
-webrtc::Mutex* SixelRenderer::Sink::GetMutex() {
-  return &frame_params_lock_;
-}
-
-bool SixelRenderer::Sink::HasNewFrame() {
-  return has_new_frame_;
-}
-
-void SixelRenderer::Sink::ResetNewFrame() {
-  has_new_frame_ = false;
-}
-
-int SixelRenderer::Sink::GetFrameWidth() {
-  return input_width_;
-}
-
-int SixelRenderer::Sink::GetFrameHeight() {
-  return input_height_;
-}
-
-int SixelRenderer::Sink::GetOriginalWidth() {
-  return original_width_;
-}
-
-int SixelRenderer::Sink::GetOriginalHeight() {
-  return original_height_;
-}
-
-uint8_t* SixelRenderer::Sink::GetImage() {
-  return image_.get();
-}
-
-void SixelRenderer::AddTrack(webrtc::VideoTrackInterface* track) {
-  std::unique_ptr<Sink> sink(new Sink(this, track));
-  webrtc::MutexLock lock(&sinks_lock_);
-  sinks_.push_back(std::make_pair(track, std::move(sink)));
-  RTC_LOG(LS_INFO) << "Sixelレンダラー: トラック追加";
-}
-
-void SixelRenderer::RemoveTrack(webrtc::VideoTrackInterface* track) {
-  webrtc::MutexLock lock(&sinks_lock_);
-  sinks_.erase(
-      std::remove_if(sinks_.begin(), sinks_.end(),
-                     [track](const VideoTrackSinkVector::value_type& sink) {
-                       return sink.first == track;
-                     }),
-      sinks_.end());
-  RTC_LOG(LS_INFO) << "Sixelレンダラー: トラック削除";
 }

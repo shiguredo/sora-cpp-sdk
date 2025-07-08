@@ -107,10 +107,10 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
       renderer_.reset(new SDLRenderer(
           config_.window_width, config_.window_height, config_.fullscreen));
     }
-    
+
     if (config_.use_sixel) {
-      sixel_renderer_.reset(new SixelRenderer(
-          config_.sixel_width, config_.sixel_height, config_.sixel_clear_screen));
+      sixel_renderer_.reset(
+          new SixelRenderer(config_.sixel_width, config_.sixel_height));
     }
 
     auto size = config_.GetSize();
