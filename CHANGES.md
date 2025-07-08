@@ -52,6 +52,8 @@
   - @melpon
 - [ADD] インストールするファイルに cmake/android.toolchain.cmake を追加
   - @melpon
+- [FIX] AMD AMF のデコーダーがオートスケーリング時に映像がおかしくなるのを修正
+  - @melpon
 
 ### misc
 

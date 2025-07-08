@@ -233,8 +233,8 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
   void OnPush(std::string text) override {}
   void OnMessage(std::string label, std::string data) override {}
 
-  void OnTrack(webrtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
-      override {
+  void OnTrack(webrtc::scoped_refptr<webrtc::RtpTransceiverInterface>
+                   transceiver) override {
     if (renderer_ == nullptr) {
       return;
     }
@@ -591,6 +591,7 @@ int main(int argc, char* argv[]) {
   if (!audio_playout_device.empty()) {
     context_config.audio_playout_device = audio_playout_device;
   }
+  context_config.use_audio_device = false;
   context_config.video_codec_factory_config.preference = std::invoke([&]() {
     std::optional<sora::VideoCodecPreference> preference;
     auto add_codec_preference =
