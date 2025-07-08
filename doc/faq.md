@@ -47,3 +47,9 @@ Sora C++ SDK は 4K@30fps での映像の配信に対応していますが、
 その場合、 `SoraVideoEncoderFactoryConfig` という構造体の `force_i420_conversion` フラグを `false` にすることで、4K@30fps で映像を配信できる場合があります。
 
 かなり内部的な話なので詳細については [コードのコメント](https://github.com/shiguredo/sora-cpp-sdk/blob/c29d3d6ec721ddc3d625275296506750a63460d4/include/sora/sora_video_encoder_factory.h#L59-L73) をご確認ください。
+
+## AMD AMF で映像受信時に映像の停止やデコード失敗が発生する
+
+AMD AMF を使用して映像を受信する際に、映像の停止やデコード失敗が発生することがあります。
+その場合は、AMD のグラフィックスドライバーのバージョンを更新することで解決できる可能性があります。
+[AMD のサポートページ](https://www.amd.com/ja/support/download/drivers.html)から最新のドライバーをダウンロードしてインストールした後、映像の受信を試してみてください。
