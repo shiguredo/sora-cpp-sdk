@@ -25,7 +25,10 @@ android {
                 //    "-DWEBRTC_INCLUDE_DIR=$projectDir/../../../_source/android/debug/webrtc/src",
                 //    "-DWEBRTC_LIBRARY_DIR=$projectDir/../../../_build/android/debug/webrtc",
                 //    "-DLIBCXX_INCLUDE_DIR=$projectDir/../../../_source/android/debug/webrtc/src/buildtools/third_party/libc++/trunk/include",
-                arguments "-DCMAKE_TOOLCHAIN_FILE=$projectDir/../../../_install/android/release/android-ndk/build/cmake/android.toolchain.cmake",
+                arguments "-DCMAKE_TOOLCHAIN_FILE=$projectDir/../../../cmake/android.toolchain.cmake",
+                    "-DANDROID_OVERRIDE_TOOLCHAIN_FILE=$projectDir/../../../_install/android/release/android-ndk/build/cmake/android.toolchain.cmake",
+                    "-DANDROID_OVERRIDE_C_COMPILER=$projectDir/../../../_install/android/release/llvm/clang/bin/clang",
+                    "-DANDROID_OVERRIDE_CXX_COMPILER=$projectDir/../../../_install/android/release/llvm/clang/bin/clang++",
                     "-DSORA_DIR=$projectDir/../../../_install/android/release/sora",
                     "-DCMAKE_BUILD_TYPE=Release",
                     "-DBOOST_ROOT=$projectDir/../../../_install/android/release/boost",
@@ -44,7 +47,9 @@ android {
                     "-DANDROID_ABI=arm64-v8a",
                     "-DANDROID_CPP_FEATURES=exceptions rtti",
                     "-DANDROID_NDK=$projectDir/../../../_install/android/release/android-ndk",
-                    "-DCMAKE_ANDROID_EXCEPTIONS=ON"
+                    "-DCMAKE_ANDROID_EXCEPTIONS=ON",
+                    "-DCMAKE_EXE_LINKER_FLAGS=-L$projectDir/../../../_install/android/release/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/aarch64",
+                    "-DCMAKE_SHARED_LINKER_FLAGS=-L$projectDir/../../../_install/android/release/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/aarch64"
             }
             ndk {
                 abiFilters 'arm64-v8a'
@@ -65,7 +70,7 @@ android {
     externalNativeBuild {
         cmake {
             path file('src/main/cpp/CMakeLists.txt')
-            version '4.0.1'
+            version '4.0.3'
         }
     }
     buildFeatures {

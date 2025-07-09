@@ -198,7 +198,7 @@ SDLRenderer::Sink::Sink(SDLRenderer* renderer,
       scaled_(false),
       width_(0),
       height_(0) {
-  track_->AddOrUpdateSink(this, rtc::VideoSinkWants());
+  track_->AddOrUpdateSink(this, webrtc::VideoSinkWants());
 }
 
 SDLRenderer::Sink::~Sink() {
@@ -241,9 +241,9 @@ void SDLRenderer::Sink::OnFrame(const webrtc::VideoFrame& frame) {
     RTC_LOG(LS_VERBOSE) << __FUNCTION__ << ": scaled_=" << scaled_;
     outline_changed_ = false;
   }
-  rtc::scoped_refptr<webrtc::I420BufferInterface> buffer_if;
+  webrtc::scoped_refptr<webrtc::I420BufferInterface> buffer_if;
   if (scaled_) {
-    rtc::scoped_refptr<webrtc::I420Buffer> buffer =
+    webrtc::scoped_refptr<webrtc::I420Buffer> buffer =
         webrtc::I420Buffer::Create(width_, height_);
     buffer->ScaleFrom(*frame.video_frame_buffer()->ToI420());
     if (frame.rotation() != webrtc::kVideoRotation_0) {

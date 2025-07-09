@@ -42,9 +42,9 @@ struct DeviceVideoCapturerConfig : ScalableVideoTrackSourceConfig {
 // 様々な環境で動作するデバイスキャプチャラを利用したい場合、
 // CreateCameraDeviceCapturer 関数を利用して生成するのが良い。
 class DeviceVideoCapturer : public ScalableVideoTrackSource,
-                            public rtc::VideoSinkInterface<webrtc::VideoFrame> {
+                            public webrtc::VideoSinkInterface<webrtc::VideoFrame> {
  public:
-  static rtc::scoped_refptr<DeviceVideoCapturer> Create(
+  static webrtc::scoped_refptr<DeviceVideoCapturer> Create(
       const DeviceVideoCapturerConfig& config);
   DeviceVideoCapturer(const DeviceVideoCapturerConfig& config);
   virtual ~DeviceVideoCapturer();
@@ -56,13 +56,13 @@ class DeviceVideoCapturer : public ScalableVideoTrackSource,
             size_t capture_device_index);
   void Destroy();
 
-  // rtc::VideoSinkInterface interface.
+  // webrtc::VideoSinkInterface interface.
   void OnFrame(const webrtc::VideoFrame& frame) override;
 
   int LogDeviceInfo();
   int GetDeviceIndex(const std::string& device);
 
-  rtc::scoped_refptr<webrtc::VideoCaptureModule> vcm_;
+  webrtc::scoped_refptr<webrtc::VideoCaptureModule> vcm_;
   webrtc::VideoCaptureCapability capability_;
 };
 

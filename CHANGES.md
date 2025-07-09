@@ -11,6 +11,65 @@
 
 ## develop
 
+## 2025.4.0
+
+**リリース日**: 2025-07-09
+
+- [CHANGE] OnDataChannel コールバックで、`#` で始まっていないラベルも Open 状態になったことを通知する
+  - @melpon
+- [CHANGE] Android ビルドに利用するコンパイラを Android NDK に内包されている clang ではなく、libwebrtc の clang に変更する
+  - @melpon
+- [UPDATE] libwebrtc を m138.7204.0.1 にあげる
+  - `rtc::revive::` を　`webrtc::revive::` に変更する
+  - m137 で `rtc_base/third_party/base64/base64.h` が削除されたため、websocket.cpp で `rtc_base/base64.h` をインクルードするように変更する
+  - `webrtc::Base64::Encode` から `webrtc::Base64Encode` に変更する
+  - Android ビルドに利用するコンパイラを Android NDK に内包されている clang ではなく、libwebrtc の clang に変更する
+  - `sora::AudioDeviceModuleConfig` から `task_queue_factory` を削除して `env` を追加する
+  - `webrtc::CreateOpenSLESAudioDeviceModule` を `webrtc::CreateJavaAudioDeviceModule` に変更する
+  - @miosakuma @torikizi @melpon
+- [UPDATE] Android NDK を r28b にあげる
+  - 16KB ページサイズに対応するため
+    - ref: https://developer.android.com/guide/practices/page-sizes
+  - @melpon
+- [UPDATE] Gradle のバージョンを 8.14.2 にあげる
+  - @melpon
+- [UPDATE] Android Gradle Plugin のバージョンを 8.10.0 にあげる
+  - @melpon
+- [UPDATE] Android SDK Command-line tools のバージョンを 13114758 にあげる
+  - @melpon
+- [UPDATE] `NVIDIA Video Codec SDK` を [13.0](https://docs.nvidia.com/video-technologies/video-codec-sdk/13.0/index.html) にアップデートする
+  - NVIDIA Video Codec SDK で新たに追加された `NvEncOutputFrame` 構造体に対応する  
+    - `v_packet_` を `std::vector<std::vector<uint8_t>>` から `std::vector<NvEncOutputFrame>` に変更する  
+    - `for (std::vector<uint8_t>& packet : v_packet_)` を `for (NvEncOutputFrame& output : v_packet_)` に変更する  
+    - ループ内に `std::vector<uint8_t>& packet = output.frame;` を追加し、既存処理との互換性を維持する
+    - コーデックごとに実行していたキーフレーム判定を NvEncOutputFrame のフレーム情報を利用して行うように変更する
+  - @torikizi
+- [UPDATE] Blend2D を公式サイトからダウンロードするように変更する
+  - 今までは現時点の master のコミットハッシュを使っていたが、asmjit と一緒にバージョンを管理しないといけなかった
+  - 公式サイトからのダウンロードだと asmjit を内包してるのでこっちの方が管理が楽そうという判断
+  - @melpon
+- [ADD] ubuntu-22.04_armv8 を追加
+  - @melpon
+- [ADD] rpc ラベルにメッセージが来た時に OnRpc コールバックを呼び出す
+  - @melpon
+- [ADD] run.py の引数に `--disable-cuda` を追加
+  - @melpon
+- [ADD] インストールするファイルに cmake/android.toolchain.cmake を追加
+  - @melpon
+- [FIX] AMD AMF のデコーダーがオートスケーリング時に映像がおかしくなるのを修正
+  - @melpon
+
+### misc
+
+- [UPDATE] CMake を 4.0.3 にあげる
+  - @voluntas @torikizi
+- [UPDATE] SDL を 2.32.6 に上げる
+  - @voluntas
+- [UPDATE] test と examples の `rtc::` を `webrtc::` に変更する
+  - @torikizi
+- [ADD] .github ディレクトリに copilot-instructions.md を追加
+  - @torikizi
+
 ## 2025.3.1
 
 **リリース日**: 2025-05-23
@@ -20,6 +79,7 @@
   - Sora から type: switched のメッセージを受け取って WS を切断するタイミングと、ユーザーからの切断のタイミングが被るとクラッシュすることがある
   - WS を非同期処理で Close しているが、この処理中にユーザーからの Disconnect 呼び出しをすると、WS の Close 完了前に WS が破棄されてしまって未定義動作となる
   - WS を綺麗にシャットダウンするのを諦めて（Close フレームを送らず）、同期的に TCP ソケットを閉じるように修正する
+  - @melpon
 
 ## 2025.3.0
 

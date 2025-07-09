@@ -2,10 +2,10 @@
 
 namespace sora {
 
-rtc::scoped_refptr<CreateSessionDescriptionThunk>
+webrtc::scoped_refptr<CreateSessionDescriptionThunk>
 CreateSessionDescriptionThunk::Create(OnSuccessFunc on_success,
                                       OnFailureFunc on_failure) {
-  return rtc::make_ref_counted<CreateSessionDescriptionThunk>(
+  return webrtc::make_ref_counted<CreateSessionDescriptionThunk>(
       std::move(on_success), std::move(on_failure));
 }
 
@@ -30,10 +30,10 @@ void CreateSessionDescriptionThunk::OnFailure(webrtc::RTCError error) {
   }
 }
 
-rtc::scoped_refptr<SetSessionDescriptionThunk>
+webrtc::scoped_refptr<SetSessionDescriptionThunk>
 SetSessionDescriptionThunk::Create(OnSuccessFunc on_success,
                                    OnFailureFunc on_failure) {
-  return rtc::make_ref_counted<SetSessionDescriptionThunk>(
+  return webrtc::make_ref_counted<SetSessionDescriptionThunk>(
       std::move(on_success), std::move(on_failure));
 }
 
@@ -80,7 +80,7 @@ void SessionDescription::SetOffer(webrtc::PeerConnectionInterface* pc,
 void SessionDescription::CreateAnswer(webrtc::PeerConnectionInterface* pc,
                                       OnSessionCreateSuccessFunc on_success,
                                       OnSessionCreateFailureFunc on_failure) {
-  rtc::scoped_refptr<webrtc::PeerConnectionInterface> rpc(pc);
+  webrtc::scoped_refptr<webrtc::PeerConnectionInterface> rpc(pc);
   auto with_set_local_desc = [rpc, on_success = std::move(on_success)](
                                  webrtc::SessionDescriptionInterface* desc) {
     std::string sdp;

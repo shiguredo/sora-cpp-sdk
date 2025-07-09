@@ -68,10 +68,10 @@ bool DeviceVideoCapturer::Init(size_t width,
   return true;
 }
 
-rtc::scoped_refptr<DeviceVideoCapturer> DeviceVideoCapturer::Create(
+webrtc::scoped_refptr<DeviceVideoCapturer> DeviceVideoCapturer::Create(
     const DeviceVideoCapturerConfig& config) {
-  rtc::scoped_refptr<DeviceVideoCapturer> capturer =
-      rtc::make_ref_counted<DeviceVideoCapturer>(config);
+  webrtc::scoped_refptr<DeviceVideoCapturer> capturer =
+      webrtc::make_ref_counted<DeviceVideoCapturer>(config);
 
   // 便利なのでデバイスの一覧をログに出力しておく
   if (capturer->LogDeviceInfo() != 0) {
@@ -115,7 +115,7 @@ rtc::scoped_refptr<DeviceVideoCapturer> DeviceVideoCapturer::Create(
   }
   int num_devices = info->NumberOfDevices();
   for (int i = 0; i < num_devices; ++i) {
-    capturer = rtc::make_ref_counted<DeviceVideoCapturer>(config);
+    capturer = webrtc::make_ref_counted<DeviceVideoCapturer>(config);
     if (!capturer->Init(config.width, config.height, config.target_fps, i)) {
       RTC_LOG(LS_WARNING) << "Failed to create DeviceVideoCapturer(w = "
                           << config.width << ", h = " << config.height

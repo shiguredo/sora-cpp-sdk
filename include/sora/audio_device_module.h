@@ -1,15 +1,16 @@
 #ifndef SORA_AUDIO_DEVICE_MODULE_H_
 #define SORA_AUDIO_DEVICE_MODULE_H_
 
+#include <api/environment/environment_factory.h>
 #include <api/task_queue/task_queue_factory.h>
 #include <modules/audio_device/include/audio_device.h>
 
 namespace sora {
 
 struct AudioDeviceModuleConfig {
+  webrtc::Environment env = webrtc::CreateEnvironment();
   webrtc::AudioDeviceModule::AudioLayer audio_layer =
       webrtc::AudioDeviceModule::kPlatformDefaultAudio;
-  webrtc::TaskQueueFactory* task_queue_factory = nullptr;
 
   // 以下は Android のみ必要かつ必須
   void* jni_env = nullptr;
@@ -18,7 +19,7 @@ struct AudioDeviceModuleConfig {
 
 // オーディオデバイスを使った ADM を生成する。
 // マイクからの録音と、スピーカーからの再生ができるようになる。
-rtc::scoped_refptr<webrtc::AudioDeviceModule> CreateAudioDeviceModule(
+webrtc::scoped_refptr<webrtc::AudioDeviceModule> CreateAudioDeviceModule(
     const AudioDeviceModuleConfig& config);
 
 }  // namespace sora

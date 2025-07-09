@@ -39,7 +39,7 @@ struct MacCapturerConfig : ScalableVideoTrackSourceConfig {
 
 class MacCapturer : public ScalableVideoTrackSource {
  public:
-  static rtc::scoped_refptr<MacCapturer> Create(
+  static webrtc::scoped_refptr<MacCapturer> Create(
       const MacCapturerConfig& config);
   MacCapturer(const MacCapturerConfig& config);
   virtual ~MacCapturer();
