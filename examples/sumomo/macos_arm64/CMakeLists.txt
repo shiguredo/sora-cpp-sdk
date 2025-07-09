@@ -33,6 +33,7 @@ set_target_properties(sumomo PROPERTIES CXX_VISIBILITY_PRESET hidden)
 target_sources(sumomo
   PRIVATE
     ../src/sumomo.cpp
+    ../src/ansi_renderer.cpp
     ../src/base_renderer.cpp
     ../src/sdl_renderer.cpp
     ../src/sixel_renderer.cpp)

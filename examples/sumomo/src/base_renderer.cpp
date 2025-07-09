@@ -12,10 +12,14 @@
 
 #define STD_ASPECT 1.33
 #define WIDE_ASPECT 1.78
-#define FRAME_INTERVAL (1000 / 30)
 
-BaseRenderer::BaseRenderer(int width, int height)
-    : running_(false), width_(width), height_(height), rows_(1), cols_(1) {}
+BaseRenderer::BaseRenderer(int width, int height, int fps)
+    : running_(false),
+      width_(width),
+      height_(height),
+      fps_(fps),
+      rows_(1),
+      cols_(1) {}
 
 BaseRenderer::~BaseRenderer() {
   Stop();
@@ -97,9 +101,10 @@ void BaseRenderer::RenderThread() {
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
                        frame_end - frame_start)
                        .count();
-    if (elapsed < FRAME_INTERVAL) {
+    int frame_interval = 1000 / fps_;
+    if (elapsed < frame_interval) {
       std::this_thread::sleep_for(
-          std::chrono::milliseconds(FRAME_INTERVAL - elapsed));
+          std::chrono::milliseconds(frame_interval - elapsed));
     }
   }
 

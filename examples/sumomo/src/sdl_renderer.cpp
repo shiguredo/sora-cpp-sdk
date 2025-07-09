@@ -14,7 +14,7 @@
 #define FRAME_INTERVAL (1000 / 30)
 
 SDLRenderer::SDLRenderer(int width, int height, bool fullscreen)
-    : BaseRenderer(width, height),
+    : BaseRenderer(width, height, 30),
       window_(nullptr),
       renderer_(nullptr),
       dispatch_(nullptr) {

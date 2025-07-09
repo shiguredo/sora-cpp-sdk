@@ -1,5 +1,5 @@
-#ifndef SIXEL_RENDERER_H_
-#define SIXEL_RENDERER_H_
+#ifndef ANSI_RENDERER_H_
+#define ANSI_RENDERER_H_
 
 #include <atomic>
 #include <memory>
@@ -15,10 +15,10 @@
 
 #include "base_renderer.h"
 
-class SixelRenderer : public BaseRenderer {
+class AnsiRenderer : public BaseRenderer {
  public:
-  SixelRenderer(int width, int height);
-  ~SixelRenderer() override;
+  AnsiRenderer(int width, int height);
+  ~AnsiRenderer() override;
 
   void RenderThreadStarted() override;
   void RenderThreadFinished() override;
@@ -28,14 +28,13 @@ class SixelRenderer : public BaseRenderer {
               const std::vector<SinkInfo>& sink_infos) override;
 
  private:
-  void OutputSixel(const uint8_t* rgb_data, int width, int height);
+  void OutputAnsi(const uint8_t* rgb_data, int width, int height);
   void ClearScreen();
   void MoveCursorToTop();
-  void InitializeColorLookupTable();
+  std::string RgbToAnsi(uint8_t r, uint8_t g, uint8_t b);
 
-  // 色変換用ルックアップテーブル
-  std::vector<uint8_t> color_lookup_table_;
-  std::map<uint32_t, int> palette_map_;
+  // ANSI 256色パレットへの変換用
+  int RgbToAnsi256(uint8_t r, uint8_t g, uint8_t b);
 };
 
 #endif

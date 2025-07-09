@@ -18,7 +18,7 @@
 
 class BaseRenderer {
  public:
-  BaseRenderer(int width, int height);
+  BaseRenderer(int width, int height, int fps);
   virtual ~BaseRenderer();
 
   void Start();
@@ -106,6 +106,7 @@ class BaseRenderer {
   std::unique_ptr<std::thread> thread_;
   int width_;
   int height_;
+  int fps_;
   int rows_;
   int cols_;
 };

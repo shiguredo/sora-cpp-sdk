@@ -32,6 +32,7 @@ set_target_properties(sumomo PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_sources(sumomo
   PRIVATE
     ../src/sumomo.cpp
+    ../src/ansi_renderer.cpp
     ../src/base_renderer.cpp
     ../src/sdl_renderer.cpp
     ../src/sixel_renderer.cpp)

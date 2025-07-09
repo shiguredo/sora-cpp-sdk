@@ -23,7 +23,7 @@
 class SDLRenderer : public BaseRenderer {
  public:
   SDLRenderer(int width, int height, bool fullscreen);
-  ~SDLRenderer();
+  ~SDLRenderer() override;
 
   void SetDispatchFunction(std::function<void(std::function<void()>)> dispatch);
 

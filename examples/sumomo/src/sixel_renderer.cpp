@@ -20,12 +20,14 @@
 #define FRAME_INTERVAL (1000 / 10)  // 10 FPS for terminal display
 
 SixelRenderer::SixelRenderer(int width, int height)
-    : BaseRenderer(width, height) {
+    : BaseRenderer(width, height, 10) {
   InitializeColorLookupTable();
   Start();
 }
 
-SixelRenderer::~SixelRenderer() {}
+SixelRenderer::~SixelRenderer() {
+  Stop();
+}
 
 void SixelRenderer::RenderThreadStarted() {}
 void SixelRenderer::RenderThreadFinished() {}
@@ -124,6 +126,9 @@ void SixelRenderer::InitializeColorLookupTable() {
 void SixelRenderer::OutputSixel(const uint8_t* rgb_data,
                                 int width,
                                 int height) {
+  std::string output;
+  output.reserve(width * height * 10);  // 大体のサイズを予約
+
   // 減色された画像データを作成（ルックアップテーブルを使用）
   std::vector<uint8_t> indexed_image(width * height);
   for (int y = 0; y < height; y++) {
@@ -145,7 +150,10 @@ void SixelRenderer::OutputSixel(const uint8_t* rgb_data,
   }
 
   // Sixelフォーマットでの出力開始
-  std::cout << "\033Pq\"1;1;" << width << ";" << height;
+  output += "\033Pq\"1;1;";
+  output += std::to_string(width);
+  output += ";";
+  output += std::to_string(height);
 
   // グローバルカラーパレットを定義
   for (const auto& [color, index] : palette_map_) {
@@ -158,8 +166,14 @@ void SixelRenderer::OutputSixel(const uint8_t* rgb_data,
     int g_percent = (g * 100) / 255;
     int b_percent = (b * 100) / 255;
 
-    std::cout << "#" << index << ";2;" << r_percent << ";" << g_percent << ";"
-              << b_percent;
+    output += "#";
+    output += std::to_string(index);
+    output += ";2;";
+    output += std::to_string(r_percent);
+    output += ";";
+    output += std::to_string(g_percent);
+    output += ";";
+    output += std::to_string(b_percent);
   }
 
   // 6行ずつ処理
@@ -188,22 +202,26 @@ void SixelRenderer::OutputSixel(const uint8_t* rgb_data,
       // この色にピクセルがある場合のみ出力
       if (has_pixels) {
         if (!first_color) {
-          std::cout << "$";  // 行の最初に戻る
+          output += "$";  // 行の最初に戻る
         }
         first_color = false;
 
-        std::cout << "#" << index;
+        output += "#";
+        output += std::to_string(index);
 
         for (uint8_t sixel_byte : sixel_line) {
           // Sixel文字として出力（63を加える）
-          std::cout << static_cast<char>(sixel_byte + 63);
+          output += static_cast<char>(sixel_byte + 63);
         }
       }
     }
 
-    std::cout << "-";  // 次の6行へ
+    output += "-";  // 次の6行へ
   }
 
   // Sixel終了
-  std::cout << "\033\\" << std::flush;
+  output += "\033\\";
+
+  // 一括出力
+  std::cout << output << std::flush;
 }
