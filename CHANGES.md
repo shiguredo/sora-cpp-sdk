@@ -11,6 +11,10 @@
 
 ## develop
 
+## 2025.4.0
+
+**リリース日**: 2025-07-09
+
 - [CHANGE] OnDataChannel コールバックで、`#` で始まっていないラベルも Open 状態になったことを通知する
   - @melpon
 - [CHANGE] Android ビルドに利用するコンパイラを Android NDK に内包されている clang ではなく、libwebrtc の clang に変更する
