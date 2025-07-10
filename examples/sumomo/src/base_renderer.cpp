@@ -1,7 +1,9 @@
 #include "base_renderer.h"
 
+#include <algorithm>
+#include <chrono>
 #include <cmath>
-#include <csignal>
+#include <cstring>
 
 // WebRTC
 #include <api/video/i420_buffer.h>

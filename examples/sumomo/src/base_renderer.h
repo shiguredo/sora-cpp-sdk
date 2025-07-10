@@ -1,13 +1,10 @@
 #ifndef BASE_RENDERER_H_
 #define BASE_RENDERER_H_
 
+#include <atomic>
 #include <memory>
-#include <string>
 #include <thread>
 #include <vector>
-
-// Boost
-#include <boost/asio.hpp>
 
 // WebRTC
 #include <api/media_stream_interface.h>

@@ -1,12 +1,8 @@
 #include "sdl_renderer.h"
 
-#include <cmath>
 #include <csignal>
 
 // WebRTC
-#include <api/video/i420_buffer.h>
-#include <libyuv/convert_from.h>
-#include <libyuv/video_common.h>
 #include <rtc_base/logging.h>
 
 SDLRenderer::SDLRenderer(int width, int height, bool fullscreen)

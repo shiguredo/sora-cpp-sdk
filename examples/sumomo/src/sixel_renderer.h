@@ -1,17 +1,8 @@
 #ifndef SIXEL_RENDERER_H_
 #define SIXEL_RENDERER_H_
 
-#include <atomic>
-#include <memory>
-#include <string>
+#include <map>
 #include <vector>
-
-// WebRTC
-#include <api/media_stream_interface.h>
-#include <api/scoped_refptr.h>
-#include <api/video/video_frame.h>
-#include <api/video/video_sink_interface.h>
-#include <rtc_base/synchronization/mutex.h>
 
 #include "base_renderer.h"
 

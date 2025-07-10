@@ -1,20 +1,9 @@
 #include "sixel_renderer.h"
 
-#include <algorithm>
-#include <climits>
-#include <cmath>
-#include <csignal>
 #include <iomanip>
 #include <iostream>
-#include <map>
-#include <sstream>
-#include <vector>
 
 // WebRTC
-#include <api/video/i420_buffer.h>
-#include <libyuv/convert_from.h>
-#include <libyuv/scale.h>
-#include <libyuv/video_common.h>
 #include <rtc_base/logging.h>
 
 SixelRenderer::SixelRenderer(int width, int height)
