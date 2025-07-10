@@ -92,8 +92,8 @@ void BaseRenderer::RenderThread() {
         info.input_height = sink->GetInputHeight();
         info.frame_width = sink->GetFrameWidth();
         info.frame_height = sink->GetFrameHeight();
-        info.width = width;
-        info.height = height;
+        info.width = sink->GetWidth();
+        info.height = sink->GetHeight();
         sink_infos.push_back(info);
       }
     }
