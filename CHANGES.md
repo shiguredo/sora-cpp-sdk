@@ -11,6 +11,11 @@
 
 ## develop
 
+### misc
+
+- [CHANGE] SDL サンプルと Sumomo から `--multistream` オプションを削除する
+  - @torikizi
+
 ## 2025.4.0
 
 **リリース日**: 2025-07-09
