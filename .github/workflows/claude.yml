@@ -23,11 +23,11 @@ jobs:
           model: "claude-opus-4-20250514"
           trigger_phrase: "!opus"
           timeout_minutes: 15
-          disallowed_tools: "Bash(git *)"
+          disallowed_tools: "Bash(git:*)"
           direct_prompt: "PR のレビューと分析のみ行ってください。コードの変更やコミットは一切行わないでください。"
 
   claude-sonnet-response-others:
-    if: contains(fromJSON('["melpon", "torikizi", "miosakuma", "zztkm"]'), github.event.comment.user.login)
+    if: contains(fromJSON('["Hexa", "akko", "sile", "melpon", "tnamao", "torikizi", "miosakuma", "zztkm", "t-miya"]'), github.event.comment.user.login)
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -39,5 +39,5 @@ jobs:
           model: "claude-sonnet-4-20250514"
           trigger_phrase: "!sonnet"
           timeout_minutes: 15
-          disallowed_tools: "Bash(git *)"
+          disallowed_tools: "Bash(git:*)"
           direct_prompt: "PR のレビューと分析のみ行ってください。コードの変更やコミットは一切行わないでください。"
