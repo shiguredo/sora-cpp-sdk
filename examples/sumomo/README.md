@@ -132,13 +132,13 @@ _build/ubuntu-24.04_x86_64/release/sumomo/
 Windows の場合
 
 ```powershell
-> .\sumomo.exe --signaling-url wss://sora.example.com/signaling --role sendrecv --channel-id sora --multistream true --use-sdl
+> .\sumomo.exe --signaling-url wss://sora.example.com/signaling --role sendrecv --channel-id sora --use-sdl
 ```
 
 Windows 以外の場合
 
 ```shell
-./sumomo --signaling-url wss://sora.example.com/signaling --role sendrecv --channel-id sora --multistream true --use-sdl
+./sumomo --signaling-url wss://sora.example.com/signaling --role sendrecv --channel-id sora --use-sdl
 ```
 
 #### 必須オプション
@@ -186,8 +186,6 @@ Windows 以外の場合
   - 0 は未指定と見なされます
 - `--metadata` : [メタデータ](https://sora-doc.shiguredo.jp/SIGNALING#414142)
   - JSON 形式の文字列を指定してください
-- `--multistream` : [マルチストリーム](https://sora-doc.shiguredo.jp/SIGNALING#808bc2) 機能の利用 (true/false)
-  - 未指定の場合は Sora の設定 (デフォルト: true) が設定されます
 - `--spotlight` : [スポットライト](https://sora-doc.shiguredo.jp/SIGNALING#8f6c79) 機能の利用 (true/false)
   - 未指定の場合は Sora の設定 (デフォルト: false) が設定されます
 - `--spotlight-number` : [spotlight_number](https://sora-doc.shiguredo.jp/SPOTLIGHT#c66032)
