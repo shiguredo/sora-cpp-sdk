@@ -1,4 +1,4 @@
-name: Claude Sonnet Assistant
+name: Claude Assistant
 
 on:
   issue_comment:
@@ -10,7 +10,7 @@ env:
   ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY_SORA_OSS_SONNET }}
 
 jobs:
-  claude-sonnet-response-voluntas:
+  claude-opus-response-voluntas:
     if: github.event.comment.user.login == 'voluntas'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -21,11 +21,11 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN_VOLUNTAS }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           model: "claude-sonnet-4-20250514"
-          trigger_phrase: "!sonnet"
+          trigger_phrase: "!opus"
           timeout_minutes: 15
 
   claude-sonnet-response-others:
-    if: contains(fromJSON('["melpon", "zztkm", "torikizi", "miosakuma"]'), github.event.comment.user.login)
+    if: contains(fromJSON('["zztkm", "torikizi", "miosakuma"]'), github.event.comment.user.login)
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
