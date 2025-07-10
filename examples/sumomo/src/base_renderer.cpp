@@ -10,8 +10,8 @@
 #include <libyuv/video_common.h>
 #include <rtc_base/logging.h>
 
-#define STD_ASPECT 1.33
-#define WIDE_ASPECT 1.78
+static constexpr float STD_ASPECT = 1.33f;   // 4:3
+static constexpr float WIDE_ASPECT = 1.78f;  // 16:9
 
 BaseRenderer::BaseRenderer(int width, int height, int fps)
     : running_(false),
@@ -53,7 +53,7 @@ void BaseRenderer::SetSize(int width, int height) {
 void BaseRenderer::RenderThread() {
   RenderThreadStarted();
 
-  std::unique_ptr<uint8_t> image(new uint8_t[width_ * height_ * 4]);
+  std::unique_ptr<uint8_t[]> image(new uint8_t[width_ * height_ * 4]);
 
   while (running_) {
     memset(image.get(), 0, width_ * height_ * 4);
@@ -67,14 +67,16 @@ void BaseRenderer::RenderThread() {
 
         webrtc::MutexLock frame_lock(sink->GetMutex());
 
-        if (!sink->GetOutlineChanged())
+        if (sink->GetOutlineChanged()) {
           continue;
+        }
 
         int width = sink->GetFrameWidth();
         int height = sink->GetFrameHeight();
 
-        if (width == 0 || height == 0)
+        if (width == 0 || height == 0) {
           continue;
+        }
 
         libyuv::ARGBCopy(sink->GetImage(), width * 4,
                          image.get() + sink->GetOffsetX() * 4 +
@@ -207,7 +209,7 @@ webrtc::Mutex* BaseRenderer::Sink::GetMutex() {
 }
 
 bool BaseRenderer::Sink::GetOutlineChanged() {
-  return !outline_changed_;
+  return outline_changed_;
 }
 
 int BaseRenderer::Sink::GetOffsetX() {
