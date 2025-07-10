@@ -9,10 +9,6 @@
 #include <libyuv/video_common.h>
 #include <rtc_base/logging.h>
 
-#define STD_ASPECT 1.33
-#define WIDE_ASPECT 1.78
-#define FRAME_INTERVAL (1000 / 30)
-
 SDLRenderer::SDLRenderer(int width, int height, bool fullscreen)
     : BaseRenderer(width, height, 30),
       window_(nullptr),

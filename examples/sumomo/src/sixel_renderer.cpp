@@ -17,8 +17,6 @@
 #include <libyuv/video_common.h>
 #include <rtc_base/logging.h>
 
-#define FRAME_INTERVAL (1000 / 10)  // 10 FPS for terminal display
-
 SixelRenderer::SixelRenderer(int width, int height)
     : BaseRenderer(width, height, 10) {
   InitializeColorLookupTable();
@@ -179,7 +177,6 @@ void SixelRenderer::OutputSixel(const uint8_t* rgb_data,
   // 6行ずつ処理
   for (int y = 0; y < height; y += 6) {
     // 各色について6行分のデータを出力
-    bool first_color = true;
     for (const auto& [color, index] : palette_map_) {
       std::vector<uint8_t> sixel_line;
       bool has_pixels = false;
@@ -201,10 +198,7 @@ void SixelRenderer::OutputSixel(const uint8_t* rgb_data,
 
       // この色にピクセルがある場合のみ出力
       if (has_pixels) {
-        if (!first_color) {
-          output += "$";  // 行の最初に戻る
-        }
-        first_color = false;
+        output += "$";  // 行の最初に戻る
 
         output += "#";
         output += std::to_string(index);
