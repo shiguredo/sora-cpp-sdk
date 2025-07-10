@@ -16,6 +16,11 @@
 - [CHANGE] SDL サンプルと Sumomo から `--multistream` オプションを削除する
   - マルチストリーム機能は Sora サーバー側で制御されるため、クライアント側でオプションは不要となりました
   - @torikizi
+- [ADD] sumomo のレンダラーに Sixel と ANSI エスケープシーケンスでの表示を追加する
+  - `--use-sixel`, `--sixel-width`, `--sixel-height` オプションの追加
+  - `--use-ansi`, `--ansi-width`, `--ansi-height` オプションの追加
+  - また、この過程で SDLRenderer の SDL に依存しない部分をベースクラス（BaseRenderer）としてまとめた
+  - @melpon
 
 ## 2025.4.0
 
