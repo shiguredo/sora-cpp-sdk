@@ -11,6 +11,16 @@
 
 ## develop
 
+### misc
+
+- [CHANGE] SDL サンプルと Sumomo から `--multistream` オプションを削除する
+  - マルチストリーム機能は Sora サーバー側で制御されるため、クライアント側でオプションは不要となりました
+  - @torikizi
+
+## 2025.4.0
+
+**リリース日**: 2025-07-09
+
 - [CHANGE] OnDataChannel コールバックで、`#` で始まっていないラベルも Open 状態になったことを通知する
   - @melpon
 - [CHANGE] Android ビルドに利用するコンパイラを Android NDK に内包されている clang ではなく、libwebrtc の clang に変更する
@@ -75,6 +85,7 @@
   - Sora から type: switched のメッセージを受け取って WS を切断するタイミングと、ユーザーからの切断のタイミングが被るとクラッシュすることがある
   - WS を非同期処理で Close しているが、この処理中にユーザーからの Disconnect 呼び出しをすると、WS の Close 完了前に WS が破棄されてしまって未定義動作となる
   - WS を綺麗にシャットダウンするのを諦めて（Close フレームを送らず）、同期的に TCP ソケットを閉じるように修正する
+  - @melpon
 
 ## 2025.3.0
 

@@ -24,7 +24,6 @@ struct SDLSampleConfig {
   std::string role;
   std::string video_codec_type;
   std::string audio_codec_type;
-  std::optional<bool> multistream;
   int width = 640;
   int height = 480;
   boost::json::value metadata;
@@ -73,7 +72,6 @@ class SDLSample : public std::enable_shared_from_this<SDLSample>,
     config.observer = shared_from_this();
     config.signaling_urls.push_back(config_.signaling_url);
     config.channel_id = config_.channel_id;
-    config.multistream = config_.multistream;
     config.video = config_.video;
     config.audio = config_.audio;
     config.role = config_.role;
@@ -224,8 +222,6 @@ int main(int argc, char* argv[]) {
   app.add_option("--metadata", metadata,
                  "Signaling metadata used in connect message")
       ->check(is_json);
-  add_optional_bool(app, "--multistream", config.multistream,
-                    "Use multistream (default: none)");
 
   // SDL に関するオプション
   app.add_option("--width", config.width, "SDL window width");

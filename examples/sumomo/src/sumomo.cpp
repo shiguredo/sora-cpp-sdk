@@ -39,7 +39,6 @@ struct SumomoConfig {
   boost::json::value video_h264_params;
   boost::json::value video_h265_params;
   boost::json::value metadata;
-  std::optional<bool> multistream;
   std::optional<bool> spotlight;
   int spotlight_number = 0;
   std::optional<bool> simulcast;
@@ -164,7 +163,6 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
     config.signaling_urls.push_back(config_.signaling_url);
     config.channel_id = config_.channel_id;
     config.role = config_.role;
-    config.multistream = config_.multistream;
     config.client_id = config_.client_id;
     config.video = config_.video;
     config.audio = config_.audio;
@@ -175,7 +173,6 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
     config.video_h264_params = config_.video_h264_params;
     config.video_h265_params = config_.video_h265_params;
     config.metadata = config_.metadata;
-    config.multistream = config_.multistream;
     config.spotlight = config_.spotlight;
     config.spotlight_number = config_.spotlight_number;
     config.simulcast = config_.simulcast;
@@ -419,8 +416,6 @@ int main(int argc, char* argv[]) {
   app.add_option("--metadata", metadata,
                  "Signaling metadata used in connect message")
       ->check(is_json);
-  add_optional_bool(app, "--multistream", config.multistream,
-                    "Use multistream (default: none)");
   add_optional_bool(app, "--spotlight", config.spotlight,
                     "Use spotlight (default: none)");
   app.add_option("--spotlight-number", config.spotlight_number,

@@ -21,6 +21,7 @@
 #include <modules/video_coding/include/video_codec_interface.h>
 #include <modules/video_coding/include/video_error_codes.h>
 #include <modules/video_coding/svc/create_scalability_structure.h>
+// create_scalability_structure.h で include 済みだが、依存性を明示するために include する
 #include <modules/video_coding/svc/scalable_video_controller.h>
 #include <rtc_base/logging.h>
 
@@ -416,6 +417,7 @@ int32_t NvCodecVideoEncoderImpl::Encode(
           layer_frames = svc_controller_->NextFrameConfig(is_key);
       codec_specific.end_of_picture = true;
       codec_specific.scalability_mode = scalability_mode_;
+      // layer_frames[0] が無効の場合、アクセス違反となるが、基本的に無効になることはない
       codec_specific.generic_frame_info =
           svc_controller_->OnEncodeDone(layer_frames[0]);
       if (is_key && codec_specific.generic_frame_info) {
@@ -452,6 +454,7 @@ void NvCodecVideoEncoderImpl::SetRates(
     return;
   }
 
+  // bitrate が 0 の時レイヤーを無効にする
   if (svc_controller_) {
     svc_controller_->OnRatesUpdated(parameters.bitrate);
   }
@@ -626,6 +629,7 @@ std::unique_ptr<NvEncoder> NvCodecVideoEncoderImpl::CreateEncoder(
     } else if (codec == CudaVideoCodec::AV1) {
       encode_config.encodeCodecConfig.av1Config.idrPeriod =
           NVENC_INFINITE_GOPLENGTH;
+      // キーフレームにサイズ情報が付与されていない状態になるのを防ぐ
       encode_config.encodeCodecConfig.av1Config.repeatSeqHdr = 1;
     }
 
