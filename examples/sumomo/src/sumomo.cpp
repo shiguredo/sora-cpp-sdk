@@ -14,6 +14,9 @@
 // WebRTC
 #include <rtc_base/crypto_random.h>
 
+// SDL3
+#include <SDL3/SDL_main.h>
+
 #include "ansi_renderer.h"
 #include "sdl_renderer.h"
 #include "sixel_renderer.h"

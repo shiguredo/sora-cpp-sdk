@@ -21,6 +21,7 @@
     - ヘッダーインクルードを `<SDL2/SDL.h>` から `<SDL3/SDL.h>` に変更
     - `SDL2::SDL2main` をリンクする代わりに `SDL3/SDL_main.h` のインクルードを追加
     - `SDL_Init` の戻り値チェックを bool 型に変更
+    - `SDL_PollEvent` の戻り値チェックを bool 型に変更
     - `SDL_CreateWindow` の位置引数を削除
     - `SDL_RENDERER_ACCELERATED` フラグを削除
     - `SDL_SetWindowFullscreen` の引数を bool 型に変更

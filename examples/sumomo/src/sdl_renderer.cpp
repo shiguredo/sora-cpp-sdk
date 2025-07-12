@@ -2,9 +2,6 @@
 
 #include <csignal>
 
-// SDL3
-#include <SDL3/SDL_main.h>
-
 // WebRTC
 #include <rtc_base/logging.h>
 
@@ -71,7 +68,7 @@ void SDLRenderer::SetFullScreen(bool fullscreen) {
 void SDLRenderer::PollEvent() {
   SDL_Event e;
   // 必ずメインスレッドから呼び出す
-  while (SDL_PollEvent(&e) > 0) {
+  while (SDL_PollEvent(&e)) {
     if (e.type == SDL_EVENT_WINDOW_RESIZED &&
         e.window.windowID == SDL_GetWindowID(window_)) {
       SetSize(e.window.data1, e.window.data2);
