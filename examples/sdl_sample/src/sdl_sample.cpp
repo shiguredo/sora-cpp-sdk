@@ -10,6 +10,9 @@
 // WebRTC
 #include <rtc_base/crypto_random.h>
 
+// SDL
+#include <SDL3/SDL_main.h>
+
 #include "sdl_renderer.h"
 
 #ifdef _WIN32
@@ -121,8 +124,8 @@ class SDLSample : public std::enable_shared_from_this<SDLSample>,
   void OnPush(std::string text) override {}
   void OnMessage(std::string label, std::string data) override {}
 
-  void OnTrack(webrtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
-      override {
+  void OnTrack(webrtc::scoped_refptr<webrtc::RtpTransceiverInterface>
+                   transceiver) override {
     auto track = transceiver->receiver()->track();
     if (track->kind() == webrtc::MediaStreamTrackInterface::kVideoKind) {
       renderer_->AddTrack(
