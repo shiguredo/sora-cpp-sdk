@@ -16,6 +16,23 @@
 - [CHANGE] SDL サンプルと Sumomo から `--multistream` オプションを削除する
   - マルチストリーム機能は Sora サーバー側で制御されるため、クライアント側でオプションは不要となりました
   - @torikizi
+- [UPDATE] SDL2 から SDL3 にアップデートする
+  - SDL3 の API 変更に伴い、sdl_sample と sumomo で以下の修正を実施:
+    - ヘッダーインクルードを `<SDL2/SDL.h>` から `<SDL3/SDL.h>` に変更
+    - `SDL2::SDL2main` をリンクする代わりに `SDL3/SDL_main.h` のインクルードを追加
+    - `SDL_Init` の戻り値チェックを bool 型に変更
+    - `SDL_CreateWindow` の位置引数を削除
+    - `SDL_RENDERER_ACCELERATED` フラグを削除
+    - `SDL_SetWindowFullscreen` の引数を bool 型に変更
+    - `SDL_ShowCursor` / `SDL_HideCursor` を分離された関数に変更
+    - イベント名を SDL3 形式に変更（例: `SDL_WINDOWEVENT` → `SDL_EVENT_WINDOW_RESIZED`）
+    - キーコードを大文字に変更（例: `SDLK_f` → `SDLK_F`）
+    - `SDL_KeyboardEvent` の `keysym.sym` を `key` に変更
+    - `SDL_RenderCopy` を `SDL_RenderTexture` に変更
+    - `SDL_Rect` を `SDL_FRect` に変更（座標を float 型に）
+    - `SDL_CreateRGBSurfaceFrom` を `SDL_CreateSurfaceFrom` に変更
+    - `SDL_FreeSurface` を `SDL_DestroySurface` に変更
+  - @melpon
 - [ADD] sumomo のレンダラーに Sixel と ANSI エスケープシーケンスでの表示を追加する
   - `--use-sixel`, `--sixel-width`, `--sixel-height` オプションの追加
   - `--use-ansi`, `--ansi-width`, `--ansi-height` オプションの追加
