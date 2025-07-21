@@ -8,6 +8,10 @@
 #include <rtc_base/crypt_string_revive.h>
 #include <rtc_base/proxy_info_revive.h>
 
+// Boost
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/split.hpp>
+
 #include "sora/data_channel.h"
 #include "sora/rtc_ssl_verifier.h"
 #include "sora/rtc_stats.h"
@@ -269,6 +273,10 @@ void SoraSignaling::DoSendConnect(bool redirect) {
 
   if (config_.simulcast) {
     m["simulcast"] = *config_.simulcast;
+  }
+
+  if (config_.simulcast_multicodec) {
+    m["simulcast_multicodec"] = *config_.simulcast_multicodec;
   }
 
   if (!config_.simulcast_rid.empty()) {
@@ -906,6 +914,7 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
                            SoraSignalingDirection::RECEIVED, text);
 
     const std::string sdp = m.at("sdp").as_string().c_str();
+    RTC_LOG(LS_ERROR) << "received sdp: " << sdp;
 
     std::string video_mid;
     std::string audio_mid;
@@ -1029,6 +1038,32 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
                   params.scalability_mode =
                       p["scalabilityMode"].as_string().c_str();
                 }
+                if (p.count("codec") != 0) {
+                  const auto& c = p["codec"].as_object();
+                  // video/VP8 のような形式で、video は確定なので後ろのコーデック部分だけ見る
+                  std::string mime_type = c.at("mimeType").as_string().c_str();
+                  auto& codec = params.codec.emplace();
+                  codec.kind = webrtc::MediaType::VIDEO;
+                  codec.name = mime_type.substr(mime_type.find('/') + 1);
+                  if (c.count("clockRate") != 0) {
+                    codec.clock_rate = c.at("clockRate").to_number<int>();
+                  }
+                  if (c.count("sdpFmtpLine") != 0) {
+                    // sdpFmtpLine は
+                    // level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e02a
+                    // のような文字列になってるはず
+                    std::vector<std::string> xs;
+                    boost::algorithm::split(
+                        xs, c.at("sdpFmtpLine").as_string().c_str(),
+                        boost::algorithm::is_any_of(";"));
+                    for (const auto& x : xs) {
+                      std::vector<std::string> kv;
+                      boost::algorithm::split(kv, x,
+                                              boost::algorithm::is_any_of("="));
+                      codec.parameters[kv[0]] = kv[1];
+                    }
+                  }
+                }
                 if (p.count("scaleResolutionDownTo") != 0) {
                   auto& obj = p["scaleResolutionDownTo"].as_object();
                   auto& v = params.scale_resolution_down_to.emplace();
@@ -1059,6 +1094,7 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
                     }
 
                     boost::json::value m = {{"type", "answer"}, {"sdp", sdp}};
+                    RTC_LOG(LS_ERROR) << sdp;
                     self->WsWriteSignaling(
                         boost::json::serialize(m),
                         [self](boost::system::error_code, size_t) {});

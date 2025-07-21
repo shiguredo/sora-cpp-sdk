@@ -45,6 +45,7 @@ struct SumomoConfig {
   std::optional<bool> spotlight;
   int spotlight_number = 0;
   std::optional<bool> simulcast;
+  std::optional<bool> simulcast_multicodec;
   std::optional<bool> data_channel_signaling;
   std::optional<bool> ignore_disconnect_websocket;
 
@@ -179,6 +180,7 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
     config.spotlight = config_.spotlight;
     config.spotlight_number = config_.spotlight_number;
     config.simulcast = config_.simulcast;
+    config.simulcast_multicodec = config_.simulcast_multicodec;
     config.data_channel_signaling = config_.data_channel_signaling;
     config.ignore_disconnect_websocket = config_.ignore_disconnect_websocket;
     config.proxy_agent = "Momo Sample for Sora C++ SDK";
@@ -426,6 +428,8 @@ int main(int argc, char* argv[]) {
       ->check(CLI::Range(0, 8));
   add_optional_bool(app, "--simulcast", config.simulcast,
                     "Use simulcast (default: none)");
+  add_optional_bool(app, "--simulcast-multicodec", config.simulcast_multicodec,
+                    "Use simulcast multi-codec (default: none)");
   add_optional_bool(app, "--data-channel-signaling",
                     config.data_channel_signaling,
                     "Use DataChannel for Sora signaling (default: none)");

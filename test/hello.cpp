@@ -72,6 +72,7 @@ void HelloSora::Run() {
   config.video_bit_rate = config_.video_bit_rate;
   config.multistream = true;
   config.simulcast = config_.simulcast;
+  config.simulcast_multicodec = config_.simulcast_multicodec;
   config.data_channel_signaling = config_.data_channel_signaling;
   if (config_.ignore_disconnect_websocket) {
     config.ignore_disconnect_websocket = *config_.ignore_disconnect_websocket;
@@ -192,6 +193,9 @@ int main(int argc, char* argv[]) {
   if (get(v, "simulcast", x)) {
     config.simulcast = x.as_bool();
   }
+  if (get(v, "simulcast_multicodec", x)) {
+    config.simulcast_multicodec = x.as_bool();
+  }
   if (get(v, "client_id", x)) {
     config.client_id = x.as_string();
   }
@@ -266,6 +270,7 @@ int main(int argc, char* argv[]) {
   if (get(v, "log_level", x)) {
     webrtc::LogMessage::LogToDebug((webrtc::LoggingSeverity)x.to_number<int>());
   }
+
   if (get(v, "degradation_preference", x)) {
     if (x.as_string() == "disabled") {
       config.degradation_preference = webrtc::DegradationPreference::DISABLED;

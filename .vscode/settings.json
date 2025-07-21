@@ -20,6 +20,7 @@
       "allowTrailingCommas": true,
     }
   }],
+  "lldb-dap.executable-path": "/home/melpon/dev/bin/llvm-20.1.1/bin/lldb-dap",
   "files.associations": {
     "*.cs": "csharp",
     "CMakeLists.txt": "cmake",
@@ -146,7 +147,19 @@
     "__verbose_abort": "cpp",
     "string_view": "cpp",
     "*.tcc": "cpp",
+    "__assertion_handler": "cpp",
+    "cuchar": "cpp",
+    "propagate_const": "cpp",
+    "print": "cpp",
+    "expected": "cpp",
+    "netfwd": "cpp",
+    "rope": "cpp",
+    "slist": "cpp",
+    "spanstream": "cpp",
+    "stacktrace": "cpp",
+    "stdfloat": "cpp",
     "__node_handle": "cpp",
-    "expected": "cpp"
+    "__bit_reference": "cpp",
+    "__split_buffer": "cpp"
   }
 }

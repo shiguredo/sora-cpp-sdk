@@ -108,6 +108,7 @@ struct SoraSignalingConfig {
   std::string spotlight_focus_rid;
   std::string spotlight_unfocus_rid;
   std::optional<bool> simulcast;
+  std::optional<bool> simulcast_multicodec;
   std::string simulcast_rid;
   std::optional<bool> data_channel_signaling;
   int data_channel_signaling_timeout = 180;

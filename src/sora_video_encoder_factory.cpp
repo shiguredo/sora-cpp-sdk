@@ -106,7 +106,7 @@ SoraVideoEncoderFactory::CreateInternalVideoEncoder(
     std::vector<webrtc::SdpVideoFormat> supported_formats = formats_[n++];
 
     if (enc.factory != nullptr) {
-      create_video_encoder = [factory = enc.factory.get()](
+      create_video_encoder = [factory = enc.factory](
                                  const webrtc::Environment& env,
                                  const webrtc::SdpVideoFormat& format) {
         return factory->Create(env, format);
