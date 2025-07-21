@@ -131,9 +131,9 @@ int main() {
   }
 #endif
 
-  rtc::LogMessage::LogToDebug(rtc::LS_INFO);
-  rtc::LogMessage::LogTimestamps();
-  rtc::LogMessage::LogThreads();
+  webrtc::LogMessage::LogToDebug(webrtc::LS_INFO);
+  webrtc::LogMessage::LogTimestamps();
+  webrtc::LogMessage::LogThreads();
 
   auto client = std::make_shared<SoraClient>();
   client->Run();

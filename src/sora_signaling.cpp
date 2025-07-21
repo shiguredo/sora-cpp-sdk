@@ -1043,7 +1043,7 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
                   // video/VP8 のような形式で、video は確定なので後ろのコーデック部分だけ見る
                   std::string mime_type = c.at("mimeType").as_string().c_str();
                   auto& codec = params.codec.emplace();
-                  codec.kind = cricket::MEDIA_TYPE_VIDEO;
+                  codec.kind = webrtc::MediaType::VIDEO;
                   codec.name = mime_type.substr(mime_type.find('/') + 1);
                   if (c.count("clockRate") != 0) {
                     codec.clock_rate = c.at("clockRate").to_number<int>();

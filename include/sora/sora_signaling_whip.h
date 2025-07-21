@@ -26,13 +26,13 @@ class SoraSignalingWhipObserver {
 
 struct SoraSignalingWhipConfig {
   boost::asio::io_context* io_context;
-  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> pc_factory;
+  webrtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> pc_factory;
   std::weak_ptr<SoraSignalingWhipObserver> observer;
 
   std::string signaling_url;
   std::string channel_id;
   std::optional<std::vector<webrtc::RtpEncodingParameters>> send_encodings;
-  rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source;
+  webrtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source;
 };
 
 class SoraSignalingWhip
@@ -44,7 +44,8 @@ class SoraSignalingWhip
   ~SoraSignalingWhip();
   static std::shared_ptr<SoraSignalingWhip> Create(
       const SoraSignalingWhipConfig& config);
-  rtc::scoped_refptr<webrtc::PeerConnectionInterface> GetPeerConnection() const;
+  webrtc::scoped_refptr<webrtc::PeerConnectionInterface> GetPeerConnection()
+      const;
 
   void Connect();
   void Disconnect();
@@ -57,8 +58,8 @@ class SoraSignalingWhip
  private:
   void OnSignalingChange(
       webrtc::PeerConnectionInterface::SignalingState new_state) override {}
-  void OnDataChannel(
-      rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) override {}
+  void OnDataChannel(webrtc::scoped_refptr<webrtc::DataChannelInterface>
+                         data_channel) override {}
   void OnStandardizedIceConnectionChange(
       webrtc::PeerConnectionInterface::IceConnectionState new_state) override {}
   void OnConnectionChange(
@@ -73,15 +74,15 @@ class SoraSignalingWhip
                            const std::string& url,
                            int error_code,
                            const std::string& error_text) override {}
-  void OnTrack(rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
-      override {}
+  void OnTrack(webrtc::scoped_refptr<webrtc::RtpTransceiverInterface>
+                   transceiver) override {}
   void OnRemoveTrack(
-      rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override {}
+      webrtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override {}
 
  private:
   SoraSignalingWhipConfig config_;
 
-  rtc::scoped_refptr<webrtc::PeerConnectionInterface> pc_;
+  webrtc::scoped_refptr<webrtc::PeerConnectionInterface> pc_;
 
   enum State {
     Init,

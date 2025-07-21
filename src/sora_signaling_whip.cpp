@@ -40,7 +40,7 @@ std::shared_ptr<SoraSignalingWhip> SoraSignalingWhip::Create(
   return std::shared_ptr<SoraSignalingWhip>(new SoraSignalingWhip(config));
 }
 
-rtc::scoped_refptr<webrtc::PeerConnectionInterface>
+webrtc::scoped_refptr<webrtc::PeerConnectionInterface>
 SoraSignalingWhip::GetPeerConnection() const {
   return pc_;
 }
@@ -86,12 +86,12 @@ void SoraSignalingWhip::Connect() {
     }
     webrtc::RtpTransceiverInit video_init;
     if (self->config_.video_source != nullptr) {
-      std::string video_track_id = rtc::CreateRandomString(16);
+      std::string video_track_id = webrtc::CreateRandomString(16);
       auto video_track = self->config_.pc_factory->CreateVideoTrack(
           self->config_.video_source, video_track_id);
       auto& init = video_init;
       init.direction = webrtc::RtpTransceiverDirection::kSendOnly;
-      init.stream_ids = {rtc::CreateRandomString(16)};
+      init.stream_ids = {webrtc::CreateRandomString(16)};
       if (self->config_.send_encodings) {
         init.send_encodings = *self->config_.send_encodings;
       }
@@ -196,7 +196,7 @@ void SoraSignalingWhip::Connect() {
                 }
                 auto codec = std::find_if(
                     media_desc->codecs().begin(), media_desc->codecs().end(),
-                    [&send_encoding](const cricket::Codec& codec) {
+                    [&send_encoding](const webrtc::Codec& codec) {
                       return webrtc::IsSameRtpCodecIgnoringLevel(
                           codec, *send_encoding->codec);
                     });
