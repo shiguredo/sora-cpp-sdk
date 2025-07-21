@@ -50,7 +50,7 @@ class FakeVideoCapturerImpl : public FakeVideoCapturer {
 
       while (!stopped_) {
         auto now = std::chrono::high_resolution_clock::now();
-        rtc::scoped_refptr<webrtc::I420Buffer> buffer;
+        webrtc::scoped_refptr<webrtc::I420Buffer> buffer;
 
         UpdateImage(now);
 
@@ -273,7 +273,7 @@ class FakeVideoCapturerImpl : public FakeVideoCapturer {
   uint32_t frame_;
 };
 
-rtc::scoped_refptr<FakeVideoCapturer> CreateFakeVideoCapturer(
+webrtc::scoped_refptr<FakeVideoCapturer> CreateFakeVideoCapturer(
     FakeVideoCapturerConfig config) {
-  return rtc::make_ref_counted<FakeVideoCapturerImpl>(config);
+  return webrtc::make_ref_counted<FakeVideoCapturerImpl>(config);
 }

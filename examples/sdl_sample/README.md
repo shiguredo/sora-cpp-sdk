@@ -132,13 +132,13 @@ _build/ubuntu-24.04_x86_64/release/sdl_sample/
 Windows の場合
 
 ```powershell
-> .\sdl_sample.exe --signaling-url wss://sora.example.com/signaling --role sendrecv --channel-id sora --multistream true
+> .\sdl_sample.exe --signaling-url wss://sora.example.com/signaling --role sendrecv --channel-id sora
 ```
 
 Windows 以外の場合
 
 ```shell
-./sdl_sample --signaling-url wss://sora.example.com/signaling --role sendrecv --channel-id sora --multistream true
+./sdl_sample --signaling-url wss://sora.example.com/signaling --role sendrecv --channel-id sora
 ```
 
 #### 必須オプション
@@ -160,8 +160,6 @@ Windows 以外の場合
 - `--video-codec-type` : [ビデオコーデック指定](https://sora-doc.shiguredo.jp/SIGNALING#d47f4d)
   - VP8 / VP9 / AV1 / H264 / H265 が指定可能ですが利用可能なコーデックはプラットフォームに依存します
   - 未指定の場合は Sora のデフォルトである VP9 が利用されます
-- `--multistream` : [マルチストリーム](https://sora-doc.shiguredo.jp/SIGNALING#808bc2) 機能の利用 (true/false)
-  - 未指定の場合は Sora の設定 (デフォルト: true) が設定されます
 - `--video` : 映像の利用 (true/false)
   - 未指定の場合は true が設定されます
 - `--audio` : 音声の利用 (true/false)

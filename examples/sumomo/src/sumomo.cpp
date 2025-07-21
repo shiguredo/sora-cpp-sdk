@@ -14,7 +14,12 @@
 // WebRTC
 #include <rtc_base/crypto_random.h>
 
+// SDL3
+#include <SDL3/SDL_main.h>
+
+#include "ansi_renderer.h"
 #include "sdl_renderer.h"
+#include "sixel_renderer.h"
 
 #ifdef _WIN32
 #include <rtc_base/win/scoped_com_initializer.h>
@@ -37,7 +42,6 @@ struct SumomoConfig {
   boost::json::value video_h264_params;
   boost::json::value video_h265_params;
   boost::json::value metadata;
-  std::optional<bool> multistream;
   std::optional<bool> spotlight;
   int spotlight_number = 0;
   std::optional<bool> simulcast;
@@ -54,6 +58,14 @@ struct SumomoConfig {
   int window_height = 480;
   bool show_me = false;
   bool fullscreen = false;
+
+  bool use_sixel = false;
+  int sixel_width = 640;
+  int sixel_height = 480;
+
+  bool use_ansi = false;
+  int ansi_width = 80;
+  int ansi_height = 40;
 
   bool insecure = false;
   std::string client_cert;
@@ -99,8 +111,18 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
 
   void Run() {
     if (config_.use_sdl) {
-      renderer_.reset(new SDLRenderer(
+      sdl_renderer_.reset(new SDLRenderer(
           config_.window_width, config_.window_height, config_.fullscreen));
+    }
+
+    if (config_.use_sixel) {
+      sixel_renderer_.reset(
+          new SixelRenderer(config_.sixel_width, config_.sixel_height));
+    }
+
+    if (config_.use_ansi) {
+      ansi_renderer_.reset(
+          new AnsiRenderer(config_.ansi_width, config_.ansi_height));
     }
 
     auto size = config_.GetSize();
@@ -117,16 +139,22 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
         return;
       }
 
-      std::string audio_track_id = rtc::CreateRandomString(16);
-      std::string video_track_id = rtc::CreateRandomString(16);
+      std::string audio_track_id = webrtc::CreateRandomString(16);
+      std::string video_track_id = webrtc::CreateRandomString(16);
       audio_track_ = context_->peer_connection_factory()->CreateAudioTrack(
           audio_track_id, context_->peer_connection_factory()
-                              ->CreateAudioSource(cricket::AudioOptions())
+                              ->CreateAudioSource(webrtc::AudioOptions())
                               .get());
       video_track_ = context_->peer_connection_factory()->CreateVideoTrack(
           video_source, video_track_id);
       if (config_.use_sdl && config_.show_me) {
-        renderer_->AddTrack(video_track_.get());
+        sdl_renderer_->AddTrack(video_track_.get());
+      }
+      if (config_.use_sixel && config_.show_me) {
+        sixel_renderer_->AddTrack(video_track_.get());
+      }
+      if (config_.use_ansi && config_.show_me) {
+        ansi_renderer_->AddTrack(video_track_.get());
       }
     }
 
@@ -139,7 +167,6 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
     config.signaling_urls.push_back(config_.signaling_url);
     config.channel_id = config_.channel_id;
     config.role = config_.role;
-    config.multistream = config_.multistream;
     config.client_id = config_.client_id;
     config.video = config_.video;
     config.audio = config_.audio;
@@ -150,7 +177,6 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
     config.video_h264_params = config_.video_h264_params;
     config.video_h265_params = config_.video_h265_params;
     config.metadata = config_.metadata;
-    config.multistream = config_.multistream;
     config.spotlight = config_.spotlight;
     config.spotlight_number = config_.spotlight_number;
     config.simulcast = config_.simulcast;
@@ -200,7 +226,7 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
     conn_->Connect();
 
     if (config_.use_sdl) {
-      renderer_->SetDispatchFunction([this](std::function<void()> f) {
+      sdl_renderer_->SetDispatchFunction([this](std::function<void()> f) {
         if (ioc_->stopped())
           return;
         boost::asio::dispatch(ioc_->get_executor(), f);
@@ -211,14 +237,14 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
   }
 
   void OnSetOffer(std::string offer) override {
-    std::string stream_id = rtc::CreateRandomString(16);
+    std::string stream_id = webrtc::CreateRandomString(16);
     if (audio_track_ != nullptr) {
-      webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpSenderInterface>>
+      webrtc::RTCErrorOr<webrtc::scoped_refptr<webrtc::RtpSenderInterface>>
           audio_result =
               conn_->GetPeerConnection()->AddTrack(audio_track_, {stream_id});
     }
     if (video_track_ != nullptr) {
-      webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::RtpSenderInterface>>
+      webrtc::RTCErrorOr<webrtc::scoped_refptr<webrtc::RtpSenderInterface>>
           video_result =
               conn_->GetPeerConnection()->AddTrack(video_track_, {stream_id});
     }
@@ -226,7 +252,9 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
   void OnDisconnect(sora::SoraSignalingErrorCode ec,
                     std::string message) override {
     RTC_LOG(LS_INFO) << "OnDisconnect: " << message;
-    renderer_.reset();
+    sdl_renderer_.reset();
+    sixel_renderer_.reset();
+    ansi_renderer_.reset();
     ioc_->stop();
   }
   void OnNotify(std::string text) override {
@@ -235,26 +263,40 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
   void OnPush(std::string text) override {}
   void OnMessage(std::string label, std::string data) override {}
 
-  void OnTrack(rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
-      override {
-    if (renderer_ == nullptr) {
-      return;
-    }
+  void OnTrack(webrtc::scoped_refptr<webrtc::RtpTransceiverInterface>
+                   transceiver) override {
     auto track = transceiver->receiver()->track();
     if (track->kind() == webrtc::MediaStreamTrackInterface::kVideoKind) {
-      renderer_->AddTrack(
-          static_cast<webrtc::VideoTrackInterface*>(track.get()));
+      if (sdl_renderer_) {
+        sdl_renderer_->AddTrack(
+            static_cast<webrtc::VideoTrackInterface*>(track.get()));
+      }
+      if (sixel_renderer_) {
+        sixel_renderer_->AddTrack(
+            static_cast<webrtc::VideoTrackInterface*>(track.get()));
+      }
+      if (ansi_renderer_) {
+        ansi_renderer_->AddTrack(
+            static_cast<webrtc::VideoTrackInterface*>(track.get()));
+      }
     }
   }
   void OnRemoveTrack(
-      rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override {
-    if (renderer_ == nullptr) {
-      return;
-    }
+      webrtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override {
     auto track = receiver->track();
     if (track->kind() == webrtc::MediaStreamTrackInterface::kVideoKind) {
-      renderer_->RemoveTrack(
-          static_cast<webrtc::VideoTrackInterface*>(track.get()));
+      if (sdl_renderer_) {
+        sdl_renderer_->RemoveTrack(
+            static_cast<webrtc::VideoTrackInterface*>(track.get()));
+      }
+      if (sixel_renderer_) {
+        sixel_renderer_->RemoveTrack(
+            static_cast<webrtc::VideoTrackInterface*>(track.get()));
+      }
+      if (ansi_renderer_) {
+        ansi_renderer_->RemoveTrack(
+            static_cast<webrtc::VideoTrackInterface*>(track.get()));
+      }
     }
   }
 
@@ -263,11 +305,13 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
  private:
   std::shared_ptr<sora::SoraClientContext> context_;
   SumomoConfig config_;
-  rtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track_;
-  rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track_;
+  webrtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track_;
+  webrtc::scoped_refptr<webrtc::VideoTrackInterface> video_track_;
   std::shared_ptr<sora::SoraSignaling> conn_;
   std::unique_ptr<boost::asio::io_context> ioc_;
-  std::unique_ptr<SDLRenderer> renderer_;
+  std::unique_ptr<SDLRenderer> sdl_renderer_;
+  std::unique_ptr<SixelRenderer> sixel_renderer_;
+  std::unique_ptr<AnsiRenderer> ansi_renderer_;
 };
 
 void add_optional_bool(CLI::App& app,
@@ -333,7 +377,7 @@ int main(int argc, char* argv[]) {
 
   CLI::App app("Momo Sample for Sora C++ SDK");
 
-  int log_level = (int)rtc::LS_ERROR;
+  int log_level = (int)webrtc::LS_ERROR;
   auto log_level_map = std::vector<std::pair<std::string, int>>(
       {{"verbose", 0}, {"info", 1}, {"warning", 2}, {"error", 3}, {"none", 4}});
   app.add_option("--log-level", log_level, "Log severity level threshold")
@@ -377,8 +421,6 @@ int main(int argc, char* argv[]) {
   app.add_option("--metadata", metadata,
                  "Signaling metadata used in connect message")
       ->check(is_json);
-  add_optional_bool(app, "--multistream", config.multistream,
-                    "Use multistream (default: none)");
   add_optional_bool(app, "--spotlight", config.spotlight,
                     "Use spotlight (default: none)");
   app.add_option("--spotlight-number", config.spotlight_number,
@@ -407,6 +449,19 @@ int main(int argc, char* argv[]) {
   app.add_flag("--fullscreen", config.fullscreen,
                "Use fullscreen window for videos");
   app.add_flag("--show-me", config.show_me, "Show self video");
+
+  // Sixel に関するオプション
+  app.add_flag("--use-sixel", config.use_sixel, "Show video using Sixel");
+  app.add_option("--sixel-width", config.sixel_width, "Sixel output width");
+  app.add_option("--sixel-height", config.sixel_height, "Sixel output height");
+
+  // ANSI に関するオプション
+  app.add_flag("--use-ansi", config.use_ansi,
+               "Show video using ANSI escape sequences");
+  app.add_option("--ansi-width", config.ansi_width,
+                 "ANSI output width (in characters)");
+  app.add_option("--ansi-height", config.ansi_height,
+                 "ANSI output height (in lines)");
 
   // 証明書に関するオプション
   app.add_flag("--insecure", config.insecure, "Allow insecure connection");
@@ -520,10 +575,10 @@ int main(int argc, char* argv[]) {
     exit(app.exit(e));
   }
 
-  if (log_level != rtc::LS_NONE) {
-    rtc::LogMessage::LogToDebug((rtc::LoggingSeverity)log_level);
-    rtc::LogMessage::LogTimestamps();
-    rtc::LogMessage::LogThreads();
+  if (log_level != webrtc::LS_NONE) {
+    webrtc::LogMessage::LogToDebug((webrtc::LoggingSeverity)log_level);
+    webrtc::LogMessage::LogTimestamps();
+    webrtc::LogMessage::LogThreads();
   }
 
   // 表示して終了する系の処理はここに書く
@@ -595,6 +650,7 @@ int main(int argc, char* argv[]) {
   if (!audio_playout_device.empty()) {
     context_config.audio_playout_device = audio_playout_device;
   }
+  context_config.use_audio_device = false;
   context_config.video_codec_factory_config.preference = std::invoke([&]() {
     std::optional<sora::VideoCodecPreference> preference;
     auto add_codec_preference =

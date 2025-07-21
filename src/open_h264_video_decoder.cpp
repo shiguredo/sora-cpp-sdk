@@ -189,7 +189,7 @@ int32_t OpenH264VideoDecoder::Decode(const EncodedImage& input_image,
   int height_uv = (height_y + 1) / 2;
   int stride_y = info.UsrData.sSystemBuffer.iStride[0];
   int stride_uv = info.UsrData.sSystemBuffer.iStride[1];
-  rtc::scoped_refptr<webrtc::I420Buffer> i420_buffer(
+  webrtc::scoped_refptr<webrtc::I420Buffer> i420_buffer(
       webrtc::I420Buffer::Create(width_y, height_y));
   libyuv::I420Copy(yuv[0], stride_y, yuv[1], stride_uv, yuv[2], stride_uv,
                    i420_buffer->MutableDataY(), i420_buffer->StrideY(),

@@ -12,7 +12,7 @@
 
 namespace sora {
 
-AndroidCapturer::AndroidCapturer(JNIEnv* env, rtc::Thread* signaling_thread)
+AndroidCapturer::AndroidCapturer(JNIEnv* env, webrtc::Thread* signaling_thread)
     : webrtc::jni::AndroidVideoTrackSource(signaling_thread, env, false, true) {
 }
 AndroidCapturer::~AndroidCapturer() {
@@ -32,15 +32,15 @@ void AndroidCapturer::Stop() {
   }
 }
 
-rtc::scoped_refptr<AndroidCapturer> AndroidCapturer::Create(
+webrtc::scoped_refptr<AndroidCapturer> AndroidCapturer::Create(
     JNIEnv* env,
     jobject context,
-    rtc::Thread* signaling_thread,
+    webrtc::Thread* signaling_thread,
     size_t width,
     size_t height,
     size_t target_fps,
     std::string video_capturer_device) {
-  auto p = rtc::make_ref_counted<AndroidCapturer>(env, signaling_thread);
+  auto p = webrtc::make_ref_counted<AndroidCapturer>(env, signaling_thread);
   if (!p->Init(env, context, signaling_thread, width, height, target_fps,
                video_capturer_device)) {
     return nullptr;
@@ -215,7 +215,7 @@ void AndroidCapturer::dispose(JNIEnv* env, jobject capturer, jobject helper) {
 
 bool AndroidCapturer::Init(JNIEnv* env,
                            jobject context,
-                           rtc::Thread* signaling_thread,
+                           webrtc::Thread* signaling_thread,
                            size_t width,
                            size_t height,
                            size_t target_fps,
@@ -226,7 +226,7 @@ bool AndroidCapturer::Init(JNIEnv* env,
   //
   // ScopedJavaLocalRef<jobject> CreateJavaNativeCapturerObserver(
   //     JNIEnv* env,
-  //     rtc::scoped_refptr<AndroidVideoTrackSource> native_source) {
+  //     webrtc::scoped_refptr<AndroidVideoTrackSource> native_source) {
   //   return Java_NativeCapturerObserver_Constructor(
   //       env, NativeToJavaPointer(native_source.release()));
   // }
@@ -238,7 +238,7 @@ bool AndroidCapturer::Init(JNIEnv* env,
       native_capturer_observer(new webrtc::ScopedJavaGlobalRef<jobject>(
           webrtc::jni::CreateJavaNativeCapturerObserver(
               env,
-              rtc::scoped_refptr<webrtc::jni::AndroidVideoTrackSource>(this))));
+              webrtc::scoped_refptr<webrtc::jni::AndroidVideoTrackSource>(this))));
   this->Release();
 
   // 以下の Java コードを JNI 経由で呼んで何とか videoCapturer を作る

@@ -1,6 +1,7 @@
 #include "sora/sora_signaling.h"
 
 // WebRTC
+#include <api/environment/environment_factory.h>
 #include <p2p/client/basic_port_allocator.h>
 #include <pc/rtp_media_utils.h>
 #include <pc/session_description.h>
@@ -43,7 +44,7 @@ std::shared_ptr<SoraSignaling> SoraSignaling::Create(
   return std::shared_ptr<SoraSignaling>(new SoraSignaling(config));
 }
 
-rtc::scoped_refptr<webrtc::PeerConnectionInterface>
+webrtc::scoped_refptr<webrtc::PeerConnectionInterface>
 SoraSignaling::GetPeerConnection() const {
   return pc_;
 }
@@ -460,7 +461,7 @@ void SoraSignaling::DoSendPong() {
 }
 
 void SoraSignaling::DoSendPong(
-    const rtc::scoped_refptr<const webrtc::RTCStatsReport>& report) {
+    const webrtc::scoped_refptr<const webrtc::RTCStatsReport>& report) {
   std::string stats = report->ToJson();
   if (dc_ && using_datachannel_ && dc_->IsOpen("stats")) {
     // DataChannel が使える場合は type: stats で DataChannel に送る
@@ -488,7 +489,7 @@ void SoraSignaling::DoSendUpdate(const std::string& sdp, std::string type) {
   }
 }
 
-class RawCryptString : public rtc::revive::CryptStringImpl {
+class RawCryptString : public webrtc::revive::CryptStringImpl {
  public:
   RawCryptString(const std::string& str) : str_(str) {}
   size_t GetLength() const override { return str_.size(); }
@@ -510,7 +511,7 @@ class RawCryptString : public rtc::revive::CryptStringImpl {
   std::string str_;
 };
 
-rtc::scoped_refptr<webrtc::PeerConnectionInterface>
+webrtc::scoped_refptr<webrtc::PeerConnectionInterface>
 SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
   webrtc::PeerConnectionInterface::RTCConfiguration rtc_config;
   webrtc::PeerConnectionInterface::IceServers ice_servers;
@@ -546,38 +547,40 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
   // その中に Let's Encrypt の証明書が無いため、接続先によっては接続できないことがある。
   //
   // それを解消するために tls_cert_verifier を設定して自前で検証を行う。
-  dependencies.tls_cert_verifier = std::unique_ptr<rtc::SSLCertificateVerifier>(
-      new RTCSSLVerifier(config_.insecure, config_.ca_cert));
+  dependencies.tls_cert_verifier =
+      std::unique_ptr<webrtc::SSLCertificateVerifier>(
+          new RTCSSLVerifier(config_.insecure, config_.ca_cert));
 
   // Proxy を設定する
   if (!config_.proxy_url.empty() && config_.network_manager != nullptr &&
       config_.socket_factory) {
-    dependencies.allocator.reset(new cricket::BasicPortAllocator(
-        config_.network_manager, config_.socket_factory,
-        rtc_config.turn_customizer));
+    dependencies.allocator.reset(new webrtc::BasicPortAllocator(
+        webrtc::CreateEnvironment(), config_.network_manager,
+        config_.socket_factory, rtc_config.turn_customizer));
     dependencies.allocator->SetPortRange(
         rtc_config.port_allocator_config.min_port,
         rtc_config.port_allocator_config.max_port);
     dependencies.allocator->set_flags(rtc_config.port_allocator_config.flags);
 
     RTC_LOG(LS_INFO) << "Set Proxy: type="
-                     << rtc::revive::ProxyToString(rtc::revive::PROXY_HTTPS)
+                     << webrtc::revive::ProxyToString(
+                            webrtc::revive::PROXY_HTTPS)
                      << " url=" << config_.proxy_url
                      << " username=" << config_.proxy_username;
-    rtc::revive::ProxyInfo pi;
-    pi.type = rtc::revive::PROXY_HTTPS;
+    webrtc::revive::ProxyInfo pi;
+    pi.type = webrtc::revive::PROXY_HTTPS;
     URLParts parts;
     if (!URLParts::Parse(config_.proxy_url, parts)) {
       RTC_LOG(LS_ERROR) << "Failed to parse: proxy_url=" << config_.proxy_url;
       return nullptr;
     }
-    pi.address = rtc::SocketAddress(parts.host, std::stoi(parts.GetPort()));
+    pi.address = webrtc::SocketAddress(parts.host, std::stoi(parts.GetPort()));
     if (!config_.proxy_username.empty()) {
       pi.username = config_.proxy_username;
     }
     if (!config_.proxy_password.empty()) {
       pi.password =
-          rtc::revive::CryptString(RawCryptString(config_.proxy_password));
+          webrtc::revive::CryptString(RawCryptString(config_.proxy_password));
     }
     std::string proxy_agent = "Sora C++ SDK";
     if (!config_.proxy_agent.empty()) {
@@ -586,7 +589,7 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
     dependencies.allocator->set_proxy(proxy_agent, pi);
   }
 
-  webrtc::RTCErrorOr<rtc::scoped_refptr<webrtc::PeerConnectionInterface>>
+  webrtc::RTCErrorOr<webrtc::scoped_refptr<webrtc::PeerConnectionInterface>>
       connection = config_.pc_factory->CreatePeerConnectionOrError(
           rtc_config, std::move(dependencies));
   if (!connection.ok()) {
@@ -1172,7 +1175,7 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
       pc_->GetStats(
           RTCStatsCallback::Create(
               [self = shared_from_this()](
-                  const rtc::scoped_refptr<const webrtc::RTCStatsReport>&
+                  const webrtc::scoped_refptr<const webrtc::RTCStatsReport>&
                       report) {
                 if (self->state_ != State::Connected) {
                   return;
@@ -1288,7 +1291,7 @@ void SoraSignaling::SetEncodingParameters(
                                    *transceiver->current_direction())
                              : "nullopt")
                      << " media_type="
-                     << cricket::MediaTypeToString(transceiver->media_type())
+                     << webrtc::MediaTypeToString(transceiver->media_type())
                      << " sender_encoding_count="
                      << transceiver->sender()->GetParameters().encodings.size();
   }
@@ -1305,7 +1308,7 @@ void SoraSignaling::SetEncodingParameters(
                              : std::string("nullopt"));
   }
 
-  rtc::scoped_refptr<webrtc::RtpTransceiverInterface> video_transceiver;
+  webrtc::scoped_refptr<webrtc::RtpTransceiverInterface> video_transceiver;
   for (auto transceiver : pc_->GetTransceivers()) {
     if (transceiver->mid() && *transceiver->mid() == mid) {
       video_transceiver = transceiver;
@@ -1318,7 +1321,7 @@ void SoraSignaling::SetEncodingParameters(
     return;
   }
 
-  rtc::scoped_refptr<webrtc::RtpSenderInterface> sender =
+  webrtc::scoped_refptr<webrtc::RtpSenderInterface> sender =
       video_transceiver->sender();
   webrtc::RtpParameters parameters = sender->GetParameters();
   parameters.encodings = encodings;
@@ -1344,7 +1347,7 @@ void SoraSignaling::ResetEncodingParameters() {
                              : std::string("nullopt"));
   }
 
-  rtc::scoped_refptr<webrtc::RtpTransceiverInterface> video_transceiver;
+  webrtc::scoped_refptr<webrtc::RtpTransceiverInterface> video_transceiver;
   for (auto transceiver : pc_->GetTransceivers()) {
     if (transceiver->mid() == video_mid_) {
       video_transceiver = transceiver;
@@ -1357,7 +1360,7 @@ void SoraSignaling::ResetEncodingParameters() {
     return;
   }
 
-  rtc::scoped_refptr<webrtc::RtpSenderInterface> sender =
+  webrtc::scoped_refptr<webrtc::RtpSenderInterface> sender =
       video_transceiver->sender();
   webrtc::RtpParameters parameters = sender->GetParameters();
   std::vector<webrtc::RtpEncodingParameters> new_encodings = encodings_;
@@ -1385,7 +1388,7 @@ void SoraSignaling::ResetEncodingParameters() {
 void SoraSignaling::SetDegradationPreference(
     std::string mid,
     webrtc::DegradationPreference degradation_preference) {
-  rtc::scoped_refptr<webrtc::RtpTransceiverInterface> video_transceiver;
+  webrtc::scoped_refptr<webrtc::RtpTransceiverInterface> video_transceiver;
   for (auto transceiver : pc_->GetTransceivers()) {
     if (transceiver->mid() && *transceiver->mid() == mid) {
       video_transceiver = transceiver;
@@ -1398,7 +1401,7 @@ void SoraSignaling::SetDegradationPreference(
     return;
   }
 
-  rtc::scoped_refptr<webrtc::RtpSenderInterface> sender =
+  webrtc::scoped_refptr<webrtc::RtpSenderInterface> sender =
       video_transceiver->sender();
   webrtc::RtpParameters parameters = sender->GetParameters();
   parameters.degradation_preference = degradation_preference;
@@ -1458,7 +1461,7 @@ webrtc::DataBuffer SoraSignaling::ConvertToDataBuffer(
   RTC_LOG(LS_INFO) << "Convert to DataChannel label=" << label
                    << " compressed=" << compressed << " input=" << input;
   const std::string& str = compressed ? ZlibHelper::Compress(input) : input;
-  return webrtc::DataBuffer(rtc::CopyOnWriteBuffer(str), true);
+  return webrtc::DataBuffer(webrtc::CopyOnWriteBuffer(str), true);
 }
 
 bool SoraSignaling::SendDataChannel(const std::string& label,
@@ -1499,7 +1502,7 @@ void SoraSignaling::Clear() {
 // --------------------------------
 
 void SoraSignaling::OnDataChannel(
-    rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) {
+    webrtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) {
   if (dc_ == nullptr) {
     return;
   }
@@ -1593,7 +1596,7 @@ void SoraSignaling::OnIceCandidateError(const std::string& address,
 }
 
 void SoraSignaling::OnTrack(
-    rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver) {
+    webrtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver) {
   boost::asio::post(*config_.io_context,
                     [self = shared_from_this(), transceiver]() {
                       auto ob = self->config_.observer.lock();
@@ -1604,7 +1607,7 @@ void SoraSignaling::OnTrack(
 }
 
 void SoraSignaling::OnRemoveTrack(
-    rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) {
+    webrtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) {
   boost::asio::post(*config_.io_context,
                     [self = shared_from_this(), receiver]() {
                       auto ob = self->config_.observer.lock();
@@ -1619,7 +1622,7 @@ void SoraSignaling::OnRemoveTrack(
 // -----------------------------
 
 void SoraSignaling::OnStateChange(
-    rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) {
+    webrtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) {
   // まだ通知してないチャンネルが開いてた場合は通知を送る
   auto ob = config_.observer.lock();
   if (ob != nullptr) {
@@ -1632,7 +1635,7 @@ void SoraSignaling::OnStateChange(
   }
 }
 void SoraSignaling::OnMessage(
-    rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel,
+    webrtc::scoped_refptr<webrtc::DataChannelInterface> data_channel,
     const webrtc::DataBuffer& buffer) {
   if (!dc_) {
     return;
@@ -1751,7 +1754,7 @@ void SoraSignaling::OnMessage(
       pc_->GetStats(
           RTCStatsCallback::Create(
               [self = shared_from_this()](
-                  const rtc::scoped_refptr<const webrtc::RTCStatsReport>&
+                  const webrtc::scoped_refptr<const webrtc::RTCStatsReport>&
                       report) {
                 if (self->state_ != State::Connected) {
                   return;

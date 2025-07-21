@@ -378,6 +378,7 @@ def git_clone_shallow(url, hash, dir, submodule=False):
 
 
 def apply_patch(patch, dir, depth):
+    patch = os.path.abspath(patch)
     with cd(dir):
         logging.info(f"patch -p{depth} < {patch}")
         if platform.system() == "Windows":
@@ -522,6 +523,7 @@ class WebrtcInfo(NamedTuple):
     webrtc_library_dir: str
     clang_dir: str
     libcxx_dir: str
+    libcxxabi_dir: str
 
 
 def get_webrtc_info(
@@ -538,6 +540,9 @@ def get_webrtc_info(
             webrtc_library_dir=os.path.join(webrtc_install_dir, "lib"),
             clang_dir=os.path.join(install_dir, "llvm", "clang"),
             libcxx_dir=os.path.join(install_dir, "llvm", "libcxx"),
+            libcxxabi_dir=os.path.join(
+                webrtc_install_dir, "include", "third_party", "libc++abi", "src"
+            ),
         )
     else:
         webrtc_build_source_dir = os.path.join(
@@ -558,6 +563,9 @@ def get_webrtc_info(
                 webrtc_build_source_dir, "src", "third_party", "llvm-build", "Release+Asserts"
             ),
             libcxx_dir=os.path.join(webrtc_build_source_dir, "src", "third_party", "libc++", "src"),
+            libcxxabi_dir=os.path.join(
+                webrtc_build_source_dir, "src", "third_party", "libc++abi", "src"
+            ),
         )
 
 
@@ -793,6 +801,7 @@ def build_and_install_boost(
                     )
         elif target_os == "android":
             # Android の場合、android-ndk を使ってビルドする
+            # ただし cxx が指定されてた場合はそちらを優先する
             with open("project-config.jam", "w", encoding="utf-8") as f:
                 bin = os.path.join(
                     android_ndk, "toolchains", "llvm", "prebuilt", android_build_platform, "bin"
@@ -807,7 +816,7 @@ def build_and_install_boost(
                 f.write(
                     f"using clang \
                     : android \
-                    : {escape(os.path.join(bin, 'clang++'))} \
+                    : {escape(cxx if len(cxx) != 0 else os.path.join(bin, 'clang++'))} \
                       --target=aarch64-none-linux-android{native_api_level} \
                       --sysroot={escape(sysroot)} \
                     : <archiver>{escape(os.path.join(bin, 'llvm-ar'))} \
@@ -1220,6 +1229,93 @@ def install_sdl2(
 
 
 @versioned
+def install_sdl3(
+    version, source_dir, build_dir, install_dir, debug: bool, platform: str, cmake_args: List[str]
+):
+    url = f"https://github.com/libsdl-org/SDL/releases/download/release-{version}/SDL3-{version}.tar.gz"
+    path = download(url, source_dir)
+    sdl3_source_dir = os.path.join(source_dir, "sdl3")
+    sdl3_build_dir = os.path.join(build_dir, "sdl3")
+    sdl3_install_dir = os.path.join(install_dir, "sdl3")
+    rm_rf(sdl3_source_dir)
+    rm_rf(sdl3_build_dir)
+    rm_rf(sdl3_install_dir)
+    extract(path, source_dir, "sdl3")
+
+    mkdir_p(sdl3_build_dir)
+    with cd(sdl3_build_dir):
+        configuration = "Debug" if debug else "Release"
+        cmake_args = cmake_args[:]
+        cmake_args += [
+            sdl3_source_dir,
+            f"-DCMAKE_BUILD_TYPE={configuration}",
+            f"-DCMAKE_INSTALL_PREFIX={cmake_path(sdl3_install_dir)}",
+            "-DBUILD_SHARED_LIBS=OFF",
+            "-DSDL_STATIC=ON",
+            "-DSDL_SHARED=OFF",
+        ]
+        if platform == "windows":
+            cmake_args += [
+                f"-DCMAKE_MSVC_RUNTIME_LIBRARY={'MultiThreaded' if not debug else 'MultiThreadedDebug'}",
+                "-DSDL_AUDIO=OFF",
+                "-DSDL_JOYSTICK=OFF",
+                "-DSDL_HAPTIC=OFF",
+                # GitHub Actions 上で gameinput.h が存在しないのに
+                # なぜか  check_c_source_compiles() が成功してしまうので
+                # HAVE_GAMEINPUT_H=0 で強制的に無効化する
+                "-DHAVE_GAMEINPUT_H=0",
+            ]
+        elif platform == "macos":
+            # どの環境でも同じようにインストールされるようにするため全部 ON/OFF を明示的に指定する
+            cmake_args += [
+                "-DSDL_AUDIO=OFF",
+                "-DSDL_VIDEO=ON",
+                "-DSDL_RENDER=ON",
+                "-DSDL_HAPTIC=ON",
+                "-DSDL_POWER=ON",
+                "-DSDL_JOYSTICK=ON",
+                "-DSDL_SENSOR=ON",
+                "-DSDL_OPENGL=ON",
+                "-DSDL_OPENGLES=ON",
+                "-DSDL_METAL=ON",
+                "-DSDL_VULKAN=OFF",
+            ]
+        elif platform == "linux":
+            # どの環境でも同じようにインストールされるようにするため全部 ON/OFF を明示的に指定する
+            cmake_args += [
+                "-DSDL_AUDIO=OFF",
+                "-DSDL_VIDEO=ON",
+                "-DSDL_RENDER=ON",
+                "-DSDL_HAPTIC=ON",
+                "-DSDL_POWER=ON",
+                "-DSDL_JOYSTICK=ON",
+                "-DSDL_SENSOR=ON",
+                "-DSDL_OPENGL=ON",
+                "-DSDL_OPENGLES=ON",
+                "-DSDL_X11=ON",
+                "-DSDL_X11_SHARED=OFF",
+                "-DSDL_X11_XCURSOR=OFF",
+                "-DSDL_X11_XDBE=OFF",
+                "-DSDL_X11_XFIXES=OFF",
+                "-DSDL_X11_XINPUT=OFF",
+                "-DSDL_X11_XRANDR=OFF",
+                "-DSDL_X11_XSCRNSAVER=OFF",
+                "-DSDL_X11_XSHAPE=OFF",
+                "-DSDL_X11_XSYNC=OFF",
+                "-DSDL_WAYLAND=OFF",
+                "-DSDL_VULKAN=OFF",
+                "-DSDL_KMSDRM=OFF",
+                "-DSDL_RPI=OFF",
+            ]
+        cmd(["cmake"] + cmake_args)
+
+        cmd(
+            ["cmake", "--build", ".", "--config", configuration, f"-j{multiprocessing.cpu_count()}"]
+        )
+        cmd(["cmake", "--install", ".", "--config", configuration])
+
+
+@versioned
 def install_cli11(version, install_dir):
     cli11_install_dir = os.path.join(install_dir, "cli11")
     rm_rf(cli11_install_dir)
@@ -1301,6 +1397,33 @@ def install_vpl(version, configuration, source_dir, build_dir, install_dir, cmak
 
 
 @versioned
+def install_blend2d_official(
+    version,
+    configuration,
+    source_dir,
+    build_dir,
+    install_dir,
+    ios,
+    cmake_args,
+):
+    rm_rf(os.path.join(source_dir, "blend2d"))
+    rm_rf(os.path.join(build_dir, "blend2d"))
+    rm_rf(os.path.join(install_dir, "blend2d"))
+
+    url = f"https://blend2d.com/download/blend2d-{version}.tar.gz"
+    path = download(url, source_dir)
+    extract(path, source_dir, "blend2d")
+    _build_blend2d(
+        configuration=configuration,
+        source_dir=source_dir,
+        build_dir=build_dir,
+        install_dir=install_dir,
+        ios=ios,
+        cmake_args=cmake_args,
+    )
+
+
+@versioned
 def install_blend2d(
     version,
     configuration,
@@ -1325,7 +1448,17 @@ def install_blend2d(
         asmjit_version,
         os.path.join(source_dir, "blend2d", "3rdparty", "asmjit"),
     )
+    _build_blend2d(
+        configuration=configuration,
+        source_dir=source_dir,
+        build_dir=build_dir,
+        install_dir=install_dir,
+        ios=ios,
+        cmake_args=cmake_args,
+    )
 
+
+def _build_blend2d(configuration, source_dir, build_dir, install_dir, ios, cmake_args):
     mkdir_p(os.path.join(build_dir, "blend2d"))
     with cd(os.path.join(build_dir, "blend2d")):
         cmd(
@@ -1740,6 +1873,7 @@ def install_opus(
                 "cmake",
                 f"-DCMAKE_INSTALL_PREFIX={cmake_path(opus_install_dir)}",
                 f"-DCMAKE_BUILD_TYPE={configuration}",
+                "-DCMAKE_POSITION_INDEPENDENT_CODE=ON",
                 "-DOPUS_BUILD_SHARED_LIBRARY=OFF",
                 "-DOPUS_BUILD_TESTING=OFF",
                 "-DOPUS_BUILD_PROGRAMS=OFF",
@@ -1794,6 +1928,163 @@ def install_amf(version, install_dir):
     git_clone_shallow(
         "https://github.com/GPUOpen-LibrariesAndSDKs/AMF.git", version, amf_install_dir
     )
+
+
+@versioned
+def install_mbedtls(version, source_dir, build_dir, install_dir, debug, cmake_args):
+    rm_rf(os.path.join(source_dir, "mbedtls"))
+    rm_rf(os.path.join(build_dir, "mbedtls"))
+    rm_rf(os.path.join(install_dir, "mbedtls"))
+    git_clone_shallow(
+        "https://github.com/Mbed-TLS/mbedtls.git",
+        version,
+        os.path.join(source_dir, "mbedtls"),
+    )
+    with cd(os.path.join(source_dir, "mbedtls")):
+        configuration = "Debug" if debug else "Release"
+        cmd(["python3", "scripts/config.py", "set", "MBEDTLS_SSL_DTLS_SRTP"])
+        cmd(
+            [
+                "cmake",
+                f"-DCMAKE_INSTALL_PREFIX={cmake_path(os.path.join(install_dir, 'mbedtls'))}",
+                f"-DCMAKE_BUILD_TYPE={configuration}",
+                "-DCMAKE_POSITION_INDEPENDENT_CODE=ON",
+                "-B",
+                os.path.join(build_dir, "mbedtls"),
+            ]
+            + cmake_args
+        )
+        cmd(
+            [
+                "cmake",
+                "--build",
+                os.path.join(build_dir, "mbedtls"),
+                f"-j{multiprocessing.cpu_count()}",
+                "--config",
+                "Release",
+            ]
+        )
+        cmd(["cmake", "--install", os.path.join(build_dir, "mbedtls")])
+
+
+@versioned
+def install_libjpeg_turbo(version, source_dir, build_dir, install_dir, configuration, cmake_args):
+    libjpeg_source_dir = os.path.join(source_dir, "libjpeg-turbo")
+    libjpeg_build_dir = os.path.join(build_dir, "libjpeg-turbo")
+    libjpeg_install_dir = os.path.join(install_dir, "libjpeg-turbo")
+    rm_rf(libjpeg_source_dir)
+    rm_rf(libjpeg_build_dir)
+    rm_rf(libjpeg_install_dir)
+    git_clone_shallow(
+        "https://github.com/libjpeg-turbo/libjpeg-turbo.git",
+        version,
+        libjpeg_source_dir,
+    )
+    mkdir_p(libjpeg_build_dir)
+    with cd(libjpeg_build_dir):
+        cmd(
+            [
+                "cmake",
+                libjpeg_source_dir,
+                f"-DCMAKE_INSTALL_PREFIX={libjpeg_install_dir}",
+                f"-DCMAKE_BUILD_TYPE={configuration}",
+                "-DENABLE_SHARED=FALSE",
+                "-DENABLE_STATIC=TRUE",
+                "-DCMAKE_BUILD_TYPE=Release",
+                "-DCMAKE_POSITION_INDEPENDENT_CODE=ON",
+            ]
+            + cmake_args
+        )
+        cmd(
+            [
+                "cmake",
+                "--build",
+                libjpeg_build_dir,
+                f"-j{multiprocessing.cpu_count()}",
+                "--config",
+                "Release",
+            ]
+        )
+        cmd(["cmake", "--install", libjpeg_build_dir])
+
+
+@versioned
+def install_libyuv(
+    version, source_dir, build_dir, install_dir, libjpeg_turbo_dir, configuration, cmake_args
+):
+    libyuv_source_dir = os.path.join(source_dir, "libyuv")
+    libyuv_build_dir = os.path.join(build_dir, "libyuv")
+    libyuv_install_dir = os.path.join(install_dir, "libyuv")
+    rm_rf(libyuv_source_dir)
+    rm_rf(libyuv_build_dir)
+    rm_rf(libyuv_install_dir)
+    git_clone_shallow(
+        "https://chromium.googlesource.com/libyuv/libyuv",
+        version,
+        libyuv_source_dir,
+    )
+    mkdir_p(libyuv_build_dir)
+    with cd(libyuv_build_dir):
+        cmd(
+            [
+                "cmake",
+                libyuv_source_dir,
+                f"-DCMAKE_INSTALL_PREFIX={cmake_path(libyuv_install_dir)}",
+                f"-DCMAKE_BUILD_TYPE={configuration}",
+                f"-DCMAKE_PREFIX_PATH={cmake_path(libjpeg_turbo_dir)}",
+                *cmake_args,
+            ]
+        )
+        cmd(
+            [
+                "cmake",
+                "--build",
+                libyuv_build_dir,
+                f"-j{multiprocessing.cpu_count()}",
+                "--config",
+                "Release",
+            ]
+        )
+        cmd(["cmake", "--install", libyuv_build_dir])
+
+
+@versioned
+def install_aom(version, source_dir, build_dir, install_dir, configuration, cmake_args):
+    aom_source_dir = os.path.join(source_dir, "aom")
+    aom_build_dir = os.path.join(build_dir, "aom")
+    aom_install_dir = os.path.join(install_dir, "aom")
+    rm_rf(aom_source_dir)
+    rm_rf(aom_build_dir)
+    rm_rf(aom_install_dir)
+    git_clone_shallow(
+        "https://aomedia.googlesource.com/aom",
+        version,
+        aom_source_dir,
+    )
+    with cd(aom_source_dir):
+        cmd(
+            [
+                "cmake",
+                "-B",
+                aom_build_dir,
+                f"-DCMAKE_INSTALL_PREFIX={cmake_path(aom_install_dir)}",
+                f"-DCMAKE_BUILD_TYPE={configuration}",
+                "-DENABLE_DOCS=OFF",
+                "-DENABLE_TESTS=OFF",
+                *cmake_args,
+            ]
+        )
+        cmd(
+            [
+                "cmake",
+                "--build",
+                aom_build_dir,
+                f"-j{multiprocessing.cpu_count()}",
+                "--config",
+                "Release",
+            ]
+        )
+        cmd(["cmake", "--install", aom_build_dir])
 
 
 class PlatformTarget(object):

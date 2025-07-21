@@ -38,40 +38,38 @@ SoraClientContext::~SoraClientContext() {
   worker_thread_->Stop();
   signaling_thread_->Stop();
 
-  //rtc::CleanupSSL();
+  //webrtc::CleanupSSL();
 }
 
 std::shared_ptr<SoraClientContext> SoraClientContext::Create(
     const SoraClientContextConfig& config) {
-  rtc::InitializeSSL();
+  webrtc::InitializeSSL();
 
   std::shared_ptr<SoraClientContext> c = std::make_shared<SoraClientContext>();
 
   c->config_ = config;
-  c->network_thread_ = rtc::Thread::CreateWithSocketServer();
+  c->network_thread_ = webrtc::Thread::CreateWithSocketServer();
   c->network_thread_->Start();
-  c->worker_thread_ = rtc::Thread::Create();
+  c->worker_thread_ = webrtc::Thread::Create();
   c->worker_thread_->Start();
-  c->signaling_thread_ = rtc::Thread::Create();
+  c->signaling_thread_ = webrtc::Thread::Create();
   c->signaling_thread_->Start();
 
   webrtc::PeerConnectionFactoryDependencies dependencies;
+  auto env = webrtc::CreateEnvironment();
   dependencies.network_thread = c->network_thread_.get();
   dependencies.worker_thread = c->worker_thread_.get();
   dependencies.signaling_thread = c->signaling_thread_.get();
-  dependencies.task_queue_factory = webrtc::CreateDefaultTaskQueueFactory();
   dependencies.event_log_factory =
       absl::make_unique<webrtc::RtcEventLogFactory>(
           dependencies.task_queue_factory.get());
-
-  void* env = sora::GetJNIEnv();
 
   auto adm = c->worker_thread_->BlockingCall([&] {
     sora::AudioDeviceModuleConfig config;
     if (!c->config_.use_audio_device) {
       config.audio_layer = webrtc::AudioDeviceModule::kDummyAudio;
     }
-    config.task_queue_factory = dependencies.task_queue_factory.get();
+    config.env = env;
     config.jni_env = sora::GetJNIEnv();
     if (c->config_.get_android_application_context) {
       config.application_context =
@@ -125,7 +123,7 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
 
   webrtc::PeerConnectionFactoryInterface::Options factory_options;
   factory_options.disable_encryption = false;
-  factory_options.ssl_max_version = rtc::SSL_PROTOCOL_DTLS_12;
+  factory_options.ssl_max_version = webrtc::SSL_PROTOCOL_DTLS_12;
   factory_options.crypto_options.srtp.enable_gcm_crypto_suites = true;
   c->factory_->SetOptions(factory_options);
 
