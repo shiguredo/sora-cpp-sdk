@@ -1,5 +1,7 @@
 import argparse
+import glob
 import hashlib
+import json
 import logging
 import multiprocessing
 import os
@@ -571,45 +573,47 @@ AVAILABLE_TARGETS = [
 WINDOWS_SDK_VERSION = "10.0.20348.0"
 
 
-def main():
-    check_version_file()
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("target", choices=AVAILABLE_TARGETS)
-    parser.add_argument("--debug", action="store_true")
-    parser.add_argument("--relwithdebinfo", action="store_true")
-    parser.add_argument("--disable-cuda", action="store_true")
-    add_webrtc_build_arguments(parser)
-    parser.add_argument("--test", action="store_true")
-    parser.add_argument("--run-e2e-test", action="store_true")
-    parser.add_argument("--package", action="store_true")
-
-    args = parser.parse_args()
-    if args.target == "windows_x86_64":
+def _get_platform(target: str) -> Platform:
+    if target == "windows_x86_64":
         platform = Platform("windows", get_windows_osver(), "x86_64")
-    elif args.target == "macos_x86_64":
+    elif target == "macos_x86_64":
         platform = Platform("macos", get_macos_osver(), "x86_64")
-    elif args.target == "macos_arm64":
+    elif target == "macos_arm64":
         platform = Platform("macos", get_macos_osver(), "arm64")
-    elif args.target == "ubuntu-22.04_x86_64":
+    elif target == "ubuntu-22.04_x86_64":
         platform = Platform("ubuntu", "22.04", "x86_64")
-    elif args.target == "ubuntu-24.04_x86_64":
+    elif target == "ubuntu-24.04_x86_64":
         platform = Platform("ubuntu", "24.04", "x86_64")
-    elif args.target == "ubuntu-22.04_armv8":
+    elif target == "ubuntu-22.04_armv8":
         platform = Platform("ubuntu", "22.04", "armv8")
-    elif args.target == "ubuntu-24.04_armv8":
+    elif target == "ubuntu-24.04_armv8":
         platform = Platform("ubuntu", "24.04", "armv8")
-    elif args.target == "ios":
+    elif target == "ios":
         platform = Platform("ios", None, None)
-    elif args.target == "android":
+    elif target == "android":
         platform = Platform("android", None, None)
     else:
-        raise Exception(f"Unknown target {args.target}")
+        raise Exception(f"Unknown target {target}")
+    return platform
+
+
+def _build(
+    target: str,
+    debug: bool,
+    relwithdebinfo: bool,
+    local_webrtc_build_dir: Optional[str],
+    local_webrtc_build_args: List[str],
+    disable_cuda: bool,
+    test: bool,
+    run_e2e_test: bool,
+    package: bool,
+):
+    platform = _get_platform(target)
 
     logging.info(f"Build platform: {platform.build.package_name}")
     logging.info(f"Target platform: {platform.target.package_name}")
 
-    configuration = "debug" if args.debug else "release"
+    configuration = "debug" if debug else "release"
     dir = platform.target.package_name
     source_dir = os.path.join(BASE_DIR, "_source", dir, configuration)
     build_dir = os.path.join(BASE_DIR, "_build", dir, configuration)
@@ -624,16 +628,16 @@ def main():
         source_dir,
         build_dir,
         install_dir,
-        args.debug,
-        local_webrtc_build_dir=args.local_webrtc_build_dir,
-        local_webrtc_build_args=args.local_webrtc_build_args,
-        disable_cuda=args.disable_cuda,
+        debug,
+        local_webrtc_build_dir=local_webrtc_build_dir,
+        local_webrtc_build_args=local_webrtc_build_args,
+        disable_cuda=disable_cuda,
     )
 
     configuration = "Release"
-    if args.debug:
+    if debug:
         configuration = "Debug"
-    if args.relwithdebinfo:
+    if relwithdebinfo:
         configuration = "RelWithDebInfo"
 
     sora_build_dir = os.path.join(build_dir, "sora")
@@ -642,11 +646,10 @@ def main():
         cmake_args = []
         cmake_args.append(f"-DCMAKE_BUILD_TYPE={configuration}")
         cmake_args.append(f"-DCMAKE_INSTALL_PREFIX={cmake_path(os.path.join(install_dir, 'sora'))}")
+        cmake_args.append("-DCMAKE_EXPORT_COMPILE_COMMANDS=ON")
         cmake_args.append(f"-DBOOST_ROOT={cmake_path(os.path.join(install_dir, 'boost'))}")
         webrtc_platform = get_webrtc_platform(platform)
-        webrtc_info = get_webrtc_info(
-            webrtc_platform, args.local_webrtc_build_dir, install_dir, args.debug
-        )
+        webrtc_info = get_webrtc_info(webrtc_platform, local_webrtc_build_dir, install_dir, debug)
         webrtc_version = read_version_file(webrtc_info.version_file)
         webrtc_deps = read_version_file(webrtc_info.deps_file)
         with cd(BASE_DIR):
@@ -762,7 +765,7 @@ def main():
             cmake_args.append(f"-DCMAKE_EXE_LINKER_FLAGS={' '.join(ldflags)}")
 
         # NvCodec
-        if not args.disable_cuda:
+        if not disable_cuda:
             if platform.target.os in ("windows", "ubuntu") and platform.target.arch == "x86_64":
                 cmake_args.append("-DUSE_NVCODEC_ENCODER=ON")
                 if platform.target.os == "windows":
@@ -848,7 +851,7 @@ def main():
                 os.path.join(install_dir, "sora", "lib", "Sora.aar"),
             )
 
-    if args.test:
+    if test:
         if platform.target.os == "ios":
             # iOS の場合は事前に用意したプロジェクトをビルドする
             # → libwebrtc.a から x64 のビルドが無くなったのでとりあえずビルドを諦める
@@ -877,6 +880,7 @@ def main():
             with cd(test_build_dir):
                 cmake_args = []
                 cmake_args.append(f"-DCMAKE_BUILD_TYPE={configuration}")
+                cmake_args.append("-DCMAKE_EXPORT_COMPILE_COMMANDS=ON")
                 cmake_args.append(f"-DBOOST_ROOT={cmake_path(os.path.join(install_dir, 'boost'))}")
                 cmake_args.append(
                     f"-DCATCH2_ROOT={cmake_path(os.path.join(install_dir, 'catch2'))}"
@@ -959,7 +963,7 @@ def main():
                     ]
                 )
 
-                if args.run_e2e_test:
+                if run_e2e_test:
                     if (
                         platform.build.os == platform.target.os
                         and platform.build.arch == platform.target.arch
@@ -969,7 +973,7 @@ def main():
                         else:
                             cmd([os.path.join(test_build_dir, "e2e")])
 
-    if args.package:
+    if package:
         mkdir_p(package_dir)
         rm_rf(os.path.join(package_dir, "sora"))
         rm_rf(os.path.join(package_dir, "sora.env"))
@@ -1008,6 +1012,150 @@ def main():
                 f.write(f"CONTENT_TYPE={content_type}\n")
                 f.write(f"PACKAGE_NAME={archive_name}\n")
                 f.write(f"BOOST_PACKAGE_NAME={boost_archive_name}\n")
+
+
+def _format(
+    target: str,
+    debug: bool,
+    relwithdebinfo: bool,
+    clang_scan_deps_path: Optional[str] = None,
+    clang_format_path: Optional[str] = None,
+    clang_include_cleaner_path: Optional[str] = None,
+):
+    platform = _get_platform(target)
+    configuration = "debug" if debug else "release"
+    build_dir = os.path.join(BASE_DIR, "_build", platform.target.package_name, configuration)
+
+    def find_clang_binary(name: str) -> Optional[str]:
+        if shutil.which(name) is not None:
+            return name
+        else:
+            for n in range(50, 14, -1):
+                if shutil.which(f"{name}-{n}") is not None:
+                    return f"{name}-{n}"
+        return None
+
+    with cd(BASE_DIR):
+        if clang_scan_deps_path is None:
+            clang_scan_deps_path = find_clang_binary("clang-scan-deps")
+        # clang-scan-deps-20 -compilation-database _build/ubuntu-24.04_x86_64/release/sora/compile_commands.json src/sora_signaling.cpp
+        # if clang_format_path is None:
+        #     if shutil.which("clang-format") is not None:
+        #         clang_format_path = "clang-format"
+        #     else:
+        #         for n in range(50, 14, -1):
+        #             if shutil.which(f"clang-format-{n}") is not None:
+        #                 clang_format_path = f"clang-format-{n}"
+        #                 break
+        if clang_include_cleaner_path is None:
+            if shutil.which("clang-include-cleaner") is not None:
+                clang_include_cleaner_path = "clang-include-cleaner"
+            else:
+                for n in range(50, 14, -1):
+                    if shutil.which(f"clang-include-cleaner-{n}") is not None:
+                        clang_include_cleaner_path = f"clang-include-cleaner-{n}"
+                        break
+
+        target_files = set()
+        patterns = [
+            "include/**/*.h",
+            "include/**/*.cpp",
+            "src/**/*.h",
+            "src/**/*.cpp",
+            "test/**/*.h",
+            "test/**/*.cpp",
+            "examples/messaging_recvonly_sample/**/*.h",
+            "examples/messaging_recvonly_sample/**/*.cpp",
+            "examples/sdl_sample/**/*.h",
+            "examples/sdl_sample/**/*.cpp",
+            "examples/sumomo/**/*.h",
+            "examples/sumomo/**/*.cpp",
+        ]
+
+        for pattern in patterns:
+            files = glob.glob(pattern, recursive=True)
+            for file in files:
+                target_files.add(os.path.join(BASE_DIR, file))
+
+        # clang-scan-deps を使って .h と .cpp ファイルを収集
+        scan_file_set = set()
+        sora_deps = json.loads(
+            cmdcap(
+                [
+                    clang_scan_deps_path,
+                    "-compilation-database",
+                    os.path.join(build_dir, "sora", "compile_commands.json"),
+                ]
+            )
+        )
+        for unit in sora_deps["translation-units"]:
+            for command in unit["commands"]:
+                if command["input-file"] in target_files:
+                    scan_file_set.append(command["input-file"])
+                for dep in command["file-deps"]:
+                    if dep in target_files:
+                        scan_file_set.append(dep)
+
+        scan_files = sorted(scan_file_set)
+        for file in scan_files:
+            cmd(
+                [
+                    clang_include_cleaner_path,
+                    "-p",
+                    os.path.join(build_dir, "sora"),
+                    "--edit",
+                    scan_file,
+                ]
+            )
+
+
+def main():
+    check_version_file()
+
+    parser = argparse.ArgumentParser()
+    sp = parser.add_subparsers()
+    bp = sp.add_parser("build")
+    bp.set_defaults(op="build")
+    bp.add_argument("target", choices=AVAILABLE_TARGETS)
+    bp.add_argument("--debug", action="store_true")
+    bp.add_argument("--relwithdebinfo", action="store_true")
+    bp.add_argument("--disable-cuda", action="store_true")
+    add_webrtc_build_arguments(bp)
+    bp.add_argument("--test", action="store_true")
+    bp.add_argument("--run-e2e-test", action="store_true")
+    bp.add_argument("--package", action="store_true")
+    fp = sp.add_parser("format")
+    fp.set_defaults(op="format")
+    fp.add_argument("target", choices=AVAILABLE_TARGETS)
+    fp.add_argument("--debug", action="store_true")
+    fp.add_argument("--relwithdebinfo", action="store_true")
+    fp.add_argument("--clang-scan-deps-path", type=str, default=None)
+    fp.add_argument("--clang-format-path", type=str, default=None)
+    fp.add_argument("--clang-include-cleaner-path", type=str, default=None)
+
+    args = parser.parse_args()
+
+    if args.op == "build":
+        _build(
+            target=args.target,
+            debug=args.debug,
+            relwithdebinfo=args.relwithdebinfo,
+            local_webrtc_build_dir=args.local_webrtc_build_dir,
+            local_webrtc_build_args=args.local_webrtc_build_args,
+            disable_cuda=args.disable_cuda,
+            test=args.test,
+            run_e2e_test=args.run_e2e_test,
+            package=args.package,
+        )
+    elif args.op == "format":
+        _format(
+            target=args.target,
+            debug=args.debug,
+            relwithdebinfo=args.relwithdebinfo,
+            clang_scan_deps_path=args.clang_scan_deps_path,
+            clang_format_path=args.clang_format_path,
+            clang_include_cleaner_path=args.clang_include_cleaner_path,
+        )
 
 
 if __name__ == "__main__":
