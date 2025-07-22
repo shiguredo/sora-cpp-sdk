@@ -1,3 +1,10 @@
+#include "amf_context_impl.h"
+
+#include <memory>
+
+// AMF
+#include <public/include/core/Result.h>
+
 #include "sora/amf_context.h"
 
 #if !defined(USE_AMF_ENCODER)

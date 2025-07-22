@@ -1,15 +1,30 @@
 #include "sora/sora_video_codec_factory.h"
 
+#include <algorithm>
+#include <cassert>
+#include <memory>
+#include <optional>
+#include <string>
+#include <vector>
+
+// Boost
+#include <boost/json/serialize.hpp>
+#include <boost/json/value_from.hpp>
+
 // WebRTC
 #include <api/video_codecs/builtin_video_decoder_factory.h>
 #include <api/video_codecs/builtin_video_encoder_factory.h>
 #include <api/video_codecs/sdp_video_format.h>
 #include <api/video_codecs/video_codec.h>
+#include <api/video_codecs/video_decoder_factory.h>
+#include <api/video_codecs/video_encoder_factory.h>
 #include <rtc_base/logging.h>
 
+#include "sora/sora_video_decoder_factory.h"
+#include "sora/sora_video_encoder_factory.h"
+#include "sora/vpl_session.h"
+
 #if !defined(__arm__) || defined(__aarch64__) || defined(__ARM_NEON__)
-#include <modules/video_coding/codecs/av1/dav1d_decoder.h>
-#include <modules/video_coding/codecs/av1/libaom_av1_encoder.h>
 #endif
 
 #if defined(__APPLE__)
@@ -35,9 +50,6 @@
 #include "sora/hwenc_amf/amf_video_encoder.h"
 #endif
 
-#include "default_video_formats.h"
-#include "sora/aligned_encoder_adapter.h"
-#include "sora/i420_encoder_adapter.h"
 #include "sora/open_h264_video_decoder.h"
 #include "sora/open_h264_video_encoder.h"
 #include "sora/sora_video_codec.h"

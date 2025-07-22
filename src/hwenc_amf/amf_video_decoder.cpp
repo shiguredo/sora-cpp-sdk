@@ -1,24 +1,43 @@
 #include "sora/hwenc_amf/amf_video_decoder.h"
 
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <memory>
+#include <optional>
 #include <thread>
 
 // WebRTC
+#include <api/scoped_refptr.h>
+#include <api/video/encoded_image.h>
+#include <api/video/i420_buffer.h>
+#include <api/video/video_codec_type.h>
+#include <api/video/video_frame.h>
 #include <api/video_codecs/video_codec.h>
+#include <api/video_codecs/video_decoder.h>
 #include <common_video/include/video_frame_buffer_pool.h>
 #include <modules/video_coding/include/video_error_codes.h>
-#include <rtc_base/checks.h>
 #include <rtc_base/logging.h>
-#include <rtc_base/time_utils.h>
-#include <third_party/libyuv/include/libyuv/convert.h>
+
+// libyuv
+#include <libyuv/convert.h>
 
 // AMF
-#include "public/common/AMFFactory.h"
-#include "public/common/AMFSTL.h"
-#include "public/common/Thread.h"
-#include "public/common/TraceAdapter.h"
-#include "public/include/components/VideoDecoderUVD.h"
+#include <public/common/AMFFactory.h>
+#include <public/common/AMFSTL.h>
+#include <public/common/Thread.h>
+#include <public/common/TraceAdapter.h>
+#include <public/include/components/Component.h>
+#include <public/include/components/VideoDecoderUVD.h>
+#include <public/include/core/Buffer.h>
+#include <public/include/core/Context.h>
+#include <public/include/core/Data.h>
+#include <public/include/core/Plane.h>
+#include <public/include/core/Result.h>
+#include <public/include/core/Surface.h>
 
 #include "../amf_context_impl.h"
+#include "sora/amf_context.h"
 
 #define RETURN_IF_FAILED(res, message)                  \
   if (res != AMF_OK) {                                  \

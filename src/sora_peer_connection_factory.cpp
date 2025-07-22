@@ -1,7 +1,13 @@
 #include "sora/sora_peer_connection_factory.h"
 
+#include <utility>
+
 // WebRTC
 #include <api/environment/environment_factory.h>
+#include <api/make_ref_counted.h>
+#include <api/peer_connection_interface.h>
+#include <api/scoped_refptr.h>
+#include <pc/connection_context.h>
 #include <pc/peer_connection_factory.h>
 #include <pc/peer_connection_factory_proxy.h>
 

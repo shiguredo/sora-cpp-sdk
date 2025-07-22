@@ -1,26 +1,47 @@
 #include "sora/hwenc_vpl/vpl_video_encoder.h"
 
+#include <algorithm>
 #include <chrono>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <memory>
 #include <mutex>
+#include <vector>
 
 // WebRTC
+#include <api/scoped_refptr.h>
+#include <api/video/encoded_image.h>
+#include <api/video/video_codec_type.h>
+#include <api/video/video_content_type.h>
+#include <api/video/video_frame.h>
+#include <api/video/video_frame_buffer.h>
+#include <api/video/video_frame_type.h>
+#include <api/video/video_timing.h>
+#include <api/video_codecs/video_codec.h>
+#include <api/video_codecs/video_encoder.h>
 #include <common_video/h264/h264_bitstream_parser.h>
 #include <common_video/h265/h265_bitstream_parser.h>
 #include <common_video/include/bitrate_adjuster.h>
-#include <modules/video_coding/codecs/h264/include/h264.h>
+#include <modules/video_coding/codecs/h264/include/h264_globals.h>
 #include <modules/video_coding/include/video_codec_interface.h>
 #include <modules/video_coding/include/video_error_codes.h>
+#include <rtc_base/checks.h>
 #include <rtc_base/logging.h>
-#include <rtc_base/synchronization/mutex.h>
-
-// Intel VPL
-#include <vpl/mfxvideo++.h>
-#include <vpl/mfxvp8.h>
 
 // libyuv
-#include <libyuv.h>
+#include <libyuv/convert_from.h>
+
+// Intel VPL
+#include <vpl/mfxcommon.h>
+#include <vpl/mfxdefs.h>
+#include <vpl/mfxstructures.h>
+#include <vpl/mfxvideo++.h>
+#include <vpl/mfxvideo.h>
+#include <vpl/mfxvp8.h>
 
 #include "../vpl_session_impl.h"
+#include "sora/vpl_session.h"
 #include "vpl_utils.h"
 
 namespace sora {

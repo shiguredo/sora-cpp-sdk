@@ -1,12 +1,19 @@
 #include "sora/hwenc_amf/amf_video_codec.h"
 
-#include "sora/hwenc_amf/amf_video_decoder.h"
-#include "sora/hwenc_amf/amf_video_encoder.h"
+#include <memory>
+#include <string>
+
+// WebRTC
+#include <api/video/video_codec_type.h>
 
 // AMF
-#include "public/include/core/Version.h"
+#include <public/include/core/Version.h>
 
 #include "../amf_context_impl.h"
+#include "sora/amf_context.h"
+#include "sora/hwenc_amf/amf_video_decoder.h"
+#include "sora/hwenc_amf/amf_video_encoder.h"
+#include "sora/sora_video_codec.h"
 
 namespace sora {
 

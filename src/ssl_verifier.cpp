@@ -1,17 +1,22 @@
 #include "sora/ssl_verifier.h"
 
-// webrtc
+#include <cstddef>
+#include <functional>
+#include <optional>
+#include <string>
+#include <utility>
+
+// WebRTC
 #include <rtc_base/logging.h>
-#include <rtc_base/openssl_utility.h>
 #include <rtc_base/ssl_roots.h>
 
-// openssl
-#include <openssl/x509v3.h>
-
-// boost
-#include <boost/asio/connect.hpp>
-#include <boost/asio/io_context.hpp>
-#include <boost/asio/ip/tcp.hpp>
+// OpenSSL
+#include <openssl/base.h>
+#include <openssl/bio.h>
+#include <openssl/err.h>
+#include <openssl/pem.h>
+#include <openssl/stack.h>
+#include <openssl/x509.h>
 
 namespace sora {
 

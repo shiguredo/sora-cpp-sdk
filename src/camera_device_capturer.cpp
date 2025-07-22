@@ -1,5 +1,8 @@
 #include "sora/camera_device_capturer.h"
 
+#include <api/media_stream_interface.h>
+#include <api/scoped_refptr.h>
+
 #if defined(__APPLE__)
 #include "sora/mac/mac_capturer.h"
 #elif defined(SORA_CPP_SDK_ANDROID)

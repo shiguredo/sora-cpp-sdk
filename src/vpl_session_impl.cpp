@@ -1,3 +1,7 @@
+#include "vpl_session_impl.h"
+
+#include <memory>
+
 #include "sora/vpl_session.h"
 
 #if !defined(USE_VPL_ENCODER)
@@ -12,11 +16,14 @@ std::shared_ptr<VplSession> VplSession::Create() {
 
 #else
 
+// WebRTC
 #include <rtc_base/logging.h>
 
-// Intel VPL
+// VPL
+#include <vpl/mfxcommon.h>
+#include <vpl/mfxdefs.h>
 #include <vpl/mfxdispatcher.h>
-#include <vpl/mfxvideo.h>
+#include <vpl/mfxsession.h>
 
 namespace sora {
 

@@ -1,20 +1,21 @@
 #ifndef SORA_SORA_VIDEO_CODEC_H_
 #define SORA_SORA_VIDEO_CODEC_H_
 
-// WebRTC
-#include <api/video/video_codec_type.h>
-
-// Boost
-#include <boost/json.hpp>
-
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
 #include <vector>
 
+// WebRTC
+#include <api/video/video_codec_type.h>
+
+// Boost
+#include <boost/json/conversion.hpp>
+#include <boost/json/value.hpp>
+
 #include "amf_context.h"
 #include "cuda_context.h"
-#include "vpl_session.h"
 
 namespace webrtc {
 

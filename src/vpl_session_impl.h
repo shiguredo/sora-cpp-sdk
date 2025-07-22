@@ -1,12 +1,12 @@
 #ifndef SORA_VPL_SESSION_IMPL_H_
 #define SORA_VPL_SESSION_IMPL_H_
 
+#include <memory>
+#include <vpl/mfxsession.h>
 #if defined(USE_VPL_ENCODER)
 
-#include <iostream>
 
 // Intel VPL
-#include <vpl/mfxvideo++.h>
 
 #include "sora/vpl_session.h"
 

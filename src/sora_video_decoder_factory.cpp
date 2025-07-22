@@ -1,16 +1,19 @@
 #include "sora/sora_video_decoder_factory.h"
 
+#include <functional>
+#include <memory>
+#include <utility>
+#include <vector>
+
 // WebRTC
-#include <absl/strings/match.h>
+#include <api/environment/environment.h>
 #include <api/environment/environment_factory.h>
+#include <api/video/video_codec_type.h>
 #include <api/video_codecs/sdp_video_format.h>
-#include <media/base/codec.h>
-#include <media/base/media_constants.h>
-#include <modules/video_coding/codecs/h264/include/h264.h>
+#include <api/video_codecs/video_codec.h>
+#include <api/video_codecs/video_decoder.h>
 #include <modules/video_coding/codecs/vp8/include/vp8.h>
 #include <modules/video_coding/codecs/vp9/include/vp9.h>
-#include <rtc_base/checks.h>
-#include <rtc_base/logging.h>
 
 #if !defined(__arm__) || defined(__aarch64__) || defined(__ARM_NEON__)
 #include <modules/video_coding/codecs/av1/dav1d_decoder.h>
@@ -33,6 +36,8 @@
 #endif
 
 #include "default_video_formats.h"
+#include "sora/cuda_context.h"
+#include "sora/vpl_session.h"
 
 namespace sora {
 

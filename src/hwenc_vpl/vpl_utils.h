@@ -1,11 +1,15 @@
 #ifndef SORA_HWENC_VPL_VPL_UTILS_H_
 #define SORA_HWENC_VPL_VPL_UTILS_H_
 
+#include <string>
+
 // WebRTC
 #include <api/video/video_codec_type.h>
 
 // Intel VPL
 #include <vpl/mfxdefs.h>
+#include <vpl/mfxstructures.h>
+#include <vpl/mfxvp8.h>
 
 #define VPL_CHECK_RESULT(P, X, ERR)                    \
   {                                                    \

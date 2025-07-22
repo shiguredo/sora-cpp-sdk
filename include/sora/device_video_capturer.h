@@ -10,17 +10,16 @@
 #ifndef SORA_DEVICE_VIDEO_CAPTURER_H_
 #define SORA_DEVICE_VIDEO_CAPTURER_H_
 
-#include <memory>
+#include <cstddef>
 #include <optional>
-#include <vector>
-
-// Boost
-#include <boost/optional.hpp>
+#include <string>
 
 // WebRTC
 #include <api/scoped_refptr.h>
+#include <api/video/video_frame.h>
+#include <api/video/video_sink_interface.h>
 #include <modules/video_capture/video_capture.h>
-#include <rtc_base/ref_counted_object.h>
+#include <modules/video_capture/video_capture_defines.h>
 
 #include "scalable_track_source.h"
 
@@ -41,8 +40,9 @@ struct DeviceVideoCapturerConfig : ScalableVideoTrackSourceConfig {
 // このキャプチャラでは動かない環境もあるため、このキャプチャラを直接利用する必要は無い。
 // 様々な環境で動作するデバイスキャプチャラを利用したい場合、
 // CreateCameraDeviceCapturer 関数を利用して生成するのが良い。
-class DeviceVideoCapturer : public ScalableVideoTrackSource,
-                            public webrtc::VideoSinkInterface<webrtc::VideoFrame> {
+class DeviceVideoCapturer
+    : public ScalableVideoTrackSource,
+      public webrtc::VideoSinkInterface<webrtc::VideoFrame> {
  public:
   static webrtc::scoped_refptr<DeviceVideoCapturer> Create(
       const DeviceVideoCapturerConfig& config);

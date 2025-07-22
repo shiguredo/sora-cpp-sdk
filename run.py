@@ -1038,24 +1038,12 @@ def _format(
     with cd(BASE_DIR):
         if clang_scan_deps_path is None:
             clang_scan_deps_path = find_clang_binary("clang-scan-deps")
-        # clang-scan-deps-20 -compilation-database _build/ubuntu-24.04_x86_64/release/sora/compile_commands.json src/sora_signaling.cpp
-        # if clang_format_path is None:
-        #     if shutil.which("clang-format") is not None:
-        #         clang_format_path = "clang-format"
-        #     else:
-        #         for n in range(50, 14, -1):
-        #             if shutil.which(f"clang-format-{n}") is not None:
-        #                 clang_format_path = f"clang-format-{n}"
-        #                 break
+        if clang_format_path is None:
+            clang_format_path = find_clang_binary("clang-format")
         if clang_include_cleaner_path is None:
-            if shutil.which("clang-include-cleaner") is not None:
-                clang_include_cleaner_path = "clang-include-cleaner"
-            else:
-                for n in range(50, 14, -1):
-                    if shutil.which(f"clang-include-cleaner-{n}") is not None:
-                        clang_include_cleaner_path = f"clang-include-cleaner-{n}"
-                        break
+            clang_include_cleaner_path = find_clang_binary("clang-include-cleaner")
 
+        # 以下のファイルだけを対象にする
         target_files = set()
         patterns = [
             "include/**/*.h",
@@ -1085,28 +1073,46 @@ def _format(
                     clang_scan_deps_path,
                     "-compilation-database",
                     os.path.join(build_dir, "sora", "compile_commands.json"),
+                    "-format",
+                    "experimental-full",
                 ]
             )
         )
         for unit in sora_deps["translation-units"]:
             for command in unit["commands"]:
                 if command["input-file"] in target_files:
-                    scan_file_set.append(command["input-file"])
+                    scan_file_set.add(command["input-file"])
                 for dep in command["file-deps"]:
                     if dep in target_files:
-                        scan_file_set.append(dep)
+                        scan_file_set.add(dep)
+
+        include_cleaner_info_file = os.path.join(build_dir, "clang-include-cleaner.json")
+        if os.path.exists(include_cleaner_info_file):
+            include_cleaner_info = json.load(open(include_cleaner_info_file, "r", encoding="utf-8"))
+        else:
+            include_cleaner_info = {}
 
         scan_files = sorted(scan_file_set)
-        for file in scan_files:
-            cmd(
-                [
-                    clang_include_cleaner_path,
-                    "-p",
-                    os.path.join(build_dir, "sora"),
-                    "--edit",
-                    scan_file,
-                ]
-            )
+        try:
+            for file in scan_files:
+                digest = hashlib.sha256(open(file, "rb").read()).hexdigest()
+                if file in include_cleaner_info and include_cleaner_info[file] == digest:
+                    logging.info(f"Skipping {file} (already processed)")
+                    continue
+                logging.info(f"Processing {file} with clang-include-cleaner")
+                cmd(
+                    [
+                        clang_include_cleaner_path,
+                        "-p",
+                        os.path.join(build_dir, "sora"),
+                        "--edit",
+                        file,
+                    ]
+                )
+                include_cleaner_info[file] = digest
+        finally:
+            with open(include_cleaner_info_file, "w", encoding="utf-8") as f:
+                json.dump(include_cleaner_info, f, indent=2, ensure_ascii=False)
 
 
 def main():

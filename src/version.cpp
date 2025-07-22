@@ -5,7 +5,8 @@
 #include <string>
 #include <vector>
 
-// boost
+// Boost
+#include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/trim.hpp>
 
