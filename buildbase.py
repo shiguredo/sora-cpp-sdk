@@ -934,7 +934,7 @@ def build_sora(
         ]
 
     with cd(local_sora_cpp_sdk_dir):
-        cmd(["python3", "run.py", platform, *local_sora_cpp_sdk_args])
+        cmd(["python3", "run.py", "build", platform, *local_sora_cpp_sdk_args])
 
 
 class SoraInfo(NamedTuple):

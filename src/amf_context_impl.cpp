@@ -1,9 +1,4 @@
-#include "amf_context_impl.h"
-
 #include <memory>
-
-// AMF
-#include <public/include/core/Result.h>
 
 #include "sora/amf_context.h"
 
@@ -23,7 +18,8 @@ bool AMFContext::CanCreate() {
 #else
 
 // AMF
-#include "public/common/AMFFactory.h"
+#include <public/common/AMFFactory.h>
+#include <public/include/core/Result.h>
 
 #include "amf_context_impl.h"
 

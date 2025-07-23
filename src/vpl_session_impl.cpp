@@ -1,5 +1,3 @@
-#include "vpl_session_impl.h"
-
 #include <memory>
 
 #include "sora/vpl_session.h"
@@ -15,6 +13,8 @@ std::shared_ptr<VplSession> VplSession::Create() {
 }  // namespace sora
 
 #else
+
+#include "vpl_session_impl.h"
 
 // WebRTC
 #include <rtc_base/logging.h>
