@@ -24,6 +24,8 @@
   - @melpon
 - [ADD] clang-include-cleaner や clang-format を GitHub Actions で実行し、差分があったらエラーにするワークフローを追加
   - @melpon
+- [ADD] Intel VPL の VP9 エンコーダを動くようにする
+  - @melpon
 
 ### misc
 
