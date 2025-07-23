@@ -1,5 +1,3 @@
-#include "cuda_context_cuda.h"
-
 #include <memory>
 
 #include "sora/cuda_context.h"
@@ -30,6 +28,7 @@ bool CudaContext::CanCreate() {
 #include "NvEncoder/../../Utils/Logger.h"
 #include "NvEncoder/../../Utils/NvCodecUtils.h"
 
+#include "cuda_context_cuda.h"
 #include "sora/dyn/cuda.h"
 #include "sora/dyn/dyn.h"
 
