@@ -97,14 +97,7 @@ jobs:
     steps:
       - uses: rtCamp/action-slack-notify@v2
         if: |
-          needs.build-windows.result == 'failure' ||
-          needs.build-macos.result == 'failure' ||
-          needs.build-ubuntu.result == 'failure' ||
-          needs.create-release.result == 'failure' ||
-          needs.build-windows-examples.result == 'failure' ||
-          needs.build-macos-examples.result == 'failure' ||
-          needs.build-ubuntu-examples.result == 'failure' ||
-          needs.create-release-example.result == 'failure'
+          needs.run-ubuntu.result == 'failure'
         env:
           SLACK_CHANNEL: sora-cpp-sdk
           SLACK_COLOR: danger
