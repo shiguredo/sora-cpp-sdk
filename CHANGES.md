@@ -11,6 +11,20 @@
 
 ## develop
 
+- [CHANGE] ライブラリのヘッダーファイルとソースファイルで使用されている include を整理する
+  - 今まで間接的にインクルードされていたファイルが含まれなくなっている可能性があるので、破壊的変更になる
+  - @melpon
+- [CHANGE] run.py のビルドをサブコマンド化する
+  - 今まで `python3 run.py ubuntu-24.04_x86_64` でビルドしていたコマンドが`python3 run.py build ubuntu-24.04_x86_64` となる
+  - @melpon
+- [ADD] clang-include-cleaner や clang-format を実行するサブコマンドを追加する
+  - `python3 run.py iwyu ubuntu-24.04_x86_64`
+  - `python3 run.py format`
+  - なお iwyu を実行するには事前にビルドしておく必要がある
+  - @melpon
+- [ADD] clang-include-cleaner や clang-format を GitHub Actions で実行し、差分があったらエラーにするワークフローを追加
+  - @melpon
+
 ### misc
 
 - [CHANGE] SDL サンプルと Sumomo から `--multistream` オプションを削除する

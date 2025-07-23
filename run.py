@@ -6,7 +6,6 @@ import logging
 import multiprocessing
 import os
 import shutil
-import sys
 import tarfile
 import zipfile
 from typing import Dict, List, Optional
@@ -1233,10 +1232,6 @@ def main():
     fp.add_argument("--clang-format-path", type=str, default=None)
 
     args = parser.parse_args()
-
-    if not hasattr(args, "op"):
-        parser.print_help()
-        sys.exit(1)
 
     if args.op == "build":
         _build(
