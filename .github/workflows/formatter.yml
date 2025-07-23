@@ -82,9 +82,9 @@ jobs:
           done
         if: matrix.platform.os == 'ubuntu' && matrix.platform.name != 'ubuntu-22.04_armv8'
       - name: Run IWYU
-        run: python3 run.py iwyu ubuntu-24.04_x86_64 || git diff
+        run: python3 run.py iwyu ubuntu-24.04_x86_64 || git diff --exit-code
       - name: Run clang format
-        run: python3 run.py format || git diff
+        run: python3 run.py format || git diff --exit-code
       - name: Check diff
         run: git diff --exit-code
 

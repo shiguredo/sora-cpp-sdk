@@ -6,6 +6,7 @@
 #include <vector>
 
 // WebRTC
+#include <absl/memory/memory.h>  // IWYU pragma: keep
 #include <api/environment/environment.h>
 #include <api/environment/environment_factory.h>
 #include <api/video/video_codec_type.h>
