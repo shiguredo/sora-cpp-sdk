@@ -1178,9 +1178,6 @@ def _iwyu(
 
 
 def _format(
-    target: str,
-    debug: bool,
-    relwithdebinfo: bool,
     clang_format_path: Optional[str] = None,
 ):
     if clang_format_path is None:
@@ -1233,9 +1230,6 @@ def main():
     ip.add_argument("--clang-include-cleaner-path", type=str, default=None)
     fp = sp.add_parser("format")
     fp.set_defaults(op="format")
-    fp.add_argument("target", choices=AVAILABLE_TARGETS)
-    fp.add_argument("--debug", action="store_true")
-    fp.add_argument("--relwithdebinfo", action="store_true")
     fp.add_argument("--clang-format-path", type=str, default=None)
 
     args = parser.parse_args()
@@ -1266,9 +1260,6 @@ def main():
         )
     elif args.op == "format":
         _format(
-            target=args.target,
-            debug=args.debug,
-            relwithdebinfo=args.relwithdebinfo,
             clang_format_path=args.clang_format_path,
         )
 

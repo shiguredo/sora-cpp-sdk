@@ -13,7 +13,11 @@
 #include <modules/video_capture/video_capture_factory.h>
 #include <rtc_base/logging.h>
 
-#ifdef SORA_CPP_SDK_ANDROID
+#if defined(SORA_CPP_SDK_WINDOWS)
+#include <modules/audio_device/include/audio_device_factory.h>
+#endif
+
+#if defined(SORA_CPP_SDK_ANDROID)
 #include <sdk/android/native_api/audio_device_module/audio_device_android.h>
 #include <sdk/android/native_api/jni/jvm.h>
 #endif
