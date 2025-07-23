@@ -38,13 +38,18 @@
 #include <rtc_base/checks.h>
 #include <rtc_base/logging.h>
 
+// libyuv
+#include <libyuv/convert_from.h>      // IWYU pragma: keep
+#include <libyuv/planar_functions.h>  // IWYU pragma: keep
+
 // NvCodec
+#include <NvEncoder/NvEncoder.h>
+#include <nvEncodeAPI.h>
+
 #ifdef _WIN32
 #include <NvEncoder/NvEncoderD3D11.h>
 #endif
 
-#include "NvEncoder/NvEncoder.h"
-#include "nvEncodeAPI.h"
 #include "sora/cuda_context.h"
 #include "sora/dyn/dyn.h"
 
