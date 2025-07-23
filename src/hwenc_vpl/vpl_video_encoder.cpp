@@ -471,7 +471,6 @@ int32_t VplVideoEncoderImpl::Encode(
 
   mfxEncodeCtrl ctrl;
   memset(&ctrl, 0, sizeof(ctrl));
-  //send_key_frame = true;
   if (send_key_frame) {
     ctrl.FrameType = MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF;
   } else {
