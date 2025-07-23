@@ -6,6 +6,7 @@ import logging
 import multiprocessing
 import os
 import shutil
+import sys
 import tarfile
 import zipfile
 from typing import Dict, List, Optional
@@ -1014,7 +1015,17 @@ def _build(
                 f.write(f"BOOST_PACKAGE_NAME={boost_archive_name}\n")
 
 
-def _do_format(
+def _find_clang_binary(name: str) -> Optional[str]:
+    if shutil.which(name) is not None:
+        return name
+    else:
+        for n in range(50, 14, -1):
+            if shutil.which(f"{name}-{n}") is not None:
+                return f"{name}-{n}"
+    return None
+
+
+def _do_iwyu(
     clang_scan_deps_path: str,
     clang_include_cleaner_path: str,
     patterns: List[str],
@@ -1022,6 +1033,10 @@ def _do_format(
     include_cleaner_info_path: str,
 ):
     with cd(BASE_DIR):
+        if not os.path.exists(compile_commands_path):
+            logging.warning(f"Compile commands file not found: {compile_commands_path}")
+            return
+
         target_files = set()
         for pattern in patterns:
             files = glob.glob(pattern, recursive=True)
@@ -1078,12 +1093,11 @@ def _do_format(
                 json.dump(include_cleaner_info, f, indent=2, ensure_ascii=False)
 
 
-def _format(
+def _iwyu(
     target: str,
     debug: bool,
     relwithdebinfo: bool,
     clang_scan_deps_path: Optional[str] = None,
-    clang_format_path: Optional[str] = None,
     clang_include_cleaner_path: Optional[str] = None,
 ):
     platform = _get_platform(target)
@@ -1093,32 +1107,19 @@ def _format(
         BASE_DIR, "examples", "_build", platform.target.package_name, configuration
     )
 
-    def find_clang_binary(name: str) -> Optional[str]:
-        if shutil.which(name) is not None:
-            return name
-        else:
-            for n in range(50, 14, -1):
-                if shutil.which(f"{name}-{n}") is not None:
-                    return f"{name}-{n}"
-        return None
-
     if clang_scan_deps_path is None:
-        clang_scan_deps_path = find_clang_binary("clang-scan-deps")
-    if clang_format_path is None:
-        clang_format_path = find_clang_binary("clang-format")
+        clang_scan_deps_path = _find_clang_binary("clang-scan-deps")
     if clang_include_cleaner_path is None:
-        clang_include_cleaner_path = find_clang_binary("clang-include-cleaner")
+        clang_include_cleaner_path = _find_clang_binary("clang-include-cleaner")
 
     if clang_scan_deps_path is None:
         raise Exception("clang-scan-deps not found. Please install it or specify the path.")
-    if clang_format_path is None:
-        raise Exception("clang-format not found. Please install it or specify the path.")
     if clang_include_cleaner_path is None:
         raise Exception("clang-include-cleaner not found. Please install it or specify the path.")
 
     include_cleaner_info_path = os.path.join(build_dir, "clang-include-cleaner.json")
 
-    _do_format(
+    _do_iwyu(
         clang_scan_deps_path=clang_scan_deps_path,
         clang_include_cleaner_path=clang_include_cleaner_path,
         patterns=[
@@ -1130,7 +1131,7 @@ def _format(
         compile_commands_path=os.path.join(build_dir, "sora", "compile_commands.json"),
         include_cleaner_info_path=include_cleaner_info_path,
     )
-    _do_format(
+    _do_iwyu(
         clang_scan_deps_path=clang_scan_deps_path,
         clang_include_cleaner_path=clang_include_cleaner_path,
         patterns=[
@@ -1140,7 +1141,7 @@ def _format(
         compile_commands_path=os.path.join(build_dir, "test", "compile_commands.json"),
         include_cleaner_info_path=include_cleaner_info_path,
     )
-    _do_format(
+    _do_iwyu(
         clang_scan_deps_path=clang_scan_deps_path,
         clang_include_cleaner_path=clang_include_cleaner_path,
         patterns=[
@@ -1152,7 +1153,7 @@ def _format(
         ),
         include_cleaner_info_path=include_cleaner_info_path,
     )
-    _do_format(
+    _do_iwyu(
         clang_scan_deps_path=clang_scan_deps_path,
         clang_include_cleaner_path=clang_include_cleaner_path,
         patterns=[
@@ -1164,7 +1165,7 @@ def _format(
         ),
         include_cleaner_info_path=include_cleaner_info_path,
     )
-    _do_format(
+    _do_iwyu(
         clang_scan_deps_path=clang_scan_deps_path,
         clang_include_cleaner_path=clang_include_cleaner_path,
         patterns=[
@@ -1174,6 +1175,38 @@ def _format(
         compile_commands_path=os.path.join(example_build_dir, "sumomo", "compile_commands.json"),
         include_cleaner_info_path=include_cleaner_info_path,
     )
+
+
+def _format(
+    target: str,
+    debug: bool,
+    relwithdebinfo: bool,
+    clang_format_path: Optional[str] = None,
+):
+    if clang_format_path is None:
+        clang_format_path = _find_clang_binary("clang-format")
+    if clang_format_path is None:
+        raise Exception("clang-format not found. Please install it or specify the path.")
+    patterns = [
+        "include/**/*.h",
+        "include/**/*.cpp",
+        "src/**/*.h",
+        "src/**/*.cpp",
+        "src/**/*.mm",
+        "test/**/*.h",
+        "test/**/*.cpp",
+        "examples/messaging_recvonly_sample/**/*.h",
+        "examples/messaging_recvonly_sample/**/*.cpp",
+        "examples/sdl_sample/**/*.h",
+        "examples/sdl_sample/**/*.cpp",
+        "examples/sumomo/**/*.h",
+        "examples/sumomo/**/*.cpp",
+    ]
+    target_files = []
+    for pattern in patterns:
+        files = glob.glob(pattern, recursive=True)
+        target_files.extend(files)
+    cmd([clang_format_path, "-i"] + target_files)
 
 
 def main():
@@ -1191,16 +1224,25 @@ def main():
     bp.add_argument("--test", action="store_true")
     bp.add_argument("--run-e2e-test", action="store_true")
     bp.add_argument("--package", action="store_true")
+    ip = sp.add_parser("iwyu")
+    ip.set_defaults(op="iwyu")
+    ip.add_argument("target", choices=AVAILABLE_TARGETS)
+    ip.add_argument("--debug", action="store_true")
+    ip.add_argument("--relwithdebinfo", action="store_true")
+    ip.add_argument("--clang-scan-deps-path", type=str, default=None)
+    ip.add_argument("--clang-include-cleaner-path", type=str, default=None)
     fp = sp.add_parser("format")
     fp.set_defaults(op="format")
     fp.add_argument("target", choices=AVAILABLE_TARGETS)
     fp.add_argument("--debug", action="store_true")
     fp.add_argument("--relwithdebinfo", action="store_true")
-    fp.add_argument("--clang-scan-deps-path", type=str, default=None)
     fp.add_argument("--clang-format-path", type=str, default=None)
-    fp.add_argument("--clang-include-cleaner-path", type=str, default=None)
 
     args = parser.parse_args()
+
+    if not hasattr(args, "op"):
+        parser.print_help()
+        sys.exit(1)
 
     if args.op == "build":
         _build(
@@ -1214,14 +1256,20 @@ def main():
             run_e2e_test=args.run_e2e_test,
             package=args.package,
         )
+    elif args.op == "iwyu":
+        _iwyu(
+            target=args.target,
+            debug=args.debug,
+            relwithdebinfo=args.relwithdebinfo,
+            clang_scan_deps_path=args.clang_scan_deps_path,
+            clang_include_cleaner_path=args.clang_include_cleaner_path,
+        )
     elif args.op == "format":
         _format(
             target=args.target,
             debug=args.debug,
             relwithdebinfo=args.relwithdebinfo,
-            clang_scan_deps_path=args.clang_scan_deps_path,
             clang_format_path=args.clang_format_path,
-            clang_include_cleaner_path=args.clang_include_cleaner_path,
         )
 
 

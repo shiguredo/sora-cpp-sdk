@@ -92,4 +92,4 @@ std::string MacVersion::GetOSVersion() {
   return [str UTF8String];
 }
 
-}
+}  // namespace sora
