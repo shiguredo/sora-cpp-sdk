@@ -21,6 +21,7 @@
 #include <api/video_codecs/video_codec.h>
 #include <rtc_base/logging.h>
 
+#include "sora/java_context.h"  // IWYU pragma: keep
 #include "sora/open_h264_video_codec.h"
 #include "sora/vpl_session.h"
 
