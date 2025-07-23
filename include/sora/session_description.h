@@ -2,9 +2,13 @@
 #define SORA_SESSION_DESCRIPTION_H_
 
 #include <functional>
+#include <string>
 
 // WebRTC
+#include <api/jsep.h>
 #include <api/peer_connection_interface.h>
+#include <api/rtc_error.h>
+#include <api/scoped_refptr.h>
 
 namespace sora {
 

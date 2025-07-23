@@ -1,9 +1,24 @@
-#include <cstdint>
+#include <atomic>
+#include <csignal>
 #include <cstdlib>
-#include <fstream>
-#include <iostream>
+#include <memory>
+#include <string>
+
+// Boost
+#include <boost/asio/deadline_timer.hpp>
+#include <boost/asio/executor_work_guard.hpp>
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/signal_set.hpp>
+#include <boost/date_time/posix_time/posix_time_duration.hpp>
+#include <boost/json/object.hpp>
+#include <boost/json/parse.hpp>
+#include <boost/system/detail/error_code.hpp>
 
 // WebRTC
+#include <api/media_stream_interface.h>
+#include <api/rtp_receiver_interface.h>
+#include <api/rtp_transceiver_interface.h>
+#include <api/scoped_refptr.h>
 #include <rtc_base/crypto_random.h>
 #include <rtc_base/logging.h>
 
@@ -14,13 +29,9 @@
 // Catch2
 #include <catch2/catch_test_macros.hpp>
 
-// Sora
-#include <sora/audio_device_module.h>
-#include <sora/camera_device_capturer.h>
-#include <sora/java_context.h>
+// Sora C++ SDK
 #include <sora/sora_client_context.h>
-#include <sora/sora_video_decoder_factory.h>
-#include <sora/sora_video_encoder_factory.h>
+#include <sora/sora_signaling.h>
 
 #include "fake_video_capturer.h"
 
@@ -135,8 +146,8 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
   void OnMessage(std::string label, std::string data) override {}
   void OnSwitched(std::string text) override {}
 
-  void OnTrack(webrtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
-      override {}
+  void OnTrack(webrtc::scoped_refptr<webrtc::RtpTransceiverInterface>
+                   transceiver) override {}
   void OnRemoveTrack(
       webrtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override {}
 

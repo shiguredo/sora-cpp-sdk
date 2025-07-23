@@ -1,3 +1,5 @@
+#include <memory>
+
 #include "sora/amf_context.h"
 
 #if !defined(USE_AMF_ENCODER)
@@ -16,7 +18,8 @@ bool AMFContext::CanCreate() {
 #else
 
 // AMF
-#include "public/common/AMFFactory.h"
+#include <public/common/AMFFactory.h>
+#include <public/include/core/Result.h>
 
 #include "amf_context_impl.h"
 

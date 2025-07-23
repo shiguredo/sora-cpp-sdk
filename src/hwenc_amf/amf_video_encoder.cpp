@@ -1,36 +1,59 @@
 #include "sora/hwenc_amf/amf_video_encoder.h"
 
-#include <chrono>
+#include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <mutex>
-#include <queue>
 #include <thread>
+#include <vector>
 
 // WebRTC
-#include <api/video/nv12_buffer.h>
-#include <base/strings/utf_string_conversions.h>
+#include <api/scoped_refptr.h>
+#include <api/video/encoded_image.h>
+#include <api/video/render_resolution.h>
+#include <api/video/video_codec_type.h>
+#include <api/video/video_content_type.h>
+#include <api/video/video_frame.h>
+#include <api/video/video_frame_buffer.h>
+#include <api/video/video_frame_type.h>
+#include <api/video/video_rotation.h>
+#include <api/video/video_timing.h>
+#include <api/video_codecs/scalability_mode.h>
+#include <api/video_codecs/video_codec.h>
+#include <api/video_codecs/video_encoder.h>
 #include <common_video/h264/h264_bitstream_parser.h>
 #include <common_video/h265/h265_bitstream_parser.h>
 #include <common_video/include/bitrate_adjuster.h>
-#include <modules/video_coding/codecs/h264/include/h264.h>
+#include <modules/video_coding/codecs/h264/include/h264_globals.h>
 #include <modules/video_coding/include/video_codec_interface.h>
 #include <modules/video_coding/include/video_error_codes.h>
 #include <modules/video_coding/svc/create_scalability_structure.h>
 #include <modules/video_coding/svc/scalable_video_controller.h>
+#include <rtc_base/checks.h>
 #include <rtc_base/logging.h>
 
 // libyuv
-#include <libyuv.h>
+#include <libyuv/convert.h>
 
 // AMF
-#include "public/common/AMFFactory.h"
-#include "public/common/Thread.h"
-#include "public/common/TraceAdapter.h"
-#include "public/include/components/VideoEncoderAV1.h"
-#include "public/include/components/VideoEncoderHEVC.h"
-#include "public/include/components/VideoEncoderVCE.h"
+#include <public/common/AMFFactory.h>
+#include <public/common/AMFSTL.h>
+#include <public/common/Thread.h>
+#include <public/common/TraceAdapter.h>
+#include <public/include/components/Component.h>
+#include <public/include/components/VideoEncoderAV1.h>
+#include <public/include/components/VideoEncoderHEVC.h>
+#include <public/include/components/VideoEncoderVCE.h>
+#include <public/include/core/Buffer.h>
+#include <public/include/core/Context.h>
+#include <public/include/core/Data.h>
+#include <public/include/core/Plane.h>
+#include <public/include/core/Platform.h>
+#include <public/include/core/Result.h>
+#include <public/include/core/Surface.h>
 
 #include "../amf_context_impl.h"
+#include "sora/amf_context.h"
 
 #define RETURN_IF_FAILED(res, message)                  \
   if (res != AMF_OK) {                                  \

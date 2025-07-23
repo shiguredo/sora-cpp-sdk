@@ -28,7 +28,8 @@
 
 - (void)capturer:(RTCVideoCapturer*)capturer
     didCaptureVideoFrame:(RTCVideoFrame*)frame {
-  const int64_t timestamp_us = frame.timeStampNs / webrtc::kNumNanosecsPerMicrosec;
+  const int64_t timestamp_us =
+      frame.timeStampNs / webrtc::kNumNanosecsPerMicrosec;
   webrtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer =
       webrtc::make_ref_counted<webrtc::ObjCFrameBuffer>(frame.buffer);
   _capturer->OnFrame(webrtc::VideoFrame::Builder()
@@ -66,19 +67,25 @@ AVCaptureDeviceFormat* SelectClosestFormat(AVCaptureDevice* device,
 
 namespace sora {
 
-MacCapturer::MacCapturer(const MacCapturerConfig& config) : ScalableVideoTrackSource(config) {
-  RTC_LOG(LS_INFO) << "MacCapturer width=" << config.width << ", height=" << config.height
+MacCapturer::MacCapturer(const MacCapturerConfig& config)
+    : ScalableVideoTrackSource(config) {
+  RTC_LOG(LS_INFO) << "MacCapturer width=" << config.width
+                   << ", height=" << config.height
                    << ", target_fps=" << config.target_fps;
 
   adapter_ = [[RTCVideoSourceAdapter alloc] init];
   adapter_.capturer = this;
 
   capturer_ = [[RTCCameraVideoCapturer alloc] initWithDelegate:adapter_];
-  AVCaptureDeviceFormat* format = SelectClosestFormat(config.device, config.width, config.height);
-  [capturer_ startCaptureWithDevice:config.device format:format fps:config.target_fps];
+  AVCaptureDeviceFormat* format =
+      SelectClosestFormat(config.device, config.width, config.height);
+  [capturer_ startCaptureWithDevice:config.device
+                             format:format
+                                fps:config.target_fps];
 }
 
-webrtc::scoped_refptr<MacCapturer> MacCapturer::Create(const MacCapturerConfig& config) {
+webrtc::scoped_refptr<MacCapturer> MacCapturer::Create(
+    const MacCapturerConfig& config) {
   MacCapturerConfig c = config;
   if (c.device == nullptr) {
     AVCaptureDevice* device = FindVideoDevice(c.device_name);
@@ -102,12 +109,14 @@ static NSArray<AVCaptureDevice*>* captureDevices() {
   // return session.devices;
   return [AVCaptureDevice devicesWithMediaType:AVMediaTypeVideo];
 #else
-  AVCaptureDeviceDiscoverySession *session = [AVCaptureDeviceDiscoverySession
-    discoverySessionWithDeviceTypes:@[ AVCaptureDeviceTypeBuiltInWideAngleCamera ]
-                          mediaType:AVMediaTypeVideo
-                           position:AVCaptureDevicePositionUnspecified];
+  AVCaptureDeviceDiscoverySession* session = [AVCaptureDeviceDiscoverySession
+      discoverySessionWithDeviceTypes:@[
+        AVCaptureDeviceTypeBuiltInWideAngleCamera
+      ]
+                            mediaType:AVMediaTypeVideo
+                             position:AVCaptureDevicePositionUnspecified];
   return session.devices;
-# endif
+#endif
 }
 
 bool MacCapturer::EnumVideoDevice(
@@ -168,7 +177,8 @@ AVCaptureDevice* MacCapturer::FindVideoDevice(
   }
 
   if (capture_device_index != SIZE_T_MAX) {
-    AVCaptureDevice* device = [captureDevices() objectAtIndex:capture_device_index];
+    AVCaptureDevice* device =
+        [captureDevices() objectAtIndex:capture_device_index];
     RTC_LOG(LS_INFO) << "selected video device: [" << capture_device_index
                      << "] device_name=" << [device.localizedName UTF8String];
     return device;
@@ -184,7 +194,8 @@ void MacCapturer::Stop() {
   [capturer_ stopCaptureWithCompletionHandler:^{
     // self を参照することで、stopCaptureWithCompletionHandler が完了するまで
     // オブジェクトが破棄されないようにする
-    RTC_LOG(LS_INFO) << "MacCapturer::Destroy() completed: self=" << (void*)self.get();
+    RTC_LOG(LS_INFO) << "MacCapturer::Destroy() completed: self="
+                     << (void*)self.get();
   }];
 }
 
@@ -196,4 +207,4 @@ void MacCapturer::OnFrame(const webrtc::VideoFrame& frame) {
   OnCapturedFrame(frame);
 }
 
-}
+}  // namespace sora

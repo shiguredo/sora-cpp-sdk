@@ -1,16 +1,23 @@
 #include "sora/device_list.h"
 
-// webrtc
+#include <functional>
+#include <memory>
+#include <string>
+
+// WebRTC
+#include <api/audio/audio_device.h>
+#include <api/audio/audio_device_defines.h>
 #include <api/audio/create_audio_device_module.h>
 #include <api/environment/environment_factory.h>
-#include <api/task_queue/default_task_queue_factory.h>
-#include <modules/audio_device/include/audio_device.h>
-#include <modules/audio_device/include/audio_device_factory.h>
 #include <modules/video_capture/video_capture.h>
 #include <modules/video_capture/video_capture_factory.h>
 #include <rtc_base/logging.h>
 
-#ifdef SORA_CPP_SDK_ANDROID
+#if defined(SORA_CPP_SDK_WINDOWS)
+#include <modules/audio_device/include/audio_device_factory.h>
+#endif
+
+#if defined(SORA_CPP_SDK_ANDROID)
 #include <sdk/android/native_api/audio_device_module/audio_device_android.h>
 #include <sdk/android/native_api/jni/jvm.h>
 #endif

@@ -1,17 +1,16 @@
 #ifndef SORA_ALIGNED_ENCODER_ADAPTER_H_
 #define SORA_ALIGNED_ENCODER_ADAPTER_H_
 
-#include <absl/types/optional.h>
+#include <cstdint>
+#include <memory>
+#include <vector>
+
+// WebRTC
 #include <api/fec_controller_override.h>
-#include <api/sequence_checker.h>
-#include <api/video_codecs/sdp_video_format.h>
+#include <api/video/video_frame.h>
+#include <api/video/video_frame_type.h>
+#include <api/video_codecs/video_codec.h>
 #include <api/video_codecs/video_encoder.h>
-#include <api/video_codecs/video_encoder_factory.h>
-#include <common_video/framerate_controller.h>
-#include <modules/video_coding/include/video_codec_interface.h>
-#include <rtc_base/experiments/encoder_info_settings.h>
-#include <rtc_base/system/no_unique_address.h>
-#include <rtc_base/system/rtc_export.h>
 
 namespace sora {
 

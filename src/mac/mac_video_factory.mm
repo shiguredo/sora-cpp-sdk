@@ -30,4 +30,4 @@ std::unique_ptr<webrtc::VideoDecoderFactory> CreateMacVideoDecoderFactory() {
       [[RTCDefaultVideoDecoderFactory alloc] init]);
 }
 
-}
+}  // namespace sora

@@ -1,9 +1,15 @@
 #ifndef SORA_I420_ENCODER_ADAPTER_H_
 #define SORA_I420_ENCODER_ADAPTER_H_
 
+#include <cstdint>
 #include <memory>
+#include <vector>
 
 // WebRTC
+#include <api/fec_controller_override.h>
+#include <api/video/video_frame.h>
+#include <api/video/video_frame_type.h>
+#include <api/video_codecs/video_codec.h>
 #include <api/video_codecs/video_encoder.h>
 
 namespace sora {

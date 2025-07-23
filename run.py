@@ -1,5 +1,7 @@
 import argparse
+import glob
 import hashlib
+import json
 import logging
 import multiprocessing
 import os
@@ -571,45 +573,47 @@ AVAILABLE_TARGETS = [
 WINDOWS_SDK_VERSION = "10.0.20348.0"
 
 
-def main():
-    check_version_file()
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("target", choices=AVAILABLE_TARGETS)
-    parser.add_argument("--debug", action="store_true")
-    parser.add_argument("--relwithdebinfo", action="store_true")
-    parser.add_argument("--disable-cuda", action="store_true")
-    add_webrtc_build_arguments(parser)
-    parser.add_argument("--test", action="store_true")
-    parser.add_argument("--run-e2e-test", action="store_true")
-    parser.add_argument("--package", action="store_true")
-
-    args = parser.parse_args()
-    if args.target == "windows_x86_64":
+def _get_platform(target: str) -> Platform:
+    if target == "windows_x86_64":
         platform = Platform("windows", get_windows_osver(), "x86_64")
-    elif args.target == "macos_x86_64":
+    elif target == "macos_x86_64":
         platform = Platform("macos", get_macos_osver(), "x86_64")
-    elif args.target == "macos_arm64":
+    elif target == "macos_arm64":
         platform = Platform("macos", get_macos_osver(), "arm64")
-    elif args.target == "ubuntu-22.04_x86_64":
+    elif target == "ubuntu-22.04_x86_64":
         platform = Platform("ubuntu", "22.04", "x86_64")
-    elif args.target == "ubuntu-24.04_x86_64":
+    elif target == "ubuntu-24.04_x86_64":
         platform = Platform("ubuntu", "24.04", "x86_64")
-    elif args.target == "ubuntu-22.04_armv8":
+    elif target == "ubuntu-22.04_armv8":
         platform = Platform("ubuntu", "22.04", "armv8")
-    elif args.target == "ubuntu-24.04_armv8":
+    elif target == "ubuntu-24.04_armv8":
         platform = Platform("ubuntu", "24.04", "armv8")
-    elif args.target == "ios":
+    elif target == "ios":
         platform = Platform("ios", None, None)
-    elif args.target == "android":
+    elif target == "android":
         platform = Platform("android", None, None)
     else:
-        raise Exception(f"Unknown target {args.target}")
+        raise Exception(f"Unknown target {target}")
+    return platform
+
+
+def _build(
+    target: str,
+    debug: bool,
+    relwithdebinfo: bool,
+    local_webrtc_build_dir: Optional[str],
+    local_webrtc_build_args: List[str],
+    disable_cuda: bool,
+    test: bool,
+    run_e2e_test: bool,
+    package: bool,
+):
+    platform = _get_platform(target)
 
     logging.info(f"Build platform: {platform.build.package_name}")
     logging.info(f"Target platform: {platform.target.package_name}")
 
-    configuration = "debug" if args.debug else "release"
+    configuration = "debug" if debug else "release"
     dir = platform.target.package_name
     source_dir = os.path.join(BASE_DIR, "_source", dir, configuration)
     build_dir = os.path.join(BASE_DIR, "_build", dir, configuration)
@@ -624,16 +628,16 @@ def main():
         source_dir,
         build_dir,
         install_dir,
-        args.debug,
-        local_webrtc_build_dir=args.local_webrtc_build_dir,
-        local_webrtc_build_args=args.local_webrtc_build_args,
-        disable_cuda=args.disable_cuda,
+        debug,
+        local_webrtc_build_dir=local_webrtc_build_dir,
+        local_webrtc_build_args=local_webrtc_build_args,
+        disable_cuda=disable_cuda,
     )
 
     configuration = "Release"
-    if args.debug:
+    if debug:
         configuration = "Debug"
-    if args.relwithdebinfo:
+    if relwithdebinfo:
         configuration = "RelWithDebInfo"
 
     sora_build_dir = os.path.join(build_dir, "sora")
@@ -642,11 +646,10 @@ def main():
         cmake_args = []
         cmake_args.append(f"-DCMAKE_BUILD_TYPE={configuration}")
         cmake_args.append(f"-DCMAKE_INSTALL_PREFIX={cmake_path(os.path.join(install_dir, 'sora'))}")
+        cmake_args.append("-DCMAKE_EXPORT_COMPILE_COMMANDS=ON")
         cmake_args.append(f"-DBOOST_ROOT={cmake_path(os.path.join(install_dir, 'boost'))}")
         webrtc_platform = get_webrtc_platform(platform)
-        webrtc_info = get_webrtc_info(
-            webrtc_platform, args.local_webrtc_build_dir, install_dir, args.debug
-        )
+        webrtc_info = get_webrtc_info(webrtc_platform, local_webrtc_build_dir, install_dir, debug)
         webrtc_version = read_version_file(webrtc_info.version_file)
         webrtc_deps = read_version_file(webrtc_info.deps_file)
         with cd(BASE_DIR):
@@ -762,7 +765,7 @@ def main():
             cmake_args.append(f"-DCMAKE_EXE_LINKER_FLAGS={' '.join(ldflags)}")
 
         # NvCodec
-        if not args.disable_cuda:
+        if not disable_cuda:
             if platform.target.os in ("windows", "ubuntu") and platform.target.arch == "x86_64":
                 cmake_args.append("-DUSE_NVCODEC_ENCODER=ON")
                 if platform.target.os == "windows":
@@ -848,7 +851,7 @@ def main():
                 os.path.join(install_dir, "sora", "lib", "Sora.aar"),
             )
 
-    if args.test:
+    if test:
         if platform.target.os == "ios":
             # iOS の場合は事前に用意したプロジェクトをビルドする
             # → libwebrtc.a から x64 のビルドが無くなったのでとりあえずビルドを諦める
@@ -877,6 +880,7 @@ def main():
             with cd(test_build_dir):
                 cmake_args = []
                 cmake_args.append(f"-DCMAKE_BUILD_TYPE={configuration}")
+                cmake_args.append("-DCMAKE_EXPORT_COMPILE_COMMANDS=ON")
                 cmake_args.append(f"-DBOOST_ROOT={cmake_path(os.path.join(install_dir, 'boost'))}")
                 cmake_args.append(
                     f"-DCATCH2_ROOT={cmake_path(os.path.join(install_dir, 'catch2'))}"
@@ -959,7 +963,7 @@ def main():
                     ]
                 )
 
-                if args.run_e2e_test:
+                if run_e2e_test:
                     if (
                         platform.build.os == platform.target.os
                         and platform.build.arch == platform.target.arch
@@ -969,7 +973,7 @@ def main():
                         else:
                             cmd([os.path.join(test_build_dir, "e2e")])
 
-    if args.package:
+    if package:
         mkdir_p(package_dir)
         rm_rf(os.path.join(package_dir, "sora"))
         rm_rf(os.path.join(package_dir, "sora.env"))
@@ -1008,6 +1012,251 @@ def main():
                 f.write(f"CONTENT_TYPE={content_type}\n")
                 f.write(f"PACKAGE_NAME={archive_name}\n")
                 f.write(f"BOOST_PACKAGE_NAME={boost_archive_name}\n")
+
+
+def _find_clang_binary(name: str) -> Optional[str]:
+    if shutil.which(name) is not None:
+        return name
+    else:
+        for n in range(50, 14, -1):
+            if shutil.which(f"{name}-{n}") is not None:
+                return f"{name}-{n}"
+    return None
+
+
+def _do_iwyu(
+    clang_scan_deps_path: str,
+    clang_include_cleaner_path: str,
+    patterns: List[str],
+    compile_commands_path: str,
+    include_cleaner_info_path: str,
+):
+    with cd(BASE_DIR):
+        if not os.path.exists(compile_commands_path):
+            logging.warning(f"Compile commands file not found: {compile_commands_path}")
+            return
+
+        target_files = set()
+        for pattern in patterns:
+            files = glob.glob(pattern, recursive=True)
+            for file in files:
+                target_files.add(os.path.join(BASE_DIR, file))
+
+        # clang-scan-deps を使って .h と .cpp ファイルを収集
+        scan_file_set = set()
+        sora_deps = json.loads(
+            cmdcap(
+                [
+                    clang_scan_deps_path,
+                    "-compilation-database",
+                    compile_commands_path,
+                    "-format",
+                    "experimental-full",
+                ]
+            )
+        )
+        for unit in sora_deps["translation-units"]:
+            for command in unit["commands"]:
+                if command["input-file"] in target_files:
+                    scan_file_set.add(command["input-file"])
+                for dep in command["file-deps"]:
+                    if dep in target_files:
+                        scan_file_set.add(dep)
+
+        if os.path.exists(include_cleaner_info_path):
+            include_cleaner_info = json.load(open(include_cleaner_info_path, "r", encoding="utf-8"))
+        else:
+            include_cleaner_info = {}
+
+        scan_files = sorted(scan_file_set)
+        try:
+            for file in scan_files:
+                digest = hashlib.sha256(open(file, "rb").read()).hexdigest()
+                if file in include_cleaner_info and include_cleaner_info[file] == digest:
+                    logging.info(f"Skipping {file} (already processed)")
+                    continue
+
+                logging.info(f"Processing {file} with clang-include-cleaner")
+                cmd(
+                    [
+                        clang_include_cleaner_path,
+                        "-p",
+                        os.path.dirname(compile_commands_path),
+                        "--edit",
+                        file,
+                    ]
+                )
+                include_cleaner_info[file] = digest
+        finally:
+            with open(include_cleaner_info_path, "w", encoding="utf-8") as f:
+                json.dump(include_cleaner_info, f, indent=2, ensure_ascii=False)
+
+
+def _iwyu(
+    target: str,
+    debug: bool,
+    relwithdebinfo: bool,
+    clang_scan_deps_path: Optional[str] = None,
+    clang_include_cleaner_path: Optional[str] = None,
+):
+    platform = _get_platform(target)
+    configuration = "debug" if debug else "release"
+    build_dir = os.path.join(BASE_DIR, "_build", platform.target.package_name, configuration)
+    example_build_dir = os.path.join(
+        BASE_DIR, "examples", "_build", platform.target.package_name, configuration
+    )
+
+    if clang_scan_deps_path is None:
+        clang_scan_deps_path = _find_clang_binary("clang-scan-deps")
+    if clang_include_cleaner_path is None:
+        clang_include_cleaner_path = _find_clang_binary("clang-include-cleaner")
+
+    if clang_scan_deps_path is None:
+        raise Exception("clang-scan-deps not found. Please install it or specify the path.")
+    if clang_include_cleaner_path is None:
+        raise Exception("clang-include-cleaner not found. Please install it or specify the path.")
+
+    include_cleaner_info_path = os.path.join(build_dir, "clang-include-cleaner.json")
+
+    _do_iwyu(
+        clang_scan_deps_path=clang_scan_deps_path,
+        clang_include_cleaner_path=clang_include_cleaner_path,
+        patterns=[
+            "include/**/*.h",
+            "include/**/*.cpp",
+            "src/**/*.h",
+            "src/**/*.cpp",
+        ],
+        compile_commands_path=os.path.join(build_dir, "sora", "compile_commands.json"),
+        include_cleaner_info_path=include_cleaner_info_path,
+    )
+    _do_iwyu(
+        clang_scan_deps_path=clang_scan_deps_path,
+        clang_include_cleaner_path=clang_include_cleaner_path,
+        patterns=[
+            "test/**/*.h",
+            "test/**/*.cpp",
+        ],
+        compile_commands_path=os.path.join(build_dir, "test", "compile_commands.json"),
+        include_cleaner_info_path=include_cleaner_info_path,
+    )
+    _do_iwyu(
+        clang_scan_deps_path=clang_scan_deps_path,
+        clang_include_cleaner_path=clang_include_cleaner_path,
+        patterns=[
+            "examples/messaging_recvonly_sample/**/*.h",
+            "examples/messaging_recvonly_sample/**/*.cpp",
+        ],
+        compile_commands_path=os.path.join(
+            example_build_dir, "messaging_recvonly_sample", "compile_commands.json"
+        ),
+        include_cleaner_info_path=include_cleaner_info_path,
+    )
+    _do_iwyu(
+        clang_scan_deps_path=clang_scan_deps_path,
+        clang_include_cleaner_path=clang_include_cleaner_path,
+        patterns=[
+            "examples/sdl_sample/**/*.h",
+            "examples/sdl_sample/**/*.cpp",
+        ],
+        compile_commands_path=os.path.join(
+            example_build_dir, "sdl_sample", "compile_commands.json"
+        ),
+        include_cleaner_info_path=include_cleaner_info_path,
+    )
+    _do_iwyu(
+        clang_scan_deps_path=clang_scan_deps_path,
+        clang_include_cleaner_path=clang_include_cleaner_path,
+        patterns=[
+            "examples/sumomo/**/*.h",
+            "examples/sumomo/**/*.cpp",
+        ],
+        compile_commands_path=os.path.join(example_build_dir, "sumomo", "compile_commands.json"),
+        include_cleaner_info_path=include_cleaner_info_path,
+    )
+
+
+def _format(
+    clang_format_path: Optional[str] = None,
+):
+    if clang_format_path is None:
+        clang_format_path = _find_clang_binary("clang-format")
+    if clang_format_path is None:
+        raise Exception("clang-format not found. Please install it or specify the path.")
+    patterns = [
+        "include/**/*.h",
+        "include/**/*.cpp",
+        "src/**/*.h",
+        "src/**/*.cpp",
+        "src/**/*.mm",
+        "test/**/*.h",
+        "test/**/*.cpp",
+        "examples/messaging_recvonly_sample/**/*.h",
+        "examples/messaging_recvonly_sample/**/*.cpp",
+        "examples/sdl_sample/**/*.h",
+        "examples/sdl_sample/**/*.cpp",
+        "examples/sumomo/**/*.h",
+        "examples/sumomo/**/*.cpp",
+    ]
+    target_files = []
+    for pattern in patterns:
+        files = glob.glob(pattern, recursive=True)
+        target_files.extend(files)
+    cmd([clang_format_path, "-i"] + target_files)
+
+
+def main():
+    check_version_file()
+
+    parser = argparse.ArgumentParser()
+    sp = parser.add_subparsers()
+    bp = sp.add_parser("build")
+    bp.set_defaults(op="build")
+    bp.add_argument("target", choices=AVAILABLE_TARGETS)
+    bp.add_argument("--debug", action="store_true")
+    bp.add_argument("--relwithdebinfo", action="store_true")
+    bp.add_argument("--disable-cuda", action="store_true")
+    add_webrtc_build_arguments(bp)
+    bp.add_argument("--test", action="store_true")
+    bp.add_argument("--run-e2e-test", action="store_true")
+    bp.add_argument("--package", action="store_true")
+    ip = sp.add_parser("iwyu")
+    ip.set_defaults(op="iwyu")
+    ip.add_argument("target", choices=AVAILABLE_TARGETS)
+    ip.add_argument("--debug", action="store_true")
+    ip.add_argument("--relwithdebinfo", action="store_true")
+    ip.add_argument("--clang-scan-deps-path", type=str, default=None)
+    ip.add_argument("--clang-include-cleaner-path", type=str, default=None)
+    fp = sp.add_parser("format")
+    fp.set_defaults(op="format")
+    fp.add_argument("--clang-format-path", type=str, default=None)
+
+    args = parser.parse_args()
+
+    if args.op == "build":
+        _build(
+            target=args.target,
+            debug=args.debug,
+            relwithdebinfo=args.relwithdebinfo,
+            local_webrtc_build_dir=args.local_webrtc_build_dir,
+            local_webrtc_build_args=args.local_webrtc_build_args,
+            disable_cuda=args.disable_cuda,
+            test=args.test,
+            run_e2e_test=args.run_e2e_test,
+            package=args.package,
+        )
+    elif args.op == "iwyu":
+        _iwyu(
+            target=args.target,
+            debug=args.debug,
+            relwithdebinfo=args.relwithdebinfo,
+            clang_scan_deps_path=args.clang_scan_deps_path,
+            clang_include_cleaner_path=args.clang_include_cleaner_path,
+        )
+    elif args.op == "format":
+        _format(
+            clang_format_path=args.clang_format_path,
+        )
 
 
 if __name__ == "__main__":

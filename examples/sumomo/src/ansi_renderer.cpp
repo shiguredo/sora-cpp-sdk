@@ -1,12 +1,13 @@
 #include "ansi_renderer.h"
 
-#include <iomanip>
+#include <cstdint>
 #include <iostream>
-#include <sstream>
+#include <string>
 #include <vector>
 
+#include "base_renderer.h"
+
 // WebRTC
-#include <rtc_base/logging.h>
 
 AnsiRenderer::AnsiRenderer(int width, int height)
     : BaseRenderer(width, height, 10) {

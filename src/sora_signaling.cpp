@@ -1,12 +1,54 @@
 #include "sora/sora_signaling.h"
 
+#include <algorithm>
+#include <cassert>
+#include <cstddef>
+#include <exception>
+#include <functional>
+#include <memory>
+#include <optional>
+#include <random>
+#include <string>
+#include <utility>
+#include <vector>
+
+// Boost
+#include <boost/asio/error.hpp>
+#include <boost/asio/post.hpp>
+#include <boost/beast/websocket/error.hpp>
+#include <boost/beast/websocket/rfc6455.hpp>
+#include <boost/core/ignore_unused.hpp>
+#include <boost/date_time/posix_time/posix_time_duration.hpp>
+#include <boost/json/array.hpp>
+#include <boost/json/object.hpp>
+#include <boost/json/parse.hpp>
+#include <boost/json/serialize.hpp>
+#include <boost/json/value.hpp>
+#include <boost/system/detail/errc.hpp>
+#include <boost/system/detail/error_code.hpp>
+#include <boost/system/errc.hpp>
+
 // WebRTC
+#include <api/data_channel_interface.h>
 #include <api/environment/environment_factory.h>
+#include <api/jsep.h>
+#include <api/media_types.h>
+#include <api/peer_connection_interface.h>
+#include <api/rtc_error.h>
+#include <api/rtp_parameters.h>
+#include <api/rtp_receiver_interface.h>
+#include <api/rtp_sender_interface.h>
+#include <api/rtp_transceiver_interface.h>
+#include <api/scoped_refptr.h>
+#include <api/stats/rtc_stats_report.h>
 #include <p2p/client/basic_port_allocator.h>
 #include <pc/rtp_media_utils.h>
-#include <pc/session_description.h>
+#include <rtc_base/copy_on_write_buffer.h>
 #include <rtc_base/crypt_string_revive.h>
+#include <rtc_base/logging.h>
 #include <rtc_base/proxy_info_revive.h>
+#include <rtc_base/socket_address.h>
+#include <rtc_base/ssl_certificate.h>
 
 #include "sora/data_channel.h"
 #include "sora/rtc_ssl_verifier.h"
@@ -14,6 +56,7 @@
 #include "sora/session_description.h"
 #include "sora/url_parts.h"
 #include "sora/version.h"
+#include "sora/websocket.h"
 #include "sora/zlib_helper.h"
 
 namespace sora {

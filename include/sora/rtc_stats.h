@@ -1,10 +1,12 @@
 #ifndef SORA_RTC_STATS_H_
 #define SORA_RTC_STATS_H_
 
+#include <functional>
+
 // WebRTC
-#include <api/peer_connection_interface.h>
 #include <api/scoped_refptr.h>
-#include <rtc_base/ref_counted_object.h>
+#include <api/stats/rtc_stats_collector_callback.h>
+#include <api/stats/rtc_stats_report.h>
 
 namespace sora {
 
@@ -18,7 +20,8 @@ class RTCStatsCallback : public webrtc::RTCStatsCollectorCallback {
   static webrtc::scoped_refptr<RTCStatsCallback> Create(
       ResultCallback result_callback);
   void OnStatsDelivered(
-      const webrtc::scoped_refptr<const webrtc::RTCStatsReport>& report) override;
+      const webrtc::scoped_refptr<const webrtc::RTCStatsReport>& report)
+      override;
 
  protected:
   RTCStatsCallback(ResultCallback result_callback);

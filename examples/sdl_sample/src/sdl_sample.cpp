@@ -1,23 +1,45 @@
+#include <csignal>
+#include <cstdlib>
+#include <functional>
+#include <memory>
 #include <optional>
+#include <string>
+#include <utility>
+#include <vector>
 
-// Sora
-#include <sora/camera_device_capturer.h>
-#include <sora/sora_client_context.h>
-
-// CLI11
-#include <CLI/CLI.hpp>
+// Boost
+#include <boost/asio/dispatch.hpp>
+#include <boost/asio/executor_work_guard.hpp>
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/signal_set.hpp>
+#include <boost/json/parse.hpp>
+#include <boost/json/value.hpp>
+#include <boost/system/detail/error_code.hpp>
 
 // WebRTC
+#include <api/audio_options.h>
+#include <api/media_stream_interface.h>
+#include <api/rtc_error.h>
+#include <api/rtp_receiver_interface.h>
+#include <api/rtp_sender_interface.h>
+#include <api/rtp_transceiver_interface.h>
+#include <api/scoped_refptr.h>
 #include <rtc_base/crypto_random.h>
-
-// SDL
-#include <SDL3/SDL_main.h>
-
-#include "sdl_renderer.h"
+#include <rtc_base/logging.h>
 
 #ifdef _WIN32
 #include <rtc_base/win/scoped_com_initializer.h>
 #endif
+
+// CLI11
+#include <CLI/CLI.hpp>
+
+// Sora C++ SDK
+#include <sora/camera_device_capturer.h>
+#include <sora/sora_client_context.h>
+#include <sora/sora_signaling.h>
+
+#include "sdl_renderer.h"
 
 struct SDLSampleConfig {
   std::string signaling_url;

@@ -1,15 +1,17 @@
 #ifndef SDL_RENDERER_H_
 #define SDL_RENDERER_H_
 
+#include <atomic>
+#include <cstdint>
+#include <functional>
 #include <memory>
-#include <string>
+#include <utility>
 #include <vector>
 
-// SDL
-#include <SDL3/SDL.h>
-
-// Boost
-#include <boost/asio.hpp>
+// SDL3
+#include <SDL3/SDL_render.h>
+#include <SDL3/SDL_thread.h>
+#include <SDL3/SDL_video.h>
 
 // WebRTC
 #include <api/media_stream_interface.h>

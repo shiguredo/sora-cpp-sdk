@@ -1,6 +1,9 @@
 #ifndef FAKE_VIDEO_CAPTURER_H_
 #define FAKE_VIDEO_CAPTURER_H_
 
+// WebRTC
+#include <api/scoped_refptr.h>
+
 // Sora C++ SDK
 #include <sora/scalable_track_source.h>
 

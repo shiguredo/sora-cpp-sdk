@@ -237,8 +237,8 @@ bool AndroidCapturer::Init(JNIEnv* env,
   std::unique_ptr<webrtc::ScopedJavaGlobalRef<jobject>>
       native_capturer_observer(new webrtc::ScopedJavaGlobalRef<jobject>(
           webrtc::jni::CreateJavaNativeCapturerObserver(
-              env,
-              webrtc::scoped_refptr<webrtc::jni::AndroidVideoTrackSource>(this))));
+              env, webrtc::scoped_refptr<webrtc::jni::AndroidVideoTrackSource>(
+                       this))));
   this->Release();
 
   // 以下の Java コードを JNI 経由で呼んで何とか videoCapturer を作る

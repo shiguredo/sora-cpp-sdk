@@ -1,10 +1,14 @@
 #ifndef SORA_CAMERA_DEVICE_CAPTURER_H_
 #define SORA_CAMERA_DEVICE_CAPTURER_H_
 
+#include <functional>
+#include <memory>
 #include <string>
 
 // WebRTC
 #include <api/media_stream_interface.h>
+#include <api/scoped_refptr.h>
+#include <api/video/video_frame.h>
 #include <rtc_base/thread.h>
 
 #include "sora/cuda_context.h"

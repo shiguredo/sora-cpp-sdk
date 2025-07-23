@@ -2,8 +2,10 @@
 #define BASE_RENDERER_H_
 
 #include <atomic>
+#include <cstdint>
 #include <memory>
 #include <thread>
+#include <utility>
 #include <vector>
 
 // WebRTC

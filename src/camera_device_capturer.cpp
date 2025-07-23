@@ -1,10 +1,16 @@
 #include "sora/camera_device_capturer.h"
 
+// WebRTC
+#include <api/media_stream_interface.h>
+#include <api/scoped_refptr.h>
+
 #if defined(__APPLE__)
 #include "sora/mac/mac_capturer.h"
 #elif defined(SORA_CPP_SDK_ANDROID)
 #include "sora/android/android_capturer.h"
-#elif defined(SORA_CPP_SDK_UBUNTU) && defined(USE_NVCODEC_ENCODER)
+#elif (defined(SORA_CPP_SDK_UBUNTU_2004) ||  \
+       defined(SORA_CPP_SDK_UBUNTU_2204)) && \
+    defined(USE_NVCODEC_ENCODER)
 #include "sora/hwenc_nvcodec/nvcodec_v4l2_capturer.h"
 #elif defined(__linux__)
 #include "sora/v4l2/v4l2_video_capturer.h"

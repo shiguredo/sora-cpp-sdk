@@ -1,5 +1,14 @@
 #include "sora/zlib_helper.h"
 
+#include <zlib.h>
+#include <cstddef>
+#include <cstdint>
+#include <exception>
+#include <string>
+
+// zlib
+#include <chromeconf.h>
+
 namespace sora {
 
 std::string ZlibHelper::Compress(const std::string& input, int level) {

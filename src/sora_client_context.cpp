@@ -1,32 +1,32 @@
 #include "sora/sora_client_context.h"
 
+#include <memory>
+#include <string>
+#include <tuple>
+#include <utility>
+#include <vector>
+
 // WebRTC
+#include <absl/memory/memory.h>
+#include <api/audio/audio_device.h>
+#include <api/audio/audio_device_defines.h>
 #include <api/audio/builtin_audio_processing_builder.h>
 #include <api/audio_codecs/builtin_audio_decoder_factory.h>
 #include <api/audio_codecs/builtin_audio_encoder_factory.h>
-#include <api/create_peerconnection_factory.h>
 #include <api/enable_media.h>
 #include <api/environment/environment_factory.h>
+#include <api/peer_connection_interface.h>
 #include <api/rtc_event_log/rtc_event_log_factory.h>
-#include <api/task_queue/default_task_queue_factory.h>
-#include <call/call_config.h>
-#include <media/engine/webrtc_media_engine.h>
-#include <modules/audio_device/include/audio_device.h>
-#include <modules/audio_device/include/audio_device_factory.h>
-#include <modules/audio_processing/include/audio_processing.h>
-#include <modules/video_capture/video_capture.h>
-#include <modules/video_capture/video_capture_factory.h>
 #include <pc/media_factory.h>
-#include <pc/video_track_source_proxy.h>
 #include <rtc_base/logging.h>
 #include <rtc_base/ssl_adapter.h>
+#include <rtc_base/ssl_stream_adapter.h>
+#include <rtc_base/thread.h>
 
 #include "sora/audio_device_module.h"
-#include "sora/camera_device_capturer.h"
 #include "sora/java_context.h"
 #include "sora/sora_peer_connection_factory.h"
-#include "sora/sora_video_decoder_factory.h"
-#include "sora/sora_video_encoder_factory.h"
+#include "sora/sora_video_codec_factory.h"
 
 namespace sora {
 

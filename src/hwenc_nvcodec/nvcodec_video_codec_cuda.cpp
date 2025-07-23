@@ -1,6 +1,13 @@
 #include "nvcodec_video_codec_cuda.h"
 
+#include <cstddef>
+#include <memory>
+
+// CUDA
+#include <cuda.h>
+
 #include "../cuda_context_cuda.h"
+#include "sora/cuda_context.h"
 #include "sora/dyn/cuda.h"
 
 namespace sora {
