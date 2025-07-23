@@ -1,3 +1,9 @@
+#include "cuda_context_cuda.h"
+
+#include <memory>
+
+#include "sora/cuda_context.h"
+
 #if !defined(USE_NVCODEC_ENCODER)
 
 namespace sora {
@@ -16,7 +22,6 @@ bool CudaContext::CanCreate() {
 #include "sora/fix_cuda_noinline_macro_error.h"
 
 #include <exception>
-#include <memory>
 
 // CUDA
 #include <cuda.h>
@@ -25,8 +30,6 @@ bool CudaContext::CanCreate() {
 #include "NvEncoder/../../Utils/Logger.h"
 #include "NvEncoder/../../Utils/NvCodecUtils.h"
 
-#include "cuda_context_cuda.h"
-#include "sora/cuda_context.h"
 #include "sora/dyn/cuda.h"
 #include "sora/dyn/dyn.h"
 
