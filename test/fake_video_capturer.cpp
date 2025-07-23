@@ -1,18 +1,24 @@
 #include "fake_video_capturer.h"
 
+#include <atomic>
 #include <chrono>
+#include <cstdint>
 #include <memory>
+#include <string>
 #include <thread>
 
 // WebRTC
+#include <api/make_ref_counted.h>
+#include <api/scoped_refptr.h>
 #include <api/video/i420_buffer.h>
-#include <rtc_base/ref_counted_object.h>
+#include <api/video/video_frame.h>
+#include <api/video/video_rotation.h>
 
 // libyuv
-#include <libyuv.h>
+#include <libyuv/convert.h>
 
 // Blend2D
-#include <blend2d.h>
+#include "blend2d_iwyu.h"
 
 #include "kosugi_regular_ttf.bin"
 

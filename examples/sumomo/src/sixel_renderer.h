@@ -1,6 +1,7 @@
 #ifndef SIXEL_RENDERER_H_
 #define SIXEL_RENDERER_H_
 
+#include <cstdint>
 #include <map>
 #include <vector>
 

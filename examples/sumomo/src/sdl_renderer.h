@@ -1,11 +1,13 @@
 #ifndef SDL_RENDERER_H_
 #define SDL_RENDERER_H_
 
+#include <cstdint>
 #include <functional>
 #include <vector>
 
 // SDL
-#include <SDL3/SDL.h>
+#include <SDL3/SDL_render.h>
+#include <SDL3/SDL_video.h>
 
 #include "base_renderer.h"
 

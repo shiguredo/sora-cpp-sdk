@@ -1,9 +1,30 @@
 #include "hello.h"
 
+#include <csignal>
+#include <cstdint>
 #include <fstream>
 #include <iostream>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <vector>
+
+// Boost
+#include <boost/asio/executor_work_guard.hpp>
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/signal_set.hpp>
+#include <boost/json/parse.hpp>
+#include <boost/json/parse_options.hpp>
+#include <boost/json/value.hpp>
+#include <boost/json/value_to.hpp>
+#include <boost/system/detail/error_code.hpp>
 
 // WebRTC
+#include <api/audio_options.h>
+#include <api/rtc_error.h>
+#include <api/rtp_parameters.h>
+#include <api/rtp_sender_interface.h>
+#include <api/scoped_refptr.h>
 #include <rtc_base/crypto_random.h>
 #include <rtc_base/logging.h>
 
@@ -12,12 +33,12 @@
 #endif
 
 // Sora C++ SDK
-#include <sora/audio_device_module.h>
-#include <sora/camera_device_capturer.h>
+#include <sora/amf_context.h>
+#include <sora/cuda_context.h>
 #include <sora/java_context.h>
+#include <sora/sora_client_context.h>
+#include <sora/sora_signaling.h>
 #include <sora/sora_video_codec.h>
-#include <sora/sora_video_decoder_factory.h>
-#include <sora/sora_video_encoder_factory.h>
 
 #include "fake_video_capturer.h"
 

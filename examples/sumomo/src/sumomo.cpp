@@ -1,29 +1,61 @@
-// Sora
-#include <sora/camera_device_capturer.h>
-#include <sora/sora_client_context.h>
-#include <sora/sora_video_codec.h>
-
+#include <algorithm>
+#include <csignal>
+#include <cstdlib>
 #include <fstream>
+#include <functional>
+#include <ios>
+#include <iostream>
+#include <iterator>
+#include <memory>
 #include <optional>
+#include <ostream>
 #include <regex>
-#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
 
-// CLI11
-#include <CLI/CLI.hpp>
+// Boost
+#include <boost/asio/dispatch.hpp>
+#include <boost/asio/executor_work_guard.hpp>
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/signal_set.hpp>
+#include <boost/json/parse.hpp>
+#include <boost/json/serialize.hpp>
+#include <boost/json/value.hpp>
+#include <boost/json/value_from.hpp>
+#include <boost/system/detail/error_code.hpp>
 
 // WebRTC
+#include <api/audio_options.h>
+#include <api/media_stream_interface.h>
+#include <api/rtc_error.h>
+#include <api/rtp_parameters.h>
+#include <api/rtp_receiver_interface.h>
+#include <api/rtp_sender_interface.h>
+#include <api/rtp_transceiver_interface.h>
+#include <api/scoped_refptr.h>
+#include <api/video/video_codec_type.h>
 #include <rtc_base/crypto_random.h>
-
-// SDL3
-#include <SDL3/SDL_main.h>
-
-#include "ansi_renderer.h"
-#include "sdl_renderer.h"
-#include "sixel_renderer.h"
+#include <rtc_base/logging.h>
 
 #ifdef _WIN32
 #include <rtc_base/win/scoped_com_initializer.h>
 #endif
+
+// Sora C++ SDK
+#include <sora/amf_context.h>
+#include <sora/camera_device_capturer.h>
+#include <sora/cuda_context.h>
+#include <sora/sora_client_context.h>
+#include <sora/sora_signaling.h>
+#include <sora/sora_video_codec.h>
+
+// CLI11
+#include <CLI/CLI.hpp>
+
+#include "ansi_renderer.h"
+#include "sdl_renderer.h"
+#include "sixel_renderer.h"
 
 struct SumomoConfig {
   std::string signaling_url;

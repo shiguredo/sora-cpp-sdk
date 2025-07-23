@@ -3,14 +3,28 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstdint>
 #include <cstring>
+#include <memory>
+#include <thread>
+#include <utility>
+#include <vector>
 
 // WebRTC
+#include <api/media_stream_interface.h>
+#include <api/scoped_refptr.h>
 #include <api/video/i420_buffer.h>
+#include <api/video/video_frame.h>
+#include <api/video/video_frame_buffer.h>
+#include <api/video/video_rotation.h>
+#include <api/video/video_source_interface.h>
+#include <rtc_base/logging.h>
+#include <rtc_base/synchronization/mutex.h>
+
+// libyuv
 #include <libyuv/convert_from.h>
 #include <libyuv/planar_functions.h>
 #include <libyuv/video_common.h>
-#include <rtc_base/logging.h>
 
 static constexpr float STD_ASPECT = 1.33f;   // 4:3
 static constexpr float WIDE_ASPECT = 1.78f;  // 16:9

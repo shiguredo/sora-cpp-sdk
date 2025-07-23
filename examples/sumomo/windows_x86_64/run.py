@@ -160,6 +160,7 @@ def main():
 
         cmake_args = []
         cmake_args.append(f"-DCMAKE_BUILD_TYPE={configuration}")
+        cmake_args.append("-DCMAKE_EXPORT_COMPILE_COMMANDS=ON")
         cmake_args.append(f"-DBOOST_ROOT={cmake_path(sora_info.boost_install_dir)}")
         cmake_args.append(f"-DWEBRTC_INCLUDE_DIR={cmake_path(webrtc_info.webrtc_include_dir)}")
         cmake_args.append(f"-DWEBRTC_LIBRARY_DIR={cmake_path(webrtc_info.webrtc_library_dir)}")

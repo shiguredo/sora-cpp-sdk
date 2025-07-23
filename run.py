@@ -1014,52 +1014,15 @@ def _build(
                 f.write(f"BOOST_PACKAGE_NAME={boost_archive_name}\n")
 
 
-def _format(
-    target: str,
-    debug: bool,
-    relwithdebinfo: bool,
-    clang_scan_deps_path: Optional[str] = None,
-    clang_format_path: Optional[str] = None,
-    clang_include_cleaner_path: Optional[str] = None,
+def _do_format(
+    clang_scan_deps_path: str,
+    clang_include_cleaner_path: str,
+    patterns: List[str],
+    compile_commands_path: str,
+    include_cleaner_info_path: str,
 ):
-    platform = _get_platform(target)
-    configuration = "debug" if debug else "release"
-    build_dir = os.path.join(BASE_DIR, "_build", platform.target.package_name, configuration)
-
-    def find_clang_binary(name: str) -> Optional[str]:
-        if shutil.which(name) is not None:
-            return name
-        else:
-            for n in range(50, 14, -1):
-                if shutil.which(f"{name}-{n}") is not None:
-                    return f"{name}-{n}"
-        return None
-
     with cd(BASE_DIR):
-        if clang_scan_deps_path is None:
-            clang_scan_deps_path = find_clang_binary("clang-scan-deps")
-        if clang_format_path is None:
-            clang_format_path = find_clang_binary("clang-format")
-        if clang_include_cleaner_path is None:
-            clang_include_cleaner_path = find_clang_binary("clang-include-cleaner")
-
-        # 以下のファイルだけを対象にする
         target_files = set()
-        patterns = [
-            "include/**/*.h",
-            "include/**/*.cpp",
-            "src/**/*.h",
-            "src/**/*.cpp",
-            "test/**/*.h",
-            "test/**/*.cpp",
-            "examples/messaging_recvonly_sample/**/*.h",
-            "examples/messaging_recvonly_sample/**/*.cpp",
-            "examples/sdl_sample/**/*.h",
-            "examples/sdl_sample/**/*.cpp",
-            "examples/sumomo/**/*.h",
-            "examples/sumomo/**/*.cpp",
-        ]
-
         for pattern in patterns:
             files = glob.glob(pattern, recursive=True)
             for file in files:
@@ -1072,7 +1035,7 @@ def _format(
                 [
                     clang_scan_deps_path,
                     "-compilation-database",
-                    os.path.join(build_dir, "sora", "compile_commands.json"),
+                    compile_commands_path,
                     "-format",
                     "experimental-full",
                 ]
@@ -1086,9 +1049,8 @@ def _format(
                     if dep in target_files:
                         scan_file_set.add(dep)
 
-        include_cleaner_info_file = os.path.join(build_dir, "clang-include-cleaner.json")
-        if os.path.exists(include_cleaner_info_file):
-            include_cleaner_info = json.load(open(include_cleaner_info_file, "r", encoding="utf-8"))
+        if os.path.exists(include_cleaner_info_path):
+            include_cleaner_info = json.load(open(include_cleaner_info_path, "r", encoding="utf-8"))
         else:
             include_cleaner_info = {}
 
@@ -1099,20 +1061,119 @@ def _format(
                 if file in include_cleaner_info and include_cleaner_info[file] == digest:
                     logging.info(f"Skipping {file} (already processed)")
                     continue
+
                 logging.info(f"Processing {file} with clang-include-cleaner")
                 cmd(
                     [
                         clang_include_cleaner_path,
                         "-p",
-                        os.path.join(build_dir, "sora"),
+                        os.path.dirname(compile_commands_path),
                         "--edit",
                         file,
                     ]
                 )
                 include_cleaner_info[file] = digest
         finally:
-            with open(include_cleaner_info_file, "w", encoding="utf-8") as f:
+            with open(include_cleaner_info_path, "w", encoding="utf-8") as f:
                 json.dump(include_cleaner_info, f, indent=2, ensure_ascii=False)
+
+
+def _format(
+    target: str,
+    debug: bool,
+    relwithdebinfo: bool,
+    clang_scan_deps_path: Optional[str] = None,
+    clang_format_path: Optional[str] = None,
+    clang_include_cleaner_path: Optional[str] = None,
+):
+    platform = _get_platform(target)
+    configuration = "debug" if debug else "release"
+    build_dir = os.path.join(BASE_DIR, "_build", platform.target.package_name, configuration)
+    example_build_dir = os.path.join(
+        BASE_DIR, "examples", "_build", platform.target.package_name, configuration
+    )
+
+    def find_clang_binary(name: str) -> Optional[str]:
+        if shutil.which(name) is not None:
+            return name
+        else:
+            for n in range(50, 14, -1):
+                if shutil.which(f"{name}-{n}") is not None:
+                    return f"{name}-{n}"
+        return None
+
+    if clang_scan_deps_path is None:
+        clang_scan_deps_path = find_clang_binary("clang-scan-deps")
+    if clang_format_path is None:
+        clang_format_path = find_clang_binary("clang-format")
+    if clang_include_cleaner_path is None:
+        clang_include_cleaner_path = find_clang_binary("clang-include-cleaner")
+
+    if clang_scan_deps_path is None:
+        raise Exception("clang-scan-deps not found. Please install it or specify the path.")
+    if clang_format_path is None:
+        raise Exception("clang-format not found. Please install it or specify the path.")
+    if clang_include_cleaner_path is None:
+        raise Exception("clang-include-cleaner not found. Please install it or specify the path.")
+
+    include_cleaner_info_path = os.path.join(build_dir, "clang-include-cleaner.json")
+
+    _do_format(
+        clang_scan_deps_path=clang_scan_deps_path,
+        clang_include_cleaner_path=clang_include_cleaner_path,
+        patterns=[
+            "include/**/*.h",
+            "include/**/*.cpp",
+            "src/**/*.h",
+            "src/**/*.cpp",
+        ],
+        compile_commands_path=os.path.join(build_dir, "sora", "compile_commands.json"),
+        include_cleaner_info_path=include_cleaner_info_path,
+    )
+    _do_format(
+        clang_scan_deps_path=clang_scan_deps_path,
+        clang_include_cleaner_path=clang_include_cleaner_path,
+        patterns=[
+            "test/**/*.h",
+            "test/**/*.cpp",
+        ],
+        compile_commands_path=os.path.join(build_dir, "test", "compile_commands.json"),
+        include_cleaner_info_path=include_cleaner_info_path,
+    )
+    _do_format(
+        clang_scan_deps_path=clang_scan_deps_path,
+        clang_include_cleaner_path=clang_include_cleaner_path,
+        patterns=[
+            "examples/messaging_recvonly_sample/**/*.h",
+            "examples/messaging_recvonly_sample/**/*.cpp",
+        ],
+        compile_commands_path=os.path.join(
+            example_build_dir, "messaging_recvonly_sample", "compile_commands.json"
+        ),
+        include_cleaner_info_path=include_cleaner_info_path,
+    )
+    _do_format(
+        clang_scan_deps_path=clang_scan_deps_path,
+        clang_include_cleaner_path=clang_include_cleaner_path,
+        patterns=[
+            "examples/sdl_sample/**/*.h",
+            "examples/sdl_sample/**/*.cpp",
+        ],
+        compile_commands_path=os.path.join(
+            example_build_dir, "sdl_sample", "compile_commands.json"
+        ),
+        include_cleaner_info_path=include_cleaner_info_path,
+    )
+    _do_format(
+        clang_scan_deps_path=clang_scan_deps_path,
+        clang_include_cleaner_path=clang_include_cleaner_path,
+        patterns=[
+            "examples/sumomo/**/*.h",
+            "examples/sumomo/**/*.cpp",
+        ],
+        compile_commands_path=os.path.join(example_build_dir, "sumomo", "compile_commands.json"),
+        include_cleaner_info_path=include_cleaner_info_path,
+    )
 
 
 def main():

@@ -1,10 +1,12 @@
 #include "sixel_renderer.h"
 
-#include <iomanip>
+#include <climits>
+#include <cstdint>
 #include <iostream>
+#include <string>
+#include <vector>
 
-// WebRTC
-#include <rtc_base/logging.h>
+#include "base_renderer.h"
 
 SixelRenderer::SixelRenderer(int width, int height)
     : BaseRenderer(width, height, 10) {

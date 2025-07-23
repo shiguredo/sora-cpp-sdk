@@ -1,8 +1,31 @@
 // 接続と切断を繰り返すテスト
+#include <csignal>
 #include <fstream>
 #include <iostream>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <vector>
+
+// Boost
+#include <boost/asio/deadline_timer.hpp>
+#include <boost/asio/executor_work_guard.hpp>
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/signal_set.hpp>
+#include <boost/date_time/posix_time/posix_time_duration.hpp>
+#include <boost/json/parse.hpp>
+#include <boost/json/value.hpp>
+#include <boost/system/detail/error_code.hpp>
 
 // WebRTC
+#include <api/audio_options.h>
+#include <api/media_stream_interface.h>
+#include <api/peer_connection_interface.h>
+#include <api/rtc_error.h>
+#include <api/rtp_receiver_interface.h>
+#include <api/rtp_sender_interface.h>
+#include <api/rtp_transceiver_interface.h>
+#include <api/scoped_refptr.h>
 #include <rtc_base/crypto_random.h>
 #include <rtc_base/logging.h>
 
@@ -10,12 +33,10 @@
 #include <rtc_base/win/scoped_com_initializer.h>
 #endif
 
-#include "sora/audio_device_module.h"
-#include "sora/camera_device_capturer.h"
-#include "sora/java_context.h"
-#include "sora/sora_client_context.h"
-#include "sora/sora_video_decoder_factory.h"
-#include "sora/sora_video_encoder_factory.h"
+// Sora C++ SDK
+#include <sora/camera_device_capturer.h>
+#include <sora/sora_client_context.h>
+#include <sora/sora_signaling.h>
 
 struct SoraClientConfig {
   std::vector<std::string> signaling_urls;
@@ -104,8 +125,8 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
   void OnPush(std::string text) override {}
   void OnMessage(std::string label, std::string data) override {}
 
-  void OnTrack(webrtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
-      override {}
+  void OnTrack(webrtc::scoped_refptr<webrtc::RtpTransceiverInterface>
+                   transceiver) override {}
   void OnRemoveTrack(
       webrtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override {}
 

@@ -1,13 +1,42 @@
 #include "sdl_renderer.h"
 
+#include <algorithm>
 #include <cmath>
 #include <csignal>
+#include <cstddef>
+#include <cstdint>
+#include <functional>
+#include <memory>
+#include <utility>
 
 // WebRTC
+#include <api/media_stream_interface.h>
+#include <api/scoped_refptr.h>
 #include <api/video/i420_buffer.h>
+#include <api/video/video_frame.h>
+#include <api/video/video_frame_buffer.h>
+#include <api/video/video_rotation.h>
+#include <api/video/video_source_interface.h>
+#include <rtc_base/logging.h>
+#include <rtc_base/synchronization/mutex.h>
+
+// libyuv
 #include <libyuv/convert_from.h>
 #include <libyuv/video_common.h>
-#include <rtc_base/logging.h>
+
+// SDL3
+#include <SDL3/SDL_error.h>
+#include <SDL3/SDL_events.h>
+#include <SDL3/SDL_init.h>
+#include <SDL3/SDL_keycode.h>
+#include <SDL3/SDL_mouse.h>
+#include <SDL3/SDL_pixels.h>
+#include <SDL3/SDL_rect.h>
+#include <SDL3/SDL_render.h>
+#include <SDL3/SDL_surface.h>
+#include <SDL3/SDL_thread.h>
+#include <SDL3/SDL_timer.h>
+#include <SDL3/SDL_video.h>
 
 #define STD_ASPECT 1.33
 #define WIDE_ASPECT 1.78
