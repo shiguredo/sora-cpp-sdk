@@ -147,7 +147,7 @@ class OpenH264VideoEncoder : public VideoEncoder {
   std::vector<LayerConfig> configurations_;
   std::vector<EncodedImage> encoded_images_;
   std::vector<std::unique_ptr<ScalableVideoController>> svc_controllers_;
-  absl::InlinedVector<absl::optional<ScalabilityMode>, kMaxSimulcastStreams>
+  absl::InlinedVector<std::optional<ScalabilityMode>, kMaxSimulcastStreams>
       scalability_modes_;
 
   const Environment env_;
@@ -155,7 +155,7 @@ class OpenH264VideoEncoder : public VideoEncoder {
   H264PacketizationMode packetization_mode_;
   size_t max_payload_size_;
   int32_t number_of_cores_;
-  absl::optional<int> encoder_thread_limit_;
+  std::optional<int> encoder_thread_limit_;
   EncodedImageCallback* encoded_image_callback_;
 
   bool has_reported_init_;
@@ -198,7 +198,7 @@ enum H264EncoderImplEvent {
   kH264EncoderEventMax = 16,
 };
 
-int NumberOfThreads(absl::optional<int> encoder_thread_limit,
+int NumberOfThreads(std::optional<int> encoder_thread_limit,
                     int width,
                     int height,
                     int number_of_cores) {
@@ -242,7 +242,7 @@ VideoFrameType ConvertToVideoFrameType(EVideoFrameType type) {
   return VideoFrameType::kEmptyFrame;
 }
 
-absl::optional<ScalabilityMode> ScalabilityModeFromTemporalLayers(
+std::optional<ScalabilityMode> ScalabilityModeFromTemporalLayers(
     int num_temporal_layers) {
   switch (num_temporal_layers) {
     case 0:
@@ -256,7 +256,7 @@ absl::optional<ScalabilityMode> ScalabilityModeFromTemporalLayers(
     default:
       RTC_DCHECK_NOTREACHED();
   }
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 }  // namespace
