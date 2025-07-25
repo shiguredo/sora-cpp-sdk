@@ -18,7 +18,11 @@
 #include <boost/asio/dispatch.hpp>
 #include <boost/asio/executor_work_guard.hpp>
 #include <boost/asio/io_context.hpp>
+#include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/signal_set.hpp>
+#include <boost/beast/core.hpp>
+#include <boost/beast/http.hpp>
+#include <boost/beast/version.hpp>
 #include <boost/json/parse.hpp>
 #include <boost/json/serialize.hpp>
 #include <boost/json/value.hpp>
@@ -46,6 +50,7 @@
 #include <sora/amf_context.h>
 #include <sora/camera_device_capturer.h>
 #include <sora/cuda_context.h>
+#include <sora/rtc_stats.h>
 #include <sora/sora_client_context.h>
 #include <sora/sora_signaling.h>
 #include <sora/sora_video_codec.h>
@@ -105,6 +110,8 @@ struct SumomoConfig {
 
   std::optional<webrtc::DegradationPreference> degradation_preference;
 
+  int http_port = 0;
+
   struct Size {
     int width;
     int height;
@@ -132,6 +139,129 @@ struct SumomoConfig {
     auto height = std::atoi(resolution.substr(pos + 1).c_str());
     return {std::max(16, width), std::max(16, height)};
   }
+};
+
+namespace beast = boost::beast;
+namespace http = beast::http;
+namespace net = boost::asio;
+using tcp = net::ip::tcp;
+
+class Sumomo;
+
+class HttpSession : public std::enable_shared_from_this<HttpSession> {
+ public:
+  HttpSession(tcp::socket socket, std::weak_ptr<Sumomo> sumomo)
+      : socket_(std::move(socket)), sumomo_(sumomo) {}
+
+  void Run() { DoRead(); }
+
+ private:
+  void DoRead() {
+    request_ = {};
+
+    http::async_read(
+        socket_, buffer_, request_,
+        [self = shared_from_this()](beast::error_code ec, std::size_t) {
+          if (!ec) {
+            self->HandleRequest();
+          }
+        });
+  }
+
+  void HandleRequest() {
+    if (request_.method() == http::verb::get && request_.target() == "/stats") {
+      auto sumomo = sumomo_.lock();
+      if (!sumomo) {
+        SendErrorResponse(http::status::service_unavailable,
+                          "Service unavailable");
+        return;
+      }
+
+      // GetStats の実装は Sumomo クラスの定義後に行う
+      GetStatsFromSumomo(sumomo, shared_from_this());
+    } else {
+      SendErrorResponse(http::status::not_found, "Not found");
+    }
+  }
+
+  void SendErrorResponse(http::status status, const std::string& message) {
+    http::response<http::string_body> res{status, request_.version()};
+    res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+    res.set(http::field::content_type, "text/plain");
+    res.keep_alive(request_.keep_alive());
+    res.body() = message;
+    res.prepare_payload();
+    Send(std::move(res));
+  }
+
+  template <typename Response>
+  void Send(Response&& res) {
+    auto sp = std::make_shared<Response>(std::forward<Response>(res));
+    http::async_write(
+        socket_, *sp,
+        [self = shared_from_this(), sp](beast::error_code ec, std::size_t) {
+          self->socket_.shutdown(tcp::socket::shutdown_send, ec);
+        });
+  }
+
+  void GetStatsFromSumomo(std::shared_ptr<Sumomo> sumomo,
+                          std::shared_ptr<HttpSession> self);
+
+  tcp::socket socket_;
+  std::weak_ptr<Sumomo> sumomo_;
+  beast::flat_buffer buffer_;
+  http::request<http::string_body> request_;
+};
+
+class HttpListener : public std::enable_shared_from_this<HttpListener> {
+ public:
+  HttpListener(net::io_context& ioc, tcp::endpoint endpoint,
+               std::weak_ptr<Sumomo> sumomo)
+      : ioc_(ioc), acceptor_(net::make_strand(ioc)), sumomo_(sumomo) {
+    beast::error_code ec;
+    acceptor_.open(endpoint.protocol(), ec);
+    if (ec) {
+      RTC_LOG(LS_ERROR) << "Failed to open acceptor: " << ec.message();
+      return;
+    }
+
+    acceptor_.set_option(net::socket_base::reuse_address(true), ec);
+    if (ec) {
+      RTC_LOG(LS_ERROR) << "Failed to set reuse_address: " << ec.message();
+      return;
+    }
+
+    acceptor_.bind(endpoint, ec);
+    if (ec) {
+      RTC_LOG(LS_ERROR) << "Failed to bind: " << ec.message();
+      return;
+    }
+
+    acceptor_.listen(net::socket_base::max_listen_connections, ec);
+    if (ec) {
+      RTC_LOG(LS_ERROR) << "Failed to listen: " << ec.message();
+      return;
+    }
+  }
+
+  void Run() { DoAccept(); }
+
+ private:
+  void DoAccept() {
+    acceptor_.async_accept(
+        net::make_strand(ioc_),
+        [self = shared_from_this()](beast::error_code ec, tcp::socket socket) {
+          if (!ec) {
+            std::make_shared<HttpSession>(std::move(socket), self->sumomo_)
+                ->Run();
+          }
+          self->DoAccept();
+        });
+  }
+
+  net::io_context& ioc_;
+  tcp::acceptor acceptor_;
+  std::weak_ptr<Sumomo> sumomo_;
 };
 
 class Sumomo : public std::enable_shared_from_this<Sumomo>,
@@ -255,6 +385,15 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
 
     conn_->Connect();
 
+    // HTTP サーバーの起動
+    std::shared_ptr<HttpListener> http_listener;
+    if (config_.http_port > 0) {
+      tcp::endpoint endpoint{tcp::v4(), static_cast<unsigned short>(config_.http_port)};
+      http_listener = std::make_shared<HttpListener>(*ioc_, endpoint, weak_from_this());
+      http_listener->Run();
+      RTC_LOG(LS_INFO) << "HTTP server listening on port " << config_.http_port;
+    }
+
     if (config_.use_sdl) {
       sdl_renderer_->SetDispatchFunction([this](std::function<void()> f) {
         if (ioc_->stopped())
@@ -332,6 +471,38 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
 
   void OnDataChannel(std::string label) override {}
 
+  void GetStats(std::function<void(const boost::json::value&)> callback) {
+    if (!conn_ || !conn_->GetPeerConnection()) {
+      callback(boost::json::array{});
+      return;
+    }
+
+    conn_->GetPeerConnection()->GetStats(
+        sora::RTCStatsCallback::Create(
+            [callback = std::move(callback)](
+                const webrtc::scoped_refptr<const webrtc::RTCStatsReport>&
+                    report) {
+              boost::json::array stats_array;
+              for (const auto& stats : *report) {
+                boost::json::object stat_object;
+                stat_object["id"] = stats.id();
+                stat_object["type"] = stats.type();
+                stat_object["timestamp"] = stats.timestamp().us();
+                
+                boost::json::object values;
+                for (const auto& attribute : stats.Attributes()) {
+                  if (attribute.has_value()) {
+                    values[attribute.name()] = attribute.ToString();
+                  }
+                }
+                stat_object["stats"] = values;
+                
+                stats_array.push_back(stat_object);
+              }
+              callback(stats_array);
+            }).get());
+  }
+
  private:
   std::shared_ptr<sora::SoraClientContext> context_;
   SumomoConfig config_;
@@ -343,6 +514,20 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
   std::unique_ptr<SixelRenderer> sixel_renderer_;
   std::unique_ptr<AnsiRenderer> ansi_renderer_;
 };
+
+void HttpSession::GetStatsFromSumomo(std::shared_ptr<Sumomo> sumomo,
+                                     std::shared_ptr<HttpSession> self) {
+  sumomo->GetStats([self](const boost::json::value& stats) {
+    http::response<http::string_body> res{http::status::ok,
+                                          self->request_.version()};
+    res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
+    res.set(http::field::content_type, "application/json");
+    res.keep_alive(self->request_.keep_alive());
+    res.body() = boost::json::serialize(stats);
+    res.prepare_payload();
+    self->Send(std::move(res));
+  });
+}
 
 void add_optional_bool(CLI::App& app,
                        const std::string& option_name,
@@ -499,6 +684,10 @@ int main(int argc, char* argv[]) {
       ->check(CLI::ExistingFile);
   app.add_option("--ca-cert", config.ca_cert, "CA certificate file")
       ->check(CLI::ExistingFile);
+
+  // HTTP サーバーに関するオプション
+  app.add_option("--port", config.http_port, "HTTP server port for stats API")
+      ->check(CLI::Range(0, 65535));
 
   // DegradationPreference に関するオプション
   auto degradation_preference_map =

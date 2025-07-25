@@ -55,6 +55,10 @@
   - `--use-ansi`, `--ansi-width`, `--ansi-height` オプションの追加
   - また、この過程で SDLRenderer の SDL に依存しない部分をベースクラス（BaseRenderer）としてまとめた
   - @melpon
+- [ADD] Sumomo に HTTP サーバー機能と WebRTC 統計情報 API を追加
+  - `--port` オプションで HTTP サーバーのポート番号を指定可能
+  - `/stats` エンドポイントで WebRTC の統計情報を JSON 形式で取得可能
+  - @voluntas
 
 ## 2025.4.0
 
