@@ -215,7 +215,8 @@ class HttpSession : public std::enable_shared_from_this<HttpSession> {
 
 class HttpListener : public std::enable_shared_from_this<HttpListener> {
  public:
-  HttpListener(net::io_context& ioc, tcp::endpoint endpoint,
+  HttpListener(net::io_context& ioc,
+               tcp::endpoint endpoint,
                std::weak_ptr<Sumomo> sumomo)
       : ioc_(ioc), acceptor_(net::make_strand(ioc)), sumomo_(sumomo) {
     beast::error_code ec;
@@ -248,15 +249,14 @@ class HttpListener : public std::enable_shared_from_this<HttpListener> {
 
  private:
   void DoAccept() {
-    acceptor_.async_accept(
-        net::make_strand(ioc_),
-        [self = shared_from_this()](beast::error_code ec, tcp::socket socket) {
-          if (!ec) {
-            std::make_shared<HttpSession>(std::move(socket), self->sumomo_)
-                ->Run();
-          }
-          self->DoAccept();
-        });
+    acceptor_.async_accept(net::make_strand(ioc_), [self = shared_from_this()](
+                                                       beast::error_code ec,
+                                                       tcp::socket socket) {
+      if (!ec) {
+        std::make_shared<HttpSession>(std::move(socket), self->sumomo_)->Run();
+      }
+      self->DoAccept();
+    });
   }
 
   net::io_context& ioc_;
@@ -388,8 +388,10 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
     // HTTP サーバーの起動
     std::shared_ptr<HttpListener> http_listener;
     if (config_.http_port != 0) {
-      tcp::endpoint endpoint{tcp::v4(), static_cast<unsigned short>(config_.http_port)};
-      http_listener = std::make_shared<HttpListener>(*ioc_, endpoint, weak_from_this());
+      tcp::endpoint endpoint{tcp::v4(),
+                             static_cast<unsigned short>(config_.http_port)};
+      http_listener =
+          std::make_shared<HttpListener>(*ioc_, endpoint, weak_from_this());
       http_listener->Run();
       RTC_LOG(LS_INFO) << "HTTP server listening on port " << config_.http_port;
     }
@@ -488,7 +490,7 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
                 stat_object["id"] = stats.id();
                 stat_object["type"] = stats.type();
                 stat_object["timestamp"] = stats.timestamp().us();
-                
+
                 boost::json::object values;
                 for (const auto& attribute : stats.Attributes()) {
                   if (attribute.has_value()) {
@@ -496,11 +498,12 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
                   }
                 }
                 stat_object["stats"] = values;
-                
+
                 stats_array.push_back(stat_object);
               }
               callback(stats_array);
-            }).get());
+            })
+            .get());
   }
 
  private:
