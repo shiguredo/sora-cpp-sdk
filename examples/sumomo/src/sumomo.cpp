@@ -387,7 +387,7 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
 
     // HTTP サーバーの起動
     std::shared_ptr<HttpListener> http_listener;
-    if (config_.http_port > 0) {
+    if (config_.http_port != 0) {
       tcp::endpoint endpoint{tcp::v4(), static_cast<unsigned short>(config_.http_port)};
       http_listener = std::make_shared<HttpListener>(*ioc_, endpoint, weak_from_this());
       http_listener->Run();
@@ -687,7 +687,7 @@ int main(int argc, char* argv[]) {
 
   // HTTP サーバーに関するオプション
   app.add_option("--port", config.http_port, "HTTP server port for stats API")
-      ->check(CLI::Range(0, 65535));
+      ->check(CLI::Range(1024, 65535));
 
   // DegradationPreference に関するオプション
   auto degradation_preference_map =
