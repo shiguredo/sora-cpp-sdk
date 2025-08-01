@@ -10,6 +10,7 @@
 #include <optional>
 #include <ostream>
 #include <regex>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -224,26 +225,22 @@ class HttpListener : public std::enable_shared_from_this<HttpListener> {
     beast::error_code ec;
     acceptor_.open(endpoint.protocol(), ec);
     if (ec) {
-      RTC_LOG(LS_ERROR) << "Failed to open acceptor: " << ec.message();
-      return;
+      throw std::runtime_error("Failed to open acceptor: " + ec.message());
     }
 
     acceptor_.set_option(net::socket_base::reuse_address(true), ec);
     if (ec) {
-      RTC_LOG(LS_ERROR) << "Failed to set reuse_address: " << ec.message();
-      return;
+      throw std::runtime_error("Failed to set reuse_address: " + ec.message());
     }
 
     acceptor_.bind(endpoint, ec);
     if (ec) {
-      RTC_LOG(LS_ERROR) << "Failed to bind: " << ec.message();
-      return;
+      throw std::runtime_error("Failed to bind: " + ec.message());
     }
 
     acceptor_.listen(net::socket_base::max_listen_connections, ec);
     if (ec) {
-      RTC_LOG(LS_ERROR) << "Failed to listen: " << ec.message();
-      return;
+      throw std::runtime_error("Failed to listen: " + ec.message());
     }
   }
 
@@ -398,8 +395,9 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
         http_listener_ =
             std::make_shared<HttpListener>(*ioc_, endpoint, weak_from_this());
         http_listener_->Run();
-        RTC_LOG(LS_INFO) << "HTTP server listening on " << config_.http_host << ":" << *config_.http_port;
-      } catch (const boost::system::system_error& e) {
+        RTC_LOG(LS_INFO) << "HTTP server listening on " << config_.http_host
+                         << ":" << *config_.http_port;
+      } catch (const std::exception& e) {
         RTC_LOG(LS_ERROR) << "Failed to start HTTP server: " << e.what();
         return;
       }
@@ -709,7 +707,9 @@ int main(int argc, char* argv[]) {
       ->check(CLI::ExistingFile);
 
   // HTTP サーバーに関するオプション
-  app.add_option("--http-port", config.http_port, "HTTP server port for stats API (none or 1024-65535, default: none = disabled)")
+  app.add_option("--http-port", config.http_port,
+                 "HTTP server port for stats API (none or 1024-65535, default: "
+                 "none = disabled)")
       ->check([](const std::string& value) {
         if (value == "none" || value.empty()) {
           return std::string();
@@ -722,9 +722,11 @@ int main(int argc, char* argv[]) {
         } catch (...) {
           // 数値でない場合
         }
-        return std::string("Port must be 'none' (disabled) or between 1024 and 65535");
+        return std::string(
+            "Port must be 'none' (disabled) or between 1024 and 65535");
       });
-  app.add_option("--http-host", config.http_host, "HTTP server host address (default: 127.0.0.1)");
+  app.add_option("--http-host", config.http_host,
+                 "HTTP server host address (default: 127.0.0.1)");
 
   // DegradationPreference に関するオプション
   auto degradation_preference_map =
