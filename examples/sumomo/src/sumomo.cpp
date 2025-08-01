@@ -237,17 +237,8 @@ class HttpListener : public std::enable_shared_from_this<HttpListener> {
       : ioc_(ioc), acceptor_(net::make_strand(ioc)), sumomo_(sumomo) {
     beast::error_code ec;
 
-    // 例外発生時のリソースクリーンアップ用ラムダ
-    // 注意: コンストラクタ内で例外が発生した場合、デストラクタは呼ばれないため
-    // 明示的にリソースをクリーンアップする必要がある
-    // RAII は効かないので、手動でのクリーンアップが重要
-    auto cleanup = [this]() {
-      beast::error_code ignore_ec;
-      if (acceptor_.is_open()) {
-        acceptor_.close(ignore_ec);
-      }
-    };
-
+    // tcp::acceptor のデストラクタは自動的に close() を呼ぶが、
+    // 明示性のため open 成功後のエラーでは手動でクローズする
     acceptor_.open(endpoint.protocol(), ec);
     if (ec) {
       throw std::runtime_error("Failed to open acceptor: " + ec.message());
@@ -256,28 +247,25 @@ class HttpListener : public std::enable_shared_from_this<HttpListener> {
     try {
       acceptor_.set_option(net::socket_base::reuse_address(true), ec);
       if (ec) {
-        cleanup();
-        throw std::runtime_error("Failed to set reuse_address: " +
-                                 ec.message());
+        throw std::runtime_error("Failed to set reuse_address: " + ec.message());
       }
 
       acceptor_.bind(endpoint, ec);
       if (ec) {
-        cleanup();
         throw std::runtime_error("Failed to bind: " + ec.message());
       }
 
       acceptor_.listen(net::socket_base::max_listen_connections, ec);
       if (ec) {
-        cleanup();
         throw std::runtime_error("Failed to listen: " + ec.message());
       }
     } catch (...) {
-      cleanup();
+      acceptor_.close(ec);
       throw;
     }
   }
 
+ public:
   void Run() { DoAccept(); }
 
   void Stop() {
@@ -769,8 +757,10 @@ int main(int argc, char* argv[]) {
           if (port >= 1024 && port <= 65535) {
             return std::string();
           }
-        } catch (...) {
-          // 数値でない場合
+        } catch (const std::invalid_argument&) {
+          return std::string("Port must be a valid number");
+        } catch (const std::out_of_range&) {
+          return std::string("Port number is out of range");
         }
         return std::string(
             "Port must be 'none' (disabled) or between 1024 and 65535");
