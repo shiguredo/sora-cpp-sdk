@@ -4,7 +4,7 @@
 #include <api/media_stream_interface.h>
 #include <api/scoped_refptr.h>
 
-#if defined(__APPLE__)
+#if defined(__APPLE__) && !defined(SORA_CPP_SDK_VISIONOS)
 #include "sora/mac/mac_capturer.h"
 #elif defined(SORA_CPP_SDK_ANDROID)
 #include "sora/android/android_capturer.h"
