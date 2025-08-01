@@ -237,31 +237,26 @@ class HttpListener : public std::enable_shared_from_this<HttpListener> {
       : ioc_(ioc), acceptor_(net::make_strand(ioc)), sumomo_(sumomo) {
     beast::error_code ec;
 
-    // tcp::acceptor のデストラクタは自動的に close() を呼ぶが、
-    // 明示性のため open 成功後のエラーでは手動でクローズする
+    // エラーが発生した場合、acceptor_ のデストラクタが自動的にソケットをクローズする
+    // (reactive_socket_service_base::destroy() → socket_ops::close())
     acceptor_.open(endpoint.protocol(), ec);
     if (ec) {
       throw std::runtime_error("Failed to open acceptor: " + ec.message());
     }
 
-    try {
-      acceptor_.set_option(net::socket_base::reuse_address(true), ec);
-      if (ec) {
-        throw std::runtime_error("Failed to set reuse_address: " + ec.message());
-      }
+    acceptor_.set_option(net::socket_base::reuse_address(true), ec);
+    if (ec) {
+      throw std::runtime_error("Failed to set reuse_address: " + ec.message());
+    }
 
-      acceptor_.bind(endpoint, ec);
-      if (ec) {
-        throw std::runtime_error("Failed to bind: " + ec.message());
-      }
+    acceptor_.bind(endpoint, ec);
+    if (ec) {
+      throw std::runtime_error("Failed to bind: " + ec.message());
+    }
 
-      acceptor_.listen(net::socket_base::max_listen_connections, ec);
-      if (ec) {
-        throw std::runtime_error("Failed to listen: " + ec.message());
-      }
-    } catch (...) {
-      acceptor_.close(ec);
-      throw;
+    acceptor_.listen(net::socket_base::max_listen_connections, ec);
+    if (ec) {
+      throw std::runtime_error("Failed to listen: " + ec.message());
     }
   }
 
