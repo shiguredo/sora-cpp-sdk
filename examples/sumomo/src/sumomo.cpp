@@ -136,6 +136,8 @@ struct SumomoConfig {
     // 数字で指定した場合の処理 (例 640x480 )
     auto pos = resolution.find('x');
     if (pos == std::string::npos) {
+      // TODO: 無効な形式の場合、16x16 を返すよりエラーを投げるべきか検討
+      // 現在は最小解像度として 16x16 を返している
       return {16, 16};
     }
     auto width = std::atoi(resolution.substr(0, pos).c_str());
@@ -151,6 +153,10 @@ using tcp = net::ip::tcp;
 
 class Sumomo;
 
+// HTTP リクエストを処理するセッション
+// 注意: 現在は1リクエスト=1コネクションの設計
+// Keep-Alive に対応する場合は、DoRead() の再帰呼び出しと
+// リクエスト数/タイムアウトの制限を実装する必要がある
 class HttpSession : public std::enable_shared_from_this<HttpSession> {
  public:
   HttpSession(tcp::socket socket, std::weak_ptr<Sumomo> sumomo)
@@ -203,10 +209,17 @@ class HttpSession : public std::enable_shared_from_this<HttpSession> {
     http::async_write(
         socket_, *sp,
         [self = shared_from_this(), sp](beast::error_code ec, std::size_t) {
+          // TODO: 現在はエラーハンドリングをしていないが、
+          // エラー時のログ出力とソケットの明示的なクローズを検討する
+          // 現状は Keep-Alive 非対応で1リクエスト=1コネクションなので
+          // 大きな問題にはなっていない
           self->socket_.shutdown(tcp::socket::shutdown_send, ec);
         });
   }
 
+  // TODO: この関数は HttpSession のメンバ関数だが、Sumomo の定義後に
+  // 実装する必要があるため外部で定義している。
+  // 将来的にはより良い設計（例: stats 取得用のインターフェース）を検討
   void GetStatsFromSumomo(std::shared_ptr<Sumomo> sumomo,
                           std::shared_ptr<HttpSession> self);
 
@@ -225,6 +238,9 @@ class HttpListener : public std::enable_shared_from_this<HttpListener> {
     beast::error_code ec;
 
     // 例外発生時のリソースクリーンアップ用ラムダ
+    // 注意: コンストラクタ内で例外が発生した場合、デストラクタは呼ばれないため
+    // 明示的にリソースをクリーンアップする必要がある
+    // RAII は効かないので、手動でのクリーンアップが重要
     auto cleanup = [this]() {
       beast::error_code ignore_ec;
       if (acceptor_.is_open()) {
@@ -291,6 +307,7 @@ class HttpListener : public std::enable_shared_from_this<HttpListener> {
         }
         return;
       }
+      // 正常にコネクションを受け入れた場合は次の accept を開始
       self->DoAccept();
     });
   }
@@ -419,6 +436,8 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
     // HTTP サーバーの起動（接続前に起動する）
     if (config_.http_port.has_value()) {
       try {
+        // TODO: make_address は無効なアドレスで例外を投げるが、
+        // より具体的なエラーメッセージのためにエラーコード版の使用を検討
         tcp::endpoint endpoint{boost::asio::ip::make_address(config_.http_host),
                                static_cast<unsigned short>(*config_.http_port)};
         http_listener_ =
@@ -745,6 +764,8 @@ int main(int argc, char* argv[]) {
         }
         try {
           int port = std::stoi(value);
+          // ウェルノウンポート (0-1023) は特権ポートなので除外
+          // 1024-65535 の範囲のみ許可
           if (port >= 1024 && port <= 65535) {
             return std::string();
           }
