@@ -57,7 +57,10 @@ jobs:
           cd examples
           mkdir examples_${{ matrix.platform.name }}
           for app in sdl_sample sumomo messaging_recvonly_sample; do
-            python3 $app/${{ matrix.platform.name }}/run.py --local-sora-cpp-sdk-dir ..
+            python3 $app/${{ matrix.platform.name }}/run.py \
+              --local-sora-cpp-sdk-dir .. \
+              --local-sora-cpp-sdk-args=--disable-cuda \
+              --install-dir `pwd`/../_install/ubuntu-24.04_x86_64/release
           done
         if: matrix.platform.os == 'ubuntu' && matrix.platform.name != 'ubuntu-22.04_armv8'
       - name: Run IWYU and Clang Format

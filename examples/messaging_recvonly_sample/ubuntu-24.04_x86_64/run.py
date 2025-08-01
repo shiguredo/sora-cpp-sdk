@@ -134,6 +134,7 @@ def install_deps(
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--debug", action="store_true")
+    parser.add_argument("--install-dir")
     add_webrtc_build_arguments(parser)
     add_sora_arguments(parser)
 
@@ -144,6 +145,8 @@ def main():
     source_dir = os.path.join(BASE_DIR, "_source", platform, configuration_dir)
     build_dir = os.path.join(BASE_DIR, "_build", platform, configuration_dir)
     install_dir = os.path.join(BASE_DIR, "_install", platform, configuration_dir)
+    if args.install_dir is not None:
+        install_dir = args.install_dir
     mkdir_p(source_dir)
     mkdir_p(build_dir)
     mkdir_p(install_dir)
