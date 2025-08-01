@@ -249,6 +249,14 @@ class HttpListener : public std::enable_shared_from_this<HttpListener> {
 
   void Run() { DoAccept(); }
 
+  void Stop() {
+    beast::error_code ec;
+    acceptor_.close(ec);
+    if (ec) {
+      RTC_LOG(LS_ERROR) << "Failed to close acceptor: " << ec.message();
+    }
+  }
+
  private:
   void DoAccept() {
     acceptor_.async_accept(net::make_strand(ioc_), [self = shared_from_this()](
@@ -382,22 +390,26 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
     boost::asio::executor_work_guard<boost::asio::io_context::executor_type>
         work_guard(ioc_->get_executor());
 
+    // HTTP サーバーの起動（接続前に起動する）
+    if (config_.http_port.has_value()) {
+      try {
+        tcp::endpoint endpoint{boost::asio::ip::make_address(config_.http_host),
+                               static_cast<unsigned short>(*config_.http_port)};
+        http_listener_ =
+            std::make_shared<HttpListener>(*ioc_, endpoint, weak_from_this());
+        http_listener_->Run();
+        RTC_LOG(LS_INFO) << "HTTP server listening on " << config_.http_host << ":" << *config_.http_port;
+      } catch (const boost::system::system_error& e) {
+        RTC_LOG(LS_ERROR) << "Failed to start HTTP server: " << e.what();
+        return;
+      }
+    }
+
     boost::asio::signal_set signals(*ioc_, SIGINT, SIGTERM);
     signals.async_wait(
         [this](const boost::system::error_code&, int) { conn_->Disconnect(); });
 
     conn_->Connect();
-
-    // HTTP サーバーの起動
-    std::shared_ptr<HttpListener> http_listener;
-    if (config_.http_port.has_value()) {
-      tcp::endpoint endpoint{boost::asio::ip::make_address(config_.http_host),
-                             static_cast<unsigned short>(*config_.http_port)};
-      http_listener =
-          std::make_shared<HttpListener>(*ioc_, endpoint, weak_from_this());
-      http_listener->Run();
-      RTC_LOG(LS_INFO) << "HTTP server listening on " << config_.http_host << ":" << *config_.http_port;
-    }
 
     if (config_.use_sdl) {
       sdl_renderer_->SetDispatchFunction([this](std::function<void()> f) {
@@ -426,6 +438,10 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
   void OnDisconnect(sora::SoraSignalingErrorCode ec,
                     std::string message) override {
     RTC_LOG(LS_INFO) << "OnDisconnect: " << message;
+    if (http_listener_) {
+      http_listener_->Stop();
+      http_listener_.reset();
+    }
     sdl_renderer_.reset();
     sixel_renderer_.reset();
     ansi_renderer_.reset();
@@ -519,6 +535,7 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
   std::unique_ptr<SDLRenderer> sdl_renderer_;
   std::unique_ptr<SixelRenderer> sixel_renderer_;
   std::unique_ptr<AnsiRenderer> ansi_renderer_;
+  std::shared_ptr<HttpListener> http_listener_;
 };
 
 void HttpSession::GetStatsFromSumomo(std::shared_ptr<Sumomo> sumomo,
