@@ -223,24 +223,42 @@ class HttpListener : public std::enable_shared_from_this<HttpListener> {
                std::weak_ptr<Sumomo> sumomo)
       : ioc_(ioc), acceptor_(net::make_strand(ioc)), sumomo_(sumomo) {
     beast::error_code ec;
+
+    // 例外発生時のリソースクリーンアップ用ラムダ
+    auto cleanup = [this]() {
+      beast::error_code ignore_ec;
+      if (acceptor_.is_open()) {
+        acceptor_.close(ignore_ec);
+      }
+    };
+
     acceptor_.open(endpoint.protocol(), ec);
     if (ec) {
       throw std::runtime_error("Failed to open acceptor: " + ec.message());
     }
 
-    acceptor_.set_option(net::socket_base::reuse_address(true), ec);
-    if (ec) {
-      throw std::runtime_error("Failed to set reuse_address: " + ec.message());
-    }
+    try {
+      acceptor_.set_option(net::socket_base::reuse_address(true), ec);
+      if (ec) {
+        cleanup();
+        throw std::runtime_error("Failed to set reuse_address: " +
+                                 ec.message());
+      }
 
-    acceptor_.bind(endpoint, ec);
-    if (ec) {
-      throw std::runtime_error("Failed to bind: " + ec.message());
-    }
+      acceptor_.bind(endpoint, ec);
+      if (ec) {
+        cleanup();
+        throw std::runtime_error("Failed to bind: " + ec.message());
+      }
 
-    acceptor_.listen(net::socket_base::max_listen_connections, ec);
-    if (ec) {
-      throw std::runtime_error("Failed to listen: " + ec.message());
+      acceptor_.listen(net::socket_base::max_listen_connections, ec);
+      if (ec) {
+        cleanup();
+        throw std::runtime_error("Failed to listen: " + ec.message());
+      }
+    } catch (...) {
+      cleanup();
+      throw;
     }
   }
 
@@ -261,6 +279,17 @@ class HttpListener : public std::enable_shared_from_this<HttpListener> {
                                                        tcp::socket socket) {
       if (!ec) {
         std::make_shared<HttpSession>(std::move(socket), self->sumomo_)->Run();
+      } else if (ec == net::error::operation_aborted) {
+        // acceptor が閉じられた場合は再帰呼び出しを停止
+        return;
+      } else {
+        // その他のエラーの場合はログを出力
+        RTC_LOG(LS_ERROR) << "Accept failed: " << ec.message();
+        // 致命的なエラーでない場合のみ再試行
+        if (self->acceptor_.is_open()) {
+          self->DoAccept();
+        }
+        return;
       }
       self->DoAccept();
     });
