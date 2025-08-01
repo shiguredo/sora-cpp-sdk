@@ -109,6 +109,7 @@ struct SumomoConfig {
   std::string ca_cert;
 
   std::optional<webrtc::DegradationPreference> degradation_preference;
+  std::optional<bool> cpu_adaptation;
 
   int http_port = 0;
 
@@ -374,6 +375,7 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
       config.ca_cert = load_file(config_.ca_cert);
     }
     config.degradation_preference = config_.degradation_preference;
+    config.cpu_adaptation = config_.cpu_adaptation;
     conn_ = sora::SoraSignaling::Create(config);
 
     boost::asio::executor_work_guard<boost::asio::io_context::executor_type>
@@ -705,6 +707,9 @@ int main(int argc, char* argv[]) {
                  "Degradation preference")
       ->transform(CLI::CheckedTransformer(degradation_preference_map,
                                           CLI::ignore_case));
+
+  add_optional_bool(app, "--cpu-adaptation", config.cpu_adaptation,
+                    "Enable/disable CPU adaptation (default: none)");
 
   // SoraClientContextConfig に関するオプション
   std::string audio_recording_device;

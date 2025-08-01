@@ -26,6 +26,10 @@
   - @melpon
 - [ADD] Intel VPL の VP9 エンコーダを動くようにする
   - @melpon
+- [ADD] CPU アダプテーションの有効/無効を設定できるように `SoraSignalingConfig` に `cpu_adaptation` フィールドを追加
+  - `examples/sumomo` で `--cpu-adaptation` オプションで指定可能
+  - 未指定の場合は従来通り macOS のサイマルキャスト時のみ自動的に無効化される
+  - @voluntas
 
 ### misc
 

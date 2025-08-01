@@ -177,6 +177,7 @@ struct SoraSignalingConfig {
   std::optional<http_header_value> user_agent;
 
   std::optional<webrtc::DegradationPreference> degradation_preference;
+  std::optional<bool> cpu_adaptation;
 };
 
 class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
