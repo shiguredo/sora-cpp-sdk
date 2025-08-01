@@ -20,6 +20,8 @@ jobs:
             arch: x86_64
     name: Build sora-cpp-sdk for ${{ matrix.platform.name }}
     runs-on: ${{ matrix.platform.runs-on }}
+    outputs:
+      diff: ${{ steps.diff.outputs.diff }}
     env:
       TEST_SIGNALING_URL: ${{ secrets.TEST_SIGNALING_URL }}
       TEST_CHANNEL_ID_PREFIX: ${{ secrets.TEST_CHANNEL_ID_PREFIX }}
@@ -27,25 +29,15 @@ jobs:
       TEST_MATRIX_NAME: ${{ matrix.platform.name }}
     steps:
       - uses: actions/checkout@v4
-      # IWYU を適用するにはまずビルドする必要がある
-      # Ubuntu 24.04 だと libtinfo5 が見つからない問題があるので、その修正
-      # ref: https://qiita.com/gengen16k/items/88cf3c18a40a94205fab
-      - name: Fix CUDA issues for Ubuntu 24.04
-        if: matrix.platform.name == 'ubuntu-24.04_x86_64'
-        run: |
-          sudo tee /etc/apt/sources.list.d/jammy.list << EOF
-          deb http://archive.ubuntu.com/ubuntu/ jammy universe
-          EOF
-
-          sudo tee /etc/apt/preferences.d/pin-jammy <<EOF
-          Package: *
-          Pin: release n=jammy
-          Pin-Priority: -10
-
-          Package: libtinfo5
-          Pin: release n=jammy
-          Pin-Priority: 990
-          EOF
+      - name: Cache Dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            _install/${{ matrix.platform.name }}/release
+            _build/${{ matrix.platform.name }}/release/clang-include-cleaner.json
+          key: ${{ matrix.platform.name }}-${{ hashFiles('VERSION') }}
+          restore-keys: |
+            ${{ matrix.platform.name }}-
       - name: Install deps for ${{ matrix.platform.name }}
         if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
         run: |
@@ -59,29 +51,23 @@ jobs:
           # OpenGL
           sudo apt-get install -y libgl-dev
 
-          # CUDA
-          # libssl1.1 が必要
-          wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.0g-2ubuntu4_amd64.deb
-          sudo dpkg -i libssl1.1_1.1.0g-2ubuntu4_amd64.deb
-          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb
-          sudo dpkg -i cuda-keyring_*all.deb
-          sudo apt-get update
-          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install cuda=$CUDA_VERSION
-
           # clang-20
           wget https://apt.llvm.org/llvm.sh
           chmod a+x llvm.sh
           sudo ./llvm.sh 20
-      - run: python3 run.py build --test ${{ matrix.platform.name }}
+      - run: python3 run.py build --disable-cuda --test ${{ matrix.platform.name }}
       - name: Build Examples
         run: |
           cd examples
-          mkdir examples_${{ matrix.platform.name }}
           for app in sdl_sample sumomo messaging_recvonly_sample; do
-            python3 $app/${{ matrix.platform.name }}/run.py --local-sora-cpp-sdk-dir ..
+            python3 $app/${{ matrix.platform.name }}/run.py \
+              --local-sora-cpp-sdk-dir .. \
+              --local-sora-cpp-sdk-args=--disable-cuda \
+              --install-dir `pwd`/../_install/${{ matrix.platform.name }}/release
           done
         if: matrix.platform.os == 'ubuntu' && matrix.platform.name != 'ubuntu-22.04_armv8'
       - name: Run IWYU and Clang Format
+        id: diff
         run: |
           set +e
 
@@ -97,9 +83,9 @@ jobs:
             echo "clang format has error"
           fi
 
-          echo "DIFF<<EOF" >> $GITHUB_ENV
-          git diff >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          echo "diff<<EOF" >> $GITHUB_OUTPUT
+          git diff >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
           git diff --exit-code
           if [ $? -ne 0 ]; then
@@ -107,7 +93,7 @@ jobs:
             echo "git diff has error"
           fi
 
-          if [ "$HAS_ERROR"="true" ]; then
+          if [ "$HAS_ERROR" = "true" ]; then
             echo "Please fix them before commit."
             exit 1
           fi
@@ -129,5 +115,5 @@ jobs:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_MESSAGE: |
             ```
-            ${{ env.DIFF }}
+            ${{ needs.run-ubuntu.outputs.diff }}
             ```
