@@ -69,10 +69,6 @@ const char kFieldKind[] = "kind";
 const char kOperatorIsIn[] = "is_in";
 const char kOperatorIsNotIn[] = "is_not_in";
 
-void f() {
-  boost::beast::http::status s = boost::beast::http::status::switching_protocols;
-}
-
 SoraSignaling::SoraSignaling(const SoraSignalingConfig& config)
     : config_(config),
       connection_timeout_timer_(*config_.io_context),
