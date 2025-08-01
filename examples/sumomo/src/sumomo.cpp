@@ -353,7 +353,7 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
     config.simulcast = config_.simulcast;
     config.data_channel_signaling = config_.data_channel_signaling;
     config.ignore_disconnect_websocket = config_.ignore_disconnect_websocket;
-    config.proxy_agent = "Momo Sample for Sora C++ SDK";
+    config.proxy_agent = "Sumomo Sample for Sora C++ SDK";
     config.proxy_url = config_.proxy_url;
     config.proxy_username = config_.proxy_username;
     config.proxy_password = config_.proxy_password;
@@ -613,7 +613,7 @@ int main(int argc, char* argv[]) {
       },
       "JSON Value");
 
-  CLI::App app("Momo Sample for Sora C++ SDK");
+  CLI::App app("Sumomo Sample for Sora C++ SDK");
 
   int log_level = (int)webrtc::LS_ERROR;
   auto log_level_map = std::vector<std::pair<std::string, int>>(
