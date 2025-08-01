@@ -1,6 +1,7 @@
 name: formatter
 
 on:
+  workflow_dispatch:
   push:
     paths-ignore:
       - "doc/**"
@@ -32,9 +33,14 @@ jobs:
       - name: Cache Dependencies
         uses: actions/cache@v4
         with:
-          path: |
-            _install/${{ matrix.platform.name }}/release
-            _build/${{ matrix.platform.name }}/release/clang-include-cleaner.json
+          path: _install/${{ matrix.platform.name }}/release
+          key: ${{ matrix.platform.name }}-${{ hashFiles('VERSION') }}
+          restore-keys: |
+            ${{ matrix.platform.name }}-
+      - name: Cache Dependencies
+        uses: actions/cache@v4
+        with:
+          path: _build/${{ matrix.platform.name }}/release/clang-include-cleaner.json
           key: ${{ matrix.platform.name }}-${{ hashFiles('VERSION') }}
           restore-keys: |
             ${{ matrix.platform.name }}-
