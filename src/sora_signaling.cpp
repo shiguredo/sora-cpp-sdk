@@ -567,13 +567,18 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
 
   rtc_config.servers = ice_servers;
 
-  // macOS のサイマルキャスト時、なぜか無限に解像度が落ちていくので、
-  // それを回避するために cpu_adaptation を無効にする。
+  // cpu_adaptation の設定
+  if (config_.cpu_adaptation.has_value()) {
+    rtc_config.set_cpu_adaptation(config_.cpu_adaptation.value());
+  } else {
+    // macOS のサイマルキャスト時、なぜか無限に解像度が落ちていくので、
+    // それを回避するために cpu_adaptation を無効にする。
 #if defined(__APPLE__)
-  if (offer_config_.simulcast) {
-    rtc_config.set_cpu_adaptation(false);
-  }
+    if (offer_config_.simulcast) {
+      rtc_config.set_cpu_adaptation(false);
+    }
 #endif
+  }
 
   rtc_config.sdp_semantics = webrtc::SdpSemantics::kUnifiedPlan;
   webrtc::PeerConnectionDependencies dependencies(this);
