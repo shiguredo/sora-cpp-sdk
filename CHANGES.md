@@ -30,6 +30,11 @@
   - `examples/sumomo` で `--cpu-adaptation` オプションで指定可能
   - 未指定の場合は従来通り macOS のサイマルキャスト時のみ自動的に無効化される
   - @voluntas
+- [ADD] visionOS に対応する
+  - visionOS には `SORA_CPP_SDK_VISIONOS` を使用してビルドするように対応する
+  - ビルドオプションに `visionos` と `visionos_simulator` を追加する
+  - 今回の対応では受信のみで、カメラ映像の送信は対応しない
+  - @torikizi
 
 ### misc
 
