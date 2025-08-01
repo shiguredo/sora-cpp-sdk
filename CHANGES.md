@@ -82,7 +82,7 @@
   - @miosakuma @torikizi @melpon
 - [UPDATE] Android NDK を r28b にあげる
   - 16KB ページサイズに対応するため
-    - ref: https://developer.android.com/guide/practices/page-sizes
+    - ref: <https://developer.android.com/guide/practices/page-sizes>
   - @melpon
 - [UPDATE] Gradle のバージョンを 8.14.2 にあげる
   - @melpon
