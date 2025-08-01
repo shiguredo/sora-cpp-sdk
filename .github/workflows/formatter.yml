@@ -81,12 +81,36 @@ jobs:
             python3 $app/${{ matrix.platform.name }}/run.py --local-sora-cpp-sdk-dir ..
           done
         if: matrix.platform.os == 'ubuntu' && matrix.platform.name != 'ubuntu-22.04_armv8'
-      - name: Run IWYU
-        run: python3 run.py iwyu ubuntu-24.04_x86_64 || git diff --exit-code
-      - name: Run clang format
-        run: python3 run.py format || git diff --exit-code
-      - name: Check diff
-        run: git diff --exit-code
+      - name: Run IWYU and Clang Format
+        run: |
+          set +e
+
+          python3 run.py iwyu ubuntu-24.04_x86_64
+          if [ $? -ne 0 ]; then
+            HAS_ERROR=true
+            echo "iwyu has error"
+          fi
+
+          python3 run.py format
+          if [ $? -ne 0 ]; then
+            HAS_ERROR=true
+            echo "clang format has error"
+          fi
+
+          echo "DIFF<<EOF" >> $GITHUB_ENV
+          git diff >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+          git diff --exit-code
+          if [ $? -ne 0 ]; then
+            HAS_ERROR=true
+            echo "git diff has error"
+          fi
+
+          if [ "$HAS_ERROR"="true" ]; then
+            echo "Please fix them before commit."
+            exit 1
+          fi
 
   notification:
     name: Slack Notification
@@ -101,5 +125,9 @@ jobs:
         env:
           SLACK_CHANNEL: sora-cpp-sdk
           SLACK_COLOR: danger
-          SLACK_TITLE: Build failed
+          SLACK_TITLE: フォーマット失敗
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_MESSAGE: |
+            ```
+            ${{ env.DIFF }}
+            ```
