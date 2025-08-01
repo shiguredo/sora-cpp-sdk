@@ -111,7 +111,8 @@ struct SumomoConfig {
   std::optional<webrtc::DegradationPreference> degradation_preference;
   std::optional<bool> cpu_adaptation;
 
-  int http_port = 0;
+  std::optional<int> http_port;
+  std::string http_host = "127.0.0.1";
 
   struct Size {
     int width;
@@ -389,13 +390,13 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
 
     // HTTP サーバーの起動
     std::shared_ptr<HttpListener> http_listener;
-    if (config_.http_port != 0) {
-      tcp::endpoint endpoint{tcp::v4(),
-                             static_cast<unsigned short>(config_.http_port)};
+    if (config_.http_port.has_value()) {
+      tcp::endpoint endpoint{boost::asio::ip::make_address(config_.http_host),
+                             static_cast<unsigned short>(*config_.http_port)};
       http_listener =
           std::make_shared<HttpListener>(*ioc_, endpoint, weak_from_this());
       http_listener->Run();
-      RTC_LOG(LS_INFO) << "HTTP server listening on port " << config_.http_port;
+      RTC_LOG(LS_INFO) << "HTTP server listening on " << config_.http_host << ":" << *config_.http_port;
     }
 
     if (config_.use_sdl) {
@@ -691,8 +692,22 @@ int main(int argc, char* argv[]) {
       ->check(CLI::ExistingFile);
 
   // HTTP サーバーに関するオプション
-  app.add_option("--port", config.http_port, "HTTP server port for stats API")
-      ->check(CLI::Range(1024, 65535));
+  app.add_option("--http-port", config.http_port, "HTTP server port for stats API (none or 1024-65535, default: none = disabled)")
+      ->check([](const std::string& value) {
+        if (value == "none" || value.empty()) {
+          return std::string();
+        }
+        try {
+          int port = std::stoi(value);
+          if (port >= 1024 && port <= 65535) {
+            return std::string();
+          }
+        } catch (...) {
+          // 数値でない場合
+        }
+        return std::string("Port must be 'none' (disabled) or between 1024 and 65535");
+      });
+  app.add_option("--http-host", config.http_host, "HTTP server host address (default: 127.0.0.1)");
 
   // DegradationPreference に関するオプション
   auto degradation_preference_map =

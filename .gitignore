@@ -11,3 +11,7 @@
 /test/android/app/src/main/jniLibs
 
 xcuserdata/
+
+# claude
+CLAUDE.local.md
+/.claude
