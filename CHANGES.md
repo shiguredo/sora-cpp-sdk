@@ -61,6 +61,7 @@
   - @melpon
 - [ADD] Sumomo に HTTP サーバー機能と WebRTC 統計情報 API を追加
   - `--http-port` オプションで HTTP サーバーのポート番号を指定可能
+  - `--http-host` オプションで HTTP サーバーのホストアドレスを指定可能（デフォルト: 127.0.0.1）
   - `/stats` エンドポイントで WebRTC の統計情報を JSON 形式で取得可能
   - @voluntas
 

@@ -623,7 +623,7 @@ int main(int argc, char* argv[]) {
                  "[WIDTH]x[HEIGHT])")
       ->check(is_valid_resolution);
   app.add_option("--hw-mjpeg-decoder", config.hw_mjpeg_decoder,
-                 "Perform MJPEG deoode and video resize by hardware "
+                 "Perform MJPEG decode and video resize by hardware "
                  "acceleration only on supported devices (default: false)");
 
   // Sora に関するオプション
