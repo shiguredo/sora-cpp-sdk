@@ -112,6 +112,19 @@ def get_common_cmake_args(
         args.append(f"-DCMAKE_OSX_DEPLOYMENT_TARGET={webrtc_deps['IOS_DEPLOYMENT_TARGET']}")
         args.append("-DCMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH=NO")
         args.append("-DBLEND2D_NO_JIT=ON")
+    if platform.target.os == "visionos":
+        args += ["-G", "Xcode"]
+        args.append("-DCMAKE_SYSTEM_NAME=visionOS")
+        args.append("-DCMAKE_OSX_ARCHITECTURES=arm64")
+        args.append(
+            f"-DCMAKE_OSX_DEPLOYMENT_TARGET={webrtc_deps.get('VISIONOS_DEPLOYMENT_TARGET', '2.0')}"
+        )
+        args.append("-DCMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH=NO")
+        args.append("-DBLEND2D_NO_JIT=ON")
+        if platform.target.extra == "simulator":
+            args.append("-DCMAKE_OSX_SYSROOT=xrsimulator")
+        else:
+            args.append("-DCMAKE_OSX_SYSROOT=xros")
     if platform.target.os == "android":
         android_ndk = os.path.join(install_dir, "android-ndk")
         toolchain_file = os.path.join(base_dir, "cmake", "android.toolchain.cmake")
@@ -318,6 +331,30 @@ def install_deps(
             install_boost_args["cxxflags"] = [
                 "-std=gnu++17",
                 f"-miphoneos-version-min={webrtc_deps['IOS_DEPLOYMENT_TARGET']}",
+            ]
+            install_boost_args["visibility"] = "hidden"
+        elif platform.target.os == "visionos":
+            install_boost_args["target_os"] = "visionos"
+            install_boost_args["toolset"] = "clang"
+            install_boost_args["architecture"] = "arm"
+
+            # Simulator と Device で異なるターゲットフラグを使用
+            if platform.target.extra == "simulator":
+                target_flag = "arm64-apple-xros2.0-simulator"
+                install_boost_args["visionos_simulator"] = True
+            else:
+                target_flag = "arm64-apple-xros2.0"
+                install_boost_args["visionos_simulator"] = False
+
+            install_boost_args["cflags"] = [
+                "-target",
+                target_flag,
+            ]
+            install_boost_args["cxxflags"] = [
+                "-std=gnu++17",
+                "-stdlib=libc++",
+                "-target",
+                target_flag,
             ]
             install_boost_args["visibility"] = "hidden"
         elif platform.target.os == "android":
@@ -568,6 +605,8 @@ AVAILABLE_TARGETS = [
     "ubuntu-22.04_armv8",
     "ubuntu-24.04_armv8",
     "ios",
+    "visionos",
+    "visionos-simulator",
     "android",
 ]
 WINDOWS_SDK_VERSION = "10.0.20348.0"
@@ -590,6 +629,10 @@ def _get_platform(target: str) -> Platform:
         platform = Platform("ubuntu", "24.04", "armv8")
     elif target == "ios":
         platform = Platform("ios", None, None)
+    elif target == "visionos":
+        platform = Platform("visionos", None, None)
+    elif target == "visionos-simulator":
+        platform = Platform("visionos", None, None, "simulator")
     elif target == "android":
         platform = Platform("android", None, None)
     else:
@@ -718,6 +761,18 @@ def _build(
                 f"-DCMAKE_OSX_DEPLOYMENT_TARGET={webrtc_deps['IOS_DEPLOYMENT_TARGET']}"
             )
             cmake_args.append("-DCMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH=NO")
+        if platform.target.os == "visionos":
+            cmake_args += ["-G", "Xcode"]
+            cmake_args.append("-DCMAKE_SYSTEM_NAME=visionOS")
+            cmake_args.append("-DCMAKE_OSX_ARCHITECTURES=arm64")
+            cmake_args.append(
+                f"-DCMAKE_OSX_DEPLOYMENT_TARGET={webrtc_deps.get('VISIONOS_DEPLOYMENT_TARGET', '2.0')}"
+            )
+            cmake_args.append("-DCMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH=NO")
+            if platform.target.extra == "simulator":
+                cmake_args.append("-DCMAKE_OSX_SYSROOT=xrsimulator")
+            else:
+                cmake_args.append("-DCMAKE_OSX_SYSROOT=xros")
         if platform.target.os == "android":
             android_ndk = os.path.join(install_dir, "android-ndk")
             toolchain_file = os.path.join(BASE_DIR, "cmake", "android.toolchain.cmake")
@@ -808,6 +863,26 @@ def _build(
                 ]
             )
             cmd(["cmake", "--install", "."])
+        elif platform.target.os == "visionos":
+            sdk = "xrsimulator" if platform.target.extra == "simulator" else "xros"
+            cmd(
+                [
+                    "cmake",
+                    "--build",
+                    ".",
+                    f"-j{multiprocessing.cpu_count()}",
+                    "--config",
+                    configuration,
+                    "--target",
+                    "sora",
+                    "--",
+                    "-arch",
+                    "arm64",
+                    "-sdk",
+                    sdk,
+                ]
+            )
+            cmd(["cmake", "--install", "."])
         else:
             cmd(
                 [
@@ -868,6 +943,10 @@ def _build(
             #      '-arch', 'arm64',
             #      '-sdk', 'iphoneos',
             #      '-configuration', 'Release'])
+            pass
+        elif platform.target.os == "visionos":
+            # visionOS の場合も iOS と同様に事前に用意したプロジェクトをビルドする
+            # → 現在は signing が必要になるため実装を見送る
             pass
         elif platform.target.os == "android":
             # Android の場合は事前に用意したプロジェクトをビルドする

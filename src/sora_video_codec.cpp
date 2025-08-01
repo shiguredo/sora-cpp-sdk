@@ -25,7 +25,7 @@
 #include "sora/open_h264_video_codec.h"
 #include "sora/vpl_session.h"
 
-#if defined(SORA_CPP_SDK_IOS) || defined(SORA_CPP_SDK_MACOS)
+#if defined(SORA_CPP_SDK_IOS) || defined(SORA_CPP_SDK_MACOS) || defined(SORA_CPP_SDK_VISIONOS)
 #include "sora/mac/mac_video_factory.h"
 #elif defined(SORA_CPP_SDK_ANDROID)
 #include "sora/android/android_video_factory.h"
@@ -299,7 +299,7 @@ VideoCodecCapability GetVideoCodecCapability(
   {
     auto& engine =
         cap.engines.emplace_back(VideoCodecImplementation::kInternal);
-#if defined(SORA_CPP_SDK_IOS) || defined(SORA_CPP_SDK_MACOS)
+#if defined(SORA_CPP_SDK_IOS) || defined(SORA_CPP_SDK_MACOS) || defined(SORA_CPP_SDK_VISIONOS)
     auto internal_encoder_factory = CreateMacVideoEncoderFactory();
     auto internal_decoder_factory = CreateMacVideoDecoderFactory();
 #elif defined(SORA_CPP_SDK_ANDROID)

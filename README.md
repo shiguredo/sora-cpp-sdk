@@ -64,6 +64,7 @@ _hololens2 は無視してください_
 - Ubuntu 24.04 arm64
 - Android 7 arm64 以降
 - iOS 14 arm64 以降
+- visionOS 2.0 以降
 - Ubuntu 22.04 ARMv8 Jetson (JetPack 6.0 以降)
   - Jetson AGX Orin
   - Jetson Orin NX

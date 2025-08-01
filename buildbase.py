@@ -699,6 +699,7 @@ def build_and_install_boost(
     address_model="64",
     runtime_link=None,
     android_build_platform="linux-x86_64",
+    visionos_simulator=False,
 ):
     version_underscore = version.replace(".", "_")
     archive = download(
@@ -786,6 +787,88 @@ def build_and_install_boost(
                 files = [
                     os.path.join(build_dir, "boost", f"install-{arch}-{sdk}", "lib", lib)
                     for arch, sdk in IOS_BUILD_TARGETS
+                ]
+                if len(files) == 1:
+                    shutil.copyfile(files[0], os.path.join(install_dir, "boost", "lib", lib))
+                else:
+                    cmd(
+                        [
+                            "lipo",
+                            "-create",
+                            "-output",
+                            os.path.join(install_dir, "boost", "lib", lib),
+                        ]
+                        + files
+                    )
+        elif target_os == "visionos":
+            # visionOS では Simulator も対象とするため、ビルドターゲットを分ける
+            if visionos_simulator:
+                VISIONOS_BUILD_TARGETS = [("arm64", "xrsimulator")]
+            else:
+                VISIONOS_BUILD_TARGETS = [("arm64", "xros")]
+
+            for arch, sdk in VISIONOS_BUILD_TARGETS:
+                clangpp = cmdcap(["xcodebuild", "-find", "clang++"])
+                sysroot = cmdcap(["xcrun", "--sdk", sdk, "--show-sdk-path"])
+                boost_arch = "arm"
+                if visionos_simulator:
+                    target_flag = "arm64-apple-xros2.0-simulator"
+                else:
+                    target_flag = "arm64-apple-xros2.0"
+
+                with open("project-config.jam", "w", encoding="utf-8") as f:
+                    f.write(
+                        f"using clang \
+                        : visionos \
+                        : {clangpp} -arch {arch} -isysroot {sysroot} \
+                          -target {target_flag} \
+                          -stdlib=libc++ \
+                          -fvisibility=hidden \
+                        : <striper> <root>{sysroot} \
+                        ; \
+                        "
+                    )
+                cmd(
+                    [
+                        b2,
+                        "install",
+                        "-d+0",
+                        f"--build-dir={os.path.join(build_dir, 'boost', f'build-{arch}-{sdk}')}",
+                        f"--prefix={os.path.join(build_dir, 'boost', f'install-{arch}-{sdk}')}",
+                        "--with-atomic",
+                        "--with-container",
+                        "--with-filesystem",
+                        "--with-json",
+                        "--with-system",
+                        "--layout=system",
+                        "--ignore-site-config",
+                        f"variant={'debug' if debug else 'release'}",
+                        f"cflags={' '.join(cflags)}",
+                        f"cxxflags={' '.join(cxxflags)}",
+                        f"linkflags={' '.join(linkflags)}",
+                        f"toolset={toolset}",
+                        f"visibility={visibility}",
+                        "target-os=darwin",
+                        f"address-model={address_model}",
+                        "link=static",
+                        f"runtime-link={runtime_link}",
+                        "threading=multi",
+                        f"architecture={boost_arch}",
+                    ]
+                )
+            arch, sdk = VISIONOS_BUILD_TARGETS[0]
+            installed_path = os.path.join(build_dir, "boost", f"install-{arch}-{sdk}")
+            rm_rf(os.path.join(install_dir, "boost"))
+            cmd(["cp", "-r", installed_path, os.path.join(install_dir, "boost")])
+
+            for lib in enum_all_files(
+                os.path.join(installed_path, "lib"), os.path.join(installed_path, "lib")
+            ):
+                if not lib.endswith(".a"):
+                    continue
+                files = [
+                    os.path.join(build_dir, "boost", f"install-{arch}-{sdk}", "lib", lib)
+                    for arch, sdk in VISIONOS_BUILD_TARGETS
                 ]
                 if len(files) == 1:
                     shutil.copyfile(files[0], os.path.join(install_dir, "boost", "lib", lib))
@@ -2104,6 +2187,10 @@ class PlatformTarget(object):
             return f"ubuntu-{self.osver}_{self.arch}"
         if self.os == "ios":
             return "ios"
+        if self.os == "visionos":
+            if self.extra == "simulator":
+                return "visionos-simulator"
+            return "visionos"
         if self.os == "android":
             return "android"
         if self.os == "raspberry-pi-os":
@@ -2229,6 +2316,10 @@ class Platform(object):
             self._check(p.arch == "armv8")
         elif p.os in ("ios", "android"):
             self._check(p.arch is None)
+        elif p.os == "visionos":
+            self._check(p.arch is None or p.arch == "arm64")
+            # extraフィールドでsimulatorかどうかを判定
+            self._check(p.extra is None or p.extra == "simulator")
         elif p.os == "ubuntu":
             self._check(p.arch in ("x86_64", "armv8"))
         else:
@@ -2249,6 +2340,9 @@ class Platform(object):
             self._check(build.os == "macos")
             self._check(build.arch in ("x86_64", "arm64"))
         if target.os == "ios":
+            self._check(build.os == "macos")
+            self._check(build.arch in ("x86_64", "arm64"))
+        if target.os == "visionos":
             self._check(build.os == "macos")
             self._check(build.arch in ("x86_64", "arm64"))
         if target.os == "android":
@@ -2273,6 +2367,11 @@ class Platform(object):
         self.target = target
 
 
+def is_apple_platform(platform: Platform) -> bool:
+    """Apple系プラットフォーム（macOS、iOS、visionOS）かどうかを判定する"""
+    return platform.target.os in ("macos", "ios", "visionos")
+
+
 def get_webrtc_platform(platform: Platform) -> str:
     # WebRTC
     if platform.target.os == "windows":
@@ -2281,6 +2380,8 @@ def get_webrtc_platform(platform: Platform) -> str:
         return f"macos_{platform.target.arch}"
     elif platform.target.os == "ios":
         return "ios"
+    elif platform.target.os == "visionos":
+        return "visionos"
     elif platform.target.os == "android":
         return "android"
     elif platform.target.os == "ubuntu":

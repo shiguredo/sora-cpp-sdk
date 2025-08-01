@@ -22,7 +22,7 @@ namespace sora {
 
 webrtc::scoped_refptr<webrtc::VideoTrackSourceInterface>
 CreateCameraDeviceCapturer(const CameraDeviceCapturerConfig& config) {
-#if defined(__APPLE__)
+#if (defined(__APPLE__)) && !defined(SORA_CPP_SDK_VISIONOS)
   MacCapturerConfig c;
   c.on_frame = config.on_frame;
   c.width = config.width;

@@ -32,6 +32,14 @@ elseif (SORA_TARGET STREQUAL "macos_arm64")
 elseif (SORA_TARGET STREQUAL "ios")
   set(SORA_TARGET_OS "ios")
   set(SORA_TARGET_DEF "SORA_CPP_SDK_IOS")
+elseif (SORA_TARGET STREQUAL "visionos")
+  set(SORA_TARGET_OS "visionos")
+  set(SORA_TARGET_DEF "SORA_CPP_SDK_VISIONOS")
+elseif (SORA_TARGET STREQUAL "visionos-simulator")
+  set(SORA_TARGET_OS "visionos")
+  set(SORA_TARGET_ARCH "arm64")
+  set(SORA_TARGET_DEF "SORA_CPP_SDK_VISIONOS")
+  set(SORA_TARGET_SIMULATOR TRUE)
 elseif (SORA_TARGET STREQUAL "android")
   set(SORA_TARGET_OS "android")
   set(SORA_TARGET_DEF "SORA_CPP_SDK_ANDROID")
@@ -429,6 +437,48 @@ elseif (SORA_TARGET_OS STREQUAL "ios")
       WEBRTC_MAC
       WEBRTC_IOS
       OPENSSL_IS_BORINGSSL
+  )
+
+elseif (SORA_TARGET_OS STREQUAL "visionos")
+  enable_language(OBJCXX)
+
+  target_sources(sora
+    PRIVATE
+      src/mac/mac_audio_output_helper.mm
+      src/mac/mac_version.mm
+      src/mac/mac_video_factory.mm
+  )
+
+  target_compile_options(sora PRIVATE -fconstant-string-class=NSConstantString)
+  target_link_options(sora PUBLIC -ObjC)
+  set_target_properties(sora PROPERTIES CXX_VISIBILITY_PRESET hidden)
+
+  target_compile_definitions(sora
+    PUBLIC
+      WEBRTC_POSIX
+      WEBRTC_MAC
+      WEBRTC_IOS
+      OPENSSL_IS_BORINGSSL
+  )
+
+  # visionOS シミュレーター向けの設定
+  if (SORA_TARGET_SIMULATOR)
+    target_compile_definitions(sora
+      PUBLIC
+        WEBRTC_VISIONOS_SIMULATOR
+    )
+    # シミュレーター用の SDK パスとアーキテクチャを設定
+    set_target_properties(sora PROPERTIES
+      OSX_ARCHITECTURES "arm64"
+    )
+  endif()
+
+  # visionOS 用フレームワーク（iOS ベース + visionOS 特有機能）
+  target_link_libraries(sora
+    PUBLIC
+      # visionOS 特有のフレームワーク
+      "-framework RealityKit"         # AR/VR/Mixed Reality 機能
+      "-framework CompositorServices" # 空間コンピューティング・ウィンドウ管理
   )
 
 elseif (SORA_TARGET_OS STREQUAL "android")

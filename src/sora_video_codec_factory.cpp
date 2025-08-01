@@ -98,7 +98,7 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
                                 VideoCodecImplementation::kInternal;
                    }) != preference.codecs.end()) {
     builtin_encoder_factory = webrtc::CreateBuiltinVideoEncoderFactory();
-#if defined(SORA_CPP_SDK_IOS) || defined(SORA_CPP_SDK_MACOS)
+#if defined(SORA_CPP_SDK_IOS) || defined(SORA_CPP_SDK_MACOS) || defined(SORA_CPP_SDK_VISIONOS)
     builtin_encoder_factory = CreateMacVideoEncoderFactory();
 #elif defined(SORA_CPP_SDK_ANDROID)
     builtin_encoder_factory =
@@ -116,7 +116,7 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
                             *codec.decoder ==
                                 VideoCodecImplementation::kInternal;
                    }) != preference.codecs.end()) {
-#if defined(SORA_CPP_SDK_IOS) || defined(SORA_CPP_SDK_MACOS)
+#if defined(SORA_CPP_SDK_IOS) || defined(SORA_CPP_SDK_MACOS) || defined(SORA_CPP_SDK_VISIONOS)
     builtin_decoder_factory = CreateMacVideoDecoderFactory();
 #elif defined(SORA_CPP_SDK_ANDROID)
     builtin_decoder_factory =
