@@ -233,7 +233,7 @@ class HttpListener : public std::enable_shared_from_this<HttpListener> {
   HttpListener(net::io_context& ioc,
                tcp::endpoint endpoint,
                std::weak_ptr<Sumomo> sumomo)
-      : ioc_(ioc), acceptor_(net::make_strand(ioc)), sumomo_(sumomo) {
+      : ioc_(ioc), acceptor_(ioc), sumomo_(sumomo) {
     beast::error_code ec;
 
     // エラーが発生した場合、acceptor_ のデストラクタが自動的にソケットをクローズする
@@ -274,8 +274,7 @@ class HttpListener : public std::enable_shared_from_this<HttpListener> {
 
  private:
   void DoAccept() {
-    acceptor_.async_accept(net::make_strand(ioc_), [self = shared_from_this()](
-                                                       beast::error_code ec,
+    acceptor_.async_accept([self = shared_from_this()](beast::error_code ec,
                                                        tcp::socket socket) {
       if (ec) {
         // Stop() 時の acceptor_.close() により operation_aborted が発生するが、
