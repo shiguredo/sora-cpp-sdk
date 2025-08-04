@@ -277,21 +277,15 @@ class HttpListener : public std::enable_shared_from_this<HttpListener> {
     acceptor_.async_accept(net::make_strand(ioc_), [self = shared_from_this()](
                                                        beast::error_code ec,
                                                        tcp::socket socket) {
-      if (!ec) {
-        std::make_shared<HttpSession>(std::move(socket), self->sumomo_)->Run();
-      } else if (ec == net::error::operation_aborted) {
-        // acceptor が閉じられた場合は再帰呼び出しを停止
-        return;
-      } else {
-        // その他のエラーの場合はログを出力
-        RTC_LOG(LS_ERROR) << "Accept failed: " << ec.message();
-        // 致命的なエラーでない場合のみ再試行
-        if (self->acceptor_.is_open()) {
-          self->DoAccept();
+      if (ec) {
+        // Stop() 時の acceptor_.close() により operation_aborted が発生するが、
+        // これは正常な終了なのでエラーログは出力しない
+        if (ec != net::error::operation_aborted) {
+          RTC_LOG(LS_ERROR) << "Accept failed: " << ec.message();
         }
         return;
       }
-      // 正常にコネクションを受け入れた場合は次の accept を開始
+      std::make_shared<HttpSession>(std::move(socket), self->sumomo_)->Run();
       self->DoAccept();
     });
   }
