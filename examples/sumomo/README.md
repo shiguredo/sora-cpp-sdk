@@ -281,6 +281,42 @@ Windows 以外の場合
 > H.264 と H.265 は `internal` または未指定では利用できません。
 > 必ずエンコーダーまたはデコーダーを指定してください。
 
+#### HTTP サーバーに関するオプション
+
+- `--http-port`
+  - WebRTC 統計情報 API を提供する HTTP サーバーのポート番号を指定します
+  - 1024-65535 の値が指定可能です
+  - 無指定の場合は HTTP サーバーを起動しません
+  - 例: `--http-port 8080`
+- `--http-host`
+  - HTTP サーバーがlistenするホストアドレスを指定します
+  - デフォルトは `127.0.0.1`（ローカルホストのみ）です
+  - 例: `--http-host 0.0.0.0`（すべてのインターフェースでlisten）
+
+HTTP サーバーを有効にすると、以下のエンドポイントが利用可能になります：
+
+- `/stats` - WebRTC の統計情報を JSON 形式で取得
+
+##### 使用例
+
+HTTP サーバーを有効にして sumomo を起動：
+
+```shell
+./sumomo --signaling-url wss://sora.example.com/signaling --role sendrecv --channel-id sora --http-port 8080
+```
+
+別のターミナルから統計情報を取得：
+
+```shell
+curl http://127.0.0.1:8080/stats
+```
+
+または
+
+```shell
+http GET 127.0.0.1:8080/stats
+```
+
 #### その他のオプション
 
 - `--help`
