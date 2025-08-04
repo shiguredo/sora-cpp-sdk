@@ -259,6 +259,8 @@ class HttpListener : public std::enable_shared_from_this<HttpListener> {
     }
   }
 
+  ~HttpListener() { Stop(); }
+
  public:
   void Run() { DoAccept(); }
 
@@ -467,7 +469,6 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
                     std::string message) override {
     RTC_LOG(LS_INFO) << "OnDisconnect: " << message;
     if (http_listener_) {
-      http_listener_->Stop();
       http_listener_.reset();
     }
     sdl_renderer_.reset();
