@@ -19,11 +19,6 @@
 #include <boost/beast/websocket/rfc6455.hpp>
 #include <boost/core/ignore_unused.hpp>
 #include <boost/date_time/posix_time/posix_time_duration.hpp>
-#include <boost/json/array.hpp>
-#include <boost/json/object.hpp>
-#include <boost/json/parse.hpp>
-#include <boost/json/serialize.hpp>
-#include <boost/json/value.hpp>
 #include <boost/system/detail/errc.hpp>
 #include <boost/system/detail/error_code.hpp>
 #include <boost/system/errc.hpp>
@@ -50,6 +45,7 @@
 #include <rtc_base/socket_address.h>
 #include <rtc_base/ssl_certificate.h>
 
+#include "sora/boost_json_iwyu.h"
 #include "sora/data_channel.h"
 #include "sora/rtc_ssl_verifier.h"
 #include "sora/rtc_stats.h"

@@ -10,8 +10,6 @@
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/signal_set.hpp>
 #include <boost/date_time/posix_time/posix_time_duration.hpp>
-#include <boost/json/object.hpp>
-#include <boost/json/parse.hpp>
 #include <boost/system/detail/error_code.hpp>
 
 // WebRTC
@@ -30,6 +28,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 // Sora C++ SDK
+#include <sora/boost_json_iwyu.h>
 #include <sora/sora_client_context.h>
 #include <sora/sora_signaling.h>
 

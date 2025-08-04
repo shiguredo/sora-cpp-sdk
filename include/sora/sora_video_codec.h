@@ -10,11 +10,8 @@
 // WebRTC
 #include <api/video/video_codec_type.h>
 
-// Boost
-#include <boost/json/conversion.hpp>
-#include <boost/json/value.hpp>
-
 #include "amf_context.h"
+#include "boost_json_iwyu.h"
 #include "cuda_context.h"
 
 namespace webrtc {

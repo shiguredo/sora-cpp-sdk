@@ -13,8 +13,6 @@
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/signal_set.hpp>
 #include <boost/date_time/posix_time/posix_time_duration.hpp>
-#include <boost/json/parse.hpp>
-#include <boost/json/value.hpp>
 #include <boost/system/detail/error_code.hpp>
 
 // WebRTC
@@ -34,6 +32,7 @@
 #endif
 
 // Sora C++ SDK
+#include <sora/boost_json_iwyu.h>
 #include <sora/camera_device_capturer.h>
 #include <sora/sora_client_context.h>
 #include <sora/sora_signaling.h>

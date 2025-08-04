@@ -13,10 +13,6 @@
 #include <boost/asio/executor_work_guard.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/signal_set.hpp>
-#include <boost/json/parse.hpp>
-#include <boost/json/parse_options.hpp>
-#include <boost/json/value.hpp>
-#include <boost/json/value_to.hpp>
 #include <boost/system/detail/error_code.hpp>
 
 // WebRTC
@@ -34,6 +30,7 @@
 
 // Sora C++ SDK
 #include <sora/amf_context.h>
+#include <sora/boost_json_iwyu.h>
 #include <sora/cuda_context.h>
 #include <sora/java_context.h>
 #include <sora/sora_client_context.h>

@@ -7,10 +7,6 @@
 #include <string>
 #include <vector>
 
-// Boost
-#include <boost/json/serialize.hpp>
-#include <boost/json/value_from.hpp>
-
 // WebRTC
 #include <api/video/video_codec_type.h>  // IWYU pragma: keep
 #include <api/video_codecs/builtin_video_decoder_factory.h>
@@ -21,6 +17,7 @@
 #include <api/video_codecs/video_encoder_factory.h>
 #include <rtc_base/logging.h>
 
+#include "sora/boost_json_iwyu.h"
 #include "sora/cuda_context.h"  // IWYU pragma: keep
 #include "sora/sora_video_decoder_factory.h"
 #include "sora/sora_video_encoder_factory.h"

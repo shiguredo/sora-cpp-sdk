@@ -12,8 +12,6 @@
 #include <boost/asio/executor_work_guard.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/signal_set.hpp>
-#include <boost/json/parse.hpp>
-#include <boost/json/value.hpp>
 #include <boost/system/detail/error_code.hpp>
 
 // WebRTC
@@ -35,6 +33,7 @@
 #include <CLI/CLI.hpp>
 
 // Sora C++ SDK
+#include <sora/boost_json_iwyu.h>
 #include <sora/camera_device_capturer.h>
 #include <sora/sora_client_context.h>
 #include <sora/sora_signaling.h>

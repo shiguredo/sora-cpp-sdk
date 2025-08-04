@@ -34,12 +34,6 @@
 #include <boost/beast/http/string_body_fwd.hpp>
 #include <boost/beast/http/verb.hpp>
 #include <boost/beast/version.hpp>
-#include <boost/json/array.hpp>
-#include <boost/json/object.hpp>
-#include <boost/json/parse.hpp>
-#include <boost/json/serialize.hpp>
-#include <boost/json/value.hpp>
-#include <boost/json/value_from.hpp>
 #include <boost/system/detail/error_code.hpp>
 
 // WebRTC
@@ -62,6 +56,7 @@
 
 // Sora C++ SDK
 #include <sora/amf_context.h>
+#include <sora/boost_json_iwyu.h>
 #include <sora/camera_device_capturer.h>
 #include <sora/cuda_context.h>
 #include <sora/rtc_stats.h>

@@ -15,7 +15,6 @@
 #include <boost/asio/deadline_timer.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/beast/websocket/rfc6455.hpp>
-#include <boost/json/value.hpp>
 #include <boost/system/detail/error_code.hpp>
 
 // WebRTC
@@ -31,6 +30,7 @@
 #include <api/stats/rtc_stats_report.h>
 #include <rtc_base/network.h>
 
+#include "sora/boost_json_iwyu.h"
 #include "sora/data_channel.h"
 #include "sora/url_parts.h"
 #include "sora/version.h"
