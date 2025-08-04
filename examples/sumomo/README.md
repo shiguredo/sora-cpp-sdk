@@ -122,6 +122,12 @@ _build/ubuntu-24.04_x86_64/release/sumomo/
 └── sumomo
 ```
 
+##### Sora C++ SDK を CUDA 抜きでビルドしつつ Sumomo をビルドする
+
+```shell
+python3 examples/sumomo/ubuntu-24.04_x86_64/run.py --local-sora-cpp-sdk-dir . --local-sora-cpp-sdk-args='--disable-cuda'
+```
+
 ## 実行する
 
 ### コマンドラインから必要なオプションを指定して実行します
@@ -243,13 +249,13 @@ Windows 以外の場合
 
 - `--degradation-preference`
   - `disabled`, `maintain_framerate`,`maintain_resolution`, `balanced` が指定可能です。
-  - 設定可能な値の詳細は [ W3C のドキュメント](https://www.w3.org/TR/mst-content-hint/#degradation-preference-when-encoding) を参照してください。
+  - 設定可能な値の詳細は [W3C のドキュメント](https://www.w3.org/TR/mst-content-hint/#degradation-preference-when-encoding) を参照してください。
 
 #### エンコーダー / デコーダーの設定に関するオプション
 
 - `--vp8-encoder`
   - VP8 エンコーダーを指定します
-- `--vp8-decoder` 
+- `--vp8-decoder`
   - VP8 デコーダーを指定します
 - `--vp9-encoder`
   - VP9 エンコーダーを指定します
@@ -271,11 +277,12 @@ Windows 以外の場合
   - 利用可能なエンコーダーとデコーダーを表示します
 
 設定可能な値は以下の通りです。
- - `internal`
- - `cisco_openh264`
- - `intel_vpl`
- - `nvidia_video_codec_sdk`
- - `amd_amf`
+
+- `internal`
+- `cisco_openh264`
+- `intel_vpl`
+- `nvidia_video_codec_sdk`
+- `amd_amf`
 
 > [!NOTE]
 > H.264 と H.265 は `internal` または未指定では利用できません。
