@@ -520,9 +520,9 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
 
   void OnDataChannel(std::string label) override {}
 
-  void GetStats(std::function<void(const boost::json::value&)> callback) {
+  void GetStats(std::function<void(const std::string&)> callback) {
     if (!conn_ || !conn_->GetPeerConnection()) {
-      callback(boost::json::array{});
+      callback("[]");
       return;
     }
 
@@ -530,26 +530,7 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
         sora::RTCStatsCallback::Create(
             [callback = std::move(callback)](
                 const webrtc::scoped_refptr<const webrtc::RTCStatsReport>&
-                    report) {
-              boost::json::array stats_array;
-              for (const auto& stats : *report) {
-                boost::json::object stat_object;
-                stat_object["id"] = stats.id();
-                stat_object["type"] = stats.type();
-                stat_object["timestamp"] = stats.timestamp().us();
-
-                boost::json::object values;
-                for (const auto& attribute : stats.Attributes()) {
-                  if (attribute.has_value()) {
-                    values[attribute.name()] = attribute.ToString();
-                  }
-                }
-                stat_object["stats"] = values;
-
-                stats_array.push_back(stat_object);
-              }
-              callback(stats_array);
-            })
+                    report) { callback(report->ToJson()); })
             .get());
   }
 
@@ -568,13 +549,13 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
 
 void HttpSession::GetStatsFromSumomo(std::shared_ptr<Sumomo> sumomo) {
   auto self = shared_from_this();
-  sumomo->GetStats([self](const boost::json::value& stats) {
+  sumomo->GetStats([self](const std::string& stats) {
     http::response<http::string_body> res{http::status::ok,
                                           self->request_.version()};
     res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
     res.set(http::field::content_type, "application/json");
     res.keep_alive(self->request_.keep_alive());
-    res.body() = boost::json::serialize(stats);
+    res.body() = stats;
     res.prepare_payload();
     self->Send(std::move(res));
   });
