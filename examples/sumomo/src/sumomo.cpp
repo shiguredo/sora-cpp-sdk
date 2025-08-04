@@ -751,10 +751,8 @@ int main(int argc, char* argv[]) {
           if (port >= 1024 && port <= 65535) {
             return std::string();
           }
-        } catch (const std::invalid_argument&) {
+        } catch (const std::exception&) {
           return std::string("Port must be a valid number");
-        } catch (const std::out_of_range&) {
-          return std::string("Port number is out of range");
         }
         return std::string(
             "Port must be 'none' (disabled) or between 1024 and 65535");
