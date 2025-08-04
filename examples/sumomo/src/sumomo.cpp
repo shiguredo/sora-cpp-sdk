@@ -236,8 +236,6 @@ class HttpListener : public std::enable_shared_from_this<HttpListener> {
       : ioc_(ioc), acceptor_(ioc), sumomo_(sumomo) {
     beast::error_code ec;
 
-    // エラーが発生した場合、acceptor_ のデストラクタが自動的にソケットをクローズする
-    // (reactive_socket_service_base::destroy() → socket_ops::close())
     acceptor_.open(endpoint.protocol(), ec);
     if (ec) {
       throw std::runtime_error("Failed to open acceptor: " + ec.message());
