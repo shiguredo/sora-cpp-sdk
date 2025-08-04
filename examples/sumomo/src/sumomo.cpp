@@ -186,8 +186,7 @@ class HttpSession : public std::enable_shared_from_this<HttpSession> {
         return;
       }
 
-      // GetStats の実装は Sumomo クラスの定義後に行う
-      GetStatsFromSumomo(sumomo, shared_from_this());
+      GetStatsFromSumomo(sumomo);
     } else {
       SendErrorResponse(http::status::not_found, "Not found");
     }
@@ -217,11 +216,11 @@ class HttpSession : public std::enable_shared_from_this<HttpSession> {
         });
   }
 
-  // TODO: この関数は HttpSession のメンバ関数だが、Sumomo の定義後に
-  // 実装する必要があるため外部で定義している。
-  // 将来的にはより良い設計（例: stats 取得用のインターフェース）を検討
-  void GetStatsFromSumomo(std::shared_ptr<Sumomo> sumomo,
-                          std::shared_ptr<HttpSession> self);
+  // この関数内で Sumomo のメンバ関数を呼び出すため、
+  // Sumomo クラスの完全な定義が必要となる。
+  // そのため、この関数の実装は Sumomo クラスの定義後に記述している。
+  // TODO: 将来的にはより良い設計（例: stats 取得用のインターフェース）を検討
+  void GetStatsFromSumomo(std::shared_ptr<Sumomo> sumomo);
 
   tcp::socket socket_;
   std::weak_ptr<Sumomo> sumomo_;
@@ -567,8 +566,8 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
   std::shared_ptr<HttpListener> http_listener_;
 };
 
-void HttpSession::GetStatsFromSumomo(std::shared_ptr<Sumomo> sumomo,
-                                     std::shared_ptr<HttpSession> self) {
+void HttpSession::GetStatsFromSumomo(std::shared_ptr<Sumomo> sumomo) {
+  auto self = shared_from_this();
   sumomo->GetStats([self](const boost::json::value& stats) {
     http::response<http::string_body> res{http::status::ok,
                                           self->request_.version()};
