@@ -737,26 +737,31 @@ int main(int argc, char* argv[]) {
       ->check(CLI::ExistingFile);
 
   // HTTP サーバーに関するオプション
-  app.add_option("--http-port", config.http_port,
-                 "HTTP server port for stats API (none or 1024-65535, default: "
-                 "none = disabled)")
-      ->check([](const std::string& value) {
-        if (value == "none" || value.empty()) {
-          return std::string();
-        }
-        try {
-          int port = std::stoi(value);
-          // ウェルノウンポート (0-1023) は特権ポートなので除外
-          // 1024-65535 の範囲のみ許可
-          if (port >= 1024 && port <= 65535) {
-            return std::string();
-          }
-        } catch (const std::exception&) {
-          return std::string("Port must be a valid number");
-        }
-        return std::string(
-            "Port must be 'none' (disabled) or between 1024 and 65535");
-      });
+  app.add_option_function<std::string>(
+         "--http-port",
+         [&config](const std::string& value) {
+           if (value == "none" || value.empty()) {
+             config.http_port = std::nullopt;
+           } else {
+             try {
+               int port = std::stoi(value);
+               // ウェルノウンポート (0-1023) は特権ポートなので除外
+               // 1024-65535 の範囲のみ許可
+               if (port >= 1024 && port <= 65535) {
+                 config.http_port = port;
+               } else {
+                 throw CLI::ConversionError(value,
+                                            "Port must be 'none' (disabled) or "
+                                            "between 1024 and 65535");
+               }
+             } catch (const std::exception&) {
+               throw CLI::ConversionError(value, "Port must be a valid number");
+             }
+           }
+         },
+         "HTTP server port for stats API (none or 1024-65535, default: "
+         "none = disabled)")
+      ->type_name("TEXT");
   app.add_option("--http-host", config.http_host,
                  "HTTP server host address (default: 127.0.0.1)");
 
