@@ -17,6 +17,8 @@
 - [CHANGE] run.py のビルドをサブコマンド化する
   - 今まで `python3 run.py ubuntu-24.04_x86_64` でビルドしていたコマンドが`python3 run.py build ubuntu-24.04_x86_64` となる
   - @melpon
+- [UPDATE] libwebrtc を m139.7258.3.0 にあげる
+  - @miosakuma
 - [ADD] clang-include-cleaner や clang-format を実行するサブコマンドを追加する
   - `python3 run.py iwyu ubuntu-24.04_x86_64`
   - `python3 run.py format`
