@@ -1,17 +1,4 @@
 #include <algorithm>
-#include <boost/asio/error.hpp>
-#include <boost/asio/ip/address.hpp>
-#include <boost/asio/socket_base.hpp>
-#include <boost/beast/core/error.hpp>
-#include <boost/beast/core/flat_buffer.hpp>
-#include <boost/beast/http/field.hpp>
-#include <boost/beast/http/impl/read.hpp>
-#include <boost/beast/http/message_fwd.hpp>
-#include <boost/beast/http/status.hpp>
-#include <boost/beast/http/string_body_fwd.hpp>
-#include <boost/beast/http/verb.hpp>
-#include <boost/json/array.hpp>
-#include <boost/json/object.hpp>
 #include <csignal>
 #include <cstdlib>
 #include <exception>
@@ -31,11 +18,24 @@
 
 // Boost
 #include <boost/asio/dispatch.hpp>
+#include <boost/asio/error.hpp>
 #include <boost/asio/executor_work_guard.hpp>
 #include <boost/asio/io_context.hpp>
+#include <boost/asio/ip/address.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/signal_set.hpp>
+#include <boost/asio/socket_base.hpp>
+#include <boost/beast/core/error.hpp>
+#include <boost/beast/core/flat_buffer.hpp>
+#include <boost/beast/http/field.hpp>
+#include <boost/beast/http/impl/read.hpp>
+#include <boost/beast/http/message_fwd.hpp>
+#include <boost/beast/http/status.hpp>
+#include <boost/beast/http/string_body_fwd.hpp>
+#include <boost/beast/http/verb.hpp>
 #include <boost/beast/version.hpp>
+#include <boost/json/array.hpp>
+#include <boost/json/object.hpp>
 #include <boost/json/parse.hpp>
 #include <boost/json/serialize.hpp>
 #include <boost/json/value.hpp>
@@ -146,7 +146,7 @@ struct SumomoConfig {
       return {3840, 2160};
     }
 
-    // 数字で指定した場合の処理 (例 640x480 )
+    // 数字で指定した場合の処理 (例 640x480)
     auto pos = resolution.find('x');
     if (pos == std::string::npos) {
       // TODO: 無効な形式の場合、16x16 を返すよりエラーを投げるべきか検討
@@ -167,9 +167,10 @@ using tcp = net::ip::tcp;
 class Sumomo;
 
 // HTTP リクエストを処理するセッション
-// 注意: 現在は1リクエスト=1コネクションの設計
-// Keep-Alive に対応する場合は、DoRead() の再帰呼び出しと
-// リクエスト数/タイムアウトの制限を実装する必要がある
+//
+// 現在は1リクエスト=1コネクションの設計。
+// Keep-Alive に対応する場合、リクエストを処理し終わった後に
+// 再度 DoRead() を呼ぶ必要がある。
 class HttpSession : public std::enable_shared_from_this<HttpSession> {
  public:
   HttpSession(tcp::socket socket, std::weak_ptr<Sumomo> sumomo)
@@ -472,9 +473,7 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
   void OnDisconnect(sora::SoraSignalingErrorCode ec,
                     std::string message) override {
     RTC_LOG(LS_INFO) << "OnDisconnect: " << message;
-    if (http_listener_) {
-      http_listener_.reset();
-    }
+    http_listener_.reset();
     sdl_renderer_.reset();
     sixel_renderer_.reset();
     ansi_renderer_.reset();
@@ -704,7 +703,7 @@ int main(int argc, char* argv[]) {
   app.add_option("--sixel-width", config.sixel_width, "Sixel output width");
   app.add_option("--sixel-height", config.sixel_height, "Sixel output height");
 
-  // ANSI に関するオプション
+  // ANSI エスケープシーケンスに関するオプション
   app.add_flag("--use-ansi", config.use_ansi,
                "Show video using ANSI escape sequences");
   app.add_option("--ansi-width", config.ansi_width,
@@ -723,7 +722,7 @@ int main(int argc, char* argv[]) {
 
   // HTTP サーバーに関するオプション
   app.add_option("--http-port", config.http_port,
-                 "HTTP server port for stats API (1024-65535)")
+                 "HTTP server port for stats API")
       ->check(CLI::Range(1024, 65535));
   app.add_option("--http-host", config.http_host,
                  "HTTP server host address (default: 127.0.0.1)");
