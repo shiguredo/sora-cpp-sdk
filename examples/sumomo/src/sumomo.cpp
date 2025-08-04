@@ -553,8 +553,7 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
 };
 
 void HttpSession::GetStatsFromSumomo(std::shared_ptr<Sumomo> sumomo) {
-  auto self = shared_from_this();
-  sumomo->GetStats([self](const std::string& stats) {
+  sumomo->GetStats([self = shared_from_this()](const std::string& stats) {
     http::response<http::string_body> res{http::status::ok,
                                           self->request_.version()};
     res.set(http::field::server, BOOST_BEAST_VERSION_STRING);
