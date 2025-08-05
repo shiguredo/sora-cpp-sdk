@@ -1593,6 +1593,52 @@ def install_catch2(version, source_dir, build_dir, install_dir, configuration, c
 
 
 @versioned
+def install_netint(version, source_dir, build_dir, install_dir):
+    netint_source_dir = os.path.join(source_dir, "netint_libxcoder")
+    netint_build_dir = os.path.join(build_dir, "netint_libxcoder")
+    netint_install_dir = os.path.join(install_dir, "netint")
+    
+    rm_rf(netint_source_dir)
+    rm_rf(netint_build_dir)
+    rm_rf(netint_install_dir)
+    
+    # Clone the repository
+    git_clone_shallow("https://github.com/NETINT-Technologies/netint_libxcoder.git", 
+                      version, netint_source_dir)
+    
+    # Netint libxcoder uses configure/make build system
+    mkdir_p(netint_build_dir)
+    
+    # Copy source to build directory as Netint builds in-source
+    cmd(["cp", "-r", netint_source_dir, netint_build_dir])
+    
+    with cd(os.path.join(netint_build_dir, "netint_libxcoder")):
+        # Configure
+        cmd(["./configure", "--prefix=" + netint_install_dir])
+        
+        # Build
+        cmd(["make", "-j" + str(multiprocessing.cpu_count())])
+        
+        # Install
+        cmd(["make", "install"])
+        
+        # Copy the build directory as the CMake expects it
+        build_output_dir = os.path.join(netint_install_dir, "build")
+        mkdir_p(build_output_dir)
+        
+        # Copy the built library
+        if os.path.exists("libxcoder.so"):
+            shutil.copy("libxcoder.so", build_output_dir)
+        if os.path.exists("libxcoder.a"):
+            shutil.copy("libxcoder.a", build_output_dir)
+        
+        # Copy source directory as CMake expects it
+        source_output_dir = os.path.join(netint_install_dir, "source")
+        mkdir_p(source_output_dir)
+        cmd(["cp", "-r", "source/.", source_output_dir])
+
+
+@versioned
 def install_protobuf(version, source_dir, install_dir, platform: str):
     # platform:
     # - linux-aarch_64

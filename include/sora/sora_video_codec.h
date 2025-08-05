@@ -33,6 +33,7 @@ enum class VideoCodecImplementation {
   kIntelVpl,
   kNvidiaVideoCodecSdk,
   kAmdAmf,
+  kNetintLibxcoder,
   // 連番になってて微妙だが、ユーザー側でカスタムエンコーダ/デコーダを実現しつつ、現在の
   // capability, preference の機能に乗せるならこのようにするのが一番分かりやすい
   kCustom_1 = 100,

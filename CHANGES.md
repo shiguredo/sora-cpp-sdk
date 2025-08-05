@@ -32,6 +32,21 @@
   - `examples/sumomo` で `--cpu-adaptation` オプションで指定可能
   - 未指定の場合は従来通り macOS のサイマルキャスト時のみ自動的に無効化される
   - @voluntas
+- [ADD] Netint libxcoder を利用したハードウェアエンコード・デコード機能を追加
+  - Linux (Ubuntu x86_64) 環境でのみ利用可能
+  - H.264, H.265, AV1 コーデックに対応
+  - `USE_NETINT_ENCODER` CMake オプションで有効化
+  - `VideoCodecImplementation::kNetintLibxcoder` として利用可能
+  - 実装内容:
+    - `NetintContext` クラスでデバイス管理とリソース制御を実装
+    - `NetintVideoEncoder` / `NetintVideoDecoder` クラスで各コーデックのエンコード・デコード処理を実装
+    - `GetNetintVideoCodecCapability` で利用可能なコーデックを自動検出
+    - `install_netint` 関数を追加し、ビルド時に自動でソースコードをダウンロード・ビルド・インストール
+  - 必要なファイル:
+    - ヘッダー: `include/sora/netint_context.h`, `include/sora/hwenc_netint/*.h`
+    - ソース: `src/netint_context_impl.cpp`, `src/hwenc_netint/*.cpp`
+  - `VERSION` ファイルに `NETINT_LIBXCODER_VERSION=v5.3.1` を追加
+  - @voluntas
 
 ### misc
 

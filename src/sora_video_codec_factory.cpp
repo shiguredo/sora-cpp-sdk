@@ -49,6 +49,12 @@
 #include "sora/hwenc_amf/amf_video_encoder.h"
 #endif
 
+#if defined(USE_NETINT_ENCODER)
+#include "sora/hwenc_netint/netint_video_decoder.h"
+#include "sora/hwenc_netint/netint_video_encoder.h"
+#include "sora/netint_context.h"
+#endif
+
 #include "sora/open_h264_video_decoder.h"
 #include "sora/open_h264_video_encoder.h"
 #include "sora/sora_video_codec.h"
@@ -183,6 +189,15 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
         encoder_factory_config.encoders.push_back(
             VideoEncoderConfig(codec.type, create_video_encoder, 16));
 #endif
+      } else if (*codec.encoder == VideoCodecImplementation::kNetintLibxcoder) {
+#if defined(USE_NETINT_ENCODER)
+        auto create_video_encoder = [](const webrtc::SdpVideoFormat& format) {
+          auto type = webrtc::PayloadStringToCodecType(format.name);
+          return NetintVideoEncoder::Create(NetintContext::Create(), type);
+        };
+        encoder_factory_config.encoders.push_back(
+            VideoEncoderConfig(codec.type, create_video_encoder, 16));
+#endif
       } else if (IsCustomImplementation(*codec.encoder)) {
         auto create_video_encoder = [create_video_encoder =
                                          config.create_video_encoder,
@@ -249,6 +264,15 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
                                         const webrtc::SdpVideoFormat& format) {
           auto type = webrtc::PayloadStringToCodecType(format.name);
           return AMFVideoDecoder::Create(amf_context, type);
+        };
+        decoder_factory_config.decoders.push_back(
+            VideoDecoderConfig(codec.type, create_video_decoder));
+#endif
+      } else if (*codec.decoder == VideoCodecImplementation::kNetintLibxcoder) {
+#if defined(USE_NETINT_ENCODER)
+        auto create_video_decoder = [](const webrtc::SdpVideoFormat& format) {
+          auto type = webrtc::PayloadStringToCodecType(format.name);
+          return NetintVideoDecoder::Create(NetintContext::Create(), type);
         };
         decoder_factory_config.decoders.push_back(
             VideoDecoderConfig(codec.type, create_video_decoder));

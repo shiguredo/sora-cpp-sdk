@@ -36,6 +36,7 @@ from buildbase import (
     install_cmake,
     install_cuda_windows,
     install_llvm,
+    install_netint,
     install_openh264,
     install_rootfs,
     install_vpl,
@@ -472,6 +473,17 @@ def install_deps(
         }
         install_openh264(**install_openh264_args)
 
+        # Netint libxcoder (Linux only)
+        if platform.target.os == "ubuntu" and platform.target.arch == "x86_64":
+            install_netint_args = {
+                "version": version["NETINT_LIBXCODER_VERSION"],
+                "version_file": os.path.join(install_dir, "netint.version"),
+                "source_dir": source_dir,
+                "build_dir": build_dir,
+                "install_dir": install_dir,
+            }
+            install_netint(**install_netint_args)
+
         if platform.target.os == "android":
             # Android 側からのコールバックする関数は消してはいけないので、
             # libwebrtc.a の中から消してはいけない関数の一覧を作っておく
@@ -782,6 +794,11 @@ def _build(
         if platform.target.os in ("windows", "ubuntu") and platform.target.arch == "x86_64":
             cmake_args.append("-DUSE_AMF_ENCODER=ON")
             cmake_args.append(f"-DAMF_ROOT_DIR={cmake_path(os.path.join(install_dir, 'amf'))}")
+
+        # Netint (Linux only)
+        if platform.target.os == "ubuntu" and platform.target.arch == "x86_64":
+            cmake_args.append("-DUSE_NETINT_ENCODER=ON")
+            cmake_args.append(f"-DNETINT_ROOT_DIR={cmake_path(os.path.join(install_dir, 'netint'))}")
 
         # バンドルされたライブラリを消しておく
         # （CMake でうまく依存関係を解消できなくて更新されないため）

@@ -12,6 +12,7 @@ set(WEBRTC_LIBRARY_NAME "webrtc" CACHE STRING "WebRTC のライブラリ名")
 set(USE_LIBCXX OFF CACHE BOOL "libstdc++ の代わりに libc++ を使うかどうか")
 set(LIBCXX_INCLUDE_DIR "" CACHE PATH "libc++ を使う場合の libc++ のインクルードディレクトリ\n空文字だった場合はデフォルト検索パスの libc++ を利用する")
 set(USE_NVCODEC_ENCODER OFF CACHE BOOL "NVIDIA Video Codec SDK によるハードウェアエンコーダを利用するかどうか")
+set(USE_NETINT_ENCODER OFF CACHE BOOL "Netint libxcoder によるハードウェアエンコーダ・デコーダを利用するかどうか")
 
 project(sora-cpp-sdk C CXX)
 
@@ -56,6 +57,12 @@ elseif (SORA_TARGET STREQUAL "ubuntu-24.04_armv8")
   set(SORA_TARGET_ARCH "armv8")
   set(SORA_TARGET_DEF "SORA_CPP_SDK_UBUNTU")
 endif()
+
+set(USE_VPL_ENCODER OFF CACHE BOOL "Intel VPL によるハードウェアエンコーダを利用するかどうか")
+set(VPL_ROOT_DIR "" CACHE PATH "Intel VPL のルートディレクトリ")
+set(USE_AMF_ENCODER OFF CACHE BOOL "AMD AMF によるハードウェアエンコーダを利用するかどうか")
+set(AMF_ROOT_DIR "" CACHE PATH "AMD AMF のルートディレクトリ")
+set(NETINT_ROOT_DIR "" CACHE PATH "Netint libxcoder のルートディレクトリ")
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 if (USE_VPL_ENCODER)
@@ -162,6 +169,7 @@ target_compile_definitions(sora
     $<$<BOOL:${USE_NVCODEC_ENCODER}>:USE_NVCODEC_ENCODER>
     $<$<BOOL:${USE_VPL_ENCODER}>:USE_VPL_ENCODER>
     $<$<BOOL:${USE_AMF_ENCODER}>:USE_AMF_ENCODER>
+    $<$<BOOL:${USE_NETINT_ENCODER}>:USE_NETINT_ENCODER>
 )
 
 # OpenH264
@@ -562,6 +570,21 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
         src/hwenc_amf/amf_video_decoder.cpp
         src/hwenc_amf/amf_video_encoder.cpp
     )
+  endif()
+
+  if (USE_NETINT_ENCODER)
+    if (NOT NETINT_ROOT_DIR)
+      message(FATAL_ERROR "NETINT_ROOT_DIR must be set when USE_NETINT_ENCODER is ON")
+    endif()
+    target_include_directories(sora PRIVATE ${NETINT_ROOT_DIR}/source)
+    target_sources(sora
+      PRIVATE
+        src/netint_context_impl.cpp
+        src/hwenc_netint/netint_video_codec.cpp
+        src/hwenc_netint/netint_video_decoder.cpp
+        src/hwenc_netint/netint_video_encoder.cpp
+    )
+    target_link_libraries(sora PRIVATE ${NETINT_ROOT_DIR}/build/libxcoder.so)
   endif()
 
 endif()

@@ -37,6 +37,11 @@
 #include "sora/hwenc_amf/amf_video_codec.h"
 #endif
 
+#if defined(USE_NETINT_ENCODER)
+#include "sora/hwenc_netint/netint_video_codec.h"
+#include "sora/netint_context.h"
+#endif
+
 namespace webrtc {
 
 // VideoCodecType
@@ -77,6 +82,9 @@ void tag_invoke(const boost::json::value_from_tag&,
       break;
     case VideoCodecImplementation::kAmdAmf:
       jv = "amd_amf";
+      break;
+    case VideoCodecImplementation::kNetintLibxcoder:
+      jv = "netint_libxcoder";
       break;
     case VideoCodecImplementation::kCustom_1:
       jv = "custom_1";
@@ -121,6 +129,8 @@ VideoCodecImplementation tag_invoke(
     return VideoCodecImplementation::kNvidiaVideoCodecSdk;
   } else if (s == "amd_amf") {
     return VideoCodecImplementation::kAmdAmf;
+  } else if (s == "netint_libxcoder") {
+    return VideoCodecImplementation::kNetintLibxcoder;
   } else if (s == "custom_1") {
     return VideoCodecImplementation::kCustom_1;
   } else if (s == "custom_2") {
@@ -357,6 +367,10 @@ VideoCodecCapability GetVideoCodecCapability(
 
 #if defined(USE_AMF_ENCODER)
   cap.engines.push_back(GetAMFVideoCodecCapability(config.amf_context));
+#endif
+
+#if defined(USE_NETINT_ENCODER)
+  cap.engines.push_back(GetNetintVideoCodecCapability(NetintContext::Create()));
 #endif
 
   if (config.get_custom_engines) {
