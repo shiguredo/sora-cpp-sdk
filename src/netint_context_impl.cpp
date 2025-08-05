@@ -21,13 +21,14 @@ struct NetintContextImpl : NetintContext {
 
 NetintContextImpl::~NetintContextImpl() {
   if (initialized_) {
-    ni_rsrc_free_device_context();
   }
 }
 
 bool NetintContextImpl::Initialize() {
   // Netint リソースマネージャーを初期化
-  ni_retcode_t ret = ni_rsrc_init();
+  // should_match_rev=0: リビジョンマッチング不要
+  // timeout_seconds=10: 10秒でタイムアウト
+  ni_retcode_t ret = ni_rsrc_init(0, 10);
   if (ret != NI_RETCODE_SUCCESS) {
     return false;
   }
@@ -48,7 +49,7 @@ std::shared_ptr<NetintContext> NetintContext::Create() {
 
 bool NetintContext::CanCreate() {
   // Netint デバイスが存在するかチェック
-  ni_retcode_t ret = ni_rsrc_init();
+  ni_retcode_t ret = ni_rsrc_init(0, 10);
   if (ret != NI_RETCODE_SUCCESS) {
     return false;
   }
@@ -63,7 +64,6 @@ bool NetintContext::CanCreate() {
     ni_rsrc_free_device_queue(device_queue);
   }
 
-  ni_rsrc_free_device_context();
   return has_device;
 }
 

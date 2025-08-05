@@ -1,5 +1,7 @@
 #include "sora/hwenc_netint/netint_video_codec.h"
 
+#include <algorithm>
+
 // WebRTC
 #include <api/video/video_codec_type.h>
 
@@ -35,19 +37,33 @@ VideoCodecCapability::Engine GetNetintVideoCodecCapability(
       // デバイスの能力を取得
       ret = ni_rsrc_get_device_capability(device, &capability);
       if (ret == NI_RETCODE_SUCCESS) {
-        // H.264 サポート
-        if (capability.h264_encoding) {
-          engine.codecs.push_back(webrtc::VideoCodecType::kVideoCodecH264);
-        }
-
-        // H.265 サポート
-        if (capability.h265_encoding) {
-          engine.codecs.push_back(webrtc::VideoCodecType::kVideoCodecH265);
-        }
-
-        // AV1 サポート
-        if (capability.av1_encoding) {
-          engine.codecs.push_back(webrtc::VideoCodecType::kVideoCodecAV1);
+        // xcoder_devices 配列から各コーデックのサポートを確認
+        for (int j = 0; j < capability.xcoder_devices_cnt; j++) {
+          ni_hw_capability_t* hw_cap = &capability.xcoder_devices[j];
+          // codec_format フィールドでコーデックタイプを判定
+          if (hw_cap->codec_type == NI_DEVICE_TYPE_ENCODER) {
+            // NI_CODEC_FORMAT_H264 = 0
+            if (hw_cap->codec_format == NI_CODEC_FORMAT_H264) {
+              if (std::find(engine.codecs.begin(), engine.codecs.end(), 
+                           webrtc::VideoCodecType::kVideoCodecH264) == engine.codecs.end()) {
+                engine.codecs.push_back(webrtc::VideoCodecType::kVideoCodecH264);
+              }
+            }
+            // NI_CODEC_FORMAT_H265 = 1
+            else if (hw_cap->codec_format == NI_CODEC_FORMAT_H265) {
+              if (std::find(engine.codecs.begin(), engine.codecs.end(), 
+                           webrtc::VideoCodecType::kVideoCodecH265) == engine.codecs.end()) {
+                engine.codecs.push_back(webrtc::VideoCodecType::kVideoCodecH265);
+              }
+            }
+            // NI_CODEC_FORMAT_AV1 = 4
+            else if (hw_cap->codec_format == NI_CODEC_FORMAT_AV1) {
+              if (std::find(engine.codecs.begin(), engine.codecs.end(), 
+                           webrtc::VideoCodecType::kVideoCodecAV1) == engine.codecs.end()) {
+                engine.codecs.push_back(webrtc::VideoCodecType::kVideoCodecAV1);
+              }
+            }
+          }
         }
 
         // 最初のデバイスの能力のみ使用

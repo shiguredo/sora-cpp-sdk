@@ -211,14 +211,14 @@ int32_t NetintVideoEncoderImpl::Encode(
   in_frame_.data.frame.force_key_frame = force_key_frame ? 1 : 0;
 
   // エンコード実行
-  ni_retcode_t ret = ni_encoder_session_write(&encoder_ctx_, &in_frame_);
+  ni_retcode_t ret = ni_device_session_write(&encoder_ctx_, &in_frame_, NI_DEVICE_TYPE_ENCODER);
   if (ret != NI_RETCODE_SUCCESS) {
     RTC_LOG(LS_ERROR) << "Failed to write frame to encoder: " << ret;
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
   // エンコード結果を読み取り
-  ret = ni_encoder_session_read(&encoder_ctx_, &out_packet_, 1);
+  ret = ni_device_session_read(&encoder_ctx_, &out_packet_, NI_DEVICE_TYPE_ENCODER);
   if (ret == NI_RETCODE_SUCCESS) {
     // エンコードされたデータがある場合
     webrtc::EncodedImage encoded_image;
@@ -270,10 +270,7 @@ void NetintVideoEncoderImpl::SetRates(const RateControlParameters& parameters) {
 
   // Netint エンコーダーのビットレートを更新
   encoder_ctx_.bit_rate = new_bitrate_bps / 1000;  // bps to kbps
-  ni_retcode_t ret = ni_encoder_session_set_params(&encoder_ctx_);
-  if (ret != NI_RETCODE_SUCCESS) {
-    RTC_LOG(LS_WARNING) << "Failed to update encoder bitrate";
-  }
+  // 動的ビットレート変更は新 API でサポートされていない
 }
 
 webrtc::VideoEncoder::EncoderInfo NetintVideoEncoderImpl::GetEncoderInfo()
@@ -346,7 +343,7 @@ bool NetintVideoEncoderImpl::AllocateEncoderContext() {
 
 void NetintVideoEncoderImpl::ReleaseEncoderContext() {
   // セッションをフラッシュ
-  ni_encoder_session_flush(&encoder_ctx_);
+  ni_device_session_flush(&encoder_ctx_, NI_DEVICE_TYPE_ENCODER);
 
   // セッションをクローズ
   ni_device_session_close(&encoder_ctx_, 1, NI_DEVICE_TYPE_ENCODER);
@@ -394,12 +391,7 @@ int32_t NetintVideoEncoderImpl::ConfigureEncoder(
   encoder_ctx_.rc.rc_mode = NI_RC_CBR;
   encoder_ctx_.rc.max_bitrate = max_bitrate_bps_ / 1000;  // bps to kbps
 
-  // エンコーダーを初期化
-  ni_retcode_t ret = ni_encoder_session_init(&encoder_ctx_);
-  if (ret != NI_RETCODE_SUCCESS) {
-    RTC_LOG(LS_ERROR) << "Failed to init encoder session: " << ret;
-    return WEBRTC_VIDEO_CODEC_ERROR;
-  }
+  // エンコーダーの初期化パラメータはセッションオープン時に設定済み
 
   // I/Oバッファを割り当て
   ret = ni_frame_buffer_alloc(&in_frame_.data.frame, width_, height_, 0);
@@ -443,19 +435,34 @@ bool NetintVideoEncoder::IsSupported(std::shared_ptr<NetintContext> context,
   if (device_queue->length > 0) {
     ret = ni_rsrc_get_device_capability(&device_queue->device[0], &capability);
     if (ret == NI_RETCODE_SUCCESS) {
-      switch (codec) {
-        case webrtc::VideoCodecType::kVideoCodecH264:
-          supported = capability.h264_encoding;
-          break;
-        case webrtc::VideoCodecType::kVideoCodecH265:
-          supported = capability.h265_encoding;
-          break;
-        case webrtc::VideoCodecType::kVideoCodecAV1:
-          supported = capability.av1_encoding;
-          break;
-        default:
-          supported = false;
-          break;
+      // xcoder_devices 配列からエンコーダーを探す
+      for (int i = 0; i < capability.xcoder_devices_cnt; i++) {
+        ni_hw_capability_t* hw_cap = &capability.xcoder_devices[i];
+        if (hw_cap->codec_type == NI_DEVICE_TYPE_ENCODER) {
+          // codec_format の値に基づいてコーデックを判定
+          switch (codec) {
+            case webrtc::VideoCodecType::kVideoCodecH264:
+              if (hw_cap->codec_format == NI_CODEC_FORMAT_H264) {  // 0
+                supported = true;
+              }
+              break;
+            case webrtc::VideoCodecType::kVideoCodecH265:
+              if (hw_cap->codec_format == NI_CODEC_FORMAT_H265) {  // 1
+                supported = true;
+              }
+              break;
+            case webrtc::VideoCodecType::kVideoCodecAV1:
+              if (hw_cap->codec_format == NI_CODEC_FORMAT_AV1) {  // 4
+                supported = true;
+              }
+              break;
+            default:
+              break;
+          }
+          if (supported) {
+            break;  // サポートされていることが確認できたら終了
+          }
+        }
       }
     }
   }
