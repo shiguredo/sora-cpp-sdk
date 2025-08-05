@@ -314,19 +314,24 @@ int32_t AMFVideoEncoderImpl::Encode(
         res = surface_->SetProperty(AMF_VIDEO_ENCODER_HEVC_FORCE_PICTURE_TYPE,
                                     AMF_VIDEO_ENCODER_HEVC_PICTURE_TYPE_IDR);
         RETURN_IF_FAILED(
-            res, "Failed to SetProperty(AMF_VIDEO_ENCODER_HEVC_FORCE_PICTURE_TYPE)");
+            res,
+            "Failed to SetProperty(AMF_VIDEO_ENCODER_HEVC_FORCE_PICTURE_TYPE)");
         res = surface_->SetProperty(AMF_VIDEO_ENCODER_HEVC_INSERT_HEADER, true);
-        RETURN_IF_FAILED(res,
-                         "Failed to SetProperty(AMF_VIDEO_ENCODER_HEVC_INSERT_HEADER)");
+        RETURN_IF_FAILED(
+            res, "Failed to SetProperty(AMF_VIDEO_ENCODER_HEVC_INSERT_HEADER)");
         break;
       case webrtc::VideoCodecType::kVideoCodecAV1:
         res = surface_->SetProperty(AMF_VIDEO_ENCODER_AV1_FORCE_FRAME_TYPE,
                                     AMF_VIDEO_ENCODER_AV1_FORCE_FRAME_TYPE_KEY);
         RETURN_IF_FAILED(
-            res, "Failed to SetProperty(AMF_VIDEO_ENCODER_AV1_FORCE_FRAME_TYPE)");
-        res = surface_->SetProperty(AMF_VIDEO_ENCODER_AV1_FORCE_INSERT_SEQUENCE_HEADER, true);
-        RETURN_IF_FAILED(res,
-                         "Failed to SetProperty(AMF_VIDEO_ENCODER_AV1_FORCE_INSERT_SEQUENCE_HEADER)");
+            res,
+            "Failed to SetProperty(AMF_VIDEO_ENCODER_AV1_FORCE_FRAME_TYPE)");
+        res = surface_->SetProperty(
+            AMF_VIDEO_ENCODER_AV1_FORCE_INSERT_SEQUENCE_HEADER, true);
+        RETURN_IF_FAILED(
+            res,
+            "Failed to "
+            "SetProperty(AMF_VIDEO_ENCODER_AV1_FORCE_INSERT_SEQUENCE_HEADER)");
         break;
       default:
         break;
