@@ -1,4 +1,9 @@
+#include <chrono>
 #include <memory>
+#include <thread>
+
+// WebRTC
+#include <rtc_base/logging.h>
 
 #include "sora/amf_context.h"
 
@@ -30,12 +35,21 @@ struct AMFContextImpl : AMFContext {
 };
 
 std::shared_ptr<AMFContext> AMFContext::Create() {
-  AMF_RESULT res = g_AMFFactory.Init();
-  if (res != AMF_OK) {
-    return nullptr;
+  const int kMaxRetries = 3;
+  const int kRetryDelayMs = 100;
+
+  for (int i = 0; i < kMaxRetries; ++i) {
+    AMF_RESULT res = g_AMFFactory.Init();
+    if (res == AMF_OK) {
+      return std::make_shared<AMFContextImpl>();
+    }
+
+    if (i < kMaxRetries - 1) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(kRetryDelayMs));
+    }
   }
 
-  return std::make_shared<AMFContextImpl>();
+  return nullptr;
 }
 
 bool AMFContext::CanCreate() {

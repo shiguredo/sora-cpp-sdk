@@ -551,34 +551,88 @@ AMF_RESULT AMFVideoEncoderImpl::CreateEncoder(
   amf::AMFSurfacePtr surface;
   res = GetAMFFactoryHelper(amf_context)->GetFactory()->CreateContext(&context);
   RETURN_IF_FAILED(res, "Failed to CreateContext()");
-  if (memory_type == amf::AMF_MEMORY_OPENGL) {
-    res = context->InitOpenGL(NULL, NULL, NULL);
-    RETURN_IF_FAILED(res, "Failed to InitOpenGL()");
-  } else if (memory_type == amf::AMF_MEMORY_VULKAN) {
-    res = amf::AMFContext1Ptr(context)->InitVulkan(NULL);
-    RETURN_IF_FAILED(res, "Failed to InitVulkan()");
-  }
+
+  // グラフィックスAPIの初期化を試行
+  bool initialized = false;
+  amf::AMF_MEMORY_TYPE actual_memory_type = memory_type;
+
 #if defined(_WIN32)
-  if (memory_type == amf::AMF_MEMORY_DX9) {
-    res = context->InitDX9(NULL);  // can be DX9 or DX9Ex device
-    RETURN_IF_FAILED(res, "Failed to InitDX9(NULL)");
-  } else if (memory_type == amf::AMF_MEMORY_DX11) {
-    res = context->InitDX11(NULL);  // can be DX11 device
-    RETURN_IF_FAILED(res, "Failed to InitDX11(NULL)");
+  // Windows の場合、DX11 -> DX12 -> Vulkan の順で試行
+  if (memory_type == amf::AMF_MEMORY_DX11) {
+    res = context->InitDX11(NULL);
+    if (res == AMF_OK) {
+      initialized = true;
+    } else {
+      // DX11 が失敗したら DX12 を試行
+      res = amf::AMFContext2Ptr(context)->InitDX12(NULL);
+      if (res == AMF_OK) {
+        initialized = true;
+        actual_memory_type = amf::AMF_MEMORY_DX12;
+      } else {
+        // DX12 も失敗したら Vulkan を試行
+        res = amf::AMFContext1Ptr(context)->InitVulkan(NULL);
+        if (res == AMF_OK) {
+          initialized = true;
+          actual_memory_type = amf::AMF_MEMORY_VULKAN;
+        }
+      }
+    }
   } else if (memory_type == amf::AMF_MEMORY_DX12) {
-    res = amf::AMFContext2Ptr(context)->InitDX12(NULL);  // can be DX12 device
-    RETURN_IF_FAILED(res, "Failed to InitDX12(NULL)");
+    res = amf::AMFContext2Ptr(context)->InitDX12(NULL);
+    if (res == AMF_OK) {
+      initialized = true;
+    }
+  } else if (memory_type == amf::AMF_MEMORY_DX9) {
+    res = context->InitDX9(NULL);
+    if (res == AMF_OK) {
+      initialized = true;
+    }
   }
 #endif
+
+  // Windows 以外または Windows で初期化失敗した場合
+  if (!initialized) {
+    if (memory_type == amf::AMF_MEMORY_VULKAN || !initialized) {
+      res = amf::AMFContext1Ptr(context)->InitVulkan(NULL);
+      if (res == AMF_OK) {
+        initialized = true;
+        actual_memory_type = amf::AMF_MEMORY_VULKAN;
+      }
+    }
+
+    if (!initialized && memory_type == amf::AMF_MEMORY_OPENGL) {
+      res = context->InitOpenGL(NULL, NULL, NULL);
+      if (res == AMF_OK) {
+        initialized = true;
+      }
+    }
+  }
+
+  if (!initialized) {
+    RETURN_IF_FAILED(res, "Failed to initialize any graphics API");
+  }
 
   auto amf_codec = codec == webrtc::kVideoCodecH264   ? AMFVideoEncoderVCE_AVC
                    : codec == webrtc::kVideoCodecH265 ? AMFVideoEncoder_HEVC
                    : codec == webrtc::kVideoCodecAV1  ? AMFVideoEncoder_AV1
                                                       : L"";
-  res = GetAMFFactoryHelper(amf_context)
-            ->GetFactory()
-            ->CreateComponent(context, amf_codec, &encoder);
-  RETURN_IF_FAILED(res, L"CreateComponent() failed");
+
+  // エンコーダーコンポーネントの作成をリトライ
+  const int kMaxComponentRetries = 3;
+  for (int i = 0; i < kMaxComponentRetries; ++i) {
+    res = GetAMFFactoryHelper(amf_context)
+              ->GetFactory()
+              ->CreateComponent(context, amf_codec, &encoder);
+    if (res == AMF_OK) {
+      break;
+    }
+
+    if (i < kMaxComponentRetries - 1) {
+      // 短い待機時間を入れてリトライ
+      amf_sleep(50);
+    }
+  }
+  RETURN_IF_FAILED(res, L"CreateComponent() failed after retries");
 
   if (codec == webrtc::kVideoCodecAV1) {
     res = encoder->SetProperty(AMF_VIDEO_ENCODER_AV1_USAGE,
@@ -679,8 +733,21 @@ AMF_RESULT AMFVideoEncoderImpl::CreateEncoder(
         res, "Failed to SetProperty(AMF_VIDEO_ENCODER_LOWLATENCY_MODE, true)");
   }
 
-  res = encoder->Init(amf::AMF_SURFACE_YUV420P, width, height);
-  RETURN_IF_FAILED(res, "Failed to encoder->Init()");
+  // エンコーダーの初期化をリトライ
+  const int kMaxInitRetries = 3;
+  for (int i = 0; i < kMaxInitRetries; ++i) {
+    res = encoder->Init(amf::AMF_SURFACE_YUV420P, width, height);
+    if (res == AMF_OK) {
+      break;
+    }
+
+    if (i < kMaxInitRetries - 1) {
+      // エンコーダーをリセットして再試行
+      encoder->Terminate();
+      amf_sleep(100);
+    }
+  }
+  RETURN_IF_FAILED(res, "Failed to encoder->Init() after retries");
 
   *out_context = context.Detach();
   *out_encoder = encoder.Detach();
