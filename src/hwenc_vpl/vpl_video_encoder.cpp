@@ -472,7 +472,14 @@ int32_t VplVideoEncoderImpl::Encode(
   mfxEncodeCtrl ctrl;
   memset(&ctrl, 0, sizeof(ctrl));
   if (send_key_frame) {
-    ctrl.FrameType = MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF;
+    // VP9 では MFX_FRAMETYPE_I のみを設定する
+    // MFX_FRAMETYPE_REF や MFX_FRAMETYPE_IDR を同時に設定すると
+    // vpl-gpu-rt の CheckAndFixCtrl で MFX_FRAMETYPE_P に変更されてしまう
+    if (codec_ == MFX_CODEC_VP9) {
+      ctrl.FrameType = MFX_FRAMETYPE_I;
+    } else {
+      ctrl.FrameType = MFX_FRAMETYPE_I | MFX_FRAMETYPE_IDR | MFX_FRAMETYPE_REF;
+    }
   } else {
     ctrl.FrameType = MFX_FRAMETYPE_UNKNOWN;
   }
