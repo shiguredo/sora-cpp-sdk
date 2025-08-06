@@ -297,16 +297,38 @@ int32_t AMFVideoEncoderImpl::Encode(
   }
 
   if (send_key_frame) {
-    res = surface_->SetProperty(AMF_VIDEO_ENCODER_FORCE_PICTURE_TYPE,
-                                AMF_VIDEO_ENCODER_PICTURE_TYPE_IDR);
-    RETURN_IF_FAILED(
-        res, "Failed to SetProperty(AMF_VIDEO_ENCODER_FORCE_PICTURE_TYPE)");
-    res = surface_->SetProperty(AMF_VIDEO_ENCODER_INSERT_SPS, true);
-    RETURN_IF_FAILED(res,
-                     "Failed to SetProperty(AMF_VIDEO_ENCODER_INSERT_SPS)");
-    res = surface_->SetProperty(AMF_VIDEO_ENCODER_INSERT_PPS, true);
-    RETURN_IF_FAILED(res,
-                     "Failed to SetProperty(AMF_VIDEO_ENCODER_INSERT_PPS)");
+    if (codec_ == webrtc::VideoCodecType::kVideoCodecH264) {
+      res = surface_->SetProperty(AMF_VIDEO_ENCODER_FORCE_PICTURE_TYPE,
+                                  AMF_VIDEO_ENCODER_PICTURE_TYPE_IDR);
+      RETURN_IF_FAILED(
+          res, "Failed to SetProperty(AMF_VIDEO_ENCODER_FORCE_PICTURE_TYPE)");
+      res = surface_->SetProperty(AMF_VIDEO_ENCODER_INSERT_SPS, true);
+      RETURN_IF_FAILED(res,
+                       "Failed to SetProperty(AMF_VIDEO_ENCODER_INSERT_SPS)");
+      res = surface_->SetProperty(AMF_VIDEO_ENCODER_INSERT_PPS, true);
+      RETURN_IF_FAILED(res,
+                       "Failed to SetProperty(AMF_VIDEO_ENCODER_INSERT_PPS)");
+    } else if (codec_ == webrtc::VideoCodecType::kVideoCodecH265) {
+      res = surface_->SetProperty(AMF_VIDEO_ENCODER_HEVC_FORCE_PICTURE_TYPE,
+                                  AMF_VIDEO_ENCODER_HEVC_PICTURE_TYPE_IDR);
+      RETURN_IF_FAILED(
+          res,
+          "Failed to SetProperty(AMF_VIDEO_ENCODER_HEVC_FORCE_PICTURE_TYPE)");
+      res = surface_->SetProperty(AMF_VIDEO_ENCODER_HEVC_INSERT_HEADER, true);
+      RETURN_IF_FAILED(
+          res, "Failed to SetProperty(AMF_VIDEO_ENCODER_HEVC_INSERT_HEADER)");
+    } else if (codec_ == webrtc::VideoCodecType::kVideoCodecAV1) {
+      res = surface_->SetProperty(AMF_VIDEO_ENCODER_AV1_FORCE_FRAME_TYPE,
+                                  AMF_VIDEO_ENCODER_AV1_FORCE_FRAME_TYPE_KEY);
+      RETURN_IF_FAILED(
+          res, "Failed to SetProperty(AMF_VIDEO_ENCODER_AV1_FORCE_FRAME_TYPE)");
+      res = surface_->SetProperty(
+          AMF_VIDEO_ENCODER_AV1_FORCE_INSERT_SEQUENCE_HEADER, true);
+      RETURN_IF_FAILED(
+          res,
+          "Failed to "
+          "SetProperty(AMF_VIDEO_ENCODER_AV1_FORCE_INSERT_SEQUENCE_HEADER)");
+    }
   }
 
   res = encoder_->SubmitInput(surface_);
