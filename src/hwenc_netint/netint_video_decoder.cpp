@@ -71,7 +71,7 @@ class NetintVideoDecoderImpl : public NetintVideoDecoder {
   int height_ = 0;
 
   // Frame buffer pool
-  std::vector<rtc::scoped_refptr<webrtc::I420Buffer>> buffer_pool_;
+  std::vector<webrtc::scoped_refptr<webrtc::I420Buffer>> buffer_pool_;
   size_t buffer_pool_size_ = 10;
 };
 
@@ -121,11 +121,11 @@ int32_t NetintVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
   // 入力パケットを設定
   in_packet_.data.packet.p_data = const_cast<uint8_t*>(input_image.data());
   in_packet_.data.packet.data_len = input_image.size();
-  in_packet_.data.packet.pts = input_image.Timestamp();
-  in_packet_.data.packet.dts = input_image.Timestamp();
+  in_packet_.data.packet.pts = input_image.RtpTimestamp();
+  in_packet_.data.packet.dts = input_image.RtpTimestamp();
 
   // デコーダーに書き込み
-  ni_retcode_t ret = ni_device_session_write(&decoder_ctx_, &in_packet_, NI_DEVICE_TYPE_DECODER);
+  int ret = ni_device_session_write(&decoder_ctx_, &in_packet_, NI_DEVICE_TYPE_DECODER);
   if (ret != NI_RETCODE_SUCCESS) {
     RTC_LOG(LS_ERROR) << "Failed to write packet to decoder: " << ret;
     return WEBRTC_VIDEO_CODEC_ERROR;
@@ -147,7 +147,7 @@ int32_t NetintVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
     }
 
     // I420バッファを作成
-    rtc::scoped_refptr<webrtc::I420Buffer> buffer =
+    webrtc::scoped_refptr<webrtc::I420Buffer> buffer =
         webrtc::I420Buffer::Create(width_, height_);
 
     // Y, U, Vプレーンをコピー
@@ -162,7 +162,7 @@ int32_t NetintVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
     webrtc::VideoFrame decoded_frame =
         webrtc::VideoFrame::Builder()
             .set_video_frame_buffer(buffer)
-            .set_timestamp_rtp(input_image.Timestamp())
+            .set_timestamp_rtp(input_image.RtpTimestamp())
             .set_timestamp_ms(render_time_ms)
             .set_rotation(webrtc::kVideoRotation_0)
             .build();
@@ -207,13 +207,13 @@ ni_retcode_t NetintVideoDecoderImpl::ConvertCodecType(
     ni_codec_t& ni_codec) {
   switch (type) {
     case webrtc::VideoCodecType::kVideoCodecH264:
-      ni_codec = NI_CODEC_FORMAT_H264;
+      ni_codec = (ni_codec_t)NI_CODEC_FORMAT_H264;
       return NI_RETCODE_SUCCESS;
     case webrtc::VideoCodecType::kVideoCodecH265:
-      ni_codec = NI_CODEC_FORMAT_H265;
+      ni_codec = (ni_codec_t)NI_CODEC_FORMAT_H265;
       return NI_RETCODE_SUCCESS;
     case webrtc::VideoCodecType::kVideoCodecAV1:
-      ni_codec = NI_CODEC_FORMAT_AV1;
+      ni_codec = (ni_codec_t)NI_CODEC_FORMAT_AV1;
       return NI_RETCODE_SUCCESS;
     default:
       return NI_RETCODE_INVALID_PARAM;
@@ -228,34 +228,47 @@ bool NetintVideoDecoderImpl::AllocateDecoderContext() {
     return false;
   }
 
-  // デバイスを割り当て
-  ret = ni_rsrc_allocate_auto(&decoder_ctx_, NI_DEVICE_TYPE_DECODER);
-  if (ret != NI_RETCODE_SUCCESS) {
-    RTC_LOG(LS_ERROR) << "Failed to allocate decoder device: " << ret;
+  // コーデックタイプを設定
+  ni_codec_t ni_codec;
+  if (ConvertCodecType(codec_type_, ni_codec) != NI_RETCODE_SUCCESS) {
+    RTC_LOG(LS_ERROR) << "Unsupported codec type";
     ni_device_session_context_clear(&decoder_ctx_);
     return false;
   }
+
+  // デバイスを割り当て - 新しいAPIシグネチャ
+  uint64_t load = 0;
+  ni_device_context_t* dev_ctx = ni_rsrc_allocate_auto(
+      NI_DEVICE_TYPE_DECODER,
+      EN_ALLOC_LEAST_LOAD,  // 最小負荷のデバイスを選択
+      ni_codec,
+      width_ > 0 ? width_ : 1920,  // デフォルト幅
+      height_ > 0 ? height_ : 1080, // デフォルト高さ
+      30,  // デフォルトフレームレート
+      &load);
+  
+  if (dev_ctx == nullptr) {
+    RTC_LOG(LS_ERROR) << "Failed to allocate decoder device";
+    ni_device_session_context_clear(&decoder_ctx_);
+    return false;
+  }
+
+  // デバイスコンテキストのパラメータをセッションコンテキストにコピー
+  decoder_ctx_.hw_id = dev_ctx->p_device_info->hw_id;
+  decoder_ctx_.codec_format = ni_codec;
+  decoder_ctx_.keep_alive_timeout = 10;
 
   // セッションをオープン
   ret = ni_device_session_open(&decoder_ctx_, NI_DEVICE_TYPE_DECODER);
   if (ret != NI_RETCODE_SUCCESS) {
     RTC_LOG(LS_ERROR) << "Failed to open decoder session: " << ret;
-    ni_rsrc_free_device_context(&decoder_ctx_);
+    ni_rsrc_free_device_context(dev_ctx);
     ni_device_session_context_clear(&decoder_ctx_);
     return false;
   }
 
-  // コーデックタイプを設定
-  ni_codec_t ni_codec;
-  if (ConvertCodecType(codec_type_, ni_codec) != NI_RETCODE_SUCCESS) {
-    RTC_LOG(LS_ERROR) << "Unsupported codec type";
-    ReleaseDecoderContext();
-    return false;
-  }
-
-  decoder_ctx_.codec_format = ni_codec;
-  decoder_ctx_.pix_fmt = NI_PIX_FMT_YUV420P;
-  decoder_ctx_.keep_alive_timeout = 10;
+  // デバイスコンテキストを解放（セッションオープン後は不要）
+  ni_rsrc_free_device_context(dev_ctx);
 
   // デコーダーの初期化パラメータはセッションオープン時に設定済み
 
@@ -278,8 +291,7 @@ void NetintVideoDecoderImpl::ReleaseDecoderContext() {
   // セッションをクローズ
   ni_device_session_close(&decoder_ctx_, 1, NI_DEVICE_TYPE_DECODER);
 
-  // リソースを解放
-  ni_rsrc_free_device_context(&decoder_ctx_);
+  // セッションコンテキストに関連するリソースはセッションクローズで解放される
 
   // コンテキストをクリア
   ni_device_session_context_clear(&decoder_ctx_);
@@ -302,41 +314,37 @@ bool NetintVideoDecoder::IsSupported(std::shared_ptr<NetintContext> context,
     return false;
   }
 
-  // サポートするコーデックタイプを確認
-  ni_device_queue_t* device_queue = nullptr;
-  ni_retcode_t ret =
-      ni_rsrc_get_available_devices(&device_queue, NI_DEVICE_TYPE_DECODER);
-
-  if (ret != NI_RETCODE_SUCCESS || device_queue == nullptr ||
-      device_queue->length == 0) {
+  // デバイスプールを取得
+  ni_device_pool_t* device_pool = ni_rsrc_get_device_pool();
+  if (device_pool == nullptr || device_pool->p_device_queue == nullptr) {
     return false;
   }
 
   bool supported = false;
-  ni_device_capability_t capability = {};
-
-  // 最初のデバイスの能力を確認
-  if (device_queue->length > 0) {
-    ret = ni_rsrc_get_device_capability(&device_queue->device[0], &capability);
-    if (ret == NI_RETCODE_SUCCESS) {
-      // xcoder_devices 配列からデコーダーを探す
-      for (int i = 0; i < capability.xcoder_devices_cnt; i++) {
-        ni_hw_capability_t* hw_cap = &capability.xcoder_devices[i];
-        if (hw_cap->codec_type == NI_DEVICE_TYPE_DECODER) {
-          // codec_format の値に基づいてコーデックを判定
+  
+  // デコーダーデバイスをチェック
+  for (int i = 0; i < NI_MAX_DEVICE_CNT; i++) {
+    int guid = device_pool->p_device_queue->xcoders[NI_DEVICE_TYPE_DECODER][i];
+    if (guid >= 0) {
+      // デバイス情報を取得
+      ni_device_info_t* device_info = ni_rsrc_get_device_info(NI_DEVICE_TYPE_DECODER, guid);
+      if (device_info != nullptr) {
+        // 各コーデックのサポートを確認
+        for (int codec_idx = 0; codec_idx < EN_CODEC_MAX; codec_idx++) {
+          int codec_format = device_info->dev_cap[codec_idx].supports_codec;
           switch (codec) {
             case webrtc::VideoCodecType::kVideoCodecH264:
-              if (hw_cap->codec_format == NI_CODEC_FORMAT_H264) {  // 0
+              if (codec_format == (int)NI_CODEC_FORMAT_H264) {
                 supported = true;
               }
               break;
             case webrtc::VideoCodecType::kVideoCodecH265:
-              if (hw_cap->codec_format == NI_CODEC_FORMAT_H265) {  // 1
+              if (codec_format == (int)NI_CODEC_FORMAT_H265) {
                 supported = true;
               }
               break;
             case webrtc::VideoCodecType::kVideoCodecAV1:
-              if (hw_cap->codec_format == NI_CODEC_FORMAT_AV1) {  // 4
+              if (codec_format == (int)NI_CODEC_FORMAT_AV1) {
                 supported = true;
               }
               break;
@@ -344,14 +352,17 @@ bool NetintVideoDecoder::IsSupported(std::shared_ptr<NetintContext> context,
               break;
           }
           if (supported) {
-            break;  // サポートされていることが確認できたら終了
+            break;
           }
         }
+      }
+      if (supported) {
+        break;  // 最初のデコーダーデバイスのみチェック
       }
     }
   }
 
-  ni_rsrc_free_device_queue(device_queue);
+  ni_rsrc_free_device_pool(device_pool);
   return supported;
 }
 

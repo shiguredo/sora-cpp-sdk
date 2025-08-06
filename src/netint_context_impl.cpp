@@ -28,7 +28,7 @@ bool NetintContextImpl::Initialize() {
   // Netint リソースマネージャーを初期化
   // should_match_rev=0: リビジョンマッチング不要
   // timeout_seconds=10: 10秒でタイムアウト
-  ni_retcode_t ret = ni_rsrc_init(0, 10);
+  int ret = ni_rsrc_init(0, 10);
   if (ret != NI_RETCODE_SUCCESS) {
     return false;
   }
@@ -49,19 +49,24 @@ std::shared_ptr<NetintContext> NetintContext::Create() {
 
 bool NetintContext::CanCreate() {
   // Netint デバイスが存在するかチェック
-  ni_retcode_t ret = ni_rsrc_init(0, 10);
+  int ret = ni_rsrc_init(0, 10);
   if (ret != NI_RETCODE_SUCCESS) {
     return false;
   }
 
   // 利用可能なデバイス数を取得
-  ni_device_queue_t* device_queue = nullptr;
-  ret = ni_rsrc_get_available_devices(&device_queue, NI_DEVICE_TYPE_ENCODER);
+  ni_device_pool_t* device_pool = ni_rsrc_get_device_pool();
 
   bool has_device = false;
-  if (ret == NI_RETCODE_SUCCESS && device_queue != nullptr) {
-    has_device = device_queue->length > 0;
-    ni_rsrc_free_device_queue(device_queue);
+  if (device_pool != nullptr && device_pool->p_device_queue != nullptr) {
+    // エンコーダーデバイスがあるか確認
+    for (int i = 0; i < NI_MAX_DEVICE_CNT; i++) {
+      if (device_pool->p_device_queue->xcoders[NI_DEVICE_TYPE_ENCODER][i] >= 0) {
+        has_device = true;
+        break;
+      }
+    }
+    ni_rsrc_free_device_pool(device_pool);
   }
 
   return has_device;

@@ -14,75 +14,105 @@ namespace sora {
 VideoCodecCapability::Engine GetNetintVideoCodecCapability(
     std::shared_ptr<NetintContext> context) {
   if (!context) {
-    return VideoCodecCapability::Engine{};
+    return VideoCodecCapability::Engine(VideoCodecImplementation::kNetintLibxcoder);
   }
 
-  VideoCodecCapability::Engine engine;
-  engine.type = VideoCodecCapability::Type::kHardware;
-  engine.impl = VideoCodecImplementation::kNetintLibxcoder;
+  VideoCodecCapability::Engine engine(VideoCodecImplementation::kNetintLibxcoder);
 
-  // 利用可能なエンコーダーデバイスを確認
-  ni_device_queue_t* encoder_queue = nullptr;
-  ni_retcode_t ret =
-      ni_rsrc_get_available_devices(&encoder_queue, NI_DEVICE_TYPE_ENCODER);
+  // 利用可能なデバイスを確認
+  ni_device_pool_t* device_pool = ni_rsrc_get_device_pool();
 
-  if (ret == NI_RETCODE_SUCCESS && encoder_queue != nullptr &&
-      encoder_queue->length > 0) {
-    // Netint デバイスの能力を確認
-    ni_device_capability_t capability = {};
-
-    for (int i = 0; i < encoder_queue->length; i++) {
-      ni_device_t* device = &encoder_queue->device[i];
-
-      // デバイスの能力を取得
-      ret = ni_rsrc_get_device_capability(device, &capability);
-      if (ret == NI_RETCODE_SUCCESS) {
-        // xcoder_devices 配列から各コーデックのサポートを確認
-        for (int j = 0; j < capability.xcoder_devices_cnt; j++) {
-          ni_hw_capability_t* hw_cap = &capability.xcoder_devices[j];
-          // codec_format フィールドでコーデックタイプを判定
-          if (hw_cap->codec_type == NI_DEVICE_TYPE_ENCODER) {
-            // NI_CODEC_FORMAT_H264 = 0
-            if (hw_cap->codec_format == NI_CODEC_FORMAT_H264) {
-              if (std::find(engine.codecs.begin(), engine.codecs.end(), 
-                           webrtc::VideoCodecType::kVideoCodecH264) == engine.codecs.end()) {
-                engine.codecs.push_back(webrtc::VideoCodecType::kVideoCodecH264);
+  if (device_pool != nullptr && device_pool->p_device_queue != nullptr) {
+    // エンコーダーデバイスをチェック
+    for (int i = 0; i < NI_MAX_DEVICE_CNT; i++) {
+      int guid = device_pool->p_device_queue->xcoders[NI_DEVICE_TYPE_ENCODER][i];
+      if (guid >= 0) {
+        // デバイス情報を取得
+        ni_device_info_t* device_info = ni_rsrc_get_device_info(NI_DEVICE_TYPE_ENCODER, guid);
+        if (device_info != nullptr) {
+          // 各コーデックのサポートを確認
+          for (int codec_idx = 0; codec_idx < EN_CODEC_MAX; codec_idx++) {
+            int codec_format = device_info->dev_cap[codec_idx].supports_codec;
+            if (codec_format == (int)NI_CODEC_FORMAT_H264) {
+              bool found = false;
+              for (const auto& codec : engine.codecs) {
+                if (codec.type == webrtc::VideoCodecType::kVideoCodecH264) {
+                  found = true;
+                  break;
+                }
               }
-            }
-            // NI_CODEC_FORMAT_H265 = 1
-            else if (hw_cap->codec_format == NI_CODEC_FORMAT_H265) {
-              if (std::find(engine.codecs.begin(), engine.codecs.end(), 
-                           webrtc::VideoCodecType::kVideoCodecH265) == engine.codecs.end()) {
-                engine.codecs.push_back(webrtc::VideoCodecType::kVideoCodecH265);
+              if (!found) {
+                engine.codecs.push_back(VideoCodecCapability::Codec(
+                    webrtc::VideoCodecType::kVideoCodecH264, true, false));
               }
-            }
-            // NI_CODEC_FORMAT_AV1 = 4
-            else if (hw_cap->codec_format == NI_CODEC_FORMAT_AV1) {
-              if (std::find(engine.codecs.begin(), engine.codecs.end(), 
-                           webrtc::VideoCodecType::kVideoCodecAV1) == engine.codecs.end()) {
-                engine.codecs.push_back(webrtc::VideoCodecType::kVideoCodecAV1);
+            } else if (codec_format == (int)NI_CODEC_FORMAT_H265) {
+              bool found = false;
+              for (const auto& codec : engine.codecs) {
+                if (codec.type == webrtc::VideoCodecType::kVideoCodecH265) {
+                  found = true;
+                  break;
+                }
+              }
+              if (!found) {
+                engine.codecs.push_back(VideoCodecCapability::Codec(
+                    webrtc::VideoCodecType::kVideoCodecH265, true, false));
+              }
+            } else if (codec_format == (int)NI_CODEC_FORMAT_AV1) {
+              bool found = false;
+              for (const auto& codec : engine.codecs) {
+                if (codec.type == webrtc::VideoCodecType::kVideoCodecAV1) {
+                  found = true;
+                  break;
+                }
+              }
+              if (!found) {
+                engine.codecs.push_back(VideoCodecCapability::Codec(
+                    webrtc::VideoCodecType::kVideoCodecAV1, true, false));
               }
             }
           }
         }
-
-        // 最初のデバイスの能力のみ使用
+        // 最初のエンコーダーデバイスのみチェック
         break;
       }
     }
 
-    ni_rsrc_free_device_queue(encoder_queue);
+    // デコーダーデバイスをチェック
+    for (int i = 0; i < NI_MAX_DEVICE_CNT; i++) {
+      int guid = device_pool->p_device_queue->xcoders[NI_DEVICE_TYPE_DECODER][i];
+      if (guid >= 0) {
+        // デバイス情報を取得
+        ni_device_info_t* device_info = ni_rsrc_get_device_info(NI_DEVICE_TYPE_DECODER, guid);
+        if (device_info != nullptr) {
+          // 各コーデックのサポートを確認
+          for (int codec_idx = 0; codec_idx < EN_CODEC_MAX; codec_idx++) {
+            int codec_format = device_info->dev_cap[codec_idx].supports_codec;
+            // 各コーデックのデコーダーサポートを更新
+            for (auto& codec : engine.codecs) {
+              if (codec.type == webrtc::VideoCodecType::kVideoCodecH264 && 
+                  codec_format == (int)NI_CODEC_FORMAT_H264) {
+                codec.decoder = true;
+              } else if (codec.type == webrtc::VideoCodecType::kVideoCodecH265 && 
+                         codec_format == (int)NI_CODEC_FORMAT_H265) {
+                codec.decoder = true;
+              } else if (codec.type == webrtc::VideoCodecType::kVideoCodecAV1 && 
+                         codec_format == (int)NI_CODEC_FORMAT_AV1) {
+                codec.decoder = true;
+              }
+            }
+          }
+        }
+        // 最初のデコーダーデバイスのみチェック
+        break;
+      }
+    }
+
+    ni_rsrc_free_device_pool(device_pool);
   }
 
-  // 利用可能なデコーダーデバイスを確認
-  ni_device_queue_t* decoder_queue = nullptr;
-  ret = ni_rsrc_get_available_devices(&decoder_queue, NI_DEVICE_TYPE_DECODER);
-
-  if (ret == NI_RETCODE_SUCCESS && decoder_queue != nullptr &&
-      decoder_queue->length > 0) {
-    // デコーダーも利用可能
-    ni_rsrc_free_device_queue(decoder_queue);
-  }
+  // デコーダー処理は上記に統合済み
 
   return engine;
 }
+
+}  // namespace sora
