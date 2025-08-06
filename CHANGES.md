@@ -38,6 +38,7 @@
     - H.264: `AMF_VIDEO_ENCODER_FORCE_PICTURE_TYPE`
     - H.265: `AMF_VIDEO_ENCODER_HEVC_FORCE_PICTURE_TYPE`
     - AV1: `AMF_VIDEO_ENCODER_AV1_FORCE_FRAME_TYPE`
+  - @voluntas
 - [FIX] Intel VPL の VP9 エンコーダーでキーフレーム要求が機能しない問題を修正
   - VP9 では `MFX_FRAMETYPE_I` のみを設定するように修正
   - `MFX_FRAMETYPE_REF` や `MFX_FRAMETYPE_IDR` を同時に設定すると vpl-gpu-rt の CheckAndFixCtrl で `MFX_FRAMETYPE_P` に変更されてしまうため
