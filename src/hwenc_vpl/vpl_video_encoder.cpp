@@ -473,8 +473,9 @@ int32_t VplVideoEncoderImpl::Encode(
   memset(&ctrl, 0, sizeof(ctrl));
   if (send_key_frame) {
     // VP9 では MFX_FRAMETYPE_I のみを設定する
-    // MFX_FRAMETYPE_REF や MFX_FRAMETYPE_IDR を同時に設定すると
-    // vpl-gpu-rt の CheckAndFixCtrl で MFX_FRAMETYPE_P に変更されてしまう
+    // VP9 は MFX_FRAMETYPE_I か MFX_FRAMETYPE_P のみのフレームを想定しているようで、
+    // 他のフレームタイプを設定すると内部的に MFX_FRAMETYPE_P に変更されてしまう
+    // ref: https://github.com/intel/vpl-gpu-rt/blob/5d99334834aafc5448e7c799a7c176ee0832ec09/_studio/mfx_lib/encode_hw/vp9/src/mfx_vp9_encode_hw_par.cpp#L1853-L1857
     if (codec_ == MFX_CODEC_VP9) {
       ctrl.FrameType = MFX_FRAMETYPE_I;
     } else {
