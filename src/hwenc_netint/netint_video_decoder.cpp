@@ -125,14 +125,16 @@ int32_t NetintVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
   in_packet_.data.packet.dts = input_image.RtpTimestamp();
 
   // デコーダーに書き込み
-  int ret = ni_device_session_write(&decoder_ctx_, &in_packet_, NI_DEVICE_TYPE_DECODER);
+  int ret = ni_device_session_write(&decoder_ctx_, &in_packet_,
+                                    NI_DEVICE_TYPE_DECODER);
   if (ret != NI_RETCODE_SUCCESS) {
     RTC_LOG(LS_ERROR) << "Failed to write packet to decoder: " << ret;
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
   // デコード結果を読み取り
-  ret = ni_device_session_read(&decoder_ctx_, &out_frame_, NI_DEVICE_TYPE_DECODER);
+  ret = ni_device_session_read(&decoder_ctx_, &out_frame_,
+                               NI_DEVICE_TYPE_DECODER);
   if (ret == NI_RETCODE_SUCCESS) {
     // フレームデータを取得
     ni_frame_t* ni_frame = &out_frame_.data.frame;
@@ -238,15 +240,15 @@ bool NetintVideoDecoderImpl::AllocateDecoderContext() {
 
   // デバイスを割り当て - 新しいAPIシグネチャ
   uint64_t load = 0;
-  ni_device_context_t* dev_ctx = ni_rsrc_allocate_auto(
-      NI_DEVICE_TYPE_DECODER,
-      EN_ALLOC_LEAST_LOAD,  // 最小負荷のデバイスを選択
-      ni_codec,
-      width_ > 0 ? width_ : 1920,  // デフォルト幅
-      height_ > 0 ? height_ : 1080, // デフォルト高さ
-      30,  // デフォルトフレームレート
-      &load);
-  
+  ni_device_context_t* dev_ctx =
+      ni_rsrc_allocate_auto(NI_DEVICE_TYPE_DECODER,
+                            EN_ALLOC_LEAST_LOAD,  // 最小負荷のデバイスを選択
+                            ni_codec,
+                            width_ > 0 ? width_ : 1920,    // デフォルト幅
+                            height_ > 0 ? height_ : 1080,  // デフォルト高さ
+                            30,  // デフォルトフレームレート
+                            &load);
+
   if (dev_ctx == nullptr) {
     RTC_LOG(LS_ERROR) << "Failed to allocate decoder device";
     ni_device_session_context_clear(&decoder_ctx_);
@@ -321,13 +323,14 @@ bool NetintVideoDecoder::IsSupported(std::shared_ptr<NetintContext> context,
   }
 
   bool supported = false;
-  
+
   // デコーダーデバイスをチェック
   for (int i = 0; i < NI_MAX_DEVICE_CNT; i++) {
     int guid = device_pool->p_device_queue->xcoders[NI_DEVICE_TYPE_DECODER][i];
     if (guid >= 0) {
       // デバイス情報を取得
-      ni_device_info_t* device_info = ni_rsrc_get_device_info(NI_DEVICE_TYPE_DECODER, guid);
+      ni_device_info_t* device_info =
+          ni_rsrc_get_device_info(NI_DEVICE_TYPE_DECODER, guid);
       if (device_info != nullptr) {
         // 各コーデックのサポートを確認
         for (int codec_idx = 0; codec_idx < EN_CODEC_MAX; codec_idx++) {

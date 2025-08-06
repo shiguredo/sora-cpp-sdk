@@ -61,7 +61,8 @@ bool NetintContext::CanCreate() {
   if (device_pool != nullptr && device_pool->p_device_queue != nullptr) {
     // エンコーダーデバイスがあるか確認
     for (int i = 0; i < NI_MAX_DEVICE_CNT; i++) {
-      if (device_pool->p_device_queue->xcoders[NI_DEVICE_TYPE_ENCODER][i] >= 0) {
+      if (device_pool->p_device_queue->xcoders[NI_DEVICE_TYPE_ENCODER][i] >=
+          0) {
         has_device = true;
         break;
       }
