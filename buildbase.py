@@ -481,7 +481,7 @@ def build_webrtc(platform, local_webrtc_build_dir, local_webrtc_build_args, debu
 
         args += local_webrtc_build_args
 
-        cmd(["python3", "run.py", "build", platform, *args])
+        cmd(["python3", "run.py", platform, *args])
 
         # インクルードディレクトリを増やしたくないので、
         # __config_site を libc++ のディレクトリにコピーしておく
@@ -1017,7 +1017,7 @@ def build_sora(
         ]
 
     with cd(local_sora_cpp_sdk_dir):
-        cmd(["python3", "run.py", "build", platform, *local_sora_cpp_sdk_args])
+        cmd(["python3", "run.py", platform, *local_sora_cpp_sdk_args])
 
 
 class SoraInfo(NamedTuple):
