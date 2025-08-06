@@ -1,6 +1,6 @@
 #include "sora/camera_device_capturer.h"
 
-#if defined(__APPLE__)
+#if defined(__APPLE__) && !defined(SORA_CPP_SDK_VISIONOS)
 #include "sora/mac/mac_capturer.h"
 #elif defined(SORA_CPP_SDK_ANDROID)
 #include "sora/android/android_capturer.h"
@@ -16,7 +16,7 @@ namespace sora {
 
 webrtc::scoped_refptr<webrtc::VideoTrackSourceInterface>
 CreateCameraDeviceCapturer(const CameraDeviceCapturerConfig& config) {
-#if defined(__APPLE__)
+#if (defined(__APPLE__)) && !defined(SORA_CPP_SDK_VISIONOS)
   MacCapturerConfig c;
   c.on_frame = config.on_frame;
   c.width = config.width;

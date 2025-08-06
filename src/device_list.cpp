@@ -15,7 +15,8 @@
 #include <sdk/android/native_api/jni/jvm.h>
 #endif
 
-#if defined(SORA_CPP_SDK_MACOS) || defined(SORA_CPP_SDK_IOS)
+#if (defined(SORA_CPP_SDK_MACOS) || defined(SORA_CPP_SDK_IOS)) && \
+    !defined(SORA_CPP_SDK_VISIONOS)
 #include "sora/mac/mac_capturer.h"
 #elif defined(SORA_CPP_SDK_ANDROID)
 #include "sora/android/android_capturer.h"
@@ -27,7 +28,8 @@ namespace sora {
 bool DeviceList::EnumVideoCapturer(
     std::function<void(std::string, std::string)> f,
     void* android_application_context) {
-#if defined(SORA_CPP_SDK_MACOS) || defined(SORA_CPP_SDK_IOS)
+#if (defined(SORA_CPP_SDK_MACOS) || defined(SORA_CPP_SDK_IOS)) && \
+    !defined(SORA_CPP_SDK_VISIONOS)
 
   return sora::MacCapturer::EnumVideoDevice(f);
 
@@ -68,7 +70,8 @@ bool DeviceList::EnumVideoCapturer(
 bool DeviceList::EnumAudioRecording(
     std::function<void(std::string, std::string)> f) {
   auto env = webrtc::CreateEnvironment();
-#if defined(SORA_CPP_SDK_ANDROID) || defined(SORA_CPP_SDK_IOS)
+#if defined(SORA_CPP_SDK_ANDROID) || defined(SORA_CPP_SDK_IOS) || \
+    defined(SORA_CPP_SDK_VISIONOS)
   // Android や iOS の場合常に１個しかなく、かつ adm->RecordingDeviceName() を呼ぶと fatal error が起きるので
   // 適当な名前で１回だけコールバックする
   f("0", "0");
@@ -120,7 +123,8 @@ bool DeviceList::EnumAudioRecording(
 bool DeviceList::EnumAudioPlayout(
     std::function<void(std::string, std::string)> f) {
   auto env = webrtc::CreateEnvironment();
-#if defined(SORA_CPP_SDK_ANDROID) || defined(SORA_CPP_SDK_IOS)
+#if defined(SORA_CPP_SDK_ANDROID) || defined(SORA_CPP_SDK_IOS) || \
+    defined(SORA_CPP_SDK_VISIONOS)
   // Android や iOS の場合常に１個しかなく、かつ adm->PlayoutDeviceName() を呼ぶと fatal error が起きるので
   // 適当な名前で１回だけコールバックする
   f("0", "0");

@@ -54,7 +54,7 @@ jobs:
           key: windows-cuda-${{ steps.versions.outputs.cuda_version }}.v1
       - run: echo "${CUDA_VERSION}" > _install\windows_x86_64\release\cuda.version
         if: steps.cache-cuda.outputs.cache-hit == 'true'
-      - run: python3 run.py --test --run-e2e-test --package ${{ matrix.name }}
+      - run: python3 run.py build --test --run-e2e-test --package ${{ matrix.name }}
         env:
           SORA_CPP_SDK_TEMP_DIR: C:\
       - name: Get package name
@@ -103,6 +103,7 @@ jobs:
         name:
           - macos_arm64
           - ios
+          - visionos
     name: Build sora-cpp-sdk for ${{ matrix.name }}
     runs-on: macos-14
     env:
@@ -116,7 +117,10 @@ jobs:
         run: |
           echo "user=`users`" >> $GITHUB_OUTPUT
         id: env
-      - run: python3 run.py --test --run-e2e-test --package ${{ matrix.name }}
+      - run: python3 run.py build --test --run-e2e-test --package ${{ matrix.name }}
+        if: matrix.name != 'visionos'
+      - run: python3 run.py build --package ${{ matrix.name }}
+        if: matrix.name == 'visionos'
       - name: Get package name
         run: |
           source _package/${{ matrix.name }}/release/sora.env
@@ -271,7 +275,7 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         if: matrix.platform.os == 'android'
-      - run: python3 run.py --test --run-e2e-test --package ${{ matrix.platform.name }}
+      - run: python3 run.py build --test --run-e2e-test --package ${{ matrix.platform.name }}
       - name: Get package name
         run: |
           source _package/${{ matrix.platform.name }}/release/sora.env
@@ -328,6 +332,9 @@ jobs:
       - uses: ./.github/actions/download
         with:
           platform: ios
+      - uses: ./.github/actions/download
+        with:
+          platform: visionos
       - uses: ./.github/actions/download
         with:
           platform: ubuntu-22.04_x86_64

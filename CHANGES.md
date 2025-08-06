@@ -11,6 +11,14 @@
 
 ## develop
 
+## 2025.4.0-apple-vision-pro.0
+
+- [ADD] visionOS に対応する
+  - visionOS には `SORA_CPP_SDK_VISIONOS` を使用してビルドするように対応する
+  - ビルドオプションに `visionos` と `visionos_simulator` を追加する
+  - 今回の対応では受信のみで、カメラ映像の送信は対応しない
+  - @torikizi
+
 ## 2025.4.0
 
 **リリース日**: 2025-07-09
