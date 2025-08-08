@@ -84,6 +84,8 @@
   - `--http-host` オプションで HTTP サーバーのホストアドレスを指定可能（デフォルト: 127.0.0.1）
   - `/stats` エンドポイントで WebRTC の統計情報を JSON 形式で取得可能
   - @voluntas
+- [UPDATE] CMake を 4.1.0 にあげる
+  - @torikizi
 
 ## 2025.4.0
 
