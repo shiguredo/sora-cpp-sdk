@@ -27,7 +27,7 @@ jobs:
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
       TEST_MATRIX_NAME: ${{ matrix.name }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: microsoft/setup-msbuild@v2
       - name: Env to output
         run: |
@@ -111,7 +111,7 @@ jobs:
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
       TEST_MATRIX_NAME: ${{ matrix.name }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Env to output
         run: |
           echo "user=`users`" >> $GITHUB_OUTPUT
@@ -186,7 +186,7 @@ jobs:
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
       TEST_MATRIX_NAME: ${{ matrix.platform.name }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Disk cleanup
         run: |
           set -x
@@ -318,7 +318,7 @@ jobs:
       - build-ubuntu
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/download
         with:
           platform: windows_x86_64
@@ -378,7 +378,7 @@ jobs:
         working-directory: ${{ github.workspace }}/examples
     runs-on: windows-2022
     steps:
-        - uses: actions/checkout@v4
+        - uses: actions/checkout@v5
         - name: Build Example
           run: |
             python3 ${{ matrix.example }}/windows_x86_64/run.py
@@ -408,7 +408,7 @@ jobs:
         working-directory: ${{ github.workspace }}/examples
     runs-on: macos-14
     steps:
-        - uses: actions/checkout@v4
+        - uses: actions/checkout@v5
         - name: Build Example
           run: |
             python3 ${{ matrix.example }}/macos_arm64/run.py
@@ -445,7 +445,7 @@ jobs:
         working-directory: ${{ github.workspace }}/examples
     runs-on: ${{ matrix.platform.runs-on }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install deps
         run: |
           sudo apt-get update
@@ -499,7 +499,7 @@ jobs:
             - ubuntu-24.04_armv8.tar.gz
       runs-on: ubuntu-24.04
       steps:
-        - uses: actions/checkout@v4
+        - uses: actions/checkout@v5
         - uses: actions/download-artifact@v4
           with:
             name: ${{ matrix.example }}_${{ matrix.archive }}

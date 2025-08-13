@@ -74,6 +74,10 @@
     - `SDL_CreateRGBSurfaceFrom` を `SDL_CreateSurfaceFrom` に変更
     - `SDL_FreeSurface` を `SDL_DestroySurface` に変更
   - @melpon
+- [UPDATE] CMake を 4.1.0 にあげる
+  - @torikizi
+- [UPDATE] actions/checkout@v4 と actions/download-artifact@v4 を @v5 に上げる
+  - @torikizi
 - [ADD] sumomo のレンダラーに Sixel と ANSI エスケープシーケンスでの表示を追加する
   - `--use-sixel`, `--sixel-width`, `--sixel-height` オプションの追加
   - `--use-ansi`, `--ansi-width`, `--ansi-height` オプションの追加
@@ -84,8 +88,7 @@
   - `--http-host` オプションで HTTP サーバーのホストアドレスを指定可能（デフォルト: 127.0.0.1）
   - `/stats` エンドポイントで WebRTC の統計情報を JSON 形式で取得可能
   - @voluntas
-- [UPDATE] CMake を 4.1.0 にあげる
-  - @torikizi
+
 
 ## 2025.4.0
 
