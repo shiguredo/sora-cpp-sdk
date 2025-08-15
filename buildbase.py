@@ -34,7 +34,6 @@ import shlex
 import shutil
 import stat
 import subprocess
-import sys
 import tarfile
 import urllib.parse
 import zipfile
@@ -182,17 +181,17 @@ def download(
 
         # ダウンロード後にハッシュチェック
         if expected_sha256 is not None:
-            verify_sha256(output_path, expected_sha256)
+            try:
+                verify_sha256(output_path, expected_sha256)
+            except ValueError as e:
+                logging.error(f"Hash verification failed. {e}")
+                raise
 
-    except Exception as e:
+    except Exception:
         # ゴミを残さないようにする
         if os.path.exists(output_path):
             logging.error(f"Removing incomplete/invalid file: {output_path}")
             os.remove(output_path)
-        # ハッシュチェックエラーの場合は即座に終了
-        if isinstance(e, ValueError) and "SHA256 hash mismatch" in str(e):
-            logging.critical("Critical error: Hash verification failed. Aborting.")
-            sys.exit(1)
         raise
 
     return output_path
@@ -742,6 +741,7 @@ def build_and_install_boost(
     source_dir,
     build_dir,
     install_dir,
+    expected_sha256: str,
     debug: bool,
     cxx: str,
     cflags: List[str],
@@ -758,16 +758,6 @@ def build_and_install_boost(
     android_build_platform="linux-x86_64",
 ):
     version_underscore = version.replace(".", "_")
-
-    # Boost のバージョンごとの SHA256 ハッシュ値
-    boost_sha256_hashes = {
-        "1_89_0": "9de758db755e8330a01d995b0a24d09798048400ac25c03fc5ea9be364b13c93",
-    }
-
-    # 対応するハッシュ値を取得（定義されていない場合は None）
-    expected_sha256 = boost_sha256_hashes.get(version_underscore)
-    if expected_sha256:
-        logging.info(f"SHA256 hash verification enabled for boost_{version_underscore}.tar.gz")
 
     archive = download(
         # 公式サイトに負荷をかけないための時雨堂によるミラー
