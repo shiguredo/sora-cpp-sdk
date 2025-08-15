@@ -145,7 +145,12 @@ def add_path(path: str, is_after=False):
         os.environ["PATH"] = path + PATH_SEPARATOR + os.environ["PATH"]
 
 
-def download(url: str, output_dir: Optional[str] = None, filename: Optional[str] = None, expected_sha256: Optional[str] = None) -> str:
+def download(
+    url: str,
+    output_dir: Optional[str] = None,
+    filename: Optional[str] = None,
+    expected_sha256: Optional[str] = None,
+) -> str:
     if filename is None:
         output_path = urllib.parse.urlparse(url).path.split("/")[-1]
     else:
@@ -159,7 +164,7 @@ def download(url: str, output_dir: Optional[str] = None, filename: Optional[str]
         if expected_sha256 is not None:
             try:
                 verify_sha256(output_path, expected_sha256)
-            except ValueError as e:
+            except ValueError:
                 # ハッシュ不一致の場合はファイルを削除して再ダウンロードを試みる
                 logging.warning(f"Existing file has invalid hash, removing: {output_path}")
                 os.remove(output_path)
@@ -174,11 +179,11 @@ def download(url: str, output_dir: Optional[str] = None, filename: Optional[str]
             cmd(["curl", "-fLo", output_path, url])
         else:
             cmd(["wget", "-cO", output_path, url])
-        
+
         # ダウンロード後にハッシュチェック
         if expected_sha256 is not None:
             verify_sha256(output_path, expected_sha256)
-            
+
     except Exception as e:
         # ゴミを残さないようにする
         if os.path.exists(output_path):
@@ -201,7 +206,7 @@ def verify_sha256(file_path: str, expected_sha256: str):
         # メモリ効率のため、チャンクごとに読み込む
         for byte_block in iter(lambda: f.read(4096), b""):
             sha256_hash.update(byte_block)
-    
+
     actual_sha256 = sha256_hash.hexdigest()
     if actual_sha256 != expected_sha256.lower():
         error_msg = (
@@ -349,7 +354,12 @@ def _extractzip(z: zipfile.ZipFile, path: str):
 def extract(file: str, output_dir: str, output_dirname: str, filetype: Optional[str] = None):
     path = os.path.join(output_dir, output_dirname)
     logging.info(f"Extract {file} to {path}")
-    if filetype == "gzip" or file.endswith(".tar.gz"):
+    if (
+        filetype == "gzip"
+        or file.endswith(".tar.gz")
+        or filetype == "lzma"
+        or file.endswith(".tar.xz")
+    ):
         rm_rf(path)
         with tarfile.open(file) as t:
             dir = is_single_dir_tar(t)
@@ -748,17 +758,17 @@ def build_and_install_boost(
     android_build_platform="linux-x86_64",
 ):
     version_underscore = version.replace(".", "_")
-    
+
     # Boost のバージョンごとの SHA256 ハッシュ値
     boost_sha256_hashes = {
         "1_89_0": "9de758db755e8330a01d995b0a24d09798048400ac25c03fc5ea9be364b13c93",
     }
-    
+
     # 対応するハッシュ値を取得（定義されていない場合は None）
     expected_sha256 = boost_sha256_hashes.get(version_underscore)
     if expected_sha256:
         logging.info(f"SHA256 hash verification enabled for boost_{version_underscore}.tar.gz")
-    
+
     archive = download(
         # 公式サイトに負荷をかけないための時雨堂によるミラー
         f"https://oss-mirrors.shiguredo.jp/boost_{version_underscore}.tar.gz",
