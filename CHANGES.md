@@ -19,6 +19,8 @@
   - @melpon
 - [UPDATE] libwebrtc を m139.7258.3.0 にあげる
   - @miosakuma
+- [UPDATE] Boost を 1.89.0 にあげる
+  - @voluntas
 - [ADD] clang-include-cleaner や clang-format を実行するサブコマンドを追加する
   - `python3 run.py iwyu ubuntu-24.04_x86_64`
   - `python3 run.py format`
@@ -88,7 +90,6 @@
   - `--http-host` オプションで HTTP サーバーのホストアドレスを指定可能（デフォルト: 127.0.0.1）
   - `/stats` エンドポイントで WebRTC の統計情報を JSON 形式で取得可能
   - @voluntas
-
 
 ## 2025.4.0
 
