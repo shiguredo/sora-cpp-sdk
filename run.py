@@ -51,6 +51,17 @@ logging.basicConfig(level=logging.DEBUG)
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
+def read_version_and_deps(version_path="VERSION", deps_path="DEPS"):
+    """VERSION と DEPS ファイルを読み込んで統合した辞書を返す"""
+    # VERSION ファイルはバージョン番号のみなので直接読み込む
+    with open(version_path, 'r') as f:
+        version_str = f.read().strip()
+    version = {"SORA_CPP_SDK_VERSION": version_str}
+    deps = read_version_file(deps_path)
+    # version と deps をマージ
+    return {**version, **deps}
+
+
 def get_common_cmake_args(
     platform: Platform,
     version: Dict[str, str],
@@ -165,7 +176,7 @@ def install_deps(
     disable_cuda: bool,
 ):
     with cd(BASE_DIR):
-        version = read_version_file("VERSION")
+        version = read_version_and_deps()
 
         # multistrap を使った sysroot の構築
         if platform.target.os == "ubuntu" and platform.target.arch == "armv8":
@@ -538,8 +549,8 @@ def install_deps(
 
 
 def check_version_file():
-    version = read_version_file(os.path.join(BASE_DIR, "VERSION"))
-    example_version = read_version_file(os.path.join(BASE_DIR, "examples", "VERSION"))
+    version = read_version_and_deps(os.path.join(BASE_DIR, "VERSION"), os.path.join(BASE_DIR, "DEPS"))
+    example_version = read_version_and_deps(os.path.join(BASE_DIR, "examples", "VERSION"), os.path.join(BASE_DIR, "examples", "DEPS"))
     has_error = False
     if version["SORA_CPP_SDK_VERSION"] != example_version["SORA_CPP_SDK_VERSION"]:
         logging.error(
@@ -654,7 +665,7 @@ def _build(
         webrtc_version = read_version_file(webrtc_info.version_file)
         webrtc_deps = read_version_file(webrtc_info.deps_file)
         with cd(BASE_DIR):
-            version = read_version_file("VERSION")
+            version = read_version_and_deps()
             sora_cpp_sdk_version = version["SORA_CPP_SDK_VERSION"]
             sora_cpp_sdk_commit = cmdcap(["git", "rev-parse", "HEAD"])
             android_native_api_level = version["ANDROID_NATIVE_API_LEVEL"]
@@ -980,7 +991,7 @@ def _build(
         rm_rf(os.path.join(package_dir, "sora.env"))
 
         with cd(BASE_DIR):
-            version = read_version_file("VERSION")
+            version = read_version_and_deps()
             sora_cpp_sdk_version = version["SORA_CPP_SDK_VERSION"]
             boost_version = version["BOOST_VERSION"]
 

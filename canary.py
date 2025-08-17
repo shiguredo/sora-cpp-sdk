@@ -7,46 +7,33 @@ EXAMPLES_VERSION_FILE = "examples/VERSION"
 
 
 def update_sdk_version(version_content):
-    updated_content = []
-    sdk_version_updated = False
-    new_version = None
-
-    for line in version_content:
-        line = line.strip()  # 前後の余分なスペースや改行を削除
-        if line.startswith("SORA_CPP_SDK_VERSION="):
-            version_match = re.match(
-                r"SORA_CPP_SDK_VERSION=(\d{4}\.\d+\.\d+)(-canary\.(\d+))?", line
-            )
-            if version_match:
-                major_minor_patch = version_match.group(1)
-                canary_suffix = version_match.group(2)
-                if canary_suffix is None:
-                    new_version = f"{major_minor_patch}-canary.0"
-                else:
-                    canary_number = int(version_match.group(3))
-                    new_version = f"{major_minor_patch}-canary.{canary_number + 1}"
-
-                updated_content.append(f"SORA_CPP_SDK_VERSION={new_version}")
-                sdk_version_updated = True
-            else:
-                updated_content.append(line)
+    # VERSION ファイルはバージョン番号のみを含む
+    version_str = version_content.strip()
+    
+    version_match = re.match(
+        r"(\d{4}\.\d+\.\d+)(-canary\.(\d+))?", version_str
+    )
+    if version_match:
+        major_minor_patch = version_match.group(1)
+        canary_suffix = version_match.group(2)
+        if canary_suffix is None:
+            new_version = f"{major_minor_patch}-canary.0"
         else:
-            updated_content.append(line)
-
-    if not sdk_version_updated:
-        raise ValueError("SORA_CPP_SDK_VERSION not found in VERSION file.")
-
-    return updated_content, new_version
+            canary_number = int(version_match.group(3))
+            new_version = f"{major_minor_patch}-canary.{canary_number + 1}"
+        
+        return new_version, new_version
+    else:
+        raise ValueError(f"Invalid version format in VERSION file: {version_str}")
 
 
 def write_version_file(filename, updated_content, dry_run):
     if dry_run:
         print(f"Dry run: The following changes would be written to {filename}:")
-        for line in updated_content:
-            print(line.strip())
+        print(updated_content)
     else:
         with open(filename, "w") as file:
-            file.write("\n".join(updated_content) + "\n")
+            file.write(updated_content)
         print(f"{filename} updated.")
 
 
@@ -81,13 +68,13 @@ def main():
 
     # Read and update the VERSION file
     with open(VERSION_FILE, "r") as file:
-        version_content = file.readlines()
+        version_content = file.read()
     updated_version_content, new_version = update_sdk_version(version_content)
     write_version_file(VERSION_FILE, updated_version_content, args.dry_run)
 
     # Read and update the examples/VERSION file
     with open(EXAMPLES_VERSION_FILE, "r") as file:
-        examples_version_content = file.readlines()
+        examples_version_content = file.read()
     updated_examples_version_content, _ = update_sdk_version(examples_version_content)
     write_version_file(EXAMPLES_VERSION_FILE, updated_examples_version_content, args.dry_run)
 
