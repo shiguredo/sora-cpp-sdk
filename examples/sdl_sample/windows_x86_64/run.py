@@ -30,6 +30,7 @@ from buildbase import (  # noqa: E402
     read_version_file,
 )
 
+
 def install_deps(
     source_dir,
     build_dir,
