@@ -550,25 +550,26 @@ def install_deps(
 
 def check_version_file():
     version = read_version_and_deps(os.path.join(BASE_DIR, "VERSION"), os.path.join(BASE_DIR, "DEPS"))
-    example_version = read_version_and_deps(os.path.join(BASE_DIR, "examples", "VERSION"), os.path.join(BASE_DIR, "examples", "DEPS"))
+    example_deps = read_version_file(os.path.join(BASE_DIR, "examples", "DEPS"))
     has_error = False
-    if version["SORA_CPP_SDK_VERSION"] != example_version["SORA_CPP_SDK_VERSION"]:
+    # examples/DEPS にも SORA_CPP_SDK_VERSION が含まれているのでチェック
+    if version["SORA_CPP_SDK_VERSION"] != example_deps["SORA_CPP_SDK_VERSION"]:
         logging.error(
-            f"SORA_CPP_SDK_VERSION mismatch: VERSION={version['SORA_CPP_SDK_VERSION']}, example/VERSION={example_version['SORA_CPP_SDK_VERSION']}"
+            f"SORA_CPP_SDK_VERSION mismatch: VERSION={version['SORA_CPP_SDK_VERSION']}, examples/DEPS={example_deps['SORA_CPP_SDK_VERSION']}"
         )
         has_error = True
-    if version["WEBRTC_BUILD_VERSION"] != example_version["WEBRTC_BUILD_VERSION"]:
+    if version["WEBRTC_BUILD_VERSION"] != example_deps["WEBRTC_BUILD_VERSION"]:
         logging.error(
-            f"WEBRTC_BUILD_VERSION mismatch: VERSION={version['WEBRTC_BUILD_VERSION']}, example/VERSION={example_version['WEBRTC_BUILD_VERSION']}"
+            f"WEBRTC_BUILD_VERSION mismatch: DEPS={version['WEBRTC_BUILD_VERSION']}, examples/DEPS={example_deps['WEBRTC_BUILD_VERSION']}"
         )
         has_error = True
-    if version["BOOST_VERSION"] != example_version["BOOST_VERSION"]:
+    if version["BOOST_VERSION"] != example_deps["BOOST_VERSION"]:
         logging.error(
-            f"BOOST_VERSION mismatch: VERSION={version['BOOST_VERSION']}, example/VERSION={example_version['BOOST_VERSION']}"
+            f"BOOST_VERSION mismatch: DEPS={version['BOOST_VERSION']}, examples/DEPS={example_deps['BOOST_VERSION']}"
         )
         has_error = True
     if has_error:
-        raise Exception("VERSION mismatch")
+        raise Exception("VERSION/DEPS mismatch")
 
 
 AVAILABLE_TARGETS = [

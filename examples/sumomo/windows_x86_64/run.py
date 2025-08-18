@@ -31,15 +31,9 @@ from buildbase import (  # noqa: E402
 )
 
 
-def read_version_and_deps(version_path="VERSION", deps_path="DEPS"):
-    """VERSION と DEPS ファイルを読み込んで統合した辞書を返す"""
-    # VERSION ファイルはバージョン番号のみなので直接読み込む
-    with open(version_path, 'r') as f:
-        version_str = f.read().strip()
-    version = {"SORA_CPP_SDK_VERSION": version_str}
-    deps = read_version_file(deps_path)
-    # version と deps をマージ
-    return {**version, **deps}
+def read_deps():
+    """DEPS ファイルを読み込む"""
+    return read_version_file("DEPS")
 
 
 def install_deps(
@@ -53,7 +47,7 @@ def install_deps(
     local_sora_cpp_sdk_args: List[str],
 ):
     with cd(BASE_DIR):
-        version = read_version_and_deps()
+        version = read_deps()
 
         # WebRTC
         if local_webrtc_build_dir is None:
