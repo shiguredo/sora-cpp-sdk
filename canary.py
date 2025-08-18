@@ -9,10 +9,8 @@ EXAMPLES_DEPS_FILE = "examples/DEPS"
 def update_sdk_version(version_content):
     # VERSION ファイルはバージョン番号のみを含む
     version_str = version_content.strip()
-    
-    version_match = re.match(
-        r"(\d{4}\.\d+\.\d+)(-canary\.(\d+))?", version_str
-    )
+
+    version_match = re.match(r"(\d{4}\.\d+\.\d+)(-canary\.(\d+))?", version_str)
     if version_match:
         major_minor_patch = version_match.group(1)
         canary_suffix = version_match.group(2)
@@ -21,13 +19,15 @@ def update_sdk_version(version_content):
         else:
             canary_number = int(version_match.group(3))
             new_version = f"{major_minor_patch}-canary.{canary_number + 1}"
-        
-        return new_version, new_version
+
+        return new_version
     else:
         raise ValueError(f"Invalid version format in VERSION file: {version_str}")
 
 
-def write_version_file(filename, updated_content, dry_run):
+def write_file(filename, updated_content, dry_run):
+    # ファイルの末尾に改行を追加
+    updated_content = updated_content.rstrip() + "\n"
     if dry_run:
         print(f"Dry run: The following changes would be written to {filename}:")
         print(updated_content)
@@ -39,14 +39,19 @@ def write_version_file(filename, updated_content, dry_run):
 
 def update_deps_version(deps_content, new_version):
     """DEPS ファイルの SORA_CPP_SDK_VERSION を更新する"""
-    lines = deps_content.split('\n')
+    lines = deps_content.split("\n")
     updated_lines = []
+    sdk_version_updated = False
     for line in lines:
-        if line.startswith('SORA_CPP_SDK_VERSION='):
-            updated_lines.append(f'SORA_CPP_SDK_VERSION={new_version}')
+        line = line.strip()  # 前後の余分なスペースや改行を削除
+        if line.startswith("SORA_CPP_SDK_VERSION="):
+            updated_lines.append(f"SORA_CPP_SDK_VERSION={new_version}")
+            sdk_version_updated = True
         else:
             updated_lines.append(line)
-    return '\n'.join(updated_lines)
+    if not sdk_version_updated:
+        raise ValueError("SORA_CPP_SDK_VERSION not found in DEPS file.")
+    return "\n".join(updated_lines)
 
 
 def git_operations(new_version, dry_run):
@@ -57,7 +62,9 @@ def git_operations(new_version, dry_run):
         print(f"Dry run: Would execute git push origin {new_version}")
     else:
         print("Executing: git commit -am '[canary] Update VERSION and examples/DEPS'")
-        subprocess.run(["git", "commit", "-am", "[canary] Update VERSION and examples/DEPS"], check=True)
+        subprocess.run(
+            ["git", "commit", "-am", "[canary] Update VERSION and examples/DEPS"], check=True
+        )
 
         print(f"Executing: git tag {new_version}")
         subprocess.run(["git", "tag", new_version], check=True)
@@ -81,14 +88,14 @@ def main():
     # Read and update the VERSION file
     with open(VERSION_FILE, "r") as file:
         version_content = file.read()
-    updated_version_content, new_version = update_sdk_version(version_content)
-    write_version_file(VERSION_FILE, updated_version_content, args.dry_run)
+    new_version = update_sdk_version(version_content)
+    write_file(VERSION_FILE, new_version, args.dry_run)
 
     # Read and update the examples/DEPS file
     with open(EXAMPLES_DEPS_FILE, "r") as file:
         examples_deps_content = file.read()
     updated_examples_deps_content = update_deps_version(examples_deps_content, new_version)
-    write_version_file(EXAMPLES_DEPS_FILE, updated_examples_deps_content, args.dry_run)
+    write_file(EXAMPLES_DEPS_FILE, updated_examples_deps_content, args.dry_run)
 
     # Perform git operations
     git_operations(new_version, args.dry_run)

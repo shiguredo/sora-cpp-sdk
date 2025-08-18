@@ -32,12 +32,6 @@ from buildbase import (  # noqa: E402
     read_version_file,
 )
 
-
-def read_deps():
-    """DEPS ファイルを読み込む"""
-    return read_version_file("DEPS")
-
-
 def install_deps(
     source_dir,
     build_dir,
@@ -49,7 +43,7 @@ def install_deps(
     local_sora_cpp_sdk_args: List[str],
 ):
     with cd(BASE_DIR):
-        version = read_deps()
+        version = read_version_file("DEPS")
 
         # multistrap を使った sysroot の構築
         conf = os.path.join(BASE_DIR, "multistrap", "ubuntu-24.04_armv8.conf")

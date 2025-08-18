@@ -51,15 +51,10 @@ logging.basicConfig(level=logging.DEBUG)
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
-def read_version(version_path="VERSION"):
+def read_version(version_path):
     """VERSION ファイルからバージョンを読み込む"""
-    with open(version_path, 'r') as f:
+    with open(version_path, "r") as f:
         return f.read().strip()
-
-
-def read_deps(deps_path="DEPS"):
-    """DEPS ファイルから依存関係情報を読み込む"""
-    return read_version_file(deps_path)
 
 
 def get_common_cmake_args(
@@ -176,7 +171,7 @@ def install_deps(
     disable_cuda: bool,
 ):
     with cd(BASE_DIR):
-        deps = read_deps()
+        deps = read_version_file("DEPS")
 
         # multistrap を使った sysroot の構築
         if platform.target.os == "ubuntu" and platform.target.arch == "armv8":
@@ -549,16 +544,18 @@ def install_deps(
 
 
 def check_version_file():
-    version = read_version(os.path.join(BASE_DIR, "VERSION"))
-    deps = read_deps(os.path.join(BASE_DIR, "DEPS"))
+    sora_cpp_sdk_version = read_version(os.path.join(BASE_DIR, "VERSION"))
+    deps = read_version_file(os.path.join(BASE_DIR, "DEPS"))
     example_deps = read_version_file(os.path.join(BASE_DIR, "examples", "DEPS"))
     has_error = False
-    # examples/DEPS にも SORA_CPP_SDK_VERSION が含まれているのでチェック
-    if version != example_deps["SORA_CPP_SDK_VERSION"]:
+    # VERSION ファイルに書いてる Sora C++ SDK のバージョンが、
+    # examples/DEPS にある SORA_CPP_SDK_VERSION と一致しているか確認
+    if sora_cpp_sdk_version != example_deps["SORA_CPP_SDK_VERSION"]:
         logging.error(
-            f"SORA_CPP_SDK_VERSION mismatch: VERSION={version}, examples/DEPS={example_deps['SORA_CPP_SDK_VERSION']}"
+            f"SORA_CPP_SDK_VERSION mismatch: VERSION={sora_cpp_sdk_version}, examples/DEPS={example_deps['SORA_CPP_SDK_VERSION']}"
         )
         has_error = True
+    # その他のバージョンも確認
     if deps["WEBRTC_BUILD_VERSION"] != example_deps["WEBRTC_BUILD_VERSION"]:
         logging.error(
             f"WEBRTC_BUILD_VERSION mismatch: DEPS={deps['WEBRTC_BUILD_VERSION']}, examples/DEPS={example_deps['WEBRTC_BUILD_VERSION']}"
@@ -667,8 +664,8 @@ def _build(
         webrtc_version = read_version_file(webrtc_info.version_file)
         webrtc_deps = read_version_file(webrtc_info.deps_file)
         with cd(BASE_DIR):
-            sora_cpp_sdk_version = read_version()
-            deps = read_deps()
+            sora_cpp_sdk_version = read_version("VERSION")
+            deps = read_version_file("DEPS")
             sora_cpp_sdk_commit = cmdcap(["git", "rev-parse", "HEAD"])
             android_native_api_level = deps["ANDROID_NATIVE_API_LEVEL"]
         cmake_args.append(f"-DWEBRTC_INCLUDE_DIR={cmake_path(webrtc_info.webrtc_include_dir)}")
@@ -993,8 +990,8 @@ def _build(
         rm_rf(os.path.join(package_dir, "sora.env"))
 
         with cd(BASE_DIR):
-            sora_cpp_sdk_version = read_version()
-            deps = read_deps()
+            sora_cpp_sdk_version = read_version("VERSION")
+            deps = read_version_file("DEPS")
             boost_version = deps["BOOST_VERSION"]
 
         def archive(archive_path, files, is_windows):

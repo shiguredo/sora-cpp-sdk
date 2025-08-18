@@ -31,12 +31,6 @@ from buildbase import (  # noqa: E402
     read_version_file,
 )
 
-
-def read_deps():
-    """DEPS ファイルを読み込む"""
-    return read_version_file("DEPS")
-
-
 def install_deps(
     source_dir,
     build_dir,
@@ -48,7 +42,7 @@ def install_deps(
     local_sora_cpp_sdk_args: List[str],
 ):
     with cd(BASE_DIR):
-        version = read_deps()
+        version = read_version_file("DEPS")
 
         # WebRTC
         if local_webrtc_build_dir is None:
