@@ -11,6 +11,16 @@
 
 ## develop
 
+- [CHANGE] VERSION ファイルと DEPS ファイルを分離する
+  - VERSION ファイルにはバージョン番号のみを格納する
+  - DEPS ファイルに依存関係のバージョン情報を移動する
+  - run.py に read_version_and_deps() 関数を追加して両ファイルを読み込む
+  - examples/VERSION を examples/DEPS に名前を変更する
+  - canary.py を新しい VERSION 形式と examples/DEPS に対応させる
+  - GitHub Actions の build.yml で source VERSION を source DEPS に変更する（CUDA_VERSION を使用するため）
+  - GitHub Actions の formatter.yml から source VERSION を削除する（環境変数を使用していないため）
+  - Android テストアプリの build.gradle で CMAKE_VERSION を DEPS ファイルから動的に読み込むように変更する
+  - @voluntas
 - [CHANGE] ライブラリのヘッダーファイルとソースファイルで使用されている include を整理する
   - 今まで間接的にインクルードされていたファイルが含まれなくなっている可能性があるので、破壊的変更になる
   - @melpon

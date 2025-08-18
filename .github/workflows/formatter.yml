@@ -34,20 +34,19 @@ jobs:
         uses: actions/cache@v4
         with:
           path: _install/${{ matrix.platform.name }}/release
-          key: ${{ matrix.platform.name }}-${{ hashFiles('VERSION') }}
+          key: ${{ matrix.platform.name }}-${{ hashFiles('VERSION', 'DEPS') }}
           restore-keys: |
             ${{ matrix.platform.name }}-
       - name: Cache Dependencies
         uses: actions/cache@v4
         with:
           path: _build/${{ matrix.platform.name }}/release/clang-include-cleaner.json
-          key: ${{ matrix.platform.name }}-${{ hashFiles('VERSION') }}
+          key: ${{ matrix.platform.name }}-${{ hashFiles('VERSION', 'DEPS') }}
           restore-keys: |
             ${{ matrix.platform.name }}-
       - name: Install deps for ${{ matrix.platform.name }}
         if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
         run: |
-          source VERSION
           sudo apt-get update
           sudo apt-get install -y software-properties-common
 
