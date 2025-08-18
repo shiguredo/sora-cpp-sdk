@@ -2,6 +2,18 @@ plugins {
     id 'com.android.application'
 }
 
+// DEPS ファイルから CMAKE_VERSION を読み込む
+def depsFile = file('../../../DEPS')
+if (!depsFile.exists()) {
+    throw new GradleException("DEPS ファイルが見つかりません: ${depsFile.absolutePath}")
+}
+def props = new Properties()
+depsFile.withInputStream { props.load(it) }
+def cmakeVersion = props.getProperty('CMAKE_VERSION')
+if (!cmakeVersion) {
+    throw new GradleException("DEPS ファイルに CMAKE_VERSION が見つかりません")
+}
+
 android {
     namespace "jp.shiguredo.hello"
     compileSdk 34
@@ -70,7 +82,7 @@ android {
     externalNativeBuild {
         cmake {
             path file('src/main/cpp/CMakeLists.txt')
-            version '4.1.0'
+            version cmakeVersion
         }
     }
     buildFeatures {
