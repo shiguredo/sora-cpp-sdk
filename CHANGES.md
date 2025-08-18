@@ -19,6 +19,7 @@
   - canary.py を新しい VERSION 形式と examples/DEPS に対応させる
   - GitHub Actions の build.yml で source VERSION を source DEPS に変更する（CUDA_VERSION を使用するため）
   - GitHub Actions の formatter.yml から source VERSION を削除する（環境変数を使用していないため）
+  - Android テストアプリの build.gradle で CMAKE_VERSION を DEPS ファイルから動的に読み込むように変更する
   - @voluntas
 - [CHANGE] ライブラリのヘッダーファイルとソースファイルで使用されている include を整理する
   - 今まで間接的にインクルードされていたファイルが含まれなくなっている可能性があるので、破壊的変更になる
