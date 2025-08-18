@@ -37,4 +37,4 @@ python3 examples/sumomo/macos_arm64/run.py --local-sora-cpp-sdk-dir .
 ローカルでビルドした sdk のルートディレクトリを `--local-sora-cpp-sdk-dir` にて指定してください。
 
 > [!note]
-> `--local-sora-cpp-sdk-dir` を指定した際は `examples/VERSION` に定義されている `SORA_CPP_SDK_VERSION` と `BOOST_VERSION` の値は利用されません。
+> `--local-sora-cpp-sdk-dir` を指定した際は `examples/DEPS` に定義されている `SORA_CPP_SDK_VERSION` と `BOOST_VERSION` の値は利用されません。
