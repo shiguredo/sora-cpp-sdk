@@ -23,7 +23,7 @@
 #include <rtc_base/logging.h>
 #include <rtc_base/synchronization/mutex.h>
 
-#include "base_renderer.h"
+#include <sora/renderer/base_renderer.h>
 
 SDLRenderer::SDLRenderer(int width, int height, bool fullscreen)
     : BaseRenderer(width, height, 30),

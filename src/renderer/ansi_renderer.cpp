@@ -1,16 +1,16 @@
-#include "ansi_renderer.h"
+#include "sora/renderer/ansi_renderer.h"
 
 #include <cstdint>
 #include <iostream>
 #include <string>
 #include <vector>
 
-#include "base_renderer.h"
+#include "sora/renderer/base_renderer.h"
 
-// WebRTC
+namespace sora {
 
-AnsiRenderer::AnsiRenderer(int width, int height)
-    : BaseRenderer(width, height, 10) {
+AnsiRenderer::AnsiRenderer(int width, int height, int fps)
+    : BaseRenderer(width, height, fps) {
   Start();
 }
 
@@ -103,3 +103,5 @@ void AnsiRenderer::OutputAnsi(const uint8_t* rgb_data, int width, int height) {
   // 一括出力
   std::cout << output << std::flush;
 }
+
+}  // namespace sora

@@ -106,6 +106,9 @@ target_sources(sora
     src/open_h264_video_codec.cpp
     src/open_h264_video_decoder.cpp
     src/open_h264_video_encoder.cpp
+    src/renderer/ansi_renderer.cpp
+    src/renderer/base_renderer.cpp
+    src/renderer/sixel_renderer.cpp
     src/rtc_ssl_verifier.cpp
     src/rtc_stats.cpp
     src/scalable_track_source.cpp

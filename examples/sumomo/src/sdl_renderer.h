@@ -9,9 +9,9 @@
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_video.h>
 
-#include "base_renderer.h"
+#include <sora/renderer/base_renderer.h>
 
-class SDLRenderer : public BaseRenderer {
+class SDLRenderer : public sora::BaseRenderer {
  public:
   SDLRenderer(int width, int height, bool fullscreen);
   ~SDLRenderer() override;

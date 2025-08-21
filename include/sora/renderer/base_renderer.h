@@ -15,6 +15,8 @@
 #include <api/video/video_sink_interface.h>
 #include <rtc_base/synchronization/mutex.h>
 
+namespace sora {
+
 class BaseRenderer {
  public:
   BaseRenderer(int width, int height, int fps);
@@ -109,5 +111,7 @@ class BaseRenderer {
   int rows_;
   int cols_;
 };
+
+}  // namespace sora
 
 #endif

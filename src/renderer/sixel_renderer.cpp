@@ -1,4 +1,4 @@
-#include "sixel_renderer.h"
+#include "sora/renderer/sixel_renderer.h"
 
 #include <climits>
 #include <cstdint>
@@ -6,10 +6,12 @@
 #include <string>
 #include <vector>
 
-#include "base_renderer.h"
+#include "sora/renderer/base_renderer.h"
 
-SixelRenderer::SixelRenderer(int width, int height)
-    : BaseRenderer(width, height, 10) {
+namespace sora {
+
+SixelRenderer::SixelRenderer(int width, int height, int fps)
+    : BaseRenderer(width, height, fps) {
   InitializeColorLookupTable();
   Start();
 }
@@ -210,3 +212,5 @@ void SixelRenderer::OutputSixel(const uint8_t* rgb_data,
   // 一括出力
   std::cout << output << std::flush;
 }
+
+}  // namespace sora

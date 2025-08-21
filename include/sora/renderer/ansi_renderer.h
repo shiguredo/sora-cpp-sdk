@@ -7,9 +7,11 @@
 
 #include "base_renderer.h"
 
+namespace sora {
+
 class AnsiRenderer : public BaseRenderer {
  public:
-  AnsiRenderer(int width, int height);
+  AnsiRenderer(int width, int height, int fps = 10);
   ~AnsiRenderer() override;
 
   void RenderThreadStarted() override;
@@ -28,5 +30,7 @@ class AnsiRenderer : public BaseRenderer {
   // ANSI 256色パレットへの変換用
   int RgbToAnsi256(uint8_t r, uint8_t g, uint8_t b);
 };
+
+}  // namespace sora
 
 #endif

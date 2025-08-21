@@ -7,9 +7,11 @@
 
 #include "base_renderer.h"
 
+namespace sora {
+
 class SixelRenderer : public BaseRenderer {
  public:
-  SixelRenderer(int width, int height);
+  SixelRenderer(int width, int height, int fps = 10);
   ~SixelRenderer() override;
 
   void RenderThreadStarted() override;
@@ -29,5 +31,7 @@ class SixelRenderer : public BaseRenderer {
   std::vector<uint8_t> color_lookup_table_;
   std::map<uint32_t, int> palette_map_;
 };
+
+}  // namespace sora
 
 #endif
