@@ -10,8 +10,8 @@
 
 namespace sora {
 
-SixelRenderer::SixelRenderer(int width, int height)
-    : BaseRenderer(width, height, 10) {
+SixelRenderer::SixelRenderer(int width, int height, int fps)
+    : BaseRenderer(width, height, fps) {
   InitializeColorLookupTable();
   Start();
 }

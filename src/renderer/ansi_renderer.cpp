@@ -9,8 +9,8 @@
 
 namespace sora {
 
-AnsiRenderer::AnsiRenderer(int width, int height)
-    : BaseRenderer(width, height, 10) {
+AnsiRenderer::AnsiRenderer(int width, int height, int fps)
+    : BaseRenderer(width, height, fps) {
   Start();
 }
 

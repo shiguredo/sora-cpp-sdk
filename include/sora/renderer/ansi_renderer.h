@@ -11,7 +11,7 @@ namespace sora {
 
 class AnsiRenderer : public BaseRenderer {
  public:
-  AnsiRenderer(int width, int height);
+  AnsiRenderer(int width, int height, int fps = 10);
   ~AnsiRenderer() override;
 
   void RenderThreadStarted() override;
