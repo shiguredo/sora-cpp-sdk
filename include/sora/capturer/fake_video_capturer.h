@@ -1,14 +1,10 @@
 #ifndef FAKE_VIDEO_CAPTURER_H_INCLUDED
 #define FAKE_VIDEO_CAPTURER_H_INCLUDED
 
-#include <atomic>
-#include <chrono>
-#include <memory>
-#include <thread>
+#include <functional>
 
 // WebRTC
-#include <api/video/i420_buffer.h>
-#include <rtc_base/ref_counted_object.h>
+#include <api/scoped_refptr.h>
 
 // Sora C++ SDK
 #include <sora/scalable_track_source.h>

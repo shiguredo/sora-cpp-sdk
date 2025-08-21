@@ -1,14 +1,25 @@
 #include "sora/capturer/fake_video_capturer.h"
 
+#include <math.h>
+#include <atomic>
 #include <chrono>
 #include <cmath>
+#include <cstdint>
 #include <cstring>
-#include <iomanip>
-#include <sstream>
+#include <memory>
+#include <thread>
+#include <utility>
 
 // WebRTC
+#include <api/make_ref_counted.h>
+#include <api/scoped_refptr.h>
+#include <api/video/i420_buffer.h>
+#include <api/video/video_frame.h>
+#include <api/video/video_rotation.h>
 #include <rtc_base/logging.h>
-#include <third_party/libyuv/include/libyuv.h>
+
+// libyuv
+#include <libyuv/convert.h>
 
 #include "../blend2d_iwyu.h"
 
