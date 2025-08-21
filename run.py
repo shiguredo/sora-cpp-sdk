@@ -677,6 +677,7 @@ def _build(
         cmake_args.append(f"-DWEBRTC_READABLE_VERSION={webrtc_version['WEBRTC_READABLE_VERSION']}")
         cmake_args.append(f"-DWEBRTC_COMMIT={webrtc_version['WEBRTC_COMMIT']}")
         cmake_args.append(f"-DOPENH264_ROOT={cmake_path(os.path.join(install_dir, 'openh264'))}")
+        cmake_args.append(f"-DBLEND2D_ROOT_DIR={cmake_path(os.path.join(install_dir, 'blend2d'))}")
         if platform.target.os == "windows":
             cmake_args.append(f"-DCMAKE_SYSTEM_VERSION={WINDOWS_SDK_VERSION}")
         if platform.target.os == "ubuntu":
@@ -903,9 +904,6 @@ def _build(
                     f"-DWEBRTC_LIBRARY_DIR={cmake_path(webrtc_info.webrtc_library_dir)}"
                 )
                 cmake_args.append(f"-DSORA_DIR={cmake_path(os.path.join(install_dir, 'sora'))}")
-                cmake_args.append(
-                    f"-DBLEND2D_ROOT_DIR={cmake_path(os.path.join(install_dir, 'blend2d'))}"
-                )
                 if platform.target.os == "macos":
                     sysroot = cmdcap(["xcrun", "--sdk", "macosx", "--show-sdk-path"])
                     target = (
