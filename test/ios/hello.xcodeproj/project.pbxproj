@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		DD76254E290AFDE100BFE6D8 /* libboost_filesystem.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DD76254D290AFDC600BFE6D8 /* libboost_filesystem.a */; };
 		DD7A98DD2B22021700B3BF0D /* libblend2d.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DD7A98DC2B22020000B3BF0D /* libblend2d.a */; };
-		DD7A98DF2B22026100B3BF0D /* fake_video_capturer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DD7A98DE2B22026100B3BF0D /* fake_video_capturer.cpp */; };
 		DDBC4B932820E3770099E1F0 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = DDBC4B922820E3770099E1F0 /* AppDelegate.m */; };
 		DDBC4B962820E3770099E1F0 /* SceneDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = DDBC4B952820E3770099E1F0 /* SceneDelegate.m */; };
 		DDBC4B992820E3770099E1F0 /* ViewController.mm in Sources */ = {isa = PBXBuildFile; fileRef = DDBC4B982820E3770099E1F0 /* ViewController.mm */; };
@@ -34,7 +33,6 @@
 /* Begin PBXFileReference section */
 		DD76254D290AFDC600BFE6D8 /* libboost_filesystem.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libboost_filesystem.a; path = ../../_install/ios/release/boost/lib/libboost_filesystem.a; sourceTree = "<group>"; };
 		DD7A98DC2B22020000B3BF0D /* libblend2d.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libblend2d.a; path = ../../_install/ios/release/blend2d/lib/libblend2d.a; sourceTree = "<group>"; };
-		DD7A98DE2B22026100B3BF0D /* fake_video_capturer.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = fake_video_capturer.cpp; path = ../../fake_video_capturer.cpp; sourceTree = "<group>"; };
 		DDBC4B8E2820E3770099E1F0 /* hello.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = hello.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DDBC4B912820E3770099E1F0 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		DDBC4B922820E3770099E1F0 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -107,7 +105,6 @@
 		DDBC4B902820E3770099E1F0 /* hello */ = {
 			isa = PBXGroup;
 			children = (
-				DD7A98DE2B22026100B3BF0D /* fake_video_capturer.cpp */,
 				DDBC4BAE2820EB4D0099E1F0 /* hello.cpp */,
 				DDBC4B912820E3770099E1F0 /* AppDelegate.h */,
 				DDBC4B922820E3770099E1F0 /* AppDelegate.m */,
@@ -222,7 +219,6 @@
 				DDBC4B932820E3770099E1F0 /* AppDelegate.m in Sources */,
 				DDBC4BA42820E3790099E1F0 /* main.m in Sources */,
 				DDBC4B962820E3770099E1F0 /* SceneDelegate.m in Sources */,
-				DD7A98DF2B22026100B3BF0D /* fake_video_capturer.cpp in Sources */,
 				E97B0C172AA9DD2600FB45B9 /* AudioOutputHelperWrapper.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

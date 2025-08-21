@@ -192,6 +192,12 @@ function(bundle_static_library target static_libs bundled_target)
       OUTPUT ${bundled_tgt_full_name}
       VERBATIM
       COMMENT "Bundling libs: ${static_libs} to $<TARGET_FILE:${target}>")
+  elseif (APPLE)
+    add_custom_command(
+      COMMAND libtool -static -o ${bundled_tgt_full_name} "$<TARGET_FILE:${target}>" ${static_libs}
+      OUTPUT ${bundled_tgt_full_name}
+      VERBATIM
+      COMMENT "Bundling libs: ${static_libs} to $<TARGET_FILE:${target}>")
   else ()
     file(WRITE  ${CMAKE_BINARY_DIR}/${bundled_target}.ar.in "CREATE ${bundled_tgt_full_name}\n" )
     file(APPEND ${CMAKE_BINARY_DIR}/${bundled_target}.ar.in "ADDLIB $<TARGET_FILE:${target}>\n")

@@ -112,9 +112,8 @@ def get_common_cmake_args(
         cxxflags = ["-nostdinc++", "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE"]
         args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
     if platform.target.os == "ios":
-        args += ["-G", "Xcode"]
         args.append("-DCMAKE_SYSTEM_NAME=iOS")
-        args.append("-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64")
+        args.append("-DCMAKE_OSX_ARCHITECTURES=arm64")
         args.append(f"-DCMAKE_OSX_DEPLOYMENT_TARGET={webrtc_deps['IOS_DEPLOYMENT_TARGET']}")
         args.append("-DCMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH=NO")
         args.append("-DBLEND2D_NO_JIT=ON")
@@ -517,7 +516,6 @@ def install_deps(
             "source_dir": source_dir,
             "build_dir": build_dir,
             "install_dir": install_dir,
-            "ios": platform.target.package_name == "ios",
             "cmake_args": [],
         }
         install_blend2d_args["cmake_args"] = get_common_cmake_args(
@@ -723,9 +721,8 @@ def _build(
             cmake_args.append(f"-DCMAKE_OBJCXX_COMPILER_TARGET={target}")
             cmake_args.append(f"-DCMAKE_SYSROOT={sysroot}")
         if platform.target.os == "ios":
-            cmake_args += ["-G", "Xcode"]
             cmake_args.append("-DCMAKE_SYSTEM_NAME=iOS")
-            cmake_args.append("-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64")
+            cmake_args.append("-DCMAKE_OSX_ARCHITECTURES=arm64")
             cmake_args.append(
                 f"-DCMAKE_OSX_DEPLOYMENT_TARGET={webrtc_deps['IOS_DEPLOYMENT_TARGET']}"
             )
@@ -801,37 +798,17 @@ def _build(
         rm_rf(os.path.join(sora_build_dir, "libsora.a"))
 
         cmd(["cmake", BASE_DIR] + cmake_args)
-        if platform.target.os == "ios":
-            cmd(
-                [
-                    "cmake",
-                    "--build",
-                    ".",
-                    f"-j{multiprocessing.cpu_count()}",
-                    "--config",
-                    configuration,
-                    "--target",
-                    "sora",
-                    "--",
-                    "-arch",
-                    "arm64",
-                    "-sdk",
-                    "iphoneos",
-                ]
-            )
-            cmd(["cmake", "--install", "."])
-        else:
-            cmd(
-                [
-                    "cmake",
-                    "--build",
-                    ".",
-                    f"-j{multiprocessing.cpu_count()}",
-                    "--config",
-                    configuration,
-                ]
-            )
-            cmd(["cmake", "--install", ".", "--config", configuration])
+        cmd(
+            [
+                "cmake",
+                "--build",
+                ".",
+                f"-j{multiprocessing.cpu_count()}",
+                "--config",
+                configuration,
+            ]
+        )
+        cmd(["cmake", "--install", ".", "--config", configuration])
 
         # バンドルされたライブラリをインストールする
         if platform.target.os == "windows":

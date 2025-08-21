@@ -1462,7 +1462,6 @@ def install_blend2d_official(
     source_dir,
     build_dir,
     install_dir,
-    ios,
     cmake_args,
 ):
     rm_rf(os.path.join(source_dir, "blend2d"))
@@ -1477,7 +1476,6 @@ def install_blend2d_official(
         source_dir=source_dir,
         build_dir=build_dir,
         install_dir=install_dir,
-        ios=ios,
         cmake_args=cmake_args,
     )
 
@@ -1491,7 +1489,6 @@ def install_blend2d(
     install_dir,
     blend2d_version,
     asmjit_version,
-    ios,
     cmake_args,
 ):
     rm_rf(os.path.join(source_dir, "blend2d"))
@@ -1512,12 +1509,11 @@ def install_blend2d(
         source_dir=source_dir,
         build_dir=build_dir,
         install_dir=install_dir,
-        ios=ios,
         cmake_args=cmake_args,
     )
 
 
-def _build_blend2d(configuration, source_dir, build_dir, install_dir, ios, cmake_args):
+def _build_blend2d(configuration, source_dir, build_dir, install_dir, cmake_args):
     mkdir_p(os.path.join(build_dir, "blend2d"))
     with cd(os.path.join(build_dir, "blend2d")):
         cmd(
@@ -1535,37 +1531,17 @@ def _build_blend2d(configuration, source_dir, build_dir, install_dir, ios, cmake
         if os.path.exists(project_path):
             replace_vcproj_static_runtime(project_path)
 
-        if ios:
-            cmd(
-                [
-                    "cmake",
-                    "--build",
-                    ".",
-                    f"-j{multiprocessing.cpu_count()}",
-                    "--config",
-                    configuration,
-                    "--target",
-                    "blend2d",
-                    "--",
-                    "-arch",
-                    "arm64",
-                    "-sdk",
-                    "iphoneos",
-                ]
-            )
-            cmd(["cmake", "--build", ".", "--target", "install", "--config", configuration])
-        else:
-            cmd(
-                [
-                    "cmake",
-                    "--build",
-                    ".",
-                    f"-j{multiprocessing.cpu_count()}",
-                    "--config",
-                    configuration,
-                ]
-            )
-            cmd(["cmake", "--build", ".", "--target", "install", "--config", configuration])
+        cmd(
+            [
+                "cmake",
+                "--build",
+                ".",
+                f"-j{multiprocessing.cpu_count()}",
+                "--config",
+                configuration,
+            ]
+        )
+        cmd(["cmake", "--build", ".", "--target", "install", "--config", configuration])
 
 
 @versioned
