@@ -38,6 +38,8 @@ add_library(hello
     ../../../../../hello.cpp
 )
 
+target_link_libraries(hello PRIVATE Sora::sora)
+
 # libwebrtc が ELF フォーマットの新しい仕様を使ってリンクしているため、
 # Android NDK に用意されている標準のリンカーだと以下のようなリンクエラーになってしまう。
 #

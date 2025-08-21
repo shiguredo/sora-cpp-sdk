@@ -839,7 +839,7 @@ def _build(
                 os.path.join(sora_build_dir, "bundled", "sora.lib"),
                 os.path.join(install_dir, "sora", "lib", "sora.lib"),
             )
-        elif platform.target.os == "ubuntu" and platform.target.arch == "x86_64":
+        else:
             shutil.copyfile(
                 os.path.join(sora_build_dir, "bundled", "libsora.a"),
                 os.path.join(install_dir, "sora", "lib", "libsora.a"),
