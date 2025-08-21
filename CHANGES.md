@@ -31,6 +31,9 @@
   - @miosakuma
 - [UPDATE] Boost を 1.89.0 にあげる
   - @voluntas
+- [ADD] SixelRenderer と AnsiRenderer を追加する
+  - 元々は sumomo の機能の一部として実装してあったのを、C++ SDK 本体へと移動した
+  - @melpon
 - [ADD] clang-include-cleaner や clang-format を実行するサブコマンドを追加する
   - `python3 run.py iwyu ubuntu-24.04_x86_64`
   - `python3 run.py format`
