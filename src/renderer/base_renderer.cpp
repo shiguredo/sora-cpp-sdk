@@ -1,4 +1,4 @@
-#include "base_renderer.h"
+#include "sora/renderer/base_renderer.h"
 
 #include <algorithm>
 #include <chrono>
@@ -25,6 +25,8 @@
 #include <libyuv/convert_from.h>
 #include <libyuv/planar_functions.h>
 #include <libyuv/video_common.h>
+
+namespace sora {
 
 static constexpr float STD_ASPECT = 1.33f;   // 4:3
 static constexpr float WIDE_ASPECT = 1.78f;  // 16:9
@@ -328,3 +330,5 @@ void BaseRenderer::RemoveTrack(webrtc::VideoTrackInterface* track) {
       sinks_.end());
   SetOutlines();
 }
+
+}  // namespace sora

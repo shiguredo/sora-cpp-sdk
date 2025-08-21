@@ -59,6 +59,8 @@
 #include <sora/boost_json_iwyu.h>
 #include <sora/camera_device_capturer.h>
 #include <sora/cuda_context.h>
+#include <sora/renderer/ansi_renderer.h>
+#include <sora/renderer/sixel_renderer.h>
 #include <sora/rtc_stats.h>
 #include <sora/sora_client_context.h>
 #include <sora/sora_signaling.h>
@@ -67,9 +69,7 @@
 // CLI11
 #include <CLI/CLI.hpp>
 
-#include "ansi_renderer.h"
 #include "sdl_renderer.h"
-#include "sixel_renderer.h"
 
 struct SumomoConfig {
   std::string signaling_url;
@@ -315,12 +315,12 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
 
     if (config_.use_sixel) {
       sixel_renderer_.reset(
-          new SixelRenderer(config_.sixel_width, config_.sixel_height));
+          new sora::SixelRenderer(config_.sixel_width, config_.sixel_height));
     }
 
     if (config_.use_ansi) {
       ansi_renderer_.reset(
-          new AnsiRenderer(config_.ansi_width, config_.ansi_height));
+          new sora::AnsiRenderer(config_.ansi_width, config_.ansi_height));
     }
 
     auto size = config_.GetSize();
@@ -541,8 +541,8 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
   std::shared_ptr<sora::SoraSignaling> conn_;
   std::unique_ptr<boost::asio::io_context> ioc_;
   std::unique_ptr<SDLRenderer> sdl_renderer_;
-  std::unique_ptr<SixelRenderer> sixel_renderer_;
-  std::unique_ptr<AnsiRenderer> ansi_renderer_;
+  std::unique_ptr<sora::SixelRenderer> sixel_renderer_;
+  std::unique_ptr<sora::AnsiRenderer> ansi_renderer_;
   std::shared_ptr<HttpListener> http_listener_;
 };
 
