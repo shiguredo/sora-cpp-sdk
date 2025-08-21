@@ -75,6 +75,8 @@ find_package(WebRTC REQUIRED)
 find_package(Boost REQUIRED COMPONENTS json filesystem)
 find_package(Threads REQUIRED)
 
+find_library(Blend2D_LIBRARY NAMES blend2d PATHS ${BLEND2D_ROOT_DIR}/lib)
+
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
@@ -97,6 +99,7 @@ target_sources(sora
     src/audio_device_module.cpp
     src/audio_output_helper.cpp
     src/camera_device_capturer.cpp
+    src/capturer/fake_video_capturer.cpp
     src/data_channel.cpp
     src/default_video_formats.cpp
     src/device_list.cpp
@@ -129,6 +132,13 @@ target_sources(sora
 )
 
 target_compile_definitions(sora PRIVATE ${SORA_TARGET_DEF})
+
+set(BUNDLE_STATIC_LIBS)
+
+# Blend2D 用の設定
+target_compile_definitions(sora PRIVATE BL_STATIC=1)
+target_include_directories(sora PRIVATE ${BLEND2D_ROOT_DIR}/include)
+list(APPEND BUNDLE_STATIC_LIBS ${Blend2D_LIBRARY})
 
 # インストールするヘッダーファイル
 file(GLOB_RECURSE SORA_HEADERS RELATIVE ${CMAKE_SOURCE_DIR} "include/*")
@@ -182,6 +192,12 @@ function(bundle_static_library target static_libs bundled_target)
       OUTPUT ${bundled_tgt_full_name}
       VERBATIM
       COMMENT "Bundling libs: ${static_libs} to $<TARGET_FILE:${target}>")
+  elseif (APPLE)
+    add_custom_command(
+      COMMAND libtool -static -o ${bundled_tgt_full_name} "$<TARGET_FILE:${target}>" ${static_libs}
+      OUTPUT ${bundled_tgt_full_name}
+      VERBATIM
+      COMMENT "Bundling libs: ${static_libs} to $<TARGET_FILE:${target}>")
   else ()
     file(WRITE  ${CMAKE_BINARY_DIR}/${bundled_target}.ar.in "CREATE ${bundled_tgt_full_name}\n" )
     file(APPEND ${CMAKE_BINARY_DIR}/${bundled_target}.ar.in "ADDLIB $<TARGET_FILE:${target}>\n")
@@ -211,8 +227,6 @@ function(bundle_static_library target static_libs bundled_target)
       INTERFACE_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:${target},INTERFACE_INCLUDE_DIRECTORIES>)
   add_dependencies(${bundled_target} ${bundled_target}_bundling)
 endfunction()
-
-set(BUNDLE_STATIC_LIBS)
 
 if (SORA_TARGET_OS STREQUAL "windows")
   # 文字コードを utf-8 として扱うのと、シンボルテーブル数を増やす
@@ -257,6 +271,7 @@ if (SORA_TARGET_OS STREQUAL "windows")
       WIN32_LEAN_AND_MEAN
       UNICODE
       _UNICODE
+      _USE_MATH_DEFINES
   )
   target_compile_definitions(sora
     PUBLIC

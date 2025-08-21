@@ -31,13 +31,12 @@
 // Sora C++ SDK
 #include <sora/amf_context.h>
 #include <sora/boost_json_iwyu.h>
+#include <sora/capturer/fake_video_capturer.h>
 #include <sora/cuda_context.h>
 #include <sora/java_context.h>
 #include <sora/sora_client_context.h>
 #include <sora/sora_signaling.h>
 #include <sora/sora_video_codec.h>
-
-#include "fake_video_capturer.h"
 
 #if defined(HELLO_ANDROID)
 void* GetAndroidApplicationContext(void* env);
@@ -62,11 +61,11 @@ HelloSora::~HelloSora() {
 void HelloSora::Run() {
   void* env = sora::GetJNIEnv();
 
-  FakeVideoCapturerConfig fake_config;
+  sora::FakeVideoCapturerConfig fake_config;
   fake_config.width = config_.capture_width;
   fake_config.height = config_.capture_height;
   fake_config.fps = 30;
-  video_source_ = CreateFakeVideoCapturer(fake_config);
+  video_source_ = sora::FakeVideoCapturer::Create(fake_config);
   std::string video_track_id = webrtc::CreateRandomString(16);
   video_track_ = pc_factory()->CreateVideoTrack(video_source_, video_track_id);
 

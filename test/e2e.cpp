@@ -29,10 +29,9 @@
 
 // Sora C++ SDK
 #include <sora/boost_json_iwyu.h>
+#include <sora/capturer/fake_video_capturer.h>
 #include <sora/sora_client_context.h>
 #include <sora/sora_signaling.h>
-
-#include "fake_video_capturer.h"
 
 class SoraClient : public std::enable_shared_from_this<SoraClient>,
                    public sora::SoraSignalingObserver {
@@ -57,11 +56,11 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
 
     ioc_.reset(new boost::asio::io_context(1));
 
-    FakeVideoCapturerConfig fake_config;
+    sora::FakeVideoCapturerConfig fake_config;
     fake_config.width = 640;
     fake_config.height = 480;
     fake_config.fps = 30;
-    video_source_ = CreateFakeVideoCapturer(fake_config);
+    video_source_ = sora::FakeVideoCapturer::Create(fake_config);
     std::string video_track_id = webrtc::CreateRandomString(16);
     video_track_ = pc_factory->CreateVideoTrack(video_source_, video_track_id);
 
