@@ -34,6 +34,8 @@
   - また、この過程で iOS 向けのライブラリビルドは Xcode を利用しないように修正した
 - [UPDATE] libwebrtc を m139.7258.3.0 にあげる
   - @miosakuma
+- [UPDATE] CMake を 4.1.0 にあげる
+  - @torikizi
 - [UPDATE] Boost を 1.89.0 にあげる
   - @voluntas
 - [ADD] SixelRenderer と AnsiRenderer を追加する
@@ -94,8 +96,6 @@
     - `SDL_CreateRGBSurfaceFrom` を `SDL_CreateSurfaceFrom` に変更
     - `SDL_FreeSurface` を `SDL_DestroySurface` に変更
   - @melpon
-- [UPDATE] CMake を 4.1.0 にあげる
-  - @torikizi
 - [UPDATE] actions/checkout@v4 と actions/download-artifact@v4 を @v5 に上げる
   - @torikizi
 - [ADD] sumomo のレンダラーに Sixel と ANSI エスケープシーケンスでの表示を追加する
