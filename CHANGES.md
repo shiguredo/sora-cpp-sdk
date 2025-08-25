@@ -11,6 +11,13 @@
 
 ## develop
 
+- [UPDATE] Blend2D のダウンロードに時雨堂のミラー URL を使用するように変更する
+  - 公式サイトに負荷をかけないように https://oss-mirrors.shiguredo.jp/ を使用する
+  - @voluntas
+- [ADD] Blend2D のダウンロード時に SHA256 ハッシュチェックを追加する
+  - DEPS ファイルに BLEND2D_SHA256_HASH を追加
+  - ダウンロードファイルの完全性を検証するようにする
+  - @voluntas
 - [CHANGE] VERSION ファイルと DEPS ファイルを分離する
   - VERSION ファイルにはバージョン番号のみを格納する
   - DEPS ファイルに依存関係のバージョン情報を移動する

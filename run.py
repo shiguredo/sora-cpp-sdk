@@ -517,6 +517,7 @@ def install_deps(
             "build_dir": build_dir,
             "install_dir": install_dir,
             "cmake_args": [],
+            "expected_sha256": deps["BLEND2D_SHA256_HASH"],
         }
         install_blend2d_args["cmake_args"] = get_common_cmake_args(
             platform, deps, webrtc_info, BASE_DIR, install_dir, debug
