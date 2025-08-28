@@ -11,6 +11,9 @@
 
 ## develop
 
+- [CHANGE] macOS 14 以降での AVCaptureDeviceTypeExternal サポートによる USB カメラ取得の改善
+  - Github Actions で macOS バージョン 12 までしか利用できなかった際にコメントアウトしていた処理を有効化した
+  - @t-miya
 - [UPDATE] Blend2D のダウンロードに時雨堂のミラー URL を使用するように変更する
   - 公式サイトに負荷をかけないように https://oss-mirrors.shiguredo.jp/ を使用する
   - @voluntas
