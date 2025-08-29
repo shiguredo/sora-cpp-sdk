@@ -11,8 +11,9 @@
 
 ## develop
 
-- [CHANGE] macOS 14 以降での AVCaptureDeviceTypeExternal サポートによる USB カメラ取得の改善
+- [CHANGE] macOS 12 用に無効化していた AVCaptureDeviceTypeExternal 利用を有効化
   - Github Actions で macOS バージョン 12 までしか利用できなかった際にコメントアウトしていた処理を有効化した
+  - カメラデバイス取得は内部カメラと外部カメラに厳密化された
   - @t-miya
 - [UPDATE] Blend2D のダウンロードに時雨堂のミラー URL を使用するように変更する
   - 公式サイトに負荷をかけないように https://oss-mirrors.shiguredo.jp/ を使用する

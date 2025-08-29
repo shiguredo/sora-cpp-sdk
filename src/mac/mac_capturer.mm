@@ -101,10 +101,12 @@ webrtc::scoped_refptr<MacCapturer> MacCapturer::Create(
 static NSArray<AVCaptureDevice*>* captureDevices() {
 // macOS では USB で接続されたカメラも取得する
 #if defined(SORA_CPP_SDK_MACOS)
-  AVCaptureDeviceDiscoverySession *session = [AVCaptureDeviceDiscoverySession
-  discoverySessionWithDeviceTypes:@[ AVCaptureDeviceTypeBuiltInWideAngleCamera, AVCaptureDeviceTypeExternal ]
-                        mediaType:AVMediaTypeVideo
-                        position:AVCaptureDevicePositionUnspecified];
+  AVCaptureDeviceDiscoverySession* session = [AVCaptureDeviceDiscoverySession
+      discoverySessionWithDeviceTypes:@[
+        AVCaptureDeviceTypeBuiltInWideAngleCamera, AVCaptureDeviceTypeExternal
+      ]
+                            mediaType:AVMediaTypeVideo
+                             position:AVCaptureDevicePositionUnspecified];
   return session.devices;
 #else
   AVCaptureDeviceDiscoverySession* session = [AVCaptureDeviceDiscoverySession
