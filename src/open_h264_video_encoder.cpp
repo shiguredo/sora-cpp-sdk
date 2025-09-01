@@ -20,7 +20,6 @@
 #include <cstring>
 #include <limits>
 #include <memory>
-#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -36,6 +35,7 @@
 // WebRTC
 #include <absl/container/inlined_vector.h>
 #include <absl/memory/memory.h>
+#include <absl/types/optional.h>
 #include <api/environment/environment.h>
 #include <api/environment/environment_factory.h>
 #include <api/scoped_refptr.h>
