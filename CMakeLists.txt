@@ -479,7 +479,11 @@ elseif (SORA_TARGET_OS STREQUAL "android")
   )
 
 elseif (SORA_TARGET_OS STREQUAL "ubuntu")
-  target_sources(sora PRIVATE src/v4l2/v4l2_video_capturer.cpp)
+  target_sources(sora
+    PRIVATE
+      src/v4l2/v4l2_device.cpp
+      src/v4l2/v4l2_video_capturer.cpp
+  )
 
   target_compile_definitions(sora
     PUBLIC
