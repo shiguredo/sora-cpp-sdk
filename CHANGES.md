@@ -48,7 +48,7 @@
   - @voluntas
 - [UPDATE] blend2d のバージョンを 0.20.0 に上げる
   - blend2d の API 変更への追従 : camelCase から snake_case へ移行
-    - 影響範囲: `src/rtc/fake_video_capturer.cpp` のみ
+    - 影響範囲: `src/capturer/fake_video_capturer.cpp` のみ
     - 変更内容（旧 → 新）の一例 :
       - `image_.getData(&data);` -> `image_.get_data(&data);`
       - `ctx.setFillStyle(BLRgba32(0, 255, 255));` -> `ctx.set_fill_style(BLRgba32(0, 255, 255));`
