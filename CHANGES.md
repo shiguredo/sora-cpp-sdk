@@ -15,13 +15,6 @@
   - Github Actions で macOS バージョン 12 までしか利用できなかった際にコメントアウトしていた処理を有効化した
   - カメラデバイス取得は内部カメラと外部カメラに厳密化された
   - @t-miya
-- [UPDATE] Blend2D のダウンロードに時雨堂のミラー URL を使用するように変更する
-  - 公式サイトに負荷をかけないように https://oss-mirrors.shiguredo.jp/ を使用する
-  - @voluntas
-- [ADD] Blend2D のダウンロード時に SHA256 ハッシュチェックを追加する
-  - DEPS ファイルに BLEND2D_SHA256_HASH を追加
-  - ダウンロードファイルの完全性を検証するようにする
-  - @voluntas
 - [CHANGE] VERSION ファイルと DEPS ファイルを分離する
   - VERSION ファイルにはバージョン番号のみを格納する
   - DEPS ファイルに依存関係のバージョン情報を移動する
@@ -43,11 +36,29 @@
   - フォントへの依存が無いので Momo の実装をベースにしている
   - これによって C++ SDK は Blend2D に依存するようになるため、プロジェクトによってはエラーになる可能性がある
   - また、この過程で iOS 向けのライブラリビルドは Xcode を利用しないように修正した
+  - @melpon
+- [UPDATE] Blend2D のダウンロードに時雨堂のミラー URL を使用するように変更する
+  - 公式サイトに負荷をかけないように https://oss-mirrors.shiguredo.jp/ を使用する
+  - @voluntas
 - [UPDATE] libwebrtc を m139.7258.3.0 にあげる
   - @miosakuma
 - [UPDATE] CMake を 4.1.0 にあげる
   - @torikizi
 - [UPDATE] Boost を 1.89.0 にあげる
+  - @voluntas
+- [UPDATE] blend2d のバージョンを 0.20.0 に上げる
+  - blend2d の API 変更への追従 : camelCase から snake_case へ移行
+    - 影響範囲: `src/rtc/fake_video_capturer.cpp` のみ
+    - 変更内容（旧 → 新）の一例 :
+      - `image_.getData(&data);` -> `image_.get_data(&data);`
+      - `ctx.setFillStyle(BLRgba32(0, 255, 255));` -> `ctx.set_fill_style(BLRgba32(0, 255, 255));`
+      - `path.moveTo(sx + gap, sy);` -> `path.move_to(sx + gap, sy);`
+    - 変更対象外の API
+      - `ctx.end()`, `ctx.save()` , `ctx.restore()` は単語なので変更なし
+  - @torikizi
+- [ADD] Blend2D のダウンロード時に SHA256 ハッシュチェックを追加する
+  - DEPS ファイルに BLEND2D_SHA256_HASH を追加
+  - ダウンロードファイルの完全性を検証するようにする
   - @voluntas
 - [ADD] SixelRenderer と AnsiRenderer を追加する
   - 元々は sumomo の機能の一部として実装してあったのを、C++ SDK 本体へと移動した
