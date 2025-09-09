@@ -120,6 +120,8 @@
   - @melpon
 - [UPDATE] actions/checkout@v4 と actions/download-artifact@v4 を @v5 に上げる
   - @torikizi
+- [UPDATE] examples/DEPS の SDL バージョンを 3.2.22 に上げる
+  - @torikizi
 - [ADD] sumomo のレンダラーに Sixel と ANSI エスケープシーケンスでの表示を追加する
   - `--use-sixel`, `--sixel-width`, `--sixel-height` オプションの追加
   - `--use-ansi`, `--ansi-width`, `--ansi-height` オプションの追加
