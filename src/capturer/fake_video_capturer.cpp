@@ -152,7 +152,7 @@ class FakeVideoCapturerImpl : public FakeVideoCapturer {
     ctx.set_fill_style(BLRgba32(160, 160, 160));
     uint32_t current_frame = frame_counter_;
     ctx.fill_pie(0, 0, width * 0.3, 0,
-                (current_frame % fps) / static_cast<float>(fps) * 2 * M_PI);
+                 (current_frame % fps) / static_cast<float>(fps) * 2 * M_PI);
 
     // 円が一周したときにコールバックする
     if (config_.on_tick) {
