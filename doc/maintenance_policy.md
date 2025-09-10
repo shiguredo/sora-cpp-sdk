@@ -59,6 +59,11 @@ P1 が一番プライオリティが高いです。
   - Ubuntu 24.04
   - Ubuntu 22.04
   - Windows 11
+- AMD AMF x86_64
+  - Ubuntu 24.04
+  - Ubuntu 22.04
+  - Windows 11
+- Raspberry Pi OS
 
 ### 方針
 
@@ -75,14 +80,6 @@ P1 が一番プライオリティが高いです。
   - ブランチ: `support/jetson-jetpack-6`
   - タグ: `{sora-cpp-sdk-version}-jetson-jetpack-{platform-version}.{release}`
     - `2024.1.0-jetson-jetpack-6.0.0.0`
-- Microsoft HoloLens 2
-  - ブランチ: `support/hololens2`
-  - タグ: `{sora-cpp-sdk-version}-hololens2.{release}`
-    - `2024.1.0-hololens2.0`
-- Raspberry Pi OS
-  - ブランチ: `support/raspberry-pi`
-  - タグ: `{sora-cpp-sdk-version}-raspberry-pi.{release}`
-    - `2024.1.0-raspberry-pi.0`
 
 ### 方針
 
