@@ -78,6 +78,12 @@ def get_common_cmake_args(
         target = (
             "x86_64-apple-darwin" if platform.target.arch == "x86_64" else "aarch64-apple-darwin"
         )
+        args.append(
+            f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}"
+        )
+        args.append(
+            f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}"
+        )
         args.append(f"-DCMAKE_SYSTEM_PROCESSOR={platform.target.arch}")
         args.append(f"-DCMAKE_OSX_ARCHITECTURES={platform.target.arch}")
         args.append(f"-DCMAKE_OSX_DEPLOYMENT_TARGET={webrtc_deps['MACOS_DEPLOYMENT_TARGET']}")
@@ -85,6 +91,10 @@ def get_common_cmake_args(
         args.append(f"-DCMAKE_CXX_COMPILER_TARGET={target}")
         args.append(f"-DCMAKE_OBJCXX_COMPILER_TARGET={target}")
         args.append(f"-DCMAKE_SYSROOT={sysroot}")
+        path = cmake_path(os.path.join(webrtc_info.libcxx_dir, "include"))
+        args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
+        cxxflags = ["-nostdinc++", "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE"]
+        args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
     if platform.target.os == "ubuntu":
         if platform.target.package_name in (
             "ubuntu-22.04_x86_64",
@@ -112,11 +122,21 @@ def get_common_cmake_args(
         cxxflags = ["-nostdinc++", "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE"]
         args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
     if platform.target.os == "ios":
+        args.append(
+            f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}"
+        )
+        args.append(
+            f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}"
+        )
         args.append("-DCMAKE_SYSTEM_NAME=iOS")
         args.append("-DCMAKE_OSX_ARCHITECTURES=arm64")
         args.append(f"-DCMAKE_OSX_DEPLOYMENT_TARGET={webrtc_deps['IOS_DEPLOYMENT_TARGET']}")
         args.append("-DCMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH=NO")
         args.append("-DBLEND2D_NO_JIT=ON")
+        path = cmake_path(os.path.join(webrtc_info.libcxx_dir, "include"))
+        args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
+        cxxflags = ["-nostdinc++", "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE"]
+        args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
     if platform.target.os == "android":
         android_ndk = os.path.join(install_dir, "android-ndk")
         toolchain_file = os.path.join(base_dir, "cmake", "android.toolchain.cmake")
@@ -243,8 +263,7 @@ def install_deps(
         webrtc_deps = read_version_file(webrtc_info.deps_file)
 
         # Windows は MSVC を使うので不要
-        # macOS と iOS は Apple Clang を使うので不要
-        if platform.target.os not in ("windows", "macos", "ios") and local_webrtc_build_dir is None:
+        if platform.target.os not in ("windows",) and local_webrtc_build_dir is None:
             # LLVM
             tools_url = webrtc_version["WEBRTC_SRC_TOOLS_URL"]
             tools_commit = webrtc_version["WEBRTC_SRC_TOOLS_COMMIT"]
@@ -295,7 +314,7 @@ def install_deps(
             sysroot = cmdcap(["xcrun", "--sdk", "macosx", "--show-sdk-path"])
             install_boost_args["target_os"] = "darwin"
             install_boost_args["toolset"] = "clang"
-            install_boost_args["cxx"] = "clang++"
+            install_boost_args["cxx"] = os.path.join(webrtc_info.clang_dir, "bin", "clang++")
             install_boost_args["cflags"] = [
                 f"--sysroot={sysroot}",
                 f"-mmacosx-version-min={webrtc_deps['MACOS_DEPLOYMENT_TARGET']}",
@@ -305,6 +324,12 @@ def install_deps(
                 f"--sysroot={sysroot}",
                 "-std=gnu++17",
                 f"-mmacosx-version-min={webrtc_deps['MACOS_DEPLOYMENT_TARGET']}",
+                "-D_LIBCPP_ABI_NAMESPACE=Cr",
+                "-D_LIBCPP_ABI_VERSION=2",
+                "-D_LIBCPP_DISABLE_AVAILABILITY",
+                "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE",
+                "-nostdinc++",
+                f"-isystem{os.path.join(webrtc_info.libcxx_dir, 'include')}",
             ]
             install_boost_args["visibility"] = "hidden"
             if platform.target.arch == "x86_64":
@@ -318,12 +343,19 @@ def install_deps(
         elif platform.target.os == "ios":
             install_boost_args["target_os"] = "iphone"
             install_boost_args["toolset"] = "clang"
+            install_boost_args["cxx"] = os.path.join(webrtc_info.clang_dir, "bin", "clang++")
             install_boost_args["cflags"] = [
                 f"-miphoneos-version-min={webrtc_deps['IOS_DEPLOYMENT_TARGET']}",
             ]
             install_boost_args["cxxflags"] = [
                 "-std=gnu++17",
                 f"-miphoneos-version-min={webrtc_deps['IOS_DEPLOYMENT_TARGET']}",
+                "-D_LIBCPP_ABI_NAMESPACE=Cr",
+                "-D_LIBCPP_ABI_VERSION=2",
+                "-D_LIBCPP_DISABLE_AVAILABILITY",
+                "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE",
+                "-nostdinc++",
+                f"-isystem{os.path.join(webrtc_info.libcxx_dir, 'include')}",
             ]
             install_boost_args["visibility"] = "hidden"
         elif platform.target.os == "android":
@@ -712,6 +744,12 @@ def _build(
                 if platform.target.arch == "x86_64"
                 else "aarch64-apple-darwin"
             )
+            cmake_args.append(
+                f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}"
+            )
+            cmake_args.append(
+                f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}"
+            )
             cmake_args.append(f"-DCMAKE_SYSTEM_PROCESSOR={platform.target.arch}")
             cmake_args.append(f"-DCMAKE_OSX_ARCHITECTURES={platform.target.arch}")
             cmake_args.append(
@@ -721,13 +759,27 @@ def _build(
             cmake_args.append(f"-DCMAKE_CXX_COMPILER_TARGET={target}")
             cmake_args.append(f"-DCMAKE_OBJCXX_COMPILER_TARGET={target}")
             cmake_args.append(f"-DCMAKE_SYSROOT={sysroot}")
+            cmake_args.append("-DUSE_LIBCXX=ON")
+            cmake_args.append(
+                f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}"
+            )
         if platform.target.os == "ios":
+            cmake_args.append(
+                f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}"
+            )
+            cmake_args.append(
+                f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}"
+            )
             cmake_args.append("-DCMAKE_SYSTEM_NAME=iOS")
             cmake_args.append("-DCMAKE_OSX_ARCHITECTURES=arm64")
             cmake_args.append(
                 f"-DCMAKE_OSX_DEPLOYMENT_TARGET={webrtc_deps['IOS_DEPLOYMENT_TARGET']}"
             )
             cmake_args.append("-DCMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH=NO")
+            cmake_args.append("-DUSE_LIBCXX=ON")
+            cmake_args.append(
+                f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}"
+            )
         if platform.target.os == "android":
             android_ndk = os.path.join(install_dir, "android-ndk")
             toolchain_file = os.path.join(BASE_DIR, "cmake", "android.toolchain.cmake")
@@ -889,6 +941,12 @@ def _build(
                         if platform.target.arch == "x86_64"
                         else "aarch64-apple-darwin"
                     )
+                    cmake_args.append(
+                        f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}"
+                    )
+                    cmake_args.append(
+                        f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}"
+                    )
                     cmake_args.append(f"-DCMAKE_SYSTEM_PROCESSOR={platform.target.arch}")
                     cmake_args.append(f"-DCMAKE_OSX_ARCHITECTURES={platform.target.arch}")
                     cmake_args.append(
@@ -898,6 +956,10 @@ def _build(
                     cmake_args.append(f"-DCMAKE_CXX_COMPILER_TARGET={target}")
                     cmake_args.append(f"-DCMAKE_OBJCXX_COMPILER_TARGET={target}")
                     cmake_args.append(f"-DCMAKE_SYSROOT={sysroot}")
+                    cmake_args.append("-DUSE_LIBCXX=ON")
+                    cmake_args.append(
+                        f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}"
+                    )
                 if platform.target.os == "ubuntu":
                     if platform.target.package_name in (
                         "ubuntu-22.04_x86_64",

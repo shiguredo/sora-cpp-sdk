@@ -792,7 +792,9 @@ def build_and_install_boost(
         if target_os == "iphone":
             IOS_BUILD_TARGETS = [("arm64", "iphoneos")]
             for arch, sdk in IOS_BUILD_TARGETS:
-                clangpp = cmdcap(["xcodebuild", "-find", "clang++"])
+                # xcode の clang++ を利用する
+                # ただし cxx が指定されてた場合はそちらを優先する
+                clangpp = cmdcap(["xcodebuild", "-find", "clang++"]) if len(cxx) == 0 else cxx
                 sysroot = cmdcap(["xcrun", "--sdk", sdk, "--show-sdk-path"])
                 boost_arch = "x86" if arch == "x86_64" else "arm"
                 with open("project-config.jam", "w", encoding="utf-8") as f:
