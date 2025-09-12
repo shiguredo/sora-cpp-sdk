@@ -13,7 +13,7 @@
 
 ## 2025.1.0
 
-**リリース日**: 2025-09-16
+**リリース日**: 2025-09-12
 
 - [CHANGE] macOS 12 用に無効化していた AVCaptureDeviceTypeExternal 利用を有効化
   - Github Actions で macOS バージョン 12 までしか利用できなかった際にコメントアウトしていた処理を有効化した
