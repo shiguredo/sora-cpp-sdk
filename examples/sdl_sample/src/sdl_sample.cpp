@@ -1,20 +1,44 @@
+#include <csignal>
+#include <cstdlib>
+#include <functional>
+#include <memory>
 #include <optional>
+#include <string>
+#include <utility>
+#include <vector>
 
-// Sora
-#include <sora/camera_device_capturer.h>
-#include <sora/sora_client_context.h>
-
-// CLI11
-#include <CLI/CLI.hpp>
+// Boost
+#include <boost/asio/dispatch.hpp>
+#include <boost/asio/executor_work_guard.hpp>
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/signal_set.hpp>
+#include <boost/system/detail/error_code.hpp>
 
 // WebRTC
+#include <api/audio_options.h>
+#include <api/media_stream_interface.h>
+#include <api/rtc_error.h>
+#include <api/rtp_receiver_interface.h>
+#include <api/rtp_sender_interface.h>
+#include <api/rtp_transceiver_interface.h>
+#include <api/scoped_refptr.h>
 #include <rtc_base/crypto_random.h>
-
-#include "sdl_renderer.h"
+#include <rtc_base/logging.h>
 
 #ifdef _WIN32
 #include <rtc_base/win/scoped_com_initializer.h>
 #endif
+
+// CLI11
+#include <CLI/CLI.hpp>
+
+// Sora C++ SDK
+#include <sora/boost_json_iwyu.h>
+#include <sora/camera_device_capturer.h>
+#include <sora/sora_client_context.h>
+#include <sora/sora_signaling.h>
+
+#include "sdl_renderer.h"
 
 struct SDLSampleConfig {
   std::string signaling_url;
@@ -24,7 +48,6 @@ struct SDLSampleConfig {
   std::string role;
   std::string video_codec_type;
   std::string audio_codec_type;
-  std::optional<bool> multistream;
   int width = 640;
   int height = 480;
   boost::json::value metadata;
@@ -73,7 +96,6 @@ class SDLSample : public std::enable_shared_from_this<SDLSample>,
     config.observer = shared_from_this();
     config.signaling_urls.push_back(config_.signaling_url);
     config.channel_id = config_.channel_id;
-    config.multistream = config_.multistream;
     config.video = config_.video;
     config.audio = config_.audio;
     config.role = config_.role;
@@ -123,8 +145,8 @@ class SDLSample : public std::enable_shared_from_this<SDLSample>,
   void OnPush(std::string text) override {}
   void OnMessage(std::string label, std::string data) override {}
 
-  void OnTrack(webrtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
-      override {
+  void OnTrack(webrtc::scoped_refptr<webrtc::RtpTransceiverInterface>
+                   transceiver) override {
     auto track = transceiver->receiver()->track();
     if (track->kind() == webrtc::MediaStreamTrackInterface::kVideoKind) {
       renderer_->AddTrack(
@@ -224,8 +246,6 @@ int main(int argc, char* argv[]) {
   app.add_option("--metadata", metadata,
                  "Signaling metadata used in connect message")
       ->check(is_json);
-  add_optional_bool(app, "--multistream", config.multistream,
-                    "Use multistream (default: none)");
 
   // SDL に関するオプション
   app.add_option("--width", config.width, "SDL window width");

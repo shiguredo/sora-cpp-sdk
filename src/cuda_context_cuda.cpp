@@ -1,4 +1,4 @@
-#include "sora/fix_cuda_noinline_macro_error.h"
+#include <memory>
 
 #include "sora/cuda_context.h"
 
@@ -17,12 +17,20 @@ bool CudaContext::CanCreate() {
 
 #else
 
-#include "cuda_context_cuda.h"
+#include "sora/fix_cuda_noinline_macro_error.h"
+
+#include <exception>
+
+// CUDA
+#include <cuda.h>
 
 // NvCodec
-#include <NvDecoder/NvDecoder.h>
+#include "NvEncoder/../../Utils/Logger.h"
+#include "NvEncoder/../../Utils/NvCodecUtils.h"
 
+#include "cuda_context_cuda.h"
 #include "sora/dyn/cuda.h"
+#include "sora/dyn/dyn.h"
 
 // どこかにグローバルな logger の定義が必要
 simplelogger::Logger* logger =

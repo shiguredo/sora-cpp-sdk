@@ -1,12 +1,23 @@
 #include "sora/sora_video_codec.h"
 
+#include <algorithm>
+#include <optional>
+#include <stdexcept>
+#include <string>
+#include <vector>
+
 // WebRTC
+#include <api/video/video_codec_type.h>
 #include <api/video_codecs/builtin_video_decoder_factory.h>
 #include <api/video_codecs/builtin_video_encoder_factory.h>
+#include <api/video_codecs/sdp_video_format.h>
+#include <api/video_codecs/video_codec.h>
 #include <rtc_base/logging.h>
 
-#include "sora/java_context.h"
+#include "sora/boost_json_iwyu.h"
+#include "sora/java_context.h"  // IWYU pragma: keep
 #include "sora/open_h264_video_codec.h"
+#include "sora/vpl_session.h"
 
 #if defined(SORA_CPP_SDK_IOS) || defined(SORA_CPP_SDK_MACOS)
 #include "sora/mac/mac_video_factory.h"

@@ -1,6 +1,7 @@
 // デバイス一覧の取得と、それで得られたデバイスの動作確認
 
 #include <iostream>
+#include <string>
 
 // WebRTC
 #include <rtc_base/logging.h>
@@ -9,9 +10,9 @@
 #include <rtc_base/win/scoped_com_initializer.h>
 #endif
 
-#include "sora/camera_device_capturer.h"
-#include "sora/device_list.h"
-#include "sora/java_context.h"
+// Sora C++ SDK
+#include <sora/camera_device_capturer.h>
+#include <sora/device_list.h>
 
 int main(int argc, char* argv[]) {
 #ifdef _WIN32

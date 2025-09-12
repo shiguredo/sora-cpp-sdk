@@ -2,36 +2,57 @@
 
 #include "sora/hwenc_nvcodec/nvcodec_video_encoder.h"
 
+#include <cstddef>
+#include <cstdint>
+#include <memory>
+#include <mutex>
+#include <vector>
+
 #ifdef _WIN32
 #include <d3d11.h>
 #include <wrl.h>
 #endif
 
-#include <chrono>
-#include <memory>
-#include <mutex>
-#include <queue>
-
 // WebRTC
+#include <api/scoped_refptr.h>
+#include <api/video/encoded_image.h>
 #include <api/video/nv12_buffer.h>
+#include <api/video/render_resolution.h>
+#include <api/video/video_codec_type.h>
+#include <api/video/video_content_type.h>
+#include <api/video/video_frame.h>
+#include <api/video/video_frame_buffer.h>
+#include <api/video/video_frame_type.h>
+#include <api/video/video_timing.h>
+#include <api/video_codecs/scalability_mode.h>
+#include <api/video_codecs/video_codec.h>
+#include <api/video_codecs/video_encoder.h>
 #include <common_video/h264/h264_bitstream_parser.h>
 #include <common_video/h265/h265_bitstream_parser.h>
 #include <common_video/include/bitrate_adjuster.h>
-#include <modules/video_coding/codecs/h264/include/h264.h>
+#include <modules/video_coding/codecs/h264/include/h264_globals.h>
 #include <modules/video_coding/include/video_codec_interface.h>
 #include <modules/video_coding/include/video_error_codes.h>
 #include <modules/video_coding/svc/create_scalability_structure.h>
-// create_scalability_structure.h で include 済みだが、依存性を明示するために include する
 #include <modules/video_coding/svc/scalable_video_controller.h>
+#include <rtc_base/checks.h>
 #include <rtc_base/logging.h>
 
 // libyuv
-#include <libyuv.h>
+#include <libyuv/convert_from.h>      // IWYU pragma: keep
+#include <libyuv/planar_functions.h>  // IWYU pragma: keep
 
 // NvCodec
+#include <NvEncoder/NvEncoder.h>
+#include <nvEncodeAPI.h>
+
 #ifdef _WIN32
 #include <NvEncoder/NvEncoderD3D11.h>
 #endif
+
+#include "sora/cuda_context.h"
+#include "sora/dyn/dyn.h"
+
 #ifdef __linux__
 #include "nvcodec_video_encoder_cuda.h"
 #endif

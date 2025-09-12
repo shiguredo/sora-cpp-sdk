@@ -5,8 +5,8 @@
 #include <string>
 
 // WebRTC
+#include <api/video_codecs/sdp_video_format.h>
 #include <api/video_codecs/video_decoder.h>
-#include <media/base/codec.h>
 
 namespace sora {
 

@@ -1,19 +1,57 @@
 #include "sora/websocket.h"
 
+#include <cstddef>
+#include <functional>
+#include <memory>
+#include <optional>
+#include <string>
 #include <utility>
 
 // WebRTC
-#include <rtc_base/logging.h>
 #include <rtc_base/base64.h>
+#include <rtc_base/logging.h>
 
 // Boost
-#include <boost/asio/bind_executor.hpp>
+#include <boost/asio/buffer.hpp>
 #include <boost/asio/connect.hpp>
+#include <boost/asio/error.hpp>
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/post.hpp>
+#include <boost/asio/ssl/context.hpp>
+#include <boost/asio/ssl/context_base.hpp>
+#include <boost/asio/ssl/error.hpp>
+#include <boost/asio/ssl/stream_base.hpp>
+#include <boost/asio/ssl/verify_context.hpp>
+#include <boost/asio/ssl/verify_mode.hpp>
 #include <boost/beast/core/buffers_to_string.hpp>
+#include <boost/beast/core/flat_buffer.hpp>
+#include <boost/beast/http/empty_body.hpp>
+#include <boost/beast/http/field.hpp>
+#include <boost/beast/http/impl/read.hpp>
+#include <boost/beast/http/impl/write.hpp>
+#include <boost/beast/http/message_fwd.hpp>
+#include <boost/beast/http/parser_fwd.hpp>
+#include <boost/beast/http/string_body_fwd.hpp>
+#include <boost/beast/http/verb.hpp>
+#include <boost/beast/websocket/rfc6455.hpp>
+#include <boost/beast/websocket/ssl.hpp>  // IWYU pragma: keep
 #include <boost/beast/websocket/stream.hpp>
+#include <boost/beast/websocket/stream_base.hpp>
+#include <boost/date_time/posix_time/posix_time_duration.hpp>
+#include <boost/system/detail/errc.hpp>
+#include <boost/system/detail/error_code.hpp>
+#include <boost/system/errc.hpp>
+
+// OpenSSL
+#include <openssl/base.h>
+#include <openssl/err.h>
+#include <openssl/ssl.h>
+#include <openssl/stack.h>
+#include <openssl/x509.h>
 
 #include "sora/ssl_verifier.h"
+#include "sora/url_parts.h"
 #include "sora/version.h"
 
 namespace sora {

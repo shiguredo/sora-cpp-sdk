@@ -1,17 +1,29 @@
 #include "sora/hwenc_nvcodec/nvcodec_video_decoder.h"
 
+#include <cstdint>
+#include <memory>
+#include <optional>
+
 // WebRTC
+#include <api/scoped_refptr.h>
+#include <api/video/encoded_image.h>
+#include <api/video/i420_buffer.h>
+#include <api/video/video_frame.h>
+#include <api/video_codecs/video_decoder.h>
 #include <modules/video_coding/include/video_error_codes.h>
-#include <rtc_base/checks.h>
 #include <rtc_base/logging.h>
-#include <rtc_base/time_utils.h>
-#include <third_party/libyuv/include/libyuv/convert.h>
+
+// libyuv
+#include <libyuv/convert.h>
 
 // NvCodec
 #include <NvDecoder/NvDecoder.h>
 
+#include "sora/cuda_context.h"
 #include "sora/dyn/cuda.h"
+#include "sora/dyn/dyn.h"
 #include "sora/dyn/nvcuvid.h"
+#include "sora/hwenc_nvcodec/nvcodec_decoder_cuda.h"
 
 namespace sora {
 

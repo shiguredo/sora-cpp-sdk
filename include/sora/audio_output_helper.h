@@ -51,7 +51,6 @@
 * 内蔵スピーカーと内蔵マイクの組み合わせを使っていることをもって、ハンズフリーモードであると返すようにしてある。
 */
 
-
 namespace sora {
 
 class AudioChangeRouteObserver {

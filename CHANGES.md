@@ -11,6 +11,132 @@
 
 ## develop
 
+## 2025.1.0
+
+**リリース日**: 2025-09-12
+
+- [CHANGE] macOS 12 用に無効化していた AVCaptureDeviceTypeExternal 利用を有効化
+  - Github Actions で macOS バージョン 12 までしか利用できなかった際にコメントアウトしていた処理を有効化した
+  - カメラデバイス取得は内部カメラと外部カメラに厳密化された
+  - @t-miya
+- [CHANGE] VERSION ファイルと DEPS ファイルを分離する
+  - VERSION ファイルにはバージョン番号のみを格納する
+  - DEPS ファイルに依存関係のバージョン情報を移動する
+  - run.py に read_version_and_deps() 関数を追加して両ファイルを読み込む
+  - examples/VERSION を examples/DEPS に名前を変更する
+  - canary.py を新しい VERSION 形式と examples/DEPS に対応させる
+  - GitHub Actions の build.yml で source VERSION を source DEPS に変更する（CUDA_VERSION を使用するため）
+  - GitHub Actions の formatter.yml から source VERSION を削除する（環境変数を使用していないため）
+  - Android テストアプリの build.gradle で CMAKE_VERSION を DEPS ファイルから動的に読み込むように変更する
+  - @voluntas
+- [CHANGE] ライブラリのヘッダーファイルとソースファイルで使用されている include を整理する
+  - 今まで間接的にインクルードされていたファイルが含まれなくなっている可能性があるので、破壊的変更になる
+  - @melpon
+- [CHANGE] run.py のビルドをサブコマンド化する
+  - 今まで `python3 run.py ubuntu-24.04_x86_64` でビルドしていたコマンドが`python3 run.py build ubuntu-24.04_x86_64` となる
+  - @melpon
+- [CHANGE] FakeVideoCapturer を追加する
+  - 元々はテストや momo や zakuro で各自実装してあったのを、C++ SDK 本体の機能にした
+  - フォントへの依存が無いので Momo の実装をベースにしている
+  - これによって C++ SDK は Blend2D に依存するようになるため、プロジェクトによってはエラーになる可能性がある
+  - また、この過程で iOS 向けのライブラリビルドは Xcode を利用しないように修正した
+  - @melpon
+- [UPDATE] Blend2D のダウンロードに時雨堂のミラー URL を使用するように変更する
+  - 公式サイトに負荷をかけないように https://oss-mirrors.shiguredo.jp/ を使用する
+  - @voluntas
+- [UPDATE] libwebrtc を m139.7258.3.0 にあげる
+  - @miosakuma
+- [UPDATE] CMake を 4.1.0 にあげる
+  - @torikizi
+- [UPDATE] Boost を 1.89.0 にあげる
+  - @voluntas
+- [UPDATE] blend2d のバージョンを 0.20.0 に上げる
+  - blend2d の API 変更への追従 : camelCase から snake_case へ移行
+    - 影響範囲: `src/capturer/fake_video_capturer.cpp` のみ
+    - 変更内容（旧 → 新）の一例 :
+      - `image_.getData(&data);` -> `image_.get_data(&data);`
+      - `ctx.setFillStyle(BLRgba32(0, 255, 255));` -> `ctx.set_fill_style(BLRgba32(0, 255, 255));`
+      - `path.moveTo(sx + gap, sy);` -> `path.move_to(sx + gap, sy);`
+    - 変更対象外の API
+      - `ctx.end()`, `ctx.save()` , `ctx.restore()` は単語なので変更なし
+  - @torikizi
+- [ADD] Blend2D のダウンロード時に SHA256 ハッシュチェックを追加する
+  - DEPS ファイルに BLEND2D_SHA256_HASH を追加
+  - ダウンロードファイルの完全性を検証するようにする
+  - @voluntas
+- [ADD] SixelRenderer と AnsiRenderer を追加する
+  - 元々は sumomo の機能の一部として実装してあったのを、C++ SDK 本体へと移動した
+  - @melpon
+- [ADD] clang-include-cleaner や clang-format を実行するサブコマンドを追加する
+  - `python3 run.py iwyu ubuntu-24.04_x86_64`
+  - `python3 run.py format`
+  - なお iwyu を実行するには事前にビルドしておく必要がある
+  - @melpon
+- [ADD] clang-include-cleaner や clang-format を GitHub Actions で実行し、差分があったらエラーにするワークフローを追加
+  - @melpon
+- [ADD] Intel VPL の VP9 エンコーダを動くようにする
+  - @melpon
+- [ADD] CPU アダプテーションの有効/無効を設定できるように `SoraSignalingConfig` に `cpu_adaptation` フィールドを追加
+  - `examples/sumomo` で `--cpu-adaptation` オプションで指定可能
+  - 未指定の場合は従来通り macOS のサイマルキャスト時のみ自動的に無効化される
+  - @voluntas
+- [FIX] AMD AMF エンコーダーで H.265/AV1 のキーフレーム要求が正しく動作しない問題を修正
+  - H.264 用のプロパティをすべてのコーデックで使用していたため、H.265/AV1 でキーフレームが生成されなかった
+  - 各コーデック固有のプロパティを使用するように修正:
+    - H.264: `AMF_VIDEO_ENCODER_FORCE_PICTURE_TYPE`
+    - H.265: `AMF_VIDEO_ENCODER_HEVC_FORCE_PICTURE_TYPE`
+    - AV1: `AMF_VIDEO_ENCODER_AV1_FORCE_FRAME_TYPE`
+  - @voluntas
+- [FIX] Intel VPL の VP9 エンコーダーでキーフレーム要求が機能しない問題を修正
+  - VP9 では `MFX_FRAMETYPE_I` のみを設定するように修正
+  - `MFX_FRAMETYPE_REF` や `MFX_FRAMETYPE_IDR` を同時に設定すると vpl-gpu-rt の CheckAndFixCtrl で `MFX_FRAMETYPE_P` に変更されてしまうため
+  - @voluntas
+- [FIX] Intel VPL の AV1 エンコーダーで Dependency Descriptor RTP ヘッダー拡張が追加されない問題を修正
+  - AMD AMF と NVIDIA Video Codec SDK では既に実装済みだった AV1 用の SVC コントローラーを Intel VPL にも追加
+  - `svc_controller_` と `scalability_mode_` メンバー変数を追加
+  - `InitEncode` で AV1 の場合に SVC コントローラーを初期化
+  - `Encode` メソッドで AV1 用の `codec_specific` 設定（`generic_frame_info` と `template_structure`）を追加
+  - `SetRates` でビットレート変更時の SVC レイヤー制御を追加
+  - @voluntas
+
+### misc
+
+- [CHANGE] SDL サンプルと Sumomo から `--multistream` オプションを削除する
+  - マルチストリーム機能は Sora サーバー側で制御されるため、クライアント側でオプションは不要となりました
+  - @torikizi
+- [UPDATE] SDL2 から SDL3 にアップデートする
+  - SDL3 の API 変更に伴い、sdl_sample と sumomo で以下の修正を実施:
+    - ヘッダーインクルードを `<SDL2/SDL.h>` から `<SDL3/SDL.h>` に変更
+    - `SDL2::SDL2main` をリンクする代わりに `SDL3/SDL_main.h` のインクルードを追加
+    - `SDL_Init` の戻り値チェックを bool 型に変更
+    - `SDL_PollEvent` の戻り値チェックを bool 型に変更
+    - `SDL_CreateWindow` の位置引数を削除
+    - `SDL_RENDERER_ACCELERATED` フラグを削除
+    - `SDL_SetWindowFullscreen` の引数を bool 型に変更
+    - `SDL_ShowCursor` / `SDL_HideCursor` を分離された関数に変更
+    - イベント名を SDL3 形式に変更（例: `SDL_WINDOWEVENT` → `SDL_EVENT_WINDOW_RESIZED`）
+    - キーコードを大文字に変更（例: `SDLK_f` → `SDLK_F`）
+    - `SDL_KeyboardEvent` の `keysym.sym` を `key` に変更
+    - `SDL_RenderCopy` を `SDL_RenderTexture` に変更
+    - `SDL_Rect` を `SDL_FRect` に変更（座標を float 型に）
+    - `SDL_CreateRGBSurfaceFrom` を `SDL_CreateSurfaceFrom` に変更
+    - `SDL_FreeSurface` を `SDL_DestroySurface` に変更
+  - @melpon
+- [UPDATE] actions/checkout@v4 と actions/download-artifact@v4 を @v5 に上げる
+  - @torikizi
+- [UPDATE] examples/DEPS の SDL バージョンを 3.2.22 に上げる
+  - @torikizi
+- [ADD] sumomo のレンダラーに Sixel と ANSI エスケープシーケンスでの表示を追加する
+  - `--use-sixel`, `--sixel-width`, `--sixel-height` オプションの追加
+  - `--use-ansi`, `--ansi-width`, `--ansi-height` オプションの追加
+  - また、この過程で SDLRenderer の SDL に依存しない部分をベースクラス（BaseRenderer）としてまとめた
+  - @melpon
+- [ADD] Sumomo に HTTP サーバー機能と WebRTC 統計情報 API を追加
+  - `--http-port` オプションで HTTP サーバーのポート番号を指定可能
+  - `--http-host` オプションで HTTP サーバーのホストアドレスを指定可能（デフォルト: 127.0.0.1）
+  - `/stats` エンドポイントで WebRTC の統計情報を JSON 形式で取得可能
+  - @voluntas
+
 ## 2025.4.0
 
 **リリース日**: 2025-07-09
@@ -29,7 +155,7 @@
   - @miosakuma @torikizi @melpon
 - [UPDATE] Android NDK を r28b にあげる
   - 16KB ページサイズに対応するため
-    - ref: https://developer.android.com/guide/practices/page-sizes
+    - ref: <https://developer.android.com/guide/practices/page-sizes>
   - @melpon
 - [UPDATE] Gradle のバージョンを 8.14.2 にあげる
   - @melpon

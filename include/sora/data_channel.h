@@ -1,16 +1,20 @@
 #ifndef SORA_DATA_CHANNEL_H_
 #define SORA_DATA_CHANNEL_H_
 
+#include <cstdint>
 #include <functional>
 #include <map>
 #include <memory>
-#include <set>
+#include <string>
 
 // Boost
-#include <boost/asio.hpp>
+#include <boost/asio/deadline_timer.hpp>
+#include <boost/asio/io_context.hpp>
+#include <boost/system/detail/error_code.hpp>
 
 // WebRTC
 #include <api/data_channel_interface.h>
+#include <api/scoped_refptr.h>
 
 namespace sora {
 

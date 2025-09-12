@@ -122,6 +122,12 @@ _build/ubuntu-24.04_x86_64/release/sumomo/
 └── sumomo
 ```
 
+##### Sora C++ SDK を CUDA 抜きでビルドしつつ Sumomo をビルドする
+
+```shell
+python3 examples/sumomo/ubuntu-24.04_x86_64/run.py --local-sora-cpp-sdk-dir . --local-sora-cpp-sdk-args='--disable-cuda'
+```
+
 ## 実行する
 
 ### コマンドラインから必要なオプションを指定して実行します
@@ -132,13 +138,13 @@ _build/ubuntu-24.04_x86_64/release/sumomo/
 Windows の場合
 
 ```powershell
-> .\sumomo.exe --signaling-url wss://sora.example.com/signaling --role sendrecv --channel-id sora --multistream true --use-sdl
+> .\sumomo.exe --signaling-url wss://sora.example.com/signaling --role sendrecv --channel-id sora --use-sdl
 ```
 
 Windows 以外の場合
 
 ```shell
-./sumomo --signaling-url wss://sora.example.com/signaling --role sendrecv --channel-id sora --multistream true --use-sdl
+./sumomo --signaling-url wss://sora.example.com/signaling --role sendrecv --channel-id sora --use-sdl
 ```
 
 #### 必須オプション
@@ -186,8 +192,6 @@ Windows 以外の場合
   - 0 は未指定と見なされます
 - `--metadata` : [メタデータ](https://sora-doc.shiguredo.jp/SIGNALING#414142)
   - JSON 形式の文字列を指定してください
-- `--multistream` : [マルチストリーム](https://sora-doc.shiguredo.jp/SIGNALING#808bc2) 機能の利用 (true/false)
-  - 未指定の場合は Sora の設定 (デフォルト: true) が設定されます
 - `--spotlight` : [スポットライト](https://sora-doc.shiguredo.jp/SIGNALING#8f6c79) 機能の利用 (true/false)
   - 未指定の場合は Sora の設定 (デフォルト: false) が設定されます
 - `--spotlight-number` : [spotlight_number](https://sora-doc.shiguredo.jp/SPOTLIGHT#c66032)
@@ -245,13 +249,13 @@ Windows 以外の場合
 
 - `--degradation-preference`
   - `disabled`, `maintain_framerate`,`maintain_resolution`, `balanced` が指定可能です。
-  - 設定可能な値の詳細は [ W3C のドキュメント](https://www.w3.org/TR/mst-content-hint/#degradation-preference-when-encoding) を参照してください。
+  - 設定可能な値の詳細は [W3C のドキュメント](https://www.w3.org/TR/mst-content-hint/#degradation-preference-when-encoding) を参照してください。
 
 #### エンコーダー / デコーダーの設定に関するオプション
 
 - `--vp8-encoder`
   - VP8 エンコーダーを指定します
-- `--vp8-decoder` 
+- `--vp8-decoder`
   - VP8 デコーダーを指定します
 - `--vp9-encoder`
   - VP9 エンコーダーを指定します
@@ -273,15 +277,52 @@ Windows 以外の場合
   - 利用可能なエンコーダーとデコーダーを表示します
 
 設定可能な値は以下の通りです。
- - `internal`
- - `cisco_openh264`
- - `intel_vpl`
- - `nvidia_video_codec_sdk`
- - `amd_amf`
+
+- `internal`
+- `cisco_openh264`
+- `intel_vpl`
+- `nvidia_video_codec_sdk`
+- `amd_amf`
 
 > [!NOTE]
 > H.264 と H.265 は `internal` または未指定では利用できません。
 > 必ずエンコーダーまたはデコーダーを指定してください。
+
+#### HTTP サーバーに関するオプション
+
+- `--http-port`
+  - WebRTC 統計情報 API を提供する HTTP サーバーのポート番号を指定します
+  - 1024-65535 の値が指定可能です
+  - 無指定の場合は HTTP サーバーを起動しません
+  - 例: `--http-port 8080`
+- `--http-host`
+  - HTTP サーバーがlistenするホストアドレスを指定します
+  - デフォルトは `127.0.0.1`（ローカルホストのみ）です
+  - 例: `--http-host 0.0.0.0`（すべてのインターフェースでlisten）
+
+HTTP サーバーを有効にすると、以下のエンドポイントが利用可能になります：
+
+- `/stats` - WebRTC の統計情報を JSON 形式で取得
+
+##### 使用例
+
+HTTP サーバーを有効にして sumomo を起動：
+
+```shell
+./sumomo --signaling-url wss://sora.example.com/signaling --role sendrecv --channel-id sora --http-port 8080
+```
+
+別のターミナルから統計情報を取得：
+
+```shell
+curl http://127.0.0.1:8080/stats
+```
+
+または
+
+```shell
+http GET 127.0.0.1:8080/stats
+```
 
 #### その他のオプション
 

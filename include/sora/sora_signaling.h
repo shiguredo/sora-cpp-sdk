@@ -1,22 +1,38 @@
 #ifndef SORA_SORA_SIGNALING_H_INCLUDED
 #define SORA_SORA_SIGNALING_H_INCLUDED
 
+#include <cstddef>
+#include <cstdint>
 #include <functional>
+#include <map>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <vector>
 
 // Boost
-#include <boost/json.hpp>
-#include <boost/optional.hpp>
+#include <boost/asio/deadline_timer.hpp>
+#include <boost/asio/io_context.hpp>
+#include <boost/beast/websocket/rfc6455.hpp>
+#include <boost/system/detail/error_code.hpp>
 
 // WebRTC
-#include <api/media_stream_interface.h>
+#include <api/data_channel_interface.h>
+#include <api/jsep.h>
+#include <api/packet_socket_factory.h>
 #include <api/peer_connection_interface.h>
+#include <api/rtc_error.h>
+#include <api/rtp_parameters.h>
+#include <api/rtp_receiver_interface.h>
+#include <api/rtp_transceiver_interface.h>
 #include <api/scoped_refptr.h>
+#include <api/stats/rtc_stats_report.h>
+#include <rtc_base/network.h>
 
+#include "sora/boost_json_iwyu.h"
 #include "sora/data_channel.h"
+#include "sora/url_parts.h"
 #include "sora/version.h"
 #include "sora/websocket.h"
 
@@ -161,6 +177,7 @@ struct SoraSignalingConfig {
   std::optional<http_header_value> user_agent;
 
   std::optional<webrtc::DegradationPreference> degradation_preference;
+  std::optional<bool> cpu_adaptation;
 };
 
 class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
@@ -172,7 +189,8 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
   ~SoraSignaling();
   static std::shared_ptr<SoraSignaling> Create(
       const SoraSignalingConfig& config);
-  webrtc::scoped_refptr<webrtc::PeerConnectionInterface> GetPeerConnection() const;
+  webrtc::scoped_refptr<webrtc::PeerConnectionInterface> GetPeerConnection()
+      const;
   std::string GetVideoMid() const;
   std::string GetAudioMid() const;
 
@@ -251,8 +269,8 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
  private:
   void OnSignalingChange(
       webrtc::PeerConnectionInterface::SignalingState new_state) override {}
-  void OnDataChannel(
-      webrtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) override;
+  void OnDataChannel(webrtc::scoped_refptr<webrtc::DataChannelInterface>
+                         data_channel) override;
   void OnStandardizedIceConnectionChange(
       webrtc::PeerConnectionInterface::IceConnectionState new_state) override;
   void OnConnectionChange(
@@ -265,17 +283,18 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
                            const std::string& url,
                            int error_code,
                            const std::string& error_text) override;
-  void OnTrack(
-      webrtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver) override;
+  void OnTrack(webrtc::scoped_refptr<webrtc::RtpTransceiverInterface>
+                   transceiver) override;
   void OnRemoveTrack(
       webrtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override;
 
   // DataChannelObserver の実装
  private:
-  void OnStateChange(
-      webrtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) override;
-  void OnMessage(webrtc::scoped_refptr<webrtc::DataChannelInterface> data_channel,
-                 const webrtc::DataBuffer& buffer) override;
+  void OnStateChange(webrtc::scoped_refptr<webrtc::DataChannelInterface>
+                         data_channel) override;
+  void OnMessage(
+      webrtc::scoped_refptr<webrtc::DataChannelInterface> data_channel,
+      const webrtc::DataBuffer& buffer) override;
 
  private:
   SoraSignalingConfig config_;

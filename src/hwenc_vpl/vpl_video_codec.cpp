@@ -1,9 +1,20 @@
 #include "sora/hwenc_vpl/vpl_video_codec.h"
+#include <memory>
+#include <string>
 
-#include "sora/hwenc_vpl/vpl_video_decoder.h"
-#include "sora/hwenc_vpl/vpl_video_encoder.h"
+// WebRTC
+#include <api/video/video_codec_type.h>
+
+// VPL
+#include <vpl/mfxcommon.h>
+#include <vpl/mfxdefs.h>
+#include <vpl/mfxsession.h>
 
 #include "../vpl_session_impl.h"
+#include "sora/hwenc_vpl/vpl_video_decoder.h"
+#include "sora/hwenc_vpl/vpl_video_encoder.h"
+#include "sora/sora_video_codec.h"
+#include "sora/vpl_session.h"
 
 namespace sora {
 

@@ -27,7 +27,7 @@ jobs:
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
       TEST_MATRIX_NAME: ${{ matrix.name }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: microsoft/setup-msbuild@v2
       - name: Env to output
         run: |
@@ -54,7 +54,7 @@ jobs:
           key: windows-cuda-${{ steps.versions.outputs.cuda_version }}.v1
       - run: echo "${CUDA_VERSION}" > _install\windows_x86_64\release\cuda.version
         if: steps.cache-cuda.outputs.cache-hit == 'true'
-      - run: python3 run.py --test --run-e2e-test --package ${{ matrix.name }}
+      - run: python3 run.py build --test --run-e2e-test --package ${{ matrix.name }}
         env:
           SORA_CPP_SDK_TEMP_DIR: C:\
       - name: Get package name
@@ -111,12 +111,12 @@ jobs:
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
       TEST_MATRIX_NAME: ${{ matrix.name }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Env to output
         run: |
           echo "user=`users`" >> $GITHUB_OUTPUT
         id: env
-      - run: python3 run.py --test --run-e2e-test --package ${{ matrix.name }}
+      - run: python3 run.py build --test --run-e2e-test --package ${{ matrix.name }}
       - name: Get package name
         run: |
           source _package/${{ matrix.name }}/release/sora.env
@@ -186,7 +186,7 @@ jobs:
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
       TEST_MATRIX_NAME: ${{ matrix.platform.name }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Disk cleanup
         run: |
           set -x
@@ -227,7 +227,7 @@ jobs:
       - name: Install deps for ${{ matrix.platform.name }}
         if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
         run: |
-          source VERSION
+          source DEPS
           sudo apt-get update
           sudo apt-get install -y software-properties-common
 
@@ -271,7 +271,7 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         if: matrix.platform.os == 'android'
-      - run: python3 run.py --test --run-e2e-test --package ${{ matrix.platform.name }}
+      - run: python3 run.py build --test --run-e2e-test --package ${{ matrix.platform.name }}
       - name: Get package name
         run: |
           source _package/${{ matrix.platform.name }}/release/sora.env
@@ -318,7 +318,7 @@ jobs:
       - build-ubuntu
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/download
         with:
           platform: windows_x86_64
@@ -378,7 +378,7 @@ jobs:
         working-directory: ${{ github.workspace }}/examples
     runs-on: windows-2022
     steps:
-        - uses: actions/checkout@v4
+        - uses: actions/checkout@v5
         - name: Build Example
           run: |
             python3 ${{ matrix.example }}/windows_x86_64/run.py
@@ -408,7 +408,7 @@ jobs:
         working-directory: ${{ github.workspace }}/examples
     runs-on: macos-14
     steps:
-        - uses: actions/checkout@v4
+        - uses: actions/checkout@v5
         - name: Build Example
           run: |
             python3 ${{ matrix.example }}/macos_arm64/run.py
@@ -445,7 +445,7 @@ jobs:
         working-directory: ${{ github.workspace }}/examples
     runs-on: ${{ matrix.platform.runs-on }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install deps
         run: |
           sudo apt-get update
@@ -499,7 +499,7 @@ jobs:
             - ubuntu-24.04_armv8.tar.gz
       runs-on: ubuntu-24.04
       steps:
-        - uses: actions/checkout@v4
+        - uses: actions/checkout@v5
         - uses: actions/download-artifact@v4
           with:
             name: ${{ matrix.example }}_${{ matrix.archive }}
