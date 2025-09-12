@@ -35,6 +35,11 @@ target_sources(sumomo
     ../src/sumomo.cpp
     ../src/sdl_renderer.cpp)
 
+target_compile_options(sumomo
+  PRIVATE
+    "$<$<COMPILE_LANGUAGE:CXX>:-nostdinc++>"
+    "$<$<COMPILE_LANGUAGE:CXX>:-isystem${LIBCXX_INCLUDE_DIR}>"
+)
 target_include_directories(sumomo PRIVATE ${CLI11_DIR}/include)
 target_link_libraries(sumomo PRIVATE Sora::sora SDL3::SDL3)
 target_compile_definitions(sumomo PRIVATE CLI11_HAS_FILESYSTEM=0)

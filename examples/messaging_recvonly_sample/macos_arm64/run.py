@@ -24,6 +24,7 @@ from buildbase import (  # noqa: E402
     get_webrtc_info,
     install_cli11,
     install_cmake,
+    install_llvm,
     install_sora_and_deps,
     install_webrtc,
     mkdir_p,
@@ -62,6 +63,33 @@ def install_deps(
                 "debug": debug,
             }
             build_webrtc(**build_webrtc_args)
+
+        webrtc_info = get_webrtc_info("macos_arm64", local_webrtc_build_dir, install_dir, debug)
+
+        if local_webrtc_build_dir is None:
+            webrtc_version = read_version_file(webrtc_info.version_file)
+
+            # LLVM
+            tools_url = webrtc_version["WEBRTC_SRC_TOOLS_URL"]
+            tools_commit = webrtc_version["WEBRTC_SRC_TOOLS_COMMIT"]
+            libcxx_url = webrtc_version["WEBRTC_SRC_THIRD_PARTY_LIBCXX_SRC_URL"]
+            libcxx_commit = webrtc_version["WEBRTC_SRC_THIRD_PARTY_LIBCXX_SRC_COMMIT"]
+            buildtools_url = webrtc_version["WEBRTC_SRC_BUILDTOOLS_URL"]
+            buildtools_commit = webrtc_version["WEBRTC_SRC_BUILDTOOLS_COMMIT"]
+            install_llvm_args = {
+                "version": f"{tools_url}.{tools_commit}."
+                f"{libcxx_url}.{libcxx_commit}."
+                f"{buildtools_url}.{buildtools_commit}",
+                "version_file": os.path.join(install_dir, "llvm.version"),
+                "install_dir": install_dir,
+                "tools_url": tools_url,
+                "tools_commit": tools_commit,
+                "libcxx_url": libcxx_url,
+                "libcxx_commit": libcxx_commit,
+                "buildtools_url": buildtools_url,
+                "buildtools_commit": buildtools_commit,
+            }
+            install_llvm(**install_llvm_args)
 
         # Sora C++ SDK, Boost
         if local_sora_cpp_sdk_dir is None:
@@ -158,11 +186,12 @@ def main():
         cmake_args += [
             "-DCMAKE_SYSTEM_PROCESSOR=arm64",
             "-DCMAKE_OSX_ARCHITECTURES=arm64",
-            "-DCMAKE_C_COMPILER=clang",
             "-DCMAKE_C_COMPILER_TARGET=aarch64-apple-darwin",
-            "-DCMAKE_CXX_COMPILER=clang++",
             "-DCMAKE_CXX_COMPILER_TARGET=aarch64-apple-darwin",
             f"-DCMAKE_SYSROOT={sysroot}",
+            f"-DCMAKE_C_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang')}",
+            f"-DCMAKE_CXX_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang++')}",
+            f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}",
         ]
 
         cmd(["cmake", os.path.join(PROJECT_DIR)] + cmake_args)
