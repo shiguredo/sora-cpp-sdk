@@ -11,6 +11,9 @@
 
 ## develop
 
+- [CHANGE] liwebrtc のバージョンを m140.7339.2.0 に上げる
+  - macOS, iOS が利用している clang, libc++ を Apple Clang のものから libwebrtc 管理下の Clang のものに変えたので破壊的変更となります。
+  - @melpon
 - [CHANGE] macOS 12 用に無効化していた AVCaptureDeviceTypeExternal 利用を有効化
   - Github Actions で macOS バージョン 12 までしか利用できなかった際にコメントアウトしていた処理を有効化した
   - カメラデバイス取得は内部カメラと外部カメラに厳密化された
