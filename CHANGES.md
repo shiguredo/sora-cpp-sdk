@@ -15,7 +15,7 @@
   - macOS, iOS が利用している clang, libc++ を Apple Clang のものから libwebrtc 管理下の Clang のものに変えたので破壊的変更となります。
   - @melpon
 
-## 2025.1.0
+## 2025.5.0
 
 **リリース日**: 2025-09-12
 
