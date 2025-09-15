@@ -1719,6 +1719,11 @@ void SoraSignaling::OnMessage(
               SessionDescription::CreateAnswer(
                   self->pc_.get(),
                   [self](webrtc::SessionDescriptionInterface* desc) {
+                    if (self->config_.degradation_preference) {
+                      self->SetDegradationPreference(
+                          self->video_mid_,
+                          *self->config_.degradation_preference);
+                    }
                     std::string sdp;
                     desc->ToString(&sdp);
                     boost::asio::post(*self->config_.io_context, [self, sdp]() {
