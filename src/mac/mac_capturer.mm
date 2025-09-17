@@ -33,7 +33,7 @@
   webrtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer =
       webrtc::make_ref_counted<webrtc::ObjCFrameBuffer>(frame.buffer);
   _capturer->OnFrame(webrtc::VideoFrame::Builder()
-                         .set_video_frame_buffer(buffer)
+                         .set_video_frame_buffer(buffer->ToI420())
                          .set_rotation((webrtc::VideoRotation)frame.rotation)
                          .set_timestamp_us(timestamp_us)
                          .build());
