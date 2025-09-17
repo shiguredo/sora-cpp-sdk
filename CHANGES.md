@@ -11,6 +11,8 @@
 
 ## develop
 
+- [CHANGE] enum の `kNvidiaVideoCodecSdk` を `kNvidiaVideoCodec` に変更する
+  - @voluntas
 - [CHANGE] liwebrtc のバージョンを m140.7339.2.2 に上げる
   - macOS, iOS が利用している clang, libc++ を Apple Clang のものから libwebrtc 管理下の Clang のものに変えたので破壊的変更となります。
   - @melpon @torikizi
@@ -59,7 +61,7 @@
   - また、この過程で iOS 向けのライブラリビルドは Xcode を利用しないように修正した
   - @melpon
 - [UPDATE] Blend2D のダウンロードに時雨堂のミラー URL を使用するように変更する
-  - 公式サイトに負荷をかけないように https://oss-mirrors.shiguredo.jp/ を使用する
+  - 公式サイトに負荷をかけないように <https://oss-mirrors.shiguredo.jp/> を使用する
   - @voluntas
 - [UPDATE] libwebrtc を m139.7258.3.0 にあげる
   - @miosakuma
