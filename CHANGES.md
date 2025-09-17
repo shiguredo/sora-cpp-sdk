@@ -14,6 +14,10 @@
 - [CHANGE] liwebrtc のバージョンを m140.7339.2.0 に上げる
   - macOS, iOS が利用している clang, libc++ を Apple Clang のものから libwebrtc 管理下の Clang のものに変えたので破壊的変更となります。
   - @melpon
+- [FIX] macOS でオートスケーラが効いていなかったのを修正する
+  - `sora::MacCapturer` でキャプチャした時点の `VideoFrameBuffer::Type` が `kNative` だったため効いていなかった
+  - `buffer->ToI420()` で `kI420` にすることでオートスケーラが効くようにする
+  - @melpon
 
 ## 2025.5.0
 
