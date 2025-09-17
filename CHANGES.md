@@ -21,6 +21,8 @@
   - `sora::MacCapturer` でキャプチャした時点の `VideoFrameBuffer::Type` が `kNative` だったため効いていなかった
   - `buffer->ToI420()` で `kI420` にすることでオートスケーラが効くようにする
   - @melpon
+- [FIX] Ubuntu 環境のカメラで MJPEG より YUV が優先されてしまうのを修正
+  - @melpon
 
 ## 2025.5.0
 
