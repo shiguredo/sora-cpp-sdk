@@ -72,8 +72,8 @@ void tag_invoke(const boost::json::value_from_tag&,
     case VideoCodecImplementation::kIntelVpl:
       jv = "intel_vpl";
       break;
-    case VideoCodecImplementation::kNvidiaVideoCodecSdk:
-      jv = "nvidia_video_codec_sdk";
+    case VideoCodecImplementation::kNvidiaVideoCodec:
+      jv = "nvidia_video_codec";
       break;
     case VideoCodecImplementation::kAmdAmf:
       jv = "amd_amf";
@@ -117,8 +117,8 @@ VideoCodecImplementation tag_invoke(
     return VideoCodecImplementation::kCiscoOpenH264;
   } else if (s == "intel_vpl") {
     return VideoCodecImplementation::kIntelVpl;
-  } else if (s == "nvidia_video_codec_sdk") {
-    return VideoCodecImplementation::kNvidiaVideoCodecSdk;
+  } else if (s == "nvidia_video_codec") {
+    return VideoCodecImplementation::kNvidiaVideoCodec;
   } else if (s == "amd_amf") {
     return VideoCodecImplementation::kAmdAmf;
   } else if (s == "custom_1") {

@@ -281,7 +281,7 @@ Windows 以外の場合
 - `internal`
 - `cisco_openh264`
 - `intel_vpl`
-- `nvidia_video_codec_sdk`
+- `nvidia_video_codec`
 - `amd_amf`
 
 > [!NOTE]

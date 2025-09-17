@@ -753,12 +753,12 @@ int main(int argc, char* argv[]) {
           {{"internal", sora::VideoCodecImplementation::kInternal},
            {"cisco_openh264", sora::VideoCodecImplementation::kCiscoOpenH264},
            {"intel_vpl", sora::VideoCodecImplementation::kIntelVpl},
-           {"nvidia_video_codec_sdk",
-            sora::VideoCodecImplementation::kNvidiaVideoCodecSdk},
+           {"nvidia_video_codec",
+            sora::VideoCodecImplementation::kNvidiaVideoCodec},
            {"amd_amf", sora::VideoCodecImplementation::kAmdAmf}});
   auto video_codec_description =
       "value in "
-      "{internal,cisco_openh264,intel_vpl,nvidia_video_codec_sdk,amd_amf}";
+      "{internal,cisco_openh264,intel_vpl,nvidia_video_codec,amd_amf}";
   std::optional<sora::VideoCodecImplementation> vp8_encoder;
   std::optional<sora::VideoCodecImplementation> vp8_decoder;
   std::optional<sora::VideoCodecImplementation> vp9_encoder;
@@ -934,7 +934,7 @@ int main(int argc, char* argv[]) {
           .openh264_path = openh264;
     }
     if (context_config.video_codec_factory_config.preference->HasImplementation(
-            sora::VideoCodecImplementation::kNvidiaVideoCodecSdk)) {
+            sora::VideoCodecImplementation::kNvidiaVideoCodec)) {
       if (sora::CudaContext::CanCreate()) {
         context_config.video_codec_factory_config.capability_config
             .cuda_context = sora::CudaContext::Create();
