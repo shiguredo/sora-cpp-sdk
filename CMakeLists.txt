@@ -11,7 +11,7 @@ set(WEBRTC_LIBRARY_DIR "" CACHE PATH "WebRTC のライブラリディレクト�
 set(WEBRTC_LIBRARY_NAME "webrtc" CACHE STRING "WebRTC のライブラリ名")
 set(USE_LIBCXX OFF CACHE BOOL "libstdc++ の代わりに libc++ を使うかどうか")
 set(LIBCXX_INCLUDE_DIR "" CACHE PATH "libc++ を使う場合の libc++ のインクルードディレクトリ\n空文字だった場合はデフォルト検索パスの libc++ を利用する")
-set(USE_NVCODEC_ENCODER OFF CACHE BOOL "NVIDIA Video Codec SDK によるハードウェアエンコーダを利用するかどうか")
+set(USE_NVCODEC_ENCODER OFF CACHE BOOL "NVIDIA Video Codec によるハードウェアエンコーダを利用するかどうか")
 
 project(sora-cpp-sdk C CXX)
 

@@ -151,7 +151,7 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
             VideoEncoderConfig(codec.type, create_video_encoder, 16));
 #endif
       } else if (*codec.encoder ==
-                 VideoCodecImplementation::kNvidiaVideoCodecSdk) {
+                 VideoCodecImplementation::kNvidiaVideoCodec) {
 #if defined(USE_NVCODEC_ENCODER)
         // CudaContext は必須ではない（Windows エンコーダでは DirectX を利用する）ので assert しない
         // assert(config.capability_config.cuda_context);
@@ -221,7 +221,7 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
             VideoDecoderConfig(codec.type, create_video_decoder));
 #endif
       } else if (*codec.decoder ==
-                 VideoCodecImplementation::kNvidiaVideoCodecSdk) {
+                 VideoCodecImplementation::kNvidiaVideoCodec) {
 #if defined(USE_NVCODEC_ENCODER)
         // CudaContext は必須ではない（Windows エンコーダでは DirectX を利用する）ので assert しない
         // assert(config.capability_config.cuda_context);
