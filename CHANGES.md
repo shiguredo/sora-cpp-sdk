@@ -13,6 +13,12 @@
 
 - [CHANGE] liwebrtc のバージョンを m140.7339.2.0 に上げる
   - macOS, iOS が利用している clang, libc++ を Apple Clang のものから libwebrtc 管理下の Clang のものに変えたので破壊的変更となります。
+
+## 2025.5.1
+
+**リリース日**: 2025-09-17
+
+- [FIX] DataChannel の re-offer の時に SetDegradationPreference を読んでいなかった問題を修正
   - @melpon
 - [FIX] macOS でオートスケーラが効いていなかったのを修正する
   - `sora::MacCapturer` でキャプチャした時点の `VideoFrameBuffer::Type` が `kNative` だったため効いていなかった
