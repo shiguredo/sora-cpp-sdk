@@ -23,7 +23,7 @@ Ubuntu 22.04 x86_64 でクロスコンパイルしたバイナリを利用する
 
 ## NVIDIA 搭載の Windows で width height のいずれかが 128 未満のサイズの VP9 の映像を受信できません
 
-NVIDIA VIDEO CODEC SDK のハードウェアデコーダでは width height のいずれかが 128 未満である場合 VP9 の映像をデコードできません。 width height のいずれかが 128 未満のサイズの映像を受信したい場合は VP9 以外のコーデックを利用するようにしてください。
+NVIDIA Video Codec のハードウェアデコーダでは width height のいずれかが 128 未満である場合 VP9 の映像をデコードできません。 width height のいずれかが 128 未満のサイズの映像を受信したい場合は VP9 以外のコーデックを利用するようにしてください。
 
 ## Windows の Chrome で Jetson の H.264 映像を受信すると色が緑色になります
 
