@@ -11,7 +11,14 @@
 
 ## develop
 
-## 2025.1.0
+## 2025.5.1
+
+**リリース日**: 2025-09-17
+
+- [FIX] DataChannel の re-offer の時に SetDegradationPreference を読んでいなかった問題を修正
+  - @melpon
+
+## 2025.5.0
 
 **リリース日**: 2025-09-12
 
