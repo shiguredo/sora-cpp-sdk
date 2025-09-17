@@ -62,7 +62,7 @@ sora::VideoCodecCapability::Parameters GetParameters(
 VideoCodecCapability::Engine GetNvCodecVideoCodecCapability(
     std::shared_ptr<CudaContext> context) {
   VideoCodecCapability::Engine engine(
-      VideoCodecImplementation::kNvidiaVideoCodecSdk);
+      VideoCodecImplementation::kNvidiaVideoCodec);
   engine.parameters = GetParameters(context);
 
   auto add = [&engine, &context](CudaVideoCodec type,

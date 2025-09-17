@@ -31,7 +31,7 @@ enum class VideoCodecImplementation {
   kInternal,
   kCiscoOpenH264,
   kIntelVpl,
-  kNvidiaVideoCodecSdk,
+  kNvidiaVideoCodec,
   kAmdAmf,
   // 連番になってて微妙だが、ユーザー側でカスタムエンコーダ/デコーダを実現しつつ、現在の
   // capability, preference の機能に乗せるならこのようにするのが一番分かりやすい

@@ -322,7 +322,7 @@ int main(int argc, char* argv[]) {
             x);
 
     if (preference.HasImplementation(
-            sora::VideoCodecImplementation::kNvidiaVideoCodecSdk)) {
+            sora::VideoCodecImplementation::kNvidiaVideoCodec)) {
       if (sora::CudaContext::CanCreate()) {
         context_config.video_codec_factory_config.capability_config
             .cuda_context = sora::CudaContext::Create();
