@@ -842,10 +842,6 @@ def _build(
             cmake_args.append(
                 f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}"
             )
-            if platform.target.os == "jetson":
-                cmake_args.append("-DUSE_JETSON_ENCODER=ON")
-            if platform.target.os == "raspberry-pi-os":
-                cmake_args.append("-DUSE_V4L2_ENCODER=ON")
         if platform.target.os == "ios":
             cmake_args.append(
                 f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}"
@@ -927,6 +923,10 @@ def _build(
         if platform.target.os in ("windows", "ubuntu") and platform.target.arch == "x86_64":
             cmake_args.append("-DUSE_AMF_ENCODER=ON")
             cmake_args.append(f"-DAMF_ROOT_DIR={cmake_path(os.path.join(install_dir, 'amf'))}")
+
+        # Jetson
+        if platform.target.os in ("jetson",):
+            cmake_args.append("-DUSE_JETSON_ENCODER=ON")
 
         # V4L2
         if platform.target.os in ("raspberry-pi-os",):
