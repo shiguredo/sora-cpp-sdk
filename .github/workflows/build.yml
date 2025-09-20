@@ -316,7 +316,7 @@ jobs:
             python3 $app/${{ matrix.platform.name }}/run.py --local-sora-cpp-sdk-dir ..
             cp _build/${{ matrix.platform.name }}/release/$app/$app examples_${{ matrix.platform.name }}
             # raspberry-pi-os は libcamerac.so も必要
-            cp _install/${{ matrix.platform.name }}/release/sora/lib/libcamerac.so examples_${{ matrix.platform.name }}
+            cp _build/${{ matrix.platform.name }}/release/$app/libcamerac.so examples_${{ matrix.platform.name }}
           done
         if: matrix.platform.os == 'raspberry-pi-os' && matrix.platform.arch == 'armv8'
       - name: Upload Examples Artifact
