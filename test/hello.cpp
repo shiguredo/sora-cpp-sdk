@@ -399,6 +399,37 @@ int main(int argc, char* argv[]) {
     }
   }
 
+  // VideoCodecCapability の一覧を出力する
+  {
+    auto capability = sora::GetVideoCodecCapability(
+        context_config.video_codec_factory_config.capability_config);
+    for (const auto& engine : capability.engines) {
+      std::cout << "Engine: "
+                << boost::json::value_from(engine.name).as_string()
+                << std::endl;
+      for (const auto& codec : engine.codecs) {
+        if (codec.encoder) {
+          std::cout << "  - " << boost::json::value_from(codec.type).as_string()
+                    << " Encoder" << std::endl;
+        }
+        if (codec.decoder) {
+          std::cout << "  - " << boost::json::value_from(codec.type).as_string()
+                    << " Decoder" << std::endl;
+        }
+        auto params = boost::json::value_from(codec.parameters);
+        if (params.as_object().size() > 0) {
+          std::cout << "    - Codec Parameters: "
+                    << boost::json::serialize(params) << std::endl;
+        }
+      }
+      auto params = boost::json::value_from(engine.parameters);
+      if (params.as_object().size() > 0) {
+        std::cout << "  - Engine Parameters: " << boost::json::serialize(params)
+                  << std::endl;
+      }
+    }
+  }
+
   auto context = sora::SoraClientContext::Create(context_config);
 
   auto hello = std::make_shared<HelloSora>(context, config);

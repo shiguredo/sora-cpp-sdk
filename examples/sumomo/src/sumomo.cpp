@@ -123,6 +123,10 @@ struct SumomoConfig {
   std::optional<int> http_port;
   std::string http_host = "127.0.0.1";
 
+  bool use_libcamera = false;
+  bool use_libcamera_native = false;
+  std::vector<std::pair<std::string, std::string>> libcamera_controls;
+
   struct Size {
     int width;
     int height;
@@ -331,6 +335,9 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
       cam_config.fps = 30;
       cam_config.use_native = config_.hw_mjpeg_decoder;
       cam_config.device_name = config_.video_device;
+      cam_config.use_libcamera = config_.use_libcamera;
+      cam_config.libcamera_native_frame_output = config_.use_libcamera_native;
+      cam_config.libcamera_controls = config_.libcamera_controls;
       auto video_source = sora::CreateCameraDeviceCapturer(cam_config);
       if (video_source == nullptr) {
         RTC_LOG(LS_ERROR) << "Failed to create video source.";
@@ -473,6 +480,11 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
     sixel_renderer_.reset();
     ansi_renderer_.reset();
     ioc_->stop();
+    ioc_.reset();
+    conn_.reset();
+    audio_track_ = nullptr;
+    video_track_ = nullptr;
+    context_.reset();
   }
   void OnNotify(std::string text) override {
     RTC_LOG(LS_INFO) << "OnNotify: " << text;
@@ -739,6 +751,13 @@ int main(int argc, char* argv[]) {
   add_optional_bool(app, "--cpu-adaptation", config.cpu_adaptation,
                     "Enable/disable CPU adaptation (default: none)");
 
+  app.add_flag("--use-libcamera", config.use_libcamera,
+               "Use libcamera for video capture (only on supported devices)");
+  app.add_flag("--use-libcamera-native", config.use_libcamera_native,
+               "Use native buffer for H.264 encoding");
+  app.add_option("--libcamera-control", config.libcamera_controls,
+                 "Set libcamera control (format: key value)");
+
   // SoraClientContextConfig に関するオプション
   std::string audio_recording_device;
   app.add_option("--audio-recording-device", audio_recording_device,
@@ -755,10 +774,12 @@ int main(int argc, char* argv[]) {
            {"intel_vpl", sora::VideoCodecImplementation::kIntelVpl},
            {"nvidia_video_codec",
             sora::VideoCodecImplementation::kNvidiaVideoCodec},
-           {"amd_amf", sora::VideoCodecImplementation::kAmdAmf}});
+           {"amd_amf", sora::VideoCodecImplementation::kAmdAmf},
+           {"raspi_v4l2m2m", sora::VideoCodecImplementation::kRaspiV4L2M2M}});
   auto video_codec_description =
       "value in "
-      "{internal,cisco_openh264,intel_vpl,nvidia_video_codec,amd_amf}";
+      "{internal,cisco_openh264,intel_vpl,nvidia_video_codec,amd_amf,raspi_"
+      "v4l2m2m}";
   std::optional<sora::VideoCodecImplementation> vp8_encoder;
   std::optional<sora::VideoCodecImplementation> vp8_decoder;
   std::optional<sora::VideoCodecImplementation> vp9_encoder;
@@ -947,6 +968,13 @@ int main(int argc, char* argv[]) {
             .amf_context = sora::AMFContext::Create();
       }
     }
+  }
+
+  // V4L2 用のネイティブバッファを使う場合、I420 変換は無効化する
+  // V4L2NativeBuffer は ToI420() をサポートしていないため
+  if (config.use_libcamera_native) {
+    context_config.video_codec_factory_config.encoder_factory_config
+        .force_i420_conversion = false;
   }
 
   auto context = sora::SoraClientContext::Create(context_config);

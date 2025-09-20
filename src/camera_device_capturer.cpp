@@ -17,6 +17,9 @@
 #else
 #include "sora/device_video_capturer.h"
 #endif
+#if defined(USE_V4L2_ENCODER)
+#include "sora/hwenc_v4l2/libcamera_capturer.h"
+#endif
 
 namespace sora {
 
@@ -62,7 +65,19 @@ CreateCameraDeviceCapturer(const CameraDeviceCapturerConfig& config) {
   v4l2_config.framerate = config.fps;
   v4l2_config.force_i420 = config.force_i420;
   v4l2_config.use_native = config.use_native;
+#if defined(USE_V4L2_ENCODER)
+  if (config.use_libcamera) {
+    sora::LibcameraCapturerConfig libcamera_config = v4l2_config;
+    libcamera_config.native_frame_output = config.libcamera_native_frame_output;
+    libcamera_config.controls = config.libcamera_controls;
+    return sora::LibcameraCapturer::Create(libcamera_config);
+  } else {
+    return sora::V4L2VideoCapturer::Create(v4l2_config);
+  }
+#else
   return sora::V4L2VideoCapturer::Create(v4l2_config);
+#endif
+
 #else
   DeviceVideoCapturerConfig c;
   c.on_frame = config.on_frame;

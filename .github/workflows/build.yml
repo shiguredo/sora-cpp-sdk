@@ -308,6 +308,17 @@ jobs:
             cp _build/${{ matrix.platform.name }}/release/$app/$app examples_${{ matrix.platform.name }}
           done
         if: matrix.platform.os == 'ubuntu' && matrix.platform.name != 'ubuntu-22.04_armv8'
+      - name: Build Examples
+        run: |
+          cd examples
+          mkdir examples_${{ matrix.platform.name }}
+          for app in sumomo; do
+            python3 $app/${{ matrix.platform.name }}/run.py --local-sora-cpp-sdk-dir ..
+            cp _build/${{ matrix.platform.name }}/release/$app/$app examples_${{ matrix.platform.name }}
+            # raspberry-pi-os は libcamerac.so も必要
+            cp _install/${{ matrix.platform.name }}/release/sora/lib/libcamerac.so examples_${{ matrix.platform.name }}
+          done
+        if: matrix.platform.os == 'raspberry-pi-os' && matrix.platform.arch == 'armv8'
       - name: Upload Examples Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -449,6 +460,8 @@ jobs:
             runs-on: ubuntu-24.04
           - name: ubuntu-24.04_armv8
             runs-on: ubuntu-24.04
+          - name: raspberry-pi-os_armv8
+            runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: ${{ github.workspace }}/examples
@@ -467,7 +480,7 @@ jobs:
 
       # ARM はクロスコンパイルのために追加のパッケージが必要なのでインストールする
       - name: Install deps Ubuntu 24.04 ARM
-        if: matrix.platform.name == 'ubuntu-24.04_armv8'
+        if: matrix.platform.name == 'ubuntu-24.04_armv8' || matrix.platform.name == 'raspberry-pi-os_armv8'
         run: |
           sudo apt-get install -y multistrap binutils-aarch64-linux-gnu
           # multistrap に insecure なリポジトリからの取得を許可する設定を入れる
@@ -481,6 +494,12 @@ jobs:
           mkdir -p ${{ matrix.example }}_${{ matrix.platform.name }}
           # バイナリをアップロード用のディレクトリにコピーする
           cp _build/${{ matrix.platform.name }}/release/${{ matrix.example }}/${{ matrix.example }} ${{ matrix.example }}_${{ matrix.platform.name }}/${{ matrix.example }}
+
+          if [ "${{ matrix.platform.name }}" = "raspberry-pi-os_armv8" ]; then
+            # raspberry-pi-os は libcamerac.so も必要
+            cp _install/${{ matrix.platform.name }}/release/sora/lib/libcamerac.so ${{ matrix.example }}_${{ matrix.platform.name }}/
+          fi
+
           # バイナリを圧縮する
           # 例: sumomo_ubuntu-24.04_x86_64.tar.gz
           tar -czf ${{ matrix.example }}_${{ matrix.platform.name }}.tar.gz ${{ matrix.example }}_${{ matrix.platform.name }}
@@ -506,6 +525,7 @@ jobs:
             - ubuntu-22.04_x86_64.tar.gz
             - ubuntu-24.04_x86_64.tar.gz
             - ubuntu-24.04_armv8.tar.gz
+            - raspberry-pi-os_armv8.tar.gz
       runs-on: ubuntu-24.04
       steps:
         - uses: actions/checkout@v5

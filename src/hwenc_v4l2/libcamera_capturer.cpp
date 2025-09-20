@@ -122,11 +122,15 @@ int32_t LibcameraCapturer::Init(int camera_id) {
 }
 
 void LibcameraCapturer::Release() {
+  StopCapture();
   if (acquired_)
     libcamerac_Camera_release(camera_.get());
   acquired_ = false;
 
   camera_.reset();
+  configuration_.reset();
+  controls_.reset();
+  allocator_.reset();
 
   camera_manager_.reset();
 }
