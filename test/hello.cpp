@@ -17,12 +17,17 @@
 
 // WebRTC
 #include <api/audio_options.h>
+#include <api/media_stream_interface.h>
 #include <api/rtc_error.h>
 #include <api/rtp_parameters.h>
+#include <api/rtp_receiver_interface.h>
 #include <api/rtp_sender_interface.h>
+#include <api/rtp_transceiver_interface.h>
 #include <api/scoped_refptr.h>
 #include <rtc_base/crypto_random.h>
 #include <rtc_base/logging.h>
+#include <sora/renderer/ansi_renderer.h>
+#include <sora/renderer/sixel_renderer.h>
 
 #ifdef _WIN32
 #include <rtc_base/win/scoped_com_initializer.h>
