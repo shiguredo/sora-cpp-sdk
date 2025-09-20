@@ -55,6 +55,10 @@ elseif (SORA_TARGET STREQUAL "ubuntu-24.04_armv8")
   set(SORA_TARGET_OS_VERSION "24.04")
   set(SORA_TARGET_ARCH "armv8")
   set(SORA_TARGET_DEF "SORA_CPP_SDK_UBUNTU")
+elseif (SORA_TARGET STREQUAL "raspberry-pi-os_armv8")
+  set(SORA_TARGET_OS "ubuntu")
+  set(SORA_TARGET_ARCH "armv8")
+  set(SORA_TARGET_DEF "SORA_CPP_SDK_RASPBERRY_PI_OS")
 endif()
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -177,6 +181,7 @@ target_compile_definitions(sora
     $<$<BOOL:${USE_NVCODEC_ENCODER}>:USE_NVCODEC_ENCODER>
     $<$<BOOL:${USE_VPL_ENCODER}>:USE_VPL_ENCODER>
     $<$<BOOL:${USE_AMF_ENCODER}>:USE_AMF_ENCODER>
+    $<$<BOOL:${USE_V4L2_ENCODER}>:USE_V4L2_ENCODER>
 )
 
 # OpenH264
@@ -602,6 +607,38 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
     )
   endif()
 
+  if (USE_V4L2_ENCODER)
+    add_library(camerac SHARED)
+    target_include_directories(camerac PRIVATE ${CMAKE_SYSROOT}/usr/include/libcamera)
+    set_target_properties(camerac PROPERTIES CXX_STANDARD 17 C_STANDARD 99)
+    target_sources(camerac
+      PRIVATE
+        third_party/libcamerac/libcamerac.cpp
+    )
+    target_link_libraries(camerac
+      PRIVATE
+        camera
+        camera-base
+    )
+
+    target_sources(sora
+      PRIVATE
+        src/hwenc_v4l2/libcamera_capturer.cpp
+        src/hwenc_v4l2/v4l2_buffers.cpp
+        src/hwenc_v4l2/v4l2_capturer.cpp
+        src/hwenc_v4l2/v4l2_converter.cpp
+        src/hwenc_v4l2/v4l2_h264_decoder.cpp
+        src/hwenc_v4l2/v4l2_h264_encoder.cpp
+        src/hwenc_v4l2/v4l2_native_buffer.cpp
+        src/hwenc_v4l2/v4l2_runner.cpp
+        src/hwenc_v4l2/v4l2_video_codec.cpp
+    )
+    target_link_libraries(sora PRIVATE camerac)
+    target_include_directories(sora
+      PRIVATE
+        third_party/libcamerac)
+  endif()
+
 endif()
 
 # 静的ライブラリを sora.lib に含める
@@ -620,6 +657,11 @@ install(TARGETS sora
   # Android の場合はライブラリを ANDROID_ABI 以下のディレクトリにインストールする
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/$<$<STREQUAL:${SORA_TARGET},"android">:/${ANDROID_ABI}>
 )
+if (SORA_TARGET_OS STREQUAL "ubuntu" AND USE_V4L2_ENCODER)
+  install(TARGETS camerac
+    EXPORT sora-config
+  )
+endif()
 install(EXPORT sora-config
   DESTINATION ${CMAKE_INSTALL_DATADIR}/sora
   NAMESPACE Sora::

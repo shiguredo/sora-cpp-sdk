@@ -175,6 +175,10 @@ jobs:
             runs-on: ubuntu-24.04
             os: ubuntu
             arch: armv8
+          - name: raspberry-pi-os_armv8
+            runs-on: ubuntu-24.04
+            os: raspberry-pi-os
+            arch: armv8
           - name: android
             runs-on: ubuntu-22.04
             os: android
@@ -251,7 +255,9 @@ jobs:
           chmod a+x llvm.sh
           sudo ./llvm.sh 20
       - name: Install deps for ${{ matrix.platform.name }}
-        if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'armv8'
+        if: |
+          matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'armv8' ||
+          matrix.platform.os == 'raspberry-pi-os' && matrix.platform.arch == 'armv8'
         run: |
           sudo apt-get update
           sudo apt-get -y install multistrap binutils-aarch64-linux-gnu libgl-dev
@@ -340,6 +346,9 @@ jobs:
       - uses: ./.github/actions/download
         with:
           platform: ubuntu-24.04_armv8
+      - uses: ./.github/actions/download
+        with:
+          platform: raspberry-pi-os_armv8
       - uses: ./.github/actions/download
         with:
           platform: android

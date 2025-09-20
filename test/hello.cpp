@@ -61,6 +61,16 @@ HelloSora::~HelloSora() {
 void HelloSora::Run() {
   void* env = sora::GetJNIEnv();
 
+  if (config_.use_sixel) {
+    sixel_renderer_.reset(
+        new sora::SixelRenderer(config_.sixel_width, config_.sixel_height));
+  }
+
+  if (config_.use_ansi) {
+    ansi_renderer_.reset(
+        new sora::AnsiRenderer(config_.ansi_width, config_.ansi_height));
+  }
+
   sora::FakeVideoCapturerConfig fake_config;
   fake_config.width = config_.capture_width;
   fake_config.height = config_.capture_height;
@@ -131,6 +141,36 @@ void HelloSora::OnDisconnect(sora::SoraSignalingErrorCode ec,
                              std::string message) {
   RTC_LOG(LS_INFO) << "OnDisconnect: " << message;
   ioc_->stop();
+}
+
+void HelloSora::OnTrack(
+    webrtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver) {
+  auto track = transceiver->receiver()->track();
+  if (track->kind() == webrtc::MediaStreamTrackInterface::kVideoKind) {
+    if (sixel_renderer_) {
+      sixel_renderer_->AddTrack(
+          static_cast<webrtc::VideoTrackInterface*>(track.get()));
+    }
+    if (ansi_renderer_) {
+      ansi_renderer_->AddTrack(
+          static_cast<webrtc::VideoTrackInterface*>(track.get()));
+    }
+  }
+}
+
+void HelloSora::OnRemoveTrack(
+    webrtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) {
+  auto track = receiver->track();
+  if (track->kind() == webrtc::MediaStreamTrackInterface::kVideoKind) {
+    if (sixel_renderer_) {
+      sixel_renderer_->RemoveTrack(
+          static_cast<webrtc::VideoTrackInterface*>(track.get()));
+    }
+    if (ansi_renderer_) {
+      ansi_renderer_->RemoveTrack(
+          static_cast<webrtc::VideoTrackInterface*>(track.get()));
+    }
+  }
 }
 
 #if defined(__ANDROID__) || (defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE)
@@ -295,6 +335,24 @@ int main(int argc, char* argv[]) {
     } else if (x.as_string() == "balanced") {
       config.degradation_preference = webrtc::DegradationPreference::BALANCED;
     }
+  }
+  if (get(v, "use_sixel", x)) {
+    config.use_sixel = x.as_bool();
+  }
+  if (get(v, "sixel_width", x)) {
+    config.sixel_width = x.to_number<int>();
+  }
+  if (get(v, "sixel_height", x)) {
+    config.sixel_height = x.to_number<int>();
+  }
+  if (get(v, "use_ansi", x)) {
+    config.use_ansi = x.as_bool();
+  }
+  if (get(v, "ansi_width", x)) {
+    config.ansi_width = x.to_number<int>();
+  }
+  if (get(v, "ansi_height", x)) {
+    config.ansi_height = x.to_number<int>();
   }
 
   sora::SoraClientContextConfig context_config;
