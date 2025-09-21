@@ -121,6 +121,26 @@ def get_common_cmake_args(
         args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
         cxxflags = ["-nostdinc++", "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE"]
         args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
+    if platform.target.os in ("jetson", "raspberry-pi-os"):
+        triplet = "aarch64-linux-gnu"
+        arch = "aarch64"
+        sysroot = os.path.join(install_dir, "rootfs")
+        args.append("-DCMAKE_SYSTEM_NAME=Linux")
+        args.append(f"-DCMAKE_SYSTEM_PROCESSOR={arch}")
+        args.append(f"-DCMAKE_C_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang')}")
+        args.append(f"-DCMAKE_C_COMPILER_TARGET={triplet}")
+        args.append(f"-DCMAKE_CXX_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang++')}")
+        args.append(f"-DCMAKE_CXX_COMPILER_TARGET={triplet}")
+        args.append(f"-DCMAKE_FIND_ROOT_PATH={sysroot}")
+        args.append("-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER")
+        args.append("-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH")
+        args.append("-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH")
+        args.append("-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH")
+        args.append(f"-DCMAKE_SYSROOT={sysroot}")
+        path = cmake_path(os.path.join(webrtc_info.libcxx_dir, "include"))
+        args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
+        cxxflags = ["-nostdinc++", "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE"]
+        args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
     if platform.target.os == "ios":
         args.append(
             f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}"
@@ -193,7 +213,13 @@ def install_deps(
         deps = read_version_file("DEPS")
 
         # multistrap を使った sysroot の構築
-        if platform.target.os == "ubuntu" and platform.target.arch == "armv8":
+        if platform.target.package_name in (
+            "ubuntu-22.04_armv8",
+            "ubuntu-24.04_armv8",
+            "raspberry-pi-os_armv8",
+            "ubuntu-20.04_armv8_jetson",
+            "ubuntu-22.04_armv8_jetson",
+        ):
             conf = os.path.join(BASE_DIR, "multistrap", f"{platform.target.package_name}.conf")
             # conf ファイルのハッシュ値をバージョンとする
             version_md5 = hashlib.md5(open(conf, "rb").read()).hexdigest()
@@ -340,6 +366,36 @@ def install_deps(
                 install_boost_args["cflags"].extend(["-target", "aarch64-apple-darwin"])
                 install_boost_args["cxxflags"].extend(["-target", "aarch64-apple-darwin"])
                 install_boost_args["architecture"] = "arm"
+        elif platform.target.os in ("jetson", "raspberry-pi-os"):
+            triplet = "aarch64-linux-gnu"
+            sysroot = os.path.join(install_dir, "rootfs")
+            install_boost_args["target_os"] = "linux"
+            install_boost_args["cxx"] = os.path.join(webrtc_info.clang_dir, "bin", "clang++")
+            install_boost_args["cflags"] = [
+                "-fPIC",
+                f"--sysroot={sysroot}",
+                f"--target={triplet}",
+                f"-I{os.path.join(sysroot, 'usr', 'include', triplet)}",
+            ]
+            install_boost_args["cxxflags"] = [
+                "-fPIC",
+                f"--target={triplet}",
+                f"--sysroot={sysroot}",
+                f"-I{os.path.join(sysroot, 'usr', 'include', triplet)}",
+                "-D_LIBCPP_ABI_NAMESPACE=Cr",
+                "-D_LIBCPP_ABI_VERSION=2",
+                "-D_LIBCPP_DISABLE_AVAILABILITY",
+                "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE",
+                "-nostdinc++",
+                "-std=gnu++17",
+                f"-isystem{os.path.join(webrtc_info.libcxx_dir, 'include')}",
+            ]
+            install_boost_args["linkflags"] = [
+                f"-L{os.path.join(sysroot, 'usr', 'lib', triplet)}",
+                f"-B{os.path.join(sysroot, 'usr', 'lib', triplet)}",
+            ]
+            install_boost_args["toolset"] = "clang"
+            install_boost_args["architecture"] = "arm"
         elif platform.target.os == "ios":
             install_boost_args["target_os"] = "iphone"
             install_boost_args["toolset"] = "clang"
@@ -609,6 +665,7 @@ AVAILABLE_TARGETS = [
     "ubuntu-24.04_x86_64",
     "ubuntu-22.04_armv8",
     "ubuntu-24.04_armv8",
+    "raspberry-pi-os_armv8",
     "ios",
     "android",
 ]
@@ -630,6 +687,8 @@ def _get_platform(target: str) -> Platform:
         platform = Platform("ubuntu", "22.04", "armv8")
     elif target == "ubuntu-24.04_armv8":
         platform = Platform("ubuntu", "24.04", "armv8")
+    elif target == "raspberry-pi-os_armv8":
+        platform = Platform("raspberry-pi-os", None, "armv8")
     elif target == "ios":
         platform = Platform("ios", None, None)
     elif target == "android":
@@ -763,6 +822,26 @@ def _build(
             cmake_args.append(
                 f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}"
             )
+        if platform.target.os in ("jetson", "raspberry-pi-os"):
+            triplet = "aarch64-linux-gnu"
+            arch = "aarch64"
+            sysroot = os.path.join(install_dir, "rootfs")
+            cmake_args.append("-DCMAKE_SYSTEM_NAME=Linux")
+            cmake_args.append(f"-DCMAKE_SYSTEM_PROCESSOR={arch}")
+            cmake_args.append(f"-DCMAKE_SYSROOT={sysroot}")
+            cmake_args.append(f"-DCMAKE_C_COMPILER_TARGET={triplet}")
+            cmake_args.append(f"-DCMAKE_CXX_COMPILER_TARGET={triplet}")
+            cmake_args.append(f"-DCMAKE_FIND_ROOT_PATH={sysroot}")
+            cmake_args.append("-DUSE_LIBCXX=ON")
+            cmake_args.append(
+                f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}"
+            )
+            cmake_args.append(
+                f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}"
+            )
+            cmake_args.append(
+                f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}"
+            )
         if platform.target.os == "ios":
             cmake_args.append(
                 f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}"
@@ -844,6 +923,14 @@ def _build(
         if platform.target.os in ("windows", "ubuntu") and platform.target.arch == "x86_64":
             cmake_args.append("-DUSE_AMF_ENCODER=ON")
             cmake_args.append(f"-DAMF_ROOT_DIR={cmake_path(os.path.join(install_dir, 'amf'))}")
+
+        # Jetson
+        if platform.target.os in ("jetson",):
+            cmake_args.append("-DUSE_JETSON_ENCODER=ON")
+
+        # V4L2
+        if platform.target.os in ("raspberry-pi-os",):
+            cmake_args.append("-DUSE_V4L2_ENCODER=ON")
 
         # バンドルされたライブラリを消しておく
         # （CMake でうまく依存関係を解消できなくて更新されないため）
@@ -989,7 +1076,26 @@ def _build(
                     cmake_args.append(
                         f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}"
                     )
-
+                if platform.target.os in ("jetson", "raspberry-pi-os"):
+                    triplet = "aarch64-linux-gnu"
+                    arch = "aarch64"
+                    sysroot = os.path.join(install_dir, "rootfs")
+                    cmake_args.append("-DCMAKE_SYSTEM_NAME=Linux")
+                    cmake_args.append(f"-DCMAKE_SYSTEM_PROCESSOR={arch}")
+                    cmake_args.append(f"-DCMAKE_SYSROOT={sysroot}")
+                    cmake_args.append(f"-DCMAKE_C_COMPILER_TARGET={triplet}")
+                    cmake_args.append(f"-DCMAKE_CXX_COMPILER_TARGET={triplet}")
+                    cmake_args.append(f"-DCMAKE_FIND_ROOT_PATH={sysroot}")
+                    cmake_args.append("-DUSE_LIBCXX=ON")
+                    cmake_args.append(
+                        f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}"
+                    )
+                    cmake_args.append(
+                        f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}"
+                    )
+                    cmake_args.append(
+                        f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}"
+                    )
                 if platform.target.os in ("windows", "macos", "ubuntu"):
                     cmake_args.append("-DTEST_CONNECT_DISCONNECT=ON")
                     cmake_args.append("-DTEST_DATACHANNEL=ON")
@@ -1011,6 +1117,13 @@ def _build(
                         configuration,
                     ]
                 )
+
+                if platform.target.os == "raspberry-pi-os":
+                    # ラズパイでは libcamerac.so を使うので実行ファイルと同じ場所に配置しておく
+                    shutil.copyfile(
+                        os.path.join(install_dir, "sora", "lib", "libcamerac.so"),
+                        os.path.join(test_build_dir, "libcamerac.so"),
+                    )
 
                 if run_e2e_test:
                     if (
