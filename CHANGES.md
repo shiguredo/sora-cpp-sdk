@@ -16,6 +16,24 @@
 - [CHANGE] liwebrtc のバージョンを m140.7339.2.2 に上げる
   - macOS, iOS が利用している clang, libc++ を Apple Clang のものから libwebrtc 管理下の Clang のものに変えたので破壊的変更となります。
   - @melpon @torikizi
+- [ADD] `raspberry-pi-os_armv8` 向けのビルドを追加
+  - Momo からの移植
+  - V4L2 M2M のエンコーダ/デコーダに対応
+  - libcamera を使ったキャプチャラを追加
+  - @melpon
+- [ADD] `sora::VideoCodecImplementation` に `kRaspiV4L2M2M` を追加
+  - @melpon
+- [ADD] `sora::CameraDeviceCapturerConfig` に `use_libcamera`, `libcamera_native_frame_output`, `libcamera_controls` フィールドを追加
+  - @melpon
+
+### misc
+
+- [ADD] sumomo に `--use-libcamera`, `--use-libcamera-native`, `--libcamera-control` オプションを追加
+  - @melpon
+- [ADD] sumomo のエンコーダ/デコーダに指定できるエンジン名として `raspi_v4l2m2m` を追加
+  - @melpon
+- [ADD] hello アプリに `use_sixel`, `sixel_width`, `sixel_height`, `use_ansi`, `ansi_width`, `ansi_height` を追加
+  - @melpon
 
 ## 2025.5.1
 
