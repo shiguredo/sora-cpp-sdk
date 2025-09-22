@@ -924,7 +924,6 @@ int main(int argc, char* argv[]) {
   if (!audio_playout_device.empty()) {
     context_config.audio_playout_device = audio_playout_device;
   }
-  context_config.use_audio_device = false;
   context_config.video_codec_factory_config.preference = std::invoke([&]() {
     std::optional<sora::VideoCodecPreference> preference;
     auto add_codec_preference =
