@@ -34,6 +34,8 @@
   - @melpon
 - [ADD] hello アプリに `use_sixel`, `sixel_width`, `sixel_height`, `use_ansi`, `ansi_width`, `ansi_height` を追加
   - @melpon
+- [FIX] sumomo で audio_device をデフォルト無効にしていたのを修正する
+  - @torikizi
 
 ## 2025.5.1
 
