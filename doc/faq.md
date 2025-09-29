@@ -60,7 +60,7 @@ Raspberry Pi で USB カメラではなく Raspberry Pi Camera を使用する�
 libcamera を有効にするには `sora::CameraDeviceCapturerConfig` で `use_libcamera` フラグを true に指定します。
 また、実行ファイルと同じディレクトリに `libcamera.so` を置いておく必要があります。
 
-libcamera を有効にすると以下を指定できます
+libcamera を有効にすると sora::CameraDeviceCapturerConfig に libcamera に関する以下のオプションを指定できます
 
 - ネイティブバッファを使うための `libcamera_native_frame_output` フラグ
   - ただし、HWA の H.264 エンコーダを使う場合にのみ有効です
