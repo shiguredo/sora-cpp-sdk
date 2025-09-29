@@ -66,3 +66,10 @@ libcamera を有効にすると sora::CameraDeviceCapturerConfig に libcamera �
   - ただし、HWA の H.264 エンコーダを使う場合にのみ有効です
 - libcamera コントロールを使うための `libcamera_controls` オプション
   - `{"AfMode", "Continuous"}` のようなキーと値のペアを必要な分だけ追加します
+
+## Raspberry Pi で H.264 の FHD をデコードすると緑の線が入る
+
+Raspberry Pi OS の v4l2m2m では解像度が 16 の倍数である必要があります。
+FHD (1920x1080) では、1080 が 16 の倍数ではないため、緑の線が入ります。
+送信側の解像度を 1920x1072 や 1920x1088 にして 16 の倍数になるように調整するか、
+H.264 以外のコーデックを使用してください。
