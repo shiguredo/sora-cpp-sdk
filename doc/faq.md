@@ -10,7 +10,7 @@ Sora C++ SDK にドキュメントはありません。Sora C++ SDK サンプル
 
 様々なプラットフォームへ対応しているため、ビルドがとても複雑です。
 
-ビルド関連の質問については環境問題がほとんどであり、環境問題を改善するコストがとても高いため基本的には解答しません。
+ビルド関連の質問については環境問題がほとんどであり、環境問題を改善するコストがとても高いため基本的には回答いたしません。
 
 GitHub Actions でビルドを行い確認していますので、まずは GitHub Actions の [build.yml](https://github.com/shiguredo/sora-cpp-sdk/blob/develop/.github/workflows/build.yml) を確認してみてください。
 
@@ -23,7 +23,7 @@ Ubuntu 22.04 x86_64 でクロスコンパイルしたバイナリを利用する
 
 ## NVIDIA 搭載の Windows で width height のいずれかが 128 未満のサイズの VP9 の映像を受信できません
 
-NVIDIA Video Codec のハードウェアデコーダでは width height のいずれかが 128 未満である場合 VP9 の映像をデコードできません。 width height のいずれかが 128 未満のサイズの映像を受信したい場合は VP9 以外のコーデックを利用するようにしてください。
+NVIDIA Video Codec のハードウェアデコーダでは width または height のいずれかが 128 未満である場合、 VP9 の映像をデコードできません。width または height のいずれかが 128 未満のサイズの映像を受信したい場合は、 VP9 以外のコーデックを利用するようにしてください。
 
 ## Windows の Chrome で Jetson の H.264 映像を受信すると色が緑色になります
 
@@ -53,3 +53,16 @@ Sora C++ SDK は 4K@30fps での映像の配信に対応していますが、
 AMD AMF を使用して映像を受信する際に、映像の停止やデコード失敗が発生することがあります。
 その場合は、AMD のグラフィックスドライバーのバージョンを更新することで解決できる可能性があります。
 [AMD のサポートページ](https://www.amd.com/ja/support/download/drivers.html)から最新のドライバーをダウンロードしてインストールした後、映像の受信を試してみてください。
+
+## Raspberry Pi で libcamera や libcamera control を使用したい
+
+Raspberry Pi で USB カメラではなく Raspberry Pi Camera を使用する場合、libcamera を有効にする必要があります。
+libcamera を有効にするには `sora::CameraDeviceCapturerConfig` で `use_libcamera` フラグを true に指定します。
+また、実行ファイルと同じディレクトリに `libcamerac.so` を置いておく必要があります。
+
+libcamera を有効にすると以下を指定できます
+
+- ネイティブバッファを使うための `libcamera_native_frame_output` フラグ
+  - ただし、HWA の H.264 エンコーダを使う場合にのみ有効です
+- libcamera コントロールを使うための `libcamera_controls` オプション
+  - `{"ExposureTime", "8000"}` のようなキーと値のペアを必要な分だけ追加します
