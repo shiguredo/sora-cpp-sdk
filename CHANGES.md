@@ -16,6 +16,8 @@
 - [CHANGE] liwebrtc のバージョンを m140.7339.2.2 に上げる
   - macOS, iOS が利用している clang, libc++ を Apple Clang のものから libwebrtc 管理下の Clang のものに変えたので破壊的変更となります。
   - @melpon @torikizi
+- [UPDATE] CMake を 4.1.2 にあげる
+  - @torikizi
 - [ADD] `raspberry-pi-os_armv8` 向けのビルドを追加
   - Momo からの移植
   - V4L2 M2M のエンコーダ/デコーダに対応
