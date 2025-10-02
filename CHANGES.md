@@ -13,7 +13,7 @@
 
 - [CHANGE] enum の `kNvidiaVideoCodecSdk` を `kNvidiaVideoCodec` に変更する
   - @voluntas
-- [CHANGE] liwebrtc のバージョンを m140.7339.2.2 に上げる
+- [CHANGE] liwebrtc のバージョンを m141.7390.2.0 に上げる
   - macOS, iOS が利用している clang, libc++ を Apple Clang のものから libwebrtc 管理下の Clang のものに変えたので破壊的変更となります。
   - @melpon @torikizi
 - [UPDATE] CMake を 4.1.2 にあげる
