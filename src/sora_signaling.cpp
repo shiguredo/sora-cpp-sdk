@@ -577,7 +577,7 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
   }
 
   rtc_config.sdp_semantics = webrtc::SdpSemantics::kUnifiedPlan;
-  rtc_config.crypto_options.emplace().srtp.enable_gcm_crypto_suites = true;
+  rtc_config.crypto_options.srtp.enable_gcm_crypto_suites = true;
   webrtc::PeerConnectionDependencies dependencies(this);
 
   // WebRTC の SSL 接続の検証は自前のルート証明書(rtc_base/ssl_roots.h)でやっていて、
