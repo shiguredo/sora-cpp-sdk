@@ -24,8 +24,7 @@ webrtc::scoped_refptr<webrtc::AudioDeviceModule> CreateAudioDeviceModule(
   }
 
 #if defined(SORA_CPP_SDK_WINDOWS)
-  return webrtc::CreateWindowsCoreAudioAudioDeviceModule(
-      &config.env.task_queue_factory());
+  return webrtc::CreateWindowsCoreAudioAudioDeviceModule(config.env);
 #elif defined(SORA_CPP_SDK_ANDROID)
   return webrtc::CreateJavaAudioDeviceModule(
       (JNIEnv*)config.jni_env, config.env, (jobject)config.application_context);

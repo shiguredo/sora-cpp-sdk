@@ -83,8 +83,8 @@ bool DeviceList::EnumAudioRecording(
 #else
 
 #if defined(SORA_CPP_SDK_WINDOWS)
-  auto adm = webrtc::CreateWindowsCoreAudioAudioDeviceModule(
-      &env.task_queue_factory());
+  auto adm =
+      webrtc::CreateWindowsCoreAudioAudioDeviceModule(env);
 #else
   auto adm = webrtc::CreateAudioDeviceModule(
       env, webrtc::AudioDeviceModule::kPlatformDefaultAudio);
@@ -135,8 +135,8 @@ bool DeviceList::EnumAudioPlayout(
 #else
 
 #if defined(SORA_CPP_SDK_WINDOWS)
-  auto adm = webrtc::CreateWindowsCoreAudioAudioDeviceModule(
-      &env.task_queue_factory());
+  auto adm =
+      webrtc::CreateWindowsCoreAudioAudioDeviceModule(env);
 #else
   auto adm = webrtc::CreateAudioDeviceModule(
       env, webrtc::AudioDeviceModule::kPlatformDefaultAudio);
