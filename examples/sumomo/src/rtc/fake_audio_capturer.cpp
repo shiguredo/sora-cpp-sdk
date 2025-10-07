@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <memory>
 #include <mutex>
+#include <numbers>
 #include <thread>
 #include <vector>
 
@@ -13,7 +14,6 @@
 #include <api/audio/audio_device.h>
 #include <api/audio/audio_device_defines.h>
 #include <api/environment/environment_factory.h>
-#include <math.h>
 #include <modules/audio_device/audio_device_buffer.h>
 
 FakeAudioCapturer::FakeAudioCapturer(Config config)
@@ -167,15 +167,16 @@ void FakeAudioCapturer::GenerateBeep(std::vector<int16_t>& buffer,
   const double frequency = beep_frequency_;
   const double amplitude = 16000;  // 音量（最大32767の半分程度）
   const double sample_rate = config_.sample_rate;
-  const double phase_increment = 2.0 * M_PI * frequency / sample_rate;
+  const double phase_increment =
+      2.0 * std::numbers::pi * frequency / sample_rate;
 
   for (int i = 0; i < samples; ++i) {
     int16_t value = static_cast<int16_t>(amplitude * sin(beep_phase_));
     beep_phase_ += phase_increment;
 
     // 位相を 0 ~ 2π の範囲に保つ
-    if (beep_phase_ >= 2.0 * M_PI) {
-      beep_phase_ -= 2.0 * M_PI;
+    if (beep_phase_ >= 2.0 * std::numbers::pi) {
+      beep_phase_ -= 2.0 * std::numbers::pi;
     }
 
     for (int ch = 0; ch < config_.channels; ++ch) {
