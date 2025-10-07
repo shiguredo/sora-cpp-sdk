@@ -58,6 +58,7 @@
 #include <sora/amf_context.h>
 #include <sora/boost_json_iwyu.h>
 #include <sora/camera_device_capturer.h>
+#include <sora/capturer/fake_video_capturer.h>
 #include <sora/cuda_context.h>
 #include <sora/renderer/ansi_renderer.h>
 #include <sora/renderer/sixel_renderer.h>
@@ -126,6 +127,9 @@ struct SumomoConfig {
   bool use_libcamera = false;
   bool use_libcamera_native = false;
   std::vector<std::pair<std::string, std::string>> libcamera_controls;
+
+  bool fake_video = false;
+  bool fake_audio = false;
 
   struct Size {
     int width;
@@ -329,16 +333,34 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
 
     auto size = config_.GetSize();
     if (config_.role != "recvonly") {
-      sora::CameraDeviceCapturerConfig cam_config;
-      cam_config.width = size.width;
-      cam_config.height = size.height;
-      cam_config.fps = 30;
-      cam_config.use_native = config_.hw_mjpeg_decoder;
-      cam_config.device_name = config_.video_device;
-      cam_config.use_libcamera = config_.use_libcamera;
-      cam_config.libcamera_native_frame_output = config_.use_libcamera_native;
-      cam_config.libcamera_controls = config_.libcamera_controls;
-      auto video_source = sora::CreateCameraDeviceCapturer(cam_config);
+      // ビデオソースの作成
+      webrtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source;
+
+      if (config_.fake_video) {
+        // Fake ビデオソースを作成
+        sora::FakeVideoCapturerConfig fake_config;
+        fake_config.width = size.width;
+        fake_config.height = size.height;
+        fake_config.fps = 30;
+        auto fake_video_capturer = sora::FakeVideoCapturer::Create(fake_config);
+        if (fake_video_capturer) {
+          fake_video_capturer->StartCapture();
+        }
+        video_source = fake_video_capturer;
+      } else {
+        // カメラデバイスからビデオソースを作成
+        sora::CameraDeviceCapturerConfig cam_config;
+        cam_config.width = size.width;
+        cam_config.height = size.height;
+        cam_config.fps = 30;
+        cam_config.use_native = config_.hw_mjpeg_decoder;
+        cam_config.device_name = config_.video_device;
+        cam_config.use_libcamera = config_.use_libcamera;
+        cam_config.libcamera_native_frame_output = config_.use_libcamera_native;
+        cam_config.libcamera_controls = config_.libcamera_controls;
+        video_source = sora::CreateCameraDeviceCapturer(cam_config);
+      }
+
       if (video_source == nullptr) {
         RTC_LOG(LS_ERROR) << "Failed to create video source.";
         return;
@@ -346,10 +368,27 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
 
       std::string audio_track_id = webrtc::CreateRandomString(16);
       std::string video_track_id = webrtc::CreateRandomString(16);
-      audio_track_ = context_->peer_connection_factory()->CreateAudioTrack(
-          audio_track_id, context_->peer_connection_factory()
-                              ->CreateAudioSource(webrtc::AudioOptions())
-                              .get());
+
+      // オーディオトラックの作成
+      if (config_.fake_audio) {
+        // Fake オーディオソースを作成（サイン波などの単純な音声）
+        webrtc::AudioOptions options;
+        options.echo_cancellation = false;
+        options.auto_gain_control = false;
+        options.noise_suppression = false;
+        options.highpass_filter = false;
+        audio_track_ = context_->peer_connection_factory()->CreateAudioTrack(
+            audio_track_id, context_->peer_connection_factory()
+                                ->CreateAudioSource(options)
+                                .get());
+      } else {
+        // 通常のオーディオソース
+        audio_track_ = context_->peer_connection_factory()->CreateAudioTrack(
+            audio_track_id, context_->peer_connection_factory()
+                                ->CreateAudioSource(webrtc::AudioOptions())
+                                .get());
+      }
+
       video_track_ = context_->peer_connection_factory()->CreateVideoTrack(
           video_source, video_track_id);
       if (config_.use_sdl && config_.show_me) {
@@ -757,6 +796,12 @@ int main(int argc, char* argv[]) {
                "Use native buffer for H.264 encoding");
   app.add_option("--libcamera-control", config.libcamera_controls,
                  "Set libcamera control (format: key value)");
+
+  // Fake デバイスに関するオプション
+  app.add_flag("--fake-video", config.fake_video,
+               "Use fake video source (generates test pattern)");
+  app.add_flag("--fake-audio", config.fake_audio,
+               "Use fake audio source (generates silence)");
 
   // SoraClientContextConfig に関するオプション
   std::string audio_recording_device;
