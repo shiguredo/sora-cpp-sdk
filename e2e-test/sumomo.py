@@ -12,7 +12,6 @@ from typing import Any, Literal, Self
 import httpx
 
 
-
 class Sumomo:
     """Sumomo プロセスを管理するクラス"""
 
@@ -85,43 +84,93 @@ class Sumomo:
         # コーデック設定
         openh264: str | None = None,  # ファイルパス
         vp8_encoder: Literal[
-            "internal", "cisco_openh264", "intel_vpl", "nvidia_video_codec", "amd_amf", "raspi_v4l2m2m"
+            "internal",
+            "cisco_openh264",
+            "intel_vpl",
+            "nvidia_video_codec",
+            "amd_amf",
+            "raspi_v4l2m2m",
         ]
         | None = None,
         vp8_decoder: Literal[
-            "internal", "cisco_openh264", "intel_vpl", "nvidia_video_codec", "amd_amf", "raspi_v4l2m2m"
+            "internal",
+            "cisco_openh264",
+            "intel_vpl",
+            "nvidia_video_codec",
+            "amd_amf",
+            "raspi_v4l2m2m",
         ]
         | None = None,
         vp9_encoder: Literal[
-            "internal", "cisco_openh264", "intel_vpl", "nvidia_video_codec", "amd_amf", "raspi_v4l2m2m"
+            "internal",
+            "cisco_openh264",
+            "intel_vpl",
+            "nvidia_video_codec",
+            "amd_amf",
+            "raspi_v4l2m2m",
         ]
         | None = None,
         vp9_decoder: Literal[
-            "internal", "cisco_openh264", "intel_vpl", "nvidia_video_codec", "amd_amf", "raspi_v4l2m2m"
+            "internal",
+            "cisco_openh264",
+            "intel_vpl",
+            "nvidia_video_codec",
+            "amd_amf",
+            "raspi_v4l2m2m",
         ]
         | None = None,
         h264_encoder: Literal[
-            "internal", "cisco_openh264", "intel_vpl", "nvidia_video_codec", "amd_amf", "raspi_v4l2m2m"
+            "internal",
+            "cisco_openh264",
+            "intel_vpl",
+            "nvidia_video_codec",
+            "amd_amf",
+            "raspi_v4l2m2m",
         ]
         | None = None,
         h264_decoder: Literal[
-            "internal", "cisco_openh264", "intel_vpl", "nvidia_video_codec", "amd_amf", "raspi_v4l2m2m"
+            "internal",
+            "cisco_openh264",
+            "intel_vpl",
+            "nvidia_video_codec",
+            "amd_amf",
+            "raspi_v4l2m2m",
         ]
         | None = None,
         h265_encoder: Literal[
-            "internal", "cisco_openh264", "intel_vpl", "nvidia_video_codec", "amd_amf", "raspi_v4l2m2m"
+            "internal",
+            "cisco_openh264",
+            "intel_vpl",
+            "nvidia_video_codec",
+            "amd_amf",
+            "raspi_v4l2m2m",
         ]
         | None = None,
         h265_decoder: Literal[
-            "internal", "cisco_openh264", "intel_vpl", "nvidia_video_codec", "amd_amf", "raspi_v4l2m2m"
+            "internal",
+            "cisco_openh264",
+            "intel_vpl",
+            "nvidia_video_codec",
+            "amd_amf",
+            "raspi_v4l2m2m",
         ]
         | None = None,
         av1_encoder: Literal[
-            "internal", "cisco_openh264", "intel_vpl", "nvidia_video_codec", "amd_amf", "raspi_v4l2m2m"
+            "internal",
+            "cisco_openh264",
+            "intel_vpl",
+            "nvidia_video_codec",
+            "amd_amf",
+            "raspi_v4l2m2m",
         ]
         | None = None,
         av1_decoder: Literal[
-            "internal", "cisco_openh264", "intel_vpl", "nvidia_video_codec", "amd_amf", "raspi_v4l2m2m"
+            "internal",
+            "cisco_openh264",
+            "intel_vpl",
+            "nvidia_video_codec",
+            "amd_amf",
+            "raspi_v4l2m2m",
         ]
         | None = None,
         # ログレベル
@@ -312,7 +361,9 @@ class Sumomo:
 
         # sumomo のパスを構築
         assert target is not None
-        sumomo_path = project_root / "examples" / "_build" / target / "release" / "sumomo" / "sumomo"
+        sumomo_path = (
+            project_root / "examples" / "_build" / target / "release" / "sumomo" / "sumomo"
+        )
 
         if not sumomo_path.exists():
             raise RuntimeError(
@@ -452,7 +503,10 @@ class Sumomo:
         # データチャネルシグナリング
         if kwargs.get("data_channel_signaling") is not None:
             args.extend(
-                ["--data-channel-signaling", "true" if kwargs["data_channel_signaling"] else "false"]
+                [
+                    "--data-channel-signaling",
+                    "true" if kwargs["data_channel_signaling"] else "false",
+                ]
             )
 
         # 切断時の WebSocket 無視
@@ -573,9 +627,7 @@ class Sumomo:
 
         return args
 
-    def _wait_for_startup(
-        self, http_port: int, timeout: int = 30, initial_wait: int = 2
-    ) -> None:
+    def _wait_for_startup(self, http_port: int, timeout: int = 30, initial_wait: int = 2) -> None:
         """プロセスが起動して HTTP サーバーが利用可能になるまで待機"""
         if not self.process:
             raise RuntimeError("Process not started")
@@ -584,9 +636,7 @@ class Sumomo:
         if initial_wait > 0:
             time.sleep(initial_wait)
 
-        print(
-            f"Waiting for HTTP endpoint to be ready on port {http_port} (timeout: {timeout}s)..."
-        )
+        print(f"Waiting for HTTP endpoint to be ready on port {http_port} (timeout: {timeout}s)...")
         start_time = time.time()
 
         with httpx.Client() as client:
@@ -609,9 +659,7 @@ class Sumomo:
                     url = f"http://{self.http_host}:{http_port}/stats"
                     response = client.get(url, timeout=5)
                     if response.status_code == 200:
-                        print(
-                            f"Sumomo started successfully after {time.time() - start_time:.1f}s"
-                        )
+                        print(f"Sumomo started successfully after {time.time() - start_time:.1f}s")
                         return
                     else:
                         print(f"  Got status code: {response.status_code}")
@@ -633,9 +681,7 @@ class Sumomo:
 
             # タイムアウト
             if self.process:
-                print(
-                    f"Timeout waiting for sumomo process (PID: {self.process.pid}) to start"
-                )
+                print(f"Timeout waiting for sumomo process (PID: {self.process.pid}) to start")
                 # stderr の内容を表示
                 if hasattr(self.process, "stderr") and self.process.stderr:
                     print("Checking for stderr output...")
@@ -699,6 +745,3 @@ class Sumomo:
         response = self._http_client.get(f"http://{self.http_host}:{self.http_port}/stats")
         response.raise_for_status()
         return response.json()
-
-
-
