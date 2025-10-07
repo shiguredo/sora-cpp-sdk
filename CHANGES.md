@@ -38,6 +38,14 @@
   - @melpon
 - [ADD] hello アプリに `use_sixel`, `sixel_width`, `sixel_height`, `use_ansi`, `ansi_width`, `ansi_height` を追加
   - @melpon
+- [ADD] sumomo に `--fake-audio`, `--fake-video` オプションを追加
+  - FakeAudioCapturer を実装し、fake デバイスでテストパターンを生成できるようにする
+  - fake デバイス使用時はオーディオデバイスを掴まないように修正
+  - @voluntas
+- [ADD] E2E テストを追加
+  - pytest を使用した sumomo の E2E テスト環境を構築
+  - `e2e-test/` ディレクトリにテストケースとプロセス管理を追加
+  - @voluntas
 - [UPDATE] actions/download-artifact を v5 に上げる
   - @miosakuma
 - [FIX] sumomo で Ctrl-C による終了が正しく動作しない問題を修正する
