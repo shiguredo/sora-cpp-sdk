@@ -70,6 +70,7 @@
 // CLI11
 #include <CLI/CLI.hpp>
 
+#include "rtc/fake_audio_capturer.h"
 #include "sdl_renderer.h"
 
 struct SumomoConfig {
@@ -312,8 +313,12 @@ class HttpListener : public std::enable_shared_from_this<HttpListener> {
 class Sumomo : public std::enable_shared_from_this<Sumomo>,
                public sora::SoraSignalingObserver {
  public:
-  Sumomo(std::shared_ptr<sora::SoraClientContext> context, SumomoConfig config)
-      : context_(context), config_(config) {}
+  Sumomo(std::shared_ptr<sora::SoraClientContext> context,
+         SumomoConfig config,
+         webrtc::scoped_refptr<FakeAudioCapturer> fake_audio_capturer = nullptr)
+      : context_(context),
+        config_(config),
+        fake_audio_capturer_(fake_audio_capturer) {}
 
   void Run() {
     if (config_.use_sdl) {
@@ -342,6 +347,10 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
         fake_config.width = size.width;
         fake_config.height = size.height;
         fake_config.fps = 30;
+        // FakeAudioCapturer と連携: 円が一周したらビープ音を鳴らす
+        if (fake_audio_capturer_) {
+          fake_config.on_tick = [this]() { fake_audio_capturer_->TriggerBeep(); };
+        }
         auto fake_video_capturer = sora::FakeVideoCapturer::Create(fake_config);
         if (fake_video_capturer) {
           fake_video_capturer->StartCapture();
@@ -370,24 +379,10 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
       std::string video_track_id = webrtc::CreateRandomString(16);
 
       // オーディオトラックの作成
-      if (config_.fake_audio) {
-        // Fake オーディオソースを作成（サイン波などの単純な音声）
-        webrtc::AudioOptions options;
-        options.echo_cancellation = false;
-        options.auto_gain_control = false;
-        options.noise_suppression = false;
-        options.highpass_filter = false;
-        audio_track_ = context_->peer_connection_factory()->CreateAudioTrack(
-            audio_track_id, context_->peer_connection_factory()
-                                ->CreateAudioSource(options)
-                                .get());
-      } else {
-        // 通常のオーディオソース
-        audio_track_ = context_->peer_connection_factory()->CreateAudioTrack(
-            audio_track_id, context_->peer_connection_factory()
-                                ->CreateAudioSource(webrtc::AudioOptions())
-                                .get());
-      }
+      audio_track_ = context_->peer_connection_factory()->CreateAudioTrack(
+          audio_track_id, context_->peer_connection_factory()
+                              ->CreateAudioSource(webrtc::AudioOptions())
+                              .get());
 
       video_track_ = context_->peer_connection_factory()->CreateVideoTrack(
           video_source, video_track_id);
@@ -646,6 +641,7 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
   SumomoConfig config_;
   webrtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track_;
   webrtc::scoped_refptr<webrtc::VideoTrackInterface> video_track_;
+  webrtc::scoped_refptr<FakeAudioCapturer> fake_audio_capturer_;
   std::shared_ptr<sora::SoraSignaling> conn_;
   std::unique_ptr<boost::asio::io_context> ioc_;
   std::unique_ptr<boost::asio::signal_set> signals_;
@@ -1023,9 +1019,20 @@ int main(int argc, char* argv[]) {
   }
 
   auto context_config = sora::SoraClientContextConfig();
-  // fake デバイスを使用する場合はオーディオデバイスを無効化
+  // fake デバイスを使用する場合は FakeAudioCapturer を設定
+  webrtc::scoped_refptr<FakeAudioCapturer> fake_audio_capturer;
   if (config.fake_audio) {
     context_config.use_audio_device = false;
+    context_config.configure_dependencies =
+        [&fake_audio_capturer](
+            webrtc::PeerConnectionFactoryDependencies& dependencies) {
+          FakeAudioCapturer::Config fake_audio_config;
+          fake_audio_config.sample_rate = 48000;
+          fake_audio_config.channels = 1;
+          fake_audio_config.fps = 30;
+          fake_audio_capturer = FakeAudioCapturer::Create(fake_audio_config);
+          dependencies.adm = fake_audio_capturer;
+        };
   }
   if (!audio_recording_device.empty()) {
     context_config.audio_recording_device = audio_recording_device;
@@ -1086,7 +1093,8 @@ int main(int argc, char* argv[]) {
   }
 
   auto context = sora::SoraClientContext::Create(context_config);
-  auto sumomo = std::make_shared<Sumomo>(context, config);
+  auto sumomo =
+      std::make_shared<Sumomo>(context, config, fake_audio_capturer);
   sumomo->Run();
 
   return 0;

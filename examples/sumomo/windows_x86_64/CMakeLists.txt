@@ -32,9 +32,10 @@ set_target_properties(sumomo PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_sources(sumomo
   PRIVATE
     ../src/sumomo.cpp
-    ../src/sdl_renderer.cpp)
+    ../src/sdl_renderer.cpp
+    ../src/rtc/fake_audio_capturer.cpp)
 
-target_include_directories(sumomo PRIVATE ${CLI11_DIR}/include)
+target_include_directories(sumomo PRIVATE ${CLI11_DIR}/include ../src)
 target_link_libraries(sumomo PRIVATE Sora::sora SDL3::SDL3)
 
 # 文字コードを utf-8 として扱うのと、シンボルテーブル数を増やす

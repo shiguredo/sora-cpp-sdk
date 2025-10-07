@@ -32,14 +32,15 @@ set_target_properties(sumomo PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_sources(sumomo
   PRIVATE
     ../src/sumomo.cpp
-    ../src/sdl_renderer.cpp)
+    ../src/sdl_renderer.cpp
+    ../src/rtc/fake_audio_capturer.cpp)
 
 target_compile_options(sumomo
   PRIVATE
     "$<$<COMPILE_LANGUAGE:CXX>:-nostdinc++>"
     "$<$<COMPILE_LANGUAGE:CXX>:-isystem${LIBCXX_INCLUDE_DIR}>"
 )
-target_include_directories(sumomo PRIVATE ${CLI11_DIR}/include)
+target_include_directories(sumomo PRIVATE ${CLI11_DIR}/include ../src)
 target_link_libraries(sumomo PRIVATE Sora::sora SDL3::SDL3)
 target_compile_definitions(sumomo PRIVATE CLI11_HAS_FILESYSTEM=0)
 set_target_properties(sumomo PROPERTIES BUILD_RPATH "\$ORIGIN")
