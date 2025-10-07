@@ -40,6 +40,12 @@
   - @melpon
 - [UPDATE] actions/download-artifact を v5 に上げる
   - @miosakuma
+- [FIX] sumomo で Ctrl-C による終了が正しく動作しない問題を修正する
+  - `boost::asio::executor_work_guard` を削除して io_context が正しく終了するように修正
+  - `boost::asio::signal_set` をメンバ変数に移動してライフタイムを保証
+  - シャットダウンフラグを `std::atomic<bool>` に変更
+  - `FinalizeShutdown()` では `ioc_->stop()` のみを呼び、リソース解放は `Run()` メソッドの `ioc_->run()` 終了後に実行
+  - @voluntas
 - [FIX] sumomo で audio_device をデフォルト無効にしていたのを修正する
   - @torikizi
 
