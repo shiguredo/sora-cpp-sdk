@@ -2,18 +2,20 @@
 #define RTC_FAKE_AUDIO_CAPTURER_H_
 
 #include <atomic>
-#include <chrono>
+#include <cstdint>
 #include <memory>
 #include <mutex>
 #include <thread>
+#include <utility>
 #include <vector>
 
 // WebRTC
-#include <api/environment/environment_factory.h>
+#include <api/audio/audio_device.h>
+#include <api/audio/audio_device_defines.h>
+#include <api/environment/environment.h>
 #include <api/make_ref_counted.h>
+#include <api/scoped_refptr.h>
 #include <modules/audio_device/audio_device_buffer.h>
-#include <modules/audio_device/include/audio_device.h>
-#include <rtc_base/ref_counted_object.h>
 
 class FakeAudioCapturer : public webrtc::AudioDeviceModule {
  public:

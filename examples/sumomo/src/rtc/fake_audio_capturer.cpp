@@ -1,10 +1,20 @@
 #include "rtc/fake_audio_capturer.h"
 
+#include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstdint>
+#include <memory>
+#include <mutex>
+#include <thread>
+#include <vector>
 
 // WebRTC
-#include <rtc_base/logging.h>
+#include <api/audio/audio_device.h>
+#include <api/audio/audio_device_defines.h>
+#include <api/environment/environment_factory.h>
+#include <math.h>
+#include <modules/audio_device/audio_device_buffer.h>
 
 FakeAudioCapturer::FakeAudioCapturer(Config config)
     : env_(webrtc::CreateEnvironment()), config_(config) {}

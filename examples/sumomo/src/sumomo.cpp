@@ -349,7 +349,9 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
         fake_config.fps = 30;
         // FakeAudioCapturer と連携: 円が一周したらビープ音を鳴らす
         if (fake_audio_capturer_) {
-          fake_config.on_tick = [this]() { fake_audio_capturer_->TriggerBeep(); };
+          fake_config.on_tick = [this]() {
+            fake_audio_capturer_->TriggerBeep();
+          };
         }
         auto fake_video_capturer = sora::FakeVideoCapturer::Create(fake_config);
         if (fake_video_capturer) {
@@ -1093,8 +1095,7 @@ int main(int argc, char* argv[]) {
   }
 
   auto context = sora::SoraClientContext::Create(context_config);
-  auto sumomo =
-      std::make_shared<Sumomo>(context, config, fake_audio_capturer);
+  auto sumomo = std::make_shared<Sumomo>(context, config, fake_audio_capturer);
   sumomo->Run();
 
   return 0;
