@@ -79,9 +79,9 @@ def test_sumomo_sendonly_recvonly(sora_settings, port_allocator):
             assert sender_vp9_codec["clockRate"] == 90000, "VP9 should have 90000 Hz clock rate"
 
             # codecId の一致確認
-            assert sender_video_outbound.get("codecId") == sender_vp9_codec["id"], (
-                "Sender video outbound codecId should match VP9 codec id"
-            )
+            assert (
+                sender_video_outbound.get("codecId") == sender_vp9_codec["id"]
+            ), "Sender video outbound codecId should match VP9 codec id"
 
             # ========== Receiver の統計情報を検証 ==========
             receiver_stats: list[dict[str, Any]] = receiver.get_stats()
@@ -102,15 +102,15 @@ def test_sumomo_sendonly_recvonly(sora_settings, port_allocator):
                 ),
                 None,
             )
-            assert receiver_video_inbound is not None, (
-                "Receiver should have a video inbound-rtp stat"
-            )
-            assert receiver_video_inbound["packetsReceived"] > 0, (
-                "Receiver should have received packets"
-            )
-            assert receiver_video_inbound["bytesReceived"] > 0, (
-                "Receiver should have received bytes"
-            )
+            assert (
+                receiver_video_inbound is not None
+            ), "Receiver should have a video inbound-rtp stat"
+            assert (
+                receiver_video_inbound["packetsReceived"] > 0
+            ), "Receiver should have received packets"
+            assert (
+                receiver_video_inbound["bytesReceived"] > 0
+            ), "Receiver should have received bytes"
 
             print(
                 f"Receiver Video Inbound - ssrc: {receiver_video_inbound['ssrc']}, "
@@ -140,12 +140,12 @@ def test_sumomo_sendonly_recvonly(sora_settings, port_allocator):
 
             assert sender_transport is not None, "Sender should have transport stat"
             assert receiver_transport is not None, "Receiver should have transport stat"
-            assert sender_transport.get("dtlsState") == "connected", (
-                "Sender DTLS should be connected"
-            )
-            assert receiver_transport.get("dtlsState") == "connected", (
-                "Receiver DTLS should be connected"
-            )
+            assert (
+                sender_transport.get("dtlsState") == "connected"
+            ), "Sender DTLS should be connected"
+            assert (
+                receiver_transport.get("dtlsState") == "connected"
+            ), "Receiver DTLS should be connected"
 
             print(
                 f"\nSender transport: dtlsState={sender_transport['dtlsState']}, "
@@ -260,7 +260,7 @@ def test_sumomo_video_codec_types(sora_settings, free_port, codec_type):
     """異なるビデオコーデックタイプのテスト"""
     with Sumomo(
         signaling_url=sora_settings.signaling_url,
-        channel_id=f"{sora_settings.channel_id}_{codec_type}",
+        channel_id=sora_settings.channel_id,
         role="sendonly",
         metadata=sora_settings.metadata,
         http_port=free_port,
@@ -295,7 +295,7 @@ def test_sumomo_resolutions(sora_settings, free_port, resolution):
     """異なる解像度での接続テスト"""
     with Sumomo(
         signaling_url=sora_settings.signaling_url,
-        channel_id=f"{sora_settings.channel_id}_{resolution}",
+        channel_id=sora_settings.channel_id,
         role="sendonly",
         metadata=sora_settings.metadata,
         http_port=free_port,
