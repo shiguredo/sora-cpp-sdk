@@ -39,6 +39,7 @@
 // WebRTC
 #include <api/audio_options.h>
 #include <api/media_stream_interface.h>
+#include <api/peer_connection_interface.h>
 #include <api/rtc_error.h>
 #include <api/rtp_parameters.h>
 #include <api/rtp_receiver_interface.h>
