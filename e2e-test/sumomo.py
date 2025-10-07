@@ -76,6 +76,9 @@ class Sumomo:
         use_libcamera: bool = False,
         use_libcamera_native: bool = False,
         libcamera_controls: list[tuple[str, str]] | None = None,
+        # Fake デバイス設定（デフォルトで fake を使用）
+        fake_video: bool = True,
+        fake_audio: bool = True,
         # オーディオデバイス設定
         audio_recording_device: str | None = None,
         audio_playout_device: str | None = None,
@@ -136,15 +139,29 @@ class Sumomo:
             - channel_id: チャンネル ID
             - role: ロール ("sendonly", "recvonly", "sendrecv")
 
+        注意:
+            デフォルトで fake_video=True, fake_audio=True になっています。
+            実際のカメラ・マイクを使用する場合は明示的に False を指定してください。
+
         使用例:
+            # デフォルト（fake デバイスを使用）
             with Sumomo(
                 signaling_url="wss://sora.example.com/signaling",
                 channel_id="test-channel",
                 role="sendonly",
-                video_codec_type="H264",
                 http_port=8080,
             ) as s:
-                # テストコード
+                stats = s.get_stats()
+
+            # 実際のカメラ・マイクを使用する場合
+            with Sumomo(
+                signaling_url="wss://sora.example.com/signaling",
+                channel_id="test-channel",
+                role="sendonly",
+                fake_video=False,  # 実際のカメラを使用
+                fake_audio=False,  # 実際のマイクを使用
+                http_port=8080,
+            ) as s:
                 stats = s.get_stats()
         """
         # 実行ファイルのパスを自動検出
@@ -203,6 +220,8 @@ class Sumomo:
             "use_libcamera": use_libcamera,
             "use_libcamera_native": use_libcamera_native,
             "libcamera_controls": libcamera_controls,
+            "fake_video": fake_video,
+            "fake_audio": fake_audio,
             "audio_recording_device": audio_recording_device,
             "audio_playout_device": audio_playout_device,
             "openh264": openh264,
@@ -316,13 +335,21 @@ class Sumomo:
             print(f"Starting sumomo with command: {quoted_cmd}")
 
             # プロセスを起動 (エラー出力をキャプチャして問題発生時に確認できるようにする)
-            self.process = subprocess.Popen(
-                cmd,
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.PIPE,
-                text=True,
-            )
-            print(f"Started sumomo process with PID: {self.process.pid}")
+            try:
+                self.process = subprocess.Popen(
+                    cmd,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                )
+                print(f"Started sumomo process with PID: {self.process.pid}")
+            except FileNotFoundError:
+                raise RuntimeError(
+                    f"Sumomo executable not found at {self.executable_path}. "
+                    f"Please build with: python3 run.py build <target>"
+                )
+            except Exception as e:
+                raise RuntimeError(f"Failed to start sumomo process: {e}")
 
             # プロセスが起動して HTTP サーバーが利用可能になるまで待機
             if self.http_port is not None and self.http_port != 0:
@@ -504,6 +531,12 @@ class Sumomo:
             for key, value in kwargs["libcamera_controls"]:
                 args.extend(["--libcamera-control", key, value])
 
+        # Fake デバイス設定
+        if kwargs.get("fake_video"):
+            args.append("--fake-video")
+        if kwargs.get("fake_audio"):
+            args.append("--fake-audio")
+
         # オーディオデバイス設定
         if kwargs.get("audio_recording_device"):
             args.extend(["--audio-recording-device", kwargs["audio_recording_device"]])
@@ -617,20 +650,30 @@ class Sumomo:
         if self.process:
             pid = self.process.pid
             print(f"Terminating sumomo process (PID: {pid})")
+
+            # 標準的な終了シグナルを送信
             self.process.terminate()
             try:
+                # 短めのタイムアウトで終了を待つ
                 self.process.wait(timeout=5)
                 print(f"Sumomo process (PID: {pid}) terminated gracefully")
             except subprocess.TimeoutExpired:
+                # タイムアウトした場合は強制終了
                 print(f"Force killing sumomo process (PID: {pid})")
                 self.process.kill()
                 self.process.wait()
                 print(f"Sumomo process (PID: {pid}) killed")
+
+            # stderr の残りを読み取ってリソースを解放
+            if hasattr(self.process, "stderr") and self.process.stderr:
+                try:
+                    self.process.stderr.close()
+                except:
+                    pass
+
             self.process = None
 
             # プロセス終了後の短い待機（リソース解放のため）
-            import time
-
             time.sleep(0.2)
 
     def get_stats(self) -> list[dict[str, Any]]:
@@ -656,5 +699,6 @@ class Sumomo:
         response = self._http_client.get(f"http://{self.http_host}:{self.http_port}/stats")
         response.raise_for_status()
         return response.json()
+
 
 

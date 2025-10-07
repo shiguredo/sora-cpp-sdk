@@ -1023,6 +1023,10 @@ int main(int argc, char* argv[]) {
   }
 
   auto context_config = sora::SoraClientContextConfig();
+  // fake デバイスを使用する場合はオーディオデバイスを無効化
+  if (config.fake_audio) {
+    context_config.use_audio_device = false;
+  }
   if (!audio_recording_device.empty()) {
     context_config.audio_recording_device = audio_recording_device;
   }
