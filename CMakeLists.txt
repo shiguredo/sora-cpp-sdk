@@ -568,7 +568,7 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
         third_party/NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
         third_party/NvCodec/NvCodec/NvEncoder/NvEncoderCuda.cpp
       PROPERTIES
-        COMPILE_OPTIONS "-xcuda;--cuda-gpu-arch=sm_50;-std=gnu++17;-Wno-tautological-constant-out-of-range-compare;-D_ALLOW_UNSUPPORTED_LIBCPP"
+        COMPILE_OPTIONS "-xcuda;--cuda-gpu-arch=sm_60;-std=gnu++17;-Wno-tautological-constant-out-of-range-compare;-D_ALLOW_UNSUPPORTED_LIBCPP"
     )
 
     # CUDA を要求したくないので libsora.a に含める

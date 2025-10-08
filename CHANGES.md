@@ -11,9 +11,9 @@
 
 ## develop
 
-- [UPDATE] CUDA のバージョンを `12.6.3-1` に上げる
+- [UPDATE] CUDA のバージョンを `12.9.1-1` に上げる
   - CUDA コンパイルオプションに `D_ALLOW_UNSUPPORTED_LIBCPP` を追加する
-  - CUDA コンパイルオプションの `cuda-gpu-arch` を `sm_35` から `sm_50` に変更する
+  - CUDA コンパイルオプションの `cuda-gpu-arch` を `sm_35` から `sm_60` に変更する
   - @voluntas
 - [CHANGE] enum の `kNvidiaVideoCodecSdk` を `kNvidiaVideoCodec` に変更する
   - @voluntas
