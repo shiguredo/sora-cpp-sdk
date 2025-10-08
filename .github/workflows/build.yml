@@ -225,11 +225,11 @@ jobs:
           sudo apt-get install -y libgl-dev
 
       - name: Download CUDA keyring for ${{ matrix.platform.name }}
-        if: matrix.platform.os == 'ubuntu-24.04' && matrix.platform.arch == 'x86_64'
+        if: matrix.platform.runs-on == 'ubuntu-24.04' && matrix.platform.arch == 'x86_64'
         run: |
           wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-keyring_1.1-1_all.deb
       - name: Download CUDA keyring for ${{ matrix.platform.name }}
-        if: matrix.platform.os == 'ubuntu-22.04' && matrix.platform.arch == 'x86_64'
+        if: matrix.platform.runs-on == 'ubuntu-22.04' && matrix.platform.arch == 'x86_64'
         run: |
           wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
 
