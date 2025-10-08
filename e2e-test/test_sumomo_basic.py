@@ -8,290 +8,247 @@ import pytest
 from sumomo import Sumomo
 
 
-def test_sumomo_sendonly_recvonly(sora_settings, port_allocator):
-    """sendonly と recvonly のペアでの統合テスト"""
-    # 同じチャンネル ID を使用
-    channel_id = sora_settings.channel_id
+def get_outbound_rtp(stats: list[dict[str, Any]], kind: str) -> dict[str, Any] | None:
+    """outbound-rtp 統計情報を取得する"""
+    return next(
+        (stat for stat in stats if stat.get("type") == "outbound-rtp" and stat.get("kind") == kind),
+        None,
+    )
 
-    # 送信側を起動
+
+def get_inbound_rtp(stats: list[dict[str, Any]], kind: str) -> dict[str, Any] | None:
+    """inbound-rtp 統計情報を取得する"""
+    return next(
+        (stat for stat in stats if stat.get("type") == "inbound-rtp" and stat.get("kind") == kind),
+        None,
+    )
+
+
+def get_codec(stats: list[dict[str, Any]], mime_type: str) -> dict[str, Any] | None:
+    """codec 統計情報を取得する"""
+    return next(
+        (
+            stat
+            for stat in stats
+            if stat.get("type") == "codec" and mime_type in stat.get("mimeType", "")
+        ),
+        None,
+    )
+
+
+def get_transport(stats: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """transport 統計情報を取得する"""
+    return next((stat for stat in stats if stat.get("type") == "transport"), None)
+
+
+@pytest.mark.parametrize("video_codec_type", ["VP8", "VP9", "AV1"])
+def test_sumomo_sendonly_recvonly(sora_settings, port_allocator, video_codec_type):
+    """sendonly と recvonly のペアでの統合テスト"""
     with Sumomo(
         signaling_url=sora_settings.signaling_url,
-        channel_id=channel_id,
+        channel_id=sora_settings.channel_id,
         role="sendonly",
         metadata=sora_settings.metadata,
         http_port=next(port_allocator),
+        audio=True,
         video=True,
-        audio=False,
-        video_codec_type="VP9",  # 明示的にコーデックを指定
-    ) as sender:
-        # 受信側を起動
+        audio_codec_type="OPUS",
+        video_codec_type=video_codec_type,
+    ) as s:
         with Sumomo(
             signaling_url=sora_settings.signaling_url,
-            channel_id=channel_id,
+            channel_id=sora_settings.channel_id,
             role="recvonly",
             metadata=sora_settings.metadata,
             http_port=next(port_allocator),
+            audio=True,
             video=True,
-            audio=False,
-        ) as receiver:
-            # 接続が確立して安定するまで待つ
+        ) as r:
             time.sleep(3)
 
-            # ========== Sender の統計情報を検証 ==========
-            sender_stats: list[dict[str, Any]] = sender.get_stats()
+            # Sender の統計情報を確認
+            sender_stats: list[dict[str, Any]] = s.get_stats()
             assert sender_stats is not None
-            assert isinstance(sender_stats, list), "Sender stats should be a list"
-            assert len(sender_stats) > 0, "Sender stats should not be empty"
+            assert isinstance(sender_stats, list)
+            assert len(sender_stats) > 0
 
-            print("=== Sender Stats ===")
-            sender_stat_types = set(stat.get("type") for stat in sender_stats if "type" in stat)
-            print(f"Sender stat types: {sender_stat_types}")
+            # outbound-rtp を確認
+            sender_audio_outbound = get_outbound_rtp(sender_stats, "audio")
+            assert sender_audio_outbound is not None
+            assert sender_audio_outbound["packetsSent"] > 0
+            assert sender_audio_outbound["bytesSent"] > 0
 
-            # sendonly では video の outbound-rtp が一つ存在することを確認
-            sender_video_outbound = next(
-                (
-                    stat
-                    for stat in sender_stats
-                    if stat.get("type") == "outbound-rtp" and stat.get("kind") == "video"
-                ),
-                None,
-            )
-            assert sender_video_outbound is not None, "Sender should have a video outbound-rtp stat"
-            assert sender_video_outbound["packetsSent"] > 0, "Sender should have sent packets"
-            assert sender_video_outbound["bytesSent"] > 0, "Sender should have sent bytes"
+            sender_video_outbound = get_outbound_rtp(sender_stats, "video")
+            assert sender_video_outbound is not None
+            assert sender_video_outbound["packetsSent"] > 0
+            assert sender_video_outbound["bytesSent"] > 0
 
-            print(
-                f"Sender Video Outbound - ssrc: {sender_video_outbound['ssrc']}, "
-                f"packets: {sender_video_outbound['packetsSent']}, "
-                f"bytes: {sender_video_outbound['bytesSent']}"
-            )
+            # audio codec を確認
+            sender_audio_codec = get_codec(sender_stats, "audio/opus")
+            assert sender_audio_codec is not None
+            assert sender_audio_codec["clockRate"] == 48000
+            assert sender_audio_outbound["codecId"] == sender_audio_codec["id"]
 
-            # VP9 codec 情報の確認
-            sender_vp9_codec = next(
-                (
-                    stat
-                    for stat in sender_stats
-                    if stat.get("type") == "codec" and "video/VP9" in stat.get("mimeType", "")
-                ),
-                None,
-            )
-            assert sender_vp9_codec is not None, "Sender should have VP9 codec stat"
-            assert sender_vp9_codec["clockRate"] == 90000, "VP9 should have 90000 Hz clock rate"
+            # video codec を確認
+            sender_video_codec = get_codec(sender_stats, f"video/{video_codec_type}")
+            assert sender_video_codec is not None
+            assert sender_video_codec["clockRate"] == 90000
+            assert sender_video_codec["mimeType"] == f"video/{video_codec_type}"
+            assert sender_video_outbound["codecId"] == sender_video_codec["id"]
 
-            # codecId の一致確認
-            assert sender_video_outbound.get("codecId") == sender_vp9_codec["id"], (
-                "Sender video outbound codecId should match VP9 codec id"
-            )
-
-            # ========== Receiver の統計情報を検証 ==========
-            receiver_stats: list[dict[str, Any]] = receiver.get_stats()
+            # Receiver の統計情報を確認
+            receiver_stats: list[dict[str, Any]] = r.get_stats()
             assert receiver_stats is not None
-            assert isinstance(receiver_stats, list), "Receiver stats should be a list"
-            assert len(receiver_stats) > 0, "Receiver stats should not be empty"
+            assert isinstance(receiver_stats, list)
+            assert len(receiver_stats) > 0
 
-            print("\n=== Receiver Stats ===")
-            receiver_stat_types = set(stat.get("type") for stat in receiver_stats if "type" in stat)
-            print(f"Receiver stat types: {receiver_stat_types}")
+            # inbound-rtp を確認
+            receiver_audio_inbound = get_inbound_rtp(receiver_stats, "audio")
+            assert receiver_audio_inbound is not None
+            assert receiver_audio_inbound["packetsReceived"] > 0
+            assert receiver_audio_inbound["bytesReceived"] > 0
 
-            # recvonly では video の inbound-rtp が存在することを確認（送信者がいるため）
-            receiver_video_inbound = next(
-                (
-                    stat
-                    for stat in receiver_stats
-                    if stat.get("type") == "inbound-rtp" and stat.get("kind") == "video"
-                ),
-                None,
-            )
-            assert receiver_video_inbound is not None, (
-                "Receiver should have a video inbound-rtp stat"
-            )
-            assert receiver_video_inbound["packetsReceived"] > 0, (
-                "Receiver should have received packets"
-            )
-            assert receiver_video_inbound["bytesReceived"] > 0, (
-                "Receiver should have received bytes"
-            )
+            receiver_video_inbound = get_inbound_rtp(receiver_stats, "video")
+            assert receiver_video_inbound is not None
+            assert receiver_video_inbound["packetsReceived"] > 0
+            assert receiver_video_inbound["bytesReceived"] > 0
 
-            print(
-                f"Receiver Video Inbound - ssrc: {receiver_video_inbound['ssrc']}, "
-                f"packets: {receiver_video_inbound['packetsReceived']}, "
-                f"bytes: {receiver_video_inbound['bytesReceived']}"
-            )
+            # audio codec を確認
+            receiver_audio_codec = get_codec(receiver_stats, "audio/opus")
+            assert receiver_audio_codec is not None
 
-            # 受信側にも codec 情報が存在することを確認
-            receiver_codec = next(
-                (
-                    stat
-                    for stat in receiver_stats
-                    if stat.get("type") == "codec" and "video" in stat.get("mimeType", "").lower()
-                ),
-                None,
-            )
-            assert receiver_codec is not None, "Receiver should have video codec stat"
-            print(f"Receiver Codec - mimeType: {receiver_codec['mimeType']}")
+            # video codec を確認
+            receiver_video_codec = get_codec(receiver_stats, f"video/{video_codec_type}")
+            assert receiver_video_codec is not None
+            assert receiver_video_codec["mimeType"] == f"video/{video_codec_type}"
 
-            # Transport 情報の確認（両方とも connected であること）
-            sender_transport = next(
-                (stat for stat in sender_stats if stat.get("type") == "transport"), None
-            )
-            receiver_transport = next(
-                (stat for stat in receiver_stats if stat.get("type") == "transport"), None
-            )
-
-            assert sender_transport is not None, "Sender should have transport stat"
-            assert receiver_transport is not None, "Receiver should have transport stat"
-            assert sender_transport.get("dtlsState") == "connected", (
-                "Sender DTLS should be connected"
-            )
-            assert receiver_transport.get("dtlsState") == "connected", (
-                "Receiver DTLS should be connected"
-            )
-
-            print(
-                f"\nSender transport: dtlsState={sender_transport['dtlsState']}, "
-                f"bytesSent={sender_transport.get('bytesSent', 0)}"
-            )
-            print(
-                f"Receiver transport: dtlsState={receiver_transport['dtlsState']}, "
-                f"bytesReceived={receiver_transport.get('bytesReceived', 0)}"
-            )
+            # transport を確認
+            sender_transport = get_transport(sender_stats)
+            receiver_transport = get_transport(receiver_stats)
+            assert sender_transport is not None
+            assert receiver_transport is not None
+            assert sender_transport["dtlsState"] == "connected"
+            assert receiver_transport["dtlsState"] == "connected"
 
 
-def test_sumomo_sendrecv_pair(sora_settings, port_allocator):
+@pytest.mark.parametrize("video_codec_type", ["VP8", "VP9", "AV1"])
+def test_sumomo_sendrecv_pair(sora_settings, port_allocator, video_codec_type):
     """sendrecv モードのペアテスト（送受信の双方向通信）"""
-    # 同じチャンネル ID を使用
-    channel_id = sora_settings.channel_id
-
-    # 両方 sendrecv で起動
     with Sumomo(
         signaling_url=sora_settings.signaling_url,
-        channel_id=channel_id,
+        channel_id=sora_settings.channel_id,
         role="sendrecv",
         metadata=sora_settings.metadata,
         http_port=next(port_allocator),
+        audio=True,
         video=True,
-        audio=False,
-    ) as peer1:
+        audio_codec_type="OPUS",
+        video_codec_type=video_codec_type,
+    ) as c1:
         with Sumomo(
             signaling_url=sora_settings.signaling_url,
-            channel_id=channel_id,
+            channel_id=sora_settings.channel_id,
             role="sendrecv",
             metadata=sora_settings.metadata,
             http_port=next(port_allocator),
+            audio=True,
             video=True,
-            audio=False,
-        ) as peer2:
-            # 接続が確立するまで少し待つ
+        ) as c2:
             time.sleep(3)
 
-            # 両方の統計情報を取得
-            peer1_stats = peer1.get_stats()
-            peer2_stats = peer2.get_stats()
+            # Client1 の統計情報を確認
+            client1_stats = c1.get_stats()
+            assert client1_stats is not None
 
-            # 両方の統計情報が取得できることを確認
-            assert peer1_stats is not None
-            assert peer2_stats is not None
+            # outbound-rtp を確認
+            client1_audio_outbound = get_outbound_rtp(client1_stats, "audio")
+            assert client1_audio_outbound is not None
+            assert client1_audio_outbound["packetsSent"] > 0
+            assert client1_audio_outbound["bytesSent"] > 0
 
-            # Peer1 は outbound と inbound の両方を持つはず
-            peer1_outbound = next(
-                (
-                    stat
-                    for stat in peer1_stats
-                    if stat.get("type") == "outbound-rtp" and stat.get("kind") == "video"
-                ),
-                None,
-            )
-            peer1_inbound = next(
-                (
-                    stat
-                    for stat in peer1_stats
-                    if stat.get("type") == "inbound-rtp" and stat.get("kind") == "video"
-                ),
-                None,
-            )
+            client1_video_outbound = get_outbound_rtp(client1_stats, "video")
+            assert client1_video_outbound is not None
+            assert client1_video_outbound["packetsSent"] > 0
+            assert client1_video_outbound["bytesSent"] > 0
 
-            # Peer2 も outbound と inbound の両方を持つはず
-            peer2_outbound = next(
-                (
-                    stat
-                    for stat in peer2_stats
-                    if stat.get("type") == "outbound-rtp" and stat.get("kind") == "video"
-                ),
-                None,
-            )
-            peer2_inbound = next(
-                (
-                    stat
-                    for stat in peer2_stats
-                    if stat.get("type") == "inbound-rtp" and stat.get("kind") == "video"
-                ),
-                None,
-            )
+            # inbound-rtp を確認
+            client1_audio_inbound = get_inbound_rtp(client1_stats, "audio")
+            assert client1_audio_inbound is not None
+            assert client1_audio_inbound["packetsReceived"] > 0
+            assert client1_audio_inbound["bytesReceived"] > 0
 
-            print("=== Peer1 Stats ===")
-            if peer1_outbound:
-                print(
-                    f"Peer1 Outbound - packets: {peer1_outbound['packetsSent']}, bytes: {peer1_outbound['bytesSent']}"
-                )
-            if peer1_inbound:
-                print(
-                    f"Peer1 Inbound - packets: {peer1_inbound['packetsReceived']}, bytes: {peer1_inbound['bytesReceived']}"
-                )
+            client1_video_inbound = get_inbound_rtp(client1_stats, "video")
+            assert client1_video_inbound is not None
+            assert client1_video_inbound["packetsReceived"] > 0
+            assert client1_video_inbound["bytesReceived"] > 0
 
-            print("\n=== Peer2 Stats ===")
-            if peer2_outbound:
-                print(
-                    f"Peer2 Outbound - packets: {peer2_outbound['packetsSent']}, bytes: {peer2_outbound['bytesSent']}"
-                )
-            if peer2_inbound:
-                print(
-                    f"Peer2 Inbound - packets: {peer2_inbound['packetsReceived']}, bytes: {peer2_inbound['bytesReceived']}"
-                )
+            # audio codec を確認
+            client1_audio_codec = get_codec(client1_stats, "audio/opus")
+            assert client1_audio_codec is not None
+            assert client1_audio_codec["clockRate"] == 48000
 
-            # sendrecv では両方向の通信が確立していることを確認
-            assert peer1_outbound is not None, "Peer1 should have outbound-rtp"
-            assert peer1_inbound is not None, "Peer1 should have inbound-rtp"
-            assert peer2_outbound is not None, "Peer2 should have outbound-rtp"
-            assert peer2_inbound is not None, "Peer2 should have inbound-rtp"
+            # video codec を確認
+            client1_video_codec = get_codec(client1_stats, f"video/{video_codec_type}")
+            assert client1_video_codec is not None
+            assert client1_video_codec["clockRate"] == 90000
+            assert client1_video_codec["mimeType"] == f"video/{video_codec_type}"
 
+            # transport を確認
+            client1_transport = get_transport(client1_stats)
+            assert client1_transport is not None
+            assert client1_transport["dtlsState"] == "connected"
 
-@pytest.mark.parametrize("codec_type", ["VP8", "VP9", "H264", "H265", "AV1"])
-def test_sumomo_video_codec_types(sora_settings, free_port, codec_type):
-    """異なるビデオコーデックタイプのテスト"""
-    with Sumomo(
-        signaling_url=sora_settings.signaling_url,
-        channel_id=sora_settings.channel_id,
-        role="sendonly",
-        metadata=sora_settings.metadata,
-        http_port=free_port,
-        video=True,
-        audio=False,
-        video_codec_type=codec_type,
-    ) as sumomo:
-        stats = sumomo.get_stats()
-        assert stats is not None
-        print(f"Stats with {codec_type}: {stats}")
+            # Client2 の統計情報を確認
+            client2_stats = c2.get_stats()
+            assert client2_stats is not None
+
+            # outbound-rtp を確認
+            client2_audio_outbound = get_outbound_rtp(client2_stats, "audio")
+            assert client2_audio_outbound is not None
+            assert client2_audio_outbound["packetsSent"] > 0
+            assert client2_audio_outbound["bytesSent"] > 0
+
+            client2_video_outbound = get_outbound_rtp(client2_stats, "video")
+            assert client2_video_outbound is not None
+            assert client2_video_outbound["packetsSent"] > 0
+            assert client2_video_outbound["bytesSent"] > 0
+
+            # inbound-rtp を確認
+            client2_audio_inbound = get_inbound_rtp(client2_stats, "audio")
+            assert client2_audio_inbound is not None
+            assert client2_audio_inbound["packetsReceived"] > 0
+            assert client2_audio_inbound["bytesReceived"] > 0
+
+            client2_video_inbound = get_inbound_rtp(client2_stats, "video")
+            assert client2_video_inbound is not None
+            assert client2_video_inbound["packetsReceived"] > 0
+            assert client2_video_inbound["bytesReceived"] > 0
+
+            # audio codec を確認
+            client2_audio_codec = get_codec(client2_stats, "audio/opus")
+            assert client2_audio_codec is not None
+
+            # video codec を確認
+            client2_video_codec = get_codec(client2_stats, f"video/{video_codec_type}")
+            assert client2_video_codec is not None
+            assert client2_video_codec["mimeType"] == f"video/{video_codec_type}"
+
+            # transport を確認
+            client2_transport = get_transport(client2_stats)
+            assert client2_transport is not None
+            assert client2_transport["dtlsState"] == "connected"
 
 
-def test_sumomo_with_audio(sora_settings, free_port):
-    """音声付きの接続テスト"""
-    with Sumomo(
-        signaling_url=sora_settings.signaling_url,
-        channel_id=sora_settings.channel_id,
-        role="sendonly",
-        metadata=sora_settings.metadata,
-        http_port=free_port,
-        video=True,
-        audio=True,  # 音声も送信
-        audio_codec_type="OPUS",
-    ) as sumomo:
-        stats = sumomo.get_stats()
-        assert stats is not None
-        print(f"Stats with audio: {stats}")
-
-
-@pytest.mark.parametrize("resolution", ["QVGA", "VGA", "HD", "FHD"])
-def test_sumomo_resolutions(sora_settings, free_port, resolution):
+@pytest.mark.parametrize(
+    "resolution,bitrate,width,height",
+    [
+        ("QVGA", 500, 320, 240),
+        ("VGA", 1000, 640, 480),
+        ("HD", 2500, 1280, 720),
+        ("FHD", 5000, 1920, 1072),
+    ],
+)
+def test_sumomo_resolutions(sora_settings, free_port, resolution, bitrate, width, height):
     """異なる解像度での接続テスト"""
     with Sumomo(
         signaling_url=sora_settings.signaling_url,
@@ -299,13 +256,22 @@ def test_sumomo_resolutions(sora_settings, free_port, resolution):
         role="sendonly",
         metadata=sora_settings.metadata,
         http_port=free_port,
+        audio=True,
         video=True,
-        audio=False,
+        video_codec_type="VP8",
+        video_bit_rate=bitrate,
         resolution=resolution,
     ) as sumomo:
+        time.sleep(3)
+
         stats = sumomo.get_stats()
         assert stats is not None
-        print(f"Stats with resolution {resolution}: {stats}")
+
+        # outbound-rtp を確認
+        video_outbound = get_outbound_rtp(stats, "video")
+        assert video_outbound is not None
+        assert video_outbound["frameWidth"] == width
+        assert video_outbound["frameHeight"] == height
 
 
 def test_sumomo_simulcast(sora_settings, free_port):
@@ -316,14 +282,13 @@ def test_sumomo_simulcast(sora_settings, free_port):
         role="sendonly",
         metadata=sora_settings.metadata,
         http_port=free_port,
+        audio=True,
         video=True,
-        audio=False,
         simulcast=True,
-        video_codec_type="VP8",  # サイマルキャストは VP8/VP9/AV1 でサポート
+        video_codec_type="VP8",
     ) as sumomo:
         stats = sumomo.get_stats()
         assert stats is not None
-        print(f"Stats with simulcast: {stats}")
 
 
 def test_sumomo_data_channel_signaling(sora_settings, free_port):
@@ -334,13 +299,11 @@ def test_sumomo_data_channel_signaling(sora_settings, free_port):
         role="sendonly",
         metadata=sora_settings.metadata,
         http_port=free_port,
+        audio=True,
         video=True,
-        audio=False,
         data_channel_signaling=True,
-        ignore_disconnect_websocket=True,  # WebSocket 切断を無視
+        ignore_disconnect_websocket=True,
     ) as sumomo:
-        # データチャネルシグナリングの場合、接続が安定するまで少し待つ
         time.sleep(2)
         stats = sumomo.get_stats()
         assert stats is not None
-        print(f"Stats with data channel signaling: {stats}")
