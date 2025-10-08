@@ -46,6 +46,8 @@
   - @miosakuma
 - [FIX] sumomo で audio_device をデフォルト無効にしていたのを修正する
   - @torikizi
+- [FIX] GitHub Actions の build.yml で CUDA パッケージを ubuntu のバージョンに合わせるようにする
+  - @voluntas
 
 ## 2025.5.1
 
