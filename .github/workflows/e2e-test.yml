@@ -91,8 +91,8 @@ jobs:
 
       - name: Run E2E tests
         run: |
-          # テストを実行
-          uv run pytest -v test_sumomo_basic.py
+          # テストを実行（最初の失敗で停止）
+          uv run pytest -v -x test_sumomo_basic.py
         working-directory: ./e2e-test
 
   e2e-test-windows:
@@ -169,6 +169,6 @@ jobs:
 
       - name: Run E2E tests
         run: |
-          # テストを実行
-          uv run pytest -v test_sumomo_basic.py
+          # テストを実行（最初の失敗で停止）
+          uv run pytest -v -x test_sumomo_basic.py
         working-directory: ./e2e-test
