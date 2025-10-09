@@ -9,7 +9,6 @@ on:
 
 jobs:
   e2e-test-ubuntu:
-    if: false
     strategy:
       fail-fast: false
       matrix:
@@ -96,6 +95,7 @@ jobs:
         working-directory: ./e2e-test
 
   e2e-test-windows:
+    if: false
     strategy:
       fail-fast: false
       matrix:
