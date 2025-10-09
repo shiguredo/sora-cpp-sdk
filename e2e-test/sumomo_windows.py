@@ -475,9 +475,9 @@ class SumomoWindows:
                 else:
                     self._log(f"Process is still running (PID: {self.process.pid})")
 
-            # HTTP クライアントを作成
-            self._http_client = httpx.Client(timeout=10.0)
-            self._log("HTTP client initialized")
+            # HTTP クライアントを作成（短めのタイムアウト）
+            self._http_client = httpx.Client(timeout=5.0)
+            self._log("HTTP client initialized with 5s timeout")
 
             self._log("SumomoWindows context entered successfully")
             return self
@@ -640,12 +640,25 @@ class SumomoWindows:
         self._log(f"Requesting stats from {url}")
 
         try:
+            self._log(f"Sending GET request to {url}")
             response = self._http_client.get(url)
+            self._log(f"Response received: status={response.status_code}")
             response.raise_for_status()
             stats = response.json()
             self._last_stats = stats
             self._log(f"Stats fetched successfully, entries={len(stats)}")
             return stats
+        except httpx.TimeoutException as exc:
+            self._log(f"ERROR: Request timed out: {exc!r}")
+            # プロセスの状態を確認
+            if self.process:
+                poll_result = self.process.poll()
+                self._log(f"Process state after timeout: poll={poll_result}")
+                if poll_result is not None:
+                    self._log("Process has exited!")
+                else:
+                    self._log("Process is still running but not responding")
+            raise RuntimeError(f"HTTP request timed out: {exc}") from exc
         except Exception as exc:
             self._log(f"ERROR: Failed to get stats: {exc!r}")
             # プロセスの最終状態を確認
@@ -654,14 +667,23 @@ class SumomoWindows:
                 self._log(f"Process final state: poll={poll_result}")
                 if poll_result is not None:
                     stderr_output = ""
+                    stdout_output = ""
                     if self.process.stderr:
                         try:
                             stderr_output = self.process.stderr.read()
+                            self._log(f"Stderr (last 1000 chars): {stderr_output[-1000:]}")
+                        except Exception:
+                            pass
+                    if self.process.stdout:
+                        try:
+                            stdout_output = self.process.stdout.read()
+                            self._log(f"Stdout (last 1000 chars): {stdout_output[-1000:]}")
                         except Exception:
                             pass
                     raise RuntimeError(
                         f"sumomo.exe crashed while getting stats (exit code: {poll_result})\n"
                         f"Stderr: {stderr_output}\n"
+                        f"Stdout: {stdout_output}\n"
                         f"Original error: {exc}"
                     )
             raise
