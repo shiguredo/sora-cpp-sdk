@@ -272,9 +272,9 @@ class SumomoWindows:
         if kwargs.get("resolution"):
             args.extend(["--resolution", kwargs["resolution"]])
 
-        # HW MJPEG デコーダー
-        if kwargs.get("hw_mjpeg_decoder") is not None:
-            args.extend(["--hw-mjpeg-decoder", "true" if kwargs["hw_mjpeg_decoder"] else "false"])
+        # HW MJPEG デコーダー（明示的に True が指定された場合のみ）
+        if kwargs.get("hw_mjpeg_decoder") is True:
+            args.extend(["--hw-mjpeg-decoder", "true"])
 
         # Sora 設定
         if kwargs.get("signaling_url"):
@@ -553,6 +553,28 @@ class SumomoWindows:
                 # 各試行前にプロセスの状態を確認
                 poll_result_before = self.process.poll()
                 self._log(f"Attempt {attempt}: Process state before HTTP check: poll={poll_result_before}")
+
+                # Windows で netstat を使ってポートがリッスンされているか確認（最初の数回のみ）
+                if attempt <= 3:
+                    try:
+                        import subprocess as sp
+                        netstat_result = sp.run(
+                            ["netstat", "-an"],
+                            capture_output=True,
+                            text=True,
+                            timeout=2
+                        )
+                        # ポート番号を含む行を探す
+                        port_lines = [
+                            line for line in netstat_result.stdout.splitlines()
+                            if f":{http_port}" in line and "LISTENING" in line
+                        ]
+                        if port_lines:
+                            self._log(f"Attempt {attempt}: Port {http_port} is LISTENING: {port_lines[0]}")
+                        else:
+                            self._log(f"Attempt {attempt}: Port {http_port} is NOT listening")
+                    except Exception as e:
+                        self._log(f"Attempt {attempt}: Failed to check netstat: {e!r}")
 
                 # HTTP エンドポイントをチェック
                 try:

@@ -20,17 +20,15 @@ def test_sumomo_windows_collects_stats(sora_settings, port_allocator):
     print(f"Allocated HTTP port: {http_port}")
 
     print("\n=== CREATING SUMOMO INSTANCE ===")
-    # GitHub Actions の Windows 環境では video/audio の初期化でハングする可能性があるため、
-    # まずは HTTP サーバーだけをテスト
     sumomo = SumomoWindows(
         signaling_url=sora_settings.signaling_url,
         channel_id=sora_settings.channel_id,
-        role="recvonly",  # recvonly なら video/audio の送信デバイス初期化をスキップできる
+        role="sendonly",
         metadata=sora_settings.metadata,
         http_port=http_port,
-        http_host="0.0.0.0",
-        video=False,  # video を無効化
-        audio=False,  # audio を無効化
+        http_host="127.0.0.1",
+        video=True,
+        audio=True,
         log_level="verbose",
     )
 
