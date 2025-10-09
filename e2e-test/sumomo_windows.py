@@ -542,6 +542,10 @@ class SumomoWindows:
                             self._log(f"WARNING: Failed to read stderr: {e!r}")
                     raise RuntimeError(error_msg)
 
+                # 各試行前にプロセスの状態を確認
+                poll_result_before = self.process.poll()
+                self._log(f"Attempt {attempt}: Process state before HTTP check: poll={poll_result_before}")
+
                 # HTTP エンドポイントをチェック
                 try:
                     url = f"http://{self.http_host}:{http_port}/stats"
@@ -561,15 +565,87 @@ class SumomoWindows:
                 except Exception as e:
                     self._log(f"Attempt {attempt}: Unexpected error: {e!r}")
 
+                # 各試行後にもプロセスの状態を確認
+                poll_result_after = self.process.poll()
+                if poll_result_after != poll_result_before:
+                    self._log(f"WARNING: Process state changed during attempt: {poll_result_before} -> {poll_result_after}")
+
+                # プロセスが終了していた場合、即座に終了して stderr/stdout を確認
+                if poll_result_after is not None:
+                    self._log(f"ERROR: Process exited with code {poll_result_after} during startup")
+                    # この時点でプロセスは既に終了しているため、read() はブロックしない
+                    error_msg = f"Process exited with code {poll_result_after} during startup"
+
+                    stderr_output = ""
+                    stdout_output = ""
+                    if self.process.stderr:
+                        try:
+                            stderr_output = self.process.stderr.read()
+                            if stderr_output:
+                                self._log(f"Stderr output:\n{stderr_output}")
+                                error_msg += f"\n\nStderr:\n{stderr_output}"
+                        except Exception as e:
+                            self._log(f"WARNING: Failed to read stderr: {e!r}")
+
+                    if self.process.stdout:
+                        try:
+                            stdout_output = self.process.stdout.read()
+                            if stdout_output:
+                                self._log(f"Stdout output:\n{stdout_output}")
+                                error_msg += f"\n\nStdout:\n{stdout_output}"
+                        except Exception as e:
+                            self._log(f"WARNING: Failed to read stdout: {e!r}")
+
+                    raise RuntimeError(error_msg)
+
                 # 次の試行まで1秒待機
                 time.sleep(1)
 
             # タイムアウト
             if self.process:
                 self._log(f"ERROR: Timeout after {timeout}s (PID: {self.process.pid})")
-                # プロセスがまだ実行中の可能性があるため、stderr は読まない（ブロックする）
                 poll_result = self.process.poll()
                 self._log(f"Process state at timeout: poll={poll_result}")
+
+                # プロセスがまだ実行中の場合、強制終了して stderr/stdout を読む
+                if poll_result is None:
+                    self._log("Process is still running, terminating to read output...")
+                    self.process.terminate()
+                    try:
+                        self.process.wait(timeout=2)
+                        self._log("Process terminated")
+                    except subprocess.TimeoutExpired:
+                        self._log("Process did not terminate, killing...")
+                        self.process.kill()
+                        self.process.wait()
+                        self._log("Process killed")
+
+                # プロセスが終了したので stderr/stdout を読む
+                error_msg = f"sumomo process failed to start within {timeout} seconds"
+
+                stderr_output = ""
+                stdout_output = ""
+                if self.process.stderr:
+                    try:
+                        stderr_output = self.process.stderr.read()
+                        if stderr_output:
+                            self._log(f"Stderr output (last 2000 chars):\n{stderr_output[-2000:]}")
+                            error_msg += f"\n\nStderr (last 2000 chars):\n{stderr_output[-2000:]}"
+                    except Exception as e:
+                        self._log(f"WARNING: Failed to read stderr: {e!r}")
+
+                if self.process.stdout:
+                    try:
+                        stdout_output = self.process.stdout.read()
+                        if stdout_output:
+                            self._log(f"Stdout output (last 2000 chars):\n{stdout_output[-2000:]}")
+                            error_msg += f"\n\nStdout (last 2000 chars):\n{stdout_output[-2000:]}"
+                    except Exception as e:
+                        self._log(f"WARNING: Failed to read stdout: {e!r}")
+
+                self._cleanup()
+                raise RuntimeError(error_msg)
+
             self._cleanup()
             raise RuntimeError(f"sumomo process failed to start within {timeout} seconds")
 
