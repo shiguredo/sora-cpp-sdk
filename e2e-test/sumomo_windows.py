@@ -97,7 +97,8 @@ class SumomoWindows:
         self.process: subprocess.Popen[Any] | None = None
         self.http_port = http_port if http_port is not None else 0
         self.http_host = http_host
-        self.initial_wait = initial_wait if initial_wait is not None else 2
+        # Windows の GitHub Actions では起動が遅い可能性があるため、longer wait
+        self.initial_wait = initial_wait if initial_wait is not None else 5
         self._http_client: httpx.Client | None = None
         self._last_stats: list[dict[str, Any]] | None = None
 
@@ -452,8 +453,9 @@ class SumomoWindows:
                 raise RuntimeError(f"Failed to start sumomo process: {e}")
 
             # プロセスが起動して HTTP サーバーが利用可能になるまで待機
+            # GitHub Actions の Windows では起動が遅い可能性があるため、タイムアウトを延ばす
             if self.http_port is not None and self.http_port != 0:
-                self._wait_for_startup(self.http_port, timeout=30, initial_wait=self.initial_wait)
+                self._wait_for_startup(self.http_port, timeout=60, initial_wait=self.initial_wait)
             else:
                 self._log(f"No HTTP port configured, waiting {self.initial_wait}s")
                 if self.initial_wait > 0:
@@ -598,8 +600,8 @@ class SumomoWindows:
 
                     raise RuntimeError(error_msg)
 
-                # 次の試行まで1秒待機
-                time.sleep(1)
+                # 次の試行まで2秒待機（GitHub Actions の Windows では起動が遅い）
+                time.sleep(2)
 
             # タイムアウト
             if self.process:

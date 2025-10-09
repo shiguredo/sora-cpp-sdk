@@ -9,7 +9,7 @@ from sumomo_windows import SumomoWindows
 
 
 @pytest.mark.skipif(platform.system().lower() != "windows", reason="Windows 以外では実行しません")
-@pytest.mark.timeout(60)  # 1 分でタイムアウト
+@pytest.mark.timeout(120)  # 2 分でタイムアウト（GitHub Actions の Windows は起動が遅い）
 def test_sumomo_windows_collects_stats(sora_settings, port_allocator):
     """SumomoWindows が統計情報と診断情報を取得できるか検証"""
     print("\n=== TEST START ===")

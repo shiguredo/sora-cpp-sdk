@@ -98,7 +98,7 @@ jobs:
         working-directory: ./e2e-test
 
   e2e-test-windows:
-    timeout-minutes: 5
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
