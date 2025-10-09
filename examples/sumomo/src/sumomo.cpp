@@ -372,7 +372,8 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
         video_source = sora::CreateCameraDeviceCapturer(cam_config);
       }
 
-      if (video_source == nullptr) {
+      // ビデオソースが作成されているかチェック（ビデオが有効な場合のみ）
+      if (config_.video && video_source == nullptr) {
         RTC_LOG(LS_ERROR) << "Failed to create video source.";
         return;
       }
@@ -386,16 +387,19 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
                               ->CreateAudioSource(webrtc::AudioOptions())
                               .get());
 
-      video_track_ = context_->peer_connection_factory()->CreateVideoTrack(
-          video_source, video_track_id);
-      if (config_.use_sdl && config_.show_me) {
-        sdl_renderer_->AddTrack(video_track_.get());
-      }
-      if (config_.use_sixel && config_.show_me) {
-        sixel_renderer_->AddTrack(video_track_.get());
-      }
-      if (config_.use_ansi && config_.show_me) {
-        ansi_renderer_->AddTrack(video_track_.get());
+      // ビデオトラックの作成（ビデオが有効な場合のみ）
+      if (config_.video) {
+        video_track_ = context_->peer_connection_factory()->CreateVideoTrack(
+            video_source, video_track_id);
+        if (config_.use_sdl && config_.show_me) {
+          sdl_renderer_->AddTrack(video_track_.get());
+        }
+        if (config_.use_sixel && config_.show_me) {
+          sixel_renderer_->AddTrack(video_track_.get());
+        }
+        if (config_.use_ansi && config_.show_me) {
+          ansi_renderer_->AddTrack(video_track_.get());
+        }
       }
     }
 
