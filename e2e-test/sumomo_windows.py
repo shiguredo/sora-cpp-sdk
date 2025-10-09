@@ -6,6 +6,7 @@ import json
 import platform
 import shlex
 import subprocess
+import threading
 import time
 from pathlib import Path
 from typing import Any, Iterable, Literal
@@ -100,6 +101,10 @@ class SumomoWindows:
         self.initial_wait = initial_wait if initial_wait is not None else 2
         self._http_client: httpx.Client | None = None
         self._last_stats: list[dict[str, Any]] | None = None
+        self._stdout_lines: list[str] = []
+        self._stderr_lines: list[str] = []
+        self._stdout_thread: threading.Thread | None = None
+        self._stderr_thread: threading.Thread | None = None
 
         # すべての引数を保存
         self._kwargs: dict[str, Any] = {
@@ -232,6 +237,17 @@ class SumomoWindows:
     def _log(self, message: str) -> None:
         timestamp = time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime())
         print(f"{timestamp} {self._log_prefix} {message}", flush=True)
+
+    def _read_stream(self, stream, lines_list: list[str], stream_name: str) -> None:
+        """バックグラウンドスレッドで stdout/stderr を読み取る"""
+        try:
+            for line in stream:
+                line = line.rstrip()
+                if line:
+                    lines_list.append(line)
+                    self._log(f"{stream_name}: {line}")
+        except Exception as e:
+            self._log(f"Error reading {stream_name}: {e!r}")
 
     def _is_sensitive(self, key_path: str) -> bool:
         key_lower = key_path.lower()
@@ -449,6 +465,25 @@ class SumomoWindows:
                     text=True,
                 )
                 self._log(f"Process started with PID: {self.process.pid}")
+
+                # バックグラウンドスレッドで stdout/stderr をリアルタイムで読み取る
+                if self.process.stdout:
+                    self._stdout_thread = threading.Thread(
+                        target=self._read_stream,
+                        args=(self.process.stdout, self._stdout_lines, "STDOUT"),
+                        daemon=True
+                    )
+                    self._stdout_thread.start()
+                    self._log("Started stdout reader thread")
+
+                if self.process.stderr:
+                    self._stderr_thread = threading.Thread(
+                        target=self._read_stream,
+                        args=(self.process.stderr, self._stderr_lines, "STDERR"),
+                        daemon=True
+                    )
+                    self._stderr_thread.start()
+                    self._log("Started stderr reader thread")
             except FileNotFoundError:
                 self._log(f"ERROR: Executable not found at {self.executable_path}")
                 raise RuntimeError(
