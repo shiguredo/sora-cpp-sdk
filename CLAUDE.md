@@ -19,7 +19,11 @@
 
 ## ビルドについて
 
-- `python3 run.py build <target>` でビルドすること
+- `python3 run.py build <target>` でビルドすること。
+
+### サンプルのビルドについて
+
+- sumomo であれば `python3 examples/sumomo/<target>/run.py` でビルドすること
 
 ## コミットについて
 
