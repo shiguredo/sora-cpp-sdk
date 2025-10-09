@@ -130,8 +130,7 @@ struct SumomoConfig {
   bool use_libcamera_native = false;
   std::vector<std::pair<std::string, std::string>> libcamera_controls;
 
-  bool fake_video = false;
-  bool fake_audio = false;
+  bool fake_capture_device = false;
 
   struct Size {
     int width;
@@ -342,7 +341,7 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
       // ビデオソースの作成
       webrtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source;
 
-      if (config_.fake_video) {
+      if (config_.fake_capture_device && config_.video) {
         // Fake ビデオソースを作成
         sora::FakeVideoCapturerConfig fake_config;
         fake_config.width = size.width;
@@ -359,7 +358,7 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
           fake_video_capturer->StartCapture();
         }
         video_source = fake_video_capturer;
-      } else {
+      } else if (config_.video) {
         // カメラデバイスからビデオソースを作成
         sora::CameraDeviceCapturerConfig cam_config;
         cam_config.width = size.width;
@@ -797,10 +796,8 @@ int main(int argc, char* argv[]) {
                  "Set libcamera control (format: key value)");
 
   // Fake デバイスに関するオプション
-  app.add_flag("--fake-video", config.fake_video,
-               "Use fake video source (generates test pattern)");
-  app.add_flag("--fake-audio", config.fake_audio,
-               "Use fake audio source (generates silence)");
+  app.add_flag("--fake-capture-device", config.fake_capture_device,
+               "Use fake capture devices for audio and video (generates test pattern and silence)");
 
   // SoraClientContextConfig に関するオプション
   std::string audio_recording_device;
@@ -964,7 +961,7 @@ int main(int argc, char* argv[]) {
   auto context_config = sora::SoraClientContextConfig();
   // fake デバイスを使用する場合は FakeAudioCapturer を設定
   webrtc::scoped_refptr<FakeAudioCapturer> fake_audio_capturer;
-  if (config.fake_audio) {
+  if (config.fake_capture_device && config.audio) {
     context_config.use_audio_device = false;
     context_config.configure_dependencies =
         [&fake_audio_capturer](

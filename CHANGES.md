@@ -11,6 +11,11 @@
 
 ## develop
 
+- [ADD] sumomo に `--fake-capture-device` オプションを追加
+  - フェイクの音声と映像デバイスを使用してテストパターンと無音を生成する
+  - 実際に音声や映像を送信するかは `--audio`/`--video` オプションに依存する
+  - FakeAudioCapturer を実装し、`--fake-capture-device` と `--audio` が有効な場合は `use_audio_device` を false に設定
+  - @voluntas
 - [UPDATE] CUDA のバージョンを `12.9.1-1` に上げる
   - CUDA コンパイルオプションに `D_ALLOW_UNSUPPORTED_LIBCPP` を追加する
   - CUDA コンパイルオプションの `cuda-gpu-arch` を `sm_35` から `sm_60` に変更する
@@ -47,10 +52,6 @@
   - @melpon
 - [ADD] hello アプリに `use_sixel`, `sixel_width`, `sixel_height`, `use_ansi`, `ansi_width`, `ansi_height` を追加
   - @melpon
-- [ADD] sumomo に `--fake-audio`, `--fake-video` オプションを追加
-  - FakeAudioCapturer を実装し、fake デバイスでテストパターンを生成できるようにする
-  - fake デバイス使用時はオーディオデバイスを掴まないように修正
-  - @voluntas
 - [ADD] E2E テストを追加
   - pytest を使用した sumomo の E2E テスト環境を構築
   - `e2e-test/` ディレクトリにテストケースとプロセス管理を追加
