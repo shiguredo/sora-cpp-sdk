@@ -76,8 +76,7 @@ class Sumomo:
         use_libcamera_native: bool = False,
         libcamera_controls: list[tuple[str, str]] | None = None,
         # Fake デバイス設定（デフォルトで fake を使用）
-        fake_video: bool = True,
-        fake_audio: bool = True,
+        fake_capture_device: bool = True,
         # オーディオデバイス設定
         audio_recording_device: str | None = None,
         audio_playout_device: str | None = None,
@@ -189,7 +188,7 @@ class Sumomo:
             - role: ロール ("sendonly", "recvonly", "sendrecv")
 
         注意:
-            デフォルトで fake_video=True, fake_audio=True になっています。
+            デフォルトで fake_capture_device=True になっています。
             実際のカメラ・マイクを使用する場合は明示的に False を指定してください。
 
         使用例:
@@ -207,8 +206,7 @@ class Sumomo:
                 signaling_url="wss://sora.example.com/signaling",
                 channel_id="test-channel",
                 role="sendonly",
-                fake_video=False,  # 実際のカメラを使用
-                fake_audio=False,  # 実際のマイクを使用
+                fake_capture_device=False,  # 実際のカメラ・マイクを使用
                 http_port=8080,
             ) as s:
                 stats = s.get_stats()
@@ -269,8 +267,7 @@ class Sumomo:
             "use_libcamera": use_libcamera,
             "use_libcamera_native": use_libcamera_native,
             "libcamera_controls": libcamera_controls,
-            "fake_video": fake_video,
-            "fake_audio": fake_audio,
+            "fake_capture_device": fake_capture_device,
             "audio_recording_device": audio_recording_device,
             "audio_playout_device": audio_playout_device,
             "openh264": openh264,
@@ -586,10 +583,8 @@ class Sumomo:
                 args.extend(["--libcamera-control", key, value])
 
         # Fake デバイス設定
-        if kwargs.get("fake_video"):
-            args.append("--fake-video")
-        if kwargs.get("fake_audio"):
-            args.append("--fake-audio")
+        if kwargs.get("fake_capture_device"):
+            args.append("--fake-capture-device")
 
         # オーディオデバイス設定
         if kwargs.get("audio_recording_device"):
