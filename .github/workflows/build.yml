@@ -210,47 +210,43 @@ jobs:
           # 1.4G
           sudo rm -rf /usr/share/dotnet
           df -h
-      # Ubuntu 24.04 だと libtinfo5 が見つからない問題があるので、その修正
-      # ref: https://qiita.com/gengen16k/items/88cf3c18a40a94205fab
-      - name: Fix CUDA issues for Ubuntu 24.04
-        if: matrix.platform.name == 'ubuntu-24.04_x86_64'
+      - name: Install base deps for ${{ matrix.platform.name }}
+        if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
         run: |
-          sudo tee /etc/apt/sources.list.d/jammy.list << EOF
-          deb http://archive.ubuntu.com/ubuntu/ jammy universe
-          EOF
+          sudo apt-get update
+          sudo apt-get install -y software-properties-common
+      - name: Install X11 for ${{ matrix.platform.name }}
+        if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
+        run: |
+          sudo apt-get install -y libx11-dev libxext-dev
+      - name: Install OpenGL for ${{ matrix.platform.name }}
+        if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
+        run: |
+          sudo apt-get install -y libgl-dev
 
-          sudo tee /etc/apt/preferences.d/pin-jammy <<EOF
-          Package: *
-          Pin: release n=jammy
-          Pin-Priority: -10
+      - name: Download CUDA keyring for ${{ matrix.platform.name }}
+        if: matrix.platform.runs-on == 'ubuntu-24.04' && matrix.platform.arch == 'x86_64'
+        run: |
+          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-keyring_1.1-1_all.deb
+      - name: Download CUDA keyring for ${{ matrix.platform.name }}
+        if: matrix.platform.runs-on == 'ubuntu-22.04' && matrix.platform.arch == 'x86_64'
+        run: |
+          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
 
-          Package: libtinfo5
-          Pin: release n=jammy
-          Pin-Priority: 990
-          EOF
-      - name: Install deps for ${{ matrix.platform.name }}
+      - name: Install CUDA for ${{ matrix.platform.name }}
         if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
         run: |
           source DEPS
-          sudo apt-get update
-          sudo apt-get install -y software-properties-common
-
-          # X11
-          sudo apt-get install libx11-dev libxext-dev
-
-          # OpenGL
-          sudo apt-get install -y libgl-dev
-
-          # CUDA
-          # libssl1.1 が必要
-          wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.0g-2ubuntu4_amd64.deb
-          sudo dpkg -i libssl1.1_1.1.0g-2ubuntu4_amd64.deb
-          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb
+          # CUDA_VERSION (例: 12.8.1-1) から cuda-12-8=12.8.1-1 のような形式を生成
+          CUDA_MAJOR=$(echo $CUDA_VERSION | cut -d. -f1)
+          CUDA_MINOR=$(echo $CUDA_VERSION | cut -d. -f2)
+          CUDA_PKG="cuda-${CUDA_MAJOR}-${CUDA_MINOR}=${CUDA_VERSION}"
           sudo dpkg -i cuda-keyring_*all.deb
           sudo apt-get update
-          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install cuda=$CUDA_VERSION
-
-          # clang-20
+          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install ${CUDA_PKG}
+      - name: Install clang-20 for ${{ matrix.platform.name }}
+        if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
+        run: |
           wget https://apt.llvm.org/llvm.sh
           chmod a+x llvm.sh
           sudo ./llvm.sh 20
@@ -271,8 +267,8 @@ jobs:
       - name: Setup JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
-          distribution: 'temurin'
+          java-version: "17"
+          distribution: "temurin"
         if: matrix.platform.os == 'android'
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
@@ -398,24 +394,24 @@ jobs:
         working-directory: ${{ github.workspace }}/examples
     runs-on: windows-2022
     steps:
-        - uses: actions/checkout@v5
-        - name: Build Example
-          run: |
-            python3 ${{ matrix.example }}/windows_x86_64/run.py
-        - name: Package Binary
-          run: |
-            # アップロード用のディレクトリを作成する
-            mkdir -p ${{ matrix.example }}_windows_x86_64
-            # バイナリをアップロード用のディレクトリにコピーする
-            cp _build/windows_x86_64/release/${{ matrix.example }}/Release/${{ matrix.example }}.exe ${{ matrix.example }}_windows_x86_64/${{ matrix.example }}.exe
-            # バイナリを圧縮する
-            # 例: sumomo_windows_x86_64.zip
-            Compress-Archive -Path ${{ matrix.example }}_windows_x86_64 -DestinationPath ${{ matrix.example }}_windows_x86_64.zip
-        - name: Upload Examples Artifact
-          uses: actions/upload-artifact@v4
-          with:
-             name: ${{ matrix.example }}_windows_x86_64.zip
-             path: examples/${{ matrix.example }}_windows_x86_64.zip
+      - uses: actions/checkout@v5
+      - name: Build Example
+        run: |
+          python3 ${{ matrix.example }}/windows_x86_64/run.py
+      - name: Package Binary
+        run: |
+          # アップロード用のディレクトリを作成する
+          mkdir -p ${{ matrix.example }}_windows_x86_64
+          # バイナリをアップロード用のディレクトリにコピーする
+          cp _build/windows_x86_64/release/${{ matrix.example }}/Release/${{ matrix.example }}.exe ${{ matrix.example }}_windows_x86_64/${{ matrix.example }}.exe
+          # バイナリを圧縮する
+          # 例: sumomo_windows_x86_64.zip
+          Compress-Archive -Path ${{ matrix.example }}_windows_x86_64 -DestinationPath ${{ matrix.example }}_windows_x86_64.zip
+      - name: Upload Examples Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.example }}_windows_x86_64.zip
+          path: examples/${{ matrix.example }}_windows_x86_64.zip
 
   build-macos-examples:
     needs: create-release
@@ -428,23 +424,23 @@ jobs:
         working-directory: ${{ github.workspace }}/examples
     runs-on: macos-14
     steps:
-        - uses: actions/checkout@v5
-        - name: Build Example
-          run: |
-            python3 ${{ matrix.example }}/macos_arm64/run.py
-        - name: Package Binary
-          run: |
-            # アップロード用のディレクトリを作成する
-            mkdir -p ${{ matrix.example }}_macos_arm64
-            cp _build/macos_arm64/release/${{ matrix.example }}/${{ matrix.example }} ${{ matrix.example }}_macos_arm64/${{ matrix.example }}
-            # バイナリを圧縮する
-            # 例: sumomo_macos_arm64.tar.gz
-            tar -czf ${{ matrix.example }}_macos_arm64.tar.gz ${{ matrix.example }}_macos_arm64
-        - name: Upload Examples Artifact
-          uses: actions/upload-artifact@v4
-          with:
-             name: ${{ matrix.example }}_macos_arm64.tar.gz
-             path: examples/${{ matrix.example }}_macos_arm64.tar.gz
+      - uses: actions/checkout@v5
+      - name: Build Example
+        run: |
+          python3 ${{ matrix.example }}/macos_arm64/run.py
+      - name: Package Binary
+        run: |
+          # アップロード用のディレクトリを作成する
+          mkdir -p ${{ matrix.example }}_macos_arm64
+          cp _build/macos_arm64/release/${{ matrix.example }}/${{ matrix.example }} ${{ matrix.example }}_macos_arm64/${{ matrix.example }}
+          # バイナリを圧縮する
+          # 例: sumomo_macos_arm64.tar.gz
+          tar -czf ${{ matrix.example }}_macos_arm64.tar.gz ${{ matrix.example }}_macos_arm64
+      - name: Upload Examples Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.example }}_macos_arm64.tar.gz
+          path: examples/${{ matrix.example }}_macos_arm64.tar.gz
 
   build-ubuntu-examples:
     needs: create-release
@@ -510,35 +506,35 @@ jobs:
           path: examples/${{ matrix.example }}_${{ matrix.platform.name }}.tar.gz
 
   create-release-example:
-      name: Create Release Examples
-      needs: 
-        - build-windows-examples
-        - build-macos-examples
-        - build-ubuntu-examples
-      strategy:
-        matrix:
-          example:
-            - sumomo
-          archive:
-            - windows_x86_64.zip
-            - macos_arm64.tar.gz
-            - ubuntu-22.04_x86_64.tar.gz
-            - ubuntu-24.04_x86_64.tar.gz
-            - ubuntu-24.04_armv8.tar.gz
-            - raspberry-pi-os_armv8.tar.gz
-      runs-on: ubuntu-24.04
-      steps:
-        - uses: actions/checkout@v5
-        - uses: actions/download-artifact@v5
-          with:
-            name: ${{ matrix.example }}_${{ matrix.archive }}
-        - name: Release Examples
-          run: |
-            gh release upload "${{ github.ref_name }}" \
-              "${{ matrix.example }}_${{ matrix.archive }}" \
-              --clobber
-          env:
-            GH_TOKEN: ${{ github.token }}
+    name: Create Release Examples
+    needs:
+      - build-windows-examples
+      - build-macos-examples
+      - build-ubuntu-examples
+    strategy:
+      matrix:
+        example:
+          - sumomo
+        archive:
+          - windows_x86_64.zip
+          - macos_arm64.tar.gz
+          - ubuntu-22.04_x86_64.tar.gz
+          - ubuntu-24.04_x86_64.tar.gz
+          - ubuntu-24.04_armv8.tar.gz
+          - raspberry-pi-os_armv8.tar.gz
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v5
+        with:
+          name: ${{ matrix.example }}_${{ matrix.archive }}
+      - name: Release Examples
+        run: |
+          gh release upload "${{ github.ref_name }}" \
+            "${{ matrix.example }}_${{ matrix.archive }}" \
+            --clobber
+        env:
+          GH_TOKEN: ${{ github.token }}
 
   notification:
     name: Slack Notification
