@@ -797,7 +797,8 @@ int main(int argc, char* argv[]) {
 
   // Fake デバイスに関するオプション
   app.add_flag("--fake-capture-device", config.fake_capture_device,
-               "Use fake capture devices for audio and video (generates test pattern and silence)");
+               "Use fake capture devices for audio and video (generates test "
+               "pattern and silence)");
 
   // SoraClientContextConfig に関するオプション
   std::string audio_recording_device;
