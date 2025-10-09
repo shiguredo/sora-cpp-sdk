@@ -466,8 +466,12 @@ class SumomoWindows:
                     self._log(f"ERROR: Process exited early with code {poll_result}")
                     stderr_output = ""
                     if self.process.stderr:
-                        stderr_output = self.process.stderr.read()
-                    self._log(f"Stderr: {stderr_output}")
+                        # プロセスが終了しているので read() はブロックしない
+                        try:
+                            stderr_output = self.process.stderr.read()
+                            self._log(f"Stderr: {stderr_output}")
+                        except Exception as e:
+                            self._log(f"WARNING: Failed to read stderr: {e!r}")
                     raise RuntimeError(
                         f"sumomo.exe exited unexpectedly with code {poll_result}\n"
                         f"Stderr: {stderr_output}"
@@ -522,14 +526,20 @@ class SumomoWindows:
             while time.time() - start_time < timeout:
                 attempt += 1
                 # プロセスの状態を確認
-                if self.process.poll() is not None:
-                    error_msg = f"Process exited unexpectedly with code {self.process.returncode}"
+                poll_result = self.process.poll()
+                if poll_result is not None:
+                    # プロセスが終了している場合のみ stderr を読む
+                    error_msg = f"Process exited unexpectedly with code {poll_result}"
                     self._log(f"ERROR: {error_msg}")
                     if self.process.stderr:
-                        stderr_output = self.process.stderr.read()
-                        if stderr_output:
-                            self._log(f"Stderr: {stderr_output}")
-                            error_msg += f"\nStderr output:\n{stderr_output}"
+                        # プロセスが終了しているので read() はブロックしない
+                        try:
+                            stderr_output = self.process.stderr.read()
+                            if stderr_output:
+                                self._log(f"Stderr: {stderr_output}")
+                                error_msg += f"\nStderr output:\n{stderr_output}"
+                        except Exception as e:
+                            self._log(f"WARNING: Failed to read stderr: {e!r}")
                     raise RuntimeError(error_msg)
 
                 # HTTP エンドポイントをチェック
@@ -557,11 +567,9 @@ class SumomoWindows:
             # タイムアウト
             if self.process:
                 self._log(f"ERROR: Timeout after {timeout}s (PID: {self.process.pid})")
-                if self.process.stderr:
-                    self._log("Reading stderr output...")
-                    stderr_output = self.process.stderr.read()
-                    if stderr_output:
-                        self._log(f"Stderr: {stderr_output}")
+                # プロセスがまだ実行中の可能性があるため、stderr は読まない（ブロックする）
+                poll_result = self.process.poll()
+                self._log(f"Process state at timeout: poll={poll_result}")
             self._cleanup()
             raise RuntimeError(f"sumomo process failed to start within {timeout} seconds")
 
