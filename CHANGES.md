@@ -42,6 +42,8 @@
   - @miosakuma
 - [FIX] sumomo で audio_device をデフォルト無効にしていたのを修正する
   - @torikizi
+- [FIX] android の hello アプリについて回転時やスクリーンサイズの変更時に Activity の再起動が行われないようにする
+  - @miosakuma
 
 ## 2025.5.1
 
