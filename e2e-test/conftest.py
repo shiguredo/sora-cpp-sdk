@@ -1,5 +1,6 @@
 import itertools
 import os
+import platform
 import time
 import uuid
 from dataclasses import dataclass
@@ -27,9 +28,15 @@ class SoraSettings:
 def sora_settings():
     """Sora 用の設定を提供するフィクスチャ（各テストごとに新しいchannel_idを生成）"""
     # 環境変数から設定を取得（必須）
-    signaling_url = os.environ.get("TEST_SIGNALING_URL")
-    if not signaling_url:
-        raise ValueError("TEST_SIGNALING_URL environment variable is required")
+    # Windows の場合は TEST2_SIGNALING_URL を使用
+    if platform.system().lower() == "windows":
+        signaling_url = os.environ.get("TEST2_SIGNALING_URL") or os.environ.get("TEST_SIGNALING_URL")
+        if not signaling_url:
+            raise ValueError("TEST2_SIGNALING_URL or TEST_SIGNALING_URL environment variable is required")
+    else:
+        signaling_url = os.environ.get("TEST_SIGNALING_URL")
+        if not signaling_url:
+            raise ValueError("TEST_SIGNALING_URL environment variable is required")
 
     channel_id_prefix = os.environ.get("TEST_CHANNEL_ID_PREFIX")
     if not channel_id_prefix:
