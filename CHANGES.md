@@ -32,6 +32,8 @@
 
 ### misc
 
+- [ADD] GitHub Actions に sumomo を利用した E2E テストを実行する `e2e-test.yml` を追加
+  - @voluntas
 - [ADD] sumomo に `--use-libcamera`, `--use-libcamera-native`, `--libcamera-control` オプションを追加
   - @melpon
 - [ADD] sumomo のエンコーダ/デコーダに指定できるエンジン名として `raspi_v4l2m2m` を追加
