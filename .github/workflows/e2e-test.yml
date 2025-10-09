@@ -2,11 +2,9 @@ name: e2e-test-workflow
 
 on:
   push:
-    paths-ignore:
-      - "doc/**"
-      - "**.md"
-      - "LICENSE"
-      - "NOTICE"
+    paths:
+      - "e2e-test/**"
+      - ".github/workflows/e2e-test.yml"
   workflow_call:
 
 jobs:
