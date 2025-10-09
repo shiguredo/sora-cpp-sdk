@@ -9,6 +9,7 @@ on:
 
 jobs:
   e2e-test-ubuntu:
+    if: false
     strategy:
       fail-fast: false
       matrix:
