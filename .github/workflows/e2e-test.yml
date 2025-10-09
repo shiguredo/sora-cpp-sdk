@@ -11,6 +11,7 @@ on:
 jobs:
   e2e-test-ubuntu:
     if: false
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -97,6 +98,7 @@ jobs:
         working-directory: ./e2e-test
 
   e2e-test-windows:
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
