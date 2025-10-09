@@ -46,20 +46,20 @@ def test_sumomo_windows_collects_stats(sora_settings, port_allocator):
 
         assert isinstance(stats, list)
         assert len(stats) > 0
-        print("✓ Stats is a non-empty list")
+        print("OK: Stats is a non-empty list")
 
         # 取得した統計情報に基本的なフィールドが存在することを確認
         kinds = {entry.get("type") for entry in stats if isinstance(entry, dict)}
         print(f"Stats types: {kinds}")
         assert "inbound-rtp" in kinds or "outbound-rtp" in kinds
-        print("✓ Stats contains RTP entries")
+        print("OK: Stats contains RTP entries")
 
         print("\n=== GETTING DIAGNOSTICS ===")
         diagnostics = client.diagnostics()
         assert diagnostics["process"] is not None
         assert diagnostics["process"]["running"] is True
         assert diagnostics["executable_path"]
-        print("✓ Diagnostics OK")
+        print("OK: Diagnostics OK")
 
         # 結果が安定するように少し待機して追加の統計を確認
         print("\n=== WAITING 2s BEFORE FOLLOW-UP ===")
@@ -70,6 +70,6 @@ def test_sumomo_windows_collects_stats(sora_settings, port_allocator):
         print(f"Follow-up stats: {len(follow_up_stats)} entries")
         assert isinstance(follow_up_stats, list)
         assert len(follow_up_stats) >= len(stats)
-        print("✓ Follow-up stats OK")
+        print("OK: Follow-up stats OK")
 
     print("\n=== TEST COMPLETED SUCCESSFULLY ===")

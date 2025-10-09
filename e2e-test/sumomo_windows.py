@@ -328,7 +328,10 @@ class SumomoWindows:
 
         # メタデータ
         if kwargs.get("metadata"):
-            args.extend(["--metadata", json.dumps(kwargs["metadata"])])
+            metadata_json = json.dumps(kwargs["metadata"])
+            # デバッグ用：metadata の実際の値をログ出力（一時的）
+            # self._log(f"DEBUG: metadata JSON = {metadata_json}")
+            args.extend(["--metadata", metadata_json])
 
         # スポットライト
         if kwargs.get("spotlight") is not None:
