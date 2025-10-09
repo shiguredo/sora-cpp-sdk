@@ -300,10 +300,14 @@ class Sumomo:
                 f"Please build with: python3 run.py build <target>"
             )
 
+        # Windows の場合は .exe 拡張子を考慮
+        system = platform.system().lower()
+        exe_suffix = ".exe" if system == "windows" else ""
+
         available_targets = [
             d.name
             for d in build_dir.iterdir()
-            if d.is_dir() and (d / "release" / "sumomo" / "sumomo").exists()
+            if d.is_dir() and (d / "release" / "sumomo" / f"sumomo{exe_suffix}").exists()
         ]
 
         if not available_targets:
@@ -318,7 +322,6 @@ class Sumomo:
             print(f"Auto-detected sumomo target: {target}")
         else:
             # 複数ビルドがある場合は、プラットフォームに応じて優先順位を決める
-            system = platform.system().lower()
             machine = platform.machine().lower()
 
             # プラットフォームに応じた優先順位リスト
@@ -336,6 +339,8 @@ class Sumomo:
                         "ubuntu-22.04_x86_64",
                         "ubuntu-20.04_x86_64",
                     ]
+            elif system == "windows":
+                preferred = ["windows_x86_64"]
             else:
                 preferred = []
 
@@ -359,7 +364,7 @@ class Sumomo:
         # sumomo のパスを構築
         assert target is not None
         sumomo_path = (
-            project_root / "examples" / "_build" / target / "release" / "sumomo" / "sumomo"
+            project_root / "examples" / "_build" / target / "release" / "sumomo" / f"sumomo{exe_suffix}"
         )
 
         if not sumomo_path.exists():
