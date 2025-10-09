@@ -421,15 +421,23 @@ class SumomoWindows:
 
             # 起動コマンドを表示
             cmd = [self.executable_path] + args
-            # JSON を含む引数を適切に表示するため、各引数を引用符で囲む
-            self._log(f"Command: {self.executable_path}")
-            self._log(f"Arguments count: {len(args)}")
+
+            # 実行コマンドライン全体を表示（デバッグ用）
+            display_cmd_parts = [self.executable_path]
             for i, arg in enumerate(args):
                 # センシティブな情報をマスク
-                display_arg = arg
                 if i > 0 and args[i - 1] in ["--metadata", "--proxy-password"]:
-                    display_arg = "<redacted>"
-                self._log(f"  arg[{i}]: {display_arg}")
+                    display_cmd_parts.append("<redacted>")
+                else:
+                    # スペースを含む引数は引用符で囲む
+                    if " " in arg:
+                        display_cmd_parts.append(f'"{arg}"')
+                    else:
+                        display_cmd_parts.append(arg)
+
+            self._log("Executing command:")
+            self._log(f"  {' '.join(display_cmd_parts)}")
+            self._log(f"Arguments count: {len(args)}")
 
             # プロセスを起動
             self._log("Starting sumomo process...")
