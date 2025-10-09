@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <atomic>
 #include <csignal>
 #include <cstdlib>
 #include <exception>
@@ -20,6 +19,7 @@
 // Boost
 #include <boost/asio/dispatch.hpp>
 #include <boost/asio/error.hpp>
+#include <boost/asio/executor_work_guard.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/address.hpp>
 #include <boost/asio/ip/tcp.hpp>
@@ -458,6 +458,9 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
     config.cpu_adaptation = config_.cpu_adaptation;
     conn_ = sora::SoraSignaling::Create(config);
 
+    boost::asio::executor_work_guard<boost::asio::io_context::executor_type>
+        work_guard(ioc_->get_executor());
+
     // HTTP サーバーの起動（接続前に起動する）
     if (config_.http_port.has_value()) {
       try {
@@ -476,13 +479,9 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
       }
     }
 
-    auto self = shared_from_this();
-    signals_ =
-        std::make_unique<boost::asio::signal_set>(*ioc_, SIGINT, SIGTERM);
-    signals_->async_wait(
-        [self](const boost::system::error_code& ec, int signal) {
-          self->HandleSignal(ec, signal);
-        });
+    boost::asio::signal_set signals(*ioc_, SIGINT, SIGTERM);
+    signals.async_wait(
+        [this](const boost::system::error_code&, int) { conn_->Disconnect(); });
 
     conn_->Connect();
 
@@ -495,13 +494,6 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
     }
 
     ioc_->run();
-
-    // io_context が終了した後にリソースをクリーンアップ
-    ioc_.reset();
-    conn_.reset();
-    audio_track_ = nullptr;
-    video_track_ = nullptr;
-    context_.reset();
   }
 
   void OnSetOffer(std::string offer) override {
@@ -520,7 +512,16 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
   void OnDisconnect(sora::SoraSignalingErrorCode ec,
                     std::string message) override {
     RTC_LOG(LS_INFO) << "OnDisconnect: " << message;
-    FinalizeShutdown();
+    http_listener_.reset();
+    sdl_renderer_.reset();
+    sixel_renderer_.reset();
+    ansi_renderer_.reset();
+    ioc_->stop();
+    ioc_.reset();
+    conn_.reset();
+    audio_track_ = nullptr;
+    video_track_ = nullptr;
+    context_.reset();
   }
   void OnNotify(std::string text) override {
     RTC_LOG(LS_INFO) << "OnNotify: " << text;
@@ -582,64 +583,6 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
   }
 
  private:
-  void HandleSignal(const boost::system::error_code& ec, int signal_number) {
-    if (ec == boost::asio::error::operation_aborted) {
-      return;
-    }
-    if (ec) {
-      RTC_LOG(LS_ERROR) << "Signal wait failed: " << ec.message();
-      return;
-    }
-    RTC_LOG(LS_INFO) << "Received signal " << signal_number
-                     << ", shutting down";
-    RequestShutdown();
-  }
-
-  void RequestShutdown() {
-    if (shutdown_requested_) {
-      return;
-    }
-    shutdown_requested_ = true;
-
-    if (signals_) {
-      boost::system::error_code ec;
-      signals_->cancel(ec);
-      if (ec) {
-        RTC_LOG(LS_WARNING) << "Failed to cancel signal_set: " << ec.message();
-      }
-    }
-
-    if (conn_) {
-      conn_->Disconnect();
-      return;
-    }
-
-    FinalizeShutdown();
-  }
-
-  void FinalizeShutdown() {
-    if (shutdown_finalized_) {
-      return;
-    }
-    shutdown_finalized_ = true;
-
-    if (signals_) {
-      signals_.reset();
-    }
-
-    if (http_listener_) {
-      http_listener_.reset();
-    }
-
-    sdl_renderer_.reset();
-    sixel_renderer_.reset();
-    ansi_renderer_.reset();
-
-    if (ioc_ && !ioc_->stopped()) {
-      ioc_->stop();
-    }
-  }
-
   std::shared_ptr<sora::SoraClientContext> context_;
   SumomoConfig config_;
   webrtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track_;
@@ -647,9 +590,6 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
   webrtc::scoped_refptr<FakeAudioCapturer> fake_audio_capturer_;
   std::shared_ptr<sora::SoraSignaling> conn_;
   std::unique_ptr<boost::asio::io_context> ioc_;
-  std::unique_ptr<boost::asio::signal_set> signals_;
-  std::atomic<bool> shutdown_requested_{false};
-  std::atomic<bool> shutdown_finalized_{false};
   std::unique_ptr<SDLRenderer> sdl_renderer_;
   std::unique_ptr<sora::SixelRenderer> sixel_renderer_;
   std::unique_ptr<sora::AnsiRenderer> ansi_renderer_;
