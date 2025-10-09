@@ -6,6 +6,7 @@ on:
       - "e2e-test/**"
       - ".github/workflows/e2e-test.yml"
   workflow_call:
+  workflow_dispatch:
 
 jobs:
   e2e-test-ubuntu:
