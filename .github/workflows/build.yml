@@ -326,69 +326,8 @@ jobs:
           path: examples/examples_${{ matrix.platform.name }}
         if: matrix.platform.os == 'ubuntu' && matrix.platform.name != 'ubuntu-22.04_armv8'
 
-  create-release:
-    name: Create Release
-    if: contains(github.ref, 'tags/202')
-    needs:
-      - build-windows
-      - build-macos
-      - build-ubuntu
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v5
-      - uses: ./.github/actions/download
-        with:
-          platform: windows_x86_64
-      - uses: ./.github/actions/download
-        with:
-          platform: macos_arm64
-      - uses: ./.github/actions/download
-        with:
-          platform: ios
-      - uses: ./.github/actions/download
-        with:
-          platform: ubuntu-22.04_x86_64
-      - uses: ./.github/actions/download
-        with:
-          platform: ubuntu-24.04_x86_64
-      - uses: ./.github/actions/download
-        with:
-          platform: ubuntu-22.04_armv8
-      - uses: ./.github/actions/download
-        with:
-          platform: ubuntu-24.04_armv8
-      - uses: ./.github/actions/download
-        with:
-          platform: raspberry-pi-os_armv8
-      - uses: ./.github/actions/download
-        with:
-          platform: android
-      - name: Env to output
-        run: |
-          # package_paths.env の内容を空白区切りに変換
-          PACKAGE_PATHS=$(tr '\n' ' ' < package_paths.env)
-          echo "package_paths=${PACKAGE_PATHS}" >> $GITHUB_OUTPUT
-        id: env
-      - name: Release (Prerelease)
-        if: contains(github.ref, 'canary')
-        run: |
-          gh release create "${{ github.ref_name }}" \
-            --prerelease \
-            --title "${{ github.ref_name }}" \
-            ${{ steps.env.outputs.package_paths }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-      - name: Release
-        if: ${{ !contains(github.ref, 'canary') }}
-        run: |
-          gh release create "${{ github.ref_name }}" \
-            --title "${{ github.ref_name }}" \
-            ${{ steps.env.outputs.package_paths }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-
   build-windows-examples:
-    needs: create-release
+    needs: build-windows
     strategy:
       matrix:
         example:
@@ -418,7 +357,7 @@ jobs:
              path: examples/${{ matrix.example }}_windows_x86_64.zip
 
   build-macos-examples:
-    needs: create-release
+    needs: build-macos
     strategy:
       matrix:
         example:
@@ -447,7 +386,7 @@ jobs:
              path: examples/${{ matrix.example }}_macos_arm64.tar.gz
 
   build-ubuntu-examples:
-    needs: create-release
+    needs: build-ubuntu
     strategy:
       fail-fast: false
       matrix:
@@ -509,9 +448,71 @@ jobs:
           name: ${{ matrix.example }}_${{ matrix.platform.name }}.tar.gz
           path: examples/${{ matrix.example }}_${{ matrix.platform.name }}.tar.gz
 
+  create-release:
+    name: Create Release
+    if: contains(github.ref, 'tags/202')
+    needs:
+      - build-windows
+      - build-macos
+      - build-ubuntu
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/download
+        with:
+          platform: windows_x86_64
+      - uses: ./.github/actions/download
+        with:
+          platform: macos_arm64
+      - uses: ./.github/actions/download
+        with:
+          platform: ios
+      - uses: ./.github/actions/download
+        with:
+          platform: ubuntu-22.04_x86_64
+      - uses: ./.github/actions/download
+        with:
+          platform: ubuntu-24.04_x86_64
+      - uses: ./.github/actions/download
+        with:
+          platform: ubuntu-22.04_armv8
+      - uses: ./.github/actions/download
+        with:
+          platform: ubuntu-24.04_armv8
+      - uses: ./.github/actions/download
+        with:
+          platform: raspberry-pi-os_armv8
+      - uses: ./.github/actions/download
+        with:
+          platform: android
+      - name: Env to output
+        run: |
+          # package_paths.env の内容を空白区切りに変換
+          PACKAGE_PATHS=$(tr '\n' ' ' < package_paths.env)
+          echo "package_paths=${PACKAGE_PATHS}" >> $GITHUB_OUTPUT
+        id: env
+      - name: Release (Prerelease)
+        if: contains(github.ref, 'canary')
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --prerelease \
+            --title "${{ github.ref_name }}" \
+            ${{ steps.env.outputs.package_paths }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Release
+        if: ${{ !contains(github.ref, 'canary') }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "${{ github.ref_name }}" \
+            ${{ steps.env.outputs.package_paths }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+
   create-release-example:
       name: Create Release Examples
-      needs: 
+      if: contains(github.ref, 'tags/202')
+      needs:
         - build-windows-examples
         - build-macos-examples
         - build-ubuntu-examples

@@ -32,6 +32,8 @@
 
 ### misc
 
+- [CHANGE] GitHub Actions でリリース時以外でも examples をビルドするように変更する
+  - @voluntas
 - [ADD] sumomo に `--use-libcamera`, `--use-libcamera-native`, `--libcamera-control` オプションを追加
   - @melpon
 - [ADD] sumomo のエンコーダ/デコーダに指定できるエンジン名として `raspi_v4l2m2m` を追加
