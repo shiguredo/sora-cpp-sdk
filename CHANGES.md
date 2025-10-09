@@ -15,6 +15,8 @@
   - CUDA コンパイルオプションに `D_ALLOW_UNSUPPORTED_LIBCPP` を追加する
   - CUDA コンパイルオプションの `cuda-gpu-arch` を `sm_35` から `sm_60` に変更する
     - sm_60 は Pascal 世代の GPU からサポートされている
+    - sm_35 は Kepler 世代の GPU からサポートされているが Kelper は CUDA 10 までのサポートとなるためドロップ
+    - sm_50 は Maxwell 世代の GPU からサポートされているが Maxwell は CUDA 11 までのサポートとなるドロップ
   - @voluntas
 - [CHANGE] enum の `kNvidiaVideoCodecSdk` を `kNvidiaVideoCodec` に変更する
   - @voluntas
