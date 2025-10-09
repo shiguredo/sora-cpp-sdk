@@ -19,7 +19,6 @@
 // Boost
 #include <boost/asio/dispatch.hpp>
 #include <boost/asio/error.hpp>
-#include <boost/asio/executor_work_guard.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/address.hpp>
 #include <boost/asio/ip/tcp.hpp>
@@ -420,9 +419,6 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
     config.degradation_preference = config_.degradation_preference;
     config.cpu_adaptation = config_.cpu_adaptation;
     conn_ = sora::SoraSignaling::Create(config);
-
-    boost::asio::executor_work_guard<boost::asio::io_context::executor_type>
-        work_guard(ioc_->get_executor());
 
     // HTTP サーバーの起動（接続前に起動する）
     if (config_.http_port.has_value()) {
