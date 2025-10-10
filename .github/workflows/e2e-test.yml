@@ -108,7 +108,7 @@ jobs:
     name: E2E Test for ${{ matrix.platform.name }}
     runs-on: ${{ matrix.platform.runs-on }}
     env:
-      TEST_SIGNALING_URL: ${{ secrets.TEST_SIGNALING_URL }}
+      TEST_SIGNALING_URL: ${{ secrets.TEST2_SIGNALING_URL }}
       TEST_CHANNEL_ID_PREFIX: ${{ secrets.TEST_CHANNEL_ID_PREFIX }}
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
     steps:
