@@ -413,13 +413,17 @@ class Sumomo:
 
             # Windows の場合、プロセスが早期終了していないか確認
             if self.process and platform.system().lower() == "windows":
-                if self.process.poll() is not None:
+                poll_result = self.process.poll()
+                if poll_result is not None:
                     # プロセスが終了していたらエラーメッセージを表示
                     stderr_output = ""
-                    if hasattr(self.process, "stderr") and self.process.stderr:
-                        stderr_output = self.process.stderr.read()
+                    if self.process.stderr:
+                        try:
+                            stderr_output = self.process.stderr.read()
+                        except Exception:
+                            pass
                     raise RuntimeError(
-                        f"sumomo.exe exited unexpectedly with code {self.process.returncode}\n"
+                        f"sumomo.exe exited unexpectedly with code {poll_result}\n"
                         f"Stderr: {stderr_output}"
                     )
 
@@ -427,10 +431,8 @@ class Sumomo:
             self._http_client = httpx.Client(timeout=10.0)
 
             return self
-        except Exception as e:
+        except Exception:
             # 例外が発生した場合は必ずクリーンアップ
-            if self.process:
-                print(f"Cleaning up sumomo process (PID: {self.process.pid}) due to exception: {e}")
             self._cleanup()
             raise
 
