@@ -1,75 +1,131 @@
-"""Windows 上で Sumomo を詳細ログ付きで検証する E2E テスト"""
+"""Sumomo の基本的な E2E テスト"""
 
-import platform
 import time
+from typing import Any
 
 import pytest
 
-from sumomo_windows import SumomoWindows
+from sumomo import Sumomo
 
 
-@pytest.mark.skipif(platform.system().lower() != "windows", reason="Windows 以外では実行しません")
-@pytest.mark.timeout(60)  # 1 分でタイムアウト
-def test_sumomo_windows_collects_stats(sora_settings, port_allocator):
-    """SumomoWindows が統計情報と診断情報を取得できるか検証"""
-    print("\n=== TEST START ===")
-    print(f"Platform: {platform.system()}")
-    print(f"Machine: {platform.machine()}")
+def get_outbound_rtp(stats: list[dict[str, Any]], kind: str) -> dict[str, Any] | None:
+    """outbound-rtp 統計情報を取得する"""
+    return next(
+        (stat for stat in stats if stat.get("type") == "outbound-rtp" and stat.get("kind") == kind),
+        None,
+    )
 
-    http_port = next(port_allocator)
-    print(f"Allocated HTTP port: {http_port}")
 
-    print("\n=== CREATING SUMOMO INSTANCE ===")
-    sumomo = SumomoWindows(
+def get_inbound_rtp(stats: list[dict[str, Any]], kind: str) -> dict[str, Any] | None:
+    """inbound-rtp 統計情報を取得する"""
+    return next(
+        (stat for stat in stats if stat.get("type") == "inbound-rtp" and stat.get("kind") == kind),
+        None,
+    )
+
+
+def get_codec(stats: list[dict[str, Any]], mime_type: str) -> dict[str, Any] | None:
+    """codec 統計情報を取得する"""
+    return next(
+        (
+            stat
+            for stat in stats
+            if stat.get("type") == "codec" and mime_type in stat.get("mimeType", "")
+        ),
+        None,
+    )
+
+
+def get_transport(stats: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """transport 統計情報を取得する"""
+    return next((stat for stat in stats if stat.get("type") == "transport"), None)
+
+
+@pytest.mark.parametrize("video_codec_type", ["VP8", "VP9", "AV1"])
+def test_sumomo_sendonly_recvonly(sora_settings, port_allocator, video_codec_type):
+    """sendonly と recvonly のペアでの統合テスト"""
+    with Sumomo(
         signaling_url=sora_settings.signaling_url,
         channel_id=sora_settings.channel_id,
         role="sendonly",
         metadata=sora_settings.metadata,
-        http_port=http_port,
-        http_host="127.0.0.1",
-        video=True,
+        http_port=next(port_allocator),
         audio=True,
-        log_level="verbose",
-    )
+        video=True,
+        audio_codec_type="OPUS",
+        video_codec_type=video_codec_type,
+    ) as s:
+        with Sumomo(
+            signaling_url=sora_settings.signaling_url,
+            channel_id=sora_settings.channel_id,
+            role="recvonly",
+            metadata=sora_settings.metadata,
+            http_port=next(port_allocator),
+            audio=True,
+            video=True,
+        ) as r:
+            time.sleep(3)
 
-    print("\n=== ENTERING CONTEXT ===")
-    with sumomo as client:
-        print("\n=== CONTEXT ENTERED ===")
-        print(f"Process PID: {client.process.pid if client.process else 'None'}")
-        print(f"HTTP port: {client.http_port}")
-        print(f"Executable: {client.executable_path}")
+            # Sender の統計情報を確認
+            sender_stats: list[dict[str, Any]] = s.get_stats()
+            assert sender_stats is not None
+            assert isinstance(sender_stats, list)
+            assert len(sender_stats) > 0
 
-        print("\n=== WAITING FOR STATS ===")
-        # 安定するまでリトライしながら統計情報を取得
-        stats = client.wait_for_stats(attempts=15, delay=2.0)
-        print(f"\n=== STATS RECEIVED: {len(stats)} entries ===")
+            # outbound-rtp を確認
+            sender_audio_outbound = get_outbound_rtp(sender_stats, "audio")
+            assert sender_audio_outbound is not None
+            assert sender_audio_outbound["packetsSent"] > 0
+            assert sender_audio_outbound["bytesSent"] > 0
 
-        assert isinstance(stats, list)
-        assert len(stats) > 0
-        print("OK: Stats is a non-empty list")
+            sender_video_outbound = get_outbound_rtp(sender_stats, "video")
+            assert sender_video_outbound is not None
+            assert sender_video_outbound["packetsSent"] > 0
+            assert sender_video_outbound["bytesSent"] > 0
 
-        # 取得した統計情報に基本的なフィールドが存在することを確認
-        kinds = {entry.get("type") for entry in stats if isinstance(entry, dict)}
-        print(f"Stats types: {kinds}")
-        assert "inbound-rtp" in kinds or "outbound-rtp" in kinds
-        print("OK: Stats contains RTP entries")
+            # audio codec を確認
+            sender_audio_codec = get_codec(sender_stats, "audio/opus")
+            assert sender_audio_codec is not None
+            assert sender_audio_codec["clockRate"] == 48000
+            assert sender_audio_outbound["codecId"] == sender_audio_codec["id"]
 
-        print("\n=== GETTING DIAGNOSTICS ===")
-        diagnostics = client.diagnostics()
-        assert diagnostics["process"] is not None
-        assert diagnostics["process"]["running"] is True
-        assert diagnostics["executable_path"]
-        print("OK: Diagnostics OK")
+            # video codec を確認
+            sender_video_codec = get_codec(sender_stats, f"video/{video_codec_type}")
+            assert sender_video_codec is not None
+            assert sender_video_codec["clockRate"] == 90000
+            assert sender_video_codec["mimeType"] == f"video/{video_codec_type}"
+            assert sender_video_outbound["codecId"] == sender_video_codec["id"]
 
-        # 結果が安定するように少し待機して追加の統計を確認
-        print("\n=== WAITING 2s BEFORE FOLLOW-UP ===")
-        time.sleep(2)
+            # Receiver の統計情報を確認
+            receiver_stats: list[dict[str, Any]] = r.get_stats()
+            assert receiver_stats is not None
+            assert isinstance(receiver_stats, list)
+            assert len(receiver_stats) > 0
 
-        print("\n=== GETTING FOLLOW-UP STATS ===")
-        follow_up_stats = client.get_stats()
-        print(f"Follow-up stats: {len(follow_up_stats)} entries")
-        assert isinstance(follow_up_stats, list)
-        assert len(follow_up_stats) >= len(stats)
-        print("OK: Follow-up stats OK")
+            # inbound-rtp を確認
+            receiver_audio_inbound = get_inbound_rtp(receiver_stats, "audio")
+            assert receiver_audio_inbound is not None
+            assert receiver_audio_inbound["packetsReceived"] > 0
+            assert receiver_audio_inbound["bytesReceived"] > 0
 
-    print("\n=== TEST COMPLETED SUCCESSFULLY ===")
+            receiver_video_inbound = get_inbound_rtp(receiver_stats, "video")
+            assert receiver_video_inbound is not None
+            assert receiver_video_inbound["packetsReceived"] > 0
+            assert receiver_video_inbound["bytesReceived"] > 0
+
+            # audio codec を確認
+            receiver_audio_codec = get_codec(receiver_stats, "audio/opus")
+            assert receiver_audio_codec is not None
+
+            # video codec を確認
+            receiver_video_codec = get_codec(receiver_stats, f"video/{video_codec_type}")
+            assert receiver_video_codec is not None
+            assert receiver_video_codec["mimeType"] == f"video/{video_codec_type}"
+
+            # transport を確認
+            sender_transport = get_transport(sender_stats)
+            receiver_transport = get_transport(receiver_stats)
+            assert sender_transport is not None
+            assert receiver_transport is not None
+            assert sender_transport["dtlsState"] == "connected"
+            assert receiver_transport["dtlsState"] == "connected"
