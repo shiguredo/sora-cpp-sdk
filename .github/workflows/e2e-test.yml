@@ -16,13 +16,26 @@ jobs:
       matrix:
         platform:
           - name: ubuntu-22.04_x86_64
+            platform-name: ubuntu-22.04_x86_64
             runs-on: ubuntu-22.04
           - name: ubuntu-24.04_x86_64
+            platform-name: ubuntu-24.04_x86_64
             runs-on: ubuntu-24.04
           - name: macos_arm64
+            platform-name: macos_arm64
             runs-on: macos-14
           - name: windows_x86_64
+            platform-name: windows_x86_64
             runs-on: windows-2025
+          # Self-hosted runner for Apple Video Toolbox
+          - name: apple_video_toolbox
+            platform-name: macos_arm64
+            runs-on:
+              group: Self
+              labels: [self-hosted, macOS, ARM64, Apple-M2-Pro]
+            test-target: test_sumomo_apple_video_toolbox.py
+            env-vars: |
+              APPLE_VIDEO_TOOLBOX=true
     name: E2E Test for ${{ matrix.platform.name }}
     runs-on: ${{ matrix.platform.runs-on }}
     env:
@@ -31,6 +44,22 @@ jobs:
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
     steps:
       - uses: actions/checkout@v5
+
+      # Homebrew のセットアップ (self-hosted macOS ランナー用)
+      - name: Setup Homebrew
+        if: ${{ runner.environment == 'self-hosted' && startsWith(matrix.platform.platform-name, 'macos') }}
+        uses: Homebrew/actions/setup-homebrew@master
+
+      # GitHub CLI のインストール (self-hosted macOS ランナー用)
+      - name: Install GitHub CLI
+        if: ${{ runner.environment == 'self-hosted' && startsWith(matrix.platform.platform-name, 'macos') }}
+        run: |
+          if ! command -v gh &> /dev/null; then
+            echo "gh コマンドが見つかりません。インストールします。"
+            brew install gh
+          else
+            echo "gh コマンドは既にインストールされています。"
+          fi
 
       # UV のセットアップ
       - uses: astral-sh/setup-uv@v7
@@ -47,14 +76,24 @@ jobs:
           # OpenGL
           sudo apt-get install -y libgl-dev
 
+      # 環境変数の設定 (HWA テスト用)
+      - name: Set environment variables
+        if: matrix.platform.env-vars
+        run: |
+          echo "${{ matrix.platform.env-vars }}" | while read line; do
+            if [ -n "$line" ]; then
+              echo "$line" >> $GITHUB_ENV
+            fi
+          done
+
       - name: Download and setup sumomo binary
         uses: ./.github/actions/download-sumomo
         with:
-          platform-name: ${{ matrix.platform.name }}
+          platform-name: ${{ matrix.platform.platform-name }}
           branch-name: ${{ github.ref_name }}
 
       - name: Run E2E tests
         run: |
           # テストを実行（最初の失敗で停止、詳細ログ出力）
-          uv run pytest -v -x test_sumomo_basic.py
+          uv run pytest -v -x ${{ matrix.platform.test-target || 'test_sumomo_basic.py' }}
         working-directory: ./e2e-test
