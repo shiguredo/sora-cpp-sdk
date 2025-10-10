@@ -668,7 +668,9 @@ class Sumomo:
 
                 # HTTP エンドポイントをチェック
                 try:
-                    url = f"http://{self.http_host}:{http_port}/stats"
+                    # 0.0.0.0 でバインドしている場合は localhost で接続
+                    connect_host = "localhost" if self.http_host == "0.0.0.0" else self.http_host
+                    url = f"http://{connect_host}:{http_port}/stats"
                     response = client.get(url, timeout=5)
                     if response.status_code == 200:
                         print(f"Sumomo started successfully after {time.time() - start_time:.1f}s")
@@ -769,7 +771,9 @@ class Sumomo:
                 )
 
         try:
-            response = self._http_client.get(f"http://{self.http_host}:{self.http_port}/stats")
+            # 0.0.0.0 でバインドしている場合は localhost で接続
+            connect_host = "localhost" if self.http_host == "0.0.0.0" else self.http_host
+            response = self._http_client.get(f"http://{connect_host}:{self.http_port}/stats")
             response.raise_for_status()
             return response.json()
         except Exception as e:
