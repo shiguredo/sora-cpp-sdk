@@ -14,7 +14,7 @@ from typing import Any, Iterable, Literal
 import httpx
 
 
-class SumomoWindows:
+class SumomoDebugWindows:
     """Windows 調査を支援するための Sumomo 管理クラス"""
 
     def __init__(

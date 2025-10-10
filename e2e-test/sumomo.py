@@ -64,7 +64,6 @@ class Sumomo:
         ca_cert: str | None = None,  # PEM ファイルパス
         # HTTP サーバー設定
         http_port: int | None = None,
-        http_host: str = "127.0.0.1",
         # パフォーマンス設定
         degradation_preference: Literal[
             "disabled", "maintain_framerate", "maintain_resolution", "balanced"
@@ -215,7 +214,7 @@ class Sumomo:
         self.executable_path = self._get_sumomo_executable_path()
         self.process: subprocess.Popen[Any] | None = None
         self.http_port = http_port if http_port is not None else 0
-        self.http_host = http_host
+        self.http_host = "127.0.0.1"
         # デフォルトの初期待機時間を設定
         self.initial_wait = initial_wait if initial_wait is not None else 2
 
@@ -261,7 +260,6 @@ class Sumomo:
             "client_key": client_key,
             "ca_cert": ca_cert,
             "http_port": http_port,
-            "http_host": http_host,
             "degradation_preference": degradation_preference,
             "cpu_adaptation": cpu_adaptation,
             "use_libcamera": use_libcamera,
@@ -582,8 +580,8 @@ class Sumomo:
         # HTTP サーバー設定
         if kwargs.get("http_port") is not None:
             args.extend(["--http-port", str(kwargs["http_port"])])
-        if kwargs.get("http_host"):
-            args.extend(["--http-host", kwargs["http_host"]])
+        # http-host は 127.0.0.1 固定
+        args.extend(["--http-host", "127.0.0.1"])
 
         # パフォーマンス設定
         if kwargs.get("degradation_preference"):
@@ -673,9 +671,8 @@ class Sumomo:
 
                 # HTTP エンドポイントをチェック
                 try:
-                    # 0.0.0.0 でバインドしている場合は localhost で接続
-                    connect_host = "localhost" if self.http_host == "0.0.0.0" else self.http_host
-                    url = f"http://{connect_host}:{http_port}/stats"
+                    # http_host は 127.0.0.1 固定
+                    url = f"http://{self.http_host}:{http_port}/stats"
                     response = client.get(url, timeout=5)
                     if response.status_code == 200:
                         elapsed = time.time() - start_time
@@ -825,9 +822,8 @@ class Sumomo:
                 )
 
         try:
-            # 0.0.0.0 でバインドしている場合は localhost で接続
-            connect_host = "localhost" if self.http_host == "0.0.0.0" else self.http_host
-            response = self._http_client.get(f"http://{connect_host}:{self.http_port}/stats")
+            # http_host は 127.0.0.1 固定
+            response = self._http_client.get(f"http://{self.http_host}:{self.http_port}/stats")
             response.raise_for_status()
             return response.json()
         except Exception as e:
