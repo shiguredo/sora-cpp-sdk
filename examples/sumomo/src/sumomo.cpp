@@ -520,11 +520,6 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
     sixel_renderer_.reset();
     ansi_renderer_.reset();
     ioc_->stop();
-    ioc_.reset();
-    conn_.reset();
-    audio_track_ = nullptr;
-    video_track_ = nullptr;
-    context_.reset();
   }
   void OnNotify(std::string text) override {
     RTC_LOG(LS_INFO) << "OnNotify: " << text;
