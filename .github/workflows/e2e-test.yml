@@ -9,8 +9,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  e2e-test-ubuntu:
-    if: false
+  e2e-test:
     timeout-minutes: 5
     strategy:
       fail-fast: false
@@ -20,89 +19,6 @@ jobs:
             runs-on: ubuntu-22.04
           - name: ubuntu-24.04_x86_64
             runs-on: ubuntu-24.04
-    name: E2E Test for ${{ matrix.platform.name }}
-    runs-on: ${{ matrix.platform.runs-on }}
-    env:
-      TEST_SIGNALING_URL: ${{ secrets.TEST_SIGNALING_URL }}
-      TEST_CHANNEL_ID_PREFIX: ${{ secrets.TEST_CHANNEL_ID_PREFIX }}
-      TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
-    steps:
-      - uses: actions/checkout@v5
-
-      # UV のセットアップ
-      - uses: astral-sh/setup-uv@v7
-      - run: uv sync
-        working-directory: ./e2e-test
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          # X11
-          sudo apt-get install -y libx11-dev libxext-dev
-          # OpenGL
-          sudo apt-get install -y libgl-dev
-
-      - name: Download sumomo artifact
-        run: |
-          # 同一ブランチの最新の成功したビルドワークフローの実行を取得
-          RUN_ID=$(gh run list --workflow=build.yml --branch=${{ github.ref_name }} --status=success --limit=1 --json databaseId --jq '.[0].databaseId')
-
-          if [ -n "$RUN_ID" ]; then
-            echo "ブランチ ${{ github.ref_name }} の成功したビルドが見つかりました: $RUN_ID"
-            # アーティファクトをダウンロード
-            gh run download $RUN_ID --name examples_${{ matrix.platform.name }} --dir ./sumomo_binary
-          else
-            echo "ブランチ ${{ github.ref_name }} の成功したビルドが見つかりません"
-            echo "VERSION ファイルから release バージョンを取得してダウンロードします"
-
-            # VERSION ファイルからバージョンを取得
-            VERSION=$(cat VERSION | head -n1)
-            echo "VERSION: $VERSION"
-
-            # リリースから sumomo バイナリをダウンロード
-            ARCHIVE_NAME="sumomo_${{ matrix.platform.name }}.tar.gz"
-            echo "リリース $VERSION から $ARCHIVE_NAME をダウンロードします"
-
-            # リリースアセットをダウンロード
-            gh release download "$VERSION" --pattern "$ARCHIVE_NAME"
-
-            # アーカイブを展開
-            mkdir -p sumomo_binary
-            tar -xzf "$ARCHIVE_NAME" -C sumomo_binary --strip-components=1
-
-            # ダウンロードしたアーカイブを削除
-            rm "$ARCHIVE_NAME"
-          fi
-        env:
-          GH_TOKEN: ${{ github.token }}
-
-      - name: Setup sumomo binary
-        run: |
-          # ダウンロードしたバイナリを確認
-          ls -la sumomo_binary/
-
-          # sumomo.py が期待するディレクトリ構造を作成
-          mkdir -p examples/_build/${{ matrix.platform.name }}/release/sumomo/
-
-          # sumomo バイナリを期待される場所に配置
-          cp sumomo_binary/sumomo examples/_build/${{ matrix.platform.name }}/release/sumomo/
-          chmod +x examples/_build/${{ matrix.platform.name }}/release/sumomo/sumomo
-
-          # パスを確認
-          ls -la examples/_build/${{ matrix.platform.name }}/release/sumomo/sumomo
-
-      - name: Run E2E tests
-        run: |
-          # テストを実行（最初の失敗で停止、詳細ログ出力）
-          uv run pytest -v -s -x test_sumomo_basic.py
-        working-directory: ./e2e-test
-
-  e2e-test-windows:
-    timeout-minutes: 5
-    strategy:
-      fail-fast: false
-      matrix:
-        platform:
           - name: windows_x86_64
             runs-on: windows-2025
     name: E2E Test for ${{ matrix.platform.name }}
@@ -119,56 +35,21 @@ jobs:
       - run: uv sync
         working-directory: ./e2e-test
 
-      - name: Download sumomo artifact
-        shell: bash
+      - name: Install system dependencies
+        # https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#runner-context
+        if: runner.os == 'Linux'
         run: |
-          # 同一ブランチの最新の成功したビルドワークフローの実行を取得
-          RUN_ID=$(gh run list --workflow=build.yml --branch=${{ github.ref_name }} --status=success --limit=1 --json databaseId --jq '.[0].databaseId')
+          sudo apt-get update
+          # X11
+          sudo apt-get install -y libx11-dev libxext-dev
+          # OpenGL
+          sudo apt-get install -y libgl-dev
 
-          if [ -n "$RUN_ID" ]; then
-            echo "ブランチ ${{ github.ref_name }} の成功したビルドが見つかりました: $RUN_ID"
-            # アーティファクトをダウンロード
-            gh run download $RUN_ID --name examples_${{ matrix.platform.name }} --dir ./sumomo_binary
-          else
-            echo "ブランチ ${{ github.ref_name }} の成功したビルドが見つかりません"
-            echo "VERSION ファイルから release バージョンを取得してダウンロードします"
-
-            # VERSION ファイルからバージョンを取得
-            VERSION=$(cat VERSION | head -n1)
-            echo "VERSION: $VERSION"
-
-            # リリースから sumomo バイナリをダウンロード
-            ARCHIVE_NAME="sumomo_${{ matrix.platform.name }}.zip"
-            echo "リリース $VERSION から $ARCHIVE_NAME をダウンロードします"
-
-            # リリースアセットをダウンロード
-            gh release download "$VERSION" --pattern "$ARCHIVE_NAME"
-
-            # アーカイブを展開
-            mkdir -p sumomo_binary
-            unzip -q "$ARCHIVE_NAME" -d .
-            mv "sumomo_${{ matrix.platform.name }}"/* sumomo_binary/
-
-            # ダウンロードしたアーカイブを削除
-            rm "$ARCHIVE_NAME"
-          fi
-        env:
-          GH_TOKEN: ${{ github.token }}
-
-      - name: Setup sumomo binary
-        shell: bash
-        run: |
-          # ダウンロードしたバイナリを確認
-          ls -la sumomo_binary/
-
-          # sumomo.py が期待するディレクトリ構造を作成
-          mkdir -p examples/_build/${{ matrix.platform.name }}/release/sumomo/
-
-          # sumomo バイナリを期待される場所に配置
-          cp sumomo_binary/sumomo.exe examples/_build/${{ matrix.platform.name }}/release/sumomo/
-
-          # パスを確認
-          ls -la examples/_build/${{ matrix.platform.name }}/release/sumomo/sumomo.exe
+      - name: Download and setup sumomo binary
+        uses: ./.github/actions/download-sumomo
+        with:
+          platform-name: ${{ matrix.platform.name }}
+          branch-name: ${{ github.ref_name }}
 
       - name: Run E2E tests
         run: |
