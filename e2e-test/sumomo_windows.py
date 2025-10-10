@@ -84,9 +84,12 @@ class SumomoWindows:
         initial_wait: int | None = None,
         # Windows 調査用
         log_interval: float = 1.0,
+        # stdout/stderr のキャプチャを有効化
+        enable_capture: bool = False,
     ) -> None:
         self._log_prefix = "[SumomoWindows]"
         self._platform = platform.system().lower()
+        self._enable_capture = enable_capture
         self._log(f"Detected platform: {self._platform}")
 
         if self._platform != "windows":
@@ -458,32 +461,42 @@ class SumomoWindows:
             # プロセスを起動
             self._log("Starting sumomo process...")
             try:
-                self.process = subprocess.Popen(
-                    cmd,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True,
-                )
-                self._log(f"Process started with PID: {self.process.pid}")
-
-                # バックグラウンドスレッドで stdout/stderr をリアルタイムで読み取る
-                if self.process.stdout:
-                    self._stdout_thread = threading.Thread(
-                        target=self._read_stream,
-                        args=(self.process.stdout, self._stdout_lines, "STDOUT"),
-                        daemon=True
+                if self._enable_capture:
+                    # キャプチャ有効時: stdout/stderr をキャプチャ
+                    self.process = subprocess.Popen(
+                        cmd,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        text=True,
                     )
-                    self._stdout_thread.start()
-                    self._log("Started stdout reader thread")
+                    self._log(f"Process started with PID: {self.process.pid} (capture enabled)")
 
-                if self.process.stderr:
-                    self._stderr_thread = threading.Thread(
-                        target=self._read_stream,
-                        args=(self.process.stderr, self._stderr_lines, "STDERR"),
-                        daemon=True
+                    # バックグラウンドスレッドで stdout/stderr をリアルタイムで読み取る
+                    if self.process.stdout:
+                        self._stdout_thread = threading.Thread(
+                            target=self._read_stream,
+                            args=(self.process.stdout, self._stdout_lines, "STDOUT"),
+                            daemon=True
+                        )
+                        self._stdout_thread.start()
+                        self._log("Started stdout reader thread")
+
+                    if self.process.stderr:
+                        self._stderr_thread = threading.Thread(
+                            target=self._read_stream,
+                            args=(self.process.stderr, self._stderr_lines, "STDERR"),
+                            daemon=True
+                        )
+                        self._stderr_thread.start()
+                        self._log("Started stderr reader thread")
+                else:
+                    # キャプチャ無効時: stdout/stderr を破棄
+                    self.process = subprocess.Popen(
+                        cmd,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
                     )
-                    self._stderr_thread.start()
-                    self._log("Started stderr reader thread")
+                    self._log(f"Process started with PID: {self.process.pid} (capture disabled)")
             except FileNotFoundError:
                 self._log(f"ERROR: Executable not found at {self.executable_path}")
                 raise RuntimeError(
