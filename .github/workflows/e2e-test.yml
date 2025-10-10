@@ -94,9 +94,9 @@ jobs:
       - run: uv sync
         working-directory: ./e2e-test
 
+      # ランタイム依存関係のインストール (GitHub-hosted Ubuntu のみ)
       - name: Install system dependencies
-        # https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#runner-context
-        if: runner.os == 'Linux'
+        if: ${{ runner.environment != 'self-hosted' && startsWith(matrix.platform.platform-name, 'ubuntu') }}
         run: |
           sudo apt-get update
           # X11
