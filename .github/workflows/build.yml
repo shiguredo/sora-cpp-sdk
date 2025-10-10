@@ -100,7 +100,6 @@ jobs:
           path: examples/examples_${{ matrix.name }}
 
   build-macos:
-    if: false
     strategy:
       fail-fast: false
       matrix:
@@ -159,7 +158,6 @@ jobs:
         if: matrix.name == 'macos_arm64'
 
   build-ubuntu:
-    if: false
     strategy:
       fail-fast: false
       matrix:
