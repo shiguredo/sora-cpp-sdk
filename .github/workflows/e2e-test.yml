@@ -36,6 +36,15 @@ jobs:
             test-target: test_sumomo_apple_video_toolbox.py
             env-vars: |
               APPLE_VIDEO_TOOLBOX=true
+          # Self-hosted runner for NVIDIA Video Codec
+          - name: nvidia_video_codec
+            platform-name: ubuntu-24.04_x86_64
+            runs-on:
+              group: Self
+              labels: [self-hosted, linux, x64, NVIDIA-Video-Codec-SDK]
+            test-target: test_sumomo_nvidia_video_codec.py
+            env-vars: |
+              NVIDIA_VIDEO_CODEC=true
     name: E2E Test for ${{ matrix.platform.name }}
     runs-on: ${{ matrix.platform.runs-on }}
     env:

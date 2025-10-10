@@ -1,0 +1,442 @@
+"""Sumomo の NVIDIA Video Codec E2E テスト
+
+NVIDIA Video Codec SDK を使用した H264/H265/AV1 のテスト
+"""
+
+import os
+import time
+from typing import Any
+
+import pytest
+
+from sumomo import Sumomo
+
+
+# NVIDIA Video Codec 環境が有効でない場合はスキップ
+pytestmark = pytest.mark.skipif(
+    not os.environ.get("NVIDIA_VIDEO_CODEC"),
+    reason="NVIDIA_VIDEO_CODEC not set in environment",
+)
+
+
+def get_outbound_rtp(stats: list[dict[str, Any]], kind: str) -> dict[str, Any] | None:
+    """outbound-rtp 統計情報を取得する"""
+    return next(
+        (stat for stat in stats if stat.get("type") == "outbound-rtp" and stat.get("kind") == kind),
+        None,
+    )
+
+
+def get_inbound_rtp(stats: list[dict[str, Any]], kind: str) -> dict[str, Any] | None:
+    """inbound-rtp 統計情報を取得する"""
+    return next(
+        (stat for stat in stats if stat.get("type") == "inbound-rtp" and stat.get("kind") == kind),
+        None,
+    )
+
+
+def get_codec(stats: list[dict[str, Any]], mime_type: str) -> dict[str, Any] | None:
+    """codec 統計情報を取得する"""
+    return next(
+        (
+            stat
+            for stat in stats
+            if stat.get("type") == "codec" and mime_type in stat.get("mimeType", "")
+        ),
+        None,
+    )
+
+
+def get_transport(stats: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """transport 統計情報を取得する"""
+    return next((stat for stat in stats if stat.get("type") == "transport"), None)
+
+
+@pytest.mark.parametrize(
+    "video_codec_type",
+    [
+        "AV1",
+        "H264",
+        "H265",
+    ],
+)
+def test_connection_stats(sora_settings, free_port, video_codec_type):
+    """H264/H265/AV1 での接続時の統計情報を確認（NVIDIA Video Codec 使用）"""
+    expected_mime_type = f"video/{video_codec_type}"
+
+    # エンコーダー設定を準備
+    encoder_params = {}
+    if video_codec_type == "AV1":
+        encoder_params["av1_encoder"] = "nvidia_video_codec"
+    elif video_codec_type == "H264":
+        encoder_params["h264_encoder"] = "nvidia_video_codec"
+    elif video_codec_type == "H265":
+        encoder_params["h265_encoder"] = "nvidia_video_codec"
+
+    with Sumomo(
+        signaling_url=sora_settings.signaling_url,
+        channel_id=sora_settings.channel_id,
+        role="sendonly",
+        metadata=sora_settings.metadata,
+        http_port=free_port,
+        audio=True,
+        video=True,
+        video_codec_type=video_codec_type,
+        initial_wait=10,
+        **encoder_params,
+    ) as s:
+        time.sleep(3)
+
+        stats = s.get_stats()
+        assert stats is not None
+        assert isinstance(stats, list)
+        assert len(stats) > 0
+
+        # 統計タイプの収集
+        stat_types = {stat.get("type") for stat in stats if "type" in stat}
+
+        # 重要な統計タイプが存在することを確認
+        expected_types = {
+            "peer-connection",
+            "transport",
+            "codec",
+            "outbound-rtp",
+        }
+        for expected_type in expected_types:
+            assert expected_type in stat_types
+
+        # 指定されたビデオコーデックが実際に使われていることを確認
+        codec_mime_types = {
+            stat.get("mimeType")
+            for stat in stats
+            if stat.get("type") == "codec" and "mimeType" in stat
+        }
+        assert expected_mime_type in codec_mime_types
+
+        # outbound-rtp の詳細をチェック
+        video_outbound = get_outbound_rtp(stats, "video")
+        assert video_outbound is not None
+        assert video_outbound["packetsSent"] > 0
+        assert video_outbound["bytesSent"] > 0
+        assert "framesEncoded" in video_outbound
+        assert video_outbound["framesEncoded"] > 0
+        assert "frameWidth" in video_outbound
+        assert "frameHeight" in video_outbound
+
+        # エンコーダー実装が NvCodec であることを確認
+        assert "encoderImplementation" in video_outbound
+        assert video_outbound["encoderImplementation"] == "NvCodec"
+
+        audio_outbound = get_outbound_rtp(stats, "audio")
+        assert audio_outbound is not None
+        assert audio_outbound["packetsSent"] > 0
+        assert audio_outbound["bytesSent"] > 0
+
+        # codec を確認
+        video_codec = get_codec(stats, expected_mime_type)
+        assert video_codec is not None
+        assert video_codec["clockRate"] == 90000
+
+        audio_codec = get_codec(stats, "audio/opus")
+        assert audio_codec is not None
+        assert audio_codec["clockRate"] == 48000
+
+        # transport を確認
+        transport = get_transport(stats)
+        assert transport is not None
+        assert transport["dtlsState"] == "connected"
+
+
+@pytest.mark.parametrize(
+    "video_codec_type,expected_encoder_implementation",
+    [
+        ("AV1", "SimulcastEncoderAdapter (NvCodec, NvCodec, NvCodec)"),
+        ("H264", "SimulcastEncoderAdapter (NvCodec, NvCodec, NvCodec)"),
+        ("H265", "SimulcastEncoderAdapter (NvCodec, NvCodec, NvCodec)"),
+    ],
+)
+def test_simulcast(sora_settings, free_port, video_codec_type, expected_encoder_implementation):
+    """サイマルキャスト接続時の統計情報を確認（NVIDIA Video Codec 使用）"""
+    # エンコーダー設定を準備
+    encoder_params = {}
+    if video_codec_type == "AV1":
+        encoder_params["av1_encoder"] = "nvidia_video_codec"
+    elif video_codec_type == "H264":
+        encoder_params["h264_encoder"] = "nvidia_video_codec"
+    elif video_codec_type == "H265":
+        encoder_params["h265_encoder"] = "nvidia_video_codec"
+
+    with Sumomo(
+        signaling_url=sora_settings.signaling_url,
+        channel_id=sora_settings.channel_id,
+        role="sendonly",
+        metadata=sora_settings.metadata,
+        http_port=free_port,
+        audio=True,
+        video=True,
+        video_codec_type=video_codec_type,
+        simulcast=True,
+        resolution="960x540",  # 540p の解像度
+        video_bit_rate=3000,  # ビットレート 3000
+        initial_wait=10,
+        **encoder_params,
+    ) as s:
+        time.sleep(3)
+
+        stats = s.get_stats()
+        assert stats is not None
+        assert isinstance(stats, list)
+        assert len(stats) > 0
+
+        # 統計タイプの収集
+        stat_types = {stat.get("type") for stat in stats if "type" in stat}
+
+        # 重要な統計タイプが存在することを確認
+        expected_types = {
+            "peer-connection",
+            "transport",
+            "codec",
+            "outbound-rtp",
+        }
+        for expected_type in expected_types:
+            assert expected_type in stat_types
+
+        # audio codec を確認
+        audio_codec_stats = [
+            stat
+            for stat in stats
+            if stat.get("type") == "codec" and stat.get("mimeType") == "audio/opus"
+        ]
+        assert len(audio_codec_stats) == 1
+
+        audio_codec = audio_codec_stats[0]
+        assert audio_codec["clockRate"] == 48000
+
+        # video codec を確認
+        expected_mime_type = f"video/{video_codec_type}"
+        video_codec_stats = [
+            stat
+            for stat in stats
+            if stat.get("type") == "codec" and stat.get("mimeType") == expected_mime_type
+        ]
+        assert len(video_codec_stats) == 1
+
+        video_codec = video_codec_stats[0]
+        assert video_codec["clockRate"] == 90000
+
+        # audio の outbound-rtp を確認
+        audio_outbound_rtp_stats = [
+            stat
+            for stat in stats
+            if stat.get("type") == "outbound-rtp" and stat.get("kind") == "audio"
+        ]
+        assert len(audio_outbound_rtp_stats) == 1
+
+        audio_outbound_rtp = audio_outbound_rtp_stats[0]
+        assert audio_outbound_rtp["packetsSent"] > 0
+        assert audio_outbound_rtp["bytesSent"] > 0
+
+        # simulcast では video の outbound-rtp が 3 つ存在することを確認
+        video_outbound_rtp_stats = [
+            stat
+            for stat in stats
+            if stat.get("type") == "outbound-rtp" and stat.get("kind") == "video"
+        ]
+        assert len(video_outbound_rtp_stats) == 3
+
+        # rid ごとに分類
+        video_outbound_rtp_by_rid = {}
+        for video_outbound_rtp in video_outbound_rtp_stats:
+            rid = video_outbound_rtp.get("rid")
+            assert rid in ["r0", "r1", "r2"], f"Unexpected rid: {rid}"
+            video_outbound_rtp_by_rid[rid] = video_outbound_rtp
+
+        # 全ての rid が存在することを確認
+        assert set(video_outbound_rtp_by_rid.keys()) == {"r0", "r1", "r2"}
+
+        # r0 (低解像度) の検証
+        outbound_rtp_r0 = video_outbound_rtp_by_rid["r0"]
+        assert outbound_rtp_r0["rid"] == "r0"
+        assert outbound_rtp_r0["packetsSent"] > 0
+        assert outbound_rtp_r0["bytesSent"] > 0
+        assert outbound_rtp_r0["framesEncoded"] > 0
+        assert outbound_rtp_r0["frameWidth"] == 240
+        assert outbound_rtp_r0["frameHeight"] == 128
+
+        # encoder implementation を確認
+        assert "encoderImplementation" in outbound_rtp_r0
+        assert "SimulcastEncoderAdapter" in outbound_rtp_r0["encoderImplementation"]
+        assert "NvCodec" in outbound_rtp_r0["encoderImplementation"]
+
+        # r1 (中解像度) の検証
+        outbound_rtp_r1 = video_outbound_rtp_by_rid["r1"]
+        assert outbound_rtp_r1["rid"] == "r1"
+        assert outbound_rtp_r1["packetsSent"] > 0
+        assert outbound_rtp_r1["bytesSent"] > 0
+        assert outbound_rtp_r1["framesEncoded"] > 0
+        assert outbound_rtp_r1["frameWidth"] == 480
+        assert outbound_rtp_r1["frameHeight"] == 256
+
+        assert "encoderImplementation" in outbound_rtp_r1
+        assert "SimulcastEncoderAdapter" in outbound_rtp_r1["encoderImplementation"]
+        assert "NvCodec" in outbound_rtp_r1["encoderImplementation"]
+
+        # r2 (高解像度) の検証
+        outbound_rtp_r2 = video_outbound_rtp_by_rid["r2"]
+        assert outbound_rtp_r2["rid"] == "r2"
+        assert outbound_rtp_r2["packetsSent"] > 0
+        assert outbound_rtp_r2["bytesSent"] > 0
+        assert outbound_rtp_r2["framesEncoded"] > 0
+        assert outbound_rtp_r2["frameWidth"] == 960
+        assert outbound_rtp_r2["frameHeight"] == 528
+
+        assert "encoderImplementation" in outbound_rtp_r2
+        assert "SimulcastEncoderAdapter" in outbound_rtp_r2["encoderImplementation"]
+        assert "NvCodec" in outbound_rtp_r2["encoderImplementation"]
+
+        # transport を確認
+        transport = get_transport(stats)
+        assert transport is not None
+        assert transport["dtlsState"] == "connected"
+
+
+@pytest.mark.parametrize(
+    "video_codec_type",
+    [
+        "AV1",
+        "H264",
+        "H265",
+    ],
+)
+def test_sendonly_recvonly_pair(
+    sora_settings,
+    port_allocator,
+    video_codec_type,
+):
+    """sendonly と recvonly のペアを作成して送受信を確認（NVIDIA Video Codec 使用）"""
+
+    expected_mime_type = f"video/{video_codec_type}"
+
+    # エンコーダー設定を準備
+    encoder_params = {}
+    if video_codec_type == "AV1":
+        encoder_params["av1_encoder"] = "nvidia_video_codec"
+    elif video_codec_type == "H264":
+        encoder_params["h264_encoder"] = "nvidia_video_codec"
+    elif video_codec_type == "H265":
+        encoder_params["h265_encoder"] = "nvidia_video_codec"
+
+    # デコーダー設定を準備
+    decoder_params = {}
+    if video_codec_type == "AV1":
+        decoder_params["av1_decoder"] = "nvidia_video_codec"
+    elif video_codec_type == "H264":
+        decoder_params["h264_decoder"] = "nvidia_video_codec"
+    elif video_codec_type == "H265":
+        decoder_params["h265_decoder"] = "nvidia_video_codec"
+
+    # 送信専用クライアント
+    with Sumomo(
+        signaling_url=sora_settings.signaling_url,
+        channel_id=sora_settings.channel_id,
+        role="sendonly",
+        metadata=sora_settings.metadata,
+        http_port=next(port_allocator),
+        video=True,
+        video_codec_type=video_codec_type,
+        audio=True,
+        initial_wait=10,
+        **encoder_params,
+    ) as sender:
+        # 受信専用クライアント
+        with Sumomo(
+            signaling_url=sora_settings.signaling_url,
+            channel_id=sora_settings.channel_id,
+            role="recvonly",
+            metadata=sora_settings.metadata,
+            http_port=next(port_allocator),
+            video=True,
+            audio=True,
+            **decoder_params,
+        ) as receiver:
+            time.sleep(3)
+
+            # 送信側の統計を確認
+            sender_stats = sender.get_stats()
+            assert sender_stats is not None
+
+            # 送信側では outbound-rtp が音声と映像の 2 つ存在することを確認
+            sender_outbound_rtp = [
+                stat for stat in sender_stats if stat.get("type") == "outbound-rtp"
+            ]
+            assert len(sender_outbound_rtp) == 2
+
+            # 送信側の codec 情報を確認
+            sender_codecs = [stat for stat in sender_stats if stat.get("type") == "codec"]
+            assert len(sender_codecs) >= 2
+
+            # video codec の mimeType を確認
+            sender_video_codec = next(
+                (stat for stat in sender_codecs if stat.get("mimeType", "").startswith("video/")),
+                None,
+            )
+            assert sender_video_codec is not None
+            assert sender_video_codec["mimeType"] == expected_mime_type
+
+            # audio codec の mimeType を確認
+            sender_audio_codec = next(
+                (stat for stat in sender_codecs if stat.get("mimeType", "").startswith("audio/")),
+                None,
+            )
+            assert sender_audio_codec is not None
+            assert sender_audio_codec["mimeType"] == "audio/opus"
+
+            # 送信側でデータが送信されていることを確認
+            for stat in sender_outbound_rtp:
+                assert stat["packetsSent"] > 0
+                assert stat["bytesSent"] > 0
+
+                # video ストリームの場合、encoderImplementation が NvCodec であることを確認
+                if stat.get("kind") == "video":
+                    assert "encoderImplementation" in stat
+                    assert stat["encoderImplementation"] == "NvCodec"
+
+            # 受信側の統計を確認
+            receiver_stats = receiver.get_stats()
+            assert receiver_stats is not None
+
+            # 受信側では inbound-rtp が音声と映像の 2 つ存在することを確認
+            receiver_inbound_rtp = [
+                stat for stat in receiver_stats if stat.get("type") == "inbound-rtp"
+            ]
+            assert len(receiver_inbound_rtp) == 2
+
+            # 受信側の codec 情報を確認
+            receiver_codecs = [stat for stat in receiver_stats if stat.get("type") == "codec"]
+            assert len(receiver_codecs) >= 2
+
+            # video codec の mimeType を確認
+            receiver_video_codec = next(
+                (stat for stat in receiver_codecs if stat.get("mimeType", "").startswith("video/")),
+                None,
+            )
+            assert receiver_video_codec is not None
+            assert receiver_video_codec["mimeType"] == expected_mime_type
+
+            # audio codec の mimeType を確認
+            receiver_audio_codec = next(
+                (stat for stat in receiver_codecs if stat.get("mimeType", "").startswith("audio/")),
+                None,
+            )
+            assert receiver_audio_codec is not None
+            assert receiver_audio_codec["mimeType"] == "audio/opus"
+
+            # 受信側でデータが受信されていることを確認
+            for stat in receiver_inbound_rtp:
+                assert stat["packetsReceived"] > 0
+                assert stat["bytesReceived"] > 0
+
+                # video ストリームの場合、decoderImplementation が NvCodec であることを確認
+                if stat.get("kind") == "video":
+                    assert "decoderImplementation" in stat
+                    assert stat["decoderImplementation"] == "NvCodec"
