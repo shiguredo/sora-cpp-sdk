@@ -28,7 +28,7 @@ class Sumomo:
         video_codec_type: Literal["VP8", "VP9", "AV1", "H264", "H265"] | None = None,
         audio_codec_type: Literal["OPUS"] | None = None,
         resolution: str | None = None,  # QVGA, VGA, HD, FHD, 4K, or [WIDTH]x[HEIGHT]
-        hw_mjpeg_decoder: bool = False,
+        hw_mjpeg_decoder: bool | None = None,
         video_bit_rate: int | None = None,  # 0-30000
         audio_bit_rate: int | None = None,  # 0-510
         video_h264_params: dict[str, Any] | None = None,
