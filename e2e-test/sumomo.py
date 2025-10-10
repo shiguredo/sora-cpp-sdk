@@ -387,11 +387,11 @@ class Sumomo:
             quoted_cmd = " ".join(shlex.quote(arg) for arg in cmd)
             print(f"Starting sumomo with command: {quoted_cmd}")
 
-            # プロセスを起動 (エラー出力をキャプチャして問題発生時に確認できるようにする)
+            # プロセスを起動 (stdout/stderr をキャプチャして問題発生時に確認できるようにする)
             try:
                 self.process = subprocess.Popen(
                     cmd,
-                    stdout=subprocess.DEVNULL,
+                    stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     text=True,
                 )
