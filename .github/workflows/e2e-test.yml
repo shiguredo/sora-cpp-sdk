@@ -140,5 +140,5 @@ jobs:
       - name: Run E2E tests
         run: |
           # テストを実行（最初の失敗で停止、詳細ログ出力）
-          uv run pytest -v -x ${{ matrix.platform.test-target || 'test_sumomo_basic.py' }}
+          uv run pytest -v -x ${{ matrix.platform.test-target || '.' }}
         working-directory: ./e2e-test
