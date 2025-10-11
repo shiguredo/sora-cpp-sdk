@@ -227,26 +227,20 @@ jobs:
         run: |
           sudo apt-get install -y libgl-dev
 
-      - name: Download CUDA keyring for ${{ matrix.platform.name }}
-        if: matrix.platform.runs-on == 'ubuntu-24.04' && matrix.platform.arch == 'x86_64'
-        run: |
-          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-keyring_1.1-1_all.deb
-      - name: Download CUDA keyring for ${{ matrix.platform.name }}
-        if: matrix.platform.runs-on == 'ubuntu-22.04' && matrix.platform.arch == 'x86_64'
-        run: |
-          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
-
-      - name: Install CUDA for ${{ matrix.platform.name }}
+      - name: Get CUDA version from DEPS
         if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
+        id: cuda-version
         run: |
-          source DEPS
-          # CUDA_VERSION (例: 12.8.1-1) から cuda-12-8=12.8.1-1 のような形式を生成
-          CUDA_MAJOR=$(echo $CUDA_VERSION | cut -d. -f1)
-          CUDA_MINOR=$(echo $CUDA_VERSION | cut -d. -f2)
-          CUDA_PKG="cuda-${CUDA_MAJOR}-${CUDA_MINOR}=${CUDA_VERSION}"
-          sudo dpkg -i cuda-keyring_*all.deb
-          sudo apt-get update
-          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install ${CUDA_PKG}
+          CUDA_VERSION=$(grep '^CUDA_VERSION=' DEPS | cut -d= -f2)
+          echo "cuda_version=$CUDA_VERSION" >> $GITHUB_OUTPUT
+
+      - uses: shiguredo/github-actions/.github/actions/setup-cuda-toolkit@main
+        if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
+        id: cuda
+        with:
+          cuda_version: ${{ steps.cuda-version.outputs.cuda_version }}
+          platform: ${{ matrix.platform.runs-on }}
+
       - name: Install clang-20 for ${{ matrix.platform.name }}
         if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
         run: |
@@ -268,14 +262,14 @@ jobs:
           sudo apt-get -y install ninja-build
       # JDK を指定しないとデフォルトの JDK 11 で動作するため指定する
       - name: Setup JDK 17
+        if: matrix.platform.os == 'android'
         uses: actions/setup-java@v4
         with:
           java-version: "17"
           distribution: "temurin"
-        if: matrix.platform.os == 'android'
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
         if: matrix.platform.os == 'android'
+        uses: android-actions/setup-android@v3
       - run: python3 run.py build --test --run-e2e-test --package ${{ matrix.platform.name }}
       - name: Get package name
         run: |
@@ -299,6 +293,7 @@ jobs:
           name: ${{ matrix.platform.name }}.env
           path: _package/${{ matrix.platform.name }}/release/sora.env
       - name: Build Examples
+        if: matrix.platform.os == 'ubuntu' && matrix.platform.name != 'ubuntu-22.04_armv8'
         run: |
           cd examples
           mkdir examples_${{ matrix.platform.name }}
@@ -306,8 +301,8 @@ jobs:
             python3 $app/${{ matrix.platform.name }}/run.py --local-sora-cpp-sdk-dir ..
             cp _build/${{ matrix.platform.name }}/release/$app/$app examples_${{ matrix.platform.name }}
           done
-        if: matrix.platform.os == 'ubuntu' && matrix.platform.name != 'ubuntu-22.04_armv8'
-      - name: Build Examples
+      - name: Build Examples (Raspberry Pi OS)
+        if: matrix.platform.os == 'raspberry-pi-os' && matrix.platform.arch == 'armv8'
         run: |
           cd examples
           mkdir examples_${{ matrix.platform.name }}
@@ -317,13 +312,14 @@ jobs:
             # raspberry-pi-os は libcamerac.so も必要
             cp _build/${{ matrix.platform.name }}/release/$app/libcamerac.so examples_${{ matrix.platform.name }}
           done
-        if: matrix.platform.os == 'raspberry-pi-os' && matrix.platform.arch == 'armv8'
       - name: Upload Examples Artifact
+        if: |
+          (matrix.platform.os == 'ubuntu' && matrix.platform.name != 'ubuntu-22.04_armv8') ||
+          (matrix.platform.os == 'raspberry-pi-os')
         uses: actions/upload-artifact@v4
         with:
           name: examples_${{ matrix.platform.name }}
           path: examples/examples_${{ matrix.platform.name }}
-        if: matrix.platform.os == 'ubuntu' && matrix.platform.name != 'ubuntu-22.04_armv8'
 
   create-release:
     name: Create Release
