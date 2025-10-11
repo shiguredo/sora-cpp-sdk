@@ -34,3 +34,11 @@ def get_codec(stats: list[dict[str, Any]], mime_type: str) -> dict[str, Any] | N
 def get_transport(stats: list[dict[str, Any]]) -> dict[str, Any] | None:
     """transport 統計情報を取得する"""
     return next((stat for stat in stats if stat.get("type") == "transport"), None)
+
+
+def get_simulcast_outbound_rtp(stats: list[dict[str, Any]], kind: str) -> dict[str, dict[str, Any]]:
+    """サイマルキャスト用の outbound-rtp 統計情報を rid をキーとした辞書で取得する"""
+    outbound_rtp_stats = [
+        stat for stat in stats if stat.get("type") == "outbound-rtp" and stat.get("kind") == kind
+    ]
+    return {stat.get("rid", ""): stat for stat in outbound_rtp_stats}

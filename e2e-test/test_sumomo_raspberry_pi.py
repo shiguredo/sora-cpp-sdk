@@ -8,7 +8,7 @@ import time
 
 import pytest
 
-from stats_test_helper import get_codec, get_outbound_rtp, get_transport
+from helper import get_codec, get_outbound_rtp, get_simulcast_outbound_rtp, get_transport
 from sumomo import Sumomo
 
 
@@ -60,25 +60,13 @@ def test_connection_stats(sora_settings, free_port):
             assert expected_type in stat_types
 
         # video codec を確認
-        video_codec_stats = [
-            stat
-            for stat in stats
-            if stat.get("type") == "codec" and stat.get("mimeType") == expected_mime_type
-        ]
-        assert len(video_codec_stats) == 1
-
-        video_codec = video_codec_stats[0]
+        video_codec = get_codec(stats, expected_mime_type)
+        assert video_codec is not None
         assert video_codec["clockRate"] == 90000
 
         # video の outbound-rtp を確認
-        video_outbound_rtp_stats = [
-            stat
-            for stat in stats
-            if stat.get("type") == "outbound-rtp" and stat.get("kind") == "video"
-        ]
-        assert len(video_outbound_rtp_stats) == 1
-
-        video_outbound_rtp = video_outbound_rtp_stats[0]
+        video_outbound_rtp = get_outbound_rtp(stats, "video")
+        assert video_outbound_rtp is not None
         assert video_outbound_rtp["packetsSent"] > 0
         assert video_outbound_rtp["bytesSent"] > 0
         assert video_outbound_rtp["framesEncoded"] > 0
@@ -138,36 +126,17 @@ def test_simulcast(sora_settings, free_port):
             assert expected_type in stat_types
 
         # video codec を確認
-        video_codec_stats = [
-            stat
-            for stat in stats
-            if stat.get("type") == "codec" and stat.get("mimeType") == expected_mime_type
-        ]
-        assert len(video_codec_stats) == 1
-
-        video_codec = video_codec_stats[0]
+        video_codec = get_codec(stats, expected_mime_type)
+        assert video_codec is not None
         assert video_codec["clockRate"] == 90000
 
-        # simulcast では video の outbound-rtp が 3 つ存在することを確認
-        video_outbound_rtp_stats = [
-            stat
-            for stat in stats
-            if stat.get("type") == "outbound-rtp" and stat.get("kind") == "video"
-        ]
-        assert len(video_outbound_rtp_stats) == 3
-
-        # rid ごとに分類
-        video_outbound_rtp_by_rid = {}
-        for video_outbound_rtp in video_outbound_rtp_stats:
-            rid = video_outbound_rtp.get("rid")
-            assert rid in ["r0", "r1", "r2"], f"Unexpected rid: {rid}"
-            video_outbound_rtp_by_rid[rid] = video_outbound_rtp
-
-        # 全ての rid が存在することを確認
-        assert set(video_outbound_rtp_by_rid.keys()) == {"r0", "r1", "r2"}
+        # simulcast では video の outbound-rtp が 3 つ (r0, r1, r2) 存在することを確認
+        outbound_rtp = get_simulcast_outbound_rtp(stats, "video")
+        outbound_rtp_r0 = outbound_rtp["r0"]
+        outbound_rtp_r1 = outbound_rtp["r1"]
+        outbound_rtp_r2 = outbound_rtp["r2"]
 
         # r0 (低解像度) の検証
-        outbound_rtp_r0 = video_outbound_rtp_by_rid["r0"]
         assert outbound_rtp_r0["rid"] == "r0"
         assert outbound_rtp_r0["packetsSent"] > 0
         assert outbound_rtp_r0["bytesSent"] > 0
@@ -182,7 +151,6 @@ def test_simulcast(sora_settings, free_port):
         assert outbound_rtp_r0["frameHeight"] == 128
 
         # r1 (中解像度) の検証
-        outbound_rtp_r1 = video_outbound_rtp_by_rid["r1"]
         assert outbound_rtp_r1["rid"] == "r1"
         assert outbound_rtp_r1["packetsSent"] > 0
         assert outbound_rtp_r1["bytesSent"] > 0
@@ -196,7 +164,6 @@ def test_simulcast(sora_settings, free_port):
         assert outbound_rtp_r1["frameHeight"] == 256
 
         # r2 (高解像度) の検証
-        outbound_rtp_r2 = video_outbound_rtp_by_rid["r2"]
         assert outbound_rtp_r2["rid"] == "r2"
         assert outbound_rtp_r2["packetsSent"] > 0
         assert outbound_rtp_r2["bytesSent"] > 0

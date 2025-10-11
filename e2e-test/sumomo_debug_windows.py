@@ -226,7 +226,13 @@ class SumomoDebugWindows:
                 )
 
         sumomo_path = (
-            project_root / "examples" / "_build" / target / "release" / "sumomo" / f"sumomo{exe_suffix}"
+            project_root
+            / "examples"
+            / "_build"
+            / target
+            / "release"
+            / "sumomo"
+            / f"sumomo{exe_suffix}"
         )
 
         if not sumomo_path.exists():
@@ -476,7 +482,7 @@ class SumomoDebugWindows:
                         self._stdout_thread = threading.Thread(
                             target=self._read_stream,
                             args=(self.process.stdout, self._stdout_lines, "STDOUT"),
-                            daemon=True
+                            daemon=True,
                         )
                         self._stdout_thread.start()
                         self._log("Started stdout reader thread")
@@ -485,7 +491,7 @@ class SumomoDebugWindows:
                         self._stderr_thread = threading.Thread(
                             target=self._read_stream,
                             args=(self.process.stderr, self._stderr_lines, "STDERR"),
-                            daemon=True
+                            daemon=True,
                         )
                         self._stderr_thread.start()
                         self._log("Started stderr reader thread")
@@ -600,25 +606,28 @@ class SumomoDebugWindows:
 
                 # 各試行前にプロセスの状態を確認
                 poll_result_before = self.process.poll()
-                self._log(f"Attempt {attempt}: Process state before HTTP check: poll={poll_result_before}")
+                self._log(
+                    f"Attempt {attempt}: Process state before HTTP check: poll={poll_result_before}"
+                )
 
                 # Windows で netstat を使ってポートがリッスンされているか確認（最初の数回のみ）
                 if attempt <= 3:
                     try:
                         import subprocess as sp
+
                         netstat_result = sp.run(
-                            ["netstat", "-an"],
-                            capture_output=True,
-                            text=True,
-                            timeout=2
+                            ["netstat", "-an"], capture_output=True, text=True, timeout=2
                         )
                         # ポート番号を含む行を探す
                         port_lines = [
-                            line for line in netstat_result.stdout.splitlines()
+                            line
+                            for line in netstat_result.stdout.splitlines()
                             if f":{http_port}" in line and "LISTENING" in line
                         ]
                         if port_lines:
-                            self._log(f"Attempt {attempt}: Port {http_port} is LISTENING: {port_lines[0]}")
+                            self._log(
+                                f"Attempt {attempt}: Port {http_port} is LISTENING: {port_lines[0]}"
+                            )
                         else:
                             self._log(f"Attempt {attempt}: Port {http_port} is NOT listening")
                     except Exception as e:
@@ -629,7 +638,9 @@ class SumomoDebugWindows:
                     # 0.0.0.0 でバインドしている場合は localhost で接続
                     connect_host = "localhost" if self.http_host == "0.0.0.0" else self.http_host
                     url = f"http://{connect_host}:{http_port}/stats"
-                    self._log(f"Attempt {attempt}: Checking {url} (server bound to {self.http_host})")
+                    self._log(
+                        f"Attempt {attempt}: Checking {url} (server bound to {self.http_host})"
+                    )
                     response = client.get(url, timeout=5)
                     if response.status_code == 200:
                         elapsed = time.time() - start_time
@@ -639,7 +650,9 @@ class SumomoDebugWindows:
                         self._log(f"Attempt {attempt}: Got status code {response.status_code}")
                 except httpx.ConnectError as e:
                     elapsed = time.time() - start_time
-                    self._log(f"Attempt {attempt}: Connection failed ({elapsed:.1f}s elapsed): {e!r}")
+                    self._log(
+                        f"Attempt {attempt}: Connection failed ({elapsed:.1f}s elapsed): {e!r}"
+                    )
                 except httpx.ConnectTimeout:
                     self._log(f"Attempt {attempt}: Connection timeout")
                 except Exception as e:
@@ -648,7 +661,9 @@ class SumomoDebugWindows:
                 # 各試行後にもプロセスの状態を確認
                 poll_result_after = self.process.poll()
                 if poll_result_after != poll_result_before:
-                    self._log(f"WARNING: Process state changed during attempt: {poll_result_before} -> {poll_result_after}")
+                    self._log(
+                        f"WARNING: Process state changed during attempt: {poll_result_before} -> {poll_result_after}"
+                    )
 
                 # プロセスが終了していた場合、即座に終了して stderr/stdout を確認
                 if poll_result_after is not None:
@@ -792,7 +807,7 @@ class SumomoDebugWindows:
                     except Exception:
                         pass
                 raise RuntimeError(
-                    f"sumomo.exe has crashed (exit code: {poll_result})\n" f"Stderr: {stderr_output}"
+                    f"sumomo.exe has crashed (exit code: {poll_result})\nStderr: {stderr_output}"
                 )
             else:
                 self._log(f"Process is running (PID: {self.process.pid})")

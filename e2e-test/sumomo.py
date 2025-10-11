@@ -362,7 +362,13 @@ class Sumomo:
         # sumomo のパスを構築
         assert target is not None
         sumomo_path = (
-            project_root / "examples" / "_build" / target / "release" / "sumomo" / f"sumomo{exe_suffix}"
+            project_root
+            / "examples"
+            / "_build"
+            / target
+            / "release"
+            / "sumomo"
+            / f"sumomo{exe_suffix}"
         )
 
         if not sumomo_path.exists():

@@ -8,7 +8,7 @@ import time
 
 import pytest
 
-from stats_test_helper import get_codec, get_inbound_rtp, get_outbound_rtp, get_transport
+from helper import get_codec, get_inbound_rtp, get_outbound_rtp, get_transport
 from sumomo import Sumomo
 
 
