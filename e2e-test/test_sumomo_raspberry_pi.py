@@ -34,6 +34,7 @@ def test_connection_stats(sora_settings, free_port):
         audio=False,
         video=True,
         video_codec_type=video_codec_type,
+        h264_encoder="raspi_v4l2m2m",
         fake_capture_device=False,
         use_libcamera=True,
         initial_wait=10,
@@ -108,6 +109,7 @@ def test_simulcast(sora_settings, free_port):
         audio=False,
         video=True,
         video_codec_type=video_codec_type,
+        h264_encoder="raspi_v4l2m2m",
         simulcast=True,
         resolution="960x540",  # 540p の解像度
         video_bit_rate=3000,  # ビットレート 3000
