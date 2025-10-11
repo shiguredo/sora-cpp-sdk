@@ -15,12 +15,18 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - name: ubuntu-22.04_x86_64
-            platform-name: ubuntu-22.04_x86_64
-            runs-on: ubuntu-22.04
           - name: ubuntu-24.04_x86_64
             platform-name: ubuntu-24.04_x86_64
             runs-on: ubuntu-24.04
+          - name: ubuntu-22.04_x86_64
+            platform-name: ubuntu-22.04_x86_64
+            runs-on: ubuntu-22.04
+          - name: ubuntu-24.04_armv8
+            platform-name: ubuntu-24.04_armv8
+            runs-on: ubuntu-24.04-arm
+          - name: ubuntu-22.04_armv8
+            platform-name: ubuntu-22.04_armv8
+            runs-on: ubuntu-22.04-arm
           - name: macos_arm64
             platform-name: macos_arm64
             runs-on: macos-14
