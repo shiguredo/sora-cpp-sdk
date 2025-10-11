@@ -8,7 +8,7 @@ import time
 
 import pytest
 
-from stats_test_helper import get_codec, get_outbound_rtp, get_transport
+from stats_test_helper import get_codec, get_inbound_rtp, get_outbound_rtp, get_transport
 from sumomo import Sumomo
 
 
@@ -70,12 +70,8 @@ def test_connection_stats(sora_settings, free_port, video_codec_type):
             assert expected_type in stat_types
 
         # 指定されたビデオコーデックが実際に使われていることを確認
-        codec_mime_types = {
-            stat.get("mimeType")
-            for stat in stats
-            if stat.get("type") == "codec" and "mimeType" in stat
-        }
-        assert expected_mime_type in codec_mime_types
+        video_codec = get_codec(stats, expected_mime_type)
+        assert video_codec is not None
 
         # outbound-rtp の詳細をチェック
         video_outbound = get_outbound_rtp(stats, "video")
@@ -163,39 +159,21 @@ def test_simulcast(sora_settings, free_port, video_codec_type, expected_encoder_
             assert expected_type in stat_types
 
         # audio codec を確認
-        audio_codec_stats = [
-            stat
-            for stat in stats
-            if stat.get("type") == "codec" and stat.get("mimeType") == "audio/opus"
-        ]
-        assert len(audio_codec_stats) == 1
-
-        audio_codec = audio_codec_stats[0]
+        audio_codec = get_codec(stats, "audio/opus")
+        assert audio_codec is not None
         assert audio_codec["clockRate"] == 48000
 
         # video codec を確認
         expected_mime_type = f"video/{video_codec_type}"
-        video_codec_stats = [
-            stat
-            for stat in stats
-            if stat.get("type") == "codec" and stat.get("mimeType") == expected_mime_type
-        ]
-        assert len(video_codec_stats) == 1
-
-        video_codec = video_codec_stats[0]
+        video_codec = get_codec(stats, expected_mime_type)
+        assert video_codec is not None
         assert video_codec["clockRate"] == 90000
 
         # audio の outbound-rtp を確認
-        audio_outbound_rtp_stats = [
-            stat
-            for stat in stats
-            if stat.get("type") == "outbound-rtp" and stat.get("kind") == "audio"
-        ]
-        assert len(audio_outbound_rtp_stats) == 1
-
-        audio_outbound_rtp = audio_outbound_rtp_stats[0]
-        assert audio_outbound_rtp["packetsSent"] > 0
-        assert audio_outbound_rtp["bytesSent"] > 0
+        audio_outbound = get_outbound_rtp(stats, "audio")
+        assert audio_outbound is not None
+        assert audio_outbound["packetsSent"] > 0
+        assert audio_outbound["bytesSent"] > 0
 
         # simulcast では video の outbound-rtp が 3 つ存在することを確認
         video_outbound_rtp_stats = [
@@ -328,22 +306,13 @@ def test_sendonly_recvonly_pair(
             assert len(sender_outbound_rtp) == 2
 
             # 送信側の codec 情報を確認
-            sender_codecs = [stat for stat in sender_stats if stat.get("type") == "codec"]
-            assert len(sender_codecs) >= 2
-
             # video codec の mimeType を確認
-            sender_video_codec = next(
-                (stat for stat in sender_codecs if stat.get("mimeType", "").startswith("video/")),
-                None,
-            )
+            sender_video_codec = get_codec(sender_stats, expected_mime_type)
             assert sender_video_codec is not None
             assert sender_video_codec["mimeType"] == expected_mime_type
 
             # audio codec の mimeType を確認
-            sender_audio_codec = next(
-                (stat for stat in sender_codecs if stat.get("mimeType", "").startswith("audio/")),
-                None,
-            )
+            sender_audio_codec = get_codec(sender_stats, "audio/opus")
             assert sender_audio_codec is not None
             assert sender_audio_codec["mimeType"] == "audio/opus"
 
@@ -361,38 +330,27 @@ def test_sendonly_recvonly_pair(
             receiver_stats = receiver.get_stats()
             assert receiver_stats is not None
 
-            # 受信側では inbound-rtp が音声と映像の 2 つ存在することを確認
-            receiver_inbound_rtp = [
-                stat for stat in receiver_stats if stat.get("type") == "inbound-rtp"
-            ]
-            assert len(receiver_inbound_rtp) == 2
-
             # 受信側の codec 情報を確認
-            receiver_codecs = [stat for stat in receiver_stats if stat.get("type") == "codec"]
-            assert len(receiver_codecs) >= 2
-
             # video codec の mimeType を確認
-            receiver_video_codec = next(
-                (stat for stat in receiver_codecs if stat.get("mimeType", "").startswith("video/")),
-                None,
-            )
+            receiver_video_codec = get_codec(receiver_stats, expected_mime_type)
             assert receiver_video_codec is not None
             assert receiver_video_codec["mimeType"] == expected_mime_type
 
             # audio codec の mimeType を確認
-            receiver_audio_codec = next(
-                (stat for stat in receiver_codecs if stat.get("mimeType", "").startswith("audio/")),
-                None,
-            )
+            receiver_audio_codec = get_codec(receiver_stats, "audio/opus")
             assert receiver_audio_codec is not None
             assert receiver_audio_codec["mimeType"] == "audio/opus"
 
-            # 受信側でデータが受信されていることを確認
-            for stat in receiver_inbound_rtp:
-                assert stat["packetsReceived"] > 0
-                assert stat["bytesReceived"] > 0
+            # 受信側の video inbound-rtp を確認
+            receiver_video_inbound = get_inbound_rtp(receiver_stats, "video")
+            assert receiver_video_inbound is not None
+            assert receiver_video_inbound["packetsReceived"] > 0
+            assert receiver_video_inbound["bytesReceived"] > 0
+            assert "decoderImplementation" in receiver_video_inbound
+            assert receiver_video_inbound["decoderImplementation"] == "VideoToolbox"
 
-                # video ストリームの場合、decoderImplementation が VideoToolbox であることを確認
-                if stat.get("kind") == "video":
-                    assert "decoderImplementation" in stat
-                    assert stat["decoderImplementation"] == "VideoToolbox"
+            # 受信側の audio inbound-rtp を確認
+            receiver_audio_inbound = get_inbound_rtp(receiver_stats, "audio")
+            assert receiver_audio_inbound is not None
+            assert receiver_audio_inbound["packetsReceived"] > 0
+            assert receiver_audio_inbound["bytesReceived"] > 0
