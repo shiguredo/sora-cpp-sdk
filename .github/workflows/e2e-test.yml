@@ -56,15 +56,14 @@ jobs:
               INTEL_VPL=true
               LIBVA_MESSAGING_LEVEL=0
           # Self-hosted runner for Raspberry Pi
-          # TODO: examples の build で raspberry pi が存在しないのでまだテストが通らない
-          # - name: raspberry_pi
-          #   platform-name: raspberry-pi-os_armv8
-          #   runs-on:
-          #     group: Self
-          #     labels: [self-hosted, linux, arm64, Raspberry-Pi]
-          #   test-target: test_sumomo_raspberry_pi.py
-          #   env-vars: |
-          #     RASPBERRY_PI=true
+          - name: raspberry_pi
+            platform-name: raspberry-pi-os_armv8
+            runs-on:
+              group: Self
+              labels: [self-hosted, linux, arm64, Raspberry-Pi]
+            test-target: test_sumomo_raspberry_pi.py
+            env-vars: |
+              RASPBERRY_PI=true
     name: E2E Test for ${{ matrix.platform.name }}
     runs-on: ${{ matrix.platform.runs-on }}
     env:
