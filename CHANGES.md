@@ -11,11 +11,6 @@
 
 ## develop
 
-- [ADD] sumomo に `--fake-capture-device` オプションを追加
-  - フェイクの音声と映像デバイスを使用してテストパターンと無音を生成する
-  - 実際に音声や映像を送信するかは `--audio`/`--video` オプションに依存する
-  - FakeAudioCapturer を実装し、`--fake-capture-device` と `--audio` が有効な場合は `use_audio_device` を false に設定
-  - @voluntas
 - [UPDATE] CUDA のバージョンを `12.9.1-1` に上げる
   - CUDA コンパイルオプションに `D_ALLOW_UNSUPPORTED_LIBCPP` を追加する
   - CUDA コンパイルオプションの `cuda-gpu-arch` を `sm_35` から `sm_60` に変更する
@@ -44,6 +39,10 @@
 
 ### misc
 
+- [ADD] sumomo に `--fake-capture-device` オプションを追加
+  - フェイクの音声と映像デバイスを使用してテストパターンと無音を生成する
+  - 実際に音声や映像を送信するかは `--audio`/`--video` オプションに依存する
+  - @voluntas
 - [ADD] GitHub Actions に sumomo を利用した E2E テストを実行する `e2e-test.yml` を追加
   - @voluntas
 - [ADD] sumomo に `--use-libcamera`, `--use-libcamera-native`, `--libcamera-control` オプションを追加
@@ -61,6 +60,10 @@
 - [FIX] sumomo で audio_device をデフォルト無効にしていたのを修正する
   - @torikizi
 - [FIX] GitHub Actions の build.yml で CUDA パッケージを ubuntu のバージョンに合わせるようにする
+  - @voluntas
+- [FIX] Raspberry Pi OS 向けのサンプルが artifact としてアップロードされていなかった問題を修正
+  - @voluntas
+- [FIX] sumomo で `--audio false` の時はトラックを生成しないように修正する
   - @voluntas
 
 ## 2025.5.1
