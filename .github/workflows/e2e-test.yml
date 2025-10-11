@@ -70,6 +70,7 @@ jobs:
       TEST_SIGNALING_URL: ${{ secrets.TEST_SIGNALING_URL }}
       TEST_CHANNEL_ID_PREFIX: ${{ secrets.TEST_CHANNEL_ID_PREFIX }}
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
+      OPENH264_VERSION: 2.6.0
     steps:
       - uses: actions/checkout@v5
 
@@ -113,6 +114,21 @@ jobs:
               echo "$line" >> $GITHUB_ENV
             fi
           done
+
+      # OpenH264 のダウンロード (GitHub-hosted ランナーのみ)
+      - name: Download OpenH264
+        if: ${{ runner.environment != 'self-hosted' }}
+        uses: shiguredo/github-actions/.github/actions/download-openh264@main
+        id: openh264
+        with:
+          platform_name: ${{ matrix.platform.platform-name }}
+          openh264_version: ${{ env.OPENH264_VERSION }}
+          use-cache: true
+
+      # OpenH264 環境変数の設定 (GitHub-hosted ランナーのみ)
+      - name: Setup OpenH264 environment
+        if: ${{ runner.environment != 'self-hosted' && steps.openh264.outputs.openh264_path }}
+        run: echo "OPENH264_PATH=${{ steps.openh264.outputs.openh264_path }}" >> $GITHUB_ENV
 
       # self-hosted runner の場合このダウンロードが凄く時間かかる
       - name: Download and setup sumomo binary
