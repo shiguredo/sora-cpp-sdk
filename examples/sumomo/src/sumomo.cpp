@@ -378,17 +378,18 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
         return;
       }
 
-      std::string audio_track_id = webrtc::CreateRandomString(16);
-      std::string video_track_id = webrtc::CreateRandomString(16);
-
-      // オーディオトラックの作成
-      audio_track_ = context_->peer_connection_factory()->CreateAudioTrack(
-          audio_track_id, context_->peer_connection_factory()
-                              ->CreateAudioSource(webrtc::AudioOptions())
-                              .get());
+      // オーディオトラックの作成（オーディオが有効な場合のみ）
+      if (config_.audio) {
+        std::string audio_track_id = webrtc::CreateRandomString(16);
+        audio_track_ = context_->peer_connection_factory()->CreateAudioTrack(
+            audio_track_id, context_->peer_connection_factory()
+                                ->CreateAudioSource(webrtc::AudioOptions())
+                                .get());
+      }
 
       // ビデオトラックの作成（ビデオが有効な場合のみ）
       if (config_.video) {
+        std::string video_track_id = webrtc::CreateRandomString(16);
         video_track_ = context_->peer_connection_factory()->CreateVideoTrack(
             video_source, video_track_id);
         if (config_.use_sdl && config_.show_me) {
