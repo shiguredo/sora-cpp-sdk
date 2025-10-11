@@ -224,26 +224,20 @@ jobs:
         run: |
           sudo apt-get install -y libgl-dev
 
-      - name: Download CUDA keyring for ${{ matrix.platform.name }}
-        if: matrix.platform.runs-on == 'ubuntu-24.04' && matrix.platform.arch == 'x86_64'
-        run: |
-          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-keyring_1.1-1_all.deb
-      - name: Download CUDA keyring for ${{ matrix.platform.name }}
-        if: matrix.platform.runs-on == 'ubuntu-22.04' && matrix.platform.arch == 'x86_64'
-        run: |
-          wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.1-1_all.deb
-
-      - name: Install CUDA for ${{ matrix.platform.name }}
+      - name: Get CUDA version from DEPS
         if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
+        id: cuda-version
         run: |
-          source DEPS
-          # CUDA_VERSION (例: 12.8.1-1) から cuda-12-8=12.8.1-1 のような形式を生成
-          CUDA_MAJOR=$(echo $CUDA_VERSION | cut -d. -f1)
-          CUDA_MINOR=$(echo $CUDA_VERSION | cut -d. -f2)
-          CUDA_PKG="cuda-${CUDA_MAJOR}-${CUDA_MINOR}=${CUDA_VERSION}"
-          sudo dpkg -i cuda-keyring_*all.deb
-          sudo apt-get update
-          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install ${CUDA_PKG}
+          CUDA_VERSION=$(grep '^CUDA_VERSION=' DEPS | cut -d= -f2)
+          echo "cuda_version=$CUDA_VERSION" >> $GITHUB_OUTPUT
+
+      - uses: shiguredo/github-actions/.github/actions/setup-cuda-toolkit@main
+        if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
+        id: cuda
+        with:
+          cuda_version: ${{ steps.cuda-version.outputs.cuda_version }}
+          platform: ${{ matrix.platform.runs-on }}
+
       - name: Install clang-20 for ${{ matrix.platform.name }}
         if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
         run: |
