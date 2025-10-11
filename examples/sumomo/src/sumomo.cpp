@@ -960,6 +960,10 @@ int main(int argc, char* argv[]) {
   }
 
   auto context_config = sora::SoraClientContextConfig();
+  // audio が無効な場合は AudioDevice を使用しない
+  if (!config.audio) {
+    context_config.use_audio_device = false;
+  }
   // fake デバイスを使用する場合は FakeAudioCapturer を設定
   webrtc::scoped_refptr<FakeAudioCapturer> fake_audio_capturer;
   if (config.fake_capture_device && config.audio) {
