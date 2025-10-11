@@ -77,7 +77,12 @@ runs:
         fi
 
         # sumomo バイナリを期待される場所に配置
-        cp sumomo_binary/$BINARY_NAME examples/_build/${{ inputs.platform-name }}/release/sumomo/
+        # raspberry_pi の場合は libcamera などの共有ライブラリも含めてすべてコピー
+        if [[ "${{ inputs.platform-name }}" == "raspberry-pi-os_armv8" ]]; then
+          cp -r sumomo_binary/* examples/_build/${{ inputs.platform-name }}/release/sumomo/
+        else
+          cp sumomo_binary/$BINARY_NAME examples/_build/${{ inputs.platform-name }}/release/sumomo/
+        fi
 
         # Linux/macOS の場合は実行権限を付与
         if [[ "${{ inputs.platform-name }}" != windows_* ]]; then
