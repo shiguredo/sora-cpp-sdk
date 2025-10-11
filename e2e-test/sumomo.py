@@ -390,7 +390,8 @@ class Sumomo:
                 self.process = subprocess.Popen(
                     cmd,
                     stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
+                    stderr=subprocess.PIPE,
+                    text=True,
                 )
                 print(f"Started sumomo process with PID: {self.process.pid}")
             except FileNotFoundError:
