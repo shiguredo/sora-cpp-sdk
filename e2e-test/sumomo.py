@@ -393,11 +393,13 @@ class Sumomo:
 
             # プロセスを起動
             try:
+                # 注意: stderr=subprocess.PIPE に変更すると Windows でテストが通らなくなる
+                # Windows ではパイプバッファが小さく、stderr を定期的に読み取らないと
+                # バッファがいっぱいになってプロセスがブロックされる可能性がある
                 self.process = subprocess.Popen(
                     cmd,
                     stdout=subprocess.DEVNULL,
-                    stderr=subprocess.PIPE,
-                    text=True,
+                    stderr=subprocess.DEVNULL,
                 )
                 print(f"Started sumomo process with PID: {self.process.pid}")
             except FileNotFoundError:
@@ -420,17 +422,7 @@ class Sumomo:
             if self.process and platform.system().lower() == "windows":
                 poll_result = self.process.poll()
                 if poll_result is not None:
-                    # プロセスが終了していたらエラーメッセージを表示
-                    stderr_output = ""
-                    if self.process.stderr:
-                        try:
-                            stderr_output = self.process.stderr.read()
-                        except Exception:
-                            pass
-                    raise RuntimeError(
-                        f"sumomo.exe exited unexpectedly with code {poll_result}\n"
-                        f"Stderr: {stderr_output}"
-                    )
+                    raise RuntimeError(f"sumomo.exe exited unexpectedly with code {poll_result}")
 
             # HTTP クライアントを作成
             self._http_client = httpx.Client(timeout=10.0)
@@ -817,16 +809,7 @@ class Sumomo:
         # Windows の場合、プロセスが生きているか確認
         if self.process and platform.system().lower() == "windows":
             if self.process.poll() is not None:
-                stderr_output = ""
-                if hasattr(self.process, "stderr") and self.process.stderr:
-                    try:
-                        stderr_output = self.process.stderr.read()
-                    except:
-                        pass
-                raise RuntimeError(
-                    f"sumomo.exe has crashed (exit code: {self.process.returncode})\n"
-                    f"Stderr: {stderr_output}"
-                )
+                raise RuntimeError(f"sumomo.exe has crashed (exit code: {self.process.returncode})")
 
         try:
             # http_host は 127.0.0.1 固定
@@ -837,15 +820,8 @@ class Sumomo:
             # Windows の場合、エラー時にプロセスの状態を確認
             if self.process and platform.system().lower() == "windows":
                 if self.process.poll() is not None:
-                    stderr_output = ""
-                    if hasattr(self.process, "stderr") and self.process.stderr:
-                        try:
-                            stderr_output = self.process.stderr.read()
-                        except:
-                            pass
                     raise RuntimeError(
                         f"sumomo.exe crashed while getting stats (exit code: {self.process.returncode})\n"
-                        f"Stderr: {stderr_output}\n"
                         f"Original error: {e}"
                     )
             raise
