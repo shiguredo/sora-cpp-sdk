@@ -93,6 +93,10 @@ def test_sumomo_sendrecv_with_openh264_encoder(sora_settings, port_allocator):
             http_port=next(port_allocator),
             audio=True,
             video=True,
+            audio_codec_type="OPUS",
+            video_codec_type="H264",
+            h264_decoder="cisco_openh264",
+            openh264=openh264_path,
         ) as s2:
             time.sleep(3)
 
