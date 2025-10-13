@@ -39,6 +39,10 @@
 
 ### misc
 
+- [ADD] examples の各サンプルに ubuntu-22.04_armv8 対応を追加する
+  - messaging_recvonly_sample, sdl_sample, sumomo の各サンプルに ubuntu-22.04_armv8 プラットフォームのビルド設定を追加
+  - multistrap/ubuntu-22.04_armv8.conf を追加
+  - @voluntas
 - [ADD] sumomo に `--fake-capture-device` オプションを追加
   - フェイクの音声と映像デバイスを使用してテストパターンと無音を生成する
   - 実際に音声や映像を送信するかは `--audio`/`--video` オプションに依存する
