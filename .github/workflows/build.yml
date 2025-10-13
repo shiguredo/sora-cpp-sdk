@@ -293,7 +293,7 @@ jobs:
           name: ${{ matrix.platform.name }}.env
           path: _package/${{ matrix.platform.name }}/release/sora.env
       - name: Build Examples
-        if: matrix.platform.os == 'ubuntu' && matrix.platform.name != 'ubuntu-22.04_armv8'
+        if: matrix.platform.os == 'ubuntu'
         run: |
           cd examples
           mkdir examples_${{ matrix.platform.name }}
@@ -313,9 +313,7 @@ jobs:
             cp _build/${{ matrix.platform.name }}/release/$app/libcamerac.so examples_${{ matrix.platform.name }}
           done
       - name: Upload Examples Artifact
-        if: |
-          (matrix.platform.os == 'ubuntu' && matrix.platform.name != 'ubuntu-22.04_armv8') ||
-          (matrix.platform.os == 'raspberry-pi-os')
+        if: matrix.platform.os == 'ubuntu' || matrix.platform.os == 'raspberry-pi-os'
         uses: actions/upload-artifact@v4
         with:
           name: examples_${{ matrix.platform.name }}
