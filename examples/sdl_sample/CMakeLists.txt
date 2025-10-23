@@ -27,7 +27,9 @@ find_package(Boost REQUIRED COMPONENTS json filesystem)
 find_package(WebRTC REQUIRED)
 find_package(Sora REQUIRED)
 find_package(SDL3 REQUIRED)
-find_package(Threads REQUIRED)
+if(NOT WIN32)
+  find_package(Threads REQUIRED)
+endif()
 
 add_executable(sdl_sample)
 set_target_properties(sdl_sample PROPERTIES CXX_STANDARD 20 C_STANDARD 20)
@@ -42,7 +44,7 @@ if(NOT WIN32)
       "$<$<COMPILE_LANGUAGE:CXX>:-isystem${LIBCXX_INCLUDE_DIR}>"
   )
 else()
-  target_compile_options(sdl_sample PRIVATE /utf-8)
+  target_compile_options(sdl_sample PRIVATE /utf-8 /bigobj)
   set_target_properties(sdl_sample
     PROPERTIES
       MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
@@ -50,4 +52,14 @@ else()
 endif()
 target_include_directories(sdl_sample PRIVATE ${CLI11_DIR}/include)
 target_link_libraries(sdl_sample PRIVATE Sora::sora SDL3::SDL3)
+
 target_compile_definitions(sdl_sample PRIVATE CLI11_HAS_FILESYSTEM=0)
+if(WIN32)
+  target_compile_definitions(sdl_sample
+    PRIVATE
+      _CONSOLE
+      _WIN32_WINNT=0x0A00
+      NOMINMAX
+      WIN32_LEAN_AND_MEAN
+  )
+endif()
