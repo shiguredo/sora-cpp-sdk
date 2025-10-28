@@ -47,6 +47,10 @@
   - @melpon
 - [UPDATE] actions/download-artifact を v5 に上げる
   - @miosakuma
+- [UPDATE] examples/DEPS の CLI11 バージョンを v2.6.1 にあげる
+  - @torikizi
+- [UPDATE] examples/DEPS の SDL バージョンを 3.2.24 にあげる
+  - @torikizi
 - [FIX] sumomo で audio_device をデフォルト無効にしていたのを修正する
   - @torikizi
 - [FIX] GitHub Actions の build.yml で CUDA パッケージを ubuntu のバージョンに合わせるようにする
