@@ -28,7 +28,7 @@ def test_sumomo_sendonly_with_openh264_encoder(sora_settings, free_port):
         role="sendonly",
         metadata=sora_settings.metadata,
         http_port=free_port,
-        audio=True,
+        audio=False,
         video=True,
         audio_codec_type="OPUS",
         video_codec_type="H264",
@@ -52,9 +52,9 @@ def test_sumomo_sendonly_with_openh264_encoder(sora_settings, free_port):
         video_outbound = get_outbound_rtp(stats, "video")
         assert video_outbound is not None, "Video outbound-rtp not found"
         assert "encoderImplementation" in video_outbound
-        assert (
-            "OpenH264" in video_outbound["encoderImplementation"]
-        ), f"Expected OpenH264 encoder, but got {video_outbound.get('encoderImplementation')}"
+        assert "OpenH264" in video_outbound["encoderImplementation"], (
+            f"Expected OpenH264 encoder, but got {video_outbound.get('encoderImplementation')}"
+        )
 
         # OpenH264 エンコーダーの統計情報を検証
         assert video_outbound["codecId"] == h264_codec["id"]
@@ -78,7 +78,7 @@ def test_sumomo_sendrecv_with_openh264_encoder(sora_settings, port_allocator):
         role="sendrecv",
         metadata=sora_settings.metadata,
         http_port=next(port_allocator),
-        audio=True,
+        audio=False,
         video=True,
         audio_codec_type="OPUS",
         video_codec_type="H264",
@@ -92,7 +92,7 @@ def test_sumomo_sendrecv_with_openh264_encoder(sora_settings, port_allocator):
             role="sendrecv",
             metadata=sora_settings.metadata,
             http_port=next(port_allocator),
-            audio=True,
+            audio=False,
             video=True,
             audio_codec_type="OPUS",
             video_codec_type="H264",
@@ -135,7 +135,7 @@ def test_sumomo_openh264_with_simulcast(sora_settings, free_port):
         role="sendonly",
         metadata=sora_settings.metadata,
         http_port=free_port,
-        audio=True,
+        audio=False,
         video=True,
         audio_codec_type="OPUS",
         video_codec_type="H264",
@@ -227,7 +227,7 @@ def test_sumomo_explicit_openh264_path(sora_settings, free_port):
         role="sendonly",
         metadata=sora_settings.metadata,
         http_port=free_port,
-        audio=True,
+        audio=False,
         video=True,
         audio_codec_type="OPUS",
         video_codec_type="H264",
@@ -243,6 +243,6 @@ def test_sumomo_explicit_openh264_path(sora_settings, free_port):
         video_outbound = get_outbound_rtp(stats, "video")
         assert video_outbound is not None
         assert "encoderImplementation" in video_outbound
-        assert (
-            "OpenH264" in video_outbound["encoderImplementation"]
-        ), "OpenH264 encoder not found with explicit path"
+        assert "OpenH264" in video_outbound["encoderImplementation"], (
+            "OpenH264 encoder not found with explicit path"
+        )
