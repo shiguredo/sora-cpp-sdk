@@ -23,6 +23,8 @@ pytestmark = pytest.mark.skipif(
     reason="AMD_AMF not set in environment",
 )
 
+CODEC_IMPLEMENTATION = "AMF"
+
 
 @pytest.mark.parametrize(
     "video_codec_type",
@@ -110,7 +112,7 @@ def test_sendonly_recvonly(
             assert sender_video_outbound["packetsSent"] > 0
             assert sender_video_outbound["bytesSent"] > 0
             assert "encoderImplementation" in sender_video_outbound
-            assert sender_video_outbound["encoderImplementation"] == "amd_amf"
+            assert sender_video_outbound["encoderImplementation"] == CODEC_IMPLEMENTATION
 
             # audio outbound-rtp を確認
             sender_audio_outbound = get_outbound_rtp(sender_stats, "audio")
@@ -138,7 +140,7 @@ def test_sendonly_recvonly(
             assert receiver_video_inbound["packetsReceived"] > 0
             assert receiver_video_inbound["bytesReceived"] > 0
             assert "decoderImplementation" in receiver_video_inbound
-            assert receiver_video_inbound["decoderImplementation"] == "amd_amf"
+            assert receiver_video_inbound["decoderImplementation"] == CODEC_IMPLEMENTATION
 
             # audio inbound-rtp を確認
             receiver_audio_inbound = get_inbound_rtp(receiver_stats, "audio")
@@ -238,7 +240,7 @@ def test_sendrecv(
             assert client1_video_outbound["packetsSent"] > 0
             assert client1_video_outbound["bytesSent"] > 0
             assert "encoderImplementation" in client1_video_outbound
-            assert client1_video_outbound["encoderImplementation"] == "amd_amf"
+            assert client1_video_outbound["encoderImplementation"] == CODEC_IMPLEMENTATION
 
             # audio outbound-rtp を確認
             client1_audio_outbound = get_outbound_rtp(client1_stats, "audio")
@@ -252,7 +254,7 @@ def test_sendrecv(
             assert client1_video_inbound["packetsReceived"] > 0
             assert client1_video_inbound["bytesReceived"] > 0
             assert "decoderImplementation" in client1_video_inbound
-            assert client1_video_inbound["decoderImplementation"] == "amd_amf"
+            assert client1_video_inbound["decoderImplementation"] == CODEC_IMPLEMENTATION
 
             # audio inbound-rtp を確認
             client1_audio_inbound = get_inbound_rtp(client1_stats, "audio")
@@ -280,7 +282,7 @@ def test_sendrecv(
             assert client2_video_outbound["packetsSent"] > 0
             assert client2_video_outbound["bytesSent"] > 0
             assert "encoderImplementation" in client2_video_outbound
-            assert client2_video_outbound["encoderImplementation"] == "amd_amf"
+            assert client2_video_outbound["encoderImplementation"] == CODEC_IMPLEMENTATION
 
             # audio outbound-rtp を確認
             client2_audio_outbound = get_outbound_rtp(client2_stats, "audio")
@@ -294,7 +296,7 @@ def test_sendrecv(
             assert client2_video_inbound["packetsReceived"] > 0
             assert client2_video_inbound["bytesReceived"] > 0
             assert "decoderImplementation" in client2_video_inbound
-            assert client2_video_inbound["decoderImplementation"] == "amd_amf"
+            assert client2_video_inbound["decoderImplementation"] == CODEC_IMPLEMENTATION
 
             # audio inbound-rtp を確認
             client2_audio_inbound = get_inbound_rtp(client2_stats, "audio")
@@ -412,7 +414,7 @@ def test_simulcast(sora_settings, free_port, video_codec_type):
         # encoder implementation を確認
         assert "encoderImplementation" in outbound_rtp_r0
         assert "SimulcastEncoderAdapter" in outbound_rtp_r0["encoderImplementation"]
-        assert "amd_amf" in outbound_rtp_r0["encoderImplementation"]
+        assert CODEC_IMPLEMENTATION in outbound_rtp_r0["encoderImplementation"]
 
         # r1 (中解像度) の検証
         outbound_rtp_r1 = video_outbound_rtp_by_rid["r1"]
@@ -425,7 +427,7 @@ def test_simulcast(sora_settings, free_port, video_codec_type):
 
         assert "encoderImplementation" in outbound_rtp_r1
         assert "SimulcastEncoderAdapter" in outbound_rtp_r1["encoderImplementation"]
-        assert "amd_amf" in outbound_rtp_r1["encoderImplementation"]
+        assert CODEC_IMPLEMENTATION in outbound_rtp_r1["encoderImplementation"]
 
         # r2 (高解像度) の検証
         outbound_rtp_r2 = video_outbound_rtp_by_rid["r2"]
@@ -438,7 +440,7 @@ def test_simulcast(sora_settings, free_port, video_codec_type):
 
         assert "encoderImplementation" in outbound_rtp_r2
         assert "SimulcastEncoderAdapter" in outbound_rtp_r2["encoderImplementation"]
-        assert "amd_amf" in outbound_rtp_r2["encoderImplementation"]
+        assert CODEC_IMPLEMENTATION in outbound_rtp_r2["encoderImplementation"]
 
         # transport を確認
         transport = get_transport(stats)
