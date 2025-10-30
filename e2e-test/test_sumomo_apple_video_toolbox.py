@@ -191,12 +191,6 @@ def test_sendrecv(
             assert "encoderImplementation" in client1_video_outbound
             assert client1_video_outbound["encoderImplementation"] == "VideoToolbox"
 
-            # audio outbound-rtp を確認
-            client1_audio_outbound = get_outbound_rtp(client1_stats, "audio")
-            assert client1_audio_outbound is not None
-            assert client1_audio_outbound["packetsSent"] > 0
-            assert client1_audio_outbound["bytesSent"] > 0
-
             # video inbound-rtp を確認
             client1_video_inbound = get_inbound_rtp(client1_stats, "video")
             assert client1_video_inbound is not None

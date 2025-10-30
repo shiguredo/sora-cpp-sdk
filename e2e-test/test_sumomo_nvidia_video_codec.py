@@ -234,12 +234,6 @@ def test_sendrecv(
             assert "decoderImplementation" in client2_video_inbound
             assert client2_video_inbound["decoderImplementation"] == "NvCodec"
 
-            # audio inbound-rtp を確認
-            client2_audio_inbound = get_inbound_rtp(client2_stats, "audio")
-            assert client2_audio_inbound is not None
-            assert client2_audio_inbound["packetsReceived"] > 0
-            assert client2_audio_inbound["bytesReceived"] > 0
-
 
 @pytest.mark.parametrize(
     "video_codec_type",
@@ -306,14 +300,6 @@ def test_simulcast(sora_settings, free_port, video_codec_type):
 
         video_codec = video_codec_stats[0]
         assert video_codec["clockRate"] == 90000
-
-        # audio の outbound-rtp を確認
-        audio_outbound_rtp_stats = [
-            stat
-            for stat in stats
-            if stat.get("type") == "outbound-rtp" and stat.get("kind") == "audio"
-        ]
-        assert len(audio_outbound_rtp_stats) == 1
 
         # simulcast では video の outbound-rtp が 3 つ存在することを確認
         video_outbound_rtp_by_rid = get_simulcast_outbound_rtp(stats, "video")

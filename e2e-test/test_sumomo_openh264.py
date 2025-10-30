@@ -30,7 +30,6 @@ def test_sumomo_sendonly_with_openh264_encoder(sora_settings, free_port):
         http_port=free_port,
         audio=False,
         video=True,
-        audio_codec_type="OPUS",
         video_codec_type="H264",
         h264_encoder="cisco_openh264",  # OpenH264 エンコーダーを使用
         openh264=openh264_path,  # 明示的にパスを指定
@@ -80,7 +79,6 @@ def test_sumomo_sendrecv_with_openh264_encoder(sora_settings, port_allocator):
         http_port=next(port_allocator),
         audio=False,
         video=True,
-        audio_codec_type="OPUS",
         video_codec_type="H264",
         h264_encoder="cisco_openh264",
         h264_decoder="cisco_openh264",
@@ -94,7 +92,6 @@ def test_sumomo_sendrecv_with_openh264_encoder(sora_settings, port_allocator):
             http_port=next(port_allocator),
             audio=False,
             video=True,
-            audio_codec_type="OPUS",
             video_codec_type="H264",
             h264_encoder="cisco_openh264",
             h264_decoder="cisco_openh264",
@@ -137,7 +134,6 @@ def test_sumomo_openh264_with_simulcast(sora_settings, free_port):
         http_port=free_port,
         audio=False,
         video=True,
-        audio_codec_type="OPUS",
         video_codec_type="H264",
         video_bit_rate=3000,
         h264_encoder="cisco_openh264",
@@ -229,7 +225,6 @@ def test_sumomo_explicit_openh264_path(sora_settings, free_port):
         http_port=free_port,
         audio=False,
         video=True,
-        audio_codec_type="OPUS",
         video_codec_type="H264",
         h264_encoder="cisco_openh264",
         openh264=openh264_path,  # 明示的にパスを指定

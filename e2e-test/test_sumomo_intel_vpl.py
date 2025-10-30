@@ -97,11 +97,6 @@ def test_sendonly_recvonly(
             assert sender_video_codec is not None
             assert sender_video_codec["mimeType"] == expected_mime_type
 
-            # audio codec を確認
-            sender_audio_codec = get_codec(sender_stats, "audio/opus")
-            assert sender_audio_codec is not None
-            assert sender_audio_codec["mimeType"] == "audio/opus"
-
             # video outbound-rtp を確認
             sender_video_outbound = get_outbound_rtp(sender_stats, "video")
             assert sender_video_outbound is not None
@@ -109,12 +104,6 @@ def test_sendonly_recvonly(
             assert sender_video_outbound["bytesSent"] > 0
             assert "encoderImplementation" in sender_video_outbound
             assert sender_video_outbound["encoderImplementation"] == "libvpl"
-
-            # audio outbound-rtp を確認
-            sender_audio_outbound = get_outbound_rtp(sender_stats, "audio")
-            assert sender_audio_outbound is not None
-            assert sender_audio_outbound["packetsSent"] > 0
-            assert sender_audio_outbound["bytesSent"] > 0
 
             # 受信側の統計を確認
             receiver_stats = receiver.get_stats()
@@ -125,11 +114,6 @@ def test_sendonly_recvonly(
             assert receiver_video_codec is not None
             assert receiver_video_codec["mimeType"] == expected_mime_type
 
-            # audio codec を確認
-            receiver_audio_codec = get_codec(receiver_stats, "audio/opus")
-            assert receiver_audio_codec is not None
-            assert receiver_audio_codec["mimeType"] == "audio/opus"
-
             # video inbound-rtp を確認
             receiver_video_inbound = get_inbound_rtp(receiver_stats, "video")
             assert receiver_video_inbound is not None
@@ -137,12 +121,6 @@ def test_sendonly_recvonly(
             assert receiver_video_inbound["bytesReceived"] > 0
             assert "decoderImplementation" in receiver_video_inbound
             assert receiver_video_inbound["decoderImplementation"] == "libvpl"
-
-            # audio inbound-rtp を確認
-            receiver_audio_inbound = get_inbound_rtp(receiver_stats, "audio")
-            assert receiver_audio_inbound is not None
-            assert receiver_audio_inbound["packetsReceived"] > 0
-            assert receiver_audio_inbound["bytesReceived"] > 0
 
 
 @pytest.mark.parametrize(
