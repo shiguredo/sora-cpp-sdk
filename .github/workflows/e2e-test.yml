@@ -69,7 +69,7 @@ jobs:
               labels: [self-hosted, linux, x64, AMD-AMF]
             env-vars: |
               AMD_AMF=true
-            test-target: tests/test_amd_amf.py
+            test-target: test_sumomo_amd_amf.py
           # Self-hosted runner for Raspberry Pi
           - name: raspberry_pi
             platform-name: raspberry-pi-os_armv8
