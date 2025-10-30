@@ -47,7 +47,8 @@ def test_sendonly_recvonly(
     # エンコーダー設定を準備
     encoder_params = {}
     if video_codec_type == "VP9":
-        encoder_params["vp9_encoder"] = "amd_amf"
+        # VP9 は decode だけなので internal を指定
+        encoder_params["vp9_encoder"] = "internal"
     elif video_codec_type == "AV1":
         encoder_params["av1_encoder"] = "amd_amf"
     elif video_codec_type == "H264":
@@ -170,7 +171,8 @@ def test_sendrecv(
     # エンコーダー設定を準備
     encoder_params = {}
     if video_codec_type == "VP9":
-        encoder_params["vp9_encoder"] = "amd_amf"
+        # VP9 は decode だけなので internal を指定
+        encoder_params["vp9_encoder"] = "internal"
     elif video_codec_type == "AV1":
         encoder_params["av1_encoder"] = "amd_amf"
     elif video_codec_type == "H264":
@@ -305,10 +307,10 @@ def test_sendrecv(
             assert client2_audio_inbound["bytesReceived"] > 0
 
 
+# AMD AMF では VP9 デコードのみ対応
 @pytest.mark.parametrize(
     "video_codec_type",
     [
-        "VP9",
         "AV1",
         "H264",
         "H265",
@@ -318,9 +320,7 @@ def test_simulcast(sora_settings, free_port, video_codec_type):
     """サイマルキャスト接続時の統計情報を確認（AMD AMF 使用）"""
     # エンコーダー設定を準備
     encoder_params = {}
-    if video_codec_type == "VP9":
-        encoder_params["vp9_encoder"] = "amd_amf"
-    elif video_codec_type == "AV1":
+    if video_codec_type == "AV1":
         encoder_params["av1_encoder"] = "amd_amf"
     elif video_codec_type == "H264":
         encoder_params["h264_encoder"] = "amd_amf"
