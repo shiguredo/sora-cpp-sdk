@@ -598,7 +598,7 @@ class Sumomo:
                 args.extend(["--libcamera-control", key, value])
 
         # Fake デバイス設定
-        if kwargs.get("fake_capture_device"):
+        if kwargs.get("fake_capture_device") and kwargs["role"] in ["sendonly", "sendrecv"]:
             args.append("--fake-capture-device")
 
         # オーディオデバイス設定
