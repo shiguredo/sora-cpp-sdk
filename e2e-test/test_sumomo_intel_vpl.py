@@ -8,9 +8,14 @@ import time
 
 import pytest
 
-from helper import get_codec, get_inbound_rtp, get_outbound_rtp, get_simulcast_outbound_rtp, get_transport
+from helper import (
+    get_codec,
+    get_inbound_rtp,
+    get_outbound_rtp,
+    get_simulcast_outbound_rtp,
+    get_transport,
+)
 from sumomo import Sumomo
-
 
 # Intel VPL 環境が有効でない場合はスキップ
 pytestmark = pytest.mark.skipif(
@@ -66,9 +71,9 @@ def test_sendonly_recvonly(
         role="sendonly",
         metadata=sora_settings.metadata,
         http_port=next(port_allocator),
+        audio=False,
         video=True,
         video_codec_type=video_codec_type,
-        audio=True,
         initial_wait=10,
         **encoder_params,
     ) as sender:
@@ -79,8 +84,6 @@ def test_sendonly_recvonly(
             role="recvonly",
             metadata=sora_settings.metadata,
             http_port=next(port_allocator),
-            video=True,
-            audio=True,
             **decoder_params,
         ) as receiver:
             time.sleep(3)
