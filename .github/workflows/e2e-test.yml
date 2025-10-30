@@ -61,6 +61,15 @@ jobs:
             env-vars: |
               INTEL_VPL=true
               LIBVA_MESSAGING_LEVEL=0
+          # Self-hosted runner for AMD AMF
+          - name: amd_amf
+            platform-name: ubuntu-24.04_x86_64
+            runs_on:
+              group: Self
+              labels: [self-hosted, linux, x64, AMD-AMF]
+            env_vars: |
+              AMD_AMF=true
+            test_target: tests/test_amd_amf.py
           # Self-hosted runner for Raspberry Pi
           - name: raspberry_pi
             platform-name: raspberry-pi-os_armv8
