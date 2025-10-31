@@ -11,9 +11,16 @@
 
 ## develop
 
+- [UPDATE] CUDA のバージョンを `12.9.1-1` に上げる
+  - CUDA コンパイルオプションに `D_ALLOW_UNSUPPORTED_LIBCPP` を追加する
+  - CUDA コンパイルオプションの `cuda-gpu-arch` を `sm_35` から `sm_60` に変更する
+    - sm_60 は Pascal 世代の GPU からサポートされている
+    - sm_35 は Kepler 世代の GPU からサポートされているが、Kepler は CUDA 10 までのサポートとなるためドロップ
+    - sm_50 は Maxwell 世代の GPU からサポートされているが、Maxwell は CUDA 11 までのサポートとなるドロップ
+  - @voluntas
 - [CHANGE] enum の `kNvidiaVideoCodecSdk` を `kNvidiaVideoCodec` に変更する
   - @voluntas
-- [CHANGE] liwebrtc のバージョンを m141.7390.2.0 に上げる
+- [CHANGE] liwebrtc のバージョンを m141.7390.3.3 に上げる
   - macOS, iOS が利用している clang, libc++ を Apple Clang のものから libwebrtc 管理下の Clang のものに変えたので破壊的変更となります
   - libwebrtc m141 で `rtc_config.crypto_options` の型が変更されたため、`emplace()` ではなく直接アクセスするよう修正
   - Windows で `CreateWindowsCoreAudioAudioDeviceModule` が `Environment` を受け取る API に変わったため、それに追従
@@ -40,12 +47,17 @@
   - @melpon
 - [UPDATE] actions/download-artifact を v5 に上げる
   - @miosakuma
+- [UPDATE] examples/DEPS の CLI11 バージョンを v2.6.1 にあげる
+  - @torikizi
+- [UPDATE] examples/DEPS の SDL バージョンを 3.2.24 にあげる
+  - @torikizi
 - [FIX] sumomo で audio_device をデフォルト無効にしていたのを修正する
   - @torikizi
 - [FIX] android の hello アプリについて回転時やスクリーンサイズの変更時に Activity の再起動が行われないようにする
   - AndroidManifest.xml の `android:configChanges` に `"orientation|screenSize|smallestScreenSize|screenLayout"` を設定する
-
   - @miosakuma
+- [FIX] GitHub Actions の build.yml で CUDA パッケージを ubuntu のバージョンに合わせるようにする
+  - @voluntas
 
 ## 2025.5.1
 
