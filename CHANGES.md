@@ -53,6 +53,9 @@
   - @torikizi
 - [FIX] sumomo で audio_device をデフォルト無効にしていたのを修正する
   - @torikizi
+- [FIX] android の hello アプリについて回転時やスクリーンサイズの変更時に Activity の再起動が行われないようにする
+  - AndroidManifest.xml の `android:configChanges` に `"orientation|screenSize|smallestScreenSize|screenLayout"` を設定する
+  - @miosakuma
 - [FIX] GitHub Actions の build.yml で CUDA パッケージを ubuntu のバージョンに合わせるようにする
   - @voluntas
 
