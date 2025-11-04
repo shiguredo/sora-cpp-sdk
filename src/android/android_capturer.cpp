@@ -123,7 +123,8 @@ webrtc::ScopedJavaLocalRef<jobject> AndroidCapturer::createCamera2Enumerator(
   //webrtc::ScopedJavaLocalRef<jclass> camcls =
   //    webrtc::GetClass(env, "org/webrtc/Camera1Enumerator");
   //jmethodID ctorid = env->GetMethodID(camcls.obj(), "<init>", "()V");
-  //webrtc::ScopedJavaLocalRef<jobject> enumerator(
+  // webrtc::ScopedJavaLocalRef<jobject> enumerator=
+  //     webrtc::ScopedJavaLocalRef<jobject>::Adopt(
   //    env, env->NewObject(camcls.obj(), ctorid));
 
   return enumerator;
