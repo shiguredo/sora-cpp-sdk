@@ -19,7 +19,7 @@ list(APPEND CMAKE_PREFIX_PATH ${SORA_DIR} ${SDL3_DIR})
 list(APPEND CMAKE_MODULE_PATH ${SORA_DIR}/share/cmake)
 
 set(Boost_USE_STATIC_LIBS ON)
-if(WIN32)
+if (WIN32)
   set(Boost_USE_STATIC_RUNTIME ON)
 endif()
 
@@ -27,7 +27,7 @@ find_package(Boost REQUIRED COMPONENTS json filesystem)
 find_package(WebRTC REQUIRED)
 find_package(Sora REQUIRED)
 find_package(SDL3 REQUIRED)
-if(NOT WIN32)
+if (NOT WIN32)
   find_package(Threads REQUIRED)
 endif()
 
@@ -39,17 +39,17 @@ target_sources(sumomo
     src/sumomo.cpp
     src/sdl_renderer.cpp)
 
-if(NOT WIN32)
-  target_compile_options(sumomo
-    PRIVATE
-      "$<$<COMPILE_LANGUAGE:CXX>:-nostdinc++>"
-      "$<$<COMPILE_LANGUAGE:CXX>:-isystem${LIBCXX_INCLUDE_DIR}>"
-  )
-else()
+if (WIN32)
   target_compile_options(sumomo PRIVATE /utf-8 /bigobj)
   set_target_properties(sumomo
     PROPERTIES
       MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
+  )
+else()
+  target_compile_options(sumomo
+    PRIVATE
+      "$<$<COMPILE_LANGUAGE:CXX>:-nostdinc++>"
+      "$<$<COMPILE_LANGUAGE:CXX>:-isystem${LIBCXX_INCLUDE_DIR}>"
   )
 endif()
 
@@ -57,7 +57,7 @@ target_include_directories(sumomo PRIVATE ${CLI11_DIR}/include src)
 target_link_libraries(sumomo PRIVATE Sora::sora SDL3::SDL3)
 
 target_compile_definitions(sumomo PRIVATE CLI11_HAS_FILESYSTEM=0)
-if(WIN32)
+if (WIN32)
   target_compile_definitions(sumomo
     PRIVATE
       _CONSOLE
@@ -67,6 +67,6 @@ if(WIN32)
   )
 endif()
 
-if(UNIX AND NOT APPLE)
+if (LINUX)
   set_target_properties(sumomo PROPERTIES BUILD_RPATH "\$ORIGIN")
 endif()
