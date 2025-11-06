@@ -254,6 +254,7 @@ class HttpSession : public std::enable_shared_from_this<HttpSession> {
   http::request<http::string_body> request_;
 };
 
+// Fake キャプチャーデバイスでビープ音を生成して配信するクラス
 class BeepAudioSource : public webrtc::Notifier<webrtc::AudioSourceInterface> {
  public:
   BeepAudioSource(int sample_rate,

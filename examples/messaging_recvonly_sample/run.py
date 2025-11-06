@@ -48,9 +48,13 @@ def install_deps(
     with cd(BASE_DIR):
         deps = read_version_file("DEPS")
 
-        if platform in ("raspberry-pi-os_armv8",):
+        if platform in (
+            "ubuntu-22.04_armv8",
+            "ubuntu-24.04_armv8",
+            "raspberry-pi-os_armv8",
+        ):
             # multistrap を使った sysroot の構築
-            conf = os.path.join(BASE_DIR, "multistrap", "raspberry-pi-os_armv8.conf")
+            conf = os.path.join(BASE_DIR, "multistrap", f"{platform}.conf")
             # conf ファイルのハッシュ値をバージョンとする
             version_md5 = hashlib.md5(open(conf, "rb").read()).hexdigest()
             install_rootfs_args = {
@@ -82,7 +86,14 @@ def install_deps(
 
         webrtc_info = get_webrtc_info(platform, local_webrtc_build_dir, install_dir, debug)
 
-        if local_webrtc_build_dir is None:
+        if local_webrtc_build_dir is None and platform in (
+            "macos_arm64",
+            "ubuntu-22.04_x86_64",
+            "ubuntu-24.04_x86_64",
+            "ubuntu-22.04_armv8",
+            "ubuntu-24.04_armv8",
+            "raspberry-pi-os_armv8",
+        ):
             webrtc_version = read_version_file(webrtc_info.version_file)
 
             # LLVM
@@ -136,6 +147,7 @@ def install_deps(
             "raspberry-pi-os_armv8",
             "ubuntu-22.04_x86_64",
             "ubuntu-24.04_x86_64",
+            "ubuntu-22.04_armv8",
             "ubuntu-24.04_armv8",
         ):
             cmake_platform = "linux-x86_64"
@@ -166,10 +178,11 @@ def install_deps(
 AVAILABLE_TARGETS = [
     "windows_x86_64",
     "macos_arm64",
-    "raspberry-pi-os_armv8",
     "ubuntu-22.04_x86_64",
     "ubuntu-24.04_x86_64",
+    "ubuntu-22.04_armv8",
     "ubuntu-24.04_armv8",
+    "raspberry-pi-os_armv8",
 ]
 
 
@@ -230,7 +243,13 @@ def _build(args):
                 f"-DCMAKE_CXX_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang++')}",
                 f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}",
             ]
-        elif platform in ("raspberry-pi-os_armv8",):
+        elif platform in ("ubuntu-22.04_x86_64", "ubuntu-24.04_x86_64"):
+            cmake_args += [
+                f"-DCMAKE_C_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang')}",
+                f"-DCMAKE_CXX_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang++')}",
+                f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}",
+            ]
+        elif platform in ("ubuntu-22.04_armv8", "ubuntu-24.04_armv8"):
             sysroot = os.path.join(install_dir, "rootfs")
             cmake_args += [
                 f"-DCMAKE_C_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang')}",
@@ -247,13 +266,7 @@ def _build(args):
                 "-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH",
                 "-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH",
             ]
-        elif platform in ("ubuntu-22.04_x86_64", "ubuntu-24.04_x86_64"):
-            cmake_args += [
-                f"-DCMAKE_C_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang')}",
-                f"-DCMAKE_CXX_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang++')}",
-                f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}",
-            ]
-        elif platform in ("ubuntu-24.04_armv8",):
+        elif platform in ("raspberry-pi-os_armv8",):
             sysroot = os.path.join(install_dir, "rootfs")
             cmake_args += [
                 f"-DCMAKE_C_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang')}",
