@@ -61,3 +61,7 @@ if(WIN32)
       WIN32_LEAN_AND_MEAN
   )
 endif()
+
+if (LINUX)
+  set_target_properties(messaging_recvonly_sample PROPERTIES BUILD_RPATH "\$ORIGIN")
+endif()

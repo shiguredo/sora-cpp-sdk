@@ -65,5 +65,5 @@ if (WIN32)
 endif()
 
 if (LINUX)
-  set_target_properties(sumomo PROPERTIES BUILD_RPATH "\$ORIGIN")
+  set_target_properties(sdl_sample PROPERTIES BUILD_RPATH "\$ORIGIN")
 endif()
