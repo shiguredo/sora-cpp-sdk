@@ -1,10 +1,13 @@
 #include <algorithm>
+#include <atomic>
+#include <chrono>
+#include <cmath>
 #include <csignal>
+#include <cstdint>
 #include <cstdlib>
 #include <exception>
 #include <fstream>
 #include <functional>
-#include <future>
 #include <ios>
 #include <iostream>
 #include <iterator>
@@ -15,6 +18,7 @@
 #include <regex>
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -42,6 +46,7 @@
 #include <api/audio_options.h>
 #include <api/make_ref_counted.h>
 #include <api/media_stream_interface.h>
+#include <api/notifier.h>
 #include <api/peer_connection_interface.h>
 #include <api/rtc_error.h>
 #include <api/rtp_parameters.h>
@@ -53,6 +58,7 @@
 #include <api/video/video_codec_type.h>
 #include <rtc_base/crypto_random.h>
 #include <rtc_base/logging.h>
+#include <rtc_base/time_utils.h>
 
 #ifdef _WIN32
 #include <rtc_base/win/scoped_com_initializer.h>
