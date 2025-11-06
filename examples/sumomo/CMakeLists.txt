@@ -37,8 +37,7 @@ set_target_properties(sumomo PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_sources(sumomo
   PRIVATE
     src/sumomo.cpp
-    src/sdl_renderer.cpp
-    src/rtc/fake_audio_capturer.cpp)
+    src/sdl_renderer.cpp)
 
 if(NOT WIN32)
   target_compile_options(sumomo

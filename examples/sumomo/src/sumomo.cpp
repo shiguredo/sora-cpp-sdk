@@ -4,10 +4,12 @@
 #include <exception>
 #include <fstream>
 #include <functional>
+#include <future>
 #include <ios>
 #include <iostream>
 #include <iterator>
 #include <memory>
+#include <numbers>
 #include <optional>
 #include <ostream>
 #include <regex>
@@ -38,6 +40,7 @@
 
 // WebRTC
 #include <api/audio_options.h>
+#include <api/make_ref_counted.h>
 #include <api/media_stream_interface.h>
 #include <api/peer_connection_interface.h>
 #include <api/rtc_error.h>
@@ -71,7 +74,6 @@
 // CLI11
 #include <CLI/CLI.hpp>
 
-#include "rtc/fake_audio_capturer.h"
 #include "sdl_renderer.h"
 
 struct SumomoConfig {
@@ -246,6 +248,120 @@ class HttpSession : public std::enable_shared_from_this<HttpSession> {
   http::request<http::string_body> request_;
 };
 
+class BeepAudioSource : public webrtc::Notifier<webrtc::AudioSourceInterface> {
+ public:
+  BeepAudioSource(int sample_rate,
+                  int channels,
+                  int frequency,
+                  int duration_ms,
+                  double volume)
+      : sample_rate_(sample_rate),
+        channels_(channels),
+        frequency_(frequency),
+        duration_ms_(duration_ms),
+        volume_(volume) {
+    thread_ = std::make_unique<std::thread>(&BeepAudioSource::Run, this);
+  }
+
+  ~BeepAudioSource() override {
+    stop_requested_ = true;
+    thread_->join();
+    thread_.reset();
+  }
+  webrtc::MediaSourceInterface::SourceState state() const override {
+    return webrtc::MediaSourceInterface::kLive;
+  }
+  bool remote() const override { return false; }
+
+  void AddSink(webrtc::AudioTrackSinkInterface* sink) override {
+    sinks_.push_back(sink);
+  }
+
+  void RemoveSink(webrtc::AudioTrackSinkInterface* sink) override {
+    sinks_.erase(std::remove(sinks_.begin(), sinks_.end(), sink), sinks_.end());
+  }
+
+  const webrtc::AudioOptions options() const override {
+    return webrtc::AudioOptions();
+  }
+
+  void TriggerBeep() { beep_triggered_ = true; }
+
+ private:
+  static std::vector<int16_t> GenerateBeep(int sample_rate,
+                                           int channels,
+                                           int frequency,
+                                           double volume,
+                                           int n) {
+    int64_t timestamp = webrtc::TimeMillis();
+
+    // 10 ミリ秒分のサンプルを生成
+    int samples_per_10ms = sample_rate / 100;
+    std::vector<int16_t> buffer(samples_per_10ms * channels);
+    for (int i = 0; i < samples_per_10ms; ++i) {
+      int16_t value =
+          static_cast<int16_t>(volume *
+                               sin(2.0 * std::numbers::pi * frequency /
+                                   sample_rate * (n * samples_per_10ms + i)) *
+                               32767);
+
+      for (int ch = 0; ch < channels; ++ch) {
+        buffer[i * channels + ch] = value;
+      }
+    }
+
+    return buffer;
+  }
+
+  void Run() {
+    int64_t timestamp = webrtc::TimeMillis();
+    int64_t last_timestamp = timestamp;
+    int n = 0;
+    while (true) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      if (stop_requested_) {
+        break;
+      }
+      if (beep_triggered_) {
+        beep_triggered_ = false;
+        timestamp = webrtc::TimeMillis();
+        last_timestamp = timestamp + duration_ms_;
+        n = 0;
+      }
+      auto now = webrtc::TimeMillis();
+      while (timestamp + 10 <= now) {
+        std::vector<int16_t> buffer;
+        if (timestamp >= last_timestamp) {
+          // 無音データ
+          int samples_per_10ms = sample_rate_ / 100;
+          buffer.resize(samples_per_10ms * channels_);
+        } else {
+          buffer =
+              GenerateBeep(sample_rate_, channels_, frequency_, volume_, n);
+          n += 1;
+        }
+        for (auto* sink : sinks_) {
+          sink->OnData(buffer.data(), channels_ * sizeof(int16_t) * 8,
+                       sample_rate_, channels_, sample_rate_ / 100, timestamp);
+        }
+        timestamp += 10;
+      }
+    }
+  }
+
+  const int sample_rate_;
+  const int channels_;
+  const int frequency_;
+  const int duration_ms_;
+  const double volume_;
+
+  std::vector<webrtc::AudioTrackSinkInterface*> sinks_;
+
+  std::atomic<bool> stop_requested_{false};
+  std::atomic<bool> beep_triggered_{false};
+  std::unique_ptr<std::thread> thread_;
+};
+
 class HttpListener : public std::enable_shared_from_this<HttpListener> {
  public:
   HttpListener(net::io_context& ioc,
@@ -313,12 +429,8 @@ class HttpListener : public std::enable_shared_from_this<HttpListener> {
 class Sumomo : public std::enable_shared_from_this<Sumomo>,
                public sora::SoraSignalingObserver {
  public:
-  Sumomo(std::shared_ptr<sora::SoraClientContext> context,
-         SumomoConfig config,
-         webrtc::scoped_refptr<FakeAudioCapturer> fake_audio_capturer = nullptr)
-      : context_(context),
-        config_(config),
-        fake_audio_capturer_(fake_audio_capturer) {}
+  Sumomo(std::shared_ptr<sora::SoraClientContext> context, SumomoConfig config)
+      : context_(context), config_(config) {}
 
   void Run() {
     if (config_.use_sdl) {
@@ -338,6 +450,18 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
 
     auto size = config_.GetSize();
     if (config_.role != "recvonly") {
+      // オーディオソースの作成
+      if (config_.audio) {
+        if (config_.fake_capture_device) {
+          audio_source_ = webrtc::make_ref_counted<BeepAudioSource>(
+              48000, 1, 440, 100, 0.5);
+        } else {
+          audio_source_ =
+              context_->peer_connection_factory()->CreateAudioSource(
+                  webrtc::AudioOptions());
+        }
+      }
+
       // ビデオソースの作成
       webrtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source;
 
@@ -347,10 +471,10 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
         fake_config.width = size.width;
         fake_config.height = size.height;
         fake_config.fps = 30;
-        // FakeAudioCapturer と連携: 円が一周したらビープ音を鳴らす
-        if (fake_audio_capturer_) {
+        // BeepAudioSource と連携: 円が一周したらビープ音を鳴らす
+        if (audio_source_) {
           fake_config.on_tick = [this]() {
-            fake_audio_capturer_->TriggerBeep();
+            static_cast<BeepAudioSource*>(audio_source_.get())->TriggerBeep();
           };
         }
         auto fake_video_capturer = sora::FakeVideoCapturer::Create(fake_config);
@@ -382,9 +506,7 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
       if (config_.audio) {
         std::string audio_track_id = webrtc::CreateRandomString(16);
         audio_track_ = context_->peer_connection_factory()->CreateAudioTrack(
-            audio_track_id, context_->peer_connection_factory()
-                                ->CreateAudioSource(webrtc::AudioOptions())
-                                .get());
+            audio_track_id, audio_source_.get());
       }
 
       // ビデオトラックの作成（ビデオが有効な場合のみ）
@@ -584,9 +706,9 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
  private:
   std::shared_ptr<sora::SoraClientContext> context_;
   SumomoConfig config_;
+  webrtc::scoped_refptr<webrtc::AudioSourceInterface> audio_source_;
   webrtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track_;
   webrtc::scoped_refptr<webrtc::VideoTrackInterface> video_track_;
-  webrtc::scoped_refptr<FakeAudioCapturer> fake_audio_capturer_;
   std::shared_ptr<sora::SoraSignaling> conn_;
   std::unique_ptr<boost::asio::io_context> ioc_;
   std::unique_ptr<SDLRenderer> sdl_renderer_;
@@ -960,24 +1082,9 @@ int main(int argc, char* argv[]) {
   }
 
   auto context_config = sora::SoraClientContextConfig();
-  // audio が無効な場合は AudioDevice を使用しない
-  if (!config.audio) {
+  // audio が無効な場合や fake の場合は AudioDevice を使用しない
+  if (!config.audio || config.fake_capture_device) {
     context_config.use_audio_device = false;
-  }
-  // fake デバイスを使用する場合は FakeAudioCapturer を設定
-  webrtc::scoped_refptr<FakeAudioCapturer> fake_audio_capturer;
-  if (config.fake_capture_device && config.audio) {
-    context_config.use_audio_device = false;
-    context_config.configure_dependencies =
-        [&fake_audio_capturer](
-            webrtc::PeerConnectionFactoryDependencies& dependencies) {
-          FakeAudioCapturer::Config fake_audio_config;
-          fake_audio_config.sample_rate = 48000;
-          fake_audio_config.channels = 1;
-          fake_audio_config.fps = 30;
-          fake_audio_capturer = FakeAudioCapturer::Create(fake_audio_config);
-          dependencies.adm = fake_audio_capturer;
-        };
   }
   if (!audio_recording_device.empty()) {
     context_config.audio_recording_device = audio_recording_device;
@@ -1038,7 +1145,7 @@ int main(int argc, char* argv[]) {
   }
 
   auto context = sora::SoraClientContext::Create(context_config);
-  auto sumomo = std::make_shared<Sumomo>(context, config, fake_audio_capturer);
+  auto sumomo = std::make_shared<Sumomo>(context, config);
   sumomo->Run();
 
   return 0;
