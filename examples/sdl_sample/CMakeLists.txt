@@ -19,7 +19,7 @@ list(APPEND CMAKE_PREFIX_PATH ${SORA_DIR} ${SDL3_DIR})
 list(APPEND CMAKE_MODULE_PATH ${SORA_DIR}/share/cmake)
 
 set(Boost_USE_STATIC_LIBS ON)
-if(WIN32)
+if (WIN32)
   set(Boost_USE_STATIC_RUNTIME ON)
 endif()
 
@@ -27,7 +27,7 @@ find_package(Boost REQUIRED COMPONENTS json filesystem)
 find_package(WebRTC REQUIRED)
 find_package(Sora REQUIRED)
 find_package(SDL3 REQUIRED)
-if(NOT WIN32)
+if (NOT WIN32)
   find_package(Threads REQUIRED)
 endif()
 
@@ -37,7 +37,7 @@ set_target_properties(sdl_sample PROPERTIES POSITION_INDEPENDENT_CODE ON)
 set_target_properties(sdl_sample PROPERTIES CXX_VISIBILITY_PRESET hidden)
 target_sources(sdl_sample PRIVATE src/sdl_sample.cpp src/sdl_renderer.cpp)
 
-if(NOT WIN32)
+if (NOT WIN32)
   target_compile_options(sdl_sample
     PRIVATE
       "$<$<COMPILE_LANGUAGE:CXX>:-nostdinc++>"
@@ -54,7 +54,7 @@ target_include_directories(sdl_sample PRIVATE ${CLI11_DIR}/include)
 target_link_libraries(sdl_sample PRIVATE Sora::sora SDL3::SDL3)
 
 target_compile_definitions(sdl_sample PRIVATE CLI11_HAS_FILESYSTEM=0)
-if(WIN32)
+if (WIN32)
   target_compile_definitions(sdl_sample
     PRIVATE
       _CONSOLE
@@ -62,4 +62,8 @@ if(WIN32)
       NOMINMAX
       WIN32_LEAN_AND_MEAN
   )
+endif()
+
+if (LINUX)
+  set_target_properties(sumomo PROPERTIES BUILD_RPATH "\$ORIGIN")
 endif()
