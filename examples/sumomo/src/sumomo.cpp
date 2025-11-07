@@ -1,5 +1,9 @@
 #include <algorithm>
+#include <atomic>
+#include <chrono>
+#include <cmath>
 #include <csignal>
+#include <cstdint>
 #include <cstdlib>
 #include <exception>
 #include <fstream>
@@ -8,11 +12,13 @@
 #include <iostream>
 #include <iterator>
 #include <memory>
+#include <numbers>
 #include <optional>
 #include <ostream>
 #include <regex>
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <utility>
 #include <vector>
 
@@ -38,7 +44,10 @@
 
 // WebRTC
 #include <api/audio_options.h>
+#include <api/make_ref_counted.h>
 #include <api/media_stream_interface.h>
+#include <api/notifier.h>
+#include <api/peer_connection_interface.h>
 #include <api/rtc_error.h>
 #include <api/rtp_parameters.h>
 #include <api/rtp_receiver_interface.h>
@@ -49,6 +58,7 @@
 #include <api/video/video_codec_type.h>
 #include <rtc_base/crypto_random.h>
 #include <rtc_base/logging.h>
+#include <rtc_base/time_utils.h>
 
 #ifdef _WIN32
 #include <rtc_base/win/scoped_com_initializer.h>
@@ -58,6 +68,7 @@
 #include <sora/amf_context.h>
 #include <sora/boost_json_iwyu.h>
 #include <sora/camera_device_capturer.h>
+#include <sora/capturer/fake_video_capturer.h>
 #include <sora/cuda_context.h>
 #include <sora/renderer/ansi_renderer.h>
 #include <sora/renderer/sixel_renderer.h>
@@ -126,6 +137,8 @@ struct SumomoConfig {
   bool use_libcamera = false;
   bool use_libcamera_native = false;
   std::vector<std::pair<std::string, std::string>> libcamera_controls;
+
+  bool fake_capture_device = false;
 
   struct Size {
     int width;
@@ -241,6 +254,121 @@ class HttpSession : public std::enable_shared_from_this<HttpSession> {
   http::request<http::string_body> request_;
 };
 
+// Fake キャプチャーデバイスでビープ音を生成して配信するクラス
+class BeepAudioSource : public webrtc::Notifier<webrtc::AudioSourceInterface> {
+ public:
+  BeepAudioSource(int sample_rate,
+                  int channels,
+                  int frequency,
+                  int duration_ms,
+                  double volume)
+      : sample_rate_(sample_rate),
+        channels_(channels),
+        frequency_(frequency),
+        duration_ms_(duration_ms),
+        volume_(volume) {
+    thread_ = std::make_unique<std::thread>(&BeepAudioSource::Run, this);
+  }
+
+  ~BeepAudioSource() override {
+    stop_requested_ = true;
+    thread_->join();
+    thread_.reset();
+  }
+  webrtc::MediaSourceInterface::SourceState state() const override {
+    return webrtc::MediaSourceInterface::kLive;
+  }
+  bool remote() const override { return false; }
+
+  void AddSink(webrtc::AudioTrackSinkInterface* sink) override {
+    sinks_.push_back(sink);
+  }
+
+  void RemoveSink(webrtc::AudioTrackSinkInterface* sink) override {
+    sinks_.erase(std::remove(sinks_.begin(), sinks_.end(), sink), sinks_.end());
+  }
+
+  const webrtc::AudioOptions options() const override {
+    return webrtc::AudioOptions();
+  }
+
+  void TriggerBeep() { beep_triggered_ = true; }
+
+ private:
+  static std::vector<int16_t> GenerateBeep(int sample_rate,
+                                           int channels,
+                                           int frequency,
+                                           double volume,
+                                           int n) {
+    int64_t timestamp = webrtc::TimeMillis();
+
+    // 10 ミリ秒分のサンプルを生成
+    int samples_per_10ms = sample_rate / 100;
+    std::vector<int16_t> buffer(samples_per_10ms * channels);
+    for (int i = 0; i < samples_per_10ms; ++i) {
+      int16_t value =
+          static_cast<int16_t>(volume *
+                               sin(2.0 * std::numbers::pi * frequency /
+                                   sample_rate * (n * samples_per_10ms + i)) *
+                               32767);
+
+      for (int ch = 0; ch < channels; ++ch) {
+        buffer[i * channels + ch] = value;
+      }
+    }
+
+    return buffer;
+  }
+
+  void Run() {
+    int64_t timestamp = webrtc::TimeMillis();
+    int64_t last_timestamp = timestamp;
+    int n = 0;
+    while (true) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));
+      if (stop_requested_) {
+        break;
+      }
+      if (beep_triggered_) {
+        beep_triggered_ = false;
+        timestamp = webrtc::TimeMillis();
+        last_timestamp = timestamp + duration_ms_;
+        n = 0;
+      }
+      auto now = webrtc::TimeMillis();
+      while (timestamp + 10 <= now) {
+        std::vector<int16_t> buffer;
+        if (timestamp >= last_timestamp) {
+          // 無音データ
+          int samples_per_10ms = sample_rate_ / 100;
+          buffer.resize(samples_per_10ms * channels_);
+        } else {
+          buffer =
+              GenerateBeep(sample_rate_, channels_, frequency_, volume_, n);
+          n += 1;
+        }
+        for (auto* sink : sinks_) {
+          sink->OnData(buffer.data(), channels_ * sizeof(int16_t) * 8,
+                       sample_rate_, channels_, sample_rate_ / 100, timestamp);
+        }
+        timestamp += 10;
+      }
+    }
+  }
+
+  const int sample_rate_;
+  const int channels_;
+  const int frequency_;
+  const int duration_ms_;
+  const double volume_;
+
+  std::vector<webrtc::AudioTrackSinkInterface*> sinks_;
+
+  std::atomic<bool> stop_requested_{false};
+  std::atomic<bool> beep_triggered_{false};
+  std::unique_ptr<std::thread> thread_;
+};
+
 class HttpListener : public std::enable_shared_from_this<HttpListener> {
  public:
   HttpListener(net::io_context& ioc,
@@ -329,37 +457,79 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
 
     auto size = config_.GetSize();
     if (config_.role != "recvonly") {
-      sora::CameraDeviceCapturerConfig cam_config;
-      cam_config.width = size.width;
-      cam_config.height = size.height;
-      cam_config.fps = 30;
-      cam_config.use_native = config_.hw_mjpeg_decoder;
-      cam_config.device_name = config_.video_device;
-      cam_config.use_libcamera = config_.use_libcamera;
-      cam_config.libcamera_native_frame_output = config_.use_libcamera_native;
-      cam_config.libcamera_controls = config_.libcamera_controls;
-      auto video_source = sora::CreateCameraDeviceCapturer(cam_config);
-      if (video_source == nullptr) {
+      // オーディオソースの作成
+      if (config_.audio) {
+        if (config_.fake_capture_device) {
+          audio_source_ = webrtc::make_ref_counted<BeepAudioSource>(
+              48000, 1, 440, 100, 0.5);
+        } else {
+          audio_source_ =
+              context_->peer_connection_factory()->CreateAudioSource(
+                  webrtc::AudioOptions());
+        }
+      }
+
+      // ビデオソースの作成
+      webrtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source;
+
+      if (config_.fake_capture_device && config_.video) {
+        // Fake ビデオソースを作成
+        sora::FakeVideoCapturerConfig fake_config;
+        fake_config.width = size.width;
+        fake_config.height = size.height;
+        fake_config.fps = 30;
+        // BeepAudioSource と連携: 円が一周したらビープ音を鳴らす
+        if (audio_source_) {
+          fake_config.on_tick = [this]() {
+            static_cast<BeepAudioSource*>(audio_source_.get())->TriggerBeep();
+          };
+        }
+        auto fake_video_capturer = sora::FakeVideoCapturer::Create(fake_config);
+        if (fake_video_capturer) {
+          fake_video_capturer->StartCapture();
+        }
+        video_source = fake_video_capturer;
+      } else if (config_.video) {
+        // カメラデバイスからビデオソースを作成
+        sora::CameraDeviceCapturerConfig cam_config;
+        cam_config.width = size.width;
+        cam_config.height = size.height;
+        cam_config.fps = 30;
+        cam_config.use_native = config_.hw_mjpeg_decoder;
+        cam_config.device_name = config_.video_device;
+        cam_config.use_libcamera = config_.use_libcamera;
+        cam_config.libcamera_native_frame_output = config_.use_libcamera_native;
+        cam_config.libcamera_controls = config_.libcamera_controls;
+        video_source = sora::CreateCameraDeviceCapturer(cam_config);
+      }
+
+      // ビデオソースが作成されているかチェック（ビデオが有効な場合のみ）
+      if (config_.video && video_source == nullptr) {
         RTC_LOG(LS_ERROR) << "Failed to create video source.";
         return;
       }
 
-      std::string audio_track_id = webrtc::CreateRandomString(16);
-      std::string video_track_id = webrtc::CreateRandomString(16);
-      audio_track_ = context_->peer_connection_factory()->CreateAudioTrack(
-          audio_track_id, context_->peer_connection_factory()
-                              ->CreateAudioSource(webrtc::AudioOptions())
-                              .get());
-      video_track_ = context_->peer_connection_factory()->CreateVideoTrack(
-          video_source, video_track_id);
-      if (config_.use_sdl && config_.show_me) {
-        sdl_renderer_->AddTrack(video_track_.get());
+      // オーディオトラックの作成（オーディオが有効な場合のみ）
+      if (config_.audio) {
+        std::string audio_track_id = webrtc::CreateRandomString(16);
+        audio_track_ = context_->peer_connection_factory()->CreateAudioTrack(
+            audio_track_id, audio_source_.get());
       }
-      if (config_.use_sixel && config_.show_me) {
-        sixel_renderer_->AddTrack(video_track_.get());
-      }
-      if (config_.use_ansi && config_.show_me) {
-        ansi_renderer_->AddTrack(video_track_.get());
+
+      // ビデオトラックの作成（ビデオが有効な場合のみ）
+      if (config_.video) {
+        std::string video_track_id = webrtc::CreateRandomString(16);
+        video_track_ = context_->peer_connection_factory()->CreateVideoTrack(
+            video_source, video_track_id);
+        if (config_.use_sdl && config_.show_me) {
+          sdl_renderer_->AddTrack(video_track_.get());
+        }
+        if (config_.use_sixel && config_.show_me) {
+          sixel_renderer_->AddTrack(video_track_.get());
+        }
+        if (config_.use_ansi && config_.show_me) {
+          ansi_renderer_->AddTrack(video_track_.get());
+        }
       }
     }
 
@@ -543,6 +713,7 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
  private:
   std::shared_ptr<sora::SoraClientContext> context_;
   SumomoConfig config_;
+  webrtc::scoped_refptr<webrtc::AudioSourceInterface> audio_source_;
   webrtc::scoped_refptr<webrtc::AudioTrackInterface> audio_track_;
   webrtc::scoped_refptr<webrtc::VideoTrackInterface> video_track_;
   std::shared_ptr<sora::SoraSignaling> conn_;
@@ -753,6 +924,11 @@ int main(int argc, char* argv[]) {
   app.add_option("--libcamera-control", config.libcamera_controls,
                  "Set libcamera control (format: key value)");
 
+  // Fake デバイスに関するオプション
+  app.add_flag("--fake-capture-device", config.fake_capture_device,
+               "Use fake capture devices for audio and video (generates test "
+               "pattern and silence)");
+
   // SoraClientContextConfig に関するオプション
   std::string audio_recording_device;
   app.add_option("--audio-recording-device", audio_recording_device,
@@ -913,6 +1089,10 @@ int main(int argc, char* argv[]) {
   }
 
   auto context_config = sora::SoraClientContextConfig();
+  // audio が無効な場合や fake の場合は AudioDevice を使用しない
+  if (!config.audio || config.fake_capture_device) {
+    context_config.use_audio_device = false;
+  }
   if (!audio_recording_device.empty()) {
     context_config.audio_recording_device = audio_recording_device;
   }

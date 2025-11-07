@@ -3,11 +3,10 @@ name: formatter
 on:
   workflow_dispatch:
   push:
-    paths-ignore:
-      - "doc/**"
-      - "**.md"
-      - "LICENSE"
-      - "NOTICE"
+    paths:
+      - "src/**"
+      - "include/**"
+      - "examples/**"
 
 jobs:
   run-ubuntu:
@@ -65,7 +64,7 @@ jobs:
         run: |
           cd examples
           for app in sdl_sample sumomo messaging_recvonly_sample; do
-            python3 $app/${{ matrix.platform.name }}/run.py \
+            python3 $app/run.py build ${{ matrix.platform.name }} \
               --local-sora-cpp-sdk-dir .. \
               --local-sora-cpp-sdk-args=--disable-cuda \
               --install-dir `pwd`/../_install/${{ matrix.platform.name }}/release

@@ -41,12 +41,26 @@
 
 ### misc
 
+- [ADD] examples の各サンプルに ubuntu-22.04_armv8 対応を追加する
+  - messaging_recvonly_sample, sdl_sample, sumomo の各サンプルに ubuntu-22.04_armv8 プラットフォームのビルド設定を追加
+  - multistrap/ubuntu-22.04_armv8.conf を追加
+  - @voluntas
+- [ADD] sumomo に `--fake-capture-device` オプションを追加
+  - フェイクの音声と映像デバイスを使用してテストパターンと無音を生成する
+  - 実際に音声や映像を送信するかは `--audio`/`--video` オプションに依存する
+  - @voluntas
+- [ADD] GitHub Actions に sumomo を利用した E2E テストを実行する `e2e-test.yml` を追加
+  - @voluntas
 - [ADD] sumomo に `--use-libcamera`, `--use-libcamera-native`, `--libcamera-control` オプションを追加
   - @melpon
 - [ADD] sumomo のエンコーダ/デコーダに指定できるエンジン名として `raspi_v4l2m2m` を追加
   - @melpon
 - [ADD] hello アプリに `use_sixel`, `sixel_width`, `sixel_height`, `use_ansi`, `ansi_width`, `ansi_height` を追加
   - @melpon
+- [ADD] E2E テストを追加
+  - pytest を使用した sumomo の E2E テスト環境を構築
+  - `e2e-test/` ディレクトリにテストケースとプロセス管理を追加
+  - @voluntas
 - [UPDATE] actions/download-artifact を v5 に上げる
   - @miosakuma
 - [UPDATE] examples/DEPS の CLI11 バージョンを v2.6.1 にあげる
@@ -59,6 +73,10 @@
   - AndroidManifest.xml の `android:configChanges` に `"orientation|screenSize|smallestScreenSize|screenLayout"` を設定する
   - @miosakuma
 - [FIX] GitHub Actions の build.yml で CUDA パッケージを ubuntu のバージョンに合わせるようにする
+  - @voluntas
+- [FIX] Raspberry Pi OS 向けのサンプルが artifact としてアップロードされていなかった問題を修正
+  - @voluntas
+- [FIX] sumomo で `--audio false` の時はトラックを生成しないように修正する
   - @voluntas
 
 ## 2025.5.1
