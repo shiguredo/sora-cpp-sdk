@@ -38,6 +38,8 @@
   - @melpon
 - [ADD] `sora::CameraDeviceCapturerConfig` に `use_libcamera`, `libcamera_native_frame_output`, `libcamera_controls` フィールドを追加
   - @melpon
+- [ADD] `sora::SoraSignalingConfig` に `simulcast_request_rid` フィールドを追加
+  - @voluntas
 
 ### misc
 
