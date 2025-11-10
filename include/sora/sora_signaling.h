@@ -125,6 +125,7 @@ struct SoraSignalingConfig {
   std::string spotlight_unfocus_rid;
   std::optional<bool> simulcast;
   std::string simulcast_rid;
+  std::string simulcast_request_rid;
   std::optional<bool> data_channel_signaling;
   int data_channel_signaling_timeout = 180;
   std::optional<bool> ignore_disconnect_websocket;
