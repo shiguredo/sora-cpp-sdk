@@ -40,6 +40,8 @@
   - @melpon
 - [ADD] `sora::SoraSignalingConfig` に `simulcast_request_rid` フィールドを追加
   - @voluntas
+- [FIX] Windows でオーディオデバイスを指定しなかった場合に録音・再生が動作しないのを修正する
+  - @melpon
 
 ### misc
 
