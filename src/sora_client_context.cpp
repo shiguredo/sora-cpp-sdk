@@ -174,7 +174,10 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
         err = is_recording ? adm->RecordingDeviceName(i, name, guid)
                            : adm->PlayoutDeviceName(i, name, guid);
         if (err != 0) {
-          RTC_LOG(LS_WARNING) << "Failed to RecordingDeviceName: index=" << i;
+          RTC_LOG(LS_WARNING)
+              << "Failed to "
+              << (is_recording ? "RecordingDeviceName" : "PlayoutDeviceName")
+              << ": index=" << i;
           continue;
         }
         RTC_LOG(LS_INFO) << (is_recording ? "RecordingDeviceName"
@@ -226,13 +229,7 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
       const auto& guid = std::get<1>(devices[index]);
       int err = is_recording ? adm->SetRecordingDevice(index)
                              : adm->SetPlayoutDevice(index);
-      if (err == 0) {
-        RTC_LOG(LS_INFO) << "Succeeded "
-                         << (is_recording ? "SetRecordingDevice"
-                                          : "SetPlayoutDevice")
-                         << ": index=" << index << " name=" << name
-                         << " guid=" << guid;
-      } else {
+      if (err != 0) {
         RTC_LOG(LS_ERROR) << "Failed to "
                           << (is_recording ? "SetRecordingDevice"
                                            : "SetPlayoutDevice")
@@ -240,6 +237,12 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
                           << " guid=" << guid;
         return false;
       }
+      RTC_LOG(LS_INFO) << "Succeeded "
+                       << (is_recording ? "SetRecordingDevice"
+                                        : "SetPlayoutDevice")
+                       << ": index=" << index << " name=" << name
+                       << " guid=" << guid;
+      return true;
     };
     if (!set_audio_device(c->config_.audio_recording_device, recording_devices,
                           true)) {
