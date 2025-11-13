@@ -757,7 +757,7 @@ void add_optional_bool(CLI::App& app,
       ->check(CLI::IsMember({"true", "false", "none"}));
 }
 
-int main(int argc, char* argv[]) {
+int _main(int argc, char* argv[]) {
 #ifdef _WIN32
   webrtc::ScopedCOMInitializer com_initializer(
       webrtc::ScopedCOMInitializer::kMTA);
@@ -1156,4 +1156,56 @@ int main(int argc, char* argv[]) {
   sumomo->Run();
 
   return 0;
+}
+
+#include <rtc_base/string_utils.h>
+
+#include <audioclient.h>
+#include <audiopolicy.h>
+#include <avrt.h>
+#include <comdef.h>
+#include <mmdeviceapi.h>
+#include <objbase.h>
+#include <propidl.h>
+#include <wrl/client.h>
+
+#include <functiondiscoverykeys_devpkey.h>
+
+int main(int argc, char* argv[]) {
+  webrtc::ScopedCOMInitializer com_initializer(
+      webrtc::ScopedCOMInitializer::kMTA);
+  if (!com_initializer.Succeeded()) {
+    std::cerr << "CoInitializeEx failed" << std::endl;
+    return 1;
+  }
+
+  webrtc::LogMessage::LogToDebug(webrtc::LoggingSeverity::LS_INFO);
+
+  using Microsoft::WRL::ComPtr;
+  ComPtr<IMMDeviceEnumerator> device_enumerator;
+  _com_error error =
+      ::CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL,
+                         IID_PPV_ARGS(&device_enumerator));
+  ComPtr<IMMDeviceCollection> collection;
+  error = device_enumerator->EnumAudioEndpoints(eCapture, DEVICE_STATEMASK_ALL,
+                                                collection.GetAddressOf());
+  UINT number_of_active_devices = 0;
+  error = collection->GetCount(&number_of_active_devices);
+  RTC_LOG(LS_INFO) << "Number of active audio capture devices: "
+                   << number_of_active_devices;
+  for (UINT i = 0; i < number_of_active_devices; ++i) {
+    ComPtr<IMMDevice> device;
+    error = collection->Item(i, device.GetAddressOf());
+    ComPtr<IPropertyStore> property_store;
+    error = device->OpenPropertyStore(STGM_READ, property_store.GetAddressOf());
+    PROPVARIANT friendly_name;
+    PropVariantInit(&friendly_name);
+    error = property_store->GetValue(PKEY_Device_FriendlyName, &friendly_name);
+    DWORD state = 0;
+    device->GetState(&state);
+    RTC_LOG(LS_INFO) << "  - " << i << ": state=" << state << " name="
+                     << webrtc::ToUtf8(friendly_name.pwszVal,
+                                       wcslen(friendly_name.pwszVal));
+    PropVariantClear(&friendly_name);
+  }
 }
