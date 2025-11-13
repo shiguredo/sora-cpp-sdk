@@ -144,33 +144,25 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
       if (device_count >= 0) {
         devices.resize(device_count);
       }
+
+      bool available = false;
+      int err = is_recording ? adm->RecordingIsAvailable(&available)
+                             : adm->PlayoutIsAvailable(&available);
+      if (err != 0) {
+        RTC_LOG(LS_WARNING)
+            << "Failed to "
+            << (is_recording ? "RecordingIsAvailable" : "PlayoutIsAvailable");
+        return devices;
+      }
+      if (!available) {
+        RTC_LOG(LS_INFO) << (is_recording ? "Recording" : "Playout")
+                         << " is not available";
+        return devices;
+      }
+
       for (int i = 0; i < device_count; i++) {
         char name[webrtc::kAdmMaxDeviceNameSize];
         char guid[webrtc::kAdmMaxGuidSize];
-        int err;
-        err = is_recording ? adm->SetRecordingDevice(i)
-                           : adm->SetPlayoutDevice(i);
-        if (err != 0) {
-          RTC_LOG(LS_WARNING)
-              << "Failed to "
-              << (is_recording ? "SetRecordingDevice" : "SetPlayoutDevice")
-              << ": index=" << i;
-          continue;
-        }
-        bool available = false;
-        err = is_recording ? adm->RecordingIsAvailable(&available)
-                           : adm->PlayoutIsAvailable(&available);
-        if (err != 0) {
-          RTC_LOG(LS_WARNING)
-              << "Failed to "
-              << (is_recording ? "RecordingIsAvailable" : "PlayoutIsAvailable")
-              << ": index=" << i;
-          continue;
-        }
-
-        if (!available) {
-          continue;
-        }
         err = is_recording ? adm->RecordingDeviceName(i, name, guid)
                            : adm->PlayoutDeviceName(i, name, guid);
         if (err != 0) {
@@ -187,9 +179,6 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
         std::get<0>(devices[i]) = name;
         std::get<1>(devices[i]) = guid;
       }
-      if (device_count >= 2) {
-        adm->SetRecordingDevice(0);
-      }
       return devices;
     };
     std::vector<std::tuple<std::string, std::string> > recording_devices =
@@ -197,53 +186,53 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
     std::vector<std::tuple<std::string, std::string> > playout_devices =
         get_audio_devices(false);
 
-    auto set_audio_device = [adm](std::optional<std::string> device_name,
-                                  const std::vector<
-                                      std::tuple<std::string, std::string> >&
-                                      devices,
-                                  bool is_recording) {
-      if (!device_name) {
-        // デバイス名が指定されていない場合はデフォルトデバイスを使う
-        // 明示的に 0 を指定しないと、Windows の場合は -1（無効なデバイス）が使われてしまう
-        if (!devices.empty()) {
-          is_recording ? adm->SetRecordingDevice(0) : adm->SetPlayoutDevice(0);
-        }
-        return true;
-      }
-      int index = -1;
-      for (int i = 0; i < devices.size(); i++) {
-        const auto& name = std::get<0>(devices[i]);
-        const auto& guid = std::get<1>(devices[i]);
-        if (*device_name == name || *device_name == guid) {
-          index = i;
-          break;
-        }
-      }
-      if (index == -1) {
-        RTC_LOG(LS_ERROR) << "No " << (is_recording ? "recording" : "playout")
-                          << " device found: name=" << *device_name;
-        return false;
-      }
+    auto set_audio_device =
+        [adm](std::optional<std::string> device_name,
+              const std::vector<std::tuple<std::string, std::string> >& devices,
+              bool is_recording) {
+          if (!device_name) {
+            // デバイス名が指定されていない場合はデフォルトデバイスを使う
+            // 明示的に 0 を指定しないと、Windows の場合は -1（無効なデバイス）が使われてしまう
+            if (!devices.empty()) {
+              is_recording ? adm->SetRecordingDevice(0)
+                           : adm->SetPlayoutDevice(0);
+            }
+            return true;
+          }
+          int index = -1;
+          for (int i = 0; i < devices.size(); i++) {
+            const auto& name = std::get<0>(devices[i]);
+            const auto& guid = std::get<1>(devices[i]);
+            if (*device_name == name || *device_name == guid) {
+              index = i;
+              break;
+            }
+          }
+          if (index == -1) {
+            RTC_LOG(LS_ERROR)
+                << "No " << (is_recording ? "recording" : "playout")
+                << " device found: name=" << *device_name;
+            return false;
+          }
 
-      const auto& name = std::get<0>(devices[index]);
-      const auto& guid = std::get<1>(devices[index]);
-      int err = is_recording ? adm->SetRecordingDevice(index)
-                             : adm->SetPlayoutDevice(index);
-      if (err != 0) {
-        RTC_LOG(LS_ERROR) << "Failed to "
-                          << (is_recording ? "SetRecordingDevice"
-                                           : "SetPlayoutDevice")
-                          << ": index=" << index << " name=" << name
-                          << " guid=" << guid;
-        return false;
-      }
-      RTC_LOG(LS_INFO) << "Succeeded "
-                       << (is_recording ? "SetRecordingDevice"
-                                        : "SetPlayoutDevice")
-                       << ": index=" << index << " name=" << name
-                       << " guid=" << guid;
-      return true;
-    };
+          const auto& name = std::get<0>(devices[index]);
+          const auto& guid = std::get<1>(devices[index]);
+          int err = is_recording ? adm->SetRecordingDevice(index)
+                                 : adm->SetPlayoutDevice(index);
+          if (err != 0) {
+            RTC_LOG(LS_ERROR)
+                << "Failed to "
+                << (is_recording ? "SetRecordingDevice" : "SetPlayoutDevice")
+                << ": index=" << index << " name=" << name << " guid=" << guid;
+            return false;
+          }
+          RTC_LOG(LS_INFO) << "Succeeded "
+                           << (is_recording ? "SetRecordingDevice"
+                                            : "SetPlayoutDevice")
+                           << ": index=" << index << " name=" << name
+                           << " guid=" << guid;
+          return true;
+        };
     if (!set_audio_device(c->config_.audio_recording_device, recording_devices,
                           true)) {
       return false;
