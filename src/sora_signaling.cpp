@@ -314,8 +314,12 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     m["simulcast_rid"] = config_.simulcast_rid;
   }
 
-  if (!config_.simulcast_request_rid.empty()) {
-    m["simulcast_request_rid"] = config_.simulcast_request_rid;
+  if (config_.simulcast_request_rid) {
+    m["simulcast_request_rid"] = *config_.simulcast_request_rid;
+  }
+
+  if (config_.simulcast_rid_auto) {
+    m["simulcast_rid_auto"] = *config_.simulcast_rid_auto;
   }
 
   if (config_.spotlight) {
