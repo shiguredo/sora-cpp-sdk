@@ -1186,9 +1186,17 @@ int main(int argc, char* argv[]) {
   _com_error error =
       ::CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL,
                          IID_PPV_ARGS(&device_enumerator));
+  if (FAILED(error.Error())) {
+    RTC_LOG(LS_ERROR) << "CoCreateInstance failed: " << error.ErrorMessage();
+    return 1;
+  }
   ComPtr<IMMDeviceCollection> collection;
   error = device_enumerator->EnumAudioEndpoints(eCapture, DEVICE_STATEMASK_ALL,
                                                 collection.GetAddressOf());
+  if (FAILED(error.Error())) {
+    RTC_LOG(LS_ERROR) << "EnumAudioEndpoints failed: " << error.ErrorMessage();
+    return 1;
+  }
   UINT number_of_active_devices = 0;
   error = collection->GetCount(&number_of_active_devices);
   RTC_LOG(LS_INFO) << "Number of active audio capture devices: "
@@ -1196,13 +1204,34 @@ int main(int argc, char* argv[]) {
   for (UINT i = 0; i < number_of_active_devices; ++i) {
     ComPtr<IMMDevice> device;
     error = collection->Item(i, device.GetAddressOf());
+    if (FAILED(error.Error())) {
+      RTC_LOG(LS_ERROR) << "IMMDeviceCollection::Item failed: "
+                        << error.ErrorMessage();
+      continue;
+    }
     ComPtr<IPropertyStore> property_store;
     error = device->OpenPropertyStore(STGM_READ, property_store.GetAddressOf());
+    if (FAILED(error.Error())) {
+      RTC_LOG(LS_ERROR) << "IMMDevice::OpenPropertyStore failed: "
+                        << error.ErrorMessage();
+      continue;
+    }
     PROPVARIANT friendly_name;
     PropVariantInit(&friendly_name);
     error = property_store->GetValue(PKEY_Device_FriendlyName, &friendly_name);
+    if (FAILED(error.Error())) {
+      RTC_LOG(LS_ERROR) << "IPropertyStore::GetValue failed: "
+                        << error.ErrorMessage();
+      continue;
+    }
     DWORD state = 0;
-    device->GetState(&state);
+    error = device->GetState(&state);
+    if (FAILED(error.Error())) {
+      RTC_LOG(LS_ERROR) << "IMMDevice::GetState failed: "
+                        << error.ErrorMessage();
+      PropVariantClear(&friendly_name);
+      continue;
+    }
     RTC_LOG(LS_INFO) << "  - " << i << ": state=" << state << " name="
                      << webrtc::ToUtf8(friendly_name.pwszVal,
                                        wcslen(friendly_name.pwszVal));
