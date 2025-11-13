@@ -22,7 +22,7 @@
   - @voluntas
 - [CHANGE] enum の `kNvidiaVideoCodecSdk` を `kNvidiaVideoCodec` に変更する
   - @voluntas
-- [CHANGE] liwebrtc のバージョンを m143.7499.0.0 に上げる
+- [CHANGE] liwebrtc のバージョンを m143.7499.1.0 に上げる
   - macOS, iOS が利用している clang, libc++ を Apple Clang のものから libwebrtc 管理下の Clang のものに変えたので破壊的変更となります
   - libwebrtc m141 で `rtc_config.crypto_options` の型が変更されたため、`emplace()` ではなく直接アクセスするよう修正
   - Windows で `CreateWindowsCoreAudioAudioDeviceModule` が `Environment` を受け取る API に変わったため、それに追従

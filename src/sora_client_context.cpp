@@ -144,33 +144,25 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
       if (device_count >= 0) {
         devices.resize(device_count);
       }
+
+      bool available = false;
+      int err = is_recording ? adm->RecordingIsAvailable(&available)
+                             : adm->PlayoutIsAvailable(&available);
+      if (err != 0) {
+        RTC_LOG(LS_WARNING)
+            << "Failed to "
+            << (is_recording ? "RecordingIsAvailable" : "PlayoutIsAvailable");
+        return devices;
+      }
+      if (!available) {
+        RTC_LOG(LS_INFO) << (is_recording ? "Recording" : "Playout")
+                         << " is not available";
+        return devices;
+      }
+
       for (int i = 0; i < device_count; i++) {
         char name[webrtc::kAdmMaxDeviceNameSize];
         char guid[webrtc::kAdmMaxGuidSize];
-        int err;
-        err = is_recording ? adm->SetRecordingDevice(i)
-                           : adm->SetPlayoutDevice(i);
-        if (err != 0) {
-          RTC_LOG(LS_WARNING)
-              << "Failed to "
-              << (is_recording ? "SetRecordingDevice" : "SetPlayoutDevice")
-              << ": index=" << i;
-          continue;
-        }
-        bool available = false;
-        err = is_recording ? adm->RecordingIsAvailable(&available)
-                           : adm->PlayoutIsAvailable(&available);
-        if (err != 0) {
-          RTC_LOG(LS_WARNING)
-              << "Failed to "
-              << (is_recording ? "RecordingIsAvailable" : "PlayoutIsAvailable")
-              << ": index=" << i;
-          continue;
-        }
-
-        if (!available) {
-          continue;
-        }
         err = is_recording ? adm->RecordingDeviceName(i, name, guid)
                            : adm->PlayoutDeviceName(i, name, guid);
         if (err != 0) {
@@ -186,9 +178,6 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
                          << " guid=" << guid;
         std::get<0>(devices[i]) = name;
         std::get<1>(devices[i]) = guid;
-      }
-      if (device_count >= 2) {
-        adm->SetRecordingDevice(0);
       }
       return devices;
     };
