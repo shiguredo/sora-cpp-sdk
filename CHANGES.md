@@ -38,7 +38,9 @@
   - @melpon
 - [ADD] `sora::CameraDeviceCapturerConfig` に `use_libcamera`, `libcamera_native_frame_output`, `libcamera_controls` フィールドを追加
   - @melpon
-- [ADD] `sora::SoraSignalingConfig` に `simulcast_request_rid` フィールドを追加
+- [ADD] `simulcast_request_rid` に対応する
+  - @voluntas
+- [ADD] `simulcast_rid_auto` に対応する
   - @voluntas
 - [FIX] Windows でオーディオデバイスを指定しなかった場合に録音・再生が動作しないのを修正する
   - @melpon
