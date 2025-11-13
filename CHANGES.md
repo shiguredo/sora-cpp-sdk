@@ -11,6 +11,8 @@
 
 ## develop
 
+- [UPDATE] AMD AMF のバージョンを `v1.5.0` にあげる
+  - @voluntas
 - [UPDATE] CUDA のバージョンを `12.9.1-1` に上げる
   - CUDA コンパイルオプションに `D_ALLOW_UNSUPPORTED_LIBCPP` を追加する
   - CUDA コンパイルオプションの `cuda-gpu-arch` を `sm_35` から `sm_60` に変更する
