@@ -319,6 +319,15 @@ jobs:
           name: examples_${{ matrix.platform.name }}
           path: examples/examples_${{ matrix.platform.name }}
 
+  e2e-test:
+    name: E2E Test
+    needs:
+      - build-windows
+      - build-macos
+      - build-ubuntu
+    uses: ./.github/workflows/e2e-test.yml
+    secrets: inherit
+
   create-release:
     name: Create Release
     if: contains(github.ref, 'tags/202')
@@ -326,6 +335,7 @@ jobs:
       - build-windows
       - build-macos
       - build-ubuntu
+      - e2e-test
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
@@ -540,6 +550,7 @@ jobs:
       - build-windows
       - build-macos
       - build-ubuntu
+      - e2e-test
       - create-release
       - build-windows-examples
       - build-macos-examples
@@ -552,6 +563,7 @@ jobs:
           needs.build-windows.result == 'failure' ||
           needs.build-macos.result == 'failure' ||
           needs.build-ubuntu.result == 'failure' ||
+          needs.e2e-test.result == 'failure' ||
           needs.create-release.result == 'failure' ||
           needs.build-windows-examples.result == 'failure' ||
           needs.build-macos-examples.result == 'failure' ||

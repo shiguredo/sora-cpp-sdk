@@ -15,47 +15,60 @@ runs:
     - name: Download sumomo artifact
       shell: bash
       run: |
-        # 同一ブランチの最新の成功したビルドワークフローの実行を取得
-        RUN_ID=$(gh run list --workflow=build.yml --branch=${{ inputs.branch-name }} --status=success --limit=1 --json databaseId --jq '.[0].databaseId')
+        # workflow_call で呼び出された場合は、現在のワークフロー実行から artifact をダウンロード
+        if [ "${{ github.event_name }}" = "workflow_call" ]; then
+          echo "workflow_call から呼び出されました。現在のワークフロー実行から artifact をダウンロードします"
 
-        if [ -n "$RUN_ID" ]; then
-          echo "ブランチ ${{ inputs.branch-name }} の成功したビルドが見つかりました: $RUN_ID"
-          # アーティファクトをダウンロード
-          gh run download $RUN_ID --name examples_${{ inputs.platform-name }} --dir ./sumomo_binary
+          # 現在のワークフロー実行 ID を取得
+          # workflow_call の場合、github.run_id は呼び出し元のワークフロー実行 ID を指す
+          CURRENT_RUN_ID="${{ github.run_id }}"
+          echo "現在のワークフロー実行 ID: $CURRENT_RUN_ID"
+
+          # 呼び出し元のワークフロー実行から artifact をダウンロード
+          gh run download $CURRENT_RUN_ID --name examples_${{ inputs.platform-name }} --dir ./sumomo_binary
         else
-          echo "ブランチ ${{ inputs.branch-name }} の成功したビルドが見つかりません"
-          echo "VERSION ファイルから release バージョンを取得してダウンロードします"
+          # workflow_call 以外の場合は、同一ブランチの最新の成功したビルドワークフローの実行を取得
+          RUN_ID=$(gh run list --workflow=build.yml --branch=${{ inputs.branch-name }} --status=success --limit=1 --json databaseId --jq '.[0].databaseId')
 
-          # VERSION ファイルからバージョンを取得
-          VERSION=$(cat VERSION | head -n1)
-          echo "VERSION: $VERSION"
-
-          # プラットフォームに応じたアーカイブ形式を決定
-          if [[ "${{ inputs.platform-name }}" == windows_* ]]; then
-            ARCHIVE_NAME="sumomo_${{ inputs.platform-name }}.zip"
+          if [ -n "$RUN_ID" ]; then
+            echo "ブランチ ${{ inputs.branch-name }} の成功したビルドが見つかりました: $RUN_ID"
+            # アーティファクトをダウンロード
+            gh run download $RUN_ID --name examples_${{ inputs.platform-name }} --dir ./sumomo_binary
           else
-            ARCHIVE_NAME="sumomo_${{ inputs.platform-name }}.tar.gz"
+            echo "ブランチ ${{ inputs.branch-name }} の成功したビルドが見つかりません"
+            echo "VERSION ファイルから release バージョンを取得してダウンロードします"
+
+            # VERSION ファイルからバージョンを取得
+            VERSION=$(cat VERSION | head -n1)
+            echo "VERSION: $VERSION"
+
+            # プラットフォームに応じたアーカイブ形式を決定
+            if [[ "${{ inputs.platform-name }}" == windows_* ]]; then
+              ARCHIVE_NAME="sumomo_${{ inputs.platform-name }}.zip"
+            else
+              ARCHIVE_NAME="sumomo_${{ inputs.platform-name }}.tar.gz"
+            fi
+
+            echo "リリース $VERSION から $ARCHIVE_NAME をダウンロードします"
+
+            # リリースアセットをダウンロード
+            gh release download "$VERSION" --pattern "$ARCHIVE_NAME"
+
+            # アーカイブを展開
+            mkdir -p sumomo_binary
+
+            if [[ "${{ inputs.platform-name }}" == windows_* ]]; then
+              # Windows の場合は zip を展開
+              unzip -q "$ARCHIVE_NAME" -d .
+              mv "sumomo_${{ inputs.platform-name }}"/* sumomo_binary/
+            else
+              # Linux/macOS の場合は tar.gz を展開
+              tar -xzf "$ARCHIVE_NAME" -C sumomo_binary --strip-components=1
+            fi
+
+            # ダウンロードしたアーカイブを削除
+            rm "$ARCHIVE_NAME"
           fi
-
-          echo "リリース $VERSION から $ARCHIVE_NAME をダウンロードします"
-
-          # リリースアセットをダウンロード
-          gh release download "$VERSION" --pattern "$ARCHIVE_NAME"
-
-          # アーカイブを展開
-          mkdir -p sumomo_binary
-
-          if [[ "${{ inputs.platform-name }}" == windows_* ]]; then
-            # Windows の場合は zip を展開
-            unzip -q "$ARCHIVE_NAME" -d .
-            mv "sumomo_${{ inputs.platform-name }}"/* sumomo_binary/
-          else
-            # Linux/macOS の場合は tar.gz を展開
-            tar -xzf "$ARCHIVE_NAME" -C sumomo_binary --strip-components=1
-          fi
-
-          # ダウンロードしたアーカイブを削除
-          rm "$ARCHIVE_NAME"
         fi
       env:
         GH_TOKEN: ${{ github.token }}
