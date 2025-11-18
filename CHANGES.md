@@ -44,6 +44,8 @@
   - @voluntas
 - [ADD] `simulcast_rid_auto` に対応する
   - @voluntas
+- [ADD] `llvm.sh` でインストールする LLVM のバージョンを DEPS ファイルから指定可能にする
+  - @melpon
 - [FIX] Windows でオーディオデバイスを指定しなかった場合に録音・再生が動作しないのを修正する
   - @melpon
 
