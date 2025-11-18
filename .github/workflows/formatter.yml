@@ -43,6 +43,13 @@ jobs:
           key: ${{ matrix.platform.name }}-${{ hashFiles('VERSION', 'DEPS') }}
           restore-keys: |
             ${{ matrix.platform.name }}-
+
+      - name: Get versions from DEPS
+        id: version
+        run: |
+          source DEPS
+          echo "apt_install_llvm_version=$APT_INSTALL_LLVM_VERSION" >> $GITHUB_OUTPUT
+
       - name: Install deps for ${{ matrix.platform.name }}
         if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
         run: |
@@ -55,10 +62,10 @@ jobs:
           # OpenGL
           sudo apt-get install -y libgl-dev
 
-          # clang-20
+          # clang
           wget https://apt.llvm.org/llvm.sh
           chmod a+x llvm.sh
-          sudo ./llvm.sh 20
+          sudo ./llvm.sh ${{ steps.version.outputs.apt_install_llvm_version }}
       - run: python3 run.py build --disable-cuda --test ${{ matrix.platform.name }}
       - name: Build Examples
         run: |
