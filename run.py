@@ -529,8 +529,10 @@ def install_deps(
                 install_vpl_args["cmake_args"].append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
             if platform.target.os == "ubuntu":
                 cmake_args = []
-                cmake_args.append("-DCMAKE_C_COMPILER=clang-20")
-                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-20")
+                cmake_args.append(f"-DCMAKE_C_COMPILER=clang-{deps['APT_INSTALL_LLVM_VERSION']}")
+                cmake_args.append(
+                    f"-DCMAKE_CXX_COMPILER=clang++-{deps['APT_INSTALL_LLVM_VERSION']}"
+                )
                 path = cmake_path(os.path.join(webrtc_info.libcxx_dir, "include"))
                 cmake_args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
                 flags = [
@@ -758,6 +760,7 @@ def _build(
             deps = read_version_file("DEPS")
             sora_cpp_sdk_commit = cmdcap(["git", "rev-parse", "HEAD"])
             android_native_api_level = deps["ANDROID_NATIVE_API_LEVEL"]
+            apt_install_llvm_version = deps["APT_INSTALL_LLVM_VERSION"]
         cmake_args.append(f"-DWEBRTC_INCLUDE_DIR={cmake_path(webrtc_info.webrtc_include_dir)}")
         cmake_args.append(f"-DWEBRTC_LIBRARY_DIR={cmake_path(webrtc_info.webrtc_library_dir)}")
         cmake_args.append(f"-DSORA_CPP_SDK_VERSION={sora_cpp_sdk_version}")
@@ -775,8 +778,8 @@ def _build(
                 "ubuntu-22.04_x86_64",
                 "ubuntu-24.04_x86_64",
             ):
-                cmake_args.append("-DCMAKE_C_COMPILER=clang-20")
-                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-20")
+                cmake_args.append(f"-DCMAKE_C_COMPILER=clang-{apt_install_llvm_version}")
+                cmake_args.append(f"-DCMAKE_CXX_COMPILER=clang++-{apt_install_llvm_version}")
             else:
                 sysroot = os.path.join(install_dir, "rootfs")
                 cmake_args.append(
@@ -1052,8 +1055,10 @@ def _build(
                         "ubuntu-22.04_x86_64",
                         "ubuntu-24.04_x86_64",
                     ):
-                        cmake_args.append("-DCMAKE_C_COMPILER=clang-20")
-                        cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-20")
+                        cmake_args.append(f"-DCMAKE_C_COMPILER=clang-{apt_install_llvm_version}")
+                        cmake_args.append(
+                            f"-DCMAKE_CXX_COMPILER=clang++-{apt_install_llvm_version}"
+                        )
                     else:
                         sysroot = os.path.join(install_dir, "rootfs")
                         cmake_args.append(
