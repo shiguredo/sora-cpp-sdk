@@ -334,9 +334,9 @@ void AMFVideoDecoderImpl::ReleaseAMF() {
   }
   if (polling_thread_ != nullptr) {
     polling_thread_->join();
+    polling_thread_.reset();
   }
   decoder_ = nullptr;
-  polling_thread_.reset();
 }
 
 std::unique_ptr<AMFVideoDecoder> AMFVideoDecoder::Create(

@@ -421,10 +421,10 @@ AMF_RESULT AMFVideoEncoderImpl::ReleaseAMF() {
   }
   if (polling_thread_ != nullptr) {
     polling_thread_->join();
+    polling_thread_.reset();
   }
 
   encoder_ = nullptr;
-  polling_thread_.reset();
 
   return AMF_OK;
 }
