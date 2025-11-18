@@ -529,7 +529,7 @@ def install_deps(
                 ]
                 install_vpl_args["cmake_args"].append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
             if platform.target.os == "ubuntu":
-                apt_install_llvm_version = deps["ANDROID_NATIVE_API_LEVEL"]
+                apt_install_llvm_version = deps["APT_INSTALL_LLVM_VERSION"]
                 cmake_args = []
                 cmake_args.append(f"-DCMAKE_C_COMPILER=clang-{apt_install_llvm_version}")
                 cmake_args.append(f"-DCMAKE_CXX_COMPILER=clang++-{apt_install_llvm_version}")
