@@ -32,11 +32,12 @@ class DataChannelObserver {
 class DataChannel : public std::enable_shared_from_this<DataChannel> {
   struct Thunk : webrtc::DataChannelObserver,
                  std::enable_shared_from_this<Thunk> {
-    DataChannel* p;
+    DataChannel* p = nullptr;
     webrtc::scoped_refptr<webrtc::DataChannelInterface> dc;
     void OnStateChange() override;
     void OnMessage(const webrtc::DataBuffer& buffer) override;
     void OnBufferedAmountChange(uint64_t previous_amount) override;
+    void Detach();
   };
 
  public:

@@ -23,13 +23,29 @@
 namespace sora {
 
 void DataChannel::Thunk::OnStateChange() {
+  if (p == nullptr) {
+    return;
+  }
   p->OnStateChange(shared_from_this());
 }
 void DataChannel::Thunk::OnMessage(const webrtc::DataBuffer& buffer) {
+  if (p == nullptr) {
+    return;
+  }
   p->OnMessage(shared_from_this(), buffer);
 }
 void DataChannel::Thunk::OnBufferedAmountChange(uint64_t previous_amount) {
+  if (p == nullptr) {
+    return;
+  }
   p->OnBufferedAmountChange(shared_from_this(), previous_amount);
+}
+void DataChannel::Thunk::Detach() {
+  if (dc) {
+    dc->UnregisterObserver();
+    dc = nullptr;
+  }
+  p = nullptr;
 }
 
 DataChannel::DataChannel(boost::asio::io_context& ioc,
@@ -37,6 +53,13 @@ DataChannel::DataChannel(boost::asio::io_context& ioc,
     : ioc_(&ioc), timer_(ioc), observer_(observer) {}
 DataChannel::~DataChannel() {
   RTC_LOG(LS_INFO) << "dtor DataChannel";
+  boost::system::error_code ec;
+  timer_.cancel(ec);
+  for (auto& kv : thunks_) {
+    kv.first->Detach();
+  }
+  thunks_.clear();
+  labels_.clear();
 }
 bool DataChannel::IsOpen(std::string label) const {
   auto it = labels_.find(label);
