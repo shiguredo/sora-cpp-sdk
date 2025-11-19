@@ -62,10 +62,11 @@ jobs:
           # OpenGL
           sudo apt-get install -y libgl-dev
 
-          # clang
+          # clang と clang-format
           wget https://apt.llvm.org/llvm.sh
           chmod a+x llvm.sh
           sudo ./llvm.sh ${{ steps.version.outputs.apt_install_llvm_version }}
+          sudo apt install clang-format-${{ steps.version.outputs.apt_install_llvm_version }}
       - run: python3 run.py build --disable-cuda --test ${{ matrix.platform.name }}
       - name: Build Examples
         run: |
