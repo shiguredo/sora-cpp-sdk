@@ -189,6 +189,8 @@
   - `Encode` メソッドで AV1 用の `codec_specific` 設定（`generic_frame_info` と `template_structure`）を追加
   - `SetRates` でビットレート変更時の SVC レイヤー制御を追加
   - @voluntas
+- [FIX] AMF エンコーダー、デコーダーのリリース時に polling_thread_ の null チェックを追加する
+  - @voluntas
 
 ### misc
 
