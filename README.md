@@ -38,11 +38,12 @@ Please read <https://github.com/shiguredo/oss/blob/master/README.en.md> before u
 - [Cisco OpenH264](https://www.openh264.org/) への対応
   - Ubuntu x86_64 / Ubuntu arm64 / macOS arm64 / Windows x86_64
 
+> [!CAUTION]  
+> AMD AMF はドライバーが不安定なため、現在非推奨です。
+
 ## ライブラリのバイナリ提供について
 
 以下からダウンロードが可能です。
-
-_hololens2 は無視してください_
 
 <https://github.com/shiguredo/sora-cpp-sdk/releases>
 
@@ -58,9 +59,9 @@ _hololens2 は無視してください_
 
 - Windows 10.1809 x86_64 以降
 - macOS 14 arm64 以降
-- Ubuntu 22.04 x86_64
 - Ubuntu 24.04 x86_64
 - Ubuntu 24.04 arm64
+- Ubuntu 22.04 x86_64
 - Android 7 arm64 以降
 - iOS 14 arm64 以降
 - Ubuntu 22.04 ARMv8 Jetson (JetPack 6.0 以降)
@@ -146,7 +147,6 @@ limitations under the License.
 ## NVIDIA Video Codec SDK
 
 <https://docs.nvidia.com/video-technologies/video-codec-sdk/13.0/index.html>
-
 
 <https://docs.nvidia.com/video-technologies/video-codec-sdk/13.0/license/index.html>
 
