@@ -1194,11 +1194,12 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
               [self = shared_from_this()](
                   const webrtc::scoped_refptr<const webrtc::RTCStatsReport>&
                       report) {
-                if (self->state_ != State::Connected) {
-                  return;
-                }
-
-                self->DoSendPong(report);
+                boost::asio::post(*self->config_.io_context, [self, report]() {
+                  if (self->state_ != State::Connected) {
+                    return;
+                  }
+                  self->DoSendPong(report);
+                });
               })
               .get());
     } else {
@@ -1778,10 +1779,12 @@ void SoraSignaling::OnMessage(
               [self = shared_from_this()](
                   const webrtc::scoped_refptr<const webrtc::RTCStatsReport>&
                       report) {
-                if (self->state_ != State::Connected) {
-                  return;
-                }
-                self->DoSendPong(report);
+                boost::asio::post(*self->config_.io_context, [self, report]() {
+                  if (self->state_ != State::Connected) {
+                    return;
+                  }
+                  self->DoSendPong(report);
+                });
               })
               .get());
     }
