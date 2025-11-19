@@ -331,6 +331,7 @@ AMF_RESULT AMFVideoDecoderImpl::InitAMF() {
 void AMFVideoDecoderImpl::ReleaseAMF() {
   if (decoder_ != nullptr) {
     decoder_->Drain();
+    decoder_->Flush();
   }
   if (polling_thread_ != nullptr) {
     polling_thread_->join();
