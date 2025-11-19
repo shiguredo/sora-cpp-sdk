@@ -628,12 +628,7 @@ void Websocket::Cancel() {
 }
 
 const boost::beast::websocket::close_reason& Websocket::reason() const {
-  static const boost::beast::websocket::close_reason null_reason{
-      boost::beast::websocket::close_code::abnormal, "WEBSOCKET_NULL"};
-  if (IsSSL()) {
-    return wss_ ? wss_->reason() : null_reason;
-  }
-  return ws_ ? ws_->reason() : null_reason;
+  return IsSSL() ? wss_->reason() : ws_->reason();
 }
 
 }  // namespace sora

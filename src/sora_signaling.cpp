@@ -677,13 +677,7 @@ void SoraSignaling::DoInternalDisconnect(
         return;
       }
       *ws_close_called = true;
-      boost::beast::websocket::close_reason reason;
-      if (self->ws_) {
-        reason = self->ws_->reason();
-      } else {
-        reason.code = boost::beast::websocket::close_code::abnormal;
-        reason.reason = "WEBSOCKET_NULL";
-      }
+      auto reason = self->ws_->reason();
       self->SendOnWsClose(reason);
       if (ec != boost::beast::websocket::error::closed) {
         std::string message = "Failed to close WebSocket: ec=" + ec.message() +
@@ -766,13 +760,7 @@ void SoraSignaling::DoInternalDisconnect(
                     on_close](boost::system::error_code ec) {
       boost::system::error_code tec;
       self->closing_timeout_timer_.cancel(tec);
-      boost::beast::websocket::close_reason reason;
-      if (self->ws_) {
-        reason = self->ws_->reason();
-      } else {
-        reason.code = boost::beast::websocket::close_code::abnormal;
-        reason.reason = "WEBSOCKET_NULL";
-      }
+      auto reason = self->ws_->reason();
       if (ec == boost::asio::error::operation_aborted) {
         // タイムアウトによる切断なので 4999 をコールバックする
         auto timeout_reason = boost::beast::websocket::close_reason(
@@ -908,14 +896,7 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
     if (state_ == State::Connected) {
       // 何かエラーが起きたので切断する
       ws_connected_ = false;
-      boost::beast::websocket::close_reason reason;
-      if (ws_) {
-        reason = ws_->reason();
-      } else {
-        // Clear() 等で ws_ が先に破棄された場合でもクラッシュさせない
-        reason.code = boost::beast::websocket::close_code::abnormal;
-        reason.reason = "WEBSOCKET_NULL";
-      }
+      auto reason = ws_->reason();
       auto error_code = reason.code == 1000
                             ? SoraSignalingErrorCode::CLOSE_SUCCEEDED
                         : ec == boost::beast::websocket::error::closed
