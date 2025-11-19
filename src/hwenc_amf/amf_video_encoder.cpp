@@ -418,7 +418,6 @@ AMF_RESULT AMFVideoEncoderImpl::InitAMF() {
 AMF_RESULT AMFVideoEncoderImpl::ReleaseAMF() {
   if (encoder_ != nullptr) {
     encoder_->Drain();
-    encoder_->Flush();
   }
   if (polling_thread_ != nullptr) {
     polling_thread_->join();
