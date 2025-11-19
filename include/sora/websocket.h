@@ -1,6 +1,7 @@
 #ifndef SORA_WEBSOCKET_H_
 #define SORA_WEBSOCKET_H_
 
+#include <atomic>
 #include <cstddef>
 #include <functional>
 #include <memory>
@@ -161,6 +162,8 @@ class Websocket {
   std::vector<std::unique_ptr<WriteData>> write_data_;
 
   boost::asio::deadline_timer close_timeout_timer_;
+  // WebSocket がクローズ中またはクローズ済みかどうかを示すフラグ
+  std::atomic<bool> closing_;
 
   http_header_value user_agent_;
 

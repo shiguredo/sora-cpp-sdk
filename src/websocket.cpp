@@ -99,6 +99,7 @@ Websocket::Websocket(boost::asio::io_context& ioc)
       resolver_(new boost::asio::ip::tcp::resolver(ioc)),
       strand_(ws_->get_executor()),
       close_timeout_timer_(ioc),
+      closing_(false),
       user_agent_(Version::GetDefaultUserAgent()) {
   ws_->write_buffer_bytes(8192);
 }
@@ -112,6 +113,7 @@ Websocket::Websocket(Websocket::ssl_tag,
       strand_(ioc.get_executor()),
       close_timeout_timer_(ioc),
       insecure_(insecure),
+      closing_(false),
       user_agent_(Version::GetDefaultUserAgent()),
       ca_cert_(ca_cert) {
   ssl_ctx_ = CreateSSLContext(client_cert, client_key);
@@ -122,6 +124,7 @@ Websocket::Websocket(boost::asio::ip::tcp::socket socket)
     : ws_(new websocket_t(std::move(socket))),
       strand_(ws_->get_executor()),
       close_timeout_timer_(ws_->get_executor()),
+      closing_(false),
       user_agent_(Version::GetDefaultUserAgent()) {
   ws_->write_buffer_bytes(8192);
 }
@@ -138,6 +141,7 @@ Websocket::Websocket(https_proxy_tag,
       strand_(ioc.get_executor()),
       close_timeout_timer_(ioc),
       insecure_(insecure),
+      closing_(false),
       ca_cert_(ca_cert),
       https_proxy_(true),
       proxy_socket_(new boost::asio::ip::tcp::socket(ioc)),
@@ -150,6 +154,8 @@ Websocket::Websocket(https_proxy_tag,
 
 Websocket::~Websocket() {
   RTC_LOG(LS_INFO) << "Websocket::~Websocket this=" << (void*)this;
+  // デストラクタでもクローズフラグを設定
+  closing_ = true;
 }
 
 void Websocket::SetUserAgent(http_header_value user_agent) {
@@ -526,6 +532,12 @@ void Websocket::DoWriteText(std::string text, write_callback_t on_write) {
   }
 }
 void Websocket::DoWrite() {
+  // WebSocket がクローズ中またはクローズ済みの場合は何もしない
+  if (closing_) {
+    RTC_LOG(LS_WARNING) << __FUNCTION__ << ": WebSocket is closing or closed";
+    return;
+  }
+
   // WebSocket が既に破棄されている場合は何もしない
   if (IsSSL() && !wss_) {
     RTC_LOG(LS_WARNING) << __FUNCTION__ << ": wss_ is already destroyed";
@@ -593,6 +605,9 @@ void Websocket::CloseSocket(boost::system::error_code& ec) {
 }
 
 void Websocket::DoClose(close_callback_t on_close, int timeout_seconds) {
+  // クローズ中フラグを設定（これ以降の書き込みをブロック）
+  closing_ = true;
+
   if (IsSSL()) {
     RTC_LOG(LS_INFO) << "DoClose wss this=" << (void*)this;
     wss_->async_close(
