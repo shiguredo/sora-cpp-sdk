@@ -1182,12 +1182,12 @@ def _build(
 
 
 def _find_clang_binary(name: str) -> Optional[str]:
-    if shutil.which(name) is not None:
-        return name
+    for n in range(50, 14, -1):
+        if shutil.which(f"{name}-{n}") is not None:
+            return f"{name}-{n}"
     else:
-        for n in range(50, 14, -1):
-            if shutil.which(f"{name}-{n}") is not None:
-                return f"{name}-{n}"
+        if shutil.which(name) is not None:
+            return name
     return None
 
 
