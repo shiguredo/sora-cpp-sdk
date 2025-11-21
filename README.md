@@ -64,6 +64,7 @@ Please read <https://github.com/shiguredo/oss/blob/master/README.en.md> before u
 - Ubuntu 22.04 x86_64
 - Android 7 arm64 以降
 - iOS 14 arm64 以降
+- Raspberry Pi OS bookworm (64bit)
 - Ubuntu 22.04 ARMv8 Jetson (JetPack 6.0 以降)
   - Jetson AGX Orin
   - Jetson Orin NX
@@ -96,7 +97,6 @@ Sora C++ SDK のメンテナンスポリシーにはプライオリティがあ�
 
 - NVIDIA Jetson JetPack 5 対応
 - NVIDIA Jetson JetPack 6 Jetson Orin Nano 対応
-- Raspberry Pi OS (64bit) arm64 対応
 - Windows arm64 対応
 
 ## サポートについて
