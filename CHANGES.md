@@ -29,8 +29,8 @@
   - libwebrtc m142 の変更に追従し `PeerConnectionFactory` のコンストラクタに `env` の引数を追加
   - libwebrtc m142 の変更に追従し `ScopedJavaLocalRef<jobject>(env, obj)` から `ScopedJavaLocalRef<jobject>::Adopt(env, obj)` を使うように変更
   - @melpon @torikizi @miosakuma
-- [UPDATE] CMake を 4.1.2 にあげる
-  - @torikizi
+- [UPDATE] CMake を 4.1.3 にあげる
+  - @torikizi @voluntas
 - [ADD] `raspberry-pi-os_armv8` 向けのビルドを追加
   - Momo からの移植
   - V4L2 M2M のエンコーダ/デコーダに対応
