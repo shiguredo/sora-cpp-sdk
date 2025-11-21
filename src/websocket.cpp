@@ -526,16 +526,6 @@ void Websocket::DoWriteText(std::string text, write_callback_t on_write) {
   }
 }
 void Websocket::DoWrite() {
-  // WebSocket が既に破棄されている場合は何もしない
-  if (IsSSL() && !wss_) {
-    RTC_LOG(LS_WARNING) << __FUNCTION__ << ": wss_ is already destroyed";
-    return;
-  }
-  if (!IsSSL() && !ws_) {
-    RTC_LOG(LS_WARNING) << __FUNCTION__ << ": ws_ is already destroyed";
-    return;
-  }
-
   auto& data = write_data_.front();
 
   RTC_LOG(LS_VERBOSE) << __FUNCTION__ << ": "
