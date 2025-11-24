@@ -742,7 +742,6 @@ void HttpSession::GetStatsFromSumomo(std::shared_ptr<Sumomo> sumomo) {
   });
 }
 
-#if defined(__linux__) || defined(__APPLE__)
 static void ListDevices() {
   // オーディオ入力デバイス一覧
   std::cout << "=== Available audio input devices ===" << std::endl;
@@ -794,7 +793,11 @@ static void ListDevices() {
   int video_count = 0;
   sora::DeviceList::EnumVideoCapturer(
       [&video_count](std::string device_name, std::string unique_name) {
-        std::cout << "  [" << video_count << "] " << device_name << std::endl;
+        std::cout << "  [" << video_count << "] " << device_name;
+        if (!unique_name.empty() && unique_name != device_name) {
+          std::cout << " (" << unique_name << ")";
+        }
+        std::cout << std::endl;
         video_count++;
       },
       nullptr);
@@ -804,7 +807,6 @@ static void ListDevices() {
   std::cout << std::endl;
 #endif
 }
-#endif
 
 void add_optional_bool(CLI::App& app,
                        const std::string& option_name,
@@ -1137,18 +1139,10 @@ int main(int argc, char* argv[]) {
     return 0;
   }
 
-#if defined(__linux__) || defined(__APPLE__)
   if (list_devices) {
     ListDevices();
     return 0;
   }
-#else
-  if (list_devices) {
-    std::cerr << "--list-devices is not supported on this platform"
-              << std::endl;
-    return 1;
-  }
-#endif
 
   // 必須のオプションを元に戻して再度パースする
   for (const auto& option : required_options) {
