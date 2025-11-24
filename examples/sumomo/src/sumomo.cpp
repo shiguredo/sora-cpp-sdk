@@ -70,12 +70,17 @@
 #include <sora/camera_device_capturer.h>
 #include <sora/capturer/fake_video_capturer.h>
 #include <sora/cuda_context.h>
+#include <sora/device_list.h>
 #include <sora/renderer/ansi_renderer.h>
 #include <sora/renderer/sixel_renderer.h>
 #include <sora/rtc_stats.h>
 #include <sora/sora_client_context.h>
 #include <sora/sora_signaling.h>
 #include <sora/sora_video_codec.h>
+
+#if defined(__linux__)
+#include <sora/v4l2/v4l2_device.h>
+#endif
 
 // CLI11
 #include <CLI/CLI.hpp>
@@ -737,6 +742,70 @@ void HttpSession::GetStatsFromSumomo(std::shared_ptr<Sumomo> sumomo) {
   });
 }
 
+#if defined(__linux__) || defined(__APPLE__)
+static void ListDevices() {
+  // オーディオ入力デバイス一覧
+  std::cout << "=== Available audio input devices ===" << std::endl;
+  std::cout << std::endl;
+  int audio_input_count = 0;
+  sora::DeviceList::EnumAudioRecording(
+      [&audio_input_count](std::string device_name, std::string unique_name) {
+        std::cout << "  [" << audio_input_count << "] " << device_name;
+        if (!unique_name.empty() && unique_name != device_name) {
+          std::cout << " (" << unique_name << ")";
+        }
+        std::cout << std::endl;
+        audio_input_count++;
+      });
+  if (audio_input_count == 0) {
+    std::cout << "  (none)" << std::endl;
+  }
+  std::cout << std::endl;
+
+  // オーディオ出力デバイス一覧
+  std::cout << "=== Available audio output devices ===" << std::endl;
+  std::cout << std::endl;
+  int audio_output_count = 0;
+  sora::DeviceList::EnumAudioPlayout(
+      [&audio_output_count](std::string device_name, std::string unique_name) {
+        std::cout << "  [" << audio_output_count << "] " << device_name;
+        if (!unique_name.empty() && unique_name != device_name) {
+          std::cout << " (" << unique_name << ")";
+        }
+        std::cout << std::endl;
+        audio_output_count++;
+      });
+  if (audio_output_count == 0) {
+    std::cout << "  (none)" << std::endl;
+  }
+  std::cout << std::endl;
+
+  // ビデオデバイス一覧
+  std::cout << "=== Available video devices ===" << std::endl;
+  std::cout << std::endl;
+#if defined(__linux__)
+  auto devices = sora::EnumV4L2CaptureDevices();
+  if (!devices) {
+    std::cerr << "Failed to enumerate video devices" << std::endl;
+    return;
+  }
+  std::cout << sora::FormatV4L2Devices(*devices);
+#else
+  int video_count = 0;
+  sora::DeviceList::EnumVideoCapturer(
+      [&video_count](std::string device_name, std::string unique_name) {
+        std::cout << "  [" << video_count << "] " << device_name << std::endl;
+        video_count++;
+      },
+      nullptr);
+  if (video_count == 0) {
+    std::cout << "  (none)" << std::endl;
+  }
+  std::cout << std::endl;
+#endif
+}
+#endif
+
 void add_optional_bool(CLI::App& app,
                        const std::string& option_name,
                        std::optional<bool>& v,
@@ -1004,6 +1073,9 @@ int main(int argc, char* argv[]) {
   bool show_video_codec_capability = false;
   app.add_flag("--show-video-codec-capability", show_video_codec_capability,
                "Show video codec capability");
+  bool list_devices = false;
+  app.add_flag("--list-devices", list_devices,
+               "List available audio and video devices and exit");
 
   // 表示して終了する系の処理のために、まず必須のオプションをオフにしておく
   std::vector<CLI::Option*> required_options;
@@ -1064,6 +1136,19 @@ int main(int argc, char* argv[]) {
     }
     return 0;
   }
+
+#if defined(__linux__) || defined(__APPLE__)
+  if (list_devices) {
+    ListDevices();
+    return 0;
+  }
+#else
+  if (list_devices) {
+    std::cerr << "--list-devices is not supported on this platform"
+              << std::endl;
+    return 1;
+  }
+#endif
 
   // 必須のオプションを元に戻して再度パースする
   for (const auto& option : required_options) {
