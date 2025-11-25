@@ -60,6 +60,9 @@
 
 ### misc
 
+- [ADD] sumomo に `--list-devices` オプションを追加
+  - 利用可能なオーディオ入力/出力デバイスとビデオデバイスを一覧表示して終了する
+  - @voluntas
 - [ADD] examples の各サンプルに ubuntu-22.04_armv8 対応を追加する
   - messaging_recvonly_sample, sdl_sample, sumomo の各サンプルに ubuntu-22.04_armv8 プラットフォームのビルド設定を追加
   - multistrap/ubuntu-22.04_armv8.conf を追加
