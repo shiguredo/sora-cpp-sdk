@@ -507,6 +507,48 @@ def git_get_url_and_revision(dir):
         return url, rev
 
 
+def install_file(src: str, dst: str):
+    """
+    src から dst へディレクトリまたはファイルをコピーする
+
+    1. dst が存在していたら（ファイルでもディレクトリでも）削除する
+    2. dst の親ディレクトリが存在しなかったら作成する
+    3. src を dst にコピーする
+    """
+    # 1. dst が存在していたら削除する
+    if os.path.exists(dst):
+        if os.path.isdir(dst):
+            logging.debug(f"Remove dir: {dst}")
+            shutil.rmtree(dst)
+        else:
+            logging.debug(f"Remove file: {dst}")
+            os.remove(dst)
+
+    # 2. dst の親ディレクトリが存在しなかったら作成する
+    dst_parent = os.path.dirname(dst)
+    if dst_parent and not os.path.exists(dst_parent):
+        logging.debug(f"Make dir: {dst_parent}")
+        os.makedirs(dst_parent)
+
+    # 3. src を dst にコピーする
+    if os.path.isdir(src):
+        logging.info(f"Copy dir: {src} -> {dst}")
+        shutil.copytree(src, dst)
+    else:
+        logging.info(f"Copy file: {src} -> {dst}")
+        shutil.copy2(src, dst)
+
+
+def install_file_ifexists(src: str, dst: str):
+    """
+    src ファイルが存在してたら install_file を呼び出す
+    """
+    if not os.path.exists(src):
+        logging.info(f"Source file does not exist: {src}")
+        return
+    install_file(src, dst)
+
+
 def replace_vcproj_static_runtime(project_file: str):
     # なぜか MSVC_STATIC_RUNTIME が効かずに DLL ランタイムを使ってしまうので
     # 生成されたプロジェクトに対して静的ランタイムを使うように変更する
@@ -531,7 +573,7 @@ def install_webrtc(version, source_dir, install_dir, platform: str):
 
 def build_webrtc(platform, local_webrtc_build_dir, local_webrtc_build_args, debug):
     with cd(local_webrtc_build_dir):
-        args = ["--webrtc-nobuild-ios-framework", "--webrtc-nobuild-android-aar"]
+        args = []
         if debug:
             args += ["--debug"]
 
@@ -577,6 +619,7 @@ class WebrtcInfo(NamedTuple):
     webrtc_include_dir: str
     webrtc_source_dir: Optional[str]
     webrtc_library_dir: str
+    webrtc_jar_file: str
     clang_dir: str
     libcxx_dir: str
     libcxxabi_dir: str
@@ -594,6 +637,7 @@ def get_webrtc_info(
             webrtc_include_dir=os.path.join(webrtc_install_dir, "include"),
             webrtc_source_dir=None,
             webrtc_library_dir=os.path.join(webrtc_install_dir, "lib"),
+            webrtc_jar_file=os.path.join(webrtc_install_dir, "jar", "webrtc.jar"),
             clang_dir=os.path.join(install_dir, "llvm", "clang"),
             libcxx_dir=os.path.join(install_dir, "llvm", "libcxx"),
             libcxxabi_dir=os.path.join(
@@ -615,6 +659,9 @@ def get_webrtc_info(
             webrtc_include_dir=os.path.join(webrtc_build_source_dir, "src"),
             webrtc_source_dir=os.path.join(webrtc_build_source_dir, "src"),
             webrtc_library_dir=webrtc_build_build_dir,
+            webrtc_jar_file=os.path.join(
+                webrtc_build_build_dir, "arm64-v8a", "lib.java", "sdk", "android", "libwebrtc.jar"
+            ),
             clang_dir=os.path.join(
                 webrtc_build_source_dir, "src", "third_party", "llvm-build", "Release+Asserts"
             ),
@@ -626,7 +673,14 @@ def get_webrtc_info(
 
 
 @versioned
-def install_boost(version, source_dir, install_dir, sora_version, platform: str):
+def install_boost(
+    version,
+    source_dir,
+    install_dir,
+    sora_version,
+    platform: str,
+    expected_sha256: Optional[str] = None,
+):
     win = platform.startswith("windows_")
     filename = (
         f"boost-{version}_sora-cpp-sdk-{sora_version}_{platform}.{'zip' if win else 'tar.gz'}"
@@ -635,6 +689,7 @@ def install_boost(version, source_dir, install_dir, sora_version, platform: str)
     archive = download(
         f"https://github.com/shiguredo/sora-cpp-sdk/releases/download/{sora_version}/{filename}",
         output_dir=source_dir,
+        expected_sha256=expected_sha256,
     )
     rm_rf(os.path.join(install_dir, "boost"))
     extract(archive, output_dir=install_dir, output_dirname="boost")
@@ -741,7 +796,6 @@ def build_and_install_boost(
     source_dir,
     build_dir,
     install_dir,
-    expected_sha256: str,
     debug: bool,
     cxx: str,
     cflags: List[str],
@@ -756,6 +810,7 @@ def build_and_install_boost(
     address_model="64",
     runtime_link=None,
     android_build_platform="linux-x86_64",
+    expected_sha256: Optional[str] = None,
 ):
     version_underscore = version.replace(".", "_")
 
@@ -792,7 +847,9 @@ def build_and_install_boost(
         if target_os == "iphone":
             IOS_BUILD_TARGETS = [("arm64", "iphoneos")]
             for arch, sdk in IOS_BUILD_TARGETS:
-                clangpp = cmdcap(["xcodebuild", "-find", "clang++"])
+                # xcode の clang++ を利用する
+                # ただし cxx が指定されてた場合はそちらを優先する
+                clangpp = cmdcap(["xcodebuild", "-find", "clang++"]) if len(cxx) == 0 else cxx
                 sysroot = cmdcap(["xcrun", "--sdk", sdk, "--show-sdk-path"])
                 boost_arch = "x86" if arch == "x86_64" else "arm"
                 with open("project-config.jam", "w", encoding="utf-8") as f:
@@ -1112,6 +1169,21 @@ def install_android_sdk_cmdline_tools(version, install_dir, source_dir):
 
 
 @versioned
+def install_android_sdk_platform_tools(version, install_dir, source_dir, platform):
+    if version not in ("latest",):
+        raise Exception(f"Supports only 'latest' version, but got: {version}")
+    if platform not in ("windows", "darwin", "linux"):
+        raise Exception(f"Not supported platform: {platform}")
+    archive = download(
+        f"https://dl.google.com/android/repository/platform-tools-{version}-{platform}.zip",
+        source_dir,
+    )
+    tools_dir = os.path.join(install_dir, "android-sdk-platform-tools")
+    rm_rf(tools_dir)
+    extract(archive, output_dir=tools_dir, output_dirname="platform-tools")
+
+
+@versioned
 def install_llvm(
     version,
     install_dir,
@@ -1400,6 +1472,12 @@ def install_cuda_windows(version, source_dir, build_dir, install_dir):
         url = "http://developer.download.nvidia.com/compute/cuda/10.2/Prod/local_installers/cuda_10.2.89_441.22_win10.exe"  # noqa: E501
     elif version == "11.8.0-1":
         url = "https://developer.download.nvidia.com/compute/cuda/11.8.0/local_installers/cuda_11.8.0_522.06_windows.exe"  # noqa: E501
+    elif version == "12.6.3-1":
+        url = "https://developer.download.nvidia.com/compute/cuda/12.6.3/local_installers/cuda_12.6.3_561.17_windows.exe"  # noqa: E501
+    elif version == "12.9.1-1":
+        url = "https://developer.download.nvidia.com/compute/cuda/12.9.1/local_installers/cuda_12.9.1_576.57_windows.exe"  # noqa: E501
+    elif version == "13.0.1-1":
+        url = "https://developer.download.nvidia.com/compute/cuda/13.0.1/local_installers/cuda_13.0.1_windows.exe"  # noqa: E501
     else:
         raise Exception(f"Unknown CUDA version {version}")
     file = download(url, source_dir)
@@ -2257,21 +2335,33 @@ def fix_clang_version(clang_dir, clang_version):
 
 
 class Platform(object):
-    def _check(self, flag):
+    def _check(self, flag, error_message):
         if not flag:
-            raise Exception("Not supported")
+            raise Exception(error_message)
 
     def _check_platform_target(self, p: PlatformTarget):
         if p.os == "raspberry-pi-os":
-            self._check(p.arch in ("armv6", "armv7", "armv8"))
+            self._check(
+                p.arch in ("armv6", "armv7", "armv8"),
+                f"Architecture {p.arch} is not supported for {p.os}. Supported: armv6, armv7, armv8",
+            )
         elif p.os == "jetson":
-            self._check(p.arch == "armv8")
+            self._check(
+                p.arch == "armv8",
+                f"Architecture {p.arch} is not supported for {p.os}. Only armv8 is supported",
+            )
         elif p.os in ("ios", "android"):
-            self._check(p.arch is None)
+            self._check(p.arch is None, f"Architecture should be None for {p.os}, but got {p.arch}")
         elif p.os == "ubuntu":
-            self._check(p.arch in ("x86_64", "armv8"))
+            self._check(
+                p.arch in ("x86_64", "armv8"),
+                f"Architecture {p.arch} is not supported for {p.os}. Supported: x86_64, armv8",
+            )
         else:
-            self._check(p.arch in ("x86_64", "arm64", "hololens2"))
+            self._check(
+                p.arch in ("x86_64", "arm64", "hololens2"),
+                f"Architecture {p.arch} is not supported for {p.os}. Supported: x86_64, arm64, hololens2",
+            )
 
     def __init__(self, target_os, target_osver, target_arch, target_extra=None):
         build = get_build_platform()
@@ -2281,32 +2371,83 @@ class Platform(object):
         self._check_platform_target(target)
 
         if target.os == "windows":
-            self._check(target.arch in ("x86_64", "arm64", "hololens2"))
-            self._check(build.os == "windows")
-            self._check(build.arch == "x86_64")
+            self._check(
+                target.arch in ("x86_64", "arm64", "hololens2"),
+                f"Target architecture {target.arch} is not supported for Windows",
+            )
+            self._check(
+                build.os == "windows",
+                f"Windows target requires Windows build platform, but got {build.os}",
+            )
+            self._check(
+                build.arch == "x86_64",
+                f"Windows build requires x86_64 architecture, but got {build.arch}",
+            )
         if target.os == "macos":
-            self._check(build.os == "macos")
-            self._check(build.arch in ("x86_64", "arm64"))
+            self._check(
+                build.os == "macos",
+                f"macOS target requires macOS build platform, but got {build.os}",
+            )
+            self._check(
+                build.arch in ("x86_64", "arm64"),
+                f"macOS build requires x86_64 or arm64, but got {build.arch}",
+            )
         if target.os == "ios":
-            self._check(build.os == "macos")
-            self._check(build.arch in ("x86_64", "arm64"))
+            self._check(
+                build.os == "macos", f"iOS target requires macOS build platform, but got {build.os}"
+            )
+            self._check(
+                build.arch in ("x86_64", "arm64"),
+                f"iOS build requires x86_64 or arm64, but got {build.arch}",
+            )
         if target.os == "android":
-            self._check(build.os in ("ubuntu", "macos"))
+            self._check(
+                build.os in ("ubuntu", "macos"),
+                f"Android target requires Ubuntu or macOS build platform, but got {build.os}",
+            )
             if build.os == "ubuntu":
-                self._check(build.arch == "x86_64")
+                self._check(
+                    build.arch == "x86_64",
+                    f"Android build on Ubuntu requires x86_64, but got {build.arch}",
+                )
             elif build.os == "macos":
-                self._check(build.arch in ("x86_64", "arm64"))
+                self._check(
+                    build.arch in ("x86_64", "arm64"),
+                    f"Android build on macOS requires x86_64 or arm64, but got {build.arch}",
+                )
         if target.os == "ubuntu":
-            self._check(build.os == "ubuntu")
-            self._check(build.arch in ("x86_64", "armv8"))
+            self._check(
+                build.os == "ubuntu",
+                f"Ubuntu target requires Ubuntu build platform, but got {build.os}",
+            )
+            self._check(
+                build.arch in ("x86_64", "armv8"),
+                f"Ubuntu build requires x86_64 or armv8, but got {build.arch}",
+            )
             if build.arch == target.arch:
-                self._check(build.osver == target.osver)
+                self._check(
+                    build.osver == target.osver,
+                    f"When building for the same architecture ({build.arch}), OS versions must match. "
+                    f"Build OS: Ubuntu {build.osver}, Target OS: Ubuntu {target.osver}. "
+                    f"This typically happens when GitHub Actions runner OS version doesn't match the target.",
+                )
         if target.os == "raspberry-pi-os":
-            self._check(build.os == "ubuntu")
-            self._check(build.arch == "x86_64")
+            self._check(
+                build.os == "ubuntu",
+                f"Raspberry Pi OS target requires Ubuntu build platform, but got {build.os}",
+            )
+            self._check(
+                build.arch == "x86_64",
+                f"Raspberry Pi OS build requires x86_64, but got {build.arch}",
+            )
         if target.os == "jetson":
-            self._check(build.os == "ubuntu")
-            self._check(build.arch == "x86_64")
+            self._check(
+                build.os == "ubuntu",
+                f"Jetson target requires Ubuntu build platform, but got {build.os}",
+            )
+            self._check(
+                build.arch == "x86_64", f"Jetson build requires x86_64, but got {build.arch}"
+            )
 
         self.build = build
         self.target = target

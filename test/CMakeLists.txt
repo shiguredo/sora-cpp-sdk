@@ -67,6 +67,7 @@ function (init_target target)
     set_target_properties(${target} PROPERTIES CXX_VISIBILITY_PRESET hidden)
   endif()
 
+  set_target_properties(${target} PROPERTIES BUILD_RPATH "\$ORIGIN")
 endfunction()
 
 # hello.exe を作る

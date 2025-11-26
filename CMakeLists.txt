@@ -11,7 +11,7 @@ set(WEBRTC_LIBRARY_DIR "" CACHE PATH "WebRTC のライブラリディレクト�
 set(WEBRTC_LIBRARY_NAME "webrtc" CACHE STRING "WebRTC のライブラリ名")
 set(USE_LIBCXX OFF CACHE BOOL "libstdc++ の代わりに libc++ を使うかどうか")
 set(LIBCXX_INCLUDE_DIR "" CACHE PATH "libc++ を使う場合の libc++ のインクルードディレクトリ\n空文字だった場合はデフォルト検索パスの libc++ を利用する")
-set(USE_NVCODEC_ENCODER OFF CACHE BOOL "NVIDIA Video Codec SDK によるハードウェアエンコーダを利用するかどうか")
+set(USE_NVCODEC_ENCODER OFF CACHE BOOL "NVIDIA Video Codec によるハードウェアエンコーダを利用するかどうか")
 
 project(sora-cpp-sdk C CXX)
 
@@ -55,6 +55,10 @@ elseif (SORA_TARGET STREQUAL "ubuntu-24.04_armv8")
   set(SORA_TARGET_OS_VERSION "24.04")
   set(SORA_TARGET_ARCH "armv8")
   set(SORA_TARGET_DEF "SORA_CPP_SDK_UBUNTU")
+elseif (SORA_TARGET STREQUAL "raspberry-pi-os_armv8")
+  set(SORA_TARGET_OS "ubuntu")
+  set(SORA_TARGET_ARCH "armv8")
+  set(SORA_TARGET_DEF "SORA_CPP_SDK_RASPBERRY_PI_OS")
 endif()
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -165,6 +169,8 @@ if (USE_LIBCXX)
     PRIVATE
       "$<$<COMPILE_LANGUAGE:CXX>:-nostdinc++>"
       "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<BOOL:LIBCXX_INCLUDE_DIR>>:-isystem${LIBCXX_INCLUDE_DIR}>"
+      "$<$<COMPILE_LANGUAGE:OBJCXX>:-nostdinc++>"
+      "$<$<AND:$<COMPILE_LANGUAGE:OBJCXX>,$<BOOL:LIBCXX_INCLUDE_DIR>>:-isystem${LIBCXX_INCLUDE_DIR}>"
   )
 endif()
 
@@ -175,6 +181,7 @@ target_compile_definitions(sora
     $<$<BOOL:${USE_NVCODEC_ENCODER}>:USE_NVCODEC_ENCODER>
     $<$<BOOL:${USE_VPL_ENCODER}>:USE_VPL_ENCODER>
     $<$<BOOL:${USE_AMF_ENCODER}>:USE_AMF_ENCODER>
+    $<$<BOOL:${USE_V4L2_ENCODER}>:USE_V4L2_ENCODER>
 )
 
 # OpenH264
@@ -402,6 +409,13 @@ elseif (SORA_TARGET_OS STREQUAL "macos")
     PUBLIC
       WEBRTC_POSIX
       WEBRTC_MAC
+      _LIBCPP_ABI_NAMESPACE=Cr
+      _LIBCPP_ABI_VERSION=2
+      _LIBCPP_DISABLE_AVAILABILITY
+      _LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS
+      _LIBCXXABI_DISABLE_VISIBILITY_ANNOTATIONS
+      _LIBCPP_ENABLE_NODISCARD
+      _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE
   )
 
   target_link_libraries(sora
@@ -447,6 +461,13 @@ elseif (SORA_TARGET_OS STREQUAL "ios")
       WEBRTC_MAC
       WEBRTC_IOS
       OPENSSL_IS_BORINGSSL
+      _LIBCPP_ABI_NAMESPACE=Cr
+      _LIBCPP_ABI_VERSION=2
+      _LIBCPP_DISABLE_AVAILABILITY
+      _LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS
+      _LIBCXXABI_DISABLE_VISIBILITY_ANNOTATIONS
+      _LIBCPP_ENABLE_NODISCARD
+      _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE
   )
 
 elseif (SORA_TARGET_OS STREQUAL "android")
@@ -547,7 +568,7 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
         third_party/NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
         third_party/NvCodec/NvCodec/NvEncoder/NvEncoderCuda.cpp
       PROPERTIES
-        COMPILE_OPTIONS "-xcuda;--cuda-gpu-arch=sm_35;-std=gnu++17;-Wno-tautological-constant-out-of-range-compare"
+        COMPILE_OPTIONS "-xcuda;--cuda-gpu-arch=sm_60;-std=gnu++17;-Wno-tautological-constant-out-of-range-compare;-D_ALLOW_UNSUPPORTED_LIBCPP"
     )
 
     # CUDA を要求したくないので libsora.a に含める
@@ -586,6 +607,38 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
     )
   endif()
 
+  if (USE_V4L2_ENCODER)
+    add_library(camerac SHARED)
+    target_include_directories(camerac PRIVATE ${CMAKE_SYSROOT}/usr/include/libcamera)
+    set_target_properties(camerac PROPERTIES CXX_STANDARD 17 C_STANDARD 99)
+    target_sources(camerac
+      PRIVATE
+        third_party/libcamerac/libcamerac.cpp
+    )
+    target_link_libraries(camerac
+      PRIVATE
+        camera
+        camera-base
+    )
+
+    target_sources(sora
+      PRIVATE
+        src/hwenc_v4l2/libcamera_capturer.cpp
+        src/hwenc_v4l2/v4l2_buffers.cpp
+        src/hwenc_v4l2/v4l2_capturer.cpp
+        src/hwenc_v4l2/v4l2_converter.cpp
+        src/hwenc_v4l2/v4l2_h264_decoder.cpp
+        src/hwenc_v4l2/v4l2_h264_encoder.cpp
+        src/hwenc_v4l2/v4l2_native_buffer.cpp
+        src/hwenc_v4l2/v4l2_runner.cpp
+        src/hwenc_v4l2/v4l2_video_codec.cpp
+    )
+    target_link_libraries(sora PRIVATE camerac)
+    target_include_directories(sora
+      PRIVATE
+        third_party/libcamerac)
+  endif()
+
 endif()
 
 # 静的ライブラリを sora.lib に含める
@@ -604,6 +657,11 @@ install(TARGETS sora
   # Android の場合はライブラリを ANDROID_ABI 以下のディレクトリにインストールする
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/$<$<STREQUAL:${SORA_TARGET},"android">:/${ANDROID_ABI}>
 )
+if (SORA_TARGET_OS STREQUAL "ubuntu" AND USE_V4L2_ENCODER)
+  install(TARGETS camerac
+    EXPORT sora-config
+  )
+endif()
 install(EXPORT sora-config
   DESTINATION ${CMAKE_INSTALL_DATADIR}/sora
   NAMESPACE Sora::

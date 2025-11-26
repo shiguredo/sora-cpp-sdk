@@ -164,15 +164,15 @@ void SoraSignaling::Redirect(std::string url) {
 
   state_ = State::Redirecting;
 
-  ws_->Read([self = shared_from_this(), url](boost::system::error_code ec,
-                                             std::size_t bytes_transferred,
-                                             std::string text) {
+  ws_->Read([self = shared_from_this(), ws = ws_, url](
+                boost::system::error_code ec, std::size_t bytes_transferred,
+                std::string text) {
     // リダイレクト中に Disconnect が呼ばれた
     if (self->state_ != State::Redirecting) {
       return;
     }
 
-    auto on_close = [self, url](boost::system::error_code ec) {
+    auto on_close = [self, ws, url](boost::system::error_code ec) {
       if (self->state_ != State::Redirecting) {
         return;
       }
@@ -207,15 +207,15 @@ void SoraSignaling::Redirect(std::string url) {
         return;
       }
 
-      std::shared_ptr<Websocket> ws;
+      std::shared_ptr<Websocket> new_ws;
       if (ssl) {
         if (self->config_.proxy_url.empty()) {
-          ws.reset(
+          new_ws.reset(
               new Websocket(Websocket::ssl_tag(), *self->config_.io_context,
                             self->config_.insecure, self->config_.client_cert,
                             self->config_.client_key, self->config_.ca_cert));
         } else {
-          ws.reset(new Websocket(
+          new_ws.reset(new Websocket(
               Websocket::https_proxy_tag(), *self->config_.io_context,
               self->config_.insecure, self->config_.client_cert,
               self->config_.client_key, self->config_.ca_cert,
@@ -223,10 +223,10 @@ void SoraSignaling::Redirect(std::string url) {
               self->config_.proxy_password));
         }
       } else {
-        ws.reset(new Websocket(*self->config_.io_context));
+        new_ws.reset(new Websocket(*self->config_.io_context));
       }
-      ws->Connect(url, std::bind(&SoraSignaling::OnRedirect, self,
-                                 std::placeholders::_1, url, ws));
+      new_ws->Connect(url, std::bind(&SoraSignaling::OnRedirect, self,
+                                     std::placeholders::_1, url, new_ws));
     };
 
     // type: redirect の後、サーバは切断してるはずなので、正常に処理が終わるのはおかしい
@@ -269,9 +269,9 @@ void SoraSignaling::OnRedirect(boost::system::error_code ec,
 }
 
 void SoraSignaling::DoRead() {
-  ws_->Read([self = shared_from_this()](boost::system::error_code ec,
-                                        std::size_t bytes_transferred,
-                                        std::string text) {
+  ws_->Read([self = shared_from_this(), ws = ws_](boost::system::error_code ec,
+                                                  std::size_t bytes_transferred,
+                                                  std::string text) {
     self->OnRead(ec, bytes_transferred, std::move(text));
   });
 }
@@ -312,6 +312,14 @@ void SoraSignaling::DoSendConnect(bool redirect) {
 
   if (!config_.simulcast_rid.empty()) {
     m["simulcast_rid"] = config_.simulcast_rid;
+  }
+
+  if (config_.simulcast_request_rid) {
+    m["simulcast_request_rid"] = *config_.simulcast_request_rid;
+  }
+
+  if (config_.simulcast_rid_auto) {
+    m["simulcast_rid_auto"] = *config_.simulcast_rid_auto;
   }
 
   if (config_.spotlight) {
@@ -486,9 +494,9 @@ void SoraSignaling::DoSendConnect(bool redirect) {
 
 void SoraSignaling::DoSendPong() {
   boost::json::value m = {{"type", "pong"}};
-  ws_->WriteText(
-      boost::json::serialize(m),
-      [self = shared_from_this()](boost::system::error_code, size_t) {});
+  ws_->WriteText(boost::json::serialize(m),
+                 [self = shared_from_this(), ws = ws_](
+                     boost::system::error_code, size_t) {});
 }
 
 void SoraSignaling::DoSendPong(
@@ -500,7 +508,7 @@ void SoraSignaling::DoSendPong(
     SendDataChannel("stats", str);
   } else if (ws_) {
     std::string str = R"({"type":"pong","stats":)" + stats + "}";
-    ws_->WriteText(std::move(str), [self = shared_from_this()](
+    ws_->WriteText(std::move(str), [self = shared_from_this(), ws = ws_](
                                        boost::system::error_code, size_t) {});
   }
 }
@@ -514,9 +522,9 @@ void SoraSignaling::DoSendUpdate(const std::string& sdp, std::string type) {
     SendOnSignalingMessage(SoraSignalingType::DATACHANNEL,
                            SoraSignalingDirection::SENT, std::move(text));
   } else if (ws_) {
-    WsWriteSignaling(
-        std::move(text),
-        [self = shared_from_this()](boost::system::error_code, size_t) {});
+    WsWriteSignaling(std::move(text),
+                     [self = shared_from_this(), ws = ws_](
+                         boost::system::error_code, size_t) {});
   }
 }
 
@@ -577,6 +585,7 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
   }
 
   rtc_config.sdp_semantics = webrtc::SdpSemantics::kUnifiedPlan;
+  rtc_config.crypto_options.srtp.enable_gcm_crypto_suites = true;
   webrtc::PeerConnectionDependencies dependencies(this);
 
   // WebRTC の SSL 接続の検証は自前のルート証明書(rtc_base/ssl_roots.h)でやっていて、
@@ -1185,11 +1194,12 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
               [self = shared_from_this()](
                   const webrtc::scoped_refptr<const webrtc::RTCStatsReport>&
                       report) {
-                if (self->state_ != State::Connected) {
-                  return;
-                }
-
-                self->DoSendPong(report);
+                boost::asio::post(*self->config_.io_context, [self, report]() {
+                  if (self->state_ != State::Connected) {
+                    return;
+                  }
+                  self->DoSendPong(report);
+                });
               })
               .get());
     } else {
@@ -1769,10 +1779,12 @@ void SoraSignaling::OnMessage(
               [self = shared_from_this()](
                   const webrtc::scoped_refptr<const webrtc::RTCStatsReport>&
                       report) {
-                if (self->state_ != State::Connected) {
-                  return;
-                }
-                self->DoSendPong(report);
+                boost::asio::post(*self->config_.io_context, [self, report]() {
+                  if (self->state_ != State::Connected) {
+                    return;
+                  }
+                  self->DoSendPong(report);
+                });
               })
               .get());
     }

@@ -108,6 +108,14 @@
       //   "parameters": {}
       // }]
       "video_codec_preference": null,
+
+      "use_sixel": null,
+      "sixel_width": null,
+      "sixel_height": null,
+
+      "use_ansi": null,
+      "ansi_width": null,
+      "ansi_height": null,
     },
 
     "signaling_urls": ["必須"],

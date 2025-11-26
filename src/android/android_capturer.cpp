@@ -60,9 +60,9 @@ bool AndroidCapturer::EnumVideoDevice(
   for (auto device : devices) {
     // camera2enumerator.isFrontFacing(device)
     // camera2enumerator.isBackFacing(device)
-    webrtc::ScopedJavaLocalRef<jclass> camcls(
+    auto camcls = webrtc::ScopedJavaLocalRef<jclass>::Adopt(
         env, env->GetObjectClass(camera2enumerator.obj()));
-    webrtc::ScopedJavaLocalRef<jstring> device_str(
+    auto device_str = webrtc::ScopedJavaLocalRef<jstring>::Adopt(
         env, env->NewStringUTF(device.c_str()));
     jmethodID frontid = env->GetMethodID(camcls.obj(), "isFrontFacing",
                                          "(Ljava/lang/String;)Z");
@@ -95,9 +95,9 @@ webrtc::ScopedJavaLocalRef<jobject> AndroidCapturer::createSurfaceTextureHelper(
       env->GetStaticMethodID(helpcls.obj(), "create",
                              "(Ljava/lang/String;Lorg/webrtc/EglBase$Context;)"
                              "Lorg/webrtc/SurfaceTextureHelper;");
-  webrtc::ScopedJavaLocalRef<jstring> str(
+  auto str = webrtc::ScopedJavaLocalRef<jstring>::Adopt(
       env, env->NewStringUTF("VideoCapturerThread"));
-  webrtc::ScopedJavaLocalRef<jobject> helper(
+  auto helper = webrtc::ScopedJavaLocalRef<jobject>::Adopt(
       env,
       env->CallStaticObjectMethod(helpcls.obj(), createid, str.obj(), nullptr));
 
@@ -111,14 +111,15 @@ webrtc::ScopedJavaLocalRef<jobject> AndroidCapturer::createCamera2Enumerator(
       webrtc::GetClass(env, "org/webrtc/Camera2Enumerator");
   jmethodID ctorid =
       env->GetMethodID(camcls.obj(), "<init>", "(Landroid/content/Context;)V");
-  webrtc::ScopedJavaLocalRef<jobject> enumerator(
+  auto enumerator = webrtc::ScopedJavaLocalRef<jobject>::Adopt(
       env, env->NewObject(camcls.obj(), ctorid, context));
 
   // Camera1Enumerator enumerator = new Camera1Enumerator();
   //webrtc::ScopedJavaLocalRef<jclass> camcls =
   //    webrtc::GetClass(env, "org/webrtc/Camera1Enumerator");
   //jmethodID ctorid = env->GetMethodID(camcls.obj(), "<init>", "()V");
-  //webrtc::ScopedJavaLocalRef<jobject> enumerator(
+  // auto enumerator=
+  //     webrtc::ScopedJavaLocalRef<jobject>::Adopt(
   //    env, env->NewObject(camcls.obj(), ctorid));
 
   return enumerator;
@@ -127,11 +128,11 @@ std::vector<std::string> AndroidCapturer::enumDevices(
     JNIEnv* env,
     jobject camera_enumerator) {
   // for (string device in enumerator.getDeviceNames()) { }
-  webrtc::ScopedJavaLocalRef<jclass> camcls(
+  auto camcls = webrtc::ScopedJavaLocalRef<jclass>::Adopt(
       env, env->GetObjectClass(camera_enumerator));
   jmethodID devicesid =
       env->GetMethodID(camcls.obj(), "getDeviceNames", "()[Ljava/lang/String;");
-  webrtc::ScopedJavaLocalRef<jobjectArray> devices(
+  auto devices = webrtc::ScopedJavaLocalRef<jobjectArray>::Adopt(
       env, (jobjectArray)env->CallObjectMethod(camera_enumerator, devicesid));
 
   if (devices.obj() == nullptr) {
@@ -142,7 +143,7 @@ std::vector<std::string> AndroidCapturer::enumDevices(
   std::vector<std::string> r;
   int count = env->GetArrayLength(devices.obj());
   for (int i = 0; i < count; i++) {
-    webrtc::ScopedJavaLocalRef<jstring> device(
+    auto device = webrtc::ScopedJavaLocalRef<jstring>::Adopt(
         env, (jstring)env->GetObjectArrayElement(devices.obj(), i));
     r.push_back(env->GetStringUTFChars(device.obj(), nullptr));
   }
@@ -153,7 +154,7 @@ webrtc::ScopedJavaLocalRef<jobject> AndroidCapturer::createCapturer(
     jobject camera_enumerator,
     std::string device) {
   // videoCapturer = enumerator.createCapturer(device, null /* eventsHandler */);
-  webrtc::ScopedJavaLocalRef<jclass> camcls(
+  auto camcls = webrtc::ScopedJavaLocalRef<jclass>::Adopt(
       env, env->GetObjectClass(camera_enumerator));
   jmethodID createid =
       env->GetMethodID(camcls.obj(), "createCapturer",
@@ -162,9 +163,9 @@ webrtc::ScopedJavaLocalRef<jobject> AndroidCapturer::createCapturer(
                        "Lorg/webrtc/CameraVideoCapturer$CameraEventsHandler;"
                        ")"
                        "Lorg/webrtc/CameraVideoCapturer;");
-  webrtc::ScopedJavaLocalRef<jstring> str(env,
-                                          env->NewStringUTF(device.c_str()));
-  webrtc::ScopedJavaLocalRef<jobject> capturer(
+  auto str = webrtc::ScopedJavaLocalRef<jstring>::Adopt(
+      env, env->NewStringUTF(device.c_str()));
+  auto capturer = webrtc::ScopedJavaLocalRef<jobject>::Adopt(
       env,
       env->CallObjectMethod(camera_enumerator, createid, str.obj(), nullptr));
 
@@ -176,7 +177,8 @@ void AndroidCapturer::initializeCapturer(JNIEnv* env,
                                          jobject context,
                                          jobject observer) {
   // videoCapturer.initialize(videoCapturerSurfaceTextureHelper, applicationContext, nativeGetJavaVideoCapturerObserver(nativeClient));
-  webrtc::ScopedJavaLocalRef<jclass> capcls(env, env->GetObjectClass(capturer));
+  auto capcls = webrtc::ScopedJavaLocalRef<jclass>::Adopt(
+      env, env->GetObjectClass(capturer));
   jmethodID initid = env->GetMethodID(capcls.obj(), "initialize",
                                       "("
                                       "Lorg/webrtc/SurfaceTextureHelper;"
@@ -191,24 +193,28 @@ void AndroidCapturer::startCapture(JNIEnv* env,
                                    int height,
                                    int target_fps) {
   // videoCapturer.startCapture(width, height, target_fps);
-  webrtc::ScopedJavaLocalRef<jclass> capcls(env, env->GetObjectClass(capturer));
+  auto capcls = webrtc::ScopedJavaLocalRef<jclass>::Adopt(
+      env, env->GetObjectClass(capturer));
   jmethodID startid = env->GetMethodID(capcls.obj(), "startCapture", "(III)V");
   env->CallVoidMethod(capturer, startid, width, height, target_fps);
 }
 void AndroidCapturer::stopCapture(JNIEnv* env, jobject capturer) {
   // videoCapturer.stopCapture();
-  webrtc::ScopedJavaLocalRef<jclass> capcls(env, env->GetObjectClass(capturer));
+  auto capcls = webrtc::ScopedJavaLocalRef<jclass>::Adopt(
+      env, env->GetObjectClass(capturer));
   jmethodID stopid = env->GetMethodID(capcls.obj(), "stopCapture", "()V");
   env->CallVoidMethod(capturer, stopid);
 }
 void AndroidCapturer::dispose(JNIEnv* env, jobject capturer, jobject helper) {
   // videoCapturer.dispose();
   // surfaceTextureHelper.dispose();
-  webrtc::ScopedJavaLocalRef<jclass> capcls(env, env->GetObjectClass(capturer));
+  auto capcls = webrtc::ScopedJavaLocalRef<jclass>::Adopt(
+      env, env->GetObjectClass(capturer));
   jmethodID capdisposeid = env->GetMethodID(capcls.obj(), "dispose", "()V");
   env->CallVoidMethod(capturer, capdisposeid);
 
-  webrtc::ScopedJavaLocalRef<jclass> helpcls(env, env->GetObjectClass(helper));
+  auto helpcls = webrtc::ScopedJavaLocalRef<jclass>::Adopt(
+      env, env->GetObjectClass(helper));
   jmethodID helpdisposeid = env->GetMethodID(helpcls.obj(), "dispose", "()V");
   env->CallVoidMethod(helper, helpdisposeid);
 }

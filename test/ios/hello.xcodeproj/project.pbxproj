@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		DD5DD92C2E742E4000F93A3E /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DD5DD92B2E742E4000F93A3E /* QuartzCore.framework */; };
+		DD5DD92E2E742E9300F93A3E /* CoreVideo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DD5DD92D2E742E9300F93A3E /* CoreVideo.framework */; };
+		DD5DD9302E742EFF00F93A3E /* CoreFoundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DD5DD92F2E742EFF00F93A3E /* CoreFoundation.framework */; };
+		DD5DD9322E742F2300F93A3E /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DD5DD9312E742F2300F93A3E /* CoreGraphics.framework */; };
+		DD5DD9342E742F5700F93A3E /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DD5DD9332E742F5700F93A3E /* Metal.framework */; };
+		DD5DD9362E742F6C00F93A3E /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DD5DD9352E742F6C00F93A3E /* UIKit.framework */; };
 		DD76254E290AFDE100BFE6D8 /* libboost_filesystem.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DD76254D290AFDC600BFE6D8 /* libboost_filesystem.a */; };
 		DD7A98DD2B22021700B3BF0D /* libblend2d.a in Frameworks */ = {isa = PBXBuildFile; fileRef = DD7A98DC2B22020000B3BF0D /* libblend2d.a */; };
 		DDBC4B932820E3770099E1F0 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = DDBC4B922820E3770099E1F0 /* AppDelegate.m */; };
@@ -31,6 +37,12 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		DD5DD92B2E742E4000F93A3E /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+		DD5DD92D2E742E9300F93A3E /* CoreVideo.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreVideo.framework; path = System/Library/Frameworks/CoreVideo.framework; sourceTree = SDKROOT; };
+		DD5DD92F2E742EFF00F93A3E /* CoreFoundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreFoundation.framework; path = System/Library/Frameworks/CoreFoundation.framework; sourceTree = SDKROOT; };
+		DD5DD9312E742F2300F93A3E /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
+		DD5DD9332E742F5700F93A3E /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
+		DD5DD9352E742F6C00F93A3E /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		DD76254D290AFDC600BFE6D8 /* libboost_filesystem.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libboost_filesystem.a; path = ../../_install/ios/release/boost/lib/libboost_filesystem.a; sourceTree = "<group>"; };
 		DD7A98DC2B22020000B3BF0D /* libblend2d.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libblend2d.a; path = ../../_install/ios/release/blend2d/lib/libblend2d.a; sourceTree = "<group>"; };
 		DDBC4B8E2820E3770099E1F0 /* hello.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = hello.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -68,14 +80,20 @@
 			buildActionMask = 2147483647;
 			files = (
 				DDBC4BC12820FEB90099E1F0 /* VideoToolbox.framework in Frameworks */,
+				DD5DD9362E742F6C00F93A3E /* UIKit.framework in Frameworks */,
+				DD5DD92C2E742E4000F93A3E /* QuartzCore.framework in Frameworks */,
 				DDBC4BBD2820F4D10099E1F0 /* CoreMedia.framework in Frameworks */,
 				DDBC4BC3282216350099E1F0 /* Network.framework in Frameworks */,
 				DDBC4BB72820F43D0099E1F0 /* AVFoundation.framework in Frameworks */,
+				DD5DD9302E742EFF00F93A3E /* CoreFoundation.framework in Frameworks */,
 				DDBC4BB12820F3390099E1F0 /* libwebrtc.a in Frameworks */,
 				DDBC4BB32820F3E90099E1F0 /* libboost_json.a in Frameworks */,
+				DD5DD92E2E742E9300F93A3E /* CoreVideo.framework in Frameworks */,
 				DDBC4BBF2820F4F80099E1F0 /* AudioToolbox.framework in Frameworks */,
 				DDBC4BB92820F4490099E1F0 /* CoreAudio.framework in Frameworks */,
+				DD5DD9342E742F5700F93A3E /* Metal.framework in Frameworks */,
 				DD7A98DD2B22021700B3BF0D /* libblend2d.a in Frameworks */,
+				DD5DD9322E742F2300F93A3E /* CoreGraphics.framework in Frameworks */,
 				DDBC4BC7282216890099E1F0 /* GLKit.framework in Frameworks */,
 				DD76254E290AFDE100BFE6D8 /* libboost_filesystem.a in Frameworks */,
 				DDBC4BB52820F4090099E1F0 /* libsora.a in Frameworks */,
@@ -126,6 +144,12 @@
 		DDBC4BAA2820E9C30099E1F0 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				DD5DD9352E742F6C00F93A3E /* UIKit.framework */,
+				DD5DD9332E742F5700F93A3E /* Metal.framework */,
+				DD5DD9312E742F2300F93A3E /* CoreGraphics.framework */,
+				DD5DD92F2E742EFF00F93A3E /* CoreFoundation.framework */,
+				DD5DD92D2E742E9300F93A3E /* CoreVideo.framework */,
+				DD5DD92B2E742E4000F93A3E /* QuartzCore.framework */,
 				DD7A98DC2B22020000B3BF0D /* libblend2d.a */,
 				DD76254D290AFDC600BFE6D8 /* libboost_filesystem.a */,
 				DDBC4BC6282216890099E1F0 /* GLKit.framework */,
@@ -360,7 +384,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CC = ../../_install/ios/release/llvm/clang/bin/clang;
+				CLANG_ENABLE_MODULES = NO;
 				CODE_SIGN_STYLE = Automatic;
+				COMPILER_INDEX_STORE_ENABLE = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 85GXXZX8RJ;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -389,6 +416,12 @@
 					../../_install/ios/release/blend2d/lib/,
 				);
 				MARKETING_VERSION = 1.0;
+				OTHER_CPLUSPLUSFLAGS = (
+					"$(OTHER_CFLAGS)",
+					"-nostdinc++",
+					"-isystem../../_install/ios/release/llvm/libcxx/include",
+					"-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE",
+				);
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_BUNDLE_IDENTIFIER = jp.co.shiguredo.hello;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -414,7 +447,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CC = ../../_install/ios/release/llvm/clang/bin/clang;
+				CLANG_ENABLE_MODULES = NO;
 				CODE_SIGN_STYLE = Automatic;
+				COMPILER_INDEX_STORE_ENABLE = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 85GXXZX8RJ;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -424,6 +460,7 @@
 					OPENSSL_IS_BORINGSSL,
 					NDEBUG,
 				);
+				GCC_VERSION = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				HEADER_SEARCH_PATHS = "";
 				INFOPLIST_FILE = hello/Info.plist;
@@ -443,6 +480,12 @@
 					../../_install/ios/release/blend2d/lib/,
 				);
 				MARKETING_VERSION = 1.0;
+				OTHER_CPLUSPLUSFLAGS = (
+					"$(OTHER_CFLAGS)",
+					"-nostdinc++",
+					"-isystem../../_install/macos_arm64/release/llvm/libcxx/include",
+					"-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE",
+				);
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_BUNDLE_IDENTIFIER = jp.co.shiguredo.hello;
 				PRODUCT_NAME = "$(TARGET_NAME)";

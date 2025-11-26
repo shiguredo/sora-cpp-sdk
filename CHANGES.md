@@ -11,6 +11,100 @@
 
 ## develop
 
+## 2025.6.0
+
+**リリース日**: 2025-11-26
+
+- [UPDATE] AMD AMF のバージョンを `v1.5.0` にあげる
+  - @voluntas
+- [UPDATE] CUDA のバージョンを `12.9.1-1` に上げる
+  - CUDA コンパイルオプションに `D_ALLOW_UNSUPPORTED_LIBCPP` を追加する
+  - CUDA コンパイルオプションの `cuda-gpu-arch` を `sm_35` から `sm_60` に変更する
+    - sm_60 は Pascal 世代の GPU からサポートされている
+    - sm_35 は Kepler 世代の GPU からサポートされているが、Kepler は CUDA 10 までのサポートとなるためドロップ
+    - sm_50 は Maxwell 世代の GPU からサポートされているが、Maxwell は CUDA 11 までのサポートとなるドロップ
+  - @voluntas
+- [CHANGE] enum の `kNvidiaVideoCodecSdk` を `kNvidiaVideoCodec` に変更する
+  - @voluntas
+- [CHANGE] liwebrtc のバージョンを m143.7499.1.0 に上げる
+  - macOS, iOS が利用している clang, libc++ を Apple Clang のものから libwebrtc 管理下の Clang のものに変えたので破壊的変更となります
+  - libwebrtc m141 で `rtc_config.crypto_options` の型が変更されたため、`emplace()` ではなく直接アクセスするよう修正
+  - Windows で `CreateWindowsCoreAudioAudioDeviceModule` が `Environment` を受け取る API に変わったため、それに追従
+  - libwebrtc m142 の変更に追従し `PeerConnectionFactory` のコンストラクタに `env` の引数を追加
+  - libwebrtc m142 の変更に追従し `ScopedJavaLocalRef<jobject>(env, obj)` から `ScopedJavaLocalRef<jobject>::Adopt(env, obj)` を使うように変更
+  - @melpon @torikizi @miosakuma
+- [UPDATE] CMake を 4.1.3 にあげる
+  - @torikizi @voluntas
+- [ADD] `raspberry-pi-os_armv8` 向けのビルドを追加
+  - Momo からの移植
+  - V4L2 M2M のエンコーダ/デコーダに対応
+  - libcamera を使ったキャプチャラを追加
+  - @melpon
+- [ADD] `sora::VideoCodecImplementation` に `kRaspiV4L2M2M` を追加
+  - @melpon
+- [ADD] `sora::CameraDeviceCapturerConfig` に `use_libcamera`, `libcamera_native_frame_output`, `libcamera_controls` フィールドを追加
+  - @melpon
+- [ADD] `simulcast_request_rid` に対応する
+  - @voluntas
+- [ADD] `simulcast_rid_auto` に対応する
+  - @voluntas
+- [ADD] `llvm.sh` でインストールする LLVM のバージョンを DEPS ファイルから指定可能にする
+  - @melpon
+- [FIX] Windows でオーディオデバイスを指定しなかった場合に録音・再生が動作しないのを修正する
+  - @melpon
+- [FIX] 接続直後にクラッシュすることがあったのを修正する
+  - 以下のシナリオでクラッシュすることがある
+    1. `GetStats()` 取得のコールバックで `ws_->WriteText()` を呼び出し書き込み開始 (非同期)
+    2. サーバーからの切断で `Clear()` 呼び出し（非同期）
+    3. `Clear()` 呼び出しでを完了して `ws_ = nullptr` を設定して `WebSocket` オブジェクトを破棄
+    4. `ws_->WriteText()` の書き込みが完了したが、`WebSocket` オブジェクトは既に破棄されているのでクラッシュ
+  - ラムダ式に `ws_` を含めるようにすることで、まだ完了していない非同期操作がある場合、 `ws_ = nullptr` の時点では破棄されないようにした
+  - また、`GetStats()` のコールバックを IO スレッドで実行していなかったせいでレースコンディションになる操作をしていたのを、ちゃんと IO スレッドで実行するようにした
+  - @melpon
+
+### misc
+
+- [ADD] sumomo に `--list-devices` オプションを追加
+  - 利用可能なオーディオ入力/出力デバイスとビデオデバイスを一覧表示して終了する
+  - @voluntas
+- [ADD] examples の各サンプルに ubuntu-22.04_armv8 対応を追加する
+  - messaging_recvonly_sample, sdl_sample, sumomo の各サンプルに ubuntu-22.04_armv8 プラットフォームのビルド設定を追加
+  - multistrap/ubuntu-22.04_armv8.conf を追加
+  - @voluntas
+- [ADD] sumomo に `--fake-capture-device` オプションを追加
+  - フェイクの音声と映像デバイスを使用してテストパターンと無音を生成する
+  - 実際に音声や映像を送信するかは `--audio`/`--video` オプションに依存する
+  - @voluntas
+- [ADD] GitHub Actions に sumomo を利用した E2E テストを実行する `e2e-test.yml` を追加
+  - @voluntas
+- [ADD] sumomo に `--use-libcamera`, `--use-libcamera-native`, `--libcamera-control` オプションを追加
+  - @melpon
+- [ADD] sumomo のエンコーダ/デコーダに指定できるエンジン名として `raspi_v4l2m2m` を追加
+  - @melpon
+- [ADD] hello アプリに `use_sixel`, `sixel_width`, `sixel_height`, `use_ansi`, `ansi_width`, `ansi_height` を追加
+  - @melpon
+- [ADD] E2E テストを追加
+  - pytest を使用した sumomo の E2E テスト環境を構築
+  - `e2e-test/` ディレクトリにテストケースとプロセス管理を追加
+  - @voluntas
+- [UPDATE] actions/download-artifact を v5 に上げる
+  - @miosakuma
+- [UPDATE] examples/DEPS の CLI11 バージョンを v2.6.1 にあげる
+  - @torikizi
+- [UPDATE] examples/DEPS の SDL バージョンを 3.2.24 にあげる
+  - @torikizi
+- [FIX] sumomo で audio_device をデフォルト無効にしていたのを修正する
+  - @torikizi
+- [FIX] android の hello アプリについて回転時やスクリーンサイズの変更時に Activity の再起動が行われないようにする
+  - AndroidManifest.xml の `android:configChanges` に `"orientation|screenSize|smallestScreenSize|screenLayout"` を設定する
+  - @miosakuma
+- [FIX] GitHub Actions の build.yml で CUDA パッケージを ubuntu のバージョンに合わせるようにする
+  - @voluntas
+- [FIX] Raspberry Pi OS 向けのサンプルが artifact としてアップロードされていなかった問題を修正
+  - @voluntas
+- [FIX] sumomo で `--audio false` の時はトラックを生成しないように修正する
+  - @voluntas
+
 ## 2025.5.1
 
 **リリース日**: 2025-09-17
@@ -55,7 +149,7 @@
   - また、この過程で iOS 向けのライブラリビルドは Xcode を利用しないように修正した
   - @melpon
 - [UPDATE] Blend2D のダウンロードに時雨堂のミラー URL を使用するように変更する
-  - 公式サイトに負荷をかけないように https://oss-mirrors.shiguredo.jp/ を使用する
+  - 公式サイトに負荷をかけないように <https://oss-mirrors.shiguredo.jp/> を使用する
   - @voluntas
 - [UPDATE] libwebrtc を m139.7258.3.0 にあげる
   - @miosakuma

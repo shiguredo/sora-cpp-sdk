@@ -47,6 +47,6 @@ sudo ./llvm.sh 20
 wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/cuda-keyring_1.0-1_all.deb
 sudo dpkg -i cuda-keyring_*all.deb
 sudo apt-get update
-# 11.8.0-1 の部分は VERSION ファイルの CUDA_VERSION を参照すること
+# 11.8.0-1 の部分は DEPS ファイルの CUDA_VERSION を参照すること
 sudo apt-get -y install cuda=11.8.0-1
 ```

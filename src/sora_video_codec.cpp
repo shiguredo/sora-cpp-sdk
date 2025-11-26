@@ -37,6 +37,10 @@
 #include "sora/hwenc_amf/amf_video_codec.h"
 #endif
 
+#if defined(USE_V4L2_ENCODER)
+#include "sora/hwenc_v4l2/v4l2_video_codec.h"
+#endif
+
 namespace webrtc {
 
 // VideoCodecType
@@ -72,11 +76,14 @@ void tag_invoke(const boost::json::value_from_tag&,
     case VideoCodecImplementation::kIntelVpl:
       jv = "intel_vpl";
       break;
-    case VideoCodecImplementation::kNvidiaVideoCodecSdk:
-      jv = "nvidia_video_codec_sdk";
+    case VideoCodecImplementation::kNvidiaVideoCodec:
+      jv = "nvidia_video_codec";
       break;
     case VideoCodecImplementation::kAmdAmf:
       jv = "amd_amf";
+      break;
+    case VideoCodecImplementation::kRaspiV4L2M2M:
+      jv = "raspi_v4l2m2m";
       break;
     case VideoCodecImplementation::kCustom_1:
       jv = "custom_1";
@@ -117,10 +124,12 @@ VideoCodecImplementation tag_invoke(
     return VideoCodecImplementation::kCiscoOpenH264;
   } else if (s == "intel_vpl") {
     return VideoCodecImplementation::kIntelVpl;
-  } else if (s == "nvidia_video_codec_sdk") {
-    return VideoCodecImplementation::kNvidiaVideoCodecSdk;
+  } else if (s == "nvidia_video_codec") {
+    return VideoCodecImplementation::kNvidiaVideoCodec;
   } else if (s == "amd_amf") {
     return VideoCodecImplementation::kAmdAmf;
+  } else if (s == "raspi_v4l2m2m") {
+    return VideoCodecImplementation::kRaspiV4L2M2M;
   } else if (s == "custom_1") {
     return VideoCodecImplementation::kCustom_1;
   } else if (s == "custom_2") {
@@ -357,6 +366,10 @@ VideoCodecCapability GetVideoCodecCapability(
 
 #if defined(USE_AMF_ENCODER)
   cap.engines.push_back(GetAMFVideoCodecCapability(config.amf_context));
+#endif
+
+#if defined(USE_V4L2_ENCODER)
+  cap.engines.push_back(GetV4L2VideoCodecCapability());
 #endif
 
   if (config.get_custom_engines) {

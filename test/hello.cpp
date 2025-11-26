@@ -17,12 +17,17 @@
 
 // WebRTC
 #include <api/audio_options.h>
+#include <api/media_stream_interface.h>
 #include <api/rtc_error.h>
 #include <api/rtp_parameters.h>
+#include <api/rtp_receiver_interface.h>
 #include <api/rtp_sender_interface.h>
+#include <api/rtp_transceiver_interface.h>
 #include <api/scoped_refptr.h>
 #include <rtc_base/crypto_random.h>
 #include <rtc_base/logging.h>
+#include <sora/renderer/ansi_renderer.h>
+#include <sora/renderer/sixel_renderer.h>
 
 #ifdef _WIN32
 #include <rtc_base/win/scoped_com_initializer.h>
@@ -60,6 +65,16 @@ HelloSora::~HelloSora() {
 
 void HelloSora::Run() {
   void* env = sora::GetJNIEnv();
+
+  if (config_.use_sixel) {
+    sixel_renderer_.reset(
+        new sora::SixelRenderer(config_.sixel_width, config_.sixel_height));
+  }
+
+  if (config_.use_ansi) {
+    ansi_renderer_.reset(
+        new sora::AnsiRenderer(config_.ansi_width, config_.ansi_height));
+  }
 
   sora::FakeVideoCapturerConfig fake_config;
   fake_config.width = config_.capture_width;
@@ -131,6 +146,36 @@ void HelloSora::OnDisconnect(sora::SoraSignalingErrorCode ec,
                              std::string message) {
   RTC_LOG(LS_INFO) << "OnDisconnect: " << message;
   ioc_->stop();
+}
+
+void HelloSora::OnTrack(
+    webrtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver) {
+  auto track = transceiver->receiver()->track();
+  if (track->kind() == webrtc::MediaStreamTrackInterface::kVideoKind) {
+    if (sixel_renderer_) {
+      sixel_renderer_->AddTrack(
+          static_cast<webrtc::VideoTrackInterface*>(track.get()));
+    }
+    if (ansi_renderer_) {
+      ansi_renderer_->AddTrack(
+          static_cast<webrtc::VideoTrackInterface*>(track.get()));
+    }
+  }
+}
+
+void HelloSora::OnRemoveTrack(
+    webrtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) {
+  auto track = receiver->track();
+  if (track->kind() == webrtc::MediaStreamTrackInterface::kVideoKind) {
+    if (sixel_renderer_) {
+      sixel_renderer_->RemoveTrack(
+          static_cast<webrtc::VideoTrackInterface*>(track.get()));
+    }
+    if (ansi_renderer_) {
+      ansi_renderer_->RemoveTrack(
+          static_cast<webrtc::VideoTrackInterface*>(track.get()));
+    }
+  }
 }
 
 #if defined(__ANDROID__) || (defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE)
@@ -296,6 +341,24 @@ int main(int argc, char* argv[]) {
       config.degradation_preference = webrtc::DegradationPreference::BALANCED;
     }
   }
+  if (get(v, "use_sixel", x)) {
+    config.use_sixel = x.as_bool();
+  }
+  if (get(v, "sixel_width", x)) {
+    config.sixel_width = x.to_number<int>();
+  }
+  if (get(v, "sixel_height", x)) {
+    config.sixel_height = x.to_number<int>();
+  }
+  if (get(v, "use_ansi", x)) {
+    config.use_ansi = x.as_bool();
+  }
+  if (get(v, "ansi_width", x)) {
+    config.ansi_width = x.to_number<int>();
+  }
+  if (get(v, "ansi_height", x)) {
+    config.ansi_height = x.to_number<int>();
+  }
 
   sora::SoraClientContextConfig context_config;
   context_config.get_android_application_context = GetAndroidApplicationContext;
@@ -322,7 +385,7 @@ int main(int argc, char* argv[]) {
             x);
 
     if (preference.HasImplementation(
-            sora::VideoCodecImplementation::kNvidiaVideoCodecSdk)) {
+            sora::VideoCodecImplementation::kNvidiaVideoCodec)) {
       if (sora::CudaContext::CanCreate()) {
         context_config.video_codec_factory_config.capability_config
             .cuda_context = sora::CudaContext::Create();
@@ -332,6 +395,37 @@ int main(int argc, char* argv[]) {
       if (sora::AMFContext::CanCreate()) {
         context_config.video_codec_factory_config.capability_config
             .amf_context = sora::AMFContext::Create();
+      }
+    }
+  }
+
+  // VideoCodecCapability の一覧を出力する
+  {
+    auto capability = sora::GetVideoCodecCapability(
+        context_config.video_codec_factory_config.capability_config);
+    for (const auto& engine : capability.engines) {
+      std::cout << "Engine: "
+                << boost::json::value_from(engine.name).as_string()
+                << std::endl;
+      for (const auto& codec : engine.codecs) {
+        if (codec.encoder) {
+          std::cout << "  - " << boost::json::value_from(codec.type).as_string()
+                    << " Encoder" << std::endl;
+        }
+        if (codec.decoder) {
+          std::cout << "  - " << boost::json::value_from(codec.type).as_string()
+                    << " Decoder" << std::endl;
+        }
+        auto params = boost::json::value_from(codec.parameters);
+        if (params.as_object().size() > 0) {
+          std::cout << "    - Codec Parameters: "
+                    << boost::json::serialize(params) << std::endl;
+        }
+      }
+      auto params = boost::json::value_from(engine.parameters);
+      if (params.as_object().size() > 0) {
+        std::cout << "  - Engine Parameters: " << boost::json::serialize(params)
+                  << std::endl;
       }
     }
   }

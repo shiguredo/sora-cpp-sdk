@@ -49,6 +49,11 @@
 #include "sora/hwenc_amf/amf_video_encoder.h"
 #endif
 
+#if defined(USE_V4L2_ENCODER)
+#include "sora/hwenc_v4l2/v4l2_h264_decoder.h"
+#include "sora/hwenc_v4l2/v4l2_h264_encoder.h"
+#endif
+
 #include "sora/open_h264_video_decoder.h"
 #include "sora/open_h264_video_encoder.h"
 #include "sora/sora_video_codec.h"
@@ -151,7 +156,7 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
             VideoEncoderConfig(codec.type, create_video_encoder, 16));
 #endif
       } else if (*codec.encoder ==
-                 VideoCodecImplementation::kNvidiaVideoCodecSdk) {
+                 VideoCodecImplementation::kNvidiaVideoCodec) {
 #if defined(USE_NVCODEC_ENCODER)
         // CudaContext は必須ではない（Windows エンコーダでは DirectX を利用する）ので assert しない
         // assert(config.capability_config.cuda_context);
@@ -179,6 +184,15 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
                                         const webrtc::SdpVideoFormat& format) {
           auto type = webrtc::PayloadStringToCodecType(format.name);
           return AMFVideoEncoder::Create(amf_context, type);
+        };
+        encoder_factory_config.encoders.push_back(
+            VideoEncoderConfig(codec.type, create_video_encoder, 16));
+#endif
+      } else if (*codec.encoder == VideoCodecImplementation::kRaspiV4L2M2M) {
+#if defined(USE_V4L2_ENCODER)
+        auto create_video_encoder = [](const webrtc::SdpVideoFormat& format) {
+          auto type = webrtc::PayloadStringToCodecType(format.name);
+          return V4L2H264Encoder::Create(type);
         };
         encoder_factory_config.encoders.push_back(
             VideoEncoderConfig(codec.type, create_video_encoder, 16));
@@ -221,7 +235,7 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
             VideoDecoderConfig(codec.type, create_video_decoder));
 #endif
       } else if (*codec.decoder ==
-                 VideoCodecImplementation::kNvidiaVideoCodecSdk) {
+                 VideoCodecImplementation::kNvidiaVideoCodec) {
 #if defined(USE_NVCODEC_ENCODER)
         // CudaContext は必須ではない（Windows エンコーダでは DirectX を利用する）ので assert しない
         // assert(config.capability_config.cuda_context);
@@ -249,6 +263,15 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
                                         const webrtc::SdpVideoFormat& format) {
           auto type = webrtc::PayloadStringToCodecType(format.name);
           return AMFVideoDecoder::Create(amf_context, type);
+        };
+        decoder_factory_config.decoders.push_back(
+            VideoDecoderConfig(codec.type, create_video_decoder));
+#endif
+      } else if (*codec.decoder == VideoCodecImplementation::kRaspiV4L2M2M) {
+#if defined(USE_V4L2_ENCODER)
+        auto create_video_decoder = [](const webrtc::SdpVideoFormat& format) {
+          auto type = webrtc::PayloadStringToCodecType(format.name);
+          return V4L2H264Decoder::Create(type);
         };
         decoder_factory_config.decoders.push_back(
             VideoDecoderConfig(codec.type, create_video_decoder));

@@ -157,7 +157,7 @@ Windows 以外の場合
 #### Sumomo 実行に関するオプション
 
 - `--log-level` : 実行時にターミナルに出力するログのレベル
-  - `verbose`,`info`,`warning`,`error`,`none` の値が指定可能です
+  - `verbose`,`info`,`warning`,`error`,`none` または `0`-`4` の値が指定可能です (`verbose` が 0, `none` が 4)
 - `--resolution` : 映像配信する際の解像度
   - 解像度は `QVGA, VGA, HD, FHD, 4K, or [WIDTH]x[HEIGHT]` の値が指定可能です
   - 未指定の場合は `VGA` が設定されます
@@ -192,17 +192,18 @@ Windows 以外の場合
   - 0 は未指定と見なされます
 - `--metadata` : [メタデータ](https://sora-doc.shiguredo.jp/SIGNALING#414142)
   - JSON 形式の文字列を指定してください
-- `--spotlight` : [スポットライト](https://sora-doc.shiguredo.jp/SIGNALING#8f6c79) 機能の利用 (true/false)
-  - 未指定の場合は Sora の設定 (デフォルト: false) が設定されます
+- `--spotlight` : [スポットライト](https://sora-doc.shiguredo.jp/SIGNALING#8f6c79) 機能の利用 (`true`/`false`/`none`)
+  - 未指定の場合は値なし (Sora 側の設定を利用) になります
 - `--spotlight-number` : [spotlight_number](https://sora-doc.shiguredo.jp/SPOTLIGHT#c66032)
   - 0 - 8 の値が指定可能です
   - 0 は未指定と見なされます
-- `--simulcast` : [サイマルキャスト](https://sora-doc.shiguredo.jp/SIGNALING#584185) 機能の利用 (true/false)
-  - 未指定の場合は Sora の設定 (デフォルト: false) が設定されます
-- `--data-channel-signaling` : [DataChannel 経由のシグナリング](https://sora-doc.shiguredo.jp/DATA_CHANNEL_SIGNALING) を行います (true/false)
-  - 未指定の場合は Sora の設定 (デフォルト: false) が設定されます
+- `--simulcast` : [サイマルキャスト](https://sora-doc.shiguredo.jp/SIGNALING#584185) 機能の利用 (`true`/`false`/`none`)
+  - 未指定の場合は値なし (Sora 側の設定を利用) になります
+- `--data-channel-signaling` : [DataChannel 経由のシグナリング](https://sora-doc.shiguredo.jp/DATA_CHANNEL_SIGNALING) を行います (`true`/`false`/`none`)
+  - 未指定の場合は値なし (Sora 側の設定を利用) になります
 - `--ignore-disconnect-websocket`
-  - 未指定の場合は Sora の設定 (デフォルト: false) が設定されます
+  - DataChannel シグナリング利用時に WebSocket 切断を無視するかを指定します (`true`/`false`/`none`)
+  - 未指定の場合は値なし (Sora 側の設定を利用) になります
 
 #### proxy に関するオプション
 
@@ -224,6 +225,24 @@ Windows 以外の場合
 - `--show-me`
   - 送信している自分の映像を表示します
 
+#### Sixel に関するオプション
+
+- `--use-sixel`
+  - Sixel を利用して映像を表示します
+- `--sixel-width`
+  - 表示する横幅を指定します
+- `--sixel-height`
+  - 表示する縦幅を指定します
+
+#### ANSI 表示に関するオプション
+
+- `--use-ansi`
+  - ANSI を利用して映像を表示します
+- `--ansi-width`
+  - 表示する横幅を指定します
+- `--ansi-height`
+  - 表示する縦幅を指定します
+
 #### 証明書に関するオプション
 
 - `--insecure` : サーバー証明書の検証を行わないようにするフラグ
@@ -238,6 +257,12 @@ Windows 以外の場合
 
 - `--video-device`
   - 映像デバイスの名前を指定します
+- `--use-libcamera`
+  - 対応デバイスで libcamera を利用します
+- `--use-libcamera-native`
+  - libcamera のネイティブバッファを利用して H.264 エンコードを行います
+- `--libcamera-control`
+  - libcamera に設定値を渡します (形式: `キー 値`)
 - `--audio-recording-device`
   - 音声録音デバイスの名前を指定します
 - `--audio-playout-device`
@@ -250,6 +275,9 @@ Windows 以外の場合
 - `--degradation-preference`
   - `disabled`, `maintain_framerate`,`maintain_resolution`, `balanced` が指定可能です。
   - 設定可能な値の詳細は [W3C のドキュメント](https://www.w3.org/TR/mst-content-hint/#degradation-preference-when-encoding) を参照してください。
+- `--cpu-adaptation`
+  - CPU 使用率に応じた適応制御を有効化するかを指定します (`true`/`false`/`none`)
+  - 未指定の場合は値なし (Sora 側の設定を利用) になります
 
 #### エンコーダー / デコーダーの設定に関するオプション
 
@@ -281,7 +309,7 @@ Windows 以外の場合
 - `internal`
 - `cisco_openh264`
 - `intel_vpl`
-- `nvidia_video_codec_sdk`
+- `nvidia_video_codec`
 - `amd_amf`
 
 > [!NOTE]

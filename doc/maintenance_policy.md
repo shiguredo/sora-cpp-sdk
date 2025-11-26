@@ -63,7 +63,7 @@ P1 が一番プライオリティが高いです。
   - Ubuntu 24.04
   - Ubuntu 22.04
   - Windows 11
-- NVIDIA Video Codec SDK x86_64
+- NVIDIA Video Codec x86_64
   - Ubuntu 24.04
   - Ubuntu 22.04
   - Windows 11

@@ -19,7 +19,11 @@
 
 ## ビルドについて
 
-- `python3 run.py build <target>` でビルドすること
+- `python3 run.py build <target>` でビルドすること。
+
+### サンプルのビルドについて
+
+- sumomo であれば `python3 examples/sumomo/<target>/run.py` でビルドすること
 
 ## コミットについて
 
@@ -28,3 +32,12 @@
 - コミットメッセージは日本語で書くこと
 - コミットメッセージは命令形で書くこと
 - コミットメッセージは〜するという形で書くこと
+
+## E2E テストについて
+
+- `AMD_AMF=1 uv run --directory=e2e-test pytest test_sumomo_amd_amf.py::test_sendonly_recvonly[H264] -v -s` のようにルートディレクトリで `--directory` オプションをつけて実行すること
+- pytest 実行時には全てのテストを実行しようとしないこと
+  - 特定のテストケースのみを実行すること
+- pytest 実行時には `-v -s` オプションをつけること
+- pytest 実行時には `--timeout` オプションをつけること
+  - タイムアウトは最大 60 秒とすること
