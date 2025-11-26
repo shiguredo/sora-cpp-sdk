@@ -11,6 +11,10 @@
 
 ## develop
 
+## 2025.6.1
+
+**リリース日**: 2025-11-26
+
 - [FIX] 正式採用を見送った `simulcast_rid_auto` を削除する
   - @voluntas
 
