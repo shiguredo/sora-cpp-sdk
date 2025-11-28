@@ -12,6 +12,8 @@
 #include <modules/video_coding/codecs/h264/include/h264.h>
 #include <modules/video_coding/codecs/vp9/include/vp9.h>
 
+#include "hevc_profile_tier_level.h"
+
 namespace sora {
 
 std::vector<webrtc::SdpVideoFormat> GetDefaultVideoFormats(
@@ -40,9 +42,31 @@ std::vector<webrtc::SdpVideoFormat> GetDefaultVideoFormats(
         CreateH264Format(webrtc::H264Profile::kProfileConstrainedBaseline,
                          webrtc::H264Level::kLevel3_1, "0", true));
   } else if (codec == webrtc::kVideoCodecH265) {
-    r.push_back(webrtc::SdpVideoFormat(webrtc::kH265CodecName));
+    // RFC draft-ietf-avtcore-hevc-webrtc-06 に従って HEVC パラメータを設定
+    // デフォルトは Main Profile, Main Tier, Level 3.1 (必須サポート)
+    // ハードウェアエンコーダーの能力に応じて、実際の値は動的に決定される
+
+    webrtc::CodecParameterMap h265_params = {
+        {"profile-id", "1"},  // Main Profile
+        {"tier-flag", "0"},   // Main Tier
+        {"level-id", "93"},   // Level 3.1 (必須サポート)
+        {"tx-mode", "SRST"}   // Single RTP stream on a Single media Transport
+    };
+    r.push_back(webrtc::SdpVideoFormat(webrtc::kH265CodecName, h265_params));
   }
   return r;
+}
+
+std::vector<webrtc::SdpVideoFormat> GetDefaultVideoFormats(
+    webrtc::VideoCodecType codec,
+    HevcHardwareType hw_type,
+    std::optional<int> max_hevc_level) {
+  if (codec == webrtc::kVideoCodecH265) {
+    // ハードウェアタイプに応じた HEVC フォーマットを返す
+    return GetHevcFormatsForHardware(hw_type, max_hevc_level);
+  }
+  // H.265 以外は通常の処理
+  return GetDefaultVideoFormats(codec);
 }
 
 }  // namespace sora
