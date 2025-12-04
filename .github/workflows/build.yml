@@ -30,7 +30,7 @@ jobs:
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
       TEST_MATRIX_NAME: ${{ matrix.name }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: microsoft/setup-msbuild@v2
       - name: Env to output
         run: |
@@ -71,17 +71,17 @@ jobs:
           echo "boost_name=${BOOST_PACKAGE_NAME}" >> ${Env:GITHUB_OUTPUT}
         id: package_name
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ steps.package_name.outputs.name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.name }}
       - name: Upload Boost Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ steps.package_name.outputs.boost_name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.boost_name }}
       - name: Upload Environment
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ matrix.name }}.env
           path: _package/${{ matrix.name }}/release/sora.env
@@ -94,7 +94,7 @@ jobs:
             cp "_build\${{ matrix.name }}\release\$app\Release\$app.exe" "examples_${{ matrix.name }}"
           }
       - name: Upload Examples Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: examples_${{ matrix.name }}
           path: examples/examples_${{ matrix.name }}
@@ -114,7 +114,7 @@ jobs:
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
       TEST_MATRIX_NAME: ${{ matrix.name }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Env to output
         run: |
           echo "user=`users`" >> $GITHUB_OUTPUT
@@ -127,17 +127,17 @@ jobs:
           echo "boost_name=${BOOST_PACKAGE_NAME}" >> $GITHUB_OUTPUT
         id: package_name
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ steps.package_name.outputs.name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.name }}
       - name: Upload Boost Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ steps.package_name.outputs.boost_name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.boost_name }}
       - name: Upload Environment
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ matrix.name }}.env
           path: _package/${{ matrix.name }}/release/sora.env
@@ -151,7 +151,7 @@ jobs:
           done
         if: matrix.name == 'macos_arm64'
       - name: Upload Examples Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: examples_${{ matrix.name }}
           path: examples/examples_${{ matrix.name }}
@@ -193,7 +193,7 @@ jobs:
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
       TEST_MATRIX_NAME: ${{ matrix.platform.name }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Disk cleanup
         run: |
           set -x
@@ -264,7 +264,7 @@ jobs:
       # JDK を指定しないとデフォルトの JDK 11 で動作するため指定する
       - name: Setup JDK 17
         if: matrix.platform.os == 'android'
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: "17"
           distribution: "temurin"
@@ -279,17 +279,17 @@ jobs:
           echo "boost_name=${BOOST_PACKAGE_NAME}" >> $GITHUB_OUTPUT
         id: package_name
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ steps.package_name.outputs.name }}
           path: _package/${{ matrix.platform.name }}/release/${{ steps.package_name.outputs.name }}
       - name: Upload Boost Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ steps.package_name.outputs.boost_name }}
           path: _package/${{ matrix.platform.name }}/release/${{ steps.package_name.outputs.boost_name }}
       - name: Upload Environment
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ matrix.platform.name }}.env
           path: _package/${{ matrix.platform.name }}/release/sora.env
@@ -315,7 +315,7 @@ jobs:
           done
       - name: Upload Examples Artifact
         if: matrix.platform.os == 'ubuntu' || matrix.platform.os == 'raspberry-pi-os'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: examples_${{ matrix.platform.name }}
           path: examples/examples_${{ matrix.platform.name }}
@@ -339,7 +339,7 @@ jobs:
       # - e2e-test
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/download
         with:
           platform: windows_x86_64
@@ -402,7 +402,7 @@ jobs:
         working-directory: ${{ github.workspace }}/examples
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Build Example
         run: |
           python3 ${{ matrix.example }}/run.py build windows_x86_64
@@ -416,7 +416,7 @@ jobs:
           # 例: sumomo_windows_x86_64.zip
           Compress-Archive -Path ${{ matrix.example }}_windows_x86_64 -DestinationPath ${{ matrix.example }}_windows_x86_64.zip
       - name: Upload Examples Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ matrix.example }}_windows_x86_64.zip
           path: examples/${{ matrix.example }}_windows_x86_64.zip
@@ -432,7 +432,7 @@ jobs:
         working-directory: ${{ github.workspace }}/examples
     runs-on: macos-14
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Build Example
         run: |
           python3 ${{ matrix.example }}/run.py build macos_arm64
@@ -445,7 +445,7 @@ jobs:
           # 例: sumomo_macos_arm64.tar.gz
           tar -czf ${{ matrix.example }}_macos_arm64.tar.gz ${{ matrix.example }}_macos_arm64
       - name: Upload Examples Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ matrix.example }}_macos_arm64.tar.gz
           path: examples/${{ matrix.example }}_macos_arm64.tar.gz
@@ -471,7 +471,7 @@ jobs:
         working-directory: ${{ github.workspace }}/examples
     runs-on: ${{ matrix.platform.runs-on }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Install deps
         run: |
           sudo apt-get update
@@ -508,7 +508,7 @@ jobs:
           # 例: sumomo_ubuntu-24.04_x86_64.tar.gz
           tar -czf ${{ matrix.example }}_${{ matrix.platform.name }}.tar.gz ${{ matrix.example }}_${{ matrix.platform.name }}
       - name: Upload Examples Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ matrix.example }}_${{ matrix.platform.name }}.tar.gz
           path: examples/${{ matrix.example }}_${{ matrix.platform.name }}.tar.gz
@@ -532,8 +532,8 @@ jobs:
           - raspberry-pi-os_armv8.tar.gz
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/download-artifact@v5
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v6
         with:
           name: ${{ matrix.example }}_${{ matrix.archive }}
       - name: Release Examples

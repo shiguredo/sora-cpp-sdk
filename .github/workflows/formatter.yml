@@ -28,7 +28,7 @@ jobs:
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
       TEST_MATRIX_NAME: ${{ matrix.platform.name }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Cache Dependencies
         uses: actions/cache@v4
         with:
