@@ -1,11 +1,15 @@
 name: e2e-test-workflow
 
 on:
-  push:
-    paths:
-      - "e2e-test/**"
-      - ".github/workflows/e2e-test.yml"
+  # push:
+  #   paths:
+  #     - "e2e-test/**"
+  #     - ".github/workflows/e2e-test.yml"
   workflow_call:
+    inputs:
+      use-download-artifact:
+        type: boolean
+        default: true
   workflow_dispatch:
 
 jobs:
@@ -145,12 +149,62 @@ jobs:
         if: ${{ runner.environment != 'self-hosted' && steps.openh264.outputs.openh264_path }}
         run: echo "OPENH264_PATH=${{ steps.openh264.outputs.openh264_path }}" >> $GITHUB_ENV
 
-      # self-hosted runner の場合このダウンロードが凄く時間かかる
-      - name: Download and setup sumomo binary
-        uses: ./.github/actions/download-sumomo
+      # workflow_call の場合: download-artifact を使用
+      - name: Download sumomo artifact (workflow_call)
+        if: inputs.use-download-artifact == true
+        uses: actions/download-artifact@v5
         with:
-          platform-name: ${{ matrix.platform.platform-name }}
-          branch-name: ${{ github.ref_name }}
+          name: examples_${{ matrix.platform.platform-name }}
+          path: ./sumomo_binary
+
+      # workflow_dispatch の場合: gh コマンドで最新成功ビルドから取得
+      - name: Download sumomo artifact (workflow_dispatch)
+        if: inputs.use-download-artifact != true
+        shell: bash
+        run: |
+          RUN_ID=$(gh run list --workflow=build.yml --branch=${{ github.ref_name }} --status=success --limit=1 --json databaseId --jq '.[0].databaseId')
+          if [ -n "$RUN_ID" ]; then
+            echo "ブランチ ${{ github.ref_name }} の成功したビルドが見つかりました: $RUN_ID"
+            gh run download $RUN_ID --name examples_${{ matrix.platform.platform-name }} --dir ./sumomo_binary
+          else
+            echo "ブランチ ${{ github.ref_name }} の成功したビルドが見つかりません"
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      # sumomo バイナリのセットアップ
+      - name: Setup sumomo binary
+        shell: bash
+        run: |
+          # ダウンロードしたバイナリを確認
+          ls -la sumomo_binary/
+
+          # sumomo.py が期待するディレクトリ構造を作成
+          mkdir -p examples/_build/${{ matrix.platform.platform-name }}/release/sumomo/
+
+          # プラットフォームに応じたバイナリ名を決定
+          if [[ "${{ matrix.platform.platform-name }}" == windows_* ]]; then
+            BINARY_NAME="sumomo.exe"
+          else
+            BINARY_NAME="sumomo"
+          fi
+
+          # sumomo バイナリを期待される場所に配置
+          # raspberry_pi の場合は libcamera などの共有ライブラリも含めてすべてコピー
+          if [[ "${{ matrix.platform.platform-name }}" == "raspberry-pi-os_armv8" ]]; then
+            cp -r sumomo_binary/* examples/_build/${{ matrix.platform.platform-name }}/release/sumomo/
+          else
+            cp sumomo_binary/$BINARY_NAME examples/_build/${{ matrix.platform.platform-name }}/release/sumomo/
+          fi
+
+          # Linux/macOS の場合は実行権限を付与
+          if [[ "${{ matrix.platform.platform-name }}" != windows_* ]]; then
+            chmod +x examples/_build/${{ matrix.platform.platform-name }}/release/sumomo/$BINARY_NAME
+          fi
+
+          # パスを確認
+          ls -la examples/_build/${{ matrix.platform.platform-name }}/release/sumomo/
 
       - name: Run E2E tests
         run: |
