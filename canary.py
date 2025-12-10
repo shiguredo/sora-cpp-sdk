@@ -6,44 +6,50 @@ VERSION_FILE = "VERSION"
 EXAMPLES_DEPS_FILE = "examples/DEPS"
 
 
-def update_sdk_version(version_content):
-    # VERSION ファイルはバージョン番号のみを含む
-    version_str = version_content.strip()
+def increment_version(version_str: str) -> str:
+    """バージョン文字列をインクリメントする"""
+    match = re.match(r"(\d{4})\.(\d+)\.(\d+)(-canary\.(\d+))?", version_str)
+    if not match:
+        raise ValueError(f"Invalid version format: {version_str}")
 
-    version_match = re.match(r"(\d{4}\.\d+\.\d+)(-canary\.(\d+))?", version_str)
-    if version_match:
-        major_minor_patch = version_match.group(1)
-        canary_suffix = version_match.group(2)
-        if canary_suffix is None:
-            new_version = f"{major_minor_patch}-canary.0"
-        else:
-            canary_number = int(version_match.group(3))
-            new_version = f"{major_minor_patch}-canary.{canary_number + 1}"
+    year, minor, patch, _, canary = match.groups()
 
-        return new_version
+    if canary:
+        # canary がある場合は canary 番号をインクリメント
+        new_version = f"{year}.{minor}.{patch}-canary.{int(canary) + 1}"
     else:
-        raise ValueError(f"Invalid version format in VERSION file: {version_str}")
+        # canary がない場合はマイナーバージョンを上げてパッチを 0 にする
+        new_version = f"{year}.{int(minor) + 1}.0-canary.0"
+
+    return new_version
 
 
-def write_file(filename, updated_content, dry_run):
-    # ファイルの末尾に改行を追加
-    updated_content = updated_content.rstrip() + "\n"
-    if dry_run:
-        print(f"Dry run: The following changes would be written to {filename}:")
-        print(updated_content)
-    else:
-        with open(filename, "w") as file:
-            file.write(updated_content)
-        print(f"{filename} updated.")
+def confirm_update(current_version: str, new_version: str) -> bool:
+    """ユーザーに更新の確認を求める"""
+    response = (
+        input(f"Update version from {current_version} to {new_version}? (y/n): ")
+        .strip()
+        .lower()
+    )
+    return response == "y"
 
 
-def update_deps_version(deps_content, new_version):
+def check_current_branch(expected_branch: str) -> bool:
+    """現在のブランチが期待するブランチかを確認する"""
+    result = subprocess.run(
+        ["git", "rev-parse", "--abbrev-ref", "HEAD"], capture_output=True, text=True
+    )
+    current_branch = result.stdout.strip()
+    return current_branch == expected_branch
+
+
+def update_deps_version(deps_content: str, new_version: str) -> str:
     """DEPS ファイルの SORA_CPP_SDK_VERSION を更新する"""
     lines = deps_content.split("\n")
     updated_lines = []
     sdk_version_updated = False
     for line in lines:
-        line = line.strip()  # 前後の余分なスペースや改行を削除
+        line = line.strip()
         if line.startswith("SORA_CPP_SDK_VERSION="):
             updated_lines.append(f"SORA_CPP_SDK_VERSION={new_version}")
             sdk_version_updated = True
@@ -54,51 +60,66 @@ def update_deps_version(deps_content, new_version):
     return "\n".join(updated_lines)
 
 
-def git_operations(new_version, dry_run):
-    if dry_run:
-        print("Dry run: Would execute git commit -am '[canary] Update VERSION and examples/DEPS'")
-        print(f"Dry run: Would execute git tag {new_version}")
-        print("Dry run: Would execute git push")
-        print(f"Dry run: Would execute git push origin {new_version}")
-    else:
-        print("Executing: git commit -am '[canary] Update VERSION and examples/DEPS'")
-        subprocess.run(
-            ["git", "commit", "-am", "[canary] Update VERSION and examples/DEPS"], check=True
-        )
-
-        print(f"Executing: git tag {new_version}")
-        subprocess.run(["git", "tag", new_version], check=True)
-
-        print("Executing: git push")
-        subprocess.run(["git", "push"], check=True)
-
-        print(f"Executing: git push origin {new_version}")
-        subprocess.run(["git", "push", "origin", new_version], check=True)
-
-
 def main():
     parser = argparse.ArgumentParser(
         description="Update VERSION and examples/DEPS file and push changes with git."
     )
     parser.add_argument(
-        "--dry-run", action="store_true", help="Perform a dry run without making any changes."
+        "--dry-run",
+        action="store_true",
+        help="Perform a dry run without making any changes.",
     )
     args = parser.parse_args()
 
-    # Read and update the VERSION file
+    # develop ブランチかを確認
+    if not check_current_branch("develop"):
+        print("This script should be run on the 'develop' branch.")
+        return
+
+    # 現在のバージョンを読み込む
     with open(VERSION_FILE, "r") as file:
-        version_content = file.read()
-    new_version = update_sdk_version(version_content)
-    write_file(VERSION_FILE, new_version, args.dry_run)
+        current_version = file.read().strip()
 
-    # Read and update the examples/DEPS file
+    new_version = increment_version(current_version)
+
+    # dry-run の場合は実行予定の内容を表示して終了
+    if args.dry_run:
+        print(
+            f"Dry run: VERSION would be updated from {current_version} to {new_version}"
+        )
+        print(
+            f"Dry run: {EXAMPLES_DEPS_FILE} SORA_CPP_SDK_VERSION would be updated to {new_version}"
+        )
+        print(
+            "Dry run: git commit -m '[canary] バージョンを上げる' would be executed"
+        )
+        print(f"Dry run: git tag {new_version} would be executed")
+        print("Dry run: git push -u origin develop --tags would be executed")
+        return
+
+    # ユーザーに確認
+    if not confirm_update(current_version, new_version):
+        print("Update cancelled.")
+        return
+
+    # VERSION ファイルを更新
+    with open(VERSION_FILE, "w") as file:
+        file.write(new_version + "\n")
+    print(f"{VERSION_FILE} updated.")
+
+    # examples/DEPS ファイルを更新
     with open(EXAMPLES_DEPS_FILE, "r") as file:
-        examples_deps_content = file.read()
-    updated_examples_deps_content = update_deps_version(examples_deps_content, new_version)
-    write_file(EXAMPLES_DEPS_FILE, updated_examples_deps_content, args.dry_run)
+        deps_content = file.read()
+    updated_deps_content = update_deps_version(deps_content, new_version)
+    with open(EXAMPLES_DEPS_FILE, "w") as file:
+        file.write(updated_deps_content.rstrip() + "\n")
+    print(f"{EXAMPLES_DEPS_FILE} updated.")
 
-    # Perform git operations
-    git_operations(new_version, args.dry_run)
+    # git 操作
+    subprocess.run(["git", "add", VERSION_FILE, EXAMPLES_DEPS_FILE])
+    subprocess.run(["git", "commit", "-m", "[canary] バージョンを上げる"])
+    subprocess.run(["git", "tag", new_version])
+    subprocess.run(["git", "push", "-u", "origin", "develop", "--tags"])
 
 
 if __name__ == "__main__":
