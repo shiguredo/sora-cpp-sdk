@@ -9,9 +9,10 @@ on:
       - "NOTICE"
       - ".github/workflows/e2e-test.yml"
       - "e2e-test/**"
-    branches-ignore:
-      - "dependabot/**"
-      - "main"
+    branches:
+      - "develop"
+    tags:
+      - "**"
   schedule:
     # UTC の 01:00 は JST だと 10:00 。
     # 1-5 で 月曜日から金曜日
