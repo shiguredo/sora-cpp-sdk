@@ -30,14 +30,14 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Cache Dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: _install/${{ matrix.platform.name }}/release
           key: ${{ matrix.platform.name }}-${{ hashFiles('VERSION', 'DEPS') }}
           restore-keys: |
             ${{ matrix.platform.name }}-
       - name: Cache Dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: _build/${{ matrix.platform.name }}/release/clang-include-cleaner.json
           key: ${{ matrix.platform.name }}-${{ hashFiles('VERSION', 'DEPS') }}
