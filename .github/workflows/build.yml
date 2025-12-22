@@ -11,6 +11,7 @@ on:
       - "e2e-test/**"
     branches:
       - "develop"
+      - "feature/**"
     tags:
       - "**"
   schedule:
