@@ -22,7 +22,8 @@
 
 - [UPDATE] Examples の DEPS を更新する
   - WEBRTC_BUILD_VERSION を m144.7559.0.0 にあげる
-  - Examples の CMake を 4.2.1 にあげる
+  - CMake を 4.2.1 にあげる
+  - SDL を 3.2.28 にあげる
   - @torikizi
 
 ## 2025.6.2
