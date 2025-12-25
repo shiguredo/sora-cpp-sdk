@@ -17,6 +17,8 @@
   - @torikizi
 - [UPDATE] CMake を 4.2.1 にあげる
   - @torikizi
+- [UPDATE] Intel VPL を v2.16.0 にあげる
+  - @torikizi
 
 ### misc
 
