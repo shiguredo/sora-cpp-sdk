@@ -18,6 +18,13 @@
 - [UPDATE] CMake を 4.2.1 にあげる
   - @torikizi
 
+### misc
+
+- [UPDATE] Examples の DEPS を更新する
+  - WEBRTC_BUILD_VERSION を m144.7559.0.0 にあげる
+  - Examples の CMake を 4.2.1 にあげる
+  - @torikizi
+
 ## 2025.6.2
 
 **リリース日**: 2025-12-05
