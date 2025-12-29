@@ -13,7 +13,7 @@
 
 - [CHANGE] macOS x86_64 ターゲットを削除する
   - @voluntas
-- [UPDATE] liwebrtc のバージョンを m144.7559.0.0 に上げる
+- [UPDATE] liwebrtc のバージョンを m144.7559.2.1 に上げる
   - @torikizi
 - [UPDATE] CMake を 4.2.1 にあげる
   - @torikizi
