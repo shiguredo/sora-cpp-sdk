@@ -19,6 +19,8 @@
   - @torikizi
 - [UPDATE] Intel VPL を v2.16.0 にあげる
   - @torikizi
+- [UPDATE] RTCSSLVerifier::Verify() を RTCSSLVerifier::VerifyChain() に変更する
+  - @zztkm
 
 ### misc
 
