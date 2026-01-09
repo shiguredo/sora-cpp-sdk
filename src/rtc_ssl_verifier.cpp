@@ -4,8 +4,6 @@
 #include <string>
 
 // WebRTC
-#include <rtc_base/boringssl_certificate.h>
-#include <rtc_base/logging.h>
 #include <rtc_base/ssl_certificate.h>
 
 // OpenSSL
