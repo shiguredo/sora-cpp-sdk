@@ -25,13 +25,13 @@ github actions のビルドが失敗していたり、
 ### github に公開されているバイナリの sdk を利用する
 
 ```bash
-python3 examples/sumomo/macos_arm64/run.py
+python3 examples/sumomo/run.py build macos_arm64
 ```
 
 ### ローカルでビルドした sdk を利用する
 
 ```bash
-python3 examples/sumomo/macos_arm64/run.py --local-sora-cpp-sdk-dir .
+python3 examples/sumomo/run.py build macos_arm64 --local-sora-cpp-sdk-dir .
 ```
 
 ローカルでビルドした sdk のルートディレクトリを `--local-sora-cpp-sdk-dir` にて指定してください。
