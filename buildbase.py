@@ -652,6 +652,9 @@ def get_webrtc_info(
         webrtc_build_build_dir = os.path.join(
             local_webrtc_build_dir, "_build", platform, configuration, "webrtc"
         )
+        android_abi = "arm64-v8a"
+        if platform == "android_x86_64":
+            android_abi = "x86_64"
 
         return WebrtcInfo(
             version_file=os.path.join(local_webrtc_build_dir, "VERSION"),
@@ -660,7 +663,7 @@ def get_webrtc_info(
             webrtc_source_dir=os.path.join(webrtc_build_source_dir, "src"),
             webrtc_library_dir=webrtc_build_build_dir,
             webrtc_jar_file=os.path.join(
-                webrtc_build_build_dir, "arm64-v8a", "lib.java", "sdk", "android", "libwebrtc.jar"
+                webrtc_build_build_dir, android_abi, "lib.java", "sdk", "android", "libwebrtc.jar"
             ),
             clang_dir=os.path.join(
                 webrtc_build_source_dir, "src", "third_party", "llvm-build", "Release+Asserts"
@@ -925,6 +928,11 @@ def build_and_install_boost(
                 sysroot = os.path.join(
                     android_ndk, "toolchains", "llvm", "prebuilt", android_build_platform, "sysroot"
                 )
+                android_target = "aarch64-none-linux-android"
+                boost_arch = "arm"
+                if architecture == "x86":
+                    android_target = "x86_64-none-linux-android"
+                    boost_arch = "x86"
 
                 def escape(s):
                     return s.replace("\\", "/").replace(":", "\\:")
@@ -933,7 +941,7 @@ def build_and_install_boost(
                     f"using clang \
                     : android \
                     : {escape(cxx if len(cxx) != 0 else os.path.join(bin, 'clang++'))} \
-                      --target=aarch64-none-linux-android{native_api_level} \
+                      --target={android_target}{native_api_level} \
                       --sysroot={escape(sysroot)} \
                     : <archiver>{escape(os.path.join(bin, 'llvm-ar'))} \
                       <ranlib>{escape(os.path.join(bin, 'llvm-ranlib'))} \
@@ -962,7 +970,7 @@ def build_and_install_boost(
                     "link=static",
                     f"runtime-link={runtime_link}",
                     "threading=multi",
-                    "architecture=arm",
+                    f"architecture={boost_arch}",
                 ]
             )
         else:
@@ -2222,6 +2230,8 @@ class PlatformTarget(object):
         if self.os == "ios":
             return "ios"
         if self.os == "android":
+            if self.arch == "x86_64":
+                return "android_x86_64"
             return "android"
         if self.os == "raspberry-pi-os":
             return f"raspberry-pi-os_{self.arch}"
@@ -2351,7 +2361,15 @@ class Platform(object):
                 f"Architecture {p.arch} is not supported for {p.os}. Only armv8 is supported",
             )
         elif p.os in ("ios", "android"):
-            self._check(p.arch is None, f"Architecture should be None for {p.os}, but got {p.arch}")
+            if p.os == "ios":
+                self._check(
+                    p.arch is None, f"Architecture should be None for {p.os}, but got {p.arch}"
+                )
+            else:
+                self._check(
+                    p.arch in (None, "arm64", "x86_64"),
+                    f"Architecture {p.arch} is not supported for {p.os}. Supported: arm64, x86_64",
+                )
         elif p.os == "ubuntu":
             self._check(
                 p.arch in ("x86_64", "armv8"),
@@ -2462,6 +2480,8 @@ def get_webrtc_platform(platform: Platform) -> str:
     elif platform.target.os == "ios":
         return "ios"
     elif platform.target.os == "android":
+        if platform.target.arch == "x86_64":
+            return "android_x86_64"
         return "android"
     elif platform.target.os == "ubuntu":
         return f"ubuntu-{platform.target.osver}_{platform.target.arch}"
