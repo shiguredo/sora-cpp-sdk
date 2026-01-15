@@ -20,22 +20,23 @@ def soraClangLibArch = (soraAndroidAbi == "x86_64") ? "x86_64" : "aarch64"
 def soraAndroidPlatformDir = (soraAndroidAbi == "x86_64") ? "android_x86_64" : "android"
 def localWebrtcBuildDir = project.findProperty("SORA_WEBRTC_LOCAL_BUILD_DIR")
 def useLocalWebrtc = localWebrtcBuildDir != null && localWebrtcBuildDir.trim()
+def installBuildType = (soraCmakeBuildType == "Debug") ? "debug" : "release"
 def localWebrtcBuildType = (soraCmakeBuildType == "Debug") ? "debug" : "release"
 def webrtcIncludeDir = useLocalWebrtc ?
         "${localWebrtcBuildDir}/_source/${soraAndroidPlatformDir}/webrtc/src" :
-        "$projectDir/../../../_install/${soraAndroidPlatformDir}/release/webrtc/include"
+        "$projectDir/../../../_install/${soraAndroidPlatformDir}/${installBuildType}/webrtc/include"
 def webrtcLibraryDir = useLocalWebrtc ?
         "${localWebrtcBuildDir}/_build/${soraAndroidPlatformDir}/${localWebrtcBuildType}/webrtc" :
-        "$projectDir/../../../_install/${soraAndroidPlatformDir}/release/webrtc/lib/${soraAndroidAbi}"
+        "$projectDir/../../../_install/${soraAndroidPlatformDir}/${installBuildType}/webrtc/lib/${soraAndroidAbi}"
 def llvmClangDir = useLocalWebrtc ?
         "${localWebrtcBuildDir}/_source/${soraAndroidPlatformDir}/webrtc/src/third_party/llvm-build/Release+Asserts" :
-        "$projectDir/../../../_install/${soraAndroidPlatformDir}/release/llvm/clang"
+        "$projectDir/../../../_install/${soraAndroidPlatformDir}/${installBuildType}/llvm/clang"
 def libcxxIncludeDir = useLocalWebrtc ?
         "${localWebrtcBuildDir}/_source/${soraAndroidPlatformDir}/webrtc/src/third_party/libc++/src/include" :
-        "$projectDir/../../../_install/${soraAndroidPlatformDir}/release/llvm/libcxx/include"
+        "$projectDir/../../../_install/${soraAndroidPlatformDir}/${installBuildType}/llvm/libcxx/include"
 def webrtcJarPath = useLocalWebrtc ?
         "${localWebrtcBuildDir}/_build/${soraAndroidPlatformDir}/${localWebrtcBuildType}/webrtc/${soraAndroidAbi}/lib.java/sdk/android/libwebrtc.jar" :
-        "$projectDir/../../../_install/${soraAndroidPlatformDir}/release/webrtc/jar/webrtc.jar"
+        "$projectDir/../../../_install/${soraAndroidPlatformDir}/${installBuildType}/webrtc/jar/webrtc.jar"
 
 android {
     namespace "jp.shiguredo.hello"
@@ -61,13 +62,13 @@ android {
                 //    "-DWEBRTC_LIBRARY_DIR=$projectDir/../../../_build/android/debug/webrtc",
                 //    "-DLIBCXX_INCLUDE_DIR=$projectDir/../../../_source/android/debug/webrtc/src/buildtools/third_party/libc++/trunk/include",
                 arguments "-DCMAKE_TOOLCHAIN_FILE=$projectDir/../../../cmake/android.toolchain.cmake",
-                    "-DANDROID_OVERRIDE_TOOLCHAIN_FILE=$projectDir/../../../_install/${soraAndroidPlatformDir}/release/android-ndk/build/cmake/android.toolchain.cmake",
+                    "-DANDROID_OVERRIDE_TOOLCHAIN_FILE=$projectDir/../../../_install/${soraAndroidPlatformDir}/${installBuildType}/android-ndk/build/cmake/android.toolchain.cmake",
                     "-DANDROID_OVERRIDE_C_COMPILER=${llvmClangDir}/bin/clang",
                     "-DANDROID_OVERRIDE_CXX_COMPILER=${llvmClangDir}/bin/clang++",
-                    "-DSORA_DIR=$projectDir/../../../_install/${soraAndroidPlatformDir}/release/sora",
+                    "-DSORA_DIR=$projectDir/../../../_install/${soraAndroidPlatformDir}/${installBuildType}/sora",
                     "-DCMAKE_BUILD_TYPE=${soraCmakeBuildType}",
-                    "-DBOOST_ROOT=$projectDir/../../../_install/${soraAndroidPlatformDir}/release/boost",
-                    "-DBLEND2D_ROOT_DIR=$projectDir/../../../_install/${soraAndroidPlatformDir}/release/blend2d",
+                    "-DBOOST_ROOT=$projectDir/../../../_install/${soraAndroidPlatformDir}/${installBuildType}/boost",
+                    "-DBLEND2D_ROOT_DIR=$projectDir/../../../_install/${soraAndroidPlatformDir}/${installBuildType}/blend2d",
                     "-DWEBRTC_INCLUDE_DIR=${webrtcIncludeDir}",
                     "-DWEBRTC_LIBRARY_DIR=${webrtcLibraryDir}",
                     "-DLIBCXX_INCLUDE_DIR=${libcxxIncludeDir}",
@@ -81,10 +82,10 @@ android {
                     "-DANDROID_PLATFORM=29",
                     "-DANDROID_ABI=${soraAndroidAbi}",
                     "-DANDROID_CPP_FEATURES=exceptions rtti",
-                    "-DANDROID_NDK=$projectDir/../../../_install/${soraAndroidPlatformDir}/release/android-ndk",
+                    "-DANDROID_NDK=$projectDir/../../../_install/${soraAndroidPlatformDir}/${installBuildType}/android-ndk",
                     "-DCMAKE_ANDROID_EXCEPTIONS=ON",
-                    "-DCMAKE_EXE_LINKER_FLAGS=-L$projectDir/../../../_install/${soraAndroidPlatformDir}/release/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/${soraClangLibArch}",
-                    "-DCMAKE_SHARED_LINKER_FLAGS=-L$projectDir/../../../_install/${soraAndroidPlatformDir}/release/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/${soraClangLibArch}"
+                    "-DCMAKE_EXE_LINKER_FLAGS=-L$projectDir/../../../_install/${soraAndroidPlatformDir}/${installBuildType}/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/${soraClangLibArch}",
+                    "-DCMAKE_SHARED_LINKER_FLAGS=-L$projectDir/../../../_install/${soraAndroidPlatformDir}/${installBuildType}/android-ndk/toolchains/llvm/prebuilt/linux-x86_64/lib/clang/19/lib/linux/${soraClangLibArch}"
             }
             ndk {
                 abiFilters soraAndroidAbi
