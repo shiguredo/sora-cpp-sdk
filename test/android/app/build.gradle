@@ -20,11 +20,12 @@ def soraClangLibArch = (soraAndroidAbi == "x86_64") ? "x86_64" : "aarch64"
 def soraAndroidPlatformDir = (soraAndroidAbi == "x86_64") ? "android_x86_64" : "android"
 def localWebrtcBuildDir = project.findProperty("SORA_WEBRTC_LOCAL_BUILD_DIR")
 def useLocalWebrtc = localWebrtcBuildDir != null && localWebrtcBuildDir.trim()
+def localWebrtcBuildType = (soraCmakeBuildType == "Debug") ? "debug" : "release"
 def webrtcIncludeDir = useLocalWebrtc ?
         "${localWebrtcBuildDir}/_source/${soraAndroidPlatformDir}/webrtc/src" :
         "$projectDir/../../../_install/${soraAndroidPlatformDir}/release/webrtc/include"
 def webrtcLibraryDir = useLocalWebrtc ?
-        "${localWebrtcBuildDir}/_build/${soraAndroidPlatformDir}/release/webrtc" :
+        "${localWebrtcBuildDir}/_build/${soraAndroidPlatformDir}/${localWebrtcBuildType}/webrtc" :
         "$projectDir/../../../_install/${soraAndroidPlatformDir}/release/webrtc/lib/${soraAndroidAbi}"
 def llvmClangDir = useLocalWebrtc ?
         "${localWebrtcBuildDir}/_source/${soraAndroidPlatformDir}/webrtc/src/third_party/llvm-build/Release+Asserts" :
@@ -33,7 +34,7 @@ def libcxxIncludeDir = useLocalWebrtc ?
         "${localWebrtcBuildDir}/_source/${soraAndroidPlatformDir}/webrtc/src/third_party/libc++/src/include" :
         "$projectDir/../../../_install/${soraAndroidPlatformDir}/release/llvm/libcxx/include"
 def webrtcJarPath = useLocalWebrtc ?
-        "${localWebrtcBuildDir}/_build/${soraAndroidPlatformDir}/release/webrtc/${soraAndroidAbi}/lib.java/sdk/android/libwebrtc.jar" :
+        "${localWebrtcBuildDir}/_build/${soraAndroidPlatformDir}/${localWebrtcBuildType}/webrtc/${soraAndroidAbi}/lib.java/sdk/android/libwebrtc.jar" :
         "$projectDir/../../../_install/${soraAndroidPlatformDir}/release/webrtc/jar/webrtc.jar"
 
 android {
