@@ -484,7 +484,6 @@ elseif (SORA_TARGET_OS STREQUAL "android")
 
   target_compile_options(sora
     PUBLIC
-      -fexperimental-relative-c++-abi-vtables
   )
 
   target_compile_definitions(sora

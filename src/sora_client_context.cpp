@@ -24,6 +24,10 @@
 #include <rtc_base/ssl_stream_adapter.h>
 #include <rtc_base/thread.h>
 
+#if defined(SORA_CPP_SDK_ANDROID)
+#include <jni.h>
+#endif
+
 #include "sora/audio_device_module.h"
 #include "sora/java_context.h"
 #include "sora/sora_peer_connection_factory.h"
@@ -72,10 +76,24 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
     config.env = env;
     config.jni_env = sora::GetJNIEnv();
     if (c->config_.get_android_application_context) {
-      config.application_context =
+      auto* jni_env = static_cast<JNIEnv*>(config.jni_env);
+      auto* app_context =
           c->config_.get_android_application_context(config.jni_env);
+      if (jni_env != nullptr && app_context != nullptr) {
+        auto* local_ref = jni_env->NewLocalRef(static_cast<jobject>(app_context));
+        config.application_context = local_ref;
+      } else {
+        config.application_context = app_context;
+      }
     }
-    return sora::CreateAudioDeviceModule(config);
+    auto adm = sora::CreateAudioDeviceModule(config);
+    if (config.application_context != nullptr) {
+      auto* jni_env = static_cast<JNIEnv*>(config.jni_env);
+      if (jni_env != nullptr) {
+        jni_env->DeleteLocalRef(static_cast<jobject>(config.application_context));
+      }
+    }
+    return adm;
   });
   dependencies.adm = adm;
 
