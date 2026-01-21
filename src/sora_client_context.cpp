@@ -80,9 +80,15 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
       auto* app_context =
           c->config_.get_android_application_context(config.jni_env);
       if (jni_env != nullptr && app_context != nullptr) {
+        // get_android_application_context は呼び出しスレッドで有効な参照を返すようにする。
+        // 別スレッドで作成された参照は無効になるため、
+        // worker_thread の JNIEnv で NewLocalRef し直して使う。
         auto* local_ref = jni_env->NewLocalRef(static_cast<jobject>(app_context));
         config.application_context = local_ref;
       } else {
+        // jni_env と app_context が取得できてなかった場合
+        // NewLocalRef 対応コードを追加する前と同様にそのまま
+        // application_context に get_android_application_context の返り値を入れる
         config.application_context = app_context;
       }
     }
