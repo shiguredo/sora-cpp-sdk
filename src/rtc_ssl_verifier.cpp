@@ -42,6 +42,7 @@ bool RTCSSLVerifier::VerifyChain(const webrtc::SSLCertChain& chain) {
     std::string pem = chain.Get(i).ToPEMString();
     BIO* bio = BIO_new_mem_buf(pem.c_str(), pem.size());
     if (!bio) {
+      X509_free(x509);
       sk_X509_pop_free(x509_chain, X509_free);
       return false;
     }
@@ -50,6 +51,7 @@ bool RTCSSLVerifier::VerifyChain(const webrtc::SSLCertChain& chain) {
     BIO_free(bio);
 
     if (!cert) {
+      X509_free(x509);
       sk_X509_pop_free(x509_chain, X509_free);
       return false;
     }
@@ -58,12 +60,16 @@ bool RTCSSLVerifier::VerifyChain(const webrtc::SSLCertChain& chain) {
       x509 = cert;
     } else if (sk_X509_push(x509_chain, cert) == 0) {
       X509_free(cert);
+      X509_free(x509);
       sk_X509_pop_free(x509_chain, X509_free);
       return false;
     }
   }
 
-  return SSLVerifier::VerifyX509(x509, x509_chain, ca_cert_);
+  bool result = SSLVerifier::VerifyX509(x509, x509_chain, ca_cert_);
+  X509_free(x509);
+  sk_X509_pop_free(x509_chain, X509_free);
+  return result;
 }
 
 }  // namespace sora
