@@ -187,11 +187,7 @@ def get_common_cmake_args(
         # https://github.com/android/ndk/issues/1618
         args.append("-DCMAKE_ANDROID_EXCEPTIONS=ON")
         args.append("-DANDROID_NDK=OFF")
-        cxxflags = [
-            "-nostdinc++",
-            "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE",
-            "-DNDEBUG",
-        ]
+        cxxflags = ["-nostdinc++", "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE"]
         args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
         clang_version = fix_clang_version(
             android_clang_dir, get_clang_version(os.path.join(android_clang_dir, "bin", "clang++"))
