@@ -336,6 +336,7 @@ def install_deps(
 
         # Windows は MSVC を使うので不要
         if platform.target.os not in ("windows",):
+
             def get_webrtc_value(key: str) -> Optional[str]:
                 return webrtc_version.get(key) or webrtc_deps.get(key)
 
@@ -363,9 +364,7 @@ def install_deps(
                     raise RuntimeError(
                         "Missing LLVM metadata in VERSION/DEPS: " + ", ".join(missing)
                     )
-                logging.info(
-                    "LLVM metadata missing; installing LLVM from local WebRTC source."
-                )
+                logging.info("LLVM metadata missing; installing LLVM from local WebRTC source.")
                 install_llvm_from_webrtc_source(webrtc_info.webrtc_source_dir, install_dir)
             else:
                 install_llvm_args = {
@@ -1085,14 +1084,8 @@ def _build(
                     "assemble",
                     f"-PSORA_ANDROID_ABI={get_android_abi(platform)}",
                 ]
-                if debug:
-                    gradle_args.append("-PSORA_CMAKE_BUILD_TYPE=Debug")
-                elif relwithdebinfo:
-                    gradle_args.append("-PSORA_CMAKE_BUILD_TYPE=RelWithDebInfo")
                 if local_webrtc_build_dir is not None:
-                    gradle_args.append(
-                        f"-PSORA_WEBRTC_LOCAL_BUILD_DIR={local_webrtc_build_dir}"
-                    )
+                    gradle_args.append(f"-PSORA_WEBRTC_LOCAL_BUILD_DIR={local_webrtc_build_dir}")
                 cmd(gradle_args)
         else:
             # 普通のプロジェクトは CMake でビルドする
