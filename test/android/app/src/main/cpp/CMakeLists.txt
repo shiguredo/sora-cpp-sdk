@@ -56,7 +56,7 @@ target_compile_options(hello
     "$<$<COMPILE_LANGUAGE:CXX>:-isystem${LIBCXX_INCLUDE_DIR}>"
 )
 
-target_compile_definitions(hello PRIVATE HELLO_ANDROID NDEBUG)
+target_compile_definitions(hello PRIVATE HELLO_ANDROID)
 
 find_library(ANDROID_LIB_LOG log)
 find_library(ANDROID_LIB_ANDROID android)
