@@ -907,7 +907,6 @@ def _build(
             cxxflags = [
                 "-nostdinc++",
                 "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE",
-                "-DNDEBUG",
             ]
             cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
 
