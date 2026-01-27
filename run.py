@@ -63,37 +63,6 @@ def get_android_clang_lib_arch(platform: Platform) -> str:
     return "aarch64"
 
 
-def install_llvm_from_webrtc_source(webrtc_source_dir: str, install_dir: str) -> None:
-    llvm_dir = os.path.join(install_dir, "llvm")
-    rm_rf(llvm_dir)
-    mkdir_p(llvm_dir)
-    with cd(webrtc_source_dir):
-        cmd(
-            [
-                "python3",
-                os.path.join("tools", "clang", "scripts", "update.py"),
-                "--output-dir",
-                os.path.join(llvm_dir, "clang"),
-            ]
-        )
-    shutil.copytree(
-        os.path.join(webrtc_source_dir, "third_party", "libc++", "src"),
-        os.path.join(llvm_dir, "libcxx"),
-    )
-    shutil.copytree(
-        os.path.join(webrtc_source_dir, "buildtools"),
-        os.path.join(llvm_dir, "buildtools"),
-    )
-    shutil.copyfile(
-        os.path.join(llvm_dir, "buildtools", "third_party", "libc++", "__config_site"),
-        os.path.join(llvm_dir, "libcxx", "include", "__config_site"),
-    )
-    shutil.copyfile(
-        os.path.join(llvm_dir, "buildtools", "third_party", "libc++", "__assertion_handler"),
-        os.path.join(llvm_dir, "libcxx", "include", "__assertion_handler"),
-    )
-
-
 def read_version(version_path):
     """VERSION ファイルからバージョンを読み込む"""
     with open(version_path, "r") as f:
@@ -336,51 +305,27 @@ def install_deps(
 
         # Windows は MSVC を使うので不要
         if platform.target.os not in ("windows",):
-
-            def get_webrtc_value(key: str) -> Optional[str]:
-                return webrtc_version.get(key) or webrtc_deps.get(key)
-
             # LLVM
-            tools_url = get_webrtc_value("WEBRTC_SRC_TOOLS_URL")
-            tools_commit = get_webrtc_value("WEBRTC_SRC_TOOLS_COMMIT")
-            libcxx_url = get_webrtc_value("WEBRTC_SRC_THIRD_PARTY_LIBCXX_SRC_URL")
-            libcxx_commit = get_webrtc_value("WEBRTC_SRC_THIRD_PARTY_LIBCXX_SRC_COMMIT")
-            buildtools_url = get_webrtc_value("WEBRTC_SRC_BUILDTOOLS_URL")
-            buildtools_commit = get_webrtc_value("WEBRTC_SRC_BUILDTOOLS_COMMIT")
-            missing = [
-                key
-                for key, value in (
-                    ("WEBRTC_SRC_TOOLS_URL", tools_url),
-                    ("WEBRTC_SRC_TOOLS_COMMIT", tools_commit),
-                    ("WEBRTC_SRC_THIRD_PARTY_LIBCXX_SRC_URL", libcxx_url),
-                    ("WEBRTC_SRC_THIRD_PARTY_LIBCXX_SRC_COMMIT", libcxx_commit),
-                    ("WEBRTC_SRC_BUILDTOOLS_URL", buildtools_url),
-                    ("WEBRTC_SRC_BUILDTOOLS_COMMIT", buildtools_commit),
-                )
-                if value is None
-            ]
-            if missing:
-                if webrtc_info.webrtc_source_dir is None:
-                    raise RuntimeError(
-                        "Missing LLVM metadata in VERSION/DEPS: " + ", ".join(missing)
-                    )
-                logging.info("LLVM metadata missing; installing LLVM from local WebRTC source.")
-                install_llvm_from_webrtc_source(webrtc_info.webrtc_source_dir, install_dir)
-            else:
-                install_llvm_args = {
-                    "version": f"{tools_url}.{tools_commit}."
-                    f"{libcxx_url}.{libcxx_commit}."
-                    f"{buildtools_url}.{buildtools_commit}",
-                    "version_file": os.path.join(install_dir, "llvm.version"),
-                    "install_dir": install_dir,
-                    "tools_url": tools_url,
-                    "tools_commit": tools_commit,
-                    "libcxx_url": libcxx_url,
-                    "libcxx_commit": libcxx_commit,
-                    "buildtools_url": buildtools_url,
-                    "buildtools_commit": buildtools_commit,
-                }
-                install_llvm(**install_llvm_args)
+            tools_url = webrtc_version["WEBRTC_SRC_TOOLS_URL"]
+            tools_commit = webrtc_version["WEBRTC_SRC_TOOLS_COMMIT"]
+            libcxx_url = webrtc_version["WEBRTC_SRC_THIRD_PARTY_LIBCXX_SRC_URL"]
+            libcxx_commit = webrtc_version["WEBRTC_SRC_THIRD_PARTY_LIBCXX_SRC_COMMIT"]
+            buildtools_url = webrtc_version["WEBRTC_SRC_BUILDTOOLS_URL"]
+            buildtools_commit = webrtc_version["WEBRTC_SRC_BUILDTOOLS_COMMIT"]
+            install_llvm_args = {
+                "version": f"{tools_url}.{tools_commit}."
+                f"{libcxx_url}.{libcxx_commit}."
+                f"{buildtools_url}.{buildtools_commit}",
+                "version_file": os.path.join(install_dir, "llvm.version"),
+                "install_dir": install_dir,
+                "tools_url": tools_url,
+                "tools_commit": tools_commit,
+                "libcxx_url": libcxx_url,
+                "libcxx_commit": libcxx_commit,
+                "buildtools_url": buildtools_url,
+                "buildtools_commit": buildtools_commit,
+            }
+            install_llvm(**install_llvm_args)
 
         # Boost
         install_boost_args = {
