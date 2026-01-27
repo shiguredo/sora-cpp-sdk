@@ -1029,8 +1029,6 @@ def _build(
                     "assemble",
                     f"-PSORA_ANDROID_ABI={get_android_abi(platform)}",
                 ]
-                if local_webrtc_build_dir is not None:
-                    gradle_args.append(f"-PSORA_WEBRTC_LOCAL_BUILD_DIR={local_webrtc_build_dir}")
                 cmd(gradle_args)
         else:
             # 普通のプロジェクトは CMake でビルドする
