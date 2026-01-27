@@ -16,9 +16,6 @@
 ```bash
 # ../webrtc-build に shiguredo-webrtc-build/webrtc-build がある場合
 python3 run.py build ubuntu-24.04_x86_64 --local-webrtc-build-dir ../webrtc-build
-
-# Android x86_64 をローカルの webrtc-build でビルドする場合
-python3 run.py build android_x86_64 --local-webrtc-build-dir ../webrtc-build
 ```
 
 この時、VERSION に指定している WEBRTC_BUILD_VERSION に関係なく、現在 webrtc-build リポジトリでチェックアウトされている内容でビルドするため、バージョンの不整合に注意すること。
