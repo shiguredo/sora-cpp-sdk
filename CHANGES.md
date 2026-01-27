@@ -20,6 +20,7 @@
 - [UPDATE] Intel VPL を v2.16.0 にあげる
   - @torikizi
 - [ADD] Android x86_64 ターゲットを追加する
+  - 既存の android ターゲットとは別で x86_64 専用のターゲットを用意する
   - @zztkm
 
 ### misc
