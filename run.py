@@ -280,8 +280,11 @@ def install_deps(
         webrtc_platform = get_webrtc_platform(platform)
 
         if local_webrtc_build_dir is None:
+            webrtc_build_version = deps["WEBRTC_BUILD_VERSION"]
+            if platform.target.os == "android" and platform.target.arch == "x86_64":
+                webrtc_build_version = deps["WEBRTC_BUILD_VERSION_ANDROID_X86_64"]
             install_webrtc_args = {
-                "version": deps["WEBRTC_BUILD_VERSION"],
+                "version": webrtc_build_version,
                 "version_file": os.path.join(install_dir, "webrtc.version"),
                 "source_dir": source_dir,
                 "install_dir": install_dir,
