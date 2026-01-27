@@ -10,31 +10,50 @@ on:
 
 jobs:
   run-ubuntu:
-    name: Build sora-cpp-sdk for android_x86_64
-    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - name: ubuntu-24.04_x86_64
+            runs-on: ubuntu-24.04
+            os: ubuntu
+            arch: x86_64
+    name: Build sora-cpp-sdk for ${{ matrix.platform.name }}
+    runs-on: ${{ matrix.platform.runs-on }}
     outputs:
       diff: ${{ steps.diff.outputs.diff }}
     env:
       TEST_SIGNALING_URL: ${{ secrets.TEST_SIGNALING_URL }}
       TEST_CHANNEL_ID_PREFIX: ${{ secrets.TEST_CHANNEL_ID_PREFIX }}
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
-      TEST_MATRIX_NAME: android_x86_64
+      TEST_MATRIX_NAME: ${{ matrix.platform.name }}
     steps:
       - uses: actions/checkout@v6
+      - name: Cache Dependencies
+        uses: actions/cache@v5
+        with:
+          path: _install/${{ matrix.platform.name }}/release
+          key: ${{ matrix.platform.name }}-${{ hashFiles('VERSION', 'DEPS') }}
+          restore-keys: |
+            ${{ matrix.platform.name }}-
+      - name: Cache Dependencies
+        uses: actions/cache@v5
+        with:
+          path: _build/${{ matrix.platform.name }}/release/clang-include-cleaner.json
+          key: ${{ matrix.platform.name }}-${{ hashFiles('VERSION', 'DEPS') }}
+          restore-keys: |
+            ${{ matrix.platform.name }}-
+
       - name: Get versions from DEPS
         id: version
         run: |
           source DEPS
           echo "apt_install_llvm_version=$APT_INSTALL_LLVM_VERSION" >> $GITHUB_OUTPUT
-      - name: Install clang tools
+
+      - name: Install deps for ${{ matrix.platform.name }}
+        if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
         run: |
           sudo apt-get update
-          wget https://apt.llvm.org/llvm.sh
-          chmod a+x llvm.sh
-          sudo ./llvm.sh ${{ steps.version.outputs.apt_install_llvm_version }}
-          sudo apt-get install -y clang-format-${{ steps.version.outputs.apt_install_llvm_version }}
-      - name: Install deps for ubuntu-24.04_x86_64
-        run: |
           sudo apt-get install -y software-properties-common
 
           # X11
@@ -42,23 +61,23 @@ jobs:
 
           # OpenGL
           sudo apt-get install -y libgl-dev
-      - name: Cache Dependencies
-        uses: actions/cache@v5
-        with:
-          path: _install/android_x86_64/release
-          key: android_x86_64-${{ hashFiles('VERSION', 'DEPS') }}
-          restore-keys: |
-            android_x86_64-
-      - name: Cache Dependencies
-        uses: actions/cache@v5
-        with:
-          path: _build/ubuntu-24.04_x86_64/release/clang-include-cleaner.json
-          key: ubuntu-24.04_x86_64-${{ hashFiles('VERSION', 'DEPS') }}
-          restore-keys: |
-            ubuntu-24.04_x86_64-
 
-      - run: python3 run.py build --disable-cuda --test android_x86_64
-      - run: python3 run.py build --disable-cuda --test ubuntu-24.04_x86_64
+          # clang と clang-format
+          wget https://apt.llvm.org/llvm.sh
+          chmod a+x llvm.sh
+          sudo ./llvm.sh ${{ steps.version.outputs.apt_install_llvm_version }}
+          sudo apt install clang-format-${{ steps.version.outputs.apt_install_llvm_version }}
+      - run: python3 run.py build --disable-cuda --test ${{ matrix.platform.name }}
+      - name: Build Examples
+        run: |
+          cd examples
+          for app in sdl_sample sumomo messaging_recvonly_sample; do
+            python3 $app/run.py build ${{ matrix.platform.name }} \
+              --local-sora-cpp-sdk-dir .. \
+              --local-sora-cpp-sdk-args=--disable-cuda \
+              --install-dir `pwd`/../_install/${{ matrix.platform.name }}/release
+          done
+        if: matrix.platform.os == 'ubuntu' && matrix.platform.name != 'ubuntu-22.04_armv8'
       - name: Run IWYU and Clang Format
         id: diff
         run: |
