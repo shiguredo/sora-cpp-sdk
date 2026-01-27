@@ -17,23 +17,7 @@ if (!cmakeVersion) {
 def soraAndroidAbi = project.findProperty("SORA_ANDROID_ABI") ?: "arm64-v8a"
 def soraClangLibArch = (soraAndroidAbi == "x86_64") ? "x86_64" : "aarch64"
 def soraAndroidPlatformDir = (soraAndroidAbi == "x86_64") ? "android_x86_64" : "android"
-def localWebrtcBuildDir = project.findProperty("SORA_WEBRTC_LOCAL_BUILD_DIR")
-def useLocalWebrtc = localWebrtcBuildDir != null && localWebrtcBuildDir.trim()
-def webrtcIncludeDir = useLocalWebrtc ?
-        "${localWebrtcBuildDir}/_source/${soraAndroidPlatformDir}/webrtc/src" :
-        "$projectDir/../../../_install/${soraAndroidPlatformDir}/release/webrtc/include"
-def webrtcLibraryDir = useLocalWebrtc ?
-        "${localWebrtcBuildDir}/_build/${soraAndroidPlatformDir}/release/webrtc" :
-        "$projectDir/../../../_install/${soraAndroidPlatformDir}/release/webrtc/lib/${soraAndroidAbi}"
-def llvmClangDir = useLocalWebrtc ?
-        "${localWebrtcBuildDir}/_source/${soraAndroidPlatformDir}/webrtc/src/third_party/llvm-build/Release+Asserts" :
-        "$projectDir/../../../_install/${soraAndroidPlatformDir}/release/llvm/clang"
-def libcxxIncludeDir = useLocalWebrtc ?
-        "${localWebrtcBuildDir}/_source/${soraAndroidPlatformDir}/webrtc/src/third_party/libc++/src/include" :
-        "$projectDir/../../../_install/${soraAndroidPlatformDir}/release/llvm/libcxx/include"
-def webrtcJarPath = useLocalWebrtc ?
-        "${localWebrtcBuildDir}/_build/${soraAndroidPlatformDir}/release/webrtc/${soraAndroidAbi}/lib.java/sdk/android/libwebrtc.jar" :
-        "$projectDir/../../../_install/${soraAndroidPlatformDir}/release/webrtc/jar/webrtc.jar"
+def webrtcJarDir = "$projectDir/../../../_install/${soraAndroidPlatformDir}/release/webrtc/jar/"
 
 android {
     namespace "jp.shiguredo.hello"
@@ -60,16 +44,16 @@ android {
                 //    "-DLIBCXX_INCLUDE_DIR=$projectDir/../../../_source/android/debug/webrtc/src/buildtools/third_party/libc++/trunk/include",
                 arguments "-DCMAKE_TOOLCHAIN_FILE=$projectDir/../../../cmake/android.toolchain.cmake",
                     "-DANDROID_OVERRIDE_TOOLCHAIN_FILE=$projectDir/../../../_install/${soraAndroidPlatformDir}/release/android-ndk/build/cmake/android.toolchain.cmake",
-                    "-DANDROID_OVERRIDE_C_COMPILER=${llvmClangDir}/bin/clang",
-                    "-DANDROID_OVERRIDE_CXX_COMPILER=${llvmClangDir}/bin/clang++",
+                    "-DANDROID_OVERRIDE_C_COMPILER=$projectDir/../../../_install/${soraAndroidPlatformDir}/release/llvm/clang/bin/clang",
+                    "-DANDROID_OVERRIDE_CXX_COMPILER=$projectDir/../../../_install/${soraAndroidPlatformDir}/release/llvm/clang/bin/clang++",
                     "-DSORA_DIR=$projectDir/../../../_install/${soraAndroidPlatformDir}/release/sora",
                     "-DCMAKE_BUILD_TYPE=Release",
                     "-DBOOST_ROOT=$projectDir/../../../_install/${soraAndroidPlatformDir}/release/boost",
                     "-DBLEND2D_ROOT_DIR=$projectDir/../../../_install/${soraAndroidPlatformDir}/release/blend2d",
-                    "-DWEBRTC_INCLUDE_DIR=${webrtcIncludeDir}",
-                    "-DWEBRTC_LIBRARY_DIR=${webrtcLibraryDir}",
-                    "-DLIBCXX_INCLUDE_DIR=${libcxxIncludeDir}",
-                    "-DLLVM_DIR=${llvmClangDir}",
+                    "-DWEBRTC_INCLUDE_DIR=$projectDir/../../../_install/${soraAndroidPlatformDir}/release/webrtc/include",
+                    "-DWEBRTC_LIBRARY_DIR=$projectDir/../../../_install/${soraAndroidPlatformDir}/release/webrtc/lib/${soraAndroidAbi}",
+                    "-DLIBCXX_INCLUDE_DIR=$projectDir/../../../_install/${soraAndroidPlatformDir}/release/llvm/libcxx/include",
+                    "-DLLVM_DIR=$projectDir/../../../_install/${soraAndroidPlatformDir}/release/llvm/clang",
                     // "-DWEBRTC_INCLUDE_DIR=$projectDir/../../../../webrtc-build/_source/android/webrtc/src",
                     // "-DWEBRTC_LIBRARY_DIR=$projectDir/../../../../webrtc-build/_build/android/release/webrtc/${soraAndroidAbi}",
                     // "-DLIBCXX_INCLUDE_DIR=$projectDir/../../../../webrtc-build/_source/android/webrtc/src/third_party/libc++/src/include",
@@ -116,5 +100,5 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.3.0'
     implementation 'com.google.android.material:material:1.4.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
-    implementation files(webrtcJarPath)
+    implementation fileTree(dir: webrtcJarDir, include: ['webrtc.jar'])
 }
