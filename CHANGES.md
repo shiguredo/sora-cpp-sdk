@@ -26,6 +26,7 @@
 ### misc
 
 - [CHANGE] GitHub Actions から Android x86_64 以外のターゲット向けのビルドを削除する
+  - support/android-x86_64 ブランチでは Android x86_64 以外のターゲットをビルドする必要がないため削除する
   - @zztkm
 - [UPDATE] Examples の DEPS を更新する
   - WEBRTC_BUILD_VERSION を m144.7559.0.0 にあげる
