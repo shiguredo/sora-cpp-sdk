@@ -1,4 +1,9 @@
 WEBRTC_BUILD_VERSION=m144.7559.2.1
+# formatter.yml で ubuntu 向けビルドを行う必要があり
+# WEBRTC_BUILD_VERSION を x86_64 対応バージョンに変更してしまうと
+# ubuntu のビルドが通らなくて追加でビルドロジックの修正が必要になってしまうため
+# 変数自体を分けてしまうほうが修正範囲がせまくて良いと判断し WEBRTC_BUILD_VERSION_ANDROID_X86_64 を追加しています。
+WEBRTC_BUILD_VERSION_ANDROID_X86_64=m144.7559.2.1-android-x86_64.0
 BOOST_VERSION=1.89.0
 BOOST_SHA256_HASH=9de758db755e8330a01d995b0a24d09798048400ac25c03fc5ea9be364b13c93
 CMAKE_VERSION=4.2.1

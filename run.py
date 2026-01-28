@@ -51,6 +51,18 @@ logging.basicConfig(level=logging.DEBUG)
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
+def get_android_abi(platform: Platform) -> str:
+    if platform.target.arch == "x86_64":
+        return "x86_64"
+    return "arm64-v8a"
+
+
+def get_android_clang_lib_arch(platform: Platform) -> str:
+    if platform.target.arch == "x86_64":
+        return "x86_64"
+    return "aarch64"
+
+
 def read_version(version_path):
     """VERSION ファイルからバージョンを読み込む"""
     with open(version_path, "r") as f:
@@ -169,6 +181,8 @@ def get_common_cmake_args(
         android_clang_dir = os.path.join(
             android_ndk, "toolchains", "llvm", "prebuilt", "linux-x86_64"
         )
+        android_abi = get_android_abi(platform)
+        clang_lib_arch = get_android_clang_lib_arch(platform)
         sysroot = os.path.join(android_clang_dir, "sysroot")
         android_native_api_level = deps["ANDROID_NATIVE_API_LEVEL"]
         args.append(f"-DANDROID_OVERRIDE_TOOLCHAIN_FILE={cmake_path(override_toolchain_file)}")
@@ -178,7 +192,7 @@ def get_common_cmake_args(
         args.append(f"-DCMAKE_TOOLCHAIN_FILE={cmake_path(toolchain_file)}")
         args.append(f"-DANDROID_NATIVE_API_LEVEL={android_native_api_level}")
         args.append(f"-DANDROID_PLATFORM={android_native_api_level}")
-        args.append("-DANDROID_ABI=arm64-v8a")
+        args.append(f"-DANDROID_ABI={android_abi}")
         args.append("-DANDROID_STL=none")
         path = cmake_path(os.path.join(webrtc_info.libcxx_dir, "include"))
         args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
@@ -193,7 +207,7 @@ def get_common_cmake_args(
             android_clang_dir, get_clang_version(os.path.join(android_clang_dir, "bin", "clang++"))
         )
         ldflags = [
-            f"-L{cmake_path(os.path.join(android_clang_dir, 'lib', 'clang', clang_version, 'lib', 'linux', 'aarch64'))}"
+            f"-L{cmake_path(os.path.join(android_clang_dir, 'lib', 'clang', clang_version, 'lib', 'linux', clang_lib_arch))}"
         ]
         args.append(f"-DCMAKE_EXE_LINKER_FLAGS={' '.join(ldflags)}")
 
@@ -266,8 +280,11 @@ def install_deps(
         webrtc_platform = get_webrtc_platform(platform)
 
         if local_webrtc_build_dir is None:
+            webrtc_build_version = deps["WEBRTC_BUILD_VERSION"]
+            if platform.target.os == "android" and platform.target.arch == "x86_64":
+                webrtc_build_version = deps["WEBRTC_BUILD_VERSION_ANDROID_X86_64"]
             install_webrtc_args = {
-                "version": deps["WEBRTC_BUILD_VERSION"],
+                "version": webrtc_build_version,
                 "version_file": os.path.join(install_dir, "webrtc.version"),
                 "source_dir": source_dir,
                 "install_dir": install_dir,
@@ -430,11 +447,13 @@ def install_deps(
                 "-nostdinc++",
                 "-std=gnu++17",
                 f"-isystem{os.path.join(webrtc_info.libcxx_dir, 'include')}",
-                "-fexperimental-relative-c++-abi-vtables",
             ]
             install_boost_args["toolset"] = "clang"
             install_boost_args["android_ndk"] = os.path.join(install_dir, "android-ndk")
             install_boost_args["native_api_level"] = deps["ANDROID_NATIVE_API_LEVEL"]
+            install_boost_args["architecture"] = (
+                "x86" if platform.target.arch == "x86_64" else "arm"
+            )
         else:
             install_boost_args["target_os"] = "linux"
             install_boost_args["cxx"] = os.path.join(webrtc_info.clang_dir, "bin", "clang++")
@@ -585,7 +604,8 @@ def install_deps(
                 "bin",
                 "llvm-readelf",
             )
-            libwebrtc = os.path.join(webrtc_info.webrtc_library_dir, "arm64-v8a", "libwebrtc.a")
+            android_abi = get_android_abi(platform)
+            libwebrtc = os.path.join(webrtc_info.webrtc_library_dir, android_abi, "libwebrtc.a")
             m = cmdcap([readelf, "-Ws", libwebrtc])
             ldflags = []
             for line in m.splitlines():
@@ -669,6 +689,7 @@ AVAILABLE_TARGETS = [
     "raspberry-pi-os_armv8",
     "ios",
     "android",
+    "android_x86_64",
 ]
 WINDOWS_SDK_VERSION = "10.0.20348.0"
 
@@ -691,7 +712,9 @@ def _get_platform(target: str) -> Platform:
     elif target == "ios":
         platform = Platform("ios", None, None)
     elif target == "android":
-        platform = Platform("android", None, None)
+        platform = Platform("android", None, "arm64")
+    elif target == "android_x86_64":
+        platform = Platform("android", None, "x86_64")
     else:
         raise Exception(f"Unknown target {target}")
     return platform
@@ -870,6 +893,8 @@ def _build(
             android_clang_dir = os.path.join(
                 android_ndk, "toolchains", "llvm", "prebuilt", "linux-x86_64"
             )
+            android_abi = get_android_abi(platform)
+            clang_lib_arch = get_android_clang_lib_arch(platform)
             sysroot = os.path.join(android_clang_dir, "sysroot")
             cmake_args.append(
                 f"-DANDROID_OVERRIDE_TOOLCHAIN_FILE={cmake_path(override_toolchain_file)}"
@@ -882,7 +907,7 @@ def _build(
             cmake_args.append(f"-DCMAKE_TOOLCHAIN_FILE={cmake_path(toolchain_file)}")
             cmake_args.append(f"-DANDROID_NATIVE_API_LEVEL={android_native_api_level}")
             cmake_args.append(f"-DANDROID_PLATFORM={android_native_api_level}")
-            cmake_args.append("-DANDROID_ABI=arm64-v8a")
+            cmake_args.append(f"-DANDROID_ABI={android_abi}")
             cmake_args.append("-DANDROID_STL=none")
             cmake_args.append("-DUSE_LIBCXX=ON")
             cmake_args.append(
@@ -901,7 +926,7 @@ def _build(
                 get_clang_version(os.path.join(android_clang_dir, "bin", "clang++")),
             )
             ldflags = [
-                f"-L{cmake_path(os.path.join(android_clang_dir, 'lib', 'clang', clang_version, 'lib', 'linux', 'aarch64'))}"
+                f"-L{cmake_path(os.path.join(android_clang_dir, 'lib', 'clang', clang_version, 'lib', 'linux', clang_lib_arch))}"
             ]
             cmake_args.append(f"-DCMAKE_EXE_LINKER_FLAGS={' '.join(ldflags)}")
 
@@ -1001,7 +1026,13 @@ def _build(
         elif platform.target.os == "android":
             # Android の場合は事前に用意したプロジェクトをビルドする
             with cd(os.path.join(BASE_DIR, "test", "android")):
-                cmd(["./gradlew", "--no-daemon", "assemble"])
+                gradle_args = [
+                    "./gradlew",
+                    "--no-daemon",
+                    "assemble",
+                    f"-PSORA_ANDROID_ABI={get_android_abi(platform)}",
+                ]
+                cmd(gradle_args)
         else:
             # 普通のプロジェクトは CMake でビルドする
             test_build_dir = os.path.join(build_dir, "test")
