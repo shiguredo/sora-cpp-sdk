@@ -307,7 +307,7 @@ def install_deps(
         webrtc_deps = read_version_file(webrtc_info.deps_file)
 
         # Windows は MSVC を使うので不要
-        if platform.target.os not in ("windows",):
+        if platform.target.os not in ("windows",) and local_webrtc_build_dir is None:
             # LLVM
             tools_url = webrtc_version["WEBRTC_SRC_TOOLS_URL"]
             tools_commit = webrtc_version["WEBRTC_SRC_TOOLS_COMMIT"]
