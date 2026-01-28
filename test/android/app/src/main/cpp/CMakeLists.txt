@@ -22,12 +22,6 @@ set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE NEVER)
 
-if(ANDROID)
-  set(THREADS_PREFER_PTHREAD_FLAG ON)
-  set(CMAKE_HAVE_LIBC_PTHREAD 1)
-  set(CMAKE_THREAD_LIBS_INIT "-pthread")
-endif()
-
 find_package(Boost REQUIRED COMPONENTS json filesystem)
 find_package(WebRTC REQUIRED)
 find_package(Sora REQUIRED)
@@ -79,8 +73,11 @@ target_link_libraries(hello
 
 set(_WEBRTC_LDFLAGS_FILE "${SORA_DIR}/share/webrtc.ldflags")
 if(NOT EXISTS "${_WEBRTC_LDFLAGS_FILE}")
+  # 旧配置との互換性のため、インストール先直下も探す。
   set(_WEBRTC_LDFLAGS_FILE "${SORA_DIR}/../webrtc.ldflags")
 endif()
+# Android の JNI コールバックは未参照でも削除してはいけないため、
+# run.py が生成する webrtc.ldflags を読み込んで -Wl,--undefined を付与する。
 file(READ ${_WEBRTC_LDFLAGS_FILE} _WEBRTC_ANDROID_LDFLAGS)
 string(REGEX REPLACE "\n" ";" _WEBRTC_ANDROID_LDFLAGS "${_WEBRTC_ANDROID_LDFLAGS}")
 target_link_options(hello
