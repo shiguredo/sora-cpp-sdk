@@ -11,6 +11,16 @@
 
 ## develop
 
+- [ADD] Android x86_64 ターゲットを追加する
+  - 既存の android ターゲットとは別で x86_64 専用のターゲットを用意する
+  - @zztkm
+
+### misc
+
+- [CHANGE] GitHub Actions から Android x86_64 以外のターゲット向けのビルドを削除する
+  - support/android-x86_64 ブランチでは Android x86_64 以外のターゲットをビルドする必要がないため削除する
+  - @zztkm
+
 ## 2025.6.2
 
 **リリース日**: 2025-12-05
