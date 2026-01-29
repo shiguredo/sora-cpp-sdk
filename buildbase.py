@@ -2368,7 +2368,7 @@ class Platform(object):
             else:
                 self._check(
                     p.arch in ("x86_64", "arm64"),
-                    f"Architecture {p.arch} is not supported for {p.os}. Supported: arm64, x86_64",
+                    f"Architecture {p.arch} is not supported for {p.os}. Supported: x86_64, arm64",
                 )
         elif p.os == "ubuntu":
             self._check(
