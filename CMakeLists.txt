@@ -35,6 +35,10 @@ elseif (SORA_TARGET STREQUAL "ios")
 elseif (SORA_TARGET STREQUAL "android")
   set(SORA_TARGET_OS "android")
   set(SORA_TARGET_DEF "SORA_CPP_SDK_ANDROID")
+elseif (SORA_TARGET STREQUAL "android_x86_64")
+  set(SORA_TARGET_OS "android")
+  set(SORA_TARGET_ARCH "x86_64")
+  set(SORA_TARGET_DEF "SORA_CPP_SDK_ANDROID")
 elseif (SORA_TARGET STREQUAL "ubuntu-22.04_x86_64")
   set(SORA_TARGET_OS "ubuntu")
   set(SORA_TARGET_OS_VERSION "22.04")
@@ -480,7 +484,6 @@ elseif (SORA_TARGET_OS STREQUAL "android")
 
   target_compile_options(sora
     PUBLIC
-      -fexperimental-relative-c++-abi-vtables
   )
 
   target_compile_definitions(sora
@@ -655,7 +658,7 @@ install(TARGETS sora
   EXPORT sora-config
   FILE_SET HEADERS
   # Android の場合はライブラリを ANDROID_ABI 以下のディレクトリにインストールする
-  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/$<$<STREQUAL:${SORA_TARGET},"android">:/${ANDROID_ABI}>
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/$<$<STREQUAL:${SORA_TARGET_OS},"android">:/${ANDROID_ABI}>
 )
 if (SORA_TARGET_OS STREQUAL "ubuntu" AND USE_V4L2_ENCODER)
   install(TARGETS camerac
@@ -675,7 +678,7 @@ install(
 install(FILES LICENSE NOTICE.md
   DESTINATION ${CMAKE_INSTALL_PREFIX}
 )
-if (SORA_TARGET STREQUAL "android")
+if (SORA_TARGET_OS STREQUAL "android")
   install(FILES ${SORA_WEBRTC_LDFLAGS}
     DESTINATION ${CMAKE_INSTALL_DATADIR}
   )
