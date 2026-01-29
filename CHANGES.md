@@ -11,6 +11,8 @@
 
 ## develop
 
+## 2025.6.2-android-x86_64.0
+
 - [ADD] Android x86_64 ターゲットを追加する
   - 既存の android ターゲットとは別で x86_64 専用のターゲットを用意する
   - @zztkm
