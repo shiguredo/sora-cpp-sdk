@@ -22,6 +22,9 @@
 - [CHANGE] GitHub Actions から Android x86_64 以外のターゲット向けのビルドを削除する
   - support/android-x86_64 ブランチでは Android x86_64 以外のターゲットをビルドする必要がないため削除する
   - @zztkm
+- [CHANGE] GitHub Actions の e2e-test.yml の push トリガーをコメントアウトする
+  - e2e-test を実行するための sumomo をリリースしておらず e2e-test が実行できないためコメントアウトする
+  - @zztkm
 
 ## 2025.6.2
 
