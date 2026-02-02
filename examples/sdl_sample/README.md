@@ -45,7 +45,7 @@ cd sora-cpp-sdk/examples
 ##### ビルド
 
 ```powershell
-> python3 sdl_sample\windows_x86_64\run.py
+> python3 sdl_sample\run.py build windows_x86_64
 ```
 
 成功した場合、`_build\windows_x86_64\release\sdl_sample\Release` に `sdl_sample.exe` が作成されます。
@@ -66,7 +66,7 @@ cd sora-cpp-sdk/examples
 ##### ビルド
 
 ```shell
-python3 sdl_sample/macos_arm64/run.py
+python3 run.py build macos_arm64
 ```
 
 成功した場合、`_build/macos_arm64/release/sdl_sample` に `sdl_sample` が作成されます。
@@ -89,7 +89,7 @@ sudo apt install build-essential libxext-dev libx11-dev libgl-dev pkg-config pyt
 ##### ビルド
 
 ```shell
-python3 sdl_sample/ubuntu-22.04_x86_64/run.py
+python3 run.py build ubuntu-22.04_x86_64
 ```
 
 成功した場合、以下のファイルが作成されます。`_build/ubuntu-22.04_x86_64/release/sdl_sample` に `sdl_sample` が作成されます。
@@ -112,7 +112,7 @@ sudo apt install build-essential libxext-dev libx11-dev libgl-dev pkg-config pyt
 ##### ビルド
 
 ```shell
-python3 sdl_sample/ubuntu-24.04_x86_64/run.py
+python3 run.py build ubuntu-24.04_x86_64
 ```
 
 成功した場合、以下のファイルが作成されます。`_build/ubuntu-24.04_x86_64/release/sdl_sample` に `sdl_sample` が作成されます。
