@@ -11,6 +11,8 @@
 
 ## develop
 
+## 2026.1.0
+
 - [CHANGE] macOS x86_64 ターゲットを削除する
   - @voluntas
 - [UPDATE] libwebrtc のバージョンを m144.7559.2.1 に上げる
