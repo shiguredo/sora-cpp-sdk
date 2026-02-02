@@ -661,7 +661,6 @@ def check_version_file():
 
 AVAILABLE_TARGETS = [
     "windows_x86_64",
-    "macos_x86_64",
     "macos_arm64",
     "ubuntu-22.04_x86_64",
     "ubuntu-24.04_x86_64",
@@ -677,8 +676,6 @@ WINDOWS_SDK_VERSION = "10.0.20348.0"
 def _get_platform(target: str) -> Platform:
     if target == "windows_x86_64":
         platform = Platform("windows", get_windows_osver(), "x86_64")
-    elif target == "macos_x86_64":
-        platform = Platform("macos", get_macos_osver(), "x86_64")
     elif target == "macos_arm64":
         platform = Platform("macos", get_macos_osver(), "arm64")
     elif target == "ubuntu-22.04_x86_64":

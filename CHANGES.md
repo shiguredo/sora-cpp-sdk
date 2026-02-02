@@ -11,6 +11,25 @@
 
 ## develop
 
+## 2026.1.0
+
+- [CHANGE] macOS x86_64 ターゲットを削除する
+  - @voluntas
+- [UPDATE] libwebrtc のバージョンを m144.7559.2.1 に上げる
+  - @torikizi
+- [UPDATE] CMake を 4.2.1 にあげる
+  - @torikizi
+- [UPDATE] Intel VPL を v2.16.0 にあげる
+  - @torikizi
+
+### misc
+
+- [UPDATE] Examples の DEPS を更新する
+  - WEBRTC_BUILD_VERSION を m144.7559.0.0 にあげる
+  - CMake を 4.2.1 にあげる
+  - SDL を 3.2.28 にあげる
+  - @torikizi
+
 ## 2025.6.2
 
 **リリース日**: 2025-12-05
@@ -40,7 +59,7 @@
   - @voluntas
 - [CHANGE] enum の `kNvidiaVideoCodecSdk` を `kNvidiaVideoCodec` に変更する
   - @voluntas
-- [CHANGE] liwebrtc のバージョンを m143.7499.1.0 に上げる
+- [CHANGE] libwebrtc のバージョンを m143.7499.1.0 に上げる
   - macOS, iOS が利用している clang, libc++ を Apple Clang のものから libwebrtc 管理下の Clang のものに変えたので破壊的変更となります
   - libwebrtc m141 で `rtc_config.crypto_options` の型が変更されたため、`emplace()` ではなく直接アクセスするよう修正
   - Windows で `CreateWindowsCoreAudioAudioDeviceModule` が `Environment` を受け取る API に変わったため、それに追従

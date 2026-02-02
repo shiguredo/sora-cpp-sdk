@@ -1,10 +1,10 @@
 name: e2e-test-workflow
 
 on:
-  push:
-    paths:
-      - "e2e-test/**"
-      - ".github/workflows/e2e-test.yml"
+  # push:
+  #   paths:
+  #     - "e2e-test/**"
+  #     - ".github/workflows/e2e-test.yml"
   workflow_call:
   workflow_dispatch:
 
@@ -88,7 +88,7 @@ jobs:
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
       OPENH264_VERSION: 2.6.0
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       # Homebrew のセットアップ (self-hosted macOS ランナー用)
       - name: Setup Homebrew

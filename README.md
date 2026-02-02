@@ -62,12 +62,15 @@ Please read <https://github.com/shiguredo/oss/blob/master/README.en.md> before u
 - Windows 10.1809 x86_64 以降
 - macOS 14 arm64 以降
 - Ubuntu 24.04 x86_64
-- Ubuntu 24.04 arm64
 - Ubuntu 22.04 x86_64
 - Android 7 arm64 以降
 - iOS 14 arm64 以降
 - Raspberry Pi OS bookworm (64bit)
 - Ubuntu 22.04 ARMv8 Jetson (JetPack 6.0 以降)
+  - Jetson AGX Orin
+  - Jetson Orin NX
+    - 動作未検証です
+- Ubuntu 24.04 ARMv8 Jetson (JetPack 6.0 以降)
   - Jetson AGX Orin
   - Jetson Orin NX
     - 動作未検証です

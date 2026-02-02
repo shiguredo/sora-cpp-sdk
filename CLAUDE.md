@@ -23,7 +23,7 @@
 
 ### サンプルのビルドについて
 
-- sumomo であれば `python3 examples/sumomo/<target>/run.py` でビルドすること
+- sumomo であれば `python3 examples/sumomo/run.py build <target>` でビルドすること
 
 ## コミットについて
 
