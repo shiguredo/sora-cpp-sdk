@@ -23,9 +23,10 @@
 ### misc
 
 - [UPDATE] Examples の DEPS を更新する
-  - WEBRTC_BUILD_VERSION を m144.7559.0.0 にあげる
+  - WEBRTC_BUILD_VERSION を m145.7632.0.0 にあげる
   - CMake を 4.2.1 にあげる
   - SDL を 3.2.28 にあげる
+  - test/CMakeLists.txt の set_target_properties で、全プラットフォームの CXX_STANDARD と C_STANDARD を 20 に統一する
   - @torikizi
 
 ## 2025.6.2

@@ -29,11 +29,7 @@ find_package(Threads REQUIRED)
 find_package(Catch2)
 
 function (init_target target)
-  if (WIN32)
-    set_target_properties(${target} PROPERTIES CXX_STANDARD 20 C_STANDARD 20)
-  else()
-    set_target_properties(${target} PROPERTIES CXX_STANDARD 20 C_STANDARD 17)
-  endif()
+  set_target_properties(${target} PROPERTIES CXX_STANDARD 20 C_STANDARD 20)
   set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE ON)
   target_link_libraries(${target} PRIVATE Sora::sora)
 
