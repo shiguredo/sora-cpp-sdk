@@ -17,7 +17,7 @@
 
 - [CHANGE] macOS x86_64 ターゲットを削除する
   - @voluntas
-- [UPDATE] libwebrtc のバージョンを m144.7559.2.1 に上げる
+- [UPDATE] libwebrtc のバージョンを m145.7632.0.0 に上げる
   - @torikizi
 - [UPDATE] CMake を 4.2.1 にあげる
   - @torikizi
@@ -27,9 +27,10 @@
 ### misc
 
 - [UPDATE] Examples の DEPS を更新する
-  - WEBRTC_BUILD_VERSION を m144.7559.0.0 にあげる
+  - WEBRTC_BUILD_VERSION を m145.7632.0.0 にあげる
   - CMake を 4.2.1 にあげる
   - SDL を 3.2.28 にあげる
+  - test/CMakeLists.txt の set_target_properties で、全プラットフォームの CXX_STANDARD と C_STANDARD を 20 に統一する
   - @torikizi
 
 ## 2025.6.2
