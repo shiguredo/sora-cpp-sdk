@@ -483,7 +483,24 @@ void SoraSignaling::DoSendConnect(bool redirect) {
   }
 
   std::string text = boost::json::serialize(m);
-  RTC_LOG(LS_INFO) << "Send type=connect: " << text;
+  auto log_object = m;
+  auto redact_access_token = [](boost::json::object& obj) {
+    auto token_it = obj.find("access_token");
+    if (token_it != obj.end()) {
+      token_it->value() = "REDACTED";
+    }
+    auto metadata_it = obj.find("metadata");
+    if (metadata_it != obj.end() && metadata_it->value().is_object()) {
+      auto& metadata_obj = metadata_it->value().as_object();
+      auto metadata_token_it = metadata_obj.find("access_token");
+      if (metadata_token_it != metadata_obj.end()) {
+        metadata_token_it->value() = "REDACTED";
+      }
+    }
+  };
+  redact_access_token(log_object);
+  std::string log_text = boost::json::serialize(log_object);
+  RTC_LOG(LS_INFO) << "Send type=connect: " << log_text;
   WsWriteSignaling(std::move(text), [self = shared_from_this()](
                                         boost::system::error_code, size_t) {});
 }
