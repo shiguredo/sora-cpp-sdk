@@ -23,6 +23,8 @@
   - @torikizi
 - [UPDATE] Intel VPL を v2.16.0 にあげる
   - @torikizi
+- [FIX] `run.py build android --test --debug` が失敗する問題を修正する
+  - @zztkm
 
 ### misc
 

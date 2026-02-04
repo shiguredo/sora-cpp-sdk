@@ -904,6 +904,11 @@ def _build(
                 f"-L{cmake_path(os.path.join(android_clang_dir, 'lib', 'clang', clang_version, 'lib', 'linux', 'aarch64'))}"
             ]
             cmake_args.append(f"-DCMAKE_EXE_LINKER_FLAGS={' '.join(ldflags)}")
+            cxxflags = [
+                "-nostdinc++",
+                "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE",
+            ]
+            cmake_args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
 
         # NvCodec
         if not disable_cuda:
@@ -1001,7 +1006,14 @@ def _build(
         elif platform.target.os == "android":
             # Android の場合は事前に用意したプロジェクトをビルドする
             with cd(os.path.join(BASE_DIR, "test", "android")):
-                cmd(["./gradlew", "--no-daemon", "assemble"])
+                gradle_args = ["./gradlew", "--no-daemon"]
+                if debug:
+                    gradle_args.append("assembleDebug")
+                    gradle_args.append("-PsoraBuildType=debug")
+                else:
+                    gradle_args.append("assembleRelease")
+                    gradle_args.append("-PsoraBuildType=release")
+                cmd(gradle_args)
         else:
             # 普通のプロジェクトは CMake でビルドする
             test_build_dir = os.path.join(build_dir, "test")
