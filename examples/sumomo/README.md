@@ -192,9 +192,6 @@ Windows 以外の場合
   - 0 は未指定と見なされます
 - `--metadata` : [メタデータ](https://sora-doc.shiguredo.jp/SIGNALING#414142)
   - JSON 形式の文字列を指定してください
-- `--access-token` : `connect` メッセージの `metadata.access_token` を設定します
-  - `--metadata` で指定した JSON が object 以外の場合はエラーになります
-  - `--metadata` に `access_token` が含まれている場合でも上書きされます
 - `--spotlight` : [スポットライト](https://sora-doc.shiguredo.jp/SIGNALING#8f6c79) 機能の利用 (`true`/`false`/`none`)
   - 未指定の場合は値なし (Sora 側の設定を利用) になります
 - `--spotlight-number` : [spotlight_number](https://sora-doc.shiguredo.jp/SPOTLIGHT#c66032)

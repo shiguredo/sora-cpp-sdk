@@ -915,9 +915,6 @@ int main(int argc, char* argv[]) {
   app.add_option("--metadata", metadata,
                  "Signaling metadata used in connect message")
       ->check(is_json);
-  std::string access_token;
-  app.add_option("--access-token", access_token,
-                 "Access token set as metadata.access_token in connect message");
   add_optional_bool(app, "--spotlight", config.spotlight,
                     "Use spotlight (default: none)");
   app.add_option("--spotlight-number", config.spotlight_number,
@@ -1168,16 +1165,6 @@ int main(int argc, char* argv[]) {
   // メタデータのパース
   if (!metadata.empty()) {
     config.metadata = boost::json::parse(metadata);
-  }
-  if (!access_token.empty()) {
-    if (config.metadata.is_null()) {
-      config.metadata = boost::json::object();
-    } else if (!config.metadata.is_object()) {
-      std::cerr << "--metadata must be a JSON object when --access-token is set."
-                << std::endl;
-      return 1;
-    }
-    config.metadata.as_object()["access_token"] = access_token;
   }
 
   auto context_config = sora::SoraClientContextConfig();
