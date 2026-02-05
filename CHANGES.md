@@ -28,7 +28,7 @@
   - @voluntas
 - [UPDATE] libwebrtc のバージョンを m144.7559.2.1 に上げる
   - @torikizi
-- [UPDATE] CMake を 4.2.1 にあげる
+- [UPDATE] CMake を 4.2.2 にあげる
   - @torikizi
 - [UPDATE] Intel VPL を v2.16.0 にあげる
   - @torikizi
