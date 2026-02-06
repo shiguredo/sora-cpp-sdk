@@ -325,14 +325,14 @@ jobs:
           name: examples_${{ matrix.platform.name }}
           path: examples/examples_${{ matrix.platform.name }}
 
-  # e2e-test:
-  #   name: E2E Test
-  #   needs:
-  #     - build-windows
-  #     - build-macos
-  #     - build-ubuntu
-  #   uses: ./.github/workflows/e2e-test.yml
-  #   secrets: inherit
+  e2e-test:
+    name: E2E Test
+    needs:
+      - build-windows
+      - build-macos
+      - build-ubuntu
+    uses: ./.github/workflows/e2e-test.yml
+    secrets: inherit
 
   create-release:
     name: Create Release
