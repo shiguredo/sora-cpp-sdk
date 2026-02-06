@@ -1355,6 +1355,8 @@ def _format(
         "src/**/*.mm",
         "test/**/*.h",
         "test/**/*.cpp",
+        "test/**/*.m",
+        "test/**/*.mm",
         "examples/messaging_recvonly_sample/**/*.h",
         "examples/messaging_recvonly_sample/**/*.cpp",
         "examples/sdl_sample/**/*.h",
