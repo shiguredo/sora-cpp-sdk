@@ -11,6 +11,14 @@
 
 ## develop
 
+
+## 2026.1.1
+
+**リリース日**: 2026-02-10
+
+- [FIX] Raspberry Pi OS 最新版の libcamera 0.7 に対応する
+  - @voluntas
+
 ## 2026.1.0
 
 - [CHANGE] macOS x86_64 ターゲットを削除する
