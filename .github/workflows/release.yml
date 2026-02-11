@@ -1,0 +1,250 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "202*"
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+    secrets: inherit
+
+  create-release:
+    name: Create Release
+    needs:
+      - ci
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/download
+        with:
+          platform: windows_x86_64
+      - uses: ./.github/actions/download
+        with:
+          platform: macos_arm64
+      - uses: ./.github/actions/download
+        with:
+          platform: ios
+      - uses: ./.github/actions/download
+        with:
+          platform: ubuntu-22.04_x86_64
+      - uses: ./.github/actions/download
+        with:
+          platform: ubuntu-24.04_x86_64
+      - uses: ./.github/actions/download
+        with:
+          platform: ubuntu-22.04_armv8
+      - uses: ./.github/actions/download
+        with:
+          platform: ubuntu-24.04_armv8
+      - uses: ./.github/actions/download
+        with:
+          platform: raspberry-pi-os_armv8
+      - uses: ./.github/actions/download
+        with:
+          platform: android
+      - name: Env to output
+        run: |
+          # package_paths.env の内容を空白区切りに変換
+          PACKAGE_PATHS=$(tr '\n' ' ' < package_paths.env)
+          echo "package_paths=${PACKAGE_PATHS}" >> $GITHUB_OUTPUT
+        id: env
+      - name: Release (Prerelease)
+        if: contains(github.ref, 'canary')
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --prerelease \
+            --title "${{ github.ref_name }}" \
+            ${{ steps.env.outputs.package_paths }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Release
+        if: ${{ !contains(github.ref, 'canary') }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "${{ github.ref_name }}" \
+            ${{ steps.env.outputs.package_paths }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  build-windows-examples:
+    needs: create-release
+    strategy:
+      matrix:
+        example:
+          - sumomo
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}/examples
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v6
+      # リリースされた SDK バイナリを使ってサンプルをビルドする
+      - name: Build Example
+        run: |
+          python3 ${{ matrix.example }}/run.py build windows_x86_64
+      - name: Package Binary
+        run: |
+          # アップロード用のディレクトリを作成する
+          mkdir -p ${{ matrix.example }}_windows_x86_64
+          # バイナリをアップロード用のディレクトリにコピーする
+          cp _build/windows_x86_64/release/${{ matrix.example }}/Release/${{ matrix.example }}.exe ${{ matrix.example }}_windows_x86_64/${{ matrix.example }}.exe
+          # バイナリを圧縮する
+          # 例: sumomo_windows_x86_64.zip
+          Compress-Archive -Path ${{ matrix.example }}_windows_x86_64 -DestinationPath ${{ matrix.example }}_windows_x86_64.zip
+      - name: Upload Examples Artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.example }}_windows_x86_64.zip
+          path: examples/${{ matrix.example }}_windows_x86_64.zip
+
+  build-macos-examples:
+    needs: create-release
+    strategy:
+      matrix:
+        example:
+          - sumomo
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}/examples
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v6
+      # リリースされた SDK バイナリを使ってサンプルをビルドする
+      - name: Build Example
+        run: |
+          python3 ${{ matrix.example }}/run.py build macos_arm64
+      - name: Package Binary
+        run: |
+          # アップロード用のディレクトリを作成する
+          mkdir -p ${{ matrix.example }}_macos_arm64
+          cp _build/macos_arm64/release/${{ matrix.example }}/${{ matrix.example }} ${{ matrix.example }}_macos_arm64/${{ matrix.example }}
+          # バイナリを圧縮する
+          # 例: sumomo_macos_arm64.tar.gz
+          tar -czf ${{ matrix.example }}_macos_arm64.tar.gz ${{ matrix.example }}_macos_arm64
+      - name: Upload Examples Artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.example }}_macos_arm64.tar.gz
+          path: examples/${{ matrix.example }}_macos_arm64.tar.gz
+
+  build-ubuntu-examples:
+    needs: create-release
+    strategy:
+      fail-fast: false
+      matrix:
+        example:
+          - sumomo
+        platform:
+          - name: ubuntu-22.04_x86_64
+            runs-on: ubuntu-22.04
+          - name: ubuntu-24.04_x86_64
+            runs-on: ubuntu-24.04
+          - name: ubuntu-24.04_armv8
+            runs-on: ubuntu-24.04
+          - name: raspberry-pi-os_armv8
+            runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}/examples
+    runs-on: ${{ matrix.platform.runs-on }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install deps
+        run: |
+          sudo apt-get update
+
+           # X11
+          sudo apt-get install -y libx11-dev libxext-dev
+
+          # OpenGL
+          sudo apt-get install -y libgl-dev
+
+      # ARM はクロスコンパイルのために追加のパッケージが必要なのでインストールする
+      - name: Install deps Ubuntu 24.04 ARM
+        if: matrix.platform.name == 'ubuntu-24.04_armv8' || matrix.platform.name == 'raspberry-pi-os_armv8'
+        run: |
+          sudo apt-get install -y multistrap binutils-aarch64-linux-gnu
+          # multistrap に insecure なリポジトリからの取得を許可する設定を入れる
+          sudo sed -e 's/Apt::Get::AllowUnauthenticated=true/Apt::Get::AllowUnauthenticated=true";\n$config_str .= " -o Acquire::AllowInsecureRepositories=true/' -i /usr/sbin/multistrap
+      # リリースされた SDK バイナリを使ってサンプルをビルドする
+      - name: Build Example
+        run: |
+          python3 ${{ matrix.example }}/run.py build ${{ matrix.platform.name }}
+      - name: Package Binary
+        run: |
+          # アップロード用のディレクトリを作成する
+          mkdir -p ${{ matrix.example }}_${{ matrix.platform.name }}
+          # バイナリをアップロード用のディレクトリにコピーする
+          cp _build/${{ matrix.platform.name }}/release/${{ matrix.example }}/${{ matrix.example }} ${{ matrix.example }}_${{ matrix.platform.name }}/${{ matrix.example }}
+
+          if [ "${{ matrix.platform.name }}" = "raspberry-pi-os_armv8" ]; then
+            # raspberry-pi-os は libcamerac.so も必要
+            cp _install/${{ matrix.platform.name }}/release/sora/lib/libcamerac.so ${{ matrix.example }}_${{ matrix.platform.name }}/
+          fi
+
+          # バイナリを圧縮する
+          # 例: sumomo_ubuntu-24.04_x86_64.tar.gz
+          tar -czf ${{ matrix.example }}_${{ matrix.platform.name }}.tar.gz ${{ matrix.example }}_${{ matrix.platform.name }}
+      - name: Upload Examples Artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.example }}_${{ matrix.platform.name }}.tar.gz
+          path: examples/${{ matrix.example }}_${{ matrix.platform.name }}.tar.gz
+
+  create-release-example:
+    name: Create Release Examples
+    needs:
+      - build-windows-examples
+      - build-macos-examples
+      - build-ubuntu-examples
+    strategy:
+      matrix:
+        example:
+          - sumomo
+        archive:
+          - windows_x86_64.zip
+          - macos_arm64.tar.gz
+          - ubuntu-22.04_x86_64.tar.gz
+          - ubuntu-24.04_x86_64.tar.gz
+          - ubuntu-24.04_armv8.tar.gz
+          - raspberry-pi-os_armv8.tar.gz
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v7
+        with:
+          name: ${{ matrix.example }}_${{ matrix.archive }}
+      - name: Release Examples
+        run: |
+          gh release upload "${{ github.ref_name }}" \
+            "${{ matrix.example }}_${{ matrix.archive }}" \
+            --clobber
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  notification:
+    name: Slack Notification
+    runs-on: ubuntu-24.04
+    needs:
+      - ci
+      - create-release
+      - build-windows-examples
+      - build-macos-examples
+      - build-ubuntu-examples
+      - create-release-example
+    if: always()
+    steps:
+      - uses: rtCamp/action-slack-notify@v2
+        if: |
+          needs.create-release.result == 'failure' ||
+          needs.build-windows-examples.result == 'failure' ||
+          needs.build-macos-examples.result == 'failure' ||
+          needs.build-ubuntu-examples.result == 'failure' ||
+          needs.create-release-example.result == 'failure'
+        env:
+          SLACK_CHANNEL: sora-cpp-sdk
+          SLACK_COLOR: danger
+          SLACK_TITLE: Release failed
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
