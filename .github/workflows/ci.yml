@@ -15,7 +15,6 @@ on:
     # 1-5 で 月曜日から金曜日
     - cron: "0 1 * * 1-5"
   workflow_dispatch:
-  workflow_call:
 
 jobs:
   build-windows:
