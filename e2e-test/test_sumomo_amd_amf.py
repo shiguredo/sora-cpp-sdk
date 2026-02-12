@@ -1,8 +1,6 @@
 """Sumomo の AMD AMF E2E テスト
 
 AMD AMF (Advanced Media Framework) を使用した AV1/H264/H265 のテスト
-
-- TODO: VP9 はデコードのみ AMD-AMF が対応しているのでテストは独立させる
 """
 
 import os
@@ -125,7 +123,6 @@ def test_sendonly_recvonly(
 @pytest.mark.parametrize(
     "video_codec_type",
     [
-        "VP9",
         "AV1",
         "H264",
         "H265",
@@ -240,7 +237,6 @@ def test_sendrecv(
             assert client2_video_inbound["decoderImplementation"] == CODEC_IMPLEMENTATION
 
 
-# AMD AMF では VP9 デコードのみ対応
 @pytest.mark.parametrize(
     "video_codec_type",
     [
