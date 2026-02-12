@@ -383,14 +383,14 @@ jobs:
               LIBVA_MESSAGING_LEVEL=0
           # Self-hosted runner for AMD AMF
           # AMD-AMF はあまりにも不安定なため、安定するまでコメントアウトする
-          # - name: amd_amf
-          #   platform-name: ubuntu-24.04_x86_64
-          #   runs-on:
-          #     group: Self
-          #     labels: [self-hosted, linux, x64, AMD-AMF]
-          #   env-vars: |
-          #     AMD_AMF=true
-          #   test-target: test_sumomo_amd_amf.py
+          - name: amd_amf
+            platform-name: ubuntu-24.04_x86_64
+            runs-on:
+              group: Self
+              labels: [self-hosted, linux, x64, AMD-AMF]
+            env-vars: |
+              AMD_AMF=true
+            test-target: test_sumomo_amd_amf.py
           # Self-hosted runner for Raspberry Pi
           - name: raspberry_pi
             platform-name: raspberry-pi-os_armv8
