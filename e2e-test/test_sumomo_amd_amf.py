@@ -1,6 +1,8 @@
 """Sumomo の AMD AMF E2E テスト
 
-AMD AMF (Advanced Media Framework) を使用した AV1/H264/H265 のテスト
+AMD AMF (Advanced Media Framework) を使用した VP9/AV1/H264/H265 のテスト
+
+- VP9 はエンコードに libvpx、デコードに AMD AMF を使用する
 """
 
 import os
@@ -123,6 +125,7 @@ def test_sendonly_recvonly(
 @pytest.mark.parametrize(
     "video_codec_type",
     [
+        "VP9",
         "AV1",
         "H264",
         "H265",
@@ -148,12 +151,17 @@ def test_sendrecv(
 
     # デコーダー設定を準備
     decoder_params = {}
-    if video_codec_type == "AV1":
+    if video_codec_type == "VP9":
+        decoder_params["vp9_decoder"] = "amd_amf"
+    elif video_codec_type == "AV1":
         decoder_params["av1_decoder"] = "amd_amf"
     elif video_codec_type == "H264":
         decoder_params["h264_decoder"] = "amd_amf"
     elif video_codec_type == "H265":
         decoder_params["h265_decoder"] = "amd_amf"
+
+    # VP9 のエンコーダーは libvpx を使用するため、期待する実装名を分ける
+    expected_encoder_implementation = "libvpx" if video_codec_type == "VP9" else CODEC_IMPLEMENTATION
 
     # 両方のパラメータを統合
     codec_params = {**encoder_params, **decoder_params}
@@ -201,7 +209,7 @@ def test_sendrecv(
             assert client1_video_outbound["packetsSent"] > 0
             assert client1_video_outbound["bytesSent"] > 0
             assert "encoderImplementation" in client1_video_outbound
-            assert client1_video_outbound["encoderImplementation"] == CODEC_IMPLEMENTATION
+            assert client1_video_outbound["encoderImplementation"] == expected_encoder_implementation
 
             # video inbound-rtp を確認
             client1_video_inbound = get_inbound_rtp(client1_stats, "video")
@@ -226,7 +234,7 @@ def test_sendrecv(
             assert client2_video_outbound["packetsSent"] > 0
             assert client2_video_outbound["bytesSent"] > 0
             assert "encoderImplementation" in client2_video_outbound
-            assert client2_video_outbound["encoderImplementation"] == CODEC_IMPLEMENTATION
+            assert client2_video_outbound["encoderImplementation"] == expected_encoder_implementation
 
             # video inbound-rtp を確認
             client2_video_inbound = get_inbound_rtp(client2_stats, "video")
