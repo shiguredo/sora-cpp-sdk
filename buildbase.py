@@ -175,7 +175,7 @@ def download(
     try:
         logging.info(f"Downloading {url} to {output_path}")
         if shutil.which("curl") is not None:
-            cmd(["curl", "-fLo", output_path, url])
+            cmd(["curl", "--http1.1", "-fLo", output_path, url])
         else:
             cmd(["wget", "-cO", output_path, url])
 
