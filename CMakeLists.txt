@@ -108,6 +108,7 @@ target_sources(sora
     src/default_video_formats.cpp
     src/device_list.cpp
     src/device_video_capturer.cpp
+    src/hevc_profile_tier_level.cpp
     src/i420_encoder_adapter.cpp
     src/java_context.cpp
     src/open_h264_video_codec.cpp
