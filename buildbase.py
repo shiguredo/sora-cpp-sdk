@@ -1072,10 +1072,30 @@ def get_sora_info(
 
 
 @versioned
-def install_rootfs(version, install_dir, conf, arch="arm64"):
+def install_rootfs(
+    version, install_dir, suite, packages, mirrors, components, keyrings=None, arch="arm64"
+):
     rootfs_dir = os.path.join(install_dir, "rootfs")
     rm_rf(rootfs_dir)
-    cmd(["multistrap", "--no-auth", "-a", arch, "-d", rootfs_dir, "-f", conf])
+    mmdebstrap_cmd = [
+        "mmdebstrap",
+        f"--architectures={arch}",
+        "--variant=extract",
+        f"--include={','.join(packages)}",
+        f"--components={','.join(components)}",
+    ]
+    if keyrings is not None:
+        mmdebstrap_cmd.append(f"--keyring={keyrings}")
+    mmdebstrap_cmd.extend([suite, rootfs_dir] + mirrors)
+    cmd(mmdebstrap_cmd)
+    # /dev ディレクトリの削除（シンボリックリンクループ防止）
+    dev_dir = os.path.join(rootfs_dir, "dev")
+    if os.path.exists(dev_dir):
+        rm_rf(dev_dir)
+    # usrmerge 対応で lib -> usr/lib シンボリックリンクを作成
+    lib_link = os.path.join(rootfs_dir, "lib")
+    if not os.path.exists(lib_link):
+        os.symlink("usr/lib", lib_link)
     # 絶対パスのシンボリックリンクを相対パスに置き換えていく
     for dir, _, filenames in os.walk(rootfs_dir):
         for filename in filenames:

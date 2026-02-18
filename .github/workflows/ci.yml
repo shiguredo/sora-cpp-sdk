@@ -257,9 +257,12 @@ jobs:
           matrix.platform.os == 'raspberry-pi-os' && matrix.platform.arch == 'armv8'
         run: |
           sudo apt-get update
-          sudo apt-get -y install multistrap binutils-aarch64-linux-gnu libgl-dev
-          # multistrap に insecure なリポジトリからの取得を許可する設定を入れる
-          sudo sed -e 's/Apt::Get::AllowUnauthenticated=true/Apt::Get::AllowUnauthenticated=true";\n$config_str .= " -o Acquire::AllowInsecureRepositories=true/' -i /usr/sbin/multistrap
+          sudo apt-get -y install mmdebstrap debian-archive-keyring binutils-aarch64-linux-gnu libgl-dev
+          # Raspberry Pi OS 用のキーリングを取得する
+          mkdir -p /tmp/keyrings
+          cp /usr/share/keyrings/debian-archive-keyring.gpg /tmp/keyrings/
+          curl -fsSL https://archive.raspberrypi.com/debian/raspberrypi.gpg.key \
+            | gpg --dearmor > /tmp/keyrings/raspberrypi-keyring.gpg
       - name: Install deps for Android
         if: matrix.platform.os == 'android'
         run: |

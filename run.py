@@ -213,23 +213,58 @@ def install_deps(
     with cd(BASE_DIR):
         deps = read_version_file("DEPS")
 
-        # multistrap を使った sysroot の構築
-        if platform.target.package_name in (
-            "ubuntu-22.04_armv8",
-            "ubuntu-24.04_armv8",
-            "raspberry-pi-os_armv8",
-            "ubuntu-20.04_armv8_jetson",
-            "ubuntu-22.04_armv8_jetson",
-        ):
-            conf = os.path.join(BASE_DIR, "multistrap", f"{platform.target.package_name}.conf")
-            # conf ファイルのハッシュ値をバージョンとする
-            version_md5 = hashlib.md5(open(conf, "rb").read()).hexdigest()
+        # mmdebstrap を使った sysroot の構築
+        ROOTFS_CONFIGS = {
+            "ubuntu-24.04_armv8": {
+                "suite": "noble",
+                "packages": ["libstdc++-13-dev", "libc6-dev", "libxext-dev", "libdbus-1-dev"],
+                "mirrors": ["http://ports.ubuntu.com/ubuntu-ports"],
+                "components": ["main", "universe"],
+            },
+            "ubuntu-22.04_armv8": {
+                "suite": "jammy",
+                "packages": ["libstdc++-10-dev", "libc6-dev", "libxext-dev", "libdbus-1-dev"],
+                "mirrors": ["http://ports.ubuntu.com/ubuntu-ports"],
+                "components": ["main", "universe"],
+            },
+            "raspberry-pi-os_armv8": {
+                "suite": "trixie",
+                "packages": [
+                    "libc6-dev",
+                    "libstdc++-14-dev",
+                    "libasound2-dev",
+                    "libpulse-dev",
+                    "libudev-dev",
+                    "libexpat1-dev",
+                    "libnss3-dev",
+                    "libxext-dev",
+                    "libxtst-dev",
+                    "libcamera-dev",
+                ],
+                "mirrors": [
+                    "http://deb.debian.org/debian",
+                    "http://archive.raspberrypi.org/debian",
+                ],
+                "components": ["main"],
+                "keyrings": "/tmp/keyrings",
+            },
+        }
+        if platform.target.package_name in ROOTFS_CONFIGS:
+            config = ROOTFS_CONFIGS[platform.target.package_name]
+            version_md5 = hashlib.md5(
+                json.dumps(config, sort_keys=True).encode()
+            ).hexdigest()
             install_rootfs_args = {
                 "version": version_md5,
                 "version_file": os.path.join(install_dir, "rootfs.version"),
                 "install_dir": install_dir,
-                "conf": conf,
+                "suite": config["suite"],
+                "packages": config["packages"],
+                "mirrors": config["mirrors"],
+                "components": config["components"],
             }
+            if "keyrings" in config:
+                install_rootfs_args["keyrings"] = config["keyrings"]
             install_rootfs(**install_rootfs_args)
 
         # Android NDK
