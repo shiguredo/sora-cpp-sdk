@@ -1078,6 +1078,7 @@ def install_rootfs(
     rootfs_dir = os.path.join(install_dir, "rootfs")
     rm_rf(rootfs_dir)
     mmdebstrap_cmd = [
+        "sudo",
         "mmdebstrap",
         f"--architectures={arch}",
         "--variant=extract",
@@ -1088,6 +1089,8 @@ def install_rootfs(
         mmdebstrap_cmd.append(f"--keyring={keyrings}")
     mmdebstrap_cmd.extend([suite, rootfs_dir] + mirrors)
     cmd(mmdebstrap_cmd)
+    # sudo で作成されたファイルの所有者を現在のユーザーに変更する
+    cmd(["sudo", "chown", "-R", f"{os.getuid()}:{os.getgid()}", rootfs_dir])
     # /dev ディレクトリの削除（シンボリックリンクループ防止）
     dev_dir = os.path.join(rootfs_dir, "dev")
     if os.path.exists(dev_dir):
