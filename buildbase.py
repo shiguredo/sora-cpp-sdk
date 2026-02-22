@@ -531,13 +531,13 @@ def install_webrtc(version, source_dir, install_dir, platform: str):
 
 def build_webrtc(platform, local_webrtc_build_dir, local_webrtc_build_args, debug):
     with cd(local_webrtc_build_dir):
-        args = ["--webrtc-nobuild-ios-framework", "--webrtc-nobuild-android-aar"]
+        args = []
         if debug:
             args += ["--debug"]
 
         args += local_webrtc_build_args
 
-        cmd(["python3", "run.py", platform, *args])
+        cmd(["python3", "run.py", "build", platform, *args])
 
         # インクルードディレクトリを増やしたくないので、
         # __config_site を libc++ のディレクトリにコピーしておく

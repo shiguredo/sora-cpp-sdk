@@ -730,11 +730,10 @@ def _get_platform(target: str) -> Platform:
         platform = Platform("raspberry-pi-os", None, "armv8")
     elif target == "ios":
         platform = Platform("ios", None, None)
-    elif args.target == "visionos":
-        platform = Platform("visionos", None, None)
-    elif args.target == "visionos-simulator":
+    elif target == "visionos":
+        platform = Platform("visionos", None, "arm64")
+    elif target == "visionos-simulator":
         platform = Platform("visionos", None, None, "simulator")
-    elif args.target == "android":
     elif target == "android":
         platform = Platform("android", None, None)
     else:
