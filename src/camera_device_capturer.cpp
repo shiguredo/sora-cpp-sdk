@@ -15,7 +15,9 @@
 #elif defined(__linux__)
 #include "sora/v4l2/v4l2_video_capturer.h"
 #else
+#if !defined(SORA_CPP_SDK_VISIONOS)
 #include "sora/device_video_capturer.h"
+#endif
 #endif
 #if defined(USE_V4L2_ENCODER)
 #include "sora/hwenc_v4l2/libcamera_capturer.h"
@@ -79,6 +81,7 @@ CreateCameraDeviceCapturer(const CameraDeviceCapturerConfig& config) {
 #endif
 
 #else
+#if !defined(SORA_CPP_SDK_VISIONOS)
   DeviceVideoCapturerConfig c;
   c.on_frame = config.on_frame;
   c.width = config.width;
@@ -86,6 +89,10 @@ CreateCameraDeviceCapturer(const CameraDeviceCapturerConfig& config) {
   c.target_fps = config.fps;
   c.device_name = config.device_name;
   return sora::DeviceVideoCapturer::Create(c);
+#else
+  // visionOS ではデバイスカメラキャプチャはサポートしない
+  return nullptr;
+#endif
 #endif
 }
 
