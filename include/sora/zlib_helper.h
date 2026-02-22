@@ -1,9 +1,12 @@
 #ifndef SORA_ZLIB_HELPER_H_
 #define SORA_ZLIB_HELPER_H_
 
+#include <cstddef>
+#include <cstdint>
 #include <string>
 
 // zlib
+#include <chromeconf.h>
 #include <zlib.h>
 
 // この define 名が邪魔してるので undef しておく

@@ -1,5 +1,8 @@
 #include "sora/url_parts.h"
 
+#include <string>
+#include <utility>
+
 namespace sora {
 
 bool URLParts::Parse(std::string url, URLParts& parts) {

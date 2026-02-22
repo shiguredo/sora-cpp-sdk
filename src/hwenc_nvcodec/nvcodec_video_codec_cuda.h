@@ -1,6 +1,9 @@
 #ifndef SORA_HWENC_NVCODEC_NVCODEC_VIDEO_CODEC_CUDA_H_
 #define SORA_HWENC_NVCODEC_NVCODEC_VIDEO_CODEC_CUDA_H_
 
+#include <cstddef>
+#include <memory>
+
 #include "sora/cuda_context.h"
 
 namespace sora {

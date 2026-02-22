@@ -3,6 +3,7 @@
 
 #include <memory>
 
+#include "sora/amf_context.h"
 #include "sora/sora_video_codec.h"
 
 namespace sora {

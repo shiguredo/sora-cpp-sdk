@@ -1,6 +1,9 @@
 #include "sora/audio_device_module.h"
 
+// WebRTC
+#include <api/audio/audio_device.h>
 #include <api/audio/create_audio_device_module.h>
+#include <api/scoped_refptr.h>
 
 #if defined(SORA_CPP_SDK_WINDOWS)
 #include <modules/audio_device/include/audio_device_factory.h>
@@ -21,8 +24,7 @@ webrtc::scoped_refptr<webrtc::AudioDeviceModule> CreateAudioDeviceModule(
   }
 
 #if defined(SORA_CPP_SDK_WINDOWS)
-  return webrtc::CreateWindowsCoreAudioAudioDeviceModule(
-      &config.env.task_queue_factory());
+  return webrtc::CreateWindowsCoreAudioAudioDeviceModule(config.env);
 #elif defined(SORA_CPP_SDK_ANDROID)
   return webrtc::CreateJavaAudioDeviceModule(
       (JNIEnv*)config.jni_env, config.env, (jobject)config.application_context);

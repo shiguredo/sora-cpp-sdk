@@ -1,12 +1,16 @@
 #ifndef SORA_SORA_VIDEO_DECODER_FACTORY_H_
 #define SORA_SORA_VIDEO_DECODER_FACTORY_H_
 
+#include <functional>
 #include <memory>
+#include <utility>
 #include <vector>
 
 // WebRTC
 #include <api/environment/environment.h>
 #include <api/video/video_codec_type.h>
+#include <api/video_codecs/sdp_video_format.h>
+#include <api/video_codecs/video_decoder.h>
 #include <api/video_codecs/video_decoder_factory.h>
 
 #include "sora/cuda_context.h"

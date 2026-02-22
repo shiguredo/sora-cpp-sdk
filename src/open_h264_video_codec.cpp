@@ -1,5 +1,8 @@
 #include "sora/open_h264_video_codec.h"
 
+#include <optional>
+#include <string>
+
 #if defined(_WIN32)
 // Windows
 #include <windows.h>
@@ -8,11 +11,13 @@
 #include <dlfcn.h>
 #endif
 
+// WebRTC
+#include <api/video/video_codec_type.h>
+
 // OpenH264
-#include <wels/codec_api.h>
 #include <wels/codec_app_def.h>
-#include <wels/codec_def.h>
-#include <wels/codec_ver.h>
+
+#include "sora/sora_video_codec.h"
 
 namespace sora {
 

@@ -30,7 +30,7 @@
                 "--channel-id=sora",
                 "--role=recvonly",
                 "--use-sdl",
-                "--av1-decoder=nvidia_video_codec_sdk",
+                "--av1-decoder=nvidia_video_codec",
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

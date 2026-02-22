@@ -3,10 +3,10 @@
 
 #if defined(USE_VPL_ENCODER)
 
-#include <iostream>
+#include <memory>
 
 // Intel VPL
-#include <vpl/mfxvideo++.h>
+#include <vpl/mfxsession.h>
 
 #include "sora/vpl_session.h"
 

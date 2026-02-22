@@ -11,7 +11,7 @@ set(WEBRTC_LIBRARY_DIR "" CACHE PATH "WebRTC のライブラリディレクト�
 set(WEBRTC_LIBRARY_NAME "webrtc" CACHE STRING "WebRTC のライブラリ名")
 set(USE_LIBCXX OFF CACHE BOOL "libstdc++ の代わりに libc++ を使うかどうか")
 set(LIBCXX_INCLUDE_DIR "" CACHE PATH "libc++ を使う場合の libc++ のインクルードディレクトリ\n空文字だった場合はデフォルト検索パスの libc++ を利用する")
-set(USE_NVCODEC_ENCODER OFF CACHE BOOL "NVIDIA Video Codec SDK によるハードウェアエンコーダを利用するかどうか")
+set(USE_NVCODEC_ENCODER OFF CACHE BOOL "NVIDIA Video Codec によるハードウェアエンコーダを利用するかどうか")
 
 project(sora-cpp-sdk C CXX)
 
@@ -63,6 +63,10 @@ elseif (SORA_TARGET STREQUAL "ubuntu-24.04_armv8")
   set(SORA_TARGET_OS_VERSION "24.04")
   set(SORA_TARGET_ARCH "armv8")
   set(SORA_TARGET_DEF "SORA_CPP_SDK_UBUNTU")
+elseif (SORA_TARGET STREQUAL "raspberry-pi-os_armv8")
+  set(SORA_TARGET_OS "ubuntu")
+  set(SORA_TARGET_ARCH "armv8")
+  set(SORA_TARGET_DEF "SORA_CPP_SDK_RASPBERRY_PI_OS")
 endif()
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
@@ -82,6 +86,8 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE NEVER)
 find_package(WebRTC REQUIRED)
 find_package(Boost REQUIRED COMPONENTS json filesystem)
 find_package(Threads REQUIRED)
+
+find_library(Blend2D_LIBRARY NAMES blend2d PATHS ${BLEND2D_ROOT_DIR}/lib)
 
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
@@ -105,6 +111,7 @@ target_sources(sora
     src/audio_device_module.cpp
     src/audio_output_helper.cpp
     src/camera_device_capturer.cpp
+    src/capturer/fake_video_capturer.cpp
     src/data_channel.cpp
     src/default_video_formats.cpp
     src/device_list.cpp
@@ -114,6 +121,9 @@ target_sources(sora
     src/open_h264_video_codec.cpp
     src/open_h264_video_decoder.cpp
     src/open_h264_video_encoder.cpp
+    src/renderer/ansi_renderer.cpp
+    src/renderer/base_renderer.cpp
+    src/renderer/sixel_renderer.cpp
     src/rtc_ssl_verifier.cpp
     src/rtc_stats.cpp
     src/scalable_track_source.cpp
@@ -134,6 +144,13 @@ target_sources(sora
 )
 
 target_compile_definitions(sora PRIVATE ${SORA_TARGET_DEF})
+
+set(BUNDLE_STATIC_LIBS)
+
+# Blend2D 用の設定
+target_compile_definitions(sora PRIVATE BL_STATIC=1)
+target_include_directories(sora PRIVATE ${BLEND2D_ROOT_DIR}/include)
+list(APPEND BUNDLE_STATIC_LIBS ${Blend2D_LIBRARY})
 
 # インストールするヘッダーファイル
 file(GLOB_RECURSE SORA_HEADERS RELATIVE ${CMAKE_SOURCE_DIR} "include/*")
@@ -160,6 +177,8 @@ if (USE_LIBCXX)
     PRIVATE
       "$<$<COMPILE_LANGUAGE:CXX>:-nostdinc++>"
       "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<BOOL:LIBCXX_INCLUDE_DIR>>:-isystem${LIBCXX_INCLUDE_DIR}>"
+      "$<$<COMPILE_LANGUAGE:OBJCXX>:-nostdinc++>"
+      "$<$<AND:$<COMPILE_LANGUAGE:OBJCXX>,$<BOOL:LIBCXX_INCLUDE_DIR>>:-isystem${LIBCXX_INCLUDE_DIR}>"
   )
 endif()
 
@@ -170,6 +189,7 @@ target_compile_definitions(sora
     $<$<BOOL:${USE_NVCODEC_ENCODER}>:USE_NVCODEC_ENCODER>
     $<$<BOOL:${USE_VPL_ENCODER}>:USE_VPL_ENCODER>
     $<$<BOOL:${USE_AMF_ENCODER}>:USE_AMF_ENCODER>
+    $<$<BOOL:${USE_V4L2_ENCODER}>:USE_V4L2_ENCODER>
 )
 
 # OpenH264
@@ -184,6 +204,12 @@ function(bundle_static_library target static_libs bundled_target)
   if (MSVC)
     add_custom_command(
       COMMAND ${CMAKE_AR} /NOLOGO /OUT:${bundled_tgt_full_name} $<TARGET_FILE:${target}> ${static_libs}
+      OUTPUT ${bundled_tgt_full_name}
+      VERBATIM
+      COMMENT "Bundling libs: ${static_libs} to $<TARGET_FILE:${target}>")
+  elseif (APPLE)
+    add_custom_command(
+      COMMAND libtool -static -o ${bundled_tgt_full_name} "$<TARGET_FILE:${target}>" ${static_libs}
       OUTPUT ${bundled_tgt_full_name}
       VERBATIM
       COMMENT "Bundling libs: ${static_libs} to $<TARGET_FILE:${target}>")
@@ -216,8 +242,6 @@ function(bundle_static_library target static_libs bundled_target)
       INTERFACE_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:${target},INTERFACE_INCLUDE_DIRECTORIES>)
   add_dependencies(${bundled_target} ${bundled_target}_bundling)
 endfunction()
-
-set(BUNDLE_STATIC_LIBS)
 
 if (SORA_TARGET_OS STREQUAL "windows")
   # 文字コードを utf-8 として扱うのと、シンボルテーブル数を増やす
@@ -262,6 +286,7 @@ if (SORA_TARGET_OS STREQUAL "windows")
       WIN32_LEAN_AND_MEAN
       UNICODE
       _UNICODE
+      _USE_MATH_DEFINES
   )
   target_compile_definitions(sora
     PUBLIC
@@ -392,6 +417,13 @@ elseif (SORA_TARGET_OS STREQUAL "macos")
     PUBLIC
       WEBRTC_POSIX
       WEBRTC_MAC
+      _LIBCPP_ABI_NAMESPACE=Cr
+      _LIBCPP_ABI_VERSION=2
+      _LIBCPP_DISABLE_AVAILABILITY
+      _LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS
+      _LIBCXXABI_DISABLE_VISIBILITY_ANNOTATIONS
+      _LIBCPP_ENABLE_NODISCARD
+      _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE
   )
 
   target_link_libraries(sora
@@ -437,6 +469,13 @@ elseif (SORA_TARGET_OS STREQUAL "ios")
       WEBRTC_MAC
       WEBRTC_IOS
       OPENSSL_IS_BORINGSSL
+      _LIBCPP_ABI_NAMESPACE=Cr
+      _LIBCPP_ABI_VERSION=2
+      _LIBCPP_DISABLE_AVAILABILITY
+      _LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS
+      _LIBCXXABI_DISABLE_VISIBILITY_ANNOTATIONS
+      _LIBCPP_ENABLE_NODISCARD
+      _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE
   )
 
 elseif (SORA_TARGET_OS STREQUAL "visionos")
@@ -511,7 +550,11 @@ elseif (SORA_TARGET_OS STREQUAL "android")
   )
 
 elseif (SORA_TARGET_OS STREQUAL "ubuntu")
-  target_sources(sora PRIVATE src/v4l2/v4l2_video_capturer.cpp)
+  target_sources(sora
+    PRIVATE
+      src/v4l2/v4l2_device.cpp
+      src/v4l2/v4l2_video_capturer.cpp
+  )
 
   target_compile_definitions(sora
     PUBLIC
@@ -575,7 +618,7 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
         third_party/NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
         third_party/NvCodec/NvCodec/NvEncoder/NvEncoderCuda.cpp
       PROPERTIES
-        COMPILE_OPTIONS "-xcuda;--cuda-gpu-arch=sm_35;-std=gnu++17;-Wno-tautological-constant-out-of-range-compare"
+        COMPILE_OPTIONS "-xcuda;--cuda-gpu-arch=sm_60;-std=gnu++17;-Wno-tautological-constant-out-of-range-compare;-D_ALLOW_UNSUPPORTED_LIBCPP"
     )
 
     # CUDA を要求したくないので libsora.a に含める
@@ -614,6 +657,38 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
     )
   endif()
 
+  if (USE_V4L2_ENCODER)
+    add_library(camerac SHARED)
+    target_include_directories(camerac PRIVATE ${CMAKE_SYSROOT}/usr/include/libcamera)
+    set_target_properties(camerac PROPERTIES CXX_STANDARD 17 C_STANDARD 99)
+    target_sources(camerac
+      PRIVATE
+        third_party/libcamerac/libcamerac.cpp
+    )
+    target_link_libraries(camerac
+      PRIVATE
+        camera
+        camera-base
+    )
+
+    target_sources(sora
+      PRIVATE
+        src/hwenc_v4l2/libcamera_capturer.cpp
+        src/hwenc_v4l2/v4l2_buffers.cpp
+        src/hwenc_v4l2/v4l2_capturer.cpp
+        src/hwenc_v4l2/v4l2_converter.cpp
+        src/hwenc_v4l2/v4l2_h264_decoder.cpp
+        src/hwenc_v4l2/v4l2_h264_encoder.cpp
+        src/hwenc_v4l2/v4l2_native_buffer.cpp
+        src/hwenc_v4l2/v4l2_runner.cpp
+        src/hwenc_v4l2/v4l2_video_codec.cpp
+    )
+    target_link_libraries(sora PRIVATE camerac)
+    target_include_directories(sora
+      PRIVATE
+        third_party/libcamerac)
+  endif()
+
 endif()
 
 # 静的ライブラリを sora.lib に含める
@@ -632,6 +707,11 @@ install(TARGETS sora
   # Android の場合はライブラリを ANDROID_ABI 以下のディレクトリにインストールする
   LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/$<$<STREQUAL:${SORA_TARGET},"android">:/${ANDROID_ABI}>
 )
+if (SORA_TARGET_OS STREQUAL "ubuntu" AND USE_V4L2_ENCODER)
+  install(TARGETS camerac
+    EXPORT sora-config
+  )
+endif()
 install(EXPORT sora-config
   DESTINATION ${CMAKE_INSTALL_DATADIR}/sora
   NAMESPACE Sora::

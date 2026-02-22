@@ -1,19 +1,22 @@
 #include "sora/sora_video_encoder_factory.h"
 
+#include <functional>
+#include <memory>
+#include <optional>
+#include <string>
+#include <utility>
+#include <vector>
+
 // WebRTC
-#include <absl/memory/memory.h>
-#include <absl/strings/match.h>
+#include <api/environment/environment.h>
 #include <api/environment/environment_factory.h>
+#include <api/video/video_codec_type.h>
 #include <api/video_codecs/sdp_video_format.h>
 #include <api/video_codecs/video_codec.h>
-#include <api/video_codecs/vp9_profile.h>
-#include <media/base/codec.h>
-#include <media/base/media_constants.h>
+#include <api/video_codecs/video_encoder.h>
 #include <media/engine/simulcast_encoder_adapter.h>
-#include <modules/video_coding/codecs/h264/include/h264.h>
 #include <modules/video_coding/codecs/vp8/include/vp8.h>
 #include <modules/video_coding/codecs/vp9/include/vp9.h>
-#include <rtc_base/logging.h>
 
 #if !defined(__arm__) || defined(__aarch64__) || defined(__ARM_NEON__)
 #include <modules/video_coding/codecs/av1/libaom_av1_encoder.h>
@@ -37,8 +40,10 @@
 
 #include "default_video_formats.h"
 #include "sora/aligned_encoder_adapter.h"
+#include "sora/cuda_context.h"
 #include "sora/i420_encoder_adapter.h"
 #include "sora/open_h264_video_encoder.h"
+#include "sora/vpl_session.h"
 
 namespace sora {
 

@@ -1,20 +1,37 @@
 // DataChannel の送受信を確認するテスト
+#include <csignal>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <memory>
+#include <set>
+#include <sstream>
+#include <string>
+#include <vector>
+
+// Boost
+#include <boost/asio/deadline_timer.hpp>
+#include <boost/asio/executor_work_guard.hpp>
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/signal_set.hpp>
+#include <boost/date_time/posix_time/posix_time_duration.hpp>
+#include <boost/system/detail/error_code.hpp>
 
 // WebRTC
+#include <api/peer_connection_interface.h>
+#include <api/rtp_receiver_interface.h>
+#include <api/rtp_transceiver_interface.h>
+#include <api/scoped_refptr.h>
 #include <rtc_base/logging.h>
 
 #ifdef _WIN32
 #include <rtc_base/win/scoped_com_initializer.h>
 #endif
 
-#include "sora/audio_device_module.h"
-#include "sora/camera_device_capturer.h"
-#include "sora/java_context.h"
-#include "sora/sora_client_context.h"
-#include "sora/sora_video_decoder_factory.h"
-#include "sora/sora_video_encoder_factory.h"
+// Sora C++ SDK
+#include <sora/boost_json_iwyu.h>
+#include <sora/sora_client_context.h>
+#include <sora/sora_signaling.h>
 
 struct SoraClientConfig {
   std::vector<std::string> signaling_urls;
@@ -103,8 +120,8 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
     RTC_LOG(LS_INFO) << "OnSwitched: " << text;
   }
 
-  void OnTrack(webrtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
-      override {}
+  void OnTrack(webrtc::scoped_refptr<webrtc::RtpTransceiverInterface>
+                   transceiver) override {}
   void OnRemoveTrack(
       webrtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override {}
 

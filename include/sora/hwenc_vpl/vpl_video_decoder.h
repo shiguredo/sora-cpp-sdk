@@ -2,7 +2,6 @@
 #define SORA_HWENC_VPL_VPL_VIDEO_DECODER_H_
 
 #include <memory>
-#include <optional>
 
 // WebRTC
 #include <api/video/video_codec_type.h>

@@ -1,5 +1,17 @@
 #include "sora/session_description.h"
 
+#include <memory>
+#include <string>
+#include <utility>
+
+// WebRTC
+#include <api/jsep.h>
+#include <api/make_ref_counted.h>
+#include <api/peer_connection_interface.h>
+#include <api/rtc_error.h>
+#include <api/scoped_refptr.h>
+#include <rtc_base/logging.h>
+
 namespace sora {
 
 webrtc::scoped_refptr<CreateSessionDescriptionThunk>

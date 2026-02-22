@@ -1,7 +1,27 @@
 #ifndef TEST_HELLO_H_
 #define TEST_HELLO_H_
 
-#include "sora/sora_client_context.h"
+#include <memory>
+#include <optional>
+#include <string>
+#include <vector>
+
+// Boost
+#include <boost/asio/io_context.hpp>
+
+// WebRTC
+#include <api/media_stream_interface.h>
+#include <api/peer_connection_interface.h>
+#include <api/rtp_parameters.h>
+#include <api/rtp_receiver_interface.h>
+#include <api/rtp_transceiver_interface.h>
+#include <api/scoped_refptr.h>
+
+// Sora C++ SDK
+#include <sora/renderer/ansi_renderer.h>
+#include <sora/renderer/sixel_renderer.h>
+#include <sora/sora_client_context.h>
+#include <sora/sora_signaling.h>
 
 struct HelloSoraConfig {
   std::vector<std::string> signaling_urls;
@@ -20,6 +40,14 @@ struct HelloSoraConfig {
   std::vector<sora::SoraSignalingConfig::DataChannel> data_channels;
   std::vector<sora::SoraSignalingConfig::ForwardingFilter> forwarding_filters;
   std::optional<webrtc::DegradationPreference> degradation_preference;
+
+  bool use_sixel = false;
+  int sixel_width = 640;
+  int sixel_height = 480;
+
+  bool use_ansi = false;
+  int ansi_width = 80;
+  int ansi_height = 40;
 };
 
 class HelloSora : public std::enable_shared_from_this<HelloSora>,
@@ -39,10 +67,10 @@ class HelloSora : public std::enable_shared_from_this<HelloSora>,
   void OnPush(std::string text) override {}
   void OnMessage(std::string label, std::string data) override {}
 
-  void OnTrack(webrtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
-      override {}
+  void OnTrack(webrtc::scoped_refptr<webrtc::RtpTransceiverInterface>
+                   transceiver) override;
   void OnRemoveTrack(
-      webrtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override {}
+      webrtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override;
 
   void OnDataChannel(std::string label) override {}
 
@@ -59,6 +87,8 @@ class HelloSora : public std::enable_shared_from_this<HelloSora>,
   webrtc::scoped_refptr<webrtc::VideoTrackInterface> video_track_;
   std::shared_ptr<sora::SoraSignaling> conn_;
   std::unique_ptr<boost::asio::io_context> ioc_;
+  std::unique_ptr<sora::SixelRenderer> sixel_renderer_;
+  std::unique_ptr<sora::AnsiRenderer> ansi_renderer_;
 };
 
 #endif

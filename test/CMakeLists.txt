@@ -28,19 +28,14 @@ find_package(Sora REQUIRED)
 find_package(Threads REQUIRED)
 find_package(Catch2)
 
-find_library(Blend2D_LIBRARY NAMES blend2d PATHS ${BLEND2D_ROOT_DIR}/lib)
-
 function (init_target target)
-  target_sources(${target} PRIVATE fake_video_capturer.cpp)
   if (WIN32)
     set_target_properties(${target} PROPERTIES CXX_STANDARD 20 C_STANDARD 20)
   else()
     set_target_properties(${target} PROPERTIES CXX_STANDARD 17 C_STANDARD 17)
   endif()
   set_target_properties(${target} PROPERTIES POSITION_INDEPENDENT_CODE ON)
-  target_compile_definitions(${target} PRIVATE BL_STATIC=1)
-  target_include_directories(${target} PRIVATE ${BLEND2D_ROOT_DIR}/include)
-  target_link_libraries(${target} PRIVATE Sora::sora ${Blend2D_LIBRARY})
+  target_link_libraries(${target} PRIVATE Sora::sora)
 
   if (USE_LIBCXX)
     target_compile_options(${target}
@@ -72,6 +67,7 @@ function (init_target target)
     set_target_properties(${target} PROPERTIES CXX_VISIBILITY_PRESET hidden)
   endif()
 
+  set_target_properties(${target} PROPERTIES BUILD_RPATH "\$ORIGIN")
 endfunction()
 
 # hello.exe を作る

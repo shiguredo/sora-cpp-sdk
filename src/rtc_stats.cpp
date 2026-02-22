@@ -1,5 +1,12 @@
 #include "sora/rtc_stats.h"
 
+#include <utility>
+
+// WebRTC
+#include <api/make_ref_counted.h>
+#include <api/scoped_refptr.h>
+#include <api/stats/rtc_stats_report.h>
+
 namespace sora {
 
 webrtc::scoped_refptr<RTCStatsCallback> RTCStatsCallback::Create(

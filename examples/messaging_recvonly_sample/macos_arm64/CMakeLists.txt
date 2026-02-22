@@ -30,6 +30,11 @@ set_target_properties(messaging_recvonly_sample PROPERTIES POSITION_INDEPENDENT_
 set_target_properties(messaging_recvonly_sample PROPERTIES CXX_VISIBILITY_PRESET hidden)
 target_sources(messaging_recvonly_sample PRIVATE ../src/messaging_recvonly_sample.cpp)
 
+target_compile_options(messaging_recvonly_sample
+  PRIVATE
+    "$<$<COMPILE_LANGUAGE:CXX>:-nostdinc++>"
+    "$<$<COMPILE_LANGUAGE:CXX>:-isystem${LIBCXX_INCLUDE_DIR}>"
+)
 target_include_directories(messaging_recvonly_sample PRIVATE ${CLI11_DIR}/include)
 target_link_libraries(messaging_recvonly_sample PRIVATE Sora::sora)
 target_compile_definitions(messaging_recvonly_sample PRIVATE CLI11_HAS_FILESYSTEM=0)
