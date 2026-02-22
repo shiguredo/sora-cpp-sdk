@@ -208,11 +208,20 @@ function(bundle_static_library target static_libs bundled_target)
       VERBATIM
       COMMENT "Bundling libs: ${static_libs} to $<TARGET_FILE:${target}>")
   elseif (APPLE)
-    add_custom_command(
-      COMMAND libtool -static -o ${bundled_tgt_full_name} "$<TARGET_FILE:${target}>" ${static_libs}
-      OUTPUT ${bundled_tgt_full_name}
-      VERBATIM
-      COMMENT "Bundling libs: ${static_libs} to $<TARGET_FILE:${target}>")
+    if (SORA_TARGET_OS STREQUAL "visionos")
+      # visionOS の場合は Release-xros ディレクトリを明示的に指定
+      add_custom_command(
+        COMMAND libtool -static -o ${bundled_tgt_full_name} "${CMAKE_BINARY_DIR}/Release-xros/${CMAKE_STATIC_LIBRARY_PREFIX}${target}${CMAKE_STATIC_LIBRARY_SUFFIX}" ${static_libs}
+        OUTPUT ${bundled_tgt_full_name}
+        VERBATIM
+        COMMENT "Bundling libs: ${static_libs} to Release-xros/${CMAKE_STATIC_LIBRARY_PREFIX}${target}${CMAKE_STATIC_LIBRARY_SUFFIX}")
+    else()
+      add_custom_command(
+        COMMAND libtool -static -o ${bundled_tgt_full_name} "$<TARGET_FILE:${target}>" ${static_libs}
+        OUTPUT ${bundled_tgt_full_name}
+        VERBATIM
+        COMMENT "Bundling libs: ${static_libs} to $<TARGET_FILE:${target}>")
+    endif()
   else ()
     file(WRITE  ${CMAKE_BINARY_DIR}/${bundled_target}.ar.in "CREATE ${bundled_tgt_full_name}\n" )
     file(APPEND ${CMAKE_BINARY_DIR}/${bundled_target}.ar.in "ADDLIB $<TARGET_FILE:${target}>\n")
