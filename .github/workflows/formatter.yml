@@ -3,11 +3,10 @@ name: formatter
 on:
   workflow_dispatch:
   push:
-    paths-ignore:
-      - "doc/**"
-      - "**.md"
-      - "LICENSE"
-      - "NOTICE"
+    paths:
+      - "src/**"
+      - "include/**"
+      - "examples/**"
 
 jobs:
   run-ubuntu:
@@ -29,21 +28,28 @@ jobs:
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
       TEST_MATRIX_NAME: ${{ matrix.platform.name }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Cache Dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: _install/${{ matrix.platform.name }}/release
           key: ${{ matrix.platform.name }}-${{ hashFiles('VERSION', 'DEPS') }}
           restore-keys: |
             ${{ matrix.platform.name }}-
       - name: Cache Dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: _build/${{ matrix.platform.name }}/release/clang-include-cleaner.json
           key: ${{ matrix.platform.name }}-${{ hashFiles('VERSION', 'DEPS') }}
           restore-keys: |
             ${{ matrix.platform.name }}-
+
+      - name: Get versions from DEPS
+        id: version
+        run: |
+          source DEPS
+          echo "apt_install_llvm_version=$APT_INSTALL_LLVM_VERSION" >> $GITHUB_OUTPUT
+
       - name: Install deps for ${{ matrix.platform.name }}
         if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
         run: |
@@ -56,16 +62,17 @@ jobs:
           # OpenGL
           sudo apt-get install -y libgl-dev
 
-          # clang-20
+          # clang と clang-format
           wget https://apt.llvm.org/llvm.sh
           chmod a+x llvm.sh
-          sudo ./llvm.sh 20
+          sudo ./llvm.sh ${{ steps.version.outputs.apt_install_llvm_version }}
+          sudo apt install clang-format-${{ steps.version.outputs.apt_install_llvm_version }}
       - run: python3 run.py build --disable-cuda --test ${{ matrix.platform.name }}
       - name: Build Examples
         run: |
           cd examples
           for app in sdl_sample sumomo messaging_recvonly_sample; do
-            python3 $app/${{ matrix.platform.name }}/run.py \
+            python3 $app/run.py build ${{ matrix.platform.name }} \
               --local-sora-cpp-sdk-dir .. \
               --local-sora-cpp-sdk-args=--disable-cuda \
               --install-dir `pwd`/../_install/${{ matrix.platform.name }}/release

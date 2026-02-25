@@ -11,6 +11,62 @@
 
 ## develop
 
+
+## 2026.1.2
+
+**リリース日**: 2026-02-11
+
+- [FIX] libcamera 0.7 で `Overwriting Request::controls() is not allowed` エラーが発生する問題を修正する
+  - `libcamerac_ControlList_copy` が `operator=` で ControlList を丸ごと上書きしていたため、Request の `infoMap` が置き換わり libcamera 0.7 の検証チェックに引っかかっていた
+  - `operator=` の代わりに `ControlList::merge()` を使い、Request の `infoMap` を保持したまま個別のコントロール値だけをコピーするように修正
+  - @voluntas
+
+## 2026.1.1
+
+**リリース日**: 2026-02-10
+
+- [FIX] Raspberry Pi OS 最新版の libcamera 0.7 に対応する
+  - @voluntas
+
+## 2026.1.0
+
+- [CHANGE] macOS x86_64 ターゲットを削除する
+  - @voluntas
+- [UPDATE] libwebrtc のバージョンを m144.7559.2.1 に上げる
+  - @torikizi
+- [UPDATE] CMake を 4.2.1 にあげる
+  - @torikizi
+- [UPDATE] Intel VPL を v2.16.0 にあげる
+  - @torikizi
+
+### misc
+
+- [UPDATE] Examples の DEPS を更新する
+  - WEBRTC_BUILD_VERSION を m144.7559.0.0 にあげる
+  - CMake を 4.2.1 にあげる
+  - SDL を 3.2.28 にあげる
+  - @torikizi
+
+## 2025.6.2
+
+**リリース日**: 2025-12-05
+
+- [FIX] Raspberry Pi OS 最新版の libcamera 0.6 に対応する
+  - @voluntas
+
+## 2025.6.1
+
+**リリース日**: 2025-11-26
+
+- [FIX] 正式採用を見送った `simulcast_rid_auto` を削除する
+  - @voluntas
+
+## 2025.6.0
+
+**リリース日**: 2025-11-26
+
+- [UPDATE] AMD AMF のバージョンを `v1.5.0` にあげる
+  - @voluntas
 - [UPDATE] CUDA のバージョンを `12.9.1-1` に上げる
   - CUDA コンパイルオプションに `D_ALLOW_UNSUPPORTED_LIBCPP` を追加する
   - CUDA コンパイルオプションの `cuda-gpu-arch` を `sm_35` から `sm_60` に変更する
@@ -20,15 +76,15 @@
   - @voluntas
 - [CHANGE] enum の `kNvidiaVideoCodecSdk` を `kNvidiaVideoCodec` に変更する
   - @voluntas
-- [CHANGE] liwebrtc のバージョンを m142.7444.2.0 に上げる
+- [CHANGE] libwebrtc のバージョンを m143.7499.1.0 に上げる
   - macOS, iOS が利用している clang, libc++ を Apple Clang のものから libwebrtc 管理下の Clang のものに変えたので破壊的変更となります
   - libwebrtc m141 で `rtc_config.crypto_options` の型が変更されたため、`emplace()` ではなく直接アクセスするよう修正
   - Windows で `CreateWindowsCoreAudioAudioDeviceModule` が `Environment` を受け取る API に変わったため、それに追従
   - libwebrtc m142 の変更に追従し `PeerConnectionFactory` のコンストラクタに `env` の引数を追加
   - libwebrtc m142 の変更に追従し `ScopedJavaLocalRef<jobject>(env, obj)` から `ScopedJavaLocalRef<jobject>::Adopt(env, obj)` を使うように変更
   - @melpon @torikizi @miosakuma
-- [UPDATE] CMake を 4.1.2 にあげる
-  - @torikizi
+- [UPDATE] CMake を 4.1.3 にあげる
+  - @torikizi @voluntas
 - [ADD] `raspberry-pi-os_armv8` 向けのビルドを追加
   - Momo からの移植
   - V4L2 M2M のエンコーダ/デコーダに対応
@@ -38,15 +94,49 @@
   - @melpon
 - [ADD] `sora::CameraDeviceCapturerConfig` に `use_libcamera`, `libcamera_native_frame_output`, `libcamera_controls` フィールドを追加
   - @melpon
+- [ADD] `simulcast_request_rid` に対応する
+  - @voluntas
+- [ADD] `simulcast_rid_auto` に対応する
+  - @voluntas
+- [ADD] `llvm.sh` でインストールする LLVM のバージョンを DEPS ファイルから指定可能にする
+  - @melpon
+- [FIX] Windows でオーディオデバイスを指定しなかった場合に録音・再生が動作しないのを修正する
+  - @melpon
+- [FIX] 接続直後にクラッシュすることがあったのを修正する
+  - 以下のシナリオでクラッシュすることがある
+    1. `GetStats()` 取得のコールバックで `ws_->WriteText()` を呼び出し書き込み開始 (非同期)
+    2. サーバーからの切断で `Clear()` 呼び出し（非同期）
+    3. `Clear()` 呼び出しでを完了して `ws_ = nullptr` を設定して `WebSocket` オブジェクトを破棄
+    4. `ws_->WriteText()` の書き込みが完了したが、`WebSocket` オブジェクトは既に破棄されているのでクラッシュ
+  - ラムダ式に `ws_` を含めるようにすることで、まだ完了していない非同期操作がある場合、 `ws_ = nullptr` の時点では破棄されないようにした
+  - また、`GetStats()` のコールバックを IO スレッドで実行していなかったせいでレースコンディションになる操作をしていたのを、ちゃんと IO スレッドで実行するようにした
+  - @melpon
 
 ### misc
 
+- [ADD] sumomo に `--list-devices` オプションを追加
+  - 利用可能なオーディオ入力/出力デバイスとビデオデバイスを一覧表示して終了する
+  - @voluntas
+- [ADD] examples の各サンプルに ubuntu-22.04_armv8 対応を追加する
+  - messaging_recvonly_sample, sdl_sample, sumomo の各サンプルに ubuntu-22.04_armv8 プラットフォームのビルド設定を追加
+  - multistrap/ubuntu-22.04_armv8.conf を追加
+  - @voluntas
+- [ADD] sumomo に `--fake-capture-device` オプションを追加
+  - フェイクの音声と映像デバイスを使用してテストパターンと無音を生成する
+  - 実際に音声や映像を送信するかは `--audio`/`--video` オプションに依存する
+  - @voluntas
+- [ADD] GitHub Actions に sumomo を利用した E2E テストを実行する `e2e-test.yml` を追加
+  - @voluntas
 - [ADD] sumomo に `--use-libcamera`, `--use-libcamera-native`, `--libcamera-control` オプションを追加
   - @melpon
 - [ADD] sumomo のエンコーダ/デコーダに指定できるエンジン名として `raspi_v4l2m2m` を追加
   - @melpon
 - [ADD] hello アプリに `use_sixel`, `sixel_width`, `sixel_height`, `use_ansi`, `ansi_width`, `ansi_height` を追加
   - @melpon
+- [ADD] E2E テストを追加
+  - pytest を使用した sumomo の E2E テスト環境を構築
+  - `e2e-test/` ディレクトリにテストケースとプロセス管理を追加
+  - @voluntas
 - [UPDATE] actions/download-artifact を v5 に上げる
   - @miosakuma
 - [UPDATE] examples/DEPS の CLI11 バージョンを v2.6.1 にあげる
@@ -59,6 +149,10 @@
   - AndroidManifest.xml の `android:configChanges` に `"orientation|screenSize|smallestScreenSize|screenLayout"` を設定する
   - @miosakuma
 - [FIX] GitHub Actions の build.yml で CUDA パッケージを ubuntu のバージョンに合わせるようにする
+  - @voluntas
+- [FIX] Raspberry Pi OS 向けのサンプルが artifact としてアップロードされていなかった問題を修正
+  - @voluntas
+- [FIX] sumomo で `--audio false` の時はトラックを生成しないように修正する
   - @voluntas
 
 ## 2025.5.1

@@ -7,10 +7,18 @@ on:
       - "**.md"
       - "LICENSE"
       - "NOTICE"
+      - ".github/workflows/e2e-test.yml"
+      - "e2e-test/**"
+    branches:
+      - "develop"
+      - "feature/**"
+    tags:
+      - "**"
   schedule:
     # UTC の 01:00 は JST だと 10:00 。
     # 1-5 で 月曜日から金曜日
     - cron: "0 1 * * 1-5"
+  workflow_dispatch:
 
 jobs:
   build-windows:
@@ -27,7 +35,7 @@ jobs:
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
       TEST_MATRIX_NAME: ${{ matrix.name }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: microsoft/setup-msbuild@v2
       - name: Env to output
         run: |
@@ -48,7 +56,7 @@ jobs:
       # （インストールする nvcc は解凍後で 100MB 程度なのでキャッシュ可能）
       - name: Cache CUDA ${{ steps.versions.outputs.cuda_version }}
         id: cache-cuda
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: _install\windows_x86_64\release\cuda
           key: windows-cuda-${{ steps.versions.outputs.cuda_version }}.v1
@@ -68,17 +76,17 @@ jobs:
           echo "boost_name=${BOOST_PACKAGE_NAME}" >> ${Env:GITHUB_OUTPUT}
         id: package_name
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ steps.package_name.outputs.name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.name }}
       - name: Upload Boost Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ steps.package_name.outputs.boost_name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.boost_name }}
       - name: Upload Environment
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.name }}.env
           path: _package/${{ matrix.name }}/release/sora.env
@@ -87,11 +95,11 @@ jobs:
           cd examples
           mkdir examples_${{ matrix.name }}
           foreach ($app in @('sdl_sample', 'sumomo', 'messaging_recvonly_sample')) {
-            python3 "$app\${{ matrix.name }}\run.py" --local-sora-cpp-sdk-dir ..
+            python3 "$app\run.py" build ${{ matrix.name }} --local-sora-cpp-sdk-dir ..
             cp "_build\${{ matrix.name }}\release\$app\Release\$app.exe" "examples_${{ matrix.name }}"
           }
       - name: Upload Examples Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: examples_${{ matrix.name }}
           path: examples/examples_${{ matrix.name }}
@@ -112,7 +120,7 @@ jobs:
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
       TEST_MATRIX_NAME: ${{ matrix.name }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Env to output
         run: |
           echo "user=`users`" >> $GITHUB_OUTPUT
@@ -126,17 +134,17 @@ jobs:
           echo "boost_name=${BOOST_PACKAGE_NAME}" >> $GITHUB_OUTPUT
         id: package_name
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ steps.package_name.outputs.name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.name }}
       - name: Upload Boost Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ steps.package_name.outputs.boost_name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.boost_name }}
       - name: Upload Environment
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.name }}.env
           path: _package/${{ matrix.name }}/release/sora.env
@@ -145,12 +153,12 @@ jobs:
           cd examples
           mkdir examples_${{ matrix.name }}
           for app in sdl_sample sumomo messaging_recvonly_sample; do
-            python3 $app/${{ matrix.name }}/run.py --local-sora-cpp-sdk-dir ..
+            python3 $app/run.py build ${{ matrix.name }} --local-sora-cpp-sdk-dir ..
             cp _build/${{ matrix.name }}/release/$app/$app examples_${{ matrix.name }}
           done
         if: matrix.name == 'macos_arm64'
       - name: Upload Examples Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: examples_${{ matrix.name }}
           path: examples/examples_${{ matrix.name }}
@@ -192,7 +200,7 @@ jobs:
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
       TEST_MATRIX_NAME: ${{ matrix.platform.name }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Disk cleanup
         run: |
           set -x
@@ -226,26 +234,27 @@ jobs:
         run: |
           sudo apt-get install -y libgl-dev
 
-      - name: Get CUDA version from DEPS
+      - name: Get versions from DEPS
         if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
-        id: cuda-version
+        id: version
         run: |
-          CUDA_VERSION=$(grep '^CUDA_VERSION=' DEPS | cut -d= -f2)
+          source DEPS
           echo "cuda_version=$CUDA_VERSION" >> $GITHUB_OUTPUT
+          echo "apt_install_llvm_version=$APT_INSTALL_LLVM_VERSION" >> $GITHUB_OUTPUT
 
       - uses: shiguredo/github-actions/.github/actions/setup-cuda-toolkit@main
         if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
         id: cuda
         with:
-          cuda_version: ${{ steps.cuda-version.outputs.cuda_version }}
+          cuda_version: ${{ steps.version.outputs.cuda_version }}
           platform: ${{ matrix.platform.runs-on }}
 
-      - name: Install clang-20 for ${{ matrix.platform.name }}
+      - name: Install clang-${{ steps.version.outputs.apt_install_llvm_version }} for ${{ matrix.platform.name }}
         if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
         run: |
           wget https://apt.llvm.org/llvm.sh
           chmod a+x llvm.sh
-          sudo ./llvm.sh 20
+          sudo ./llvm.sh ${{ steps.version.outputs.apt_install_llvm_version }}
       - name: Install deps for ${{ matrix.platform.name }}
         if: |
           matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'armv8' ||
@@ -262,7 +271,7 @@ jobs:
       # JDK を指定しないとデフォルトの JDK 11 で動作するため指定する
       - name: Setup JDK 17
         if: matrix.platform.os == 'android'
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: "17"
           distribution: "temurin"
@@ -277,27 +286,27 @@ jobs:
           echo "boost_name=${BOOST_PACKAGE_NAME}" >> $GITHUB_OUTPUT
         id: package_name
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ steps.package_name.outputs.name }}
           path: _package/${{ matrix.platform.name }}/release/${{ steps.package_name.outputs.name }}
       - name: Upload Boost Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ steps.package_name.outputs.boost_name }}
           path: _package/${{ matrix.platform.name }}/release/${{ steps.package_name.outputs.boost_name }}
       - name: Upload Environment
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.platform.name }}.env
           path: _package/${{ matrix.platform.name }}/release/sora.env
       - name: Build Examples
-        if: matrix.platform.os == 'ubuntu' && matrix.platform.name != 'ubuntu-22.04_armv8'
+        if: matrix.platform.os == 'ubuntu'
         run: |
           cd examples
           mkdir examples_${{ matrix.platform.name }}
           for app in sdl_sample sumomo messaging_recvonly_sample; do
-            python3 $app/${{ matrix.platform.name }}/run.py --local-sora-cpp-sdk-dir ..
+            python3 $app/run.py build ${{ matrix.platform.name }} --local-sora-cpp-sdk-dir ..
             cp _build/${{ matrix.platform.name }}/release/$app/$app examples_${{ matrix.platform.name }}
           done
       - name: Build Examples (Raspberry Pi OS)
@@ -306,19 +315,26 @@ jobs:
           cd examples
           mkdir examples_${{ matrix.platform.name }}
           for app in sumomo; do
-            python3 $app/${{ matrix.platform.name }}/run.py --local-sora-cpp-sdk-dir ..
+            python3 $app/run.py build ${{ matrix.platform.name }} --local-sora-cpp-sdk-dir ..
             cp _build/${{ matrix.platform.name }}/release/$app/$app examples_${{ matrix.platform.name }}
             # raspberry-pi-os は libcamerac.so も必要
             cp _build/${{ matrix.platform.name }}/release/$app/libcamerac.so examples_${{ matrix.platform.name }}
           done
       - name: Upload Examples Artifact
-        if: |
-          (matrix.platform.os == 'ubuntu' && matrix.platform.name != 'ubuntu-22.04_armv8') ||
-          (matrix.platform.os == 'raspberry-pi-os')
-        uses: actions/upload-artifact@v4
+        if: matrix.platform.os == 'ubuntu' || matrix.platform.os == 'raspberry-pi-os'
+        uses: actions/upload-artifact@v6
         with:
           name: examples_${{ matrix.platform.name }}
           path: examples/examples_${{ matrix.platform.name }}
+
+  # e2e-test:
+  #   name: E2E Test
+  #   needs:
+  #     - build-windows
+  #     - build-macos
+  #     - build-ubuntu
+  #   uses: ./.github/workflows/e2e-test.yml
+  #   secrets: inherit
 
   create-release:
     name: Create Release
@@ -327,9 +343,10 @@ jobs:
       - build-windows
       - build-macos
       - build-ubuntu
+      # - e2e-test
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: ./.github/actions/download
         with:
           platform: windows_x86_64
@@ -395,10 +412,10 @@ jobs:
         working-directory: ${{ github.workspace }}/examples
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Build Example
         run: |
-          python3 ${{ matrix.example }}/windows_x86_64/run.py
+          python3 ${{ matrix.example }}/run.py build windows_x86_64
       - name: Package Binary
         run: |
           # アップロード用のディレクトリを作成する
@@ -409,7 +426,7 @@ jobs:
           # 例: sumomo_windows_x86_64.zip
           Compress-Archive -Path ${{ matrix.example }}_windows_x86_64 -DestinationPath ${{ matrix.example }}_windows_x86_64.zip
       - name: Upload Examples Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.example }}_windows_x86_64.zip
           path: examples/${{ matrix.example }}_windows_x86_64.zip
@@ -425,10 +442,10 @@ jobs:
         working-directory: ${{ github.workspace }}/examples
     runs-on: macos-14
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Build Example
         run: |
-          python3 ${{ matrix.example }}/macos_arm64/run.py
+          python3 ${{ matrix.example }}/run.py build macos_arm64
       - name: Package Binary
         run: |
           # アップロード用のディレクトリを作成する
@@ -438,7 +455,7 @@ jobs:
           # 例: sumomo_macos_arm64.tar.gz
           tar -czf ${{ matrix.example }}_macos_arm64.tar.gz ${{ matrix.example }}_macos_arm64
       - name: Upload Examples Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.example }}_macos_arm64.tar.gz
           path: examples/${{ matrix.example }}_macos_arm64.tar.gz
@@ -464,7 +481,7 @@ jobs:
         working-directory: ${{ github.workspace }}/examples
     runs-on: ${{ matrix.platform.runs-on }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Install deps
         run: |
           sudo apt-get update
@@ -484,7 +501,7 @@ jobs:
           sudo sed -e 's/Apt::Get::AllowUnauthenticated=true/Apt::Get::AllowUnauthenticated=true";\n$config_str .= " -o Acquire::AllowInsecureRepositories=true/' -i /usr/sbin/multistrap
       - name: Build Example
         run: |
-          python3 ${{ matrix.example }}/${{ matrix.platform.name }}/run.py
+          python3 ${{ matrix.example }}/run.py build ${{ matrix.platform.name }}
       - name: Package Binary
         run: |
           # アップロード用のディレクトリを作成する
@@ -501,7 +518,7 @@ jobs:
           # 例: sumomo_ubuntu-24.04_x86_64.tar.gz
           tar -czf ${{ matrix.example }}_${{ matrix.platform.name }}.tar.gz ${{ matrix.example }}_${{ matrix.platform.name }}
       - name: Upload Examples Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.example }}_${{ matrix.platform.name }}.tar.gz
           path: examples/${{ matrix.example }}_${{ matrix.platform.name }}.tar.gz
@@ -525,8 +542,8 @@ jobs:
           - raspberry-pi-os_armv8.tar.gz
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/download-artifact@v5
+      - uses: actions/checkout@v6
+      - uses: actions/download-artifact@v7
         with:
           name: ${{ matrix.example }}_${{ matrix.archive }}
       - name: Release Examples
@@ -544,6 +561,7 @@ jobs:
       - build-windows
       - build-macos
       - build-ubuntu
+      # - e2e-test
       - create-release
       - build-windows-examples
       - build-macos-examples

@@ -151,30 +151,6 @@
             "intelliSenseMode": "linux-clang-x64"
         },
         {
-            "name": "macos_x86_64 Release",
-            "includePath": [
-                "${workspaceFolder}/_install/macos_x86_64/release/boost/include",
-                "${workspaceFolder}/_install/macos_x86_64/release/webrtc/include",
-                "${workspaceFolder}/_install/macos_x86_64/release/webrtc/include/third_party/abseil-cpp",
-                "${workspaceFolder}/_install/macos_x86_64/release/webrtc/include/third_party/boringssl/src/include",
-                "${workspaceFolder}/_install/macos_x86_64/release/webrtc/include/third_party/libyuv/include",
-                "${workspaceFolder}/_install/macos_x86_64/release/webrtc/include/third_party/zlib",
-                "${workspaceFolder}/_install/macos_x86_64/release/webrtc/include/sdk/objc",
-                "${workspaceFolder}/_install/macos_x86_64/release/blend2d/include",
-                "${workspaceFolder}/_build/macos_x86_64/release/sora",
-                "${workspaceFolder}/include"
-            ],
-            "defines": [
-                "WEBRTC_POSIX",
-                "WEBRTC_MAC",
-                "OPENSSL_IS_BORINGSSL",
-                "RTC_ENABLE_H265"
-            ],
-            "cStandard": "gnu17",
-            "cppStandard": "gnu++17",
-            "intelliSenseMode": "linux-clang-x64"
-        },
-        {
             "name": "Windows Release",
             "includePath": [
                 "${workspaceFolder}/_install/windows_x86_64/release/boost/include",

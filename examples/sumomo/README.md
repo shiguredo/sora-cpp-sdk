@@ -45,7 +45,7 @@ cd sora-cpp-sdk/examples
 ##### ビルド
 
 ```powershell
-> python3 sumomo\windows_x86_64\run.py
+> python3 sumomo\run.py build windows_x86_64
 ```
 
 成功した場合、`_build\windows_x86_64\release\sumomo\Release` に `sumomo.exe` が作成されます。
@@ -66,7 +66,7 @@ cd sora-cpp-sdk/examples
 ##### ビルド
 
 ```shell
-python3 sumomo/macos_arm64/run.py
+python3 sumomo/run.py build macos_arm64
 ```
 
 成功した場合、`_build/macos_arm64/release/sumomo` に `sumomo` が作成されます。
@@ -89,7 +89,7 @@ sudo apt install build-essential libxext-dev libx11-dev libgl-dev pkg-config pyt
 ##### ビルド
 
 ```shell
-python3 sumomo/ubuntu-22.04_x86_64/run.py
+python3 sumomo/run.py build ubuntu-22.04_x86_64
 ```
 
 成功した場合、以下のファイルが作成されます。`_build/ubuntu-22.04_x86_64/release/sumomo` に `sumomo` が作成されます。
@@ -112,7 +112,7 @@ sudo apt install build-essential libxext-dev libx11-dev libgl-dev pkg-config pyt
 ##### ビルド
 
 ```shell
-python3 sumomo/ubuntu-24.04_x86_64/run.py
+python3 sumomo/run.py build ubuntu-24.04_x86_64
 ```
 
 成功した場合、以下のファイルが作成されます。`_build/ubuntu-24.04_x86_64/release/sumomo` に `sumomo` が作成されます。
@@ -125,7 +125,7 @@ _build/ubuntu-24.04_x86_64/release/sumomo/
 ##### Sora C++ SDK を CUDA 抜きでビルドしつつ Sumomo をビルドする
 
 ```shell
-python3 examples/sumomo/ubuntu-24.04_x86_64/run.py --local-sora-cpp-sdk-dir . --local-sora-cpp-sdk-args='--disable-cuda'
+python3 examples/sumomo/run.py build ubuntu-24.04_x86_64 --local-sora-cpp-sdk-dir . --local-sora-cpp-sdk-args='--disable-cuda'
 ```
 
 ## 実行する

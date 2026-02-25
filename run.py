@@ -100,8 +100,9 @@ def get_common_cmake_args(
             "ubuntu-22.04_x86_64",
             "ubuntu-24.04_x86_64",
         ):
-            args.append("-DCMAKE_C_COMPILER=clang-20")
-            args.append("-DCMAKE_CXX_COMPILER=clang++-20")
+            apt_install_llvm_version = deps["APT_INSTALL_LLVM_VERSION"]
+            args.append(f"-DCMAKE_C_COMPILER=clang-{apt_install_llvm_version}")
+            args.append(f"-DCMAKE_CXX_COMPILER=clang++-{apt_install_llvm_version}")
         else:
             sysroot = os.path.join(install_dir, "rootfs")
             args.append(
@@ -565,9 +566,10 @@ def install_deps(
                 ]
                 install_vpl_args["cmake_args"].append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
             if platform.target.os == "ubuntu":
+                apt_install_llvm_version = deps["APT_INSTALL_LLVM_VERSION"]
                 cmake_args = []
-                cmake_args.append("-DCMAKE_C_COMPILER=clang-20")
-                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-20")
+                cmake_args.append(f"-DCMAKE_C_COMPILER=clang-{apt_install_llvm_version}")
+                cmake_args.append(f"-DCMAKE_CXX_COMPILER=clang++-{apt_install_llvm_version}")
                 path = cmake_path(os.path.join(webrtc_info.libcxx_dir, "include"))
                 cmake_args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
                 flags = [
@@ -696,7 +698,6 @@ def check_version_file():
 
 AVAILABLE_TARGETS = [
     "windows_x86_64",
-    "macos_x86_64",
     "macos_arm64",
     "ubuntu-22.04_x86_64",
     "ubuntu-24.04_x86_64",
@@ -714,8 +715,6 @@ WINDOWS_SDK_VERSION = "10.0.20348.0"
 def _get_platform(target: str) -> Platform:
     if target == "windows_x86_64":
         platform = Platform("windows", get_windows_osver(), "x86_64")
-    elif target == "macos_x86_64":
-        platform = Platform("macos", get_macos_osver(), "x86_64")
     elif target == "macos_arm64":
         platform = Platform("macos", get_macos_osver(), "arm64")
     elif target == "ubuntu-22.04_x86_64":
@@ -801,6 +800,7 @@ def _build(
             deps = read_version_file("DEPS")
             sora_cpp_sdk_commit = cmdcap(["git", "rev-parse", "HEAD"])
             android_native_api_level = deps["ANDROID_NATIVE_API_LEVEL"]
+            apt_install_llvm_version = deps["APT_INSTALL_LLVM_VERSION"]
         cmake_args.append(f"-DWEBRTC_INCLUDE_DIR={cmake_path(webrtc_info.webrtc_include_dir)}")
         cmake_args.append(f"-DWEBRTC_LIBRARY_DIR={cmake_path(webrtc_info.webrtc_library_dir)}")
         cmake_args.append(f"-DSORA_CPP_SDK_VERSION={sora_cpp_sdk_version}")
@@ -818,8 +818,8 @@ def _build(
                 "ubuntu-22.04_x86_64",
                 "ubuntu-24.04_x86_64",
             ):
-                cmake_args.append("-DCMAKE_C_COMPILER=clang-20")
-                cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-20")
+                cmake_args.append(f"-DCMAKE_C_COMPILER=clang-{apt_install_llvm_version}")
+                cmake_args.append(f"-DCMAKE_CXX_COMPILER=clang++-{apt_install_llvm_version}")
             else:
                 sysroot = os.path.join(install_dir, "rootfs")
                 cmake_args.append(
@@ -1111,8 +1111,10 @@ def _build(
                         "ubuntu-22.04_x86_64",
                         "ubuntu-24.04_x86_64",
                     ):
-                        cmake_args.append("-DCMAKE_C_COMPILER=clang-20")
-                        cmake_args.append("-DCMAKE_CXX_COMPILER=clang++-20")
+                        cmake_args.append(f"-DCMAKE_C_COMPILER=clang-{apt_install_llvm_version}")
+                        cmake_args.append(
+                            f"-DCMAKE_CXX_COMPILER=clang++-{apt_install_llvm_version}"
+                        )
                     else:
                         sysroot = os.path.join(install_dir, "rootfs")
                         cmake_args.append(
@@ -1236,12 +1238,12 @@ def _build(
 
 
 def _find_clang_binary(name: str) -> Optional[str]:
-    if shutil.which(name) is not None:
-        return name
+    for n in range(50, 14, -1):
+        if shutil.which(f"{name}-{n}") is not None:
+            return f"{name}-{n}"
     else:
-        for n in range(50, 14, -1):
-            if shutil.which(f"{name}-{n}") is not None:
-                return f"{name}-{n}"
+        if shutil.which(name) is not None:
+            return name
     return None
 
 
