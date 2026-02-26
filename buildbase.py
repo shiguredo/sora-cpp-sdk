@@ -924,7 +924,9 @@ def build_and_install_boost(
                 VISIONOS_BUILD_TARGETS = [("arm64", "xros")]
 
             for arch, sdk in VISIONOS_BUILD_TARGETS:
-                clangpp = cmdcap(["xcodebuild", "-find", "clang++"])
+                # xcode の clang++ を利用する
+                # ただし cxx が指定されてた場合はそちらを優先する
+                clangpp = cmdcap(["xcodebuild", "-find", "clang++"]) if len(cxx) == 0 else cxx
                 sysroot = cmdcap(["xcrun", "--sdk", sdk, "--show-sdk-path"])
                 boost_arch = "arm"
                 if visionos_simulator:

@@ -160,6 +160,12 @@ def get_common_cmake_args(
         args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
     if platform.target.os == "visionos":
         args += ["-G", "Xcode"]
+        args.append(
+            f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}"
+        )
+        args.append(
+            f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}"
+        )
         args.append("-DCMAKE_SYSTEM_NAME=visionOS")
         args.append("-DCMAKE_OSX_ARCHITECTURES=arm64")
         args.append(
@@ -167,6 +173,10 @@ def get_common_cmake_args(
         )
         args.append("-DCMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH=NO")
         args.append("-DBLEND2D_NO_JIT=ON")
+        path = cmake_path(os.path.join(webrtc_info.libcxx_dir, "include"))
+        args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
+        cxxflags = ["-nostdinc++", "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE"]
+        args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
         if platform.target.extra == "simulator":
             args.append("-DCMAKE_OSX_SYSROOT=xrsimulator")
         else:
@@ -431,6 +441,7 @@ def install_deps(
         elif platform.target.os == "visionos":
             install_boost_args["target_os"] = "visionos"
             install_boost_args["toolset"] = "clang"
+            install_boost_args["cxx"] = os.path.join(webrtc_info.clang_dir, "bin", "clang++")
             install_boost_args["architecture"] = "arm"
 
             # Simulator と Device で異なるターゲットフラグを使用
@@ -450,6 +461,12 @@ def install_deps(
                 "-stdlib=libc++",
                 "-target",
                 target_flag,
+                "-D_LIBCPP_ABI_NAMESPACE=Cr",
+                "-D_LIBCPP_ABI_VERSION=2",
+                "-D_LIBCPP_DISABLE_AVAILABILITY",
+                "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE",
+                "-nostdinc++",
+                f"-isystem{os.path.join(webrtc_info.libcxx_dir, 'include')}",
             ]
             install_boost_args["visibility"] = "hidden"
         elif platform.target.os == "android":
@@ -904,12 +921,22 @@ def _build(
             )
         if platform.target.os == "visionos":
             cmake_args += ["-G", "Xcode"]
+            cmake_args.append(
+                f"-DCMAKE_C_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang'))}"
+            )
+            cmake_args.append(
+                f"-DCMAKE_CXX_COMPILER={cmake_path(os.path.join(webrtc_info.clang_dir, 'bin', 'clang++'))}"
+            )
             cmake_args.append("-DCMAKE_SYSTEM_NAME=visionOS")
             cmake_args.append("-DCMAKE_OSX_ARCHITECTURES=arm64")
             cmake_args.append(
                 f"-DCMAKE_OSX_DEPLOYMENT_TARGET={webrtc_deps.get('VISIONOS_DEPLOYMENT_TARGET', '2.0')}"
             )
             cmake_args.append("-DCMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH=NO")
+            cmake_args.append("-DUSE_LIBCXX=ON")
+            cmake_args.append(
+                f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}"
+            )
             if platform.target.extra == "simulator":
                 cmake_args.append("-DCMAKE_OSX_SYSROOT=xrsimulator")
             else:

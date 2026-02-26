@@ -126,7 +126,6 @@ jobs:
           echo "user=`users`" >> $GITHUB_OUTPUT
         id: env
       - run: python3 run.py build --test --run-e2e-test --package ${{ matrix.name }}
-        if: matrix.name != 'visionos'
       - name: Get package name
         run: |
           source _package/${{ matrix.name }}/release/sora.env
