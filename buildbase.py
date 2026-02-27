@@ -940,7 +940,6 @@ def build_and_install_boost(
                         : visionos \
                         : {clangpp} -arch {arch} -isysroot {sysroot} \
                           -target {target_flag} \
-                          -stdlib=libc++ \
                           -fvisibility=hidden \
                         : <striper> <root>{sysroot} \
                         ; \
