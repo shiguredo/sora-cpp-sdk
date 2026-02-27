@@ -11,6 +11,23 @@
 
 ## develop
 
+- [UPDATE] visionOS ブランチを m144 にアップデートする
+  - iOS の変更に追従し、visionOS ビルドで libwebrtc 管理下の `clang/libc++` 設定を利用するように修正する
+  - CMake の visionOS ターゲットに iOS と同等の `libc++` 関連定義を追加する
+  - Boost の visionOS ビルドで `cxx` 指定（libwebrtc の clang）を優先して利用するように修正する
+  - GitHub Actions の `build-macos` で、visionOS は `--package` のみ実行し、`--test --run-e2e-test` を実行しないように修正する
+  - @torikizi
+- [UPDATE] visionOS ブランチを m142 にアップデートする
+  - `m142` への追従不足を修正する
+  - device_video_capturer は visionOS では使用しないように除外する
+  - visionOS ビルド時に `CMakeLists.txt` で `Release-xros` ディレクトリを明示的に指定する
+  - @torikizi
+
+### misc
+
+- [CHANGE] CI を Apple 系のみ実行するようにする
+  - GitHub Actions の `build.yml` で、macOS と iOS と visionOS のみ実行するように変更する
+  - @torikizi
 
 ## 2026.1.2
 
