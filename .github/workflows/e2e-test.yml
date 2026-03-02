@@ -29,7 +29,7 @@ jobs:
             runs-on: ubuntu-22.04-arm
           - name: macos_arm64
             platform-name: macos_arm64
-            runs-on: macos-14
+            runs-on: macos-26
           - name: windows_x86_64
             platform-name: windows_x86_64
             runs-on: windows-2025

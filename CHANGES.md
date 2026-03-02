@@ -16,6 +16,7 @@
   - CMake の visionOS ターゲットに iOS と同等の `libc++` 関連定義を追加する
   - Boost の visionOS ビルドで `cxx` 指定（libwebrtc の clang）を優先して利用するように修正する
   - GitHub Actions の `build-macos` で、visionOS は `--package` のみ実行し、`--test --run-e2e-test` を実行しないように修正する
+  - build.yml の macOS ジョブを 26 で実行するように変更する
   - @torikizi
 - [UPDATE] visionOS ブランチを m142 にアップデートする
   - `m142` への追従不足を修正する
