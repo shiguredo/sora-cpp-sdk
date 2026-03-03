@@ -31,6 +31,7 @@
   - @torikizi
 - [CHANGE] visionOS ブランチでは formatter.yml の push トリガーをコメントアウトする
   - formatter は Ubuntu ランナー上での Ubuntu バイナリ実行を前提としているため、visionOS ブランチでは自動実行しない
+  - develop との互換性を維持するため formatter.yml は削除しない
   - @torikizi
 
 ## 2026.1.2
