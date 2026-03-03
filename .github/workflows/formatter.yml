@@ -2,7 +2,7 @@ name: formatter
 
 on:
   workflow_dispatch:
-  # formatter は Ubuntu バイナリでの動作を前提としているため、visionOS では自動実行しない
+  # formatter は Ubuntu ランナー上での Ubuntu バイナリ実行を前提としているため、visionOS ブランチでは自動実行しない
   #push:
   #  paths:
   #    - "src/**"
