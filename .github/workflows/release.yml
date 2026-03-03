@@ -455,7 +455,7 @@ jobs:
         run: echo "OPENH264_PATH=${{ steps.openh264.outputs.openh264_path }}" >> $GITHUB_ENV
 
       - name: Download sumomo artifact
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: examples_${{ matrix.platform.platform-name }}
           path: ./sumomo_binary
@@ -698,7 +698,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: ${{ matrix.example }}_${{ matrix.archive }}
       - name: Release Examples
