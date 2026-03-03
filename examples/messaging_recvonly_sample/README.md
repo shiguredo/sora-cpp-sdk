@@ -44,7 +44,7 @@ cd sora-cpp-sdk/examples
 ##### ビルド
 
 ```powershell
-> python3 messaging_recvonly_sample\windows_x86_64\run.py
+> python3 run.py build windows_x86_64
 ```
 
 成功した場合、`_build\windows_x86_64\release\messaging_recvonly_sample\Release` に `messaging_recvonly_sample.exe` が作成されます。
@@ -65,7 +65,7 @@ cd sora-cpp-sdk/examples
 ##### ビルド
 
 ```shell
-python3 messaging_recvonly_sample/macos_arm64/run.py
+python3 run.py build macos_arm64
 ```
 
 成功した場合、`_build/macos_arm64/release/messaging_recvonly_sample` に `messaging_recvonly_sample` が作成されます。
@@ -88,7 +88,7 @@ sudo apt install build-essential libx11-dev pkg-config python3
 ##### ビルド
 
 ```shell
-python3 messaging_recvonly_sample/ubuntu-22.04_x86_64/run.py
+python3 run.py build ubuntu-22.04_x86_64
 ```
 
 成功した場合、以下のファイルが作成されます。`_build/ubuntu-22.04_x86_64/release/messaging_recvonly_sample` に `messaging_recvonly_sample` が作成されます。
@@ -111,7 +111,7 @@ sudo apt install build-essential libx11-dev pkg-config python3
 ##### ビルド
 
 ```shell
-python3 messaging_recvonly_sample/ubuntu-24.04_x86_64/run.py
+python3 run.py build ubuntu-24.04_x86_64
 ```
 
 成功した場合、以下のファイルが作成されます。`_build/ubuntu-24.04_x86_64/release/messaging_recvonly_sample` に `messaging_recvonly_sample` が作成されます。

@@ -1,9 +1,12 @@
 #ifndef SORA_WEBSOCKET_H_
 #define SORA_WEBSOCKET_H_
 
+#include <cstddef>
 #include <functional>
 #include <memory>
 #include <optional>
+#include <string>
+#include <vector>
 
 // Boost
 #include <boost/asio/deadline_timer.hpp>
@@ -14,8 +17,13 @@
 #include <boost/asio/strand.hpp>
 #include <boost/beast/core/flat_buffer.hpp>
 #include <boost/beast/core/multi_buffer.hpp>
-#include <boost/beast/websocket/ssl.hpp>
+#include <boost/beast/http/empty_body.hpp>
+#include <boost/beast/http/message_fwd.hpp>
+#include <boost/beast/http/parser_fwd.hpp>
+#include <boost/beast/http/string_body_fwd.hpp>
+#include <boost/beast/websocket/rfc6455.hpp>
 #include <boost/beast/websocket/stream.hpp>
+#include <boost/system/detail/error_code.hpp>
 
 #include "url_parts.h"
 #include "version.h"

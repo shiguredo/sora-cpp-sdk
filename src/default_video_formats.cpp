@@ -1,13 +1,15 @@
 #include "default_video_formats.h"
 
+#include <vector>
+
 // WebRTC
+#include <api/rtp_parameters.h>
+#include <api/video/video_codec_type.h>
+#include <api/video_codecs/h264_profile_level_id.h>
 #include <api/video_codecs/sdp_video_format.h>
-#include <api/video_codecs/video_codec.h>
-#include <api/video_codecs/vp9_profile.h>
 #include <media/base/media_constants.h>
 #include <modules/video_coding/codecs/av1/av1_svc_config.h>
 #include <modules/video_coding/codecs/h264/include/h264.h>
-#include <modules/video_coding/codecs/vp8/include/vp8.h>
 #include <modules/video_coding/codecs/vp9/include/vp9.h>
 
 namespace sora {

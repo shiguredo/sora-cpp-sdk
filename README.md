@@ -22,11 +22,10 @@ Please read <https://github.com/shiguredo/oss/blob/master/README.en.md> before u
 - 各プラットフォームで利用可能な HWA への対応
   - [Intel VPL](https://github.com/intel/libvpl)
     - VP9 / AV1 / H.264 / H.265
-      - VP9 はエンコードのみの対応です
-  - [NVIDIA Video Codec SDK](https://developer.nvidia.com/video-codec-sdk)
+  - [NVIDIA Video Codec](https://developer.nvidia.com/video-codec-sdk)
     - VP8 / VP9 / AV1 / H.264 / H.265
       - VP8 / VP9 はチップセットが対応していないため、デコードのみの対応です
-  - [NVIDIA JetPack SDK](https://developer.nvidia.com/embedded/jetpack) (JetPack 6)
+  - [NVIDIA JetPack](https://developer.nvidia.com/embedded/jetpack) (JetPack 6)
     - VP9 / AV1 / H.264 / H.265
   - [AMD AMF](https://github.com/GPUOpen-LibrariesAndSDKs/AMF)
     - VP8 / VP9 / AV1 / H.264 / H.265
@@ -36,14 +35,17 @@ Please read <https://github.com/shiguredo/oss/blob/master/README.en.md> before u
     - H.264 / H.265
   - Google Android HWA
     - VP8 / VP9 / H.264 / H.265
+  - Raspberry Pi HWA V4L2 M2M
+    - H.264
 - [Cisco OpenH264](https://www.openh264.org/) への対応
   - Ubuntu x86_64 / Ubuntu arm64 / macOS arm64 / Windows x86_64
+
+> [!CAUTION]  
+> AMD AMF はドライバーが不安定なため、現在非推奨です。
 
 ## ライブラリのバイナリ提供について
 
 以下からダウンロードが可能です。
-
-_hololens2 は無視してください_
 
 <https://github.com/shiguredo/sora-cpp-sdk/releases>
 
@@ -59,13 +61,17 @@ _hololens2 は無視してください_
 
 - Windows 10.1809 x86_64 以降
 - macOS 14 arm64 以降
-- Ubuntu 22.04 x86_64
 - Ubuntu 24.04 x86_64
-- Ubuntu 24.04 arm64
+- Ubuntu 22.04 x86_64
 - Android 7 arm64 以降
 - iOS 14 arm64 以降
 - visionOS 2.0 以降
+- Raspberry Pi OS bookworm (64bit)
 - Ubuntu 22.04 ARMv8 Jetson (JetPack 6.0 以降)
+  - Jetson AGX Orin
+  - Jetson Orin NX
+    - 動作未検証です
+- Ubuntu 24.04 ARMv8 Jetson (JetPack 6.0 以降)
   - Jetson AGX Orin
   - Jetson Orin NX
     - 動作未検証です
@@ -97,7 +103,6 @@ Sora C++ SDK のメンテナンスポリシーにはプライオリティがあ�
 
 - NVIDIA Jetson JetPack 5 対応
 - NVIDIA Jetson JetPack 6 Jetson Orin Nano 対応
-- Raspberry Pi OS (64bit) arm64 対応
 - Windows arm64 対応
 
 ## サポートについて
@@ -148,7 +153,6 @@ limitations under the License.
 ## NVIDIA Video Codec SDK
 
 <https://docs.nvidia.com/video-technologies/video-codec-sdk/13.0/index.html>
-
 
 <https://docs.nvidia.com/video-technologies/video-codec-sdk/13.0/license/index.html>
 

@@ -1,7 +1,13 @@
 #include "sora/sora_peer_connection_factory.h"
 
+#include <utility>
+
 // WebRTC
 #include <api/environment/environment_factory.h>
+#include <api/make_ref_counted.h>
+#include <api/peer_connection_interface.h>
+#include <api/scoped_refptr.h>
+#include <pc/connection_context.h>
 #include <pc/peer_connection_factory.h>
 #include <pc/peer_connection_factory_proxy.h>
 
@@ -22,7 +28,9 @@ class PeerConnectionFactoryWithContext : public webrtc::PeerConnectionFactory {
       webrtc::scoped_refptr<webrtc::ConnectionContext> context,
       webrtc::PeerConnectionFactoryDependencies* dependencies)
       : conn_context_(context),
-        webrtc::PeerConnectionFactory(context, dependencies) {}
+        webrtc::PeerConnectionFactory(webrtc::CreateEnvironment(),
+                                      context,
+                                      dependencies) {}
 
   static webrtc::scoped_refptr<PeerConnectionFactoryWithContext> Create(
       webrtc::PeerConnectionFactoryDependencies dependencies) {

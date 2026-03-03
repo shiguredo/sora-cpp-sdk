@@ -53,7 +53,7 @@
                 "${workspaceFolder}/_install/ubuntu-24.04_x86_64/release/amf/amf",
                 "${workspaceFolder}/_install/ubuntu-24.04_x86_64/release/blend2d/include",
                 "${workspaceFolder}/examples/_install/ubuntu-24.04_x86_64/release/cli11/include",
-                "${workspaceFolder}/examples/_install/ubuntu-24.04_x86_64/release/sdl2/include",
+                "${workspaceFolder}/examples/_install/ubuntu-24.04_x86_64/release/sdl3/include",
                 "${workspaceFolder}/_build/ubuntu-24.04_x86_64/release/sora",
                 "${workspaceFolder}/third_party/NvCodec/include",
                 "${workspaceFolder}/third_party/NvCodec/NvCodec",
@@ -93,7 +93,7 @@
                 "${workspaceFolder}/_install/ubuntu-24.04_x86_64/debug/amf/amf",
                 "${workspaceFolder}/_install/ubuntu-24.04_x86_64/debug/blend2d/include",
                 "${workspaceFolder}/examples/_install/ubuntu-24.04_x86_64/debug/cli11/include",
-                "${workspaceFolder}/examples/_install/ubuntu-24.04_x86_64/debug/sdl2/include",
+                "${workspaceFolder}/examples/_install/ubuntu-24.04_x86_64/debug/sdl3/include",
                 "${workspaceFolder}/_build/ubuntu-24.04_x86_64/debug/sora",
                 "${workspaceFolder}/third_party/NvCodec/include",
                 "${workspaceFolder}/third_party/NvCodec/NvCodec",
@@ -146,30 +146,6 @@
             ],
             "compilerPath": "${workspaceFolder}/_install/android/release/llvm/clang/bin/clang++",
             "compilerArgs": ["-nostdinc++"],
-            "cStandard": "gnu17",
-            "cppStandard": "gnu++17",
-            "intelliSenseMode": "linux-clang-x64"
-        },
-        {
-            "name": "macos_x86_64 Release",
-            "includePath": [
-                "${workspaceFolder}/_install/macos_x86_64/release/boost/include",
-                "${workspaceFolder}/_install/macos_x86_64/release/webrtc/include",
-                "${workspaceFolder}/_install/macos_x86_64/release/webrtc/include/third_party/abseil-cpp",
-                "${workspaceFolder}/_install/macos_x86_64/release/webrtc/include/third_party/boringssl/src/include",
-                "${workspaceFolder}/_install/macos_x86_64/release/webrtc/include/third_party/libyuv/include",
-                "${workspaceFolder}/_install/macos_x86_64/release/webrtc/include/third_party/zlib",
-                "${workspaceFolder}/_install/macos_x86_64/release/webrtc/include/sdk/objc",
-                "${workspaceFolder}/_install/macos_x86_64/release/blend2d/include",
-                "${workspaceFolder}/_build/macos_x86_64/release/sora",
-                "${workspaceFolder}/include"
-            ],
-            "defines": [
-                "WEBRTC_POSIX",
-                "WEBRTC_MAC",
-                "OPENSSL_IS_BORINGSSL",
-                "RTC_ENABLE_H265"
-            ],
             "cStandard": "gnu17",
             "cppStandard": "gnu++17",
             "intelliSenseMode": "linux-clang-x64"

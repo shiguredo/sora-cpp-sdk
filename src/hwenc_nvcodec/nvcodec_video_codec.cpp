@@ -1,12 +1,16 @@
 #include "sora/hwenc_nvcodec/nvcodec_video_codec.h"
 
-#include <iostream>
+#include <memory>
+#include <string>
 
+// WebRTC
+#include <api/video/video_codec_type.h>
+
+#include "nvcodec_video_codec_cuda.h"
+#include "sora/cuda_context.h"
 #include "sora/hwenc_nvcodec/nvcodec_video_decoder.h"
 #include "sora/hwenc_nvcodec/nvcodec_video_encoder.h"
-
-#include "../cuda_context_cuda.h"
-#include "nvcodec_video_codec_cuda.h"
+#include "sora/sora_video_codec.h"
 
 #if defined(_WIN32)
 #include <d3d11.h>
@@ -58,7 +62,7 @@ sora::VideoCodecCapability::Parameters GetParameters(
 VideoCodecCapability::Engine GetNvCodecVideoCodecCapability(
     std::shared_ptr<CudaContext> context) {
   VideoCodecCapability::Engine engine(
-      VideoCodecImplementation::kNvidiaVideoCodecSdk);
+      VideoCodecImplementation::kNvidiaVideoCodec);
   engine.parameters = GetParameters(context);
 
   auto add = [&engine, &context](CudaVideoCodec type,

@@ -1,10 +1,16 @@
 #ifndef SORA_CAMERA_DEVICE_CAPTURER_H_
 #define SORA_CAMERA_DEVICE_CAPTURER_H_
 
+#include <functional>
+#include <memory>
 #include <string>
+#include <utility>
+#include <vector>
 
 // WebRTC
 #include <api/media_stream_interface.h>
+#include <api/scoped_refptr.h>
+#include <api/video/video_frame.h>
 #include <rtc_base/thread.h>
 
 #include "sora/cuda_context.h"
@@ -33,6 +39,11 @@ struct CameraDeviceCapturerConfig {
   void* jni_env = nullptr;
   void* application_context = nullptr;
   webrtc::Thread* signaling_thread = nullptr;
+
+  // Raspberry Pi OS の場合のみ利用可能
+  bool use_libcamera = false;
+  bool libcamera_native_frame_output = false;
+  std::vector<std::pair<std::string, std::string>> libcamera_controls;
 };
 
 // カメラデバイスを使ったキャプチャラを生成する。

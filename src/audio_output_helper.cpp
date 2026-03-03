@@ -1,5 +1,7 @@
 #include "sora/audio_output_helper.h"
 
+#include <memory>
+
 // WebRTC
 #include <rtc_base/logging.h>
 

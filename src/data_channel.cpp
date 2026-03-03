@@ -1,5 +1,25 @@
 #include "sora/data_channel.h"
 
+#include <cstdint>
+#include <functional>
+#include <memory>
+#include <string>
+#include <utility>
+
+// Boost
+#include <boost/asio/error.hpp>
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/post.hpp>
+#include <boost/date_time/posix_time/posix_time_duration.hpp>
+#include <boost/system/detail/errc.hpp>
+#include <boost/system/detail/error_code.hpp>
+#include <boost/system/errc.hpp>
+
+// WebRTC
+#include <api/data_channel_interface.h>
+#include <api/scoped_refptr.h>
+#include <rtc_base/logging.h>
+
 namespace sora {
 
 void DataChannel::Thunk::OnStateChange() {

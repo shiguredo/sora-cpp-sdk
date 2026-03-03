@@ -1,12 +1,17 @@
 #ifndef SORA_SORA_CLIENT_CONTEXT_H_
 #define SORA_SORA_CLIENT_CONTEXT_H_
 
+#include <functional>
+#include <memory>
+#include <optional>
+#include <string>
+
 // WebRTC
 #include <api/peer_connection_interface.h>
-#include <media/engine/webrtc_media_engine.h>
+#include <api/scoped_refptr.h>
 #include <pc/connection_context.h>
+#include <rtc_base/thread.h>
 
-#include "sora/sora_signaling.h"
 #include "sora/sora_video_codec_factory.h"
 
 namespace sora {

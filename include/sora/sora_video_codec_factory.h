@@ -1,7 +1,14 @@
 #ifndef SORA_SORA_VIDEO_CODEC_FACTORY_H_
 #define SORA_SORA_VIDEO_CODEC_FACTORY_H_
 
+#include <functional>
 #include <memory>
+#include <optional>
+
+// WebRTC
+#include <api/video/video_codec_type.h>
+#include <api/video_codecs/video_decoder.h>
+#include <api/video_codecs/video_encoder.h>
 
 #include "sora/sora_video_codec.h"
 #include "sora/sora_video_decoder_factory.h"

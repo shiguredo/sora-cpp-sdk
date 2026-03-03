@@ -1,9 +1,11 @@
 #ifndef SORA_AUDIO_DEVICE_MODULE_H_
 #define SORA_AUDIO_DEVICE_MODULE_H_
 
+// WebRTC
+#include <api/audio/audio_device.h>
+#include <api/environment/environment.h>
 #include <api/environment/environment_factory.h>
-#include <api/task_queue/task_queue_factory.h>
-#include <modules/audio_device/include/audio_device.h>
+#include <api/scoped_refptr.h>
 
 namespace sora {
 

@@ -11,3 +11,17 @@
 /test/android/app/src/main/jniLibs
 
 xcuserdata/
+
+# claude
+CLAUDE.local.md
+/.claude
+
+# sumomo
+.env*
+!.env.template
+
+# python
+.venv
+.mypy_cache
+__pycache__
+.pytest_cache

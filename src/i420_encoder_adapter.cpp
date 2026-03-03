@@ -1,6 +1,15 @@
 #include "sora/i420_encoder_adapter.h"
 
-#include <rtc_base/logging.h>
+#include <cstdint>
+#include <memory>
+#include <vector>
+
+#include <api/fec_controller_override.h>
+#include <api/video/video_frame.h>
+#include <api/video/video_frame_buffer.h>
+#include <api/video/video_frame_type.h>
+#include <api/video_codecs/video_codec.h>
+#include <api/video_codecs/video_encoder.h>
 
 namespace sora {
 

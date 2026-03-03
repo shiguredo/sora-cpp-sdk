@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
- 
- #include "sora/mac/mac_audio_output_helper.h"
+
+#include "sora/mac/mac_audio_output_helper.h"
 
 // WebRTC
 #include <rtc_base/logging.h>
@@ -19,21 +19,23 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface SoraRTCAudioSessionDelegateAdapter : NSObject <RTC_OBJC_TYPE (RTCAudioSessionDelegate)>
+@interface SoraRTCAudioSessionDelegateAdapter
+    : NSObject <RTC_OBJC_TYPE (RTCAudioSessionDelegate)>
 
 - (instancetype)init NS_UNAVAILABLE;
 
-- (instancetype)initWithObserver:(sora::AudioChangeRouteObserver *)observer NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithObserver:(sora::AudioChangeRouteObserver*)observer
+    NS_DESIGNATED_INITIALIZER;
 
 @end
 
 NS_ASSUME_NONNULL_END
 
 @implementation SoraRTCAudioSessionDelegateAdapter {
-  sora::AudioChangeRouteObserver *_observer;
+  sora::AudioChangeRouteObserver* _observer;
 }
 
-- (instancetype)initWithObserver:(sora::AudioChangeRouteObserver *)observer {
+- (instancetype)initWithObserver:(sora::AudioChangeRouteObserver*)observer {
   RTC_DCHECK(observer);
   if (self = [super init]) {
     _observer = observer;
@@ -41,7 +43,8 @@ NS_ASSUME_NONNULL_END
   return self;
 }
 
-- (void)audioSessionDidBeginInterruption:(RTC_OBJC_TYPE(RTCAudioSession) *)session {
+- (void)audioSessionDidBeginInterruption:
+    (RTC_OBJC_TYPE(RTCAudioSession) *)session {
 }
 
 - (void)audioSessionDidEndInterruption:(RTC_OBJC_TYPE(RTCAudioSession) *)session
@@ -50,7 +53,8 @@ NS_ASSUME_NONNULL_END
 
 - (void)audioSessionDidChangeRoute:(RTC_OBJC_TYPE(RTCAudioSession) *)session
                             reason:(AVAudioSessionRouteChangeReason)reason
-                     previousRoute:(AVAudioSessionRouteDescription *)previousRoute {
+                     previousRoute:
+                         (AVAudioSessionRouteDescription*)previousRoute {
   // WebRTC の内部で RouteChange とみなされる reason をそのまま拾うこととした
   switch (reason) {
     case AVAudioSessionRouteChangeReasonUnknown:
@@ -76,7 +80,8 @@ NS_ASSUME_NONNULL_END
   }
 }
 
-- (void)audioSessionMediaServerTerminated:(RTC_OBJC_TYPE(RTCAudioSession) *)session {
+- (void)audioSessionMediaServerTerminated:
+    (RTC_OBJC_TYPE(RTCAudioSession) *)session {
 }
 
 - (void)audioSessionMediaServerReset:(RTC_OBJC_TYPE(RTCAudioSession) *)session {
@@ -86,10 +91,12 @@ NS_ASSUME_NONNULL_END
     didChangeCanPlayOrRecord:(BOOL)canPlayOrRecord {
 }
 
-- (void)audioSessionDidStartPlayOrRecord:(RTC_OBJC_TYPE(RTCAudioSession) *)session {
+- (void)audioSessionDidStartPlayOrRecord:
+    (RTC_OBJC_TYPE(RTCAudioSession) *)session {
 }
 
-- (void)audioSessionDidStopPlayOrRecord:(RTC_OBJC_TYPE(RTCAudioSession) *)session {
+- (void)audioSessionDidStopPlayOrRecord:
+    (RTC_OBJC_TYPE(RTCAudioSession) *)session {
 }
 
 - (void)audioSession:(RTC_OBJC_TYPE(RTCAudioSession) *)audioSession
@@ -102,9 +109,11 @@ namespace sora {
 
 MacAudioOutputHelper::MacAudioOutputHelper(AudioChangeRouteObserver* observer) {
   if (observer != nullptr) {
-    adapter_ = [[SoraRTCAudioSessionDelegateAdapter alloc] initWithObserver:observer];
+    adapter_ =
+        [[SoraRTCAudioSessionDelegateAdapter alloc] initWithObserver:observer];
 
-    RTC_OBJC_TYPE(RTCAudioSession)* session = [RTC_OBJC_TYPE(RTCAudioSession) sharedInstance];
+    RTC_OBJC_TYPE(RTCAudioSession)* session =
+        [RTC_OBJC_TYPE(RTCAudioSession) sharedInstance];
     [session addDelegate:adapter_];
   } else {
     adapter_ = nil;
@@ -113,17 +122,21 @@ MacAudioOutputHelper::MacAudioOutputHelper(AudioChangeRouteObserver* observer) {
 
 MacAudioOutputHelper::~MacAudioOutputHelper() {
   if (adapter_ != nil) {
-    RTC_OBJC_TYPE(RTCAudioSession)* session = [RTC_OBJC_TYPE(RTCAudioSession) sharedInstance];
+    RTC_OBJC_TYPE(RTCAudioSession)* session =
+        [RTC_OBJC_TYPE(RTCAudioSession) sharedInstance];
     [session removeDelegate:adapter_];
     adapter_ = nil;
   }
 }
 
 bool MacAudioOutputHelper::IsHandsfree() {
-  RTC_OBJC_TYPE(RTCAudioSession)* session = [RTC_OBJC_TYPE(RTCAudioSession) sharedInstance];
+  RTC_OBJC_TYPE(RTCAudioSession)* session =
+      [RTC_OBJC_TYPE(RTCAudioSession) sharedInstance];
   // 現在の Output, Input ルートが 2 つ以上ある状態にはならないため、 1 つ目のみ検証する
-  AVAudioSessionPortDescription *output = session.currentRoute.outputs.firstObject;
-  AVAudioSessionPortDescription *input = session.currentRoute.inputs.firstObject;
+  AVAudioSessionPortDescription* output =
+      session.currentRoute.outputs.firstObject;
+  AVAudioSessionPortDescription* input =
+      session.currentRoute.inputs.firstObject;
   // AVAudioSessionPortOverrideSpeaker を設定した状態かを確認する
   return [output.portType isEqualToString:AVAudioSessionPortBuiltInSpeaker] &&
          [input.portType isEqualToString:AVAudioSessionPortBuiltInMic];
@@ -138,18 +151,20 @@ void MacAudioOutputHelper::SetHandsfree(bool enable) {
     // OverrideSpeaker と書いてあるがマイクも内蔵マイクに切り替える
     portOverride = AVAudioSessionPortOverrideSpeaker;
   }
-  [RTC_OBJC_TYPE(RTCDispatcher) dispatchAsyncOnType:RTCDispatcherTypeAudioSession
-                                              block:^{
-                                                RTC_OBJC_TYPE(RTCAudioSession) *session =
-                                                    [RTC_OBJC_TYPE(RTCAudioSession) sharedInstance];
-                                                [session lockForConfiguration];
-                                                NSError *error = nil;
-                                                if (![session overrideOutputAudioPort:portOverride
-                                                                               error:&error]) {
-                                                  RTC_LOG(LS_ERROR) << "Failed to set Handsfree " << enable;
-                                                }
-                                                [session unlockForConfiguration];
-                                              }];
+  [RTC_OBJC_TYPE(RTCDispatcher)
+      dispatchAsyncOnType:RTCDispatcherTypeAudioSession
+                    block:^{
+                      RTC_OBJC_TYPE(RTCAudioSession)* session =
+                          [RTC_OBJC_TYPE(RTCAudioSession) sharedInstance];
+                      [session lockForConfiguration];
+                      NSError* error = nil;
+                      if (![session overrideOutputAudioPort:portOverride
+                                                      error:&error]) {
+                        RTC_LOG(LS_ERROR)
+                            << "Failed to set Handsfree " << enable;
+                      }
+                      [session unlockForConfiguration];
+                    }];
 }
 
-}
+}  // namespace sora

@@ -11,13 +11,25 @@
 #include "sora/device_video_capturer.h"
 
 #include <stdint.h>
-
+#include <algorithm>
+#include <cctype>
+#include <cstddef>
+#include <exception>
+#include <iterator>
 #include <memory>
+#include <string>
 
 // WebRTC
+#include <api/make_ref_counted.h>
+#include <api/scoped_refptr.h>
+#include <api/video/video_frame.h>
+#include <common_video/libyuv/include/webrtc_libyuv.h>
+#include <modules/video_capture/video_capture.h>
 #include <modules/video_capture/video_capture_factory.h>
 #include <rtc_base/checks.h>
 #include <rtc_base/logging.h>
+
+#include "sora/scalable_track_source.h"
 
 namespace sora {
 

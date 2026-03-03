@@ -1,7 +1,6 @@
 #ifndef SORA_OPEN_H264_VIDEO_CODEC_H_
 #define SORA_OPEN_H264_VIDEO_CODEC_H_
 
-#include <memory>
 #include <optional>
 #include <string>
 

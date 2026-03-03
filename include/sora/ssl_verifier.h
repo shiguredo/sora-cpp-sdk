@@ -6,6 +6,7 @@
 
 // openssl
 #include <openssl/ssl.h>
+#include <openssl/stack.h>
 
 namespace sora {
 

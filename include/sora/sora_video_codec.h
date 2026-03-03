@@ -1,20 +1,18 @@
 #ifndef SORA_SORA_VIDEO_CODEC_H_
 #define SORA_SORA_VIDEO_CODEC_H_
 
-// WebRTC
-#include <api/video/video_codec_type.h>
-
-// Boost
-#include <boost/json.hpp>
-
+#include <functional>
 #include <memory>
 #include <optional>
 #include <string>
 #include <vector>
 
+// WebRTC
+#include <api/video/video_codec_type.h>
+
 #include "amf_context.h"
+#include "boost_json_iwyu.h"
 #include "cuda_context.h"
-#include "vpl_session.h"
 
 namespace webrtc {
 
@@ -33,8 +31,9 @@ enum class VideoCodecImplementation {
   kInternal,
   kCiscoOpenH264,
   kIntelVpl,
-  kNvidiaVideoCodecSdk,
+  kNvidiaVideoCodec,
   kAmdAmf,
+  kRaspiV4L2M2M,
   // 連番になってて微妙だが、ユーザー側でカスタムエンコーダ/デコーダを実現しつつ、現在の
   // capability, preference の機能に乗せるならこのようにするのが一番分かりやすい
   kCustom_1 = 100,

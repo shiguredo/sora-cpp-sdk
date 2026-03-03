@@ -1,6 +1,11 @@
 #include "sora/open_h264_video_decoder.h"
 
+#include <array>
+#include <cstdint>
 #include <memory>
+#include <optional>
+#include <string>
+#include <utility>
 
 #if defined(_WIN32)
 // Windows
@@ -11,18 +16,24 @@
 #endif
 
 // WebRTC
+#include <api/scoped_refptr.h>
+#include <api/video/encoded_image.h>
 #include <api/video/i420_buffer.h>
+#include <api/video/video_frame.h>
+#include <api/video_codecs/sdp_video_format.h>
+#include <api/video_codecs/video_decoder.h>
 #include <common_video/h264/h264_bitstream_parser.h>
 #include <modules/video_coding/codecs/h264/include/h264.h>
 #include <modules/video_coding/include/video_error_codes.h>
 #include <rtc_base/logging.h>
-#include <third_party/libyuv/include/libyuv.h>
+
+// libyuv
+#include <libyuv/convert.h>
 
 // OpenH264
 #include <wels/codec_api.h>
 #include <wels/codec_app_def.h>
 #include <wels/codec_def.h>
-#include <wels/codec_ver.h>
 
 class ISVCDecoder;
 

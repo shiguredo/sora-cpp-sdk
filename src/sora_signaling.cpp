@@ -1,19 +1,58 @@
 #include "sora/sora_signaling.h"
 
+#include <algorithm>
+#include <cassert>
+#include <cstddef>
+#include <exception>
+#include <functional>
+#include <memory>
+#include <optional>
+#include <random>
+#include <string>
+#include <utility>
+#include <vector>
+
+// Boost
+#include <boost/asio/error.hpp>
+#include <boost/asio/post.hpp>
+#include <boost/beast/websocket/error.hpp>
+#include <boost/beast/websocket/rfc6455.hpp>
+#include <boost/core/ignore_unused.hpp>
+#include <boost/date_time/posix_time/posix_time_duration.hpp>
+#include <boost/system/detail/errc.hpp>
+#include <boost/system/detail/error_code.hpp>
+#include <boost/system/errc.hpp>
+
 // WebRTC
+#include <api/data_channel_interface.h>
 #include <api/environment/environment_factory.h>
+#include <api/jsep.h>
+#include <api/media_types.h>
+#include <api/peer_connection_interface.h>
+#include <api/rtc_error.h>
+#include <api/rtp_parameters.h>
+#include <api/rtp_receiver_interface.h>
+#include <api/rtp_sender_interface.h>
+#include <api/rtp_transceiver_interface.h>
+#include <api/scoped_refptr.h>
+#include <api/stats/rtc_stats_report.h>
 #include <p2p/client/basic_port_allocator.h>
 #include <pc/rtp_media_utils.h>
-#include <pc/session_description.h>
+#include <rtc_base/copy_on_write_buffer.h>
 #include <rtc_base/crypt_string_revive.h>
+#include <rtc_base/logging.h>
 #include <rtc_base/proxy_info_revive.h>
+#include <rtc_base/socket_address.h>
+#include <rtc_base/ssl_certificate.h>
 
+#include "sora/boost_json_iwyu.h"
 #include "sora/data_channel.h"
 #include "sora/rtc_ssl_verifier.h"
 #include "sora/rtc_stats.h"
 #include "sora/session_description.h"
 #include "sora/url_parts.h"
 #include "sora/version.h"
+#include "sora/websocket.h"
 #include "sora/zlib_helper.h"
 
 namespace sora {
@@ -125,15 +164,15 @@ void SoraSignaling::Redirect(std::string url) {
 
   state_ = State::Redirecting;
 
-  ws_->Read([self = shared_from_this(), url](boost::system::error_code ec,
-                                             std::size_t bytes_transferred,
-                                             std::string text) {
+  ws_->Read([self = shared_from_this(), ws = ws_, url](
+                boost::system::error_code ec, std::size_t bytes_transferred,
+                std::string text) {
     // リダイレクト中に Disconnect が呼ばれた
     if (self->state_ != State::Redirecting) {
       return;
     }
 
-    auto on_close = [self, url](boost::system::error_code ec) {
+    auto on_close = [self, ws, url](boost::system::error_code ec) {
       if (self->state_ != State::Redirecting) {
         return;
       }
@@ -168,15 +207,15 @@ void SoraSignaling::Redirect(std::string url) {
         return;
       }
 
-      std::shared_ptr<Websocket> ws;
+      std::shared_ptr<Websocket> new_ws;
       if (ssl) {
         if (self->config_.proxy_url.empty()) {
-          ws.reset(
+          new_ws.reset(
               new Websocket(Websocket::ssl_tag(), *self->config_.io_context,
                             self->config_.insecure, self->config_.client_cert,
                             self->config_.client_key, self->config_.ca_cert));
         } else {
-          ws.reset(new Websocket(
+          new_ws.reset(new Websocket(
               Websocket::https_proxy_tag(), *self->config_.io_context,
               self->config_.insecure, self->config_.client_cert,
               self->config_.client_key, self->config_.ca_cert,
@@ -184,10 +223,10 @@ void SoraSignaling::Redirect(std::string url) {
               self->config_.proxy_password));
         }
       } else {
-        ws.reset(new Websocket(*self->config_.io_context));
+        new_ws.reset(new Websocket(*self->config_.io_context));
       }
-      ws->Connect(url, std::bind(&SoraSignaling::OnRedirect, self,
-                                 std::placeholders::_1, url, ws));
+      new_ws->Connect(url, std::bind(&SoraSignaling::OnRedirect, self,
+                                     std::placeholders::_1, url, new_ws));
     };
 
     // type: redirect の後、サーバは切断してるはずなので、正常に処理が終わるのはおかしい
@@ -230,9 +269,9 @@ void SoraSignaling::OnRedirect(boost::system::error_code ec,
 }
 
 void SoraSignaling::DoRead() {
-  ws_->Read([self = shared_from_this()](boost::system::error_code ec,
-                                        std::size_t bytes_transferred,
-                                        std::string text) {
+  ws_->Read([self = shared_from_this(), ws = ws_](boost::system::error_code ec,
+                                                  std::size_t bytes_transferred,
+                                                  std::string text) {
     self->OnRead(ec, bytes_transferred, std::move(text));
   });
 }
@@ -273,6 +312,10 @@ void SoraSignaling::DoSendConnect(bool redirect) {
 
   if (!config_.simulcast_rid.empty()) {
     m["simulcast_rid"] = config_.simulcast_rid;
+  }
+
+  if (config_.simulcast_request_rid) {
+    m["simulcast_request_rid"] = *config_.simulcast_request_rid;
   }
 
   if (config_.spotlight) {
@@ -447,9 +490,9 @@ void SoraSignaling::DoSendConnect(bool redirect) {
 
 void SoraSignaling::DoSendPong() {
   boost::json::value m = {{"type", "pong"}};
-  ws_->WriteText(
-      boost::json::serialize(m),
-      [self = shared_from_this()](boost::system::error_code, size_t) {});
+  ws_->WriteText(boost::json::serialize(m),
+                 [self = shared_from_this(), ws = ws_](
+                     boost::system::error_code, size_t) {});
 }
 
 void SoraSignaling::DoSendPong(
@@ -461,7 +504,7 @@ void SoraSignaling::DoSendPong(
     SendDataChannel("stats", str);
   } else if (ws_) {
     std::string str = R"({"type":"pong","stats":)" + stats + "}";
-    ws_->WriteText(std::move(str), [self = shared_from_this()](
+    ws_->WriteText(std::move(str), [self = shared_from_this(), ws = ws_](
                                        boost::system::error_code, size_t) {});
   }
 }
@@ -475,9 +518,9 @@ void SoraSignaling::DoSendUpdate(const std::string& sdp, std::string type) {
     SendOnSignalingMessage(SoraSignalingType::DATACHANNEL,
                            SoraSignalingDirection::SENT, std::move(text));
   } else if (ws_) {
-    WsWriteSignaling(
-        std::move(text),
-        [self = shared_from_this()](boost::system::error_code, size_t) {});
+    WsWriteSignaling(std::move(text),
+                     [self = shared_from_this(), ws = ws_](
+                         boost::system::error_code, size_t) {});
   }
 }
 
@@ -524,15 +567,21 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
 
   rtc_config.servers = ice_servers;
 
-  // macOS のサイマルキャスト時、なぜか無限に解像度が落ちていくので、
-  // それを回避するために cpu_adaptation を無効にする。
+  // cpu_adaptation の設定
+  if (config_.cpu_adaptation.has_value()) {
+    rtc_config.set_cpu_adaptation(config_.cpu_adaptation.value());
+  } else {
+    // macOS のサイマルキャスト時、なぜか無限に解像度が落ちていくので、
+    // それを回避するために cpu_adaptation を無効にする。
 #if defined(__APPLE__)
-  if (offer_config_.simulcast) {
-    rtc_config.set_cpu_adaptation(false);
-  }
+    if (offer_config_.simulcast) {
+      rtc_config.set_cpu_adaptation(false);
+    }
 #endif
+  }
 
   rtc_config.sdp_semantics = webrtc::SdpSemantics::kUnifiedPlan;
+  rtc_config.crypto_options.srtp.enable_gcm_crypto_suites = true;
   webrtc::PeerConnectionDependencies dependencies(this);
 
   // WebRTC の SSL 接続の検証は自前のルート証明書(rtc_base/ssl_roots.h)でやっていて、
@@ -1141,11 +1190,12 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
               [self = shared_from_this()](
                   const webrtc::scoped_refptr<const webrtc::RTCStatsReport>&
                       report) {
-                if (self->state_ != State::Connected) {
-                  return;
-                }
-
-                self->DoSendPong(report);
+                boost::asio::post(*self->config_.io_context, [self, report]() {
+                  if (self->state_ != State::Connected) {
+                    return;
+                  }
+                  self->DoSendPong(report);
+                });
               })
               .get());
     } else {
@@ -1675,6 +1725,11 @@ void SoraSignaling::OnMessage(
               SessionDescription::CreateAnswer(
                   self->pc_.get(),
                   [self](webrtc::SessionDescriptionInterface* desc) {
+                    if (self->config_.degradation_preference) {
+                      self->SetDegradationPreference(
+                          self->video_mid_,
+                          *self->config_.degradation_preference);
+                    }
                     std::string sdp;
                     desc->ToString(&sdp);
                     boost::asio::post(*self->config_.io_context, [self, sdp]() {
@@ -1720,10 +1775,12 @@ void SoraSignaling::OnMessage(
               [self = shared_from_this()](
                   const webrtc::scoped_refptr<const webrtc::RTCStatsReport>&
                       report) {
-                if (self->state_ != State::Connected) {
-                  return;
-                }
-                self->DoSendPong(report);
+                boost::asio::post(*self->config_.io_context, [self, report]() {
+                  if (self->state_ != State::Connected) {
+                    return;
+                  }
+                  self->DoSendPong(report);
+                });
               })
               .get());
     }

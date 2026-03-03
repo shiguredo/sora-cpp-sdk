@@ -1,6 +1,8 @@
 #ifndef SORA_HWENC_VPL_VPL_VIDEO_CODEC_H_
 #define SORA_HWENC_VPL_VPL_VIDEO_CODEC_H_
 
+#include <memory>
+
 #include "sora/sora_video_codec.h"
 #include "sora/vpl_session.h"
 

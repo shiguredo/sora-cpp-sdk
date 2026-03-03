@@ -1,15 +1,26 @@
 #include "sora/camera_device_capturer.h"
 
-#if defined(__APPLE__) && !defined(SORA_CPP_SDK_VISIONOS)
+// WebRTC
+#include <api/media_stream_interface.h>
+#include <api/scoped_refptr.h>
+
+#if defined(__APPLE__)
 #include "sora/mac/mac_capturer.h"
 #elif defined(SORA_CPP_SDK_ANDROID)
 #include "sora/android/android_capturer.h"
-#elif defined(SORA_CPP_SDK_UBUNTU) && defined(USE_NVCODEC_ENCODER)
+#elif (defined(SORA_CPP_SDK_UBUNTU_2004) ||  \
+       defined(SORA_CPP_SDK_UBUNTU_2204)) && \
+    defined(USE_NVCODEC_ENCODER)
 #include "sora/hwenc_nvcodec/nvcodec_v4l2_capturer.h"
 #elif defined(__linux__)
 #include "sora/v4l2/v4l2_video_capturer.h"
 #else
+#if !defined(SORA_CPP_SDK_VISIONOS)
 #include "sora/device_video_capturer.h"
+#endif
+#endif
+#if defined(USE_V4L2_ENCODER)
+#include "sora/hwenc_v4l2/libcamera_capturer.h"
 #endif
 
 namespace sora {
@@ -56,8 +67,21 @@ CreateCameraDeviceCapturer(const CameraDeviceCapturerConfig& config) {
   v4l2_config.framerate = config.fps;
   v4l2_config.force_i420 = config.force_i420;
   v4l2_config.use_native = config.use_native;
-  return sora::V4L2VideoCapturer::Create(v4l2_config);
+#if defined(USE_V4L2_ENCODER)
+  if (config.use_libcamera) {
+    sora::LibcameraCapturerConfig libcamera_config = v4l2_config;
+    libcamera_config.native_frame_output = config.libcamera_native_frame_output;
+    libcamera_config.controls = config.libcamera_controls;
+    return sora::LibcameraCapturer::Create(libcamera_config);
+  } else {
+    return sora::V4L2VideoCapturer::Create(v4l2_config);
+  }
 #else
+  return sora::V4L2VideoCapturer::Create(v4l2_config);
+#endif
+
+#else
+#if !defined(SORA_CPP_SDK_VISIONOS)
   DeviceVideoCapturerConfig c;
   c.on_frame = config.on_frame;
   c.width = config.width;
@@ -65,6 +89,10 @@ CreateCameraDeviceCapturer(const CameraDeviceCapturerConfig& config) {
   c.target_fps = config.fps;
   c.device_name = config.device_name;
   return sora::DeviceVideoCapturer::Create(c);
+#else
+  // visionOS ではデバイスカメラキャプチャはサポートしない
+  return nullptr;
+#endif
 #endif
 }
 
