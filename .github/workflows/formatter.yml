@@ -2,11 +2,11 @@ name: formatter
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - "src/**"
-      - "include/**"
-      - "examples/**"
+  #push:
+  #  paths:
+  #    - "src/**"
+  #    - "include/**"
+  #    - "examples/**"
 
 jobs:
   run-ubuntu:

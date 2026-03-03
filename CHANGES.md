@@ -29,6 +29,8 @@
 - [CHANGE] CI を Apple 系のみ実行するようにする
   - GitHub Actions の `build.yml` で、macOS と iOS と visionOS のみ実行するように変更する
   - @torikizi
+- [CHANGE] Apple のみビルド対象であるため、formatter.yml はコメントアウトする
+  - @torikizi
 
 ## 2026.1.2
 
