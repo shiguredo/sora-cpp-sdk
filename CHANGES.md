@@ -11,6 +11,10 @@
 
 ## develop
 
+## 2026.1.2-apple-vision-pro.0
+
+**リリース日**: 2026-03-03
+
 - [UPDATE] visionOS ブランチを m144 にアップデートする
   - iOS の変更に追従し、visionOS ビルドで libwebrtc 管理下の `clang/libc++` 設定を利用するように修正する
   - CMake の visionOS ターゲットに iOS と同等の `libc++` 関連定義を追加する
