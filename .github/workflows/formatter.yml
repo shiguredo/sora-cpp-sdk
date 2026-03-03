@@ -2,11 +2,12 @@ name: formatter
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - "src/**"
-      - "include/**"
-      - "examples/**"
+  # formatter は Ubuntu ランナー上での Ubuntu バイナリ実行を前提としているため、visionOS ブランチでは自動実行しない
+  #push:
+  #  paths:
+  #    - "src/**"
+  #    - "include/**"
+  #    - "examples/**"
 
 jobs:
   run-ubuntu:

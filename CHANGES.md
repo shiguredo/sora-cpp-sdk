@@ -29,6 +29,10 @@
 - [CHANGE] CI を Apple 系のみ実行するようにする
   - GitHub Actions の `build.yml` で、macOS と iOS と visionOS のみ実行するように変更する
   - @torikizi
+- [CHANGE] visionOS ブランチでは formatter.yml の push トリガーをコメントアウトする
+  - formatter は Ubuntu ランナー上での Ubuntu バイナリ実行を前提としているため、visionOS ブランチでは自動実行しない
+  - develop との互換性を維持するため formatter.yml は削除しない
+  - @torikizi
 
 ## 2026.1.2
 
