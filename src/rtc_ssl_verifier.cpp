@@ -36,7 +36,6 @@ using BIOPtr = std::unique_ptr<BIO, BIODeleter>;
 using X509ChainPtr = std::unique_ptr<STACK_OF(X509), X509ChainDeleter>;
 
 X509Ptr ToX509(const webrtc::SSLCertificate& certificate) {
-  // SSLVerifier::VerifyX509 は X509* を受け取るため、WebRTC 型をここで正規化する。
   std::string pem = certificate.ToPEMString();
   BIOPtr bio(BIO_new_mem_buf(pem.c_str(), pem.size()));
   if (!bio) {
