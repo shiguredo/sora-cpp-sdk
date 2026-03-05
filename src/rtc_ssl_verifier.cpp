@@ -1,5 +1,6 @@
 #include "sora/rtc_ssl_verifier.h"
 
+#include <cassert>
 #include <memory>
 #include <optional>
 #include <string>
@@ -60,8 +61,11 @@ bool RTCSSLVerifier::VerifyChain(const webrtc::SSLCertChain& chain) {
     return false;
   }
 
+  // WebRTC 側で空チェーンは除外される前提なのでここでは契約として扱う。
+  assert(chain.GetSize() > 0);
+
   // VerifyX509 用に leaf と intermediate を分けて構築する。
-  X509Ptr x509 = chain.GetSize() > 0 ? ToX509(chain.Get(0)) : X509Ptr(nullptr);
+  X509Ptr x509 = ToX509(chain.Get(0));
   if (!x509) {
     return false;
   }
@@ -74,6 +78,8 @@ bool RTCSSLVerifier::VerifyChain(const webrtc::SSLCertChain& chain) {
     if (sk_X509_push(x509_chain.get(), cert.get()) == 0) {
       return false;
     }
+    // sk_X509_push 成功後は cert の所有権が x509_chain に移るため、
+    // cert の所有権を放棄している。
     cert.release();
   }
 
