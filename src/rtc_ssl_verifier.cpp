@@ -28,7 +28,7 @@ struct BIODeleter {
   void operator()(BIO* p) const { BIO_free(p); }
 };
 struct X509ChainDeleter {
-  void operator()(STACK_OF(X509)* p) const { sk_X509_pop_free(p, X509_free); }
+  void operator()(STACK_OF(X509) * p) const { sk_X509_pop_free(p, X509_free); }
 };
 
 using X509Ptr = std::unique_ptr<X509, X509Deleter>;
@@ -61,8 +61,7 @@ bool RTCSSLVerifier::VerifyChain(const webrtc::SSLCertChain& chain) {
   }
 
   // VerifyX509 用に leaf と intermediate を分けて構築する。
-  X509Ptr x509 =
-      chain.GetSize() > 0 ? ToX509(chain.Get(0)) : X509Ptr(nullptr);
+  X509Ptr x509 = chain.GetSize() > 0 ? ToX509(chain.Get(0)) : X509Ptr(nullptr);
   if (!x509) {
     return false;
   }
