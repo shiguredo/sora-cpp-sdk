@@ -1,5 +1,6 @@
 #include "sora/rtc_ssl_verifier.h"
 
+#include <memory>
 #include <optional>
 #include <string>
 
@@ -18,6 +19,34 @@
 
 namespace sora {
 
+namespace {
+
+struct X509Deleter {
+  void operator()(X509* p) const { X509_free(p); }
+};
+struct BIODeleter {
+  void operator()(BIO* p) const { BIO_free(p); }
+};
+struct X509ChainDeleter {
+  void operator()(STACK_OF(X509)* p) const { sk_X509_pop_free(p, X509_free); }
+};
+
+using X509Ptr = std::unique_ptr<X509, X509Deleter>;
+using BIOPtr = std::unique_ptr<BIO, BIODeleter>;
+using X509ChainPtr = std::unique_ptr<STACK_OF(X509), X509ChainDeleter>;
+
+X509Ptr ToX509(const webrtc::SSLCertificate& certificate) {
+  // SSLVerifier::VerifyX509 は X509* を受け取るため、WebRTC 型をここで正規化する。
+  std::string pem = certificate.ToPEMString();
+  BIOPtr bio(BIO_new_mem_buf(pem.c_str(), pem.size()));
+  if (!bio) {
+    return X509Ptr(nullptr);
+  }
+  return X509Ptr(PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr));
+}
+
+}  // namespace
+
 RTCSSLVerifier::RTCSSLVerifier(bool insecure,
                                std::optional<std::string> ca_cert)
     : insecure_(insecure), ca_cert_(ca_cert) {}
@@ -27,46 +56,30 @@ bool RTCSSLVerifier::VerifyChain(const webrtc::SSLCertChain& chain) {
     return true;
   }
 
-  STACK_OF(X509)* x509_chain = sk_X509_new_null();
+  X509ChainPtr x509_chain(sk_X509_new_null());
   if (!x509_chain) {
     return false;
   }
 
-  X509* x509 = nullptr;
-
-  for (size_t i = 0; i < chain.GetSize(); i++) {
-    std::string pem = chain.Get(i).ToPEMString();
-    BIO* bio = BIO_new_mem_buf(pem.c_str(), pem.size());
-    if (!bio) {
-      X509_free(x509);
-      sk_X509_pop_free(x509_chain, X509_free);
-      return false;
-    }
-
-    X509* cert = PEM_read_bio_X509(bio, nullptr, nullptr, nullptr);
-    BIO_free(bio);
-
-    if (!cert) {
-      X509_free(x509);
-      sk_X509_pop_free(x509_chain, X509_free);
-      return false;
-    }
-
-    if (i == 0) {
-      x509 = cert;
-    } else if (sk_X509_push(x509_chain, cert) == 0) {
-      X509_free(cert);
-      X509_free(x509);
-      sk_X509_pop_free(x509_chain, X509_free);
-      return false;
-    }
+  // VerifyX509 用に leaf と intermediate を分けて構築する。
+  X509Ptr x509 =
+      chain.GetSize() > 0 ? ToX509(chain.Get(0)) : X509Ptr(nullptr);
+  if (!x509) {
+    return false;
   }
 
-  // OpenSSL オブジェクトは所有権がこの関数にあるためここで解放する。
-  bool result = SSLVerifier::VerifyX509(x509, x509_chain, ca_cert_);
-  X509_free(x509);
-  sk_X509_pop_free(x509_chain, X509_free);
-  return result;
+  for (size_t i = 1; i < chain.GetSize(); i++) {
+    X509Ptr cert = ToX509(chain.Get(i));
+    if (!cert) {
+      return false;
+    }
+    if (sk_X509_push(x509_chain.get(), cert.get()) == 0) {
+      return false;
+    }
+    cert.release();
+  }
+
+  return SSLVerifier::VerifyX509(x509.get(), x509_chain.get(), ca_cert_);
 }
 
 }  // namespace sora
