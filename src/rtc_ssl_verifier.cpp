@@ -27,10 +27,6 @@ bool RTCSSLVerifier::VerifyChain(const webrtc::SSLCertChain& chain) {
     return true;
   }
 
-  if (chain.GetSize() == 0) {
-    return false;
-  }
-
   STACK_OF(X509)* x509_chain = sk_X509_new_null();
   if (!x509_chain) {
     return false;
