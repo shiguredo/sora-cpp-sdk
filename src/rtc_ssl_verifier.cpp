@@ -66,6 +66,7 @@ bool RTCSSLVerifier::VerifyChain(const webrtc::SSLCertChain& chain) {
     }
   }
 
+  // OpenSSL オブジェクトは所有権がこの関数にあるためここで解放する。
   bool result = SSLVerifier::VerifyX509(x509, x509_chain, ca_cert_);
   X509_free(x509);
   sk_X509_pop_free(x509_chain, X509_free);
