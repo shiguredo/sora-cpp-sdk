@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cctype>
 #include <cstddef>
 #include <exception>
 #include <functional>
@@ -44,6 +45,7 @@
 #include <rtc_base/proxy_info_revive.h>
 #include <rtc_base/socket_address.h>
 #include <rtc_base/ssl_certificate.h>
+#include <rtc_base/ssl_identity.h>
 
 #include "sora/boost_json_iwyu.h"
 #include "sora/data_channel.h"
@@ -550,6 +552,32 @@ webrtc::scoped_refptr<webrtc::PeerConnectionInterface>
 SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
   webrtc::PeerConnectionInterface::RTCConfiguration rtc_config;
   webrtc::PeerConnectionInterface::IceServers ice_servers;
+  std::unique_ptr<webrtc::SSLIdentity> tls_client_identity;
+  auto is_turns_url = [](const std::string& url) {
+    static constexpr char kTurnsScheme[] = "turns:";
+    if (url.size() < sizeof(kTurnsScheme) - 1) {
+      return false;
+    }
+    for (size_t i = 0; i < sizeof(kTurnsScheme) - 1; ++i) {
+      if (std::tolower(static_cast<unsigned char>(url[i])) !=
+          kTurnsScheme[i]) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  if (config_.client_cert.has_value() && config_.client_key.has_value()) {
+    tls_client_identity = webrtc::SSLIdentity::CreateFromPEMStrings(
+        *config_.client_key, *config_.client_cert);
+    if (!tls_client_identity) {
+      RTC_LOG(LS_WARNING) << "Failed to create TURN-TLS client identity from "
+                             "client_cert/client_key";
+    }
+  } else if (config_.client_cert.has_value() || config_.client_key.has_value()) {
+    RTC_LOG(LS_WARNING) << "TURN-TLS client certificate requires both "
+                           "client_cert and client_key";
+  }
 
   auto jservers = jconfig.at("iceServers");
   for (auto jserver : jservers.as_array()) {
@@ -561,6 +589,9 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
       ice_server.uri = url.as_string().c_str();
       ice_server.username = username;
       ice_server.password = credential;
+      if (tls_client_identity && is_turns_url(ice_server.uri)) {
+        ice_server.tls_client_identity = tls_client_identity->Clone();
+      }
       ice_servers.push_back(ice_server);
     }
   }
