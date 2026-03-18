@@ -16,6 +16,10 @@
 
 ### misc
 
+- [CHANGE] GitHub Actions の Slack 通知を `github-actions-slack-notify` に置き換える
+  - `rtCamp/action-slack-notify@v2` を `shiguredo/github-actions/.github/actions/slack-notify@main` に置き換える
+  - 通知ジョブの `runs-on` を `ubuntu-slim` に変更する
+  - @miosakuma
 - [UPDATE] Examples の DEPS を更新する
   - WEBRTC_BUILD_VERSION を m146.7680.0.0 にあげる
   - @torikizi

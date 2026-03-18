@@ -112,20 +112,24 @@ jobs:
 
   notification:
     name: Slack Notification
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-slim
+    permissions:
+      actions: read
+      contents: read
     needs:
       - run-ubuntu
     if: always()
     steps:
-      - uses: rtCamp/action-slack-notify@v2
+      - uses: shiguredo/github-actions/.github/actions/slack-notify@main
         if: |
           needs.run-ubuntu.result == 'failure'
-        env:
-          SLACK_CHANNEL: sora-cpp-sdk
-          SLACK_COLOR: danger
-          SLACK_TITLE: フォーマット失敗
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-          SLACK_MESSAGE: |
+        with:
+          status: ${{ job.status }}
+          slack_channel: sora-cpp-sdk
+          slack_webhook: ${{ secrets.SLACK_WEBHOOK }}
+          slack_message: |
             ```
             ${{ needs.run-ubuntu.outputs.diff }}
             ```
+        env:
+          GH_TOKEN: ${{ github.token }}
