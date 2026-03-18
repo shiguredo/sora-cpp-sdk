@@ -711,7 +711,10 @@ jobs:
 
   notification:
     name: Slack Notification
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-slim
+    permissions:
+      actions: read
+      contents: read
     needs:
       - build-windows
       - build-macos
@@ -724,7 +727,7 @@ jobs:
       - create-release-example
     if: always()
     steps:
-      - uses: rtCamp/action-slack-notify@v2
+      - uses: shiguredo/github-actions/.github/actions/slack-notify@main
         if: |
           needs.build-windows.result == 'failure' ||
           needs.build-macos.result == 'failure' ||
@@ -735,8 +738,9 @@ jobs:
           needs.build-macos-examples.result == 'failure' ||
           needs.build-ubuntu-examples.result == 'failure' ||
           needs.create-release-example.result == 'failure'
+        with:
+          status: ${{ job.status }}
+          slack_channel: sora-cpp-sdk
+          slack_webhook: ${{ secrets.SLACK_WEBHOOK }}
         env:
-          SLACK_CHANNEL: sora-cpp-sdk
-          SLACK_COLOR: danger
-          SLACK_TITLE: Release failed
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          GH_TOKEN: ${{ github.token }}
