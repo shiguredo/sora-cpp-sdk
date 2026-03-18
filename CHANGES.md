@@ -16,7 +16,7 @@
 
 ### misc
 
-- [CHANGE] GitHub Actions の Slack 通知を `github-actions-slack-notify` に置き換える
+- [CHANGE] GitHub Actions の Slack 通知を `shiguredo/github-actions` に置き換える
   - `rtCamp/action-slack-notify@v2` を `shiguredo/github-actions/.github/actions/slack-notify@main` に置き換える
   - 通知ジョブの `runs-on` を `ubuntu-slim` に変更する
   - @miosakuma
