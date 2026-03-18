@@ -11,14 +11,14 @@
 
 ## develop
 
-- [UPDATE] libwebrtc のバージョンを m146.7680.0.0 に上げる
-  - @torikizi
+- [UPDATE] libwebrtc のバージョンを m146.7680.3.1 に上げる
+  - @torikizi @zztkm
 
 ### misc
 
 - [UPDATE] Examples の DEPS を更新する
-  - WEBRTC_BUILD_VERSION を m146.7680.0.0 にあげる
-  - @torikizi
+  - WEBRTC_BUILD_VERSION を m146.7680.3.1 にあげる
+  - @torikizi @zztkm
 
 ## 2026.1.2
 
