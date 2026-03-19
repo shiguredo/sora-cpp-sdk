@@ -559,8 +559,7 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
       return false;
     }
     for (size_t i = 0; i < sizeof(kTurnsScheme) - 1; ++i) {
-      if (std::tolower(static_cast<unsigned char>(url[i])) !=
-          kTurnsScheme[i]) {
+      if (std::tolower(static_cast<unsigned char>(url[i])) != kTurnsScheme[i]) {
         return false;
       }
     }
@@ -574,7 +573,8 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
       RTC_LOG(LS_WARNING) << "Failed to create TURN-TLS client identity from "
                              "client_cert/client_key";
     }
-  } else if (config_.client_cert.has_value() || config_.client_key.has_value()) {
+  } else if (config_.client_cert.has_value() ||
+             config_.client_key.has_value()) {
     RTC_LOG(LS_WARNING) << "TURN-TLS client certificate requires both "
                            "client_cert and client_key";
   }
