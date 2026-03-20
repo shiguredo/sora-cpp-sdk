@@ -13,6 +13,9 @@
 
 - [UPDATE] libwebrtc のバージョンを m146.7680.3.1 に上げる
   - @torikizi @zztkm
+- [ADD] TURN-TLS のクライアント証明書設定に対応する
+  - `SoraSignalingConfig` の `client_cert` / `client_key` を TURN-TLS にも適用する
+  - @zztkm
 
 ### misc
 
