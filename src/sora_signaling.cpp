@@ -553,18 +553,6 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
   webrtc::PeerConnectionInterface::RTCConfiguration rtc_config;
   webrtc::PeerConnectionInterface::IceServers ice_servers;
   std::unique_ptr<webrtc::SSLIdentity> tls_client_identity;
-  auto is_turns_url = [](const std::string& url) {
-    static constexpr char kTurnsScheme[] = "turns:";
-    if (url.size() < sizeof(kTurnsScheme) - 1) {
-      return false;
-    }
-    for (size_t i = 0; i < sizeof(kTurnsScheme) - 1; ++i) {
-      if (std::tolower(static_cast<unsigned char>(url[i])) != kTurnsScheme[i]) {
-        return false;
-      }
-    }
-    return true;
-  };
 
   if (config_.client_cert.has_value() && config_.client_key.has_value()) {
     tls_client_identity = webrtc::SSLIdentity::CreateFromPEMStrings(
@@ -589,7 +577,7 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
       ice_server.uri = url.as_string().c_str();
       ice_server.username = username;
       ice_server.password = credential;
-      if (tls_client_identity && is_turns_url(ice_server.uri)) {
+      if (tls_client_identity && ice_server.uri.starts_with("turns:")) {
         ice_server.tls_client_identity = tls_client_identity->Clone();
       }
       ice_servers.push_back(ice_server);
