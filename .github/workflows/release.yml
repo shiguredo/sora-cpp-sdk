@@ -98,7 +98,7 @@ jobs:
           - macos_arm64
           - ios
     name: Build sora-cpp-sdk for ${{ matrix.name }}
-    runs-on: macos-14
+    runs-on: macos-15
     env:
       TEST_SIGNALING_URL: ${{ secrets.TEST_SIGNALING_URL }}
       TEST_CHANNEL_ID_PREFIX: ${{ secrets.TEST_CHANNEL_ID_PREFIX }}
@@ -338,7 +338,7 @@ jobs:
             runs-on: ubuntu-22.04-arm
           - name: macos_arm64
             platform-name: macos_arm64
-            runs-on: macos-14
+            runs-on: macos-15
           - name: windows_x86_64
             platform-name: windows_x86_64
             runs-on: windows-2025
@@ -593,7 +593,7 @@ jobs:
     defaults:
       run:
         working-directory: ${{ github.workspace }}/examples
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v6
       # リリースされた SDK バイナリを使ってサンプルをビルドする

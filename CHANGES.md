@@ -23,7 +23,7 @@
 - [UPDATE] Examples の DEPS を更新する
   - WEBRTC_BUILD_VERSION を m146.7680.3.1 にあげる
   - @torikizi @zztkm
-- [UPDATE] `.github/workflows/ci.yml` の build-macos の `runs-on` を `macos-15` に上げる
+- [UPDATE] GitHub Actions の `macos-14` を `macos-15` に上げる
   - macos-14 を利用しているときに SDL3 のビルドエラーが発生するようになったが `macos-15` に上げることでビルドエラーを解消できた
   - 発生したエラーは ` /Applications/Xcode_15.4.app/.../Foundation.framework/Headers/NSObjCRuntime.h:615:74: error: unknown type name 'NSUInteger'` のように Foundation 系ヘッダーが解決できない問題だった
   - @zztkm
