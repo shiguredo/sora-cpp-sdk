@@ -1398,17 +1398,7 @@ def install_sdl3(
             ]
         elif platform == "macos":
             # どの環境でも同じようにインストールされるようにするため全部 ON/OFF を明示的に指定する
-            #
-            # GitHub Actions の macOS ランナーでは Homebrew の clang が PATH の先頭に来ることがあり、
-            # SDL3 の Objective-C ソースがそれでビルドされると Foundation 系ヘッダの解決に失敗する。
-            # SDL3 のビルドだけは Xcode 付属の clang を明示的に使う。
-            # xcode_clang = cmdcap(["xcrun", "--sdk", "macosx", "--find", "clang"])
-            # xcode_clangxx = cmdcap(["xcrun", "--sdk", "macosx", "--find", "clang++"])
             cmake_args += [
-                # f"-DCMAKE_C_COMPILER={xcode_clang}",
-                # f"-DCMAKE_OBJC_COMPILER={xcode_clang}",
-                # f"-DCMAKE_CXX_COMPILER={xcode_clangxx}",
-                # f"-DCMAKE_OBJCXX_COMPILER={xcode_clangxx}",
                 "-DSDL_AUDIO=OFF",
                 "-DSDL_VIDEO=ON",
                 "-DSDL_RENDER=ON",
