@@ -23,6 +23,9 @@
 - [UPDATE] Examples の DEPS を更新する
   - WEBRTC_BUILD_VERSION を m146.7680.3.1 にあげる
   - @torikizi @zztkm
+- [FIX] macOS の SDL3 ビルドで Xcode 付属の clang を使うように修正する
+  - GitHub Actions の macOS ランナーで Homebrew の clang が選ばれると、SDL3 の Objective-C ソースが Foundation 系ヘッダの解決に失敗する問題を避ける
+  - @zztkm
 
 ## 2026.1.2
 
