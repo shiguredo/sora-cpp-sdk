@@ -21,7 +21,7 @@ jobs:
       TEST_MATRIX_NAME: ${{ matrix.name }}
     steps:
       - uses: actions/checkout@v6
-      - uses: microsoft/setup-msbuild@v2
+      - uses: microsoft/setup-msbuild@v3
       - name: Env to output
         run: |
           echo "userprofile=${Env:USERPROFILE}" >> ${Env:GITHUB_OUTPUT}
