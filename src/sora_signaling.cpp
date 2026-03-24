@@ -576,7 +576,7 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
       ice_server.uri = url.as_string().c_str();
       ice_server.username = username;
       ice_server.password = credential;
-      if (tls_client_identity && ice_server.uri.starts_with("turns:")) {
+      if (tls_client_identity) {
         ice_server.tls_client_identity = tls_client_identity->Clone();
       }
       ice_servers.push_back(ice_server);
