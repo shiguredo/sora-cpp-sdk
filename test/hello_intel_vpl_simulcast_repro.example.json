@@ -1,0 +1,31 @@
+{
+  // Copy this file to `test/hello_intel_vpl_simulcast_repro.json` and fill
+  // signaling_urls/channel_id for your environment.
+  "signaling_urls": [
+    "wss://sora.example.com/signaling"
+  ],
+  "channel_id": "replace_me",
+
+  // Repro condition
+  "role": "sendonly",
+  "video": true,
+  "audio": false,
+  "use_audio_device": false,
+  "capture_width": 1920,
+  "capture_height": 1080,
+  "video_codec_type": "H265",
+  "simulcast": true,
+
+  // Verbose logs help detect the failure timing around disconnect.
+  "log_level": 0,
+
+  // Force Intel VPL for H265.
+  "video_codec_preference": [
+    {
+      "type": "H265",
+      "encoder": "intel_vpl",
+      "decoder": null,
+      "parameters": {}
+    }
+  ]
+}

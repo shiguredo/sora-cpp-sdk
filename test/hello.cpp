@@ -190,250 +190,266 @@ int main(int argc, char* argv[]) {
     return -1;
   }
 
+  try {
 #ifdef _WIN32
-  webrtc::ScopedCOMInitializer com_initializer(
-      webrtc::ScopedCOMInitializer::kMTA);
-  if (!com_initializer.Succeeded()) {
-    std::cerr << "CoInitializeEx failed" << std::endl;
-    return 1;
-  }
+    webrtc::ScopedCOMInitializer com_initializer(
+        webrtc::ScopedCOMInitializer::kMTA);
+    if (!com_initializer.Succeeded()) {
+      std::cerr << "CoInitializeEx failed" << std::endl;
+      return 1;
+    }
 #endif
 
-  webrtc::LogMessage::LogToDebug(webrtc::LS_WARNING);
-  webrtc::LogMessage::LogTimestamps();
-  webrtc::LogMessage::LogThreads();
+    webrtc::LogMessage::LogToDebug(webrtc::LS_WARNING);
+    webrtc::LogMessage::LogTimestamps();
+    webrtc::LogMessage::LogThreads();
 
-  boost::json::value v;
-  {
-    std::ifstream ifs(argv[1]);
-    std::ostringstream oss;
-    oss << ifs.rdbuf();
-    std::string js = oss.str();
-    boost::json::parse_options opt;
-    opt.allow_comments = true;
-    opt.allow_trailing_commas = true;
-    v = boost::json::parse(js, {}, opt);
-  }
+    boost::json::value v;
+    {
+      std::ifstream ifs(argv[1]);
+      std::ostringstream oss;
+      oss << ifs.rdbuf();
+      std::string js = oss.str();
+      boost::json::parse_options opt;
+      opt.allow_comments = true;
+      opt.allow_trailing_commas = true;
+      v = boost::json::parse(js, {}, opt);
+    }
 
-  HelloSoraConfig config;
-  for (auto&& x : v.as_object().at("signaling_urls").as_array()) {
-    config.signaling_urls.push_back(x.as_string().c_str());
-  }
-  config.channel_id = v.as_object().at("channel_id").as_string().c_str();
-  boost::json::value x;
-  auto get = [](const boost::json::value& v, const char* key,
-                boost::json::value& x) -> bool {
-    if (auto it = v.as_object().find(key);
-        it != v.as_object().end() && !it->value().is_null()) {
-      x = it->value();
-      return true;
+    HelloSoraConfig config;
+    for (auto&& x : v.as_object().at("signaling_urls").as_array()) {
+      config.signaling_urls.push_back(x.as_string().c_str());
     }
-    return false;
-  };
-  if (get(v, "role", x)) {
-    config.role = x.as_string();
-  }
-  if (get(v, "video", x)) {
-    config.video = x.as_bool();
-  }
-  if (get(v, "audio", x)) {
-    config.audio = x.as_bool();
-  }
-  if (get(v, "capture_width", x)) {
-    config.capture_width = x.to_number<int>();
-  }
-  if (get(v, "capture_height", x)) {
-    config.capture_height = x.to_number<int>();
-  }
-  if (get(v, "video_bit_rate", x)) {
-    config.video_bit_rate = x.to_number<int>();
-  }
-  if (get(v, "video_codec_type", x)) {
-    config.video_codec_type = x.as_string();
-  }
-  if (get(v, "simulcast", x)) {
-    config.simulcast = x.as_bool();
-  }
-  if (get(v, "client_id", x)) {
-    config.client_id = x.as_string();
-  }
-  if (get(v, "data_channel_signaling", x)) {
-    config.data_channel_signaling = x.as_bool();
-  }
-  if (get(v, "ignore_disconnect_websocket", x)) {
-    config.ignore_disconnect_websocket = x.as_bool();
-  }
-  if (get(v, "data_channels", x)) {
-    for (auto&& dc : x.as_array()) {
-      sora::SoraSignalingConfig::DataChannel data_channel;
-      data_channel.label = dc.as_object().at("label").as_string();
-      data_channel.direction = dc.as_object().at("direction").as_string();
-      boost::json::value y;
-      if (get(dc, "ordered", y)) {
-        data_channel.ordered = y.as_bool();
+    config.channel_id = v.as_object().at("channel_id").as_string().c_str();
+    boost::json::value x;
+    auto get = [](const boost::json::value& v, const char* key,
+                  boost::json::value& x) -> bool {
+      if (auto it = v.as_object().find(key);
+          it != v.as_object().end() && !it->value().is_null()) {
+        x = it->value();
+        return true;
       }
-      if (get(dc, "max_packet_life_time", y)) {
-        data_channel.max_packet_life_time = y.to_number<int32_t>();
-      }
-      if (get(dc, "max_retransmits", y)) {
-        data_channel.max_retransmits = y.to_number<int32_t>();
-      }
-      if (get(dc, "protocol", y)) {
-        data_channel.protocol = y.as_string().c_str();
-      }
-      if (get(dc, "compress", y)) {
-        data_channel.compress = y.as_bool();
-      }
-      if (get(dc, "header", y)) {
-        data_channel.header.emplace(y.as_array().begin(), y.as_array().end());
-      }
-      config.data_channels.push_back(data_channel);
+      return false;
+    };
+    if (get(v, "role", x)) {
+      config.role = x.as_string();
     }
-  }
-  if (get(v, "forwarding_filters", x)) {
-    for (auto&& ff : x.as_array()) {
-      sora::SoraSignalingConfig::ForwardingFilter forwarding_filter;
-      boost::json::value y;
-      if (get(ff, "name", y)) {
-        forwarding_filter.name.emplace(y.as_string());
+    if (get(v, "video", x)) {
+      config.video = x.as_bool();
+    }
+    if (get(v, "audio", x)) {
+      config.audio = x.as_bool();
+    }
+    if (get(v, "capture_width", x)) {
+      config.capture_width = x.to_number<int>();
+    }
+    if (get(v, "capture_height", x)) {
+      config.capture_height = x.to_number<int>();
+    }
+    if (get(v, "video_bit_rate", x)) {
+      config.video_bit_rate = x.to_number<int>();
+    }
+    if (get(v, "video_codec_type", x)) {
+      config.video_codec_type = x.as_string();
+    }
+    if (get(v, "simulcast", x)) {
+      config.simulcast = x.as_bool();
+    }
+    if (get(v, "client_id", x)) {
+      config.client_id = x.as_string();
+    }
+    if (get(v, "data_channel_signaling", x)) {
+      config.data_channel_signaling = x.as_bool();
+    }
+    if (get(v, "ignore_disconnect_websocket", x)) {
+      config.ignore_disconnect_websocket = x.as_bool();
+    }
+    if (get(v, "data_channels", x)) {
+      for (auto&& dc : x.as_array()) {
+        sora::SoraSignalingConfig::DataChannel data_channel;
+        data_channel.label = dc.as_object().at("label").as_string();
+        data_channel.direction = dc.as_object().at("direction").as_string();
+        boost::json::value y;
+        if (get(dc, "ordered", y)) {
+          data_channel.ordered = y.as_bool();
+        }
+        if (get(dc, "max_packet_life_time", y)) {
+          data_channel.max_packet_life_time = y.to_number<int32_t>();
+        }
+        if (get(dc, "max_retransmits", y)) {
+          data_channel.max_retransmits = y.to_number<int32_t>();
+        }
+        if (get(dc, "protocol", y)) {
+          data_channel.protocol = y.as_string().c_str();
+        }
+        if (get(dc, "compress", y)) {
+          data_channel.compress = y.as_bool();
+        }
+        if (get(dc, "header", y)) {
+          data_channel.header.emplace(y.as_array().begin(), y.as_array().end());
+        }
+        config.data_channels.push_back(data_channel);
       }
-      if (get(ff, "priority", y)) {
-        forwarding_filter.priority.emplace(y.to_number<int>());
-      }
-      if (get(ff, "action", y)) {
-        forwarding_filter.action.emplace(y.as_string());
-      }
-      for (auto&& rs : ff.as_object().at("rules").as_array()) {
-        std::vector<sora::SoraSignalingConfig::ForwardingFilter::Rule> rules;
-        for (auto&& r : rs.as_array()) {
-          sora::SoraSignalingConfig::ForwardingFilter::Rule rule;
-          rule.field = r.as_object().at("field").as_string();
-          rule.op = r.as_object().at("operator").as_string();
-          for (auto&& v : r.as_object().at("values").as_array()) {
-            rule.values.push_back(v.as_string().c_str());
+    }
+    if (get(v, "forwarding_filters", x)) {
+      for (auto&& ff : x.as_array()) {
+        sora::SoraSignalingConfig::ForwardingFilter forwarding_filter;
+        boost::json::value y;
+        if (get(ff, "name", y)) {
+          forwarding_filter.name.emplace(y.as_string());
+        }
+        if (get(ff, "priority", y)) {
+          forwarding_filter.priority.emplace(y.to_number<int>());
+        }
+        if (get(ff, "action", y)) {
+          forwarding_filter.action.emplace(y.as_string());
+        }
+        for (auto&& rs : ff.as_object().at("rules").as_array()) {
+          std::vector<sora::SoraSignalingConfig::ForwardingFilter::Rule> rules;
+          for (auto&& r : rs.as_array()) {
+            sora::SoraSignalingConfig::ForwardingFilter::Rule rule;
+            rule.field = r.as_object().at("field").as_string();
+            rule.op = r.as_object().at("operator").as_string();
+            for (auto&& v : r.as_object().at("values").as_array()) {
+              rule.values.push_back(v.as_string().c_str());
+            }
+            rules.push_back(rule);
           }
-          rules.push_back(rule);
+          forwarding_filter.rules.push_back(rules);
         }
-        forwarding_filter.rules.push_back(rules);
-      }
-      if (get(ff, "version", y)) {
-        forwarding_filter.version.emplace(y.as_string());
-      }
-      if (get(ff, "metadata", y)) {
-        forwarding_filter.metadata = y;
-      }
-      config.forwarding_filters.push_back(forwarding_filter);
-    }
-  }
-  if (get(v, "log_level", x)) {
-    webrtc::LogMessage::LogToDebug((webrtc::LoggingSeverity)x.to_number<int>());
-  }
-  if (get(v, "degradation_preference", x)) {
-    if (x.as_string() == "disabled") {
-      config.degradation_preference = webrtc::DegradationPreference::DISABLED;
-    } else if (x.as_string() == "maintain_framerate") {
-      config.degradation_preference =
-          webrtc::DegradationPreference::MAINTAIN_FRAMERATE;
-    } else if (x.as_string() == "maintain_resolution") {
-      config.degradation_preference =
-          webrtc::DegradationPreference::MAINTAIN_RESOLUTION;
-    } else if (x.as_string() == "balanced") {
-      config.degradation_preference = webrtc::DegradationPreference::BALANCED;
-    }
-  }
-  if (get(v, "use_sixel", x)) {
-    config.use_sixel = x.as_bool();
-  }
-  if (get(v, "sixel_width", x)) {
-    config.sixel_width = x.to_number<int>();
-  }
-  if (get(v, "sixel_height", x)) {
-    config.sixel_height = x.to_number<int>();
-  }
-  if (get(v, "use_ansi", x)) {
-    config.use_ansi = x.as_bool();
-  }
-  if (get(v, "ansi_width", x)) {
-    config.ansi_width = x.to_number<int>();
-  }
-  if (get(v, "ansi_height", x)) {
-    config.ansi_height = x.to_number<int>();
-  }
-
-  sora::SoraClientContextConfig context_config;
-  context_config.get_android_application_context = GetAndroidApplicationContext;
-  if (get(v, "use_audio_device", x)) {
-    context_config.use_audio_device = x.as_bool();
-  }
-  if (get(v, "openh264", x)) {
-    context_config.video_codec_factory_config.capability_config.openh264_path =
-        x.as_string();
-    auto& preference =
-        context_config.video_codec_factory_config.preference.emplace();
-    auto capability = sora::GetVideoCodecCapability(
-        context_config.video_codec_factory_config.capability_config);
-    preference.Merge(sora::CreateVideoCodecPreferenceFromImplementation(
-        capability, sora::VideoCodecImplementation::kInternal));
-    preference.Merge(sora::CreateVideoCodecPreferenceFromImplementation(
-        capability, sora::VideoCodecImplementation::kCiscoOpenH264));
-  }
-  if (get(v, "video_codec_preference", x)) {
-    auto& preference =
-        context_config.video_codec_factory_config.preference.emplace();
-    preference.codecs =
-        boost::json::value_to<std::vector<sora::VideoCodecPreference::Codec>>(
-            x);
-
-    if (preference.HasImplementation(
-            sora::VideoCodecImplementation::kNvidiaVideoCodec)) {
-      if (sora::CudaContext::CanCreate()) {
-        context_config.video_codec_factory_config.capability_config
-            .cuda_context = sora::CudaContext::Create();
-      }
-    }
-    if (preference.HasImplementation(sora::VideoCodecImplementation::kAmdAmf)) {
-      if (sora::AMFContext::CanCreate()) {
-        context_config.video_codec_factory_config.capability_config
-            .amf_context = sora::AMFContext::Create();
-      }
-    }
-  }
-
-  // VideoCodecCapability の一覧を出力する
-  {
-    auto capability = sora::GetVideoCodecCapability(
-        context_config.video_codec_factory_config.capability_config);
-    for (const auto& engine : capability.engines) {
-      std::cout << "Engine: "
-                << boost::json::value_from(engine.name).as_string()
-                << std::endl;
-      for (const auto& codec : engine.codecs) {
-        if (codec.encoder) {
-          std::cout << "  - " << boost::json::value_from(codec.type).as_string()
-                    << " Encoder" << std::endl;
+        if (get(ff, "version", y)) {
+          forwarding_filter.version.emplace(y.as_string());
         }
-        if (codec.decoder) {
-          std::cout << "  - " << boost::json::value_from(codec.type).as_string()
-                    << " Decoder" << std::endl;
+        if (get(ff, "metadata", y)) {
+          forwarding_filter.metadata = y;
         }
-        auto params = boost::json::value_from(codec.parameters);
+        config.forwarding_filters.push_back(forwarding_filter);
+      }
+    }
+    if (get(v, "log_level", x)) {
+      webrtc::LogMessage::LogToDebug(
+          (webrtc::LoggingSeverity)x.to_number<int>());
+    }
+    if (get(v, "degradation_preference", x)) {
+      if (x.as_string() == "disabled") {
+        config.degradation_preference = webrtc::DegradationPreference::DISABLED;
+      } else if (x.as_string() == "maintain_framerate") {
+        config.degradation_preference =
+            webrtc::DegradationPreference::MAINTAIN_FRAMERATE;
+      } else if (x.as_string() == "maintain_resolution") {
+        config.degradation_preference =
+            webrtc::DegradationPreference::MAINTAIN_RESOLUTION;
+      } else if (x.as_string() == "balanced") {
+        config.degradation_preference = webrtc::DegradationPreference::BALANCED;
+      }
+    }
+    if (get(v, "use_sixel", x)) {
+      config.use_sixel = x.as_bool();
+    }
+    if (get(v, "sixel_width", x)) {
+      config.sixel_width = x.to_number<int>();
+    }
+    if (get(v, "sixel_height", x)) {
+      config.sixel_height = x.to_number<int>();
+    }
+    if (get(v, "use_ansi", x)) {
+      config.use_ansi = x.as_bool();
+    }
+    if (get(v, "ansi_width", x)) {
+      config.ansi_width = x.to_number<int>();
+    }
+    if (get(v, "ansi_height", x)) {
+      config.ansi_height = x.to_number<int>();
+    }
+
+    sora::SoraClientContextConfig context_config;
+    context_config.get_android_application_context = GetAndroidApplicationContext;
+    if (get(v, "use_audio_device", x)) {
+      context_config.use_audio_device = x.as_bool();
+    }
+    if (get(v, "openh264", x)) {
+      context_config.video_codec_factory_config.capability_config
+          .openh264_path = x.as_string();
+      auto& preference =
+          context_config.video_codec_factory_config.preference.emplace();
+      auto capability = sora::GetVideoCodecCapability(
+          context_config.video_codec_factory_config.capability_config);
+      preference.Merge(sora::CreateVideoCodecPreferenceFromImplementation(
+          capability, sora::VideoCodecImplementation::kInternal));
+      preference.Merge(sora::CreateVideoCodecPreferenceFromImplementation(
+          capability, sora::VideoCodecImplementation::kCiscoOpenH264));
+    }
+    if (get(v, "video_codec_preference", x)) {
+      auto& preference =
+          context_config.video_codec_factory_config.preference.emplace();
+      preference.codecs =
+          boost::json::value_to<std::vector<sora::VideoCodecPreference::Codec>>(
+              x);
+
+      if (preference.HasImplementation(
+              sora::VideoCodecImplementation::kNvidiaVideoCodec)) {
+        if (sora::CudaContext::CanCreate()) {
+          context_config.video_codec_factory_config.capability_config
+              .cuda_context = sora::CudaContext::Create();
+        }
+      }
+      if (preference.HasImplementation(
+              sora::VideoCodecImplementation::kAmdAmf)) {
+        if (sora::AMFContext::CanCreate()) {
+          context_config.video_codec_factory_config.capability_config
+              .amf_context = sora::AMFContext::Create();
+        }
+      }
+    }
+
+    // VideoCodecCapability の一覧を出力する
+    {
+      auto capability = sora::GetVideoCodecCapability(
+          context_config.video_codec_factory_config.capability_config);
+      for (const auto& engine : capability.engines) {
+        std::cout << "Engine: "
+                  << boost::json::value_from(engine.name).as_string()
+                  << std::endl;
+        for (const auto& codec : engine.codecs) {
+          if (codec.encoder) {
+            std::cout << "  - " << boost::json::value_from(codec.type).as_string()
+                      << " Encoder" << std::endl;
+          }
+          if (codec.decoder) {
+            std::cout << "  - " << boost::json::value_from(codec.type).as_string()
+                      << " Decoder" << std::endl;
+          }
+          auto params = boost::json::value_from(codec.parameters);
+          if (params.as_object().size() > 0) {
+            std::cout << "    - Codec Parameters: "
+                      << boost::json::serialize(params) << std::endl;
+          }
+        }
+        auto params = boost::json::value_from(engine.parameters);
         if (params.as_object().size() > 0) {
-          std::cout << "    - Codec Parameters: "
+          std::cout << "  - Engine Parameters: "
                     << boost::json::serialize(params) << std::endl;
         }
       }
-      auto params = boost::json::value_from(engine.parameters);
-      if (params.as_object().size() > 0) {
-        std::cout << "  - Engine Parameters: " << boost::json::serialize(params)
-                  << std::endl;
-      }
     }
+
+    auto context = sora::SoraClientContext::Create(context_config);
+
+    auto hello = std::make_shared<HelloSora>(context, config);
+    hello->Run();
+    return 0;
+  } catch (const boost::system::system_error& e) {
+    std::cerr << "boost::system::system_error: " << e.what() << std::endl;
+    std::cerr << "  code: " << e.code().value() << " (" << e.code().message()
+              << ")" << std::endl;
+    return 1;
+  } catch (const std::exception& e) {
+    std::cerr << "std::exception: " << e.what() << std::endl;
+    return 1;
+  } catch (...) {
+    std::cerr << "unknown exception" << std::endl;
+    return 1;
   }
-
-  auto context = sora::SoraClientContext::Create(context_config);
-
-  auto hello = std::make_shared<HelloSora>(context, config);
-  hello->Run();
 }
 
 #endif
