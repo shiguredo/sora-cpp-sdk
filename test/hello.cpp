@@ -102,6 +102,7 @@ void HelloSora::Run() {
   config.audio = config_.audio;
   config.video_codec_type = config_.video_codec_type;
   config.video_bit_rate = config_.video_bit_rate;
+  config.metadata = config_.metadata;
   config.multistream = true;
   config.simulcast = config_.simulcast;
   config.data_channel_signaling = config_.data_channel_signaling;
@@ -251,6 +252,9 @@ int main(int argc, char* argv[]) {
     }
     if (get(v, "video_codec_type", x)) {
       config.video_codec_type = x.as_string();
+    }
+    if (get(v, "metadata", x)) {
+      config.metadata = x;
     }
     if (get(v, "simulcast", x)) {
       config.simulcast = x.as_bool();
