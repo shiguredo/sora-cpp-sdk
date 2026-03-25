@@ -4,9 +4,11 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <memory>
 #include <mutex>
+#include <thread>
 #include <vector>
 
 // WebRTC
@@ -141,6 +143,31 @@ class VplVideoEncoderImpl : public VplVideoEncoder {
 
 const int kLowH264QpThreshold = 34;
 const int kHighH264QpThreshold = 40;
+
+// Repro/analysis helper:
+// If SORA_TEST_VPL_PRE_CALLBACK_SLEEP_MS is set (> 0), sleep before
+// callback_->OnEncodedImage() to widen race timing around disconnect/teardown.
+int GetVplPreCallbackSleepMsForTest() {
+  static const int kSleepMs = []() {
+    const char* env = std::getenv("SORA_TEST_VPL_PRE_CALLBACK_SLEEP_MS");
+    if (env == nullptr || env[0] == '\0') {
+      return 0;
+    }
+    char* end = nullptr;
+    long v = std::strtol(env, &end, 10);
+    if (end == env || *end != '\0') {
+      return 0;
+    }
+    if (v <= 0) {
+      return 0;
+    }
+    if (v > 10000) {
+      return 10000;
+    }
+    return static_cast<int>(v);
+  }();
+  return kSleepMs;
+}
 
 VplVideoEncoderImpl::VplVideoEncoderImpl(std::shared_ptr<VplSession> session,
                                          mfxU32 codec)
@@ -689,7 +716,20 @@ int32_t VplVideoEncoderImpl::Encode(
     }
 
     webrtc::EncodedImageCallback::Result result =
-        callback_->OnEncodedImage(encoded_image_, &codec_specific);
+        [&]() {
+          const int sleep_ms = GetVplPreCallbackSleepMsForTest();
+          if (sleep_ms > 0) {
+            static std::once_flag s_once;
+            std::call_once(s_once, [sleep_ms]() {
+              RTC_LOG(LS_WARNING)
+                  << "TEST ONLY: sleep before OnEncodedImage enabled: "
+                  << sleep_ms << " ms"
+                  << " (SORA_TEST_VPL_PRE_CALLBACK_SLEEP_MS)";
+            });
+            std::this_thread::sleep_for(std::chrono::milliseconds(sleep_ms));
+          }
+          return callback_->OnEncodedImage(encoded_image_, &codec_specific);
+        }();
     if (result.error != webrtc::EncodedImageCallback::Result::OK) {
       RTC_LOG(LS_ERROR) << __FUNCTION__
                         << " OnEncodedImage failed error:" << result.error;

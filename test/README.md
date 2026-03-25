@@ -47,7 +47,7 @@ ulimit -c unlimited
 ./test/repeat-hello-until-abort.sh \
   _build/ubuntu-24.04_x86_64/release/test/hello \
   test/hello_intel_vpl_simulcast_repro.json \
-  20 10 0.5 /tmp/sora-hello-phase-check 0
+  20 3 0.5 /tmp/sora-hello-phase-check 0
 ```
 
 引数の意味は以下です。
@@ -78,4 +78,29 @@ summary:
 ```bash
 rg -n "disconnect|VideoSendStreamImpl::Stop|OnEncodedImage|deque::|Hardening assertion" \
   /tmp/sora-hello-phase-check/run-*.log
+```
+
+## 6. 再現率を上げる（SLEEP 環境変数）
+
+`vpl_video_encoder.cpp` にはテスト用に、`OnEncodedImage()` の直前で sleep するオプションがあります。
+
+- 環境変数: `SORA_TEST_VPL_PRE_CALLBACK_SLEEP_MS`
+- 単位: ミリ秒
+- 未設定または `0` 以下: 無効
+
+例:
+
+```bash
+export SORA_TEST_VPL_PRE_CALLBACK_SLEEP_MS=50
+
+./test/repeat-hello-until-abort.sh \
+  _build/ubuntu-24.04_x86_64/release/test/hello \
+  test/hello_intel_vpl_simulcast_repro.json \
+  20 2 0 /tmp/sora-hello-race-max 0
+```
+
+無効化:
+
+```bash
+unset SORA_TEST_VPL_PRE_CALLBACK_SLEEP_MS
 ```
