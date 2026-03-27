@@ -455,7 +455,6 @@ int32_t NvCodecVideoEncoderImpl::Encode(
     if (result.error != webrtc::EncodedImageCallback::Result::OK) {
       RTC_LOG(LS_ERROR) << __FUNCTION__
                         << " OnEncodedImage failed error:" << result.error;
-      return WEBRTC_VIDEO_CODEC_ERROR;
     }
     bitrate_adjuster_.Update(packet.size());
   }

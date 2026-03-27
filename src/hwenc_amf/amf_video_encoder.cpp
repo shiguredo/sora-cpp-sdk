@@ -543,7 +543,6 @@ AMF_RESULT AMFVideoEncoderImpl::ProcessBuffer(amf::AMFBufferPtr buffer,
   if (result.error != webrtc::EncodedImageCallback::Result::OK) {
     RTC_LOG(LS_ERROR) << __FUNCTION__
                       << " OnEncodedImage failed error:" << result.error;
-    return AMF_FAIL;
   }
   bitrate_adjuster_.Update(size);
 

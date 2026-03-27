@@ -13,6 +13,15 @@
 
 - [UPDATE] libwebrtc のバージョンを m146.7680.3.1 に上げる
   - @torikizi @zztkm
+- [UPDATE] libwebrtc m146 追従に伴う hardware encoder の error handling を修正する
+  - disconnect 中の OnEncodedImage() 後の callback error の扱いを見直し abort することがある問題に対応する
+  - WEBRTC_VIDEO_CODEC_ERROR を返していた箇所を削除して、エラーはログ出力のみに変更する
+  - 各種ハードウェアエンコーダーの `webrtc::EncodedImageCallback::Result` を対象に修正する
+    - vpl_video_encoder.cpp
+    - amf_video_encoder.cpp
+    - nv_video_encoder.cpp
+    - v4l2_video_encoder.cpp
+  - @torikizi
 - [ADD] TURN-TLS のクライアント証明書設定に対応する
   - `SoraSignalingConfig` の `client_cert` / `client_key` を TURN-TLS にも適用する
   - @zztkm
