@@ -16,11 +16,8 @@
 - [UPDATE] libwebrtc m146 追従に伴うハードウェアエンコーダーのエラーハンドリングを修正する
   - 切断中に `OnEncodedImage()` のコールバックエラーにより abort することがある問題に対応する
   - `OnEncodedImage()` のコールバックエラーではエラーを返さず、`LS_WARNING` のログ出力のみに変更する
-  - 各種ハードウェアエンコーダーにおける `webrtc::EncodedImageCallback::Result` の扱いを修正する
-    - vpl_video_encoder.cpp
-    - amf_video_encoder.cpp
-    - nvcodec_video_encoder.cpp
-    - v4l2_h264_video_encoder.cpp
+  - 参考 : 追従する libwebrtc のコミットのリンク
+    - https://source.chromium.org/chromium/_/webrtc/src/+/54e6613e4005f449ea609eaa19491d0c36e73824
   - @torikizi
 - [ADD] TURN-TLS のクライアント証明書設定に対応する
   - `SoraSignalingConfig` の `client_cert` / `client_key` を TURN-TLS にも適用する
