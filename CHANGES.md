@@ -11,13 +11,15 @@
 
 ## develop
 
-- [UPDATE] libwebrtc のバージョンを m146.7680.3.1 に上げる
+- [UPDATE] libwebrtc のバージョンを m146.7680.5.0 に上げる
   - @torikizi @zztkm
 - [UPDATE] libwebrtc m146 追従に伴うハードウェアエンコーダーのエラーハンドリングを修正する
   - 切断中に `OnEncodedImage()` のコールバックエラーにより abort することがある問題に対応する
   - `OnEncodedImage()` のコールバックエラーではエラーを返さず、`LS_WARNING` のログ出力のみに変更する
   - 参考 : 追従する libwebrtc のコミットのリンク
     - https://source.chromium.org/chromium/_/webrtc/src/+/54e6613e4005f449ea609eaa19491d0c36e73824
+  - @torikizi
+- [UPDATE] cmake のバージョンを 4.3.1 にあげる
   - @torikizi
 - [ADD] TURN-TLS のクライアント証明書設定に対応する
   - `SoraSignalingConfig` の `client_cert` / `client_key` を TURN-TLS にも適用する
@@ -30,12 +32,14 @@
   - 通知ジョブの `runs-on` を `ubuntu-slim` に変更する
   - @miosakuma
 - [UPDATE] Examples の DEPS を更新する
-  - WEBRTC_BUILD_VERSION を m146.7680.3.1 にあげる
+  - WEBRTC_BUILD_VERSION を m146.7680.5.0 にあげる
   - @torikizi @zztkm
 - [UPDATE] GitHub Actions の `macos-14` を `macos-15` に上げる
   - macos-14 を利用しているときに SDL3 のビルドエラーが発生するようになったが `macos-15` に上げることでビルドエラーを解消できた
   - 発生したエラーは ` /Applications/Xcode_15.4.app/.../Foundation.framework/Headers/NSObjCRuntime.h:615:74: error: unknown type name 'NSUInteger'` のように Foundation 系ヘッダーが解決できない問題だった
   - @zztkm
+- [UPDATE] cli11 のバージョンを v2.6.2 にあげる
+  - @torikizi
 
 ## 2026.1.2
 
