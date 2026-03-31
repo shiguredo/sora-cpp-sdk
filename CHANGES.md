@@ -11,7 +11,7 @@
 
 ## develop
 
-- [UPDATE] libwebrtc のバージョンを m146.7680.5.0 に上げる
+- [UPDATE] libwebrtc のバージョンを m147.7727.9.0 に上げる
   - @torikizi @zztkm
 - [UPDATE] libwebrtc m146 追従に伴うハードウェアエンコーダーのエラーハンドリングを修正する
   - 切断中に `OnEncodedImage()` のコールバックエラーにより abort することがある問題に対応する
