@@ -554,7 +554,7 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
   std::unique_ptr<webrtc::SSLIdentity> tls_client_identity;
 
   if (config_.client_cert.has_value() && config_.client_key.has_value()) {
-    tls_client_identity = webrtc::SSLIdentity::CreateFromPEMStrings(
+    tls_client_identity = webrtc::SSLIdentity::CreateFromPEMChainStrings(
         *config_.client_key, *config_.client_cert);
     if (!tls_client_identity) {
       RTC_LOG(LS_WARNING) << "Failed to create TURN-TLS client identity from "
