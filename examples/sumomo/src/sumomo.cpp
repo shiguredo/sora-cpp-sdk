@@ -957,7 +957,8 @@ int main(int argc, char* argv[]) {
 
   // 証明書に関するオプション
   app.add_flag("--insecure", config.insecure, "Allow insecure connection");
-  app.add_option("--client-cert", config.client_cert, "Client certificate file")
+  app.add_option("--client-cert", config.client_cert,
+                 "Client certificate or certificate chain file")
       ->check(CLI::ExistingFile);
   app.add_option("--client-key", config.client_key, "Client key file")
       ->check(CLI::ExistingFile);

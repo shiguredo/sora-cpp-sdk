@@ -21,6 +21,9 @@
   - @torikizi
 - [UPDATE] cmake のバージョンを 4.3.1 にあげる
   - @torikizi
+- [UPDATE] WSS / TURN-TLS のクライアント証明書設定で証明書チェーンを利用できるようにする
+  - `SoraSignalingConfig` の `client_cert` はこれまで単体の証明書が前提になっていたが、証明書チェーンを指定できるようにする
+  - @zztkm
 - [ADD] TURN-TLS のクライアント証明書設定に対応する
   - `SoraSignalingConfig` の `client_cert` / `client_key` を TURN-TLS にも適用する
   - @zztkm
