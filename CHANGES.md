@@ -21,6 +21,8 @@
   - @torikizi
 - [UPDATE] cmake のバージョンを 4.3.1 にあげる
   - @torikizi
+- [UPDATE] Boost のバージョンを 1.90.0 に上げる
+  - @voluntas
 - [UPDATE] WSS / TURN-TLS のクライアント証明書設定で証明書チェーンを利用できるようにする
   - `SoraSignalingConfig` の `client_cert` はこれまで単体の証明書が前提になっていたが、証明書チェーンを指定できるようにする
   - @zztkm
@@ -43,6 +45,8 @@
   - @zztkm
 - [UPDATE] cli11 のバージョンを v2.6.2 にあげる
   - @torikizi
+- [UPDATE] Examples の Boost のバージョンを 1.90.0 に上げる
+  - @voluntas
 
 ## 2026.1.2
 
