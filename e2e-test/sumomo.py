@@ -177,6 +177,9 @@ class Sumomo:
         extra_args: list[str] | None = None,
         # 起動待機時間
         initial_wait: int | None = None,
+        # プロセス出力設定
+        stdout: Any = subprocess.DEVNULL,
+        stderr: Any = subprocess.DEVNULL,
     ) -> None:
         """
         Sumomo プロセスを管理するクラス
@@ -217,6 +220,8 @@ class Sumomo:
         self.http_host = "127.0.0.1"
         # デフォルトの初期待機時間を設定
         self.initial_wait = initial_wait if initial_wait is not None else 2
+        self.stdout = stdout
+        self.stderr = stderr
 
         # すべての引数を保存
         self.kwargs: dict[str, Any] = {
@@ -398,8 +403,8 @@ class Sumomo:
                 # バッファがいっぱいになってプロセスがブロックされる可能性がある
                 self.process = subprocess.Popen(
                     cmd,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
+                    stdout=self.stdout,
+                    stderr=self.stderr,
                 )
                 print(f"Started sumomo process with PID: {self.process.pid}")
             except FileNotFoundError:

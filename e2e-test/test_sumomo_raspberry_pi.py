@@ -4,6 +4,7 @@ Raspberry Pi の V4L2 M2M を使用した H264 のテスト
 """
 
 import os
+import subprocess
 import time
 
 import pytest
@@ -37,6 +38,8 @@ def test_connection_stats(sora_settings, free_port):
         fake_capture_device=False,
         use_libcamera=True,
         initial_wait=10,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
     ) as s:
         time.sleep(10)
 
@@ -104,6 +107,8 @@ def test_simulcast(sora_settings, free_port):
         fake_capture_device=False,
         use_libcamera=True,
         initial_wait=10,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
     ) as s:
         time.sleep(10)
 
