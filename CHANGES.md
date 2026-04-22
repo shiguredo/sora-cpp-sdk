@@ -11,7 +11,7 @@
 
 ## develop
 
-- [UPDATE] libwebrtc のバージョンを m147.7727.9.0 に上げる
+- [UPDATE] libwebrtc のバージョンを m148.7778.4.0 に上げる
   - @torikizi @zztkm
 - [UPDATE] libwebrtc m146 追従に伴うハードウェアエンコーダーのエラーハンドリングを修正する
   - 切断中に `OnEncodedImage()` のコールバックエラーにより abort することがある問題に対応する
@@ -37,7 +37,7 @@
   - 通知ジョブの `runs-on` を `ubuntu-slim` に変更する
   - @miosakuma
 - [UPDATE] Examples の DEPS を更新する
-  - WEBRTC_BUILD_VERSION を m146.7680.5.0 にあげる
+  - WEBRTC_BUILD_VERSION を m148.7778.4.0 にあげる
   - @torikizi @zztkm
 - [UPDATE] GitHub Actions の `macos-14` を `macos-15` に上げる
   - macos-14 を利用しているときに SDL3 のビルドエラーが発生するようになったが `macos-15` に上げることでビルドエラーを解消できた
