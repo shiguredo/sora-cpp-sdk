@@ -4,6 +4,7 @@ import json
 import platform
 import shlex
 import subprocess
+import tempfile
 import time
 from pathlib import Path
 from types import TracebackType
@@ -177,9 +178,9 @@ class Sumomo:
         extra_args: list[str] | None = None,
         # 起動待機時間
         initial_wait: int | None = None,
-        # プロセス出力設定
-        stdout: Any = subprocess.DEVNULL,
-        stderr: Any = subprocess.DEVNULL,
+        # 失敗時のプロセス出力設定
+        dump_process_output_on_failure: bool = False,
+        process_output_tail_bytes: int = 20000,
     ) -> None:
         """
         Sumomo プロセスを管理するクラス
@@ -220,8 +221,8 @@ class Sumomo:
         self.http_host = "127.0.0.1"
         # デフォルトの初期待機時間を設定
         self.initial_wait = initial_wait if initial_wait is not None else 2
-        self.stdout = stdout
-        self.stderr = stderr
+        self.dump_process_output_on_failure = dump_process_output_on_failure
+        self.process_output_tail_bytes = process_output_tail_bytes
 
         # すべての引数を保存
         self.kwargs: dict[str, Any] = {
@@ -290,6 +291,7 @@ class Sumomo:
 
         # HTTP クライアントの初期化（None で初期化）
         self._http_client: httpx.Client | None = None
+        self._process_output: Any | None = None
 
     def _get_sumomo_executable_path(self) -> str:
         """ビルド済みの sumomo 実行ファイルのパスを自動検出"""
@@ -401,10 +403,12 @@ class Sumomo:
                 # 注意: stderr=subprocess.PIPE に変更すると Windows でテストが通らなくなる
                 # Windows ではパイプバッファが小さく、stderr を定期的に読み取らないと
                 # バッファがいっぱいになってプロセスがブロックされる可能性がある
+                # そのため、失敗時にログを見たい場合でも PIPE は使わず一時ファイルへ退避する
+                stdout, stderr = self._get_process_output_streams()
                 self.process = subprocess.Popen(
                     cmd,
-                    stdout=self.stdout,
-                    stderr=self.stderr,
+                    stdout=stdout,
+                    stderr=stderr,
                 )
                 print(f"Started sumomo process with PID: {self.process.pid}")
             except FileNotFoundError:
@@ -433,9 +437,11 @@ class Sumomo:
             self._http_client = httpx.Client(timeout=10.0)
 
             return self
-        except Exception:
+        except Exception as e:
             # 例外が発生した場合は必ずクリーンアップ
-            self._cleanup()
+            self._cleanup_process()
+            self._dump_process_output(f"{type(e).__name__}: {e}")
+            self._close_process_output()
             raise
 
     def __exit__(
@@ -450,7 +456,13 @@ class Sumomo:
             self._http_client.close()
             self._http_client = None
 
-        self._cleanup()
+        self._cleanup_process()
+        if _exc_type is not None:
+            reason = _exc_type.__name__
+            if _exc_val is not None:
+                reason = f"{reason}: {_exc_val}"
+            self._dump_process_output(reason)
+        self._close_process_output()
         return False
 
     def _build_args(self, **kwargs: Any) -> list[str]:
@@ -754,13 +766,49 @@ class Sumomo:
                     except Exception:
                         pass
 
-                self._cleanup()
                 raise RuntimeError(error_msg)
 
-            self._cleanup()
             raise RuntimeError(f"sumomo process failed to start within {timeout} seconds")
 
-    def _cleanup(self) -> None:
+    def _get_process_output_streams(self) -> tuple[Any, Any]:
+        """プロセス出力の保存先を返す"""
+        if not self.dump_process_output_on_failure:
+            return subprocess.DEVNULL, subprocess.DEVNULL
+
+        if self._process_output is None:
+            self._process_output = tempfile.SpooledTemporaryFile(max_size=1024 * 1024, mode="w+b")
+
+        return self._process_output, subprocess.STDOUT
+
+    def _dump_process_output(self, reason: str) -> None:
+        """失敗時にプロセス出力を表示"""
+        if not self._process_output:
+            return
+
+        try:
+            self._process_output.flush()
+            self._process_output.seek(0, 2)
+            end = self._process_output.tell()
+            start = max(0, end - self.process_output_tail_bytes)
+            self._process_output.seek(start)
+            output = self._process_output.read().decode("utf-8", errors="replace").strip()
+            if output:
+                print(f"===== sumomo output ({reason}) =====")
+                print(output)
+                print("===== end sumomo output =====")
+        except Exception:
+            pass
+
+    def _close_process_output(self) -> None:
+        """保存していたプロセス出力を解放"""
+        if self._process_output:
+            try:
+                self._process_output.close()
+            except Exception:
+                pass
+            self._process_output = None
+
+    def _cleanup_process(self) -> None:
         """プロセスをクリーンアップ"""
         if self.process:
             pid = self.process.pid
@@ -778,13 +826,6 @@ class Sumomo:
                 self.process.kill()
                 self.process.wait()
                 print(f"Sumomo process (PID: {pid}) killed")
-
-            # stderr の残りを読み取ってリソースを解放
-            if hasattr(self.process, "stderr") and self.process.stderr:
-                try:
-                    self.process.stderr.close()
-                except:
-                    pass
 
             self.process = None
 
