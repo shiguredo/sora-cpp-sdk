@@ -402,7 +402,7 @@ jobs:
       # Homebrew のセットアップ (self-hosted macOS ランナー用)
       - name: Setup Homebrew
         if: ${{ runner.environment == 'self-hosted' && startsWith(matrix.platform.platform-name, 'macos') }}
-        uses: Homebrew/actions/setup-homebrew@master
+        uses: Homebrew/actions/setup-homebrew@main
 
       # GitHub CLI のインストール (self-hosted macOS ランナー用)
       - name: Install GitHub CLI

@@ -47,6 +47,11 @@
   - @torikizi
 - [UPDATE] Examples の Boost のバージョンを 1.90.0 に上げる
   - @voluntas
+- [UPDATE] Homebrew/actions/setup-homebrew@master を Homebrew/actions/setup-homebrew@main に変更する
+  - 2026 年 6 月 10 日以降のリリースで `Homebrew/actions/setup-homebrew` の master ブランチは無効化されるため、main ブランチを使用するように変更する
+  - 参考 : Homebrew/actions/setup-homebrew のコミットのリンクでも移行の対応が行われている
+    - https://github.com/Homebrew/actions/commit/675fcd27b59e54d310c5484c8c27c01d03da660c
+  - @torikizi
 
 ## 2026.1.2
 
