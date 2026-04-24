@@ -398,8 +398,8 @@ class Sumomo:
                 # バッファがいっぱいになってプロセスがブロックされる可能性がある
                 self.process = subprocess.Popen(
                     cmd,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
+                    stdout=None,
+                    stderr=None,
                 )
                 print(f"Started sumomo process with PID: {self.process.pid}")
             except FileNotFoundError:

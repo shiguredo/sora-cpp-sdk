@@ -52,6 +52,8 @@
   - 参考: Homebrew/actions/setup-homebrew で、main ブランチへの移行を促す警告が表示されるようになったことを示すコミット
     - https://github.com/Homebrew/actions/commit/675fcd27b59e54d310c5484c8c27c01d03da660c
   - @torikizi
+- [UPDATE] E2E テストで `sumomo` の標準出力と標準エラー出力を表示するようにする
+  - @zztkm
 
 ## 2026.1.2
 
