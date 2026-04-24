@@ -54,6 +54,8 @@
   - @torikizi
 - [UPDATE] Examples の cmake のバージョンを 4.3.2 にあげる
   - @torikizi
+- [UPDATE] E2E テストで `sumomo` の標準出力と標準エラー出力を表示するようにする
+  - @zztkm
 
 ## 2026.1.2
 
