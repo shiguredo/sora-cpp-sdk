@@ -814,6 +814,8 @@ def build_and_install_boost(
 ):
     version_underscore = version.replace(".", "_")
 
+    rm_rf(os.path.join(install_dir, "boost"))
+
     archive = download(
         # 公式サイトに負荷をかけないための時雨堂によるミラー
         f"https://oss-mirrors.shiguredo.jp/boost_{version_underscore}.tar.gz",
