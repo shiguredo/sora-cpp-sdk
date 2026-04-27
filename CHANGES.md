@@ -22,6 +22,9 @@
 - [UPDATE] cmake のバージョンを 4.3.2 にあげる
   - @torikizi
 - [UPDATE] Boost のバージョンを 1.91.0 に上げる
+  - macOS ビルドの cxxflags に `-DBOOST_ASIO_DISABLE_STD_ATOMIC_WAIT` を追加する
+    - boost 1.91.0 で asio の `kqueue_reactor` 内部 mutex が `atomic_slim_mutex` (`std::atomic::wait` / `notify_one` を利用) に切り替わったが、 webrtc-build 同梱の libc++ + macOS の組み合わせで kevent から完了通知が届かず async_connect がハングする現象を確認した
+    - 旧来の pthread ベース mutex 実装に戻すことで回避する
   - @voluntas @torikizi
 - [UPDATE] WSS / TURN-TLS のクライアント証明書設定で証明書チェーンを利用できるようにする
   - `SoraSignalingConfig` の `client_cert` はこれまで単体の証明書が前提になっていたが、証明書チェーンを指定できるようにする
@@ -46,6 +49,8 @@
 - [UPDATE] cli11 のバージョンを v2.6.2 にあげる
   - @torikizi
 - [UPDATE] Examples の Boost のバージョンを 1.91.0 に上げる
+  - sumomo の macOS 向け CMake 設定に `-DBOOST_ASIO_DISABLE_STD_ATOMIC_WAIT` を追加する
+    - sora-cpp-sdk 本体側にも同じ定義が必要 (片方だけ外すと kqueue_reactor の mutex 型が TU 間で食い違って ABI ミスマッチを起こす)
   - @voluntas @torikizi
 - [UPDATE] Homebrew/actions/setup-homebrew@master を Homebrew/actions/setup-homebrew@main に変更する
   - 2026 年 6 月 10 日以降のリリースで `Homebrew/actions/setup-homebrew` の master ブランチは無効化されるため、main ブランチを使用するように変更する
