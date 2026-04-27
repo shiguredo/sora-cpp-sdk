@@ -893,7 +893,6 @@ def build_and_install_boost(
                 )
             arch, sdk = IOS_BUILD_TARGETS[0]
             installed_path = os.path.join(build_dir, "boost", f"install-{arch}-{sdk}")
-            rm_rf(os.path.join(install_dir, "boost"))
             cmd(["cp", "-r", installed_path, os.path.join(install_dir, "boost")])
 
             for lib in enum_all_files(
