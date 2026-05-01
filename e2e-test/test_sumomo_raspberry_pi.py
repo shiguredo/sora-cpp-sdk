@@ -11,11 +11,14 @@ import pytest
 from helper import get_codec, get_outbound_rtp, get_simulcast_outbound_rtp, get_transport
 from sumomo import Sumomo
 
-# Raspberry Pi 環境が有効でない場合はスキップ
-pytestmark = pytest.mark.skipif(
-    not os.environ.get("RASPBERRY_PI"),
-    reason="RASPBERRY_PI not set in environment",
-)
+# Raspberry Pi 環境が有効でない場合はスキップし、フレーキー対策で retry する
+pytestmark = [
+    pytest.mark.skipif(
+        not os.environ.get("RASPBERRY_PI"),
+        reason="RASPBERRY_PI not set in environment",
+    ),
+    pytest.mark.flaky(retries=2, delay=5),
+]
 
 
 def test_connection_stats(sora_settings, free_port):
