@@ -62,7 +62,7 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
   dependencies.worker_thread = c->worker_thread_.get();
   dependencies.signaling_thread = c->signaling_thread_.get();
   dependencies.event_log_factory =
-      absl::make_unique<webrtc::RtcEventLogFactory>(&env.task_queue_factory());
+      absl::make_unique<webrtc::RtcEventLogFactory>();
 
   auto adm = c->worker_thread_->BlockingCall([&] {
     sora::AudioDeviceModuleConfig config;
