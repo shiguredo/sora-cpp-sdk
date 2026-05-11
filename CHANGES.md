@@ -11,7 +11,11 @@
 
 ## develop
 
-- [UPDATE] libwebrtc のバージョンを m148.7778.4.0 に上げる
+- [UPDATE] libwebrtc のバージョンを m149.7827.0.0 に上げる
+  - `webrtc::RtcEventLogFactory` のコンストラクタ不一致を修正する
+    - libwebrtc で `RtcEventLogFactory` の `TaskQueueFactory` が削除されたため、変更に追従する
+    - 参考 : libwebrtc で削除の入ったコミットのリンク
+      - https://source.chromium.org/chromium/_/webrtc/src/+/987aa57ba46fe759284caa9a2cdad3c52ea5d13a
   - @torikizi @zztkm
 - [UPDATE] libwebrtc m146 追従に伴うハードウェアエンコーダーのエラーハンドリングを修正する
   - 切断中に `OnEncodedImage()` のコールバックエラーにより abort することがある問題に対応する
@@ -40,7 +44,7 @@
   - 通知ジョブの `runs-on` を `ubuntu-slim` に変更する
   - @miosakuma
 - [UPDATE] Examples の DEPS を更新する
-  - WEBRTC_BUILD_VERSION を m148.7778.4.0 にあげる
+  - WEBRTC_BUILD_VERSION を m149.7827.0.0 にあげる
   - @torikizi @zztkm
 - [UPDATE] GitHub Actions の `macos-14` を `macos-15` に上げる
   - macos-14 を利用しているときに SDL3 のビルドエラーが発生するようになったが `macos-15` に上げることでビルドエラーを解消できた
