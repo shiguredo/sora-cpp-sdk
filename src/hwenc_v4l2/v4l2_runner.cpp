@@ -132,6 +132,10 @@ void V4L2Runner::PollProcess() {
         if (!on_complete) {
           RTC_LOG(LS_ERROR)
               << "[POLL][" << name_ << "] on_completes_ is empty.";
+          if (ioctl(fd_, VIDIOC_QBUF, &v4l2_buf) < 0) {
+            RTC_LOG(LS_ERROR) << "Failed to enqueue capture buffer: error="
+                              << strerror(errno);
+          }
         } else {
           (*on_complete)(&v4l2_buf, [fd = fd_, v4l2_buf]() mutable {
             v4l2_plane planes[VIDEO_MAX_PLANES] = {};
