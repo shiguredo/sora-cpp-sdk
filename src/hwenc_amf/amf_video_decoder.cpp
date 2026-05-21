@@ -47,6 +47,13 @@
                       << message;                       \
     return res;                                         \
   }
+#define WEBRTC_RETURN_IF_FAILED(res, message)           \
+  if (res != AMF_OK) {                                  \
+    RTC_LOG(LS_ERROR) << amf::amf_from_unicode_to_utf8( \
+                             amf::AMFFormatResult(res)) \
+                      << message;                       \
+    return WEBRTC_VIDEO_CODEC_ERROR;                    \
+  }
 #define TRACE() RTC_LOG(LS_ERROR) << "TRACE: " << __LINE__
 
 namespace sora {
@@ -163,7 +170,7 @@ int32_t AMFVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
   amf::AMFBufferPtr buffer;
   res =
       context_->AllocBuffer(amf::AMF_MEMORY_HOST, input_image.size(), &buffer);
-  RETURN_IF_FAILED(res, "Failed to AllocBuffer()");
+  WEBRTC_RETURN_IF_FAILED(res, "Failed to AllocBuffer()");
 
   memcpy(buffer->GetNative(), input_image.data(), input_image.size());
 
@@ -188,7 +195,7 @@ int32_t AMFVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
       InitAMF();
       continue;
     } else {
-      RETURN_IF_FAILED(res, L"Failed to SubmitInput()");
+      WEBRTC_RETURN_IF_FAILED(res, L"Failed to SubmitInput()");
       break;
     }
   }

@@ -40,10 +40,15 @@
   - インクルードガードの命名規則を統一する
   - 非標準の `__FUNCTION__` をやめて標準の `__func__` に統一する
   - シグナリング処理の似たような処理をヘルパー関数化してコードを簡潔にする
-  - 不要なコード、変数、include、空のプリプロセッサブロック、誤字を整理する
+  - `RtpTransceiverInterface` の検索処理をヘルパー関数化してコードを簡潔にする
+  - 不要なコード、不要なロック、変数、include、空のプリプロセッサブロック、誤字を整理する
   - `SoraAudioManagerBase` から不要な `running` フラグを削除する
+  - AMF エンコーダ/デコーダで AMF_RESULT を WebRTC エラーコードとして返していたのを修正する
+  - AMF エンコーダで入力キューがフルの時に OK を返していたのを修正する
   - @melpon
 - [UPDATE] Boost で deadline_timer が deprecated になったので、代わりに steady_timer を利用する
+  - @melpon
+- [UPDATE] BitrateAdjuster の２引数コンストラクタが deprecated になったので、代わりに３引数コンストラクタを利用する
   - @melpon
 - [FIX] カスタムエンジンが複数ある場合、`GetVideoCodecCapability()` で重複したエンジンが返されるのを修正
   - @melpon
@@ -66,6 +71,8 @@
 - [FIX] Android の `SoraAudioManagerBluetooth` で `stateToString` の出力が間違っていたのを修正する
   - @melpon
 - [FIX] Android の `registerReceiver` に `RECEIVER_NOT_EXPORTED` フラグを付与する
+  - @melpon
+- [FIX] `SoraSignaling` で接続タイムアウトの値に `SoraSignalingConfig::websocket_connection_timeout` が使用されていなかったのを修正する
   - @melpon
 
 ### misc

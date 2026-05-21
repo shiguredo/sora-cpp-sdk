@@ -109,6 +109,18 @@ void SetIfNonZero(boost::json::object& obj,
   }
 }
 
+webrtc::scoped_refptr<webrtc::RtpTransceiverInterface> FindTransceiver(
+    const std::vector<webrtc::scoped_refptr<webrtc::RtpTransceiverInterface>>&
+        transceivers,
+    const std::string& mid) {
+  for (auto transceiver : transceivers) {
+    if (transceiver->mid() && *transceiver->mid() == mid) {
+      return transceiver;
+    }
+  }
+  return nullptr;
+}
+
 }  // namespace
 
 SoraSignaling::SoraSignaling(const SoraSignalingConfig& config)
@@ -1222,7 +1234,8 @@ void SoraSignaling::DoConnect() {
   dc_.reset(new DataChannel(*config_.io_context, shared_from_this()));
 
   // 接続タイムアウト用の処理
-  connection_timeout_timer_.expires_after(std::chrono::seconds(30));
+  connection_timeout_timer_.expires_after(
+      std::chrono::seconds(config_.websocket_connection_timeout));
   connection_timeout_timer_.async_wait(
       [self = shared_from_this()](boost::system::error_code ec) {
         if (ec) {
@@ -1312,14 +1325,7 @@ void SoraSignaling::SetEncodingParameters(
                              : std::string("nullopt"));
   }
 
-  webrtc::scoped_refptr<webrtc::RtpTransceiverInterface> video_transceiver;
-  for (auto transceiver : pc_->GetTransceivers()) {
-    if (transceiver->mid() && *transceiver->mid() == mid) {
-      video_transceiver = transceiver;
-      break;
-    }
-  }
-
+  auto video_transceiver = FindTransceiver(pc_->GetTransceivers(), mid);
   if (video_transceiver == nullptr) {
     RTC_LOG(LS_ERROR) << "video transceiver not found";
     return;
@@ -1351,14 +1357,7 @@ void SoraSignaling::ResetEncodingParameters() {
                              : std::string("nullopt"));
   }
 
-  webrtc::scoped_refptr<webrtc::RtpTransceiverInterface> video_transceiver;
-  for (auto transceiver : pc_->GetTransceivers()) {
-    if (transceiver->mid() == video_mid_) {
-      video_transceiver = transceiver;
-      break;
-    }
-  }
-
+  auto video_transceiver = FindTransceiver(pc_->GetTransceivers(), video_mid_);
   if (video_transceiver == nullptr) {
     RTC_LOG(LS_ERROR) << "video transceiver not found";
     return;
@@ -1392,14 +1391,7 @@ void SoraSignaling::ResetEncodingParameters() {
 void SoraSignaling::SetDegradationPreference(
     std::string mid,
     webrtc::DegradationPreference degradation_preference) {
-  webrtc::scoped_refptr<webrtc::RtpTransceiverInterface> video_transceiver;
-  for (auto transceiver : pc_->GetTransceivers()) {
-    if (transceiver->mid() && *transceiver->mid() == mid) {
-      video_transceiver = transceiver;
-      break;
-    }
-  }
-
+  auto video_transceiver = FindTransceiver(pc_->GetTransceivers(), mid);
   if (video_transceiver == nullptr) {
     RTC_LOG(LS_ERROR) << "video transceiver not found";
     return;

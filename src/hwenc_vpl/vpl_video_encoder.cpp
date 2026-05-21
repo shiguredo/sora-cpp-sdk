@@ -6,7 +6,6 @@
 #include <cstdint>
 #include <cstring>
 #include <memory>
-#include <mutex>
 #include <vector>
 
 // WebRTC
@@ -35,6 +34,7 @@
 #include <modules/video_coding/utility/vp9_uncompressed_header_parser.h>
 #include <rtc_base/checks.h>
 #include <rtc_base/logging.h>
+#include <system_wrappers/include/clock.h>
 
 // libyuv
 #include <libyuv/convert_from.h>
@@ -100,7 +100,6 @@ class VplVideoEncoderImpl : public VplVideoEncoder {
                            ExtBuffer& ext);
 
  private:
-  std::mutex mutex_;
   webrtc::EncodedImageCallback* callback_ = nullptr;
   webrtc::BitrateAdjuster bitrate_adjuster_;
   uint32_t target_bitrate_bps_ = 0;
@@ -144,7 +143,9 @@ const int kHighH264QpThreshold = 40;
 
 VplVideoEncoderImpl::VplVideoEncoderImpl(std::shared_ptr<VplSession> session,
                                          mfxU32 codec)
-    : session_(session), codec_(codec), bitrate_adjuster_(0.5, 0.95) {}
+    : session_(session),
+      codec_(codec),
+      bitrate_adjuster_(webrtc::Clock::GetRealTimeClock(), 0.5, 0.95) {}
 
 VplVideoEncoderImpl::~VplVideoEncoderImpl() {
   Release();
@@ -451,7 +452,6 @@ int32_t VplVideoEncoderImpl::InitEncode(
 }
 int32_t VplVideoEncoderImpl::RegisterEncodeCompleteCallback(
     webrtc::EncodedImageCallback* callback) {
-  std::lock_guard<std::mutex> lock(mutex_);
   callback_ = callback;
   return WEBRTC_VIDEO_CODEC_OK;
 }
