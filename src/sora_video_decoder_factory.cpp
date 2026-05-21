@@ -32,7 +32,7 @@
 #include "sora/hwenc_nvcodec/nvcodec_video_decoder.h"
 #endif
 
-#if USE_VPL_ENCODER
+#if defined(USE_VPL_ENCODER)
 #include "sora/hwenc_vpl/vpl_video_decoder.h"
 #endif
 
@@ -183,7 +183,7 @@ SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
   }
 #endif
 
-#if USE_VPL_ENCODER
+#if defined(USE_VPL_ENCODER)
   auto session = VplSession::Create();
   if (VplVideoDecoder::IsSupported(session, webrtc::kVideoCodecVP8)) {
     config.decoders.insert(
