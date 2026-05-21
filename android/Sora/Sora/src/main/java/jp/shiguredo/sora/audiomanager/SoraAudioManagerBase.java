@@ -24,6 +24,8 @@ import android.media.AudioManager;
 import android.os.Build;
 import android.util.Log;
 
+import androidx.core.content.ContextCompat;
+
 abstract class SoraAudioManagerBase implements SoraAudioManager {
     private static final String TAG = "SoraAudioManager";
     protected final Context context;
@@ -98,9 +100,11 @@ abstract class SoraAudioManagerBase implements SoraAudioManager {
 
     // 有線ヘッドセットの接続を通知するレシーバーを登録する
     protected void registerWiredHeadsetReceiver() {
-        context.registerReceiver(
+        ContextCompat.registerReceiver(
+                context,
                 wiredHeadsetReceiver,
-                new IntentFilter(Intent.ACTION_HEADSET_PLUG));
+                new IntentFilter(Intent.ACTION_HEADSET_PLUG),
+                ContextCompat.RECEIVER_NOT_EXPORTED);
     }
 
     @Override
