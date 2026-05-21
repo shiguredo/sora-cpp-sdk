@@ -628,7 +628,7 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
       connection = config_.pc_factory->CreatePeerConnectionOrError(
           rtc_config, std::move(dependencies));
   if (!connection.ok()) {
-    RTC_LOG(LS_ERROR) << "CreatePeerConnection failed: errro="
+    RTC_LOG(LS_ERROR) << "CreatePeerConnection failed: error="
                       << connection.error().message();
     return nullptr;
   }
