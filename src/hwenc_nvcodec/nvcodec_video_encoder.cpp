@@ -37,6 +37,7 @@
 #include <modules/video_coding/svc/scalable_video_controller.h>
 #include <rtc_base/checks.h>
 #include <rtc_base/logging.h>
+#include <system_wrappers/include/clock.h>
 
 // libyuv
 #include <libyuv/convert_from.h>      // IWYU pragma: keep
@@ -157,7 +158,9 @@ class NvCodecVideoEncoderImpl : public NvCodecVideoEncoder {
 NvCodecVideoEncoderImpl::NvCodecVideoEncoderImpl(
     std::shared_ptr<CudaContext> cuda_context,
     CudaVideoCodec codec)
-    : cuda_context_(cuda_context), codec_(codec), bitrate_adjuster_(0.5, 0.95) {
+    : cuda_context_(cuda_context),
+      codec_(codec),
+      bitrate_adjuster_(webrtc::Clock::GetRealTimeClock(), 0.5, 0.95) {
 #ifdef _WIN32
   ComPtr<IDXGIFactory1> idxgi_factory;
   RTC_CHECK(!FAILED(CreateDXGIFactory1(__uuidof(IDXGIFactory1),

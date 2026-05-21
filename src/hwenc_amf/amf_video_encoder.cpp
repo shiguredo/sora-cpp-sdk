@@ -31,6 +31,7 @@
 #include <modules/video_coding/svc/scalable_video_controller.h>
 #include <rtc_base/checks.h>
 #include <rtc_base/logging.h>
+#include <system_wrappers/include/clock.h>
 
 // libyuv
 #include <libyuv/convert.h>
@@ -161,7 +162,9 @@ class AMFVideoEncoderImpl : public AMFVideoEncoder {
 AMFVideoEncoderImpl::AMFVideoEncoderImpl(
     std::shared_ptr<AMFContext> amf_context,
     webrtc::VideoCodecType codec)
-    : amf_context_(amf_context), codec_(codec), bitrate_adjuster_(0.5, 0.95) {}
+    : amf_context_(amf_context),
+      codec_(codec),
+      bitrate_adjuster_(webrtc::Clock::GetRealTimeClock(), 0.5, 0.95) {}
 
 AMFVideoEncoderImpl::~AMFVideoEncoderImpl() {
   Release();

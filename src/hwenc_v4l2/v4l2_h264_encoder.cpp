@@ -37,7 +37,7 @@ V4L2H264Encoder::V4L2H264Encoder(webrtc::VideoCodecType codec)
     : configured_width_(0),
       configured_height_(0),
       callback_(nullptr),
-      bitrate_adjuster_(.5, .95),
+      bitrate_adjuster_(webrtc::Clock::GetRealTimeClock(), .5, .95),
       target_framerate_fps_(30),
       configured_framerate_fps_(30) {}
 

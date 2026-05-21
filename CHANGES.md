@@ -48,6 +48,8 @@
   - @melpon
 - [UPDATE] Boost で deadline_timer が deprecated になったので、代わりに steady_timer を利用する
   - @melpon
+- [UPDATE] BitrateAdjuster の２引数コンストラクタが deprecated になったので、代わりに３引数コンストラクタを利用する
+  - @melpon
 - [FIX] カスタムエンジンが複数ある場合、`GetVideoCodecCapability()` で重複したエンジンが返されるのを修正
   - @melpon
 - [FIX] `#if USE_VPL_ENCODER` と `#if defined(USE_VPL_ENCODER)` の不一致を修正する
