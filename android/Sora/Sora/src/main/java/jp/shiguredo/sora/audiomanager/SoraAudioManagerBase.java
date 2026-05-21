@@ -29,7 +29,6 @@ abstract class SoraAudioManagerBase implements SoraAudioManager {
     protected final Context context;
     protected final AudioManager audioManager;
     protected final BroadcastReceiver wiredHeadsetReceiver;
-    protected boolean running;
     private int savedAudioMode = AudioManager.MODE_INVALID;
     private boolean savedIsMicrophoneMute;
     protected boolean hasWiredHeadset;
@@ -53,7 +52,6 @@ abstract class SoraAudioManagerBase implements SoraAudioManager {
         this.context = context;
         audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
         wiredHeadsetReceiver = new WiredHeadsetReceiver();
-        running = false;
     }
 
     @Override
