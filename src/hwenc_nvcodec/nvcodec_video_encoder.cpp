@@ -436,9 +436,13 @@ int32_t NvCodecVideoEncoderImpl::Encode(
           encoded_image_._frameType == webrtc::VideoFrameType::kVideoFrameKey;
       std::vector<webrtc::ScalableVideoController::LayerFrameConfig>
           layer_frames = svc_controller_->NextFrameConfig(is_key);
+      // AV1 の SVC では、まれにエンコード対象のレイヤーフレームが存在しない場合がある。
+      // 次のフレームを待つことで正常に継続可能なケースであるため、エラーではなく正常終了を返してスキップする。
+      if (layer_frames.empty()) {
+        return WEBRTC_VIDEO_CODEC_OK;
+      }
       codec_specific.end_of_picture = true;
       codec_specific.scalability_mode = scalability_mode_;
-      // layer_frames[0] が無効の場合、アクセス違反となるが、基本的に無効になることはない
       codec_specific.generic_frame_info =
           svc_controller_->OnEncodeDone(layer_frames[0]);
       if (is_key && codec_specific.generic_frame_info) {
