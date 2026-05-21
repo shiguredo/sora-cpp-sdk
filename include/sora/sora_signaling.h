@@ -1,5 +1,5 @@
-#ifndef SORA_SORA_SIGNALING_H_INCLUDED
-#define SORA_SORA_SIGNALING_H_INCLUDED
+#ifndef SORA_SORA_SIGNALING_H_
+#define SORA_SORA_SIGNALING_H_
 
 #include <cstddef>
 #include <cstdint>

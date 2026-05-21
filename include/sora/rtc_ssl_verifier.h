@@ -1,5 +1,5 @@
-#ifndef RTC_SSL_VERIFIER
-#define RTC_SSL_VERIFIER
+#ifndef SORA_RTC_SSL_VERIFIER_H_
+#define SORA_RTC_SSL_VERIFIER_H_
 
 #include <optional>
 #include <string>
