@@ -36,6 +36,8 @@
 - [ADD] TURN-TLS のクライアント証明書設定に対応する
   - `SoraSignalingConfig` の `client_cert` / `client_key` を TURN-TLS にも適用する
   - @zztkm
+- [FIX] カスタムエンジンが複数ある場合、`GetVideoCodecCapability()` で重複したエンジンが返されるのを修正
+  - @melpon
 
 ### misc
 
