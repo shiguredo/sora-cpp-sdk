@@ -114,7 +114,7 @@ class SoraAudioManagerBluetooth {
                         intent.getIntExtra(BluetoothHeadset.EXTRA_STATE, BluetoothHeadset.STATE_DISCONNECTED);
                 Log.d(TAG, "BluetoothHeadsetBroadcastReceiver.onReceive: "
                         + "a=ACTION_CONNECTION_STATE_CHANGED, "
-                        + "s=" + stateToString(state) + ", "
+                        + "s=" + profileStateToString(state) + ", "
                         + "sb=" + isInitialStickyBroadcast() + ", "
                         + "BT state: " + bluetoothState);
                 if (state == BluetoothHeadset.STATE_CONNECTED) {
@@ -135,7 +135,7 @@ class SoraAudioManagerBluetooth {
                         BluetoothHeadset.EXTRA_STATE, BluetoothHeadset.STATE_AUDIO_DISCONNECTED);
                 Log.d(TAG, "BluetoothHeadsetBroadcastReceiver.onReceive: "
                         + "a=ACTION_AUDIO_STATE_CHANGED, "
-                        + "s=" + stateToString(state) + ", "
+                        + "s=" + headsetAudioStateToString(state) + ", "
                         + "sb=" + isInitialStickyBroadcast() + ", "
                         + "BT state: " + bluetoothState);
                 if (state == BluetoothHeadset.STATE_AUDIO_CONNECTED) {
@@ -337,26 +337,31 @@ class SoraAudioManagerBluetooth {
         updateAudioDeviceState();
     }
 
-    static String stateToString(int state) {
+    static String profileStateToString(int state) {
         switch (state) {
-            case BluetoothAdapter.STATE_DISCONNECTED:
+            case BluetoothProfile.STATE_DISCONNECTED:
                 return "DISCONNECTED";
-            case BluetoothAdapter.STATE_CONNECTED:
+            case BluetoothProfile.STATE_CONNECTED:
                 return "CONNECTED";
-            case BluetoothAdapter.STATE_CONNECTING:
+            case BluetoothProfile.STATE_CONNECTING:
                 return "CONNECTING";
-            case BluetoothAdapter.STATE_DISCONNECTING:
+            case BluetoothProfile.STATE_DISCONNECTING:
                 return "DISCONNECTING";
-            case BluetoothAdapter.STATE_OFF:
-                return "OFF";
-            case BluetoothAdapter.STATE_ON:
-                return "ON";
-            case BluetoothAdapter.STATE_TURNING_OFF:
-                return "TURNING_OFF";
-            case BluetoothAdapter.STATE_TURNING_ON:
-                return  "TURNING_ON";
             default:
-                return "INVALID";
+                return "INVALID(" + state + ")";
+        }
+    }
+
+    static String headsetAudioStateToString(int state) {
+        switch (state) {
+            case BluetoothHeadset.STATE_AUDIO_DISCONNECTED:
+                return "AUDIO_DISCONNECTED";
+            case BluetoothHeadset.STATE_AUDIO_CONNECTED:
+                return "AUDIO_CONNECTED";
+            case BluetoothHeadset.STATE_AUDIO_CONNECTING:
+                return "AUDIO_CONNECTING";
+            default:
+                return "INVALID_AUDIO(" + state + ")";
         }
     }
 }
