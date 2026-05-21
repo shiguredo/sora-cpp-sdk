@@ -349,7 +349,9 @@ int32_t AMFVideoEncoderImpl::Encode(
   if (res == AMF_NEED_MORE_INPUT) {
     // do nothing
   } else if (res == AMF_INPUT_FULL || res == AMF_DECODER_NO_FREE_SURFACES) {
-    amf_sleep(1);  // input queue is full: wait, poll and submit again
+    // TODO(melpon): Submit に成功するまでループさせるかどうか考えた方が良いかもしれない
+    // amf_sleep(1);  // input queue is full: wait, poll and submit again
+    return WEBRTC_VIDEO_CODEC_ERROR;
   } else {
     WEBRTC_RETURN_IF_FAILED(res, L"Failed to SubmitInput()");
     surface_ = nullptr;

@@ -43,6 +43,7 @@
   - 不要なコード、不要なロック、変数、include、空のプリプロセッサブロック、誤字を整理する
   - `SoraAudioManagerBase` から不要な `running` フラグを削除する
   - AMF エンコーダ/デコーダで AMF_RESULT を WebRTC エラーコードとして返していたのを修正する
+  - AMF エンコーダで入力キューがフルの時に OK を返していたのを修正する
   - @melpon
 - [UPDATE] Boost で deadline_timer が deprecated になったので、代わりに steady_timer を利用する
   - @melpon
