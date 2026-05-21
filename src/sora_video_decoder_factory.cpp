@@ -103,15 +103,10 @@ std::unique_ptr<webrtc::VideoDecoder> SoraVideoDecoderFactory::Create(
       create_video_decoder = dec.create_video_decoder;
     }
 
-    std::unique_ptr<webrtc::VideoDecoder> r;
     for (const auto& f : supported_formats) {
       if (f.IsSameCodec(format)) {
         return create_video_decoder(format);
       }
-    }
-
-    if (r != nullptr) {
-      return r;
     }
   }
 
