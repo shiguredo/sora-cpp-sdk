@@ -169,6 +169,15 @@ void LibcameraCapturerImpl::ReleaseLibcamera() {
     libcamerac_Camera_release(camera_.get());
   acquired_ = false;
 
+  for (auto& [buffer, spans] : mapped_buffers_) {
+    for (auto& span : spans) {
+      if (span.buffer != nullptr) {
+        munmap(span.buffer, span.length);
+      }
+    }
+  }
+  mapped_buffers_.clear();
+
   camera_.reset();
   configuration_.reset();
   controls_.reset();
