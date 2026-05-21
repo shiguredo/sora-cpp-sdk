@@ -118,8 +118,7 @@ void SessionDescription::SetAnswer(webrtc::PeerConnectionInterface* pc,
   std::unique_ptr<webrtc::SessionDescriptionInterface> session_description =
       webrtc::CreateSessionDescription(webrtc::SdpType::kAnswer, sdp, &error);
   if (!session_description) {
-    RTC_LOG(LS_ERROR) << __func__
-                      << "Failed to create session description: "
+    RTC_LOG(LS_ERROR) << __func__ << "Failed to create session description: "
                       << error.description.c_str()
                       << "\nline: " << error.line.c_str();
     on_failure(webrtc::RTCError(webrtc::RTCErrorType::SYNTAX_ERROR,

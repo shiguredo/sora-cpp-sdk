@@ -158,8 +158,7 @@ void V4L2H264Encoder::SetBitrateBps(uint32_t bitrate_bps) {
   if (bitrate_bps < 300000 || configured_bitrate_bps_ == bitrate_bps) {
     return;
   }
-  RTC_LOG(LS_INFO) << __func__ << "  bitrate: " << bitrate_bps
-                   << " bit/sec";
+  RTC_LOG(LS_INFO) << __func__ << "  bitrate: " << bitrate_bps << " bit/sec";
   v4l2_control ctrl = {};
   ctrl.id = V4L2_CID_MPEG_VIDEO_BITRATE;
   ctrl.value = bitrate_bps;
@@ -314,8 +313,7 @@ int32_t V4L2H264Encoder::SendFrame(const webrtc::VideoFrame& frame,
                                    int64_t timestamp_us,
                                    bool is_key_frame) {
   if (frame.timestamp_us() != timestamp_us) {
-    RTC_LOG(LS_ERROR) << __func__
-                      << "  Frame parameter is not found. SkipFrame"
+    RTC_LOG(LS_ERROR) << __func__ << "  Frame parameter is not found. SkipFrame"
                       << "  timestamp_us: " << timestamp_us;
     return WEBRTC_VIDEO_CODEC_ERROR;
   }

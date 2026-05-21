@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <chrono>
 #include <cstddef>
 #include <exception>
 #include <functional>
@@ -18,7 +19,6 @@
 #include <boost/beast/websocket/error.hpp>
 #include <boost/beast/websocket/rfc6455.hpp>
 #include <boost/core/ignore_unused.hpp>
-#include <boost/date_time/posix_time/posix_time_duration.hpp>
 #include <boost/system/detail/errc.hpp>
 #include <boost/system/detail/error_code.hpp>
 #include <boost/system/errc.hpp>
@@ -232,9 +232,8 @@ void SoraSignaling::Redirect(std::string url) {
       }
 
       // 接続タイムアウト用の処理
-      self->connection_timeout_timer_.expires_from_now(
-          boost::posix_time::seconds(
-              self->config_.websocket_connection_timeout));
+      self->connection_timeout_timer_.expires_after(
+          std::chrono::seconds(self->config_.websocket_connection_timeout));
       self->connection_timeout_timer_.async_wait(
           [self](boost::system::error_code ec) {
             if (ec) {
@@ -301,8 +300,7 @@ void SoraSignaling::OnRedirect(boost::system::error_code ec,
     return;
   }
 
-  boost::system::error_code tec;
-  connection_timeout_timer_.cancel(tec);
+  connection_timeout_timer_.cancel();
 
   state_ = State::Connected;
   ws_ = ws;
@@ -737,8 +735,8 @@ void SoraSignaling::DoInternalDisconnect(
     SendOnSignalingMessage(SoraSignalingType::DATACHANNEL,
                            SoraSignalingDirection::SENT, std::move(text));
   } else if (!using_datachannel_ && ws_connected_) {
-    closing_timeout_timer_.expires_from_now(
-        boost::posix_time::seconds(config_.websocket_close_timeout));
+    closing_timeout_timer_.expires_after(
+        std::chrono::seconds(config_.websocket_close_timeout));
     closing_timeout_timer_.async_wait(
         [self = shared_from_this()](boost::system::error_code ec) {
           if (ec) {
@@ -748,8 +746,7 @@ void SoraSignaling::DoInternalDisconnect(
         });
     on_ws_close_ = [self = shared_from_this(),
                     on_close](boost::system::error_code ec) {
-      boost::system::error_code tec;
-      self->closing_timeout_timer_.cancel(tec);
+      self->closing_timeout_timer_.cancel();
       auto reason = self->ws_->reason();
       if (ec == boost::asio::error::operation_aborted) {
         // タイムアウトによる切断なので 4999 をコールバックする
@@ -842,8 +839,7 @@ void SoraSignaling::OnConnect(boost::system::error_code ec,
     return;
   }
 
-  boost::system::error_code tec;
-  connection_timeout_timer_.cancel(tec);
+  connection_timeout_timer_.cancel();
 
   RTC_LOG(LS_INFO) << "Signaling Websocket is connected: url=" << url;
   state_ = State::Connected;
@@ -1226,7 +1222,7 @@ void SoraSignaling::DoConnect() {
   dc_.reset(new DataChannel(*config_.io_context, shared_from_this()));
 
   // 接続タイムアウト用の処理
-  connection_timeout_timer_.expires_from_now(boost::posix_time::seconds(30));
+  connection_timeout_timer_.expires_after(std::chrono::seconds(30));
   connection_timeout_timer_.async_wait(
       [self = shared_from_this()](boost::system::error_code ec) {
         if (ec) {
@@ -1484,9 +1480,8 @@ bool SoraSignaling::SendDataChannel(const std::string& label,
 }
 
 void SoraSignaling::Clear() {
-  boost::system::error_code tec;
-  connection_timeout_timer_.cancel(tec);
-  closing_timeout_timer_.cancel(tec);
+  connection_timeout_timer_.cancel();
+  closing_timeout_timer_.cancel();
   connecting_wss_.clear();
   selected_signaling_url_.store("");
   connected_signaling_url_.store("");

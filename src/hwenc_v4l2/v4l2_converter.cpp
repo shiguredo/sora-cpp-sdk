@@ -88,16 +88,14 @@ int V4L2H264EncodeConverter::Init(int src_memory,
   ctrl.id = V4L2_CID_MPEG_VIDEO_H264_PROFILE;
   ctrl.value = V4L2_MPEG_VIDEO_H264_PROFILE_HIGH;
   if (ioctl(fd_, VIDIOC_S_CTRL, &ctrl) < 0) {
-    RTC_LOG(LS_ERROR) << __func__
-                      << "  Failed to set profile: error=" << errno;
+    RTC_LOG(LS_ERROR) << __func__ << "  Failed to set profile: error=" << errno;
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
   ctrl.id = V4L2_CID_MPEG_VIDEO_H264_LEVEL;
   ctrl.value = V4L2_MPEG_VIDEO_H264_LEVEL_4_2;
   if (ioctl(fd_, VIDIOC_S_CTRL, &ctrl) < 0) {
-    RTC_LOG(LS_ERROR) << __func__
-                      << "  Failed to set level: error=" << errno;
+    RTC_LOG(LS_ERROR) << __func__ << "  Failed to set level: error=" << errno;
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
@@ -564,8 +562,7 @@ int V4L2DecodeConverter::Init(int src_pixelformat, bool dst_export_dmafds) {
         // 全てのストリームを止めて、バッファをクリアする
         int type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
         if (ioctl(fd_, VIDIOC_STREAMOFF, &type) < 0) {
-          RTC_LOG(LS_ERROR)
-              << __func__ << "  Failed to start capture stream";
+          RTC_LOG(LS_ERROR) << __func__ << "  Failed to start capture stream";
           return;
         }
         dst_buffers_.Deallocate();
@@ -604,8 +601,7 @@ int V4L2DecodeConverter::Init(int src_pixelformat, bool dst_export_dmafds) {
 
         type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
         if (ioctl(fd_, VIDIOC_STREAMON, &type) < 0) {
-          RTC_LOG(LS_ERROR)
-              << __func__ << "  Failed to start capture stream";
+          RTC_LOG(LS_ERROR) << __func__ << "  Failed to start capture stream";
           return;
         }
 

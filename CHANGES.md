@@ -43,6 +43,8 @@
   - 不要なコード、変数、include、空のプリプロセッサブロック、誤字を整理する
   - `SoraAudioManagerBase` から不要な `running` フラグを削除する
   - @melpon
+- [UPDATE] Boost で deadline_timer が deprecated になったので、代わりに steady_timer を利用する
+  - @melpon
 - [FIX] カスタムエンジンが複数ある場合、`GetVideoCodecCapability()` で重複したエンジンが返されるのを修正
   - @melpon
 - [FIX] `#if USE_VPL_ENCODER` と `#if defined(USE_VPL_ENCODER)` の不一致を修正する

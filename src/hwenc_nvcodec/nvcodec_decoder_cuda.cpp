@@ -30,17 +30,17 @@ static cudaVideoCodec ToCudaVideoCodec(CudaVideoCodec codec) {
                                          : cudaVideoCodec_JPEG;
 }
 
-#define CUDA_DRVAPI_CALL(call)                                      \
-  do {                                                              \
-    CUresult err__ = call;                                          \
-    if (err__ != CUDA_SUCCESS) {                                    \
-      const char* szErrName = NULL;                                 \
-      dyn::cuGetErrorName(err__, &szErrName);                       \
-      std::ostringstream errorLog;                                  \
-      errorLog << "CUDA driver API error " << szErrName;            \
-      throw NVDECException::makeNVDECException(                     \
-          errorLog.str(), err__, __func__, __FILE__, __LINE__); \
-    }                                                               \
+#define CUDA_DRVAPI_CALL(call)                                                \
+  do {                                                                        \
+    CUresult err__ = call;                                                    \
+    if (err__ != CUDA_SUCCESS) {                                              \
+      const char* szErrName = NULL;                                           \
+      dyn::cuGetErrorName(err__, &szErrName);                                 \
+      std::ostringstream errorLog;                                            \
+      errorLog << "CUDA driver API error " << szErrName;                      \
+      throw NVDECException::makeNVDECException(errorLog.str(), err__,         \
+                                               __func__, __FILE__, __LINE__); \
+    }                                                                         \
   } while (0)
 
 NvCodecDecoderCuda::NvCodecDecoderCuda(std::shared_ptr<CudaContext> ctx,

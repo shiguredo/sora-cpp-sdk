@@ -1,5 +1,6 @@
 #include "sora/data_channel.h"
 
+#include <chrono>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -10,7 +11,6 @@
 #include <boost/asio/error.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/post.hpp>
-#include <boost/date_time/posix_time/posix_time_duration.hpp>
 #include <boost/system/detail/errc.hpp>
 #include <boost/system/detail/error_code.hpp>
 #include <boost/system/errc.hpp>
@@ -75,8 +75,8 @@ void DataChannel::Close(const webrtc::DataBuffer& disconnect_message,
     return;
   }
 
-  timer_.expires_from_now(
-      boost::posix_time::milliseconds((int)(disconnect_wait_timeout * 1000)));
+  timer_.expires_after(
+      std::chrono::milliseconds((int)(disconnect_wait_timeout * 1000)));
   timer_.async_wait([on_close](boost::system::error_code ec) {
     if (ec == boost::asio::error::operation_aborted) {
       return;
