@@ -147,7 +147,7 @@ std::vector<std::string> AndroidCapturer::enumDevices(
         env, (jstring)env->GetObjectArrayElement(devices.obj(), i));
     auto device_str = env->GetStringUTFChars(device.obj(), nullptr);
     r.push_back(device_str);
-    env->ReleaseStringUTFChars(device_str);
+    env->ReleaseStringUTFChars(device.obj(), device_str);
   }
   return r;
 }
