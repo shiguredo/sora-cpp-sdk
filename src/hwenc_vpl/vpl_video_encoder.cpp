@@ -574,7 +574,7 @@ int32_t VplVideoEncoderImpl::Encode(
   }
   VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-  sts = MFXVideoCORE_SyncOperation(GetVplSession(session_), syncp, 600000);
+  sts = MFXVideoCORE_SyncOperation(GetVplSession(session_), syncp, 5000);
   VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
   //RTC_LOG(LS_ERROR) << "SurfaceSize=" << (surface->Data.U - surface->Data.Y);

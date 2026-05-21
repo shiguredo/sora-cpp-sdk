@@ -305,7 +305,7 @@ int32_t VplVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
     }
     VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-    sts = MFXVideoCORE_SyncOperation(GetVplSession(session_), syncp, 600000);
+    sts = MFXVideoCORE_SyncOperation(GetVplSession(session_), syncp, 5000);
     VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
     uint64_t pts = input_image.RtpTimestamp();
