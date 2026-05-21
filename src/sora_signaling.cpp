@@ -66,6 +66,51 @@ const char kFieldKind[] = "kind";
 const char kOperatorIsIn[] = "is_in";
 const char kOperatorIsNotIn[] = "is_not_in";
 
+namespace {
+
+void SetIfNotEmpty(boost::json::object& obj,
+                   boost::json::string_view key,
+                   const std::string& value) {
+  if (!value.empty()) {
+    obj[key] = value;
+  }
+}
+
+template <typename T>
+void SetIfPresent(boost::json::object& obj,
+                  boost::json::string_view key,
+                  const std::optional<T>& value) {
+  if (value) {
+    obj[key] = *value;
+  }
+}
+
+void SetIfNotNull(boost::json::object& obj,
+                  boost::json::string_view key,
+                  const boost::json::value& value) {
+  if (!value.is_null()) {
+    obj[key] = value;
+  }
+}
+
+void SetIfPositive(boost::json::object& obj,
+                   boost::json::string_view key,
+                   int value) {
+  if (value > 0) {
+    obj[key] = value;
+  }
+}
+
+void SetIfNonZero(boost::json::object& obj,
+                  boost::json::string_view key,
+                  int value) {
+  if (value != 0) {
+    obj[key] = value;
+  }
+}
+
+}  // namespace
+
 SoraSignaling::SoraSignaling(const SoraSignalingConfig& config)
     : config_(config),
       connection_timeout_timer_(*config_.io_context),
@@ -291,56 +336,23 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     m["redirect"] = true;
   }
 
-  if (!config_.client_id.empty()) {
-    m["client_id"] = config_.client_id;
-  }
+  SetIfNotEmpty(m, "client_id", config_.client_id);
+  SetIfNotEmpty(m, "bundle_id", config_.bundle_id);
+  SetIfNotEmpty(m, "sora_client", config_.sora_client);
 
-  if (!config_.bundle_id.empty()) {
-    m["bundle_id"] = config_.bundle_id;
-  }
+  SetIfPresent(m, "multistream", config_.multistream);
+  SetIfPresent(m, "simulcast", config_.simulcast);
+  SetIfNotEmpty(m, "simulcast_rid", config_.simulcast_rid);
+  SetIfPresent(m, "simulcast_request_rid", config_.simulcast_request_rid);
 
-  if (!config_.sora_client.empty()) {
-    m["sora_client"] = config_.sora_client;
-  }
+  SetIfPresent(m, "spotlight", config_.spotlight);
+  SetIfPositive(m, "spotlight_number", config_.spotlight_number);
+  SetIfNotEmpty(m, "spotlight_focus_rid", config_.spotlight_focus_rid);
+  SetIfNotEmpty(m, "spotlight_unfocus_rid", config_.spotlight_unfocus_rid);
 
-  if (config_.multistream) {
-    m["multistream"] = *config_.multistream;
-  }
-
-  if (config_.simulcast) {
-    m["simulcast"] = *config_.simulcast;
-  }
-
-  if (!config_.simulcast_rid.empty()) {
-    m["simulcast_rid"] = config_.simulcast_rid;
-  }
-
-  if (config_.simulcast_request_rid) {
-    m["simulcast_request_rid"] = *config_.simulcast_request_rid;
-  }
-
-  if (config_.spotlight) {
-    m["spotlight"] = *config_.spotlight;
-  }
-  if (config_.spotlight_number > 0) {
-    m["spotlight_number"] = config_.spotlight_number;
-  }
-
-  if (!config_.spotlight_focus_rid.empty()) {
-    m["spotlight_focus_rid"] = config_.spotlight_focus_rid;
-  }
-
-  if (!config_.spotlight_unfocus_rid.empty()) {
-    m["spotlight_unfocus_rid"] = config_.spotlight_unfocus_rid;
-  }
-
-  if (!config_.metadata.is_null()) {
-    m["metadata"] = config_.metadata;
-  }
-
-  if (!config_.signaling_notify_metadata.is_null()) {
-    m["signaling_notify_metadata"] = config_.signaling_notify_metadata;
-  }
+  SetIfNotNull(m, "metadata", config_.metadata);
+  SetIfNotNull(m, "signaling_notify_metadata",
+               config_.signaling_notify_metadata);
 
   if (!config_.video) {
     // video: false の場合はそのまま設定
@@ -348,25 +360,17 @@ void SoraSignaling::DoSendConnect(bool redirect) {
   } else {
     // video: true の場合は、ちゃんとオプションを設定する
     m["video"] = boost::json::object();
-    if (!config_.video_codec_type.empty()) {
-      m["video"].as_object()["codec_type"] = config_.video_codec_type;
-    }
-    if (config_.video_bit_rate != 0) {
-      m["video"].as_object()["bit_rate"] = config_.video_bit_rate;
-    }
-    if (!config_.video_vp9_params.is_null()) {
-      m["video"].as_object()["vp9_params"] = config_.video_vp9_params;
-    }
-    if (!config_.video_av1_params.is_null()) {
-      m["video"].as_object()["av1_params"] = config_.video_av1_params;
-    }
-    if (!config_.video_h264_params.is_null()) {
-      m["video"].as_object()["h264_params"] = config_.video_h264_params;
-    }
-
-    if (!config_.video_h265_params.is_null()) {
-      m["video"].as_object()["h265_params"] = config_.video_h265_params;
-    }
+    SetIfNotEmpty(m["video"].as_object(), "codec_type",
+                  config_.video_codec_type);
+    SetIfNonZero(m["video"].as_object(), "bit_rate", config_.video_bit_rate);
+    SetIfNotNull(m["video"].as_object(), "vp9_params",
+                 config_.video_vp9_params);
+    SetIfNotNull(m["video"].as_object(), "av1_params",
+                 config_.video_av1_params);
+    SetIfNotNull(m["video"].as_object(), "h264_params",
+                 config_.video_h264_params);
+    SetIfNotNull(m["video"].as_object(), "h265_params",
+                 config_.video_h265_params);
 
     // オプションの設定が行われてなければ単に true を設定
     if (m["video"].as_object().empty()) {
@@ -378,15 +382,11 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     m["audio"] = false;
   } else {
     m["audio"] = boost::json::object();
-    if (!config_.audio_codec_type.empty()) {
-      m["audio"].as_object()["codec_type"] = config_.audio_codec_type;
-    }
-    if (config_.audio_bit_rate != 0) {
-      m["audio"].as_object()["bit_rate"] = config_.audio_bit_rate;
-    }
-    if (!config_.audio_opus_params.is_null()) {
-      m["audio"].as_object()["opus_params"] = config_.audio_opus_params;
-    }
+    SetIfNotEmpty(m["audio"].as_object(), "codec_type",
+                  config_.audio_codec_type);
+    SetIfNonZero(m["audio"].as_object(), "bit_rate", config_.audio_bit_rate);
+    SetIfNotNull(m["audio"].as_object(), "opus_params",
+                 config_.audio_opus_params);
 
     // オプションの設定が行われてなければ単に true を設定
     if (m["audio"].as_object().empty()) {
@@ -394,16 +394,12 @@ void SoraSignaling::DoSendConnect(bool redirect) {
     }
   }
 
-  if (!config_.audio_streaming_language_code.empty()) {
-    m["audio_streaming_language_code"] = config_.audio_streaming_language_code;
-  }
+  SetIfNotEmpty(m, "audio_streaming_language_code",
+                config_.audio_streaming_language_code);
 
-  if (config_.data_channel_signaling) {
-    m["data_channel_signaling"] = *config_.data_channel_signaling;
-  }
-  if (config_.ignore_disconnect_websocket) {
-    m["ignore_disconnect_websocket"] = *config_.ignore_disconnect_websocket;
-  }
+  SetIfPresent(m, "data_channel_signaling", config_.data_channel_signaling);
+  SetIfPresent(m, "ignore_disconnect_websocket",
+               config_.ignore_disconnect_websocket);
 
   if (!config_.data_channels.empty()) {
     boost::json::array ar;
@@ -411,21 +407,11 @@ void SoraSignaling::DoSendConnect(bool redirect) {
       boost::json::object obj;
       obj["label"] = d.label;
       obj["direction"] = d.direction;
-      if (d.ordered) {
-        obj["ordered"] = *d.ordered;
-      }
-      if (d.max_packet_life_time) {
-        obj["max_packet_life_time"] = *d.max_packet_life_time;
-      }
-      if (d.max_retransmits) {
-        obj["max_retransmits"] = *d.max_retransmits;
-      }
-      if (d.protocol) {
-        obj["protocol"] = *d.protocol;
-      }
-      if (d.compress) {
-        obj["compress"] = *d.compress;
-      }
+      SetIfPresent(obj, "ordered", d.ordered);
+      SetIfPresent(obj, "max_packet_life_time", d.max_packet_life_time);
+      SetIfPresent(obj, "max_retransmits", d.max_retransmits);
+      SetIfPresent(obj, "protocol", d.protocol);
+      SetIfPresent(obj, "compress", d.compress);
       if (d.header) {
         obj["header"] = boost::json::array(d.header->begin(), d.header->end());
       }
@@ -437,15 +423,9 @@ void SoraSignaling::DoSendConnect(bool redirect) {
   auto forwarding_filter_to_json =
       [](const SoraSignalingConfig::ForwardingFilter& f) -> boost::json::value {
     boost::json::object obj;
-    if (f.name) {
-      obj["name"] = *f.name;
-    }
-    if (f.priority) {
-      obj["priority"] = *f.priority;
-    }
-    if (f.action) {
-      obj["action"] = *f.action;
-    }
+    SetIfPresent(obj, "name", f.name);
+    SetIfPresent(obj, "priority", f.priority);
+    SetIfPresent(obj, "action", f.action);
     obj["rules"] = boost::json::array();
     for (const auto& rules : f.rules) {
       boost::json::array ar;
@@ -461,12 +441,8 @@ void SoraSignaling::DoSendConnect(bool redirect) {
       }
       obj["rules"].as_array().push_back(ar);
     }
-    if (f.version) {
-      obj["version"] = *f.version;
-    }
-    if (f.metadata) {
-      obj["metadata"] = *f.metadata;
-    }
+    SetIfPresent(obj, "version", f.version);
+    SetIfPresent(obj, "metadata", f.metadata);
     return obj;
   };
 
