@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstring>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <thread>
 
@@ -84,6 +85,8 @@ class AMFVideoDecoderImpl : public AMFVideoDecoder {
   void ReleaseAMF();
   AMF_RESULT ProcessSurface(amf::AMFSurfacePtr surface);
 
+ private:
+  std::mutex mutex_;
   webrtc::DecodedImageCallback* decode_complete_callback_ = nullptr;
   webrtc::VideoFrameBufferPool buffer_pool_;
 
@@ -144,7 +147,12 @@ int32_t AMFVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
   if (decoder_ == nullptr) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
-  if (decode_complete_callback_ == nullptr) {
+  webrtc::DecodedImageCallback* decode_complete_callback;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    decode_complete_callback = decode_complete_callback_;
+  }
+  if (decode_complete_callback == nullptr) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
   if (input_image.data() == nullptr && input_image.size() > 0) {
@@ -190,6 +198,7 @@ int32_t AMFVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
 
 int32_t AMFVideoDecoderImpl::RegisterDecodeCompleteCallback(
     webrtc::DecodedImageCallback* callback) {
+  std::lock_guard<std::mutex> lock(mutex_);
   decode_complete_callback_ = callback;
   return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -231,7 +240,12 @@ AMF_RESULT AMFVideoDecoderImpl::ProcessSurface(amf::AMFSurfacePtr surface) {
                                          .set_video_frame_buffer(i420_buffer)
                                          .set_timestamp_rtp(pts)
                                          .build();
-  decode_complete_callback_->Decoded(decoded_image, std::nullopt, std::nullopt);
+  webrtc::DecodedImageCallback* decode_complete_callback;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    decode_complete_callback = decode_complete_callback_;
+  }
+  decode_complete_callback->Decoded(decoded_image, std::nullopt, std::nullopt);
 
   return res;
 }

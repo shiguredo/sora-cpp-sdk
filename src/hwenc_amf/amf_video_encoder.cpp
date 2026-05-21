@@ -219,7 +219,12 @@ int32_t AMFVideoEncoderImpl::Encode(
   if (encoder_ == nullptr) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
-  if (!callback_) {
+  webrtc::EncodedImageCallback* callback;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    callback = callback_;
+  }
+  if (!callback) {
     RTC_LOG(LS_WARNING)
         << "InitEncode() has been called, but a callback function "
         << "has not been set with RegisterEncodeCompleteCallback()";
@@ -538,8 +543,14 @@ AMF_RESULT AMFVideoEncoderImpl::ProcessBuffer(amf::AMFBufferPtr buffer,
     }
   }
 
+  webrtc::EncodedImageCallback* callback;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    callback = callback_;
+  }
+
   webrtc::EncodedImageCallback::Result result =
-      callback_->OnEncodedImage(encoded_image_, &codec_specific);
+      callback->OnEncodedImage(encoded_image_, &codec_specific);
   if (result.error != webrtc::EncodedImageCallback::Result::OK) {
     RTC_LOG(LS_WARNING) << __FUNCTION__
                         << " OnEncodedImage failed error:" << result.error;
