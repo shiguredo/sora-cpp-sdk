@@ -691,7 +691,7 @@ int32_t VplVideoEncoderImpl::Encode(
     webrtc::EncodedImageCallback::Result result =
         callback_->OnEncodedImage(encoded_image_, &codec_specific);
     if (result.error != webrtc::EncodedImageCallback::Result::OK) {
-      RTC_LOG(LS_WARNING) << __FUNCTION__
+      RTC_LOG(LS_WARNING) << __func__
                           << " OnEncodedImage failed error:" << result.error;
     }
     bitrate_adjuster_.Update(size);
@@ -707,7 +707,7 @@ void VplVideoEncoderImpl::SetRates(const RateControlParameters& parameters) {
 
   uint32_t new_framerate = (uint32_t)parameters.framerate_fps;
   uint32_t new_bitrate = parameters.bitrate.get_sum_bps();
-  RTC_LOG(LS_INFO) << __FUNCTION__ << " framerate_:" << framerate_
+  RTC_LOG(LS_INFO) << __func__ << " framerate_:" << framerate_
                    << " new_framerate: " << new_framerate
                    << " target_bitrate_bps_:" << target_bitrate_bps_
                    << " new_bitrate:" << new_bitrate

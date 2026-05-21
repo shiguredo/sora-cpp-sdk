@@ -185,7 +185,7 @@ void BaseRenderer::Sink::OnFrame(const webrtc::VideoFrame& frame) {
     } else {
       image_.reset(new uint8_t[input_width_ * input_height_ * 4]);
     }
-    RTC_LOG(LS_VERBOSE) << __FUNCTION__ << ": scaled_=" << scaled_;
+    RTC_LOG(LS_VERBOSE) << __func__ << ": scaled_=" << scaled_;
     outline_changed_ = false;
   }
   webrtc::scoped_refptr<webrtc::I420BufferInterface> buffer_if;
@@ -295,7 +295,7 @@ void BaseRenderer::SetOutlines() {
       }
     }
   }
-  RTC_LOG(LS_VERBOSE) << __FUNCTION__ << " rows:" << rows << " cols:" << cols;
+  RTC_LOG(LS_VERBOSE) << __func__ << " rows:" << rows << " cols:" << cols;
   int outline_width = std::floor(width_ / cols);
   int outline_height = std::floor(height_ / rows);
   int sinks_count = sinks_.size();
@@ -304,7 +304,7 @@ void BaseRenderer::SetOutlines() {
     int offset_x = outline_width * (i % cols);
     int offset_y = outline_height * std::floor(i / cols);
     sink->SetOutlineRect(offset_x, offset_y, outline_width, outline_height);
-    RTC_LOG(LS_VERBOSE) << __FUNCTION__ << " offset_x:" << offset_x
+    RTC_LOG(LS_VERBOSE) << __func__ << " offset_x:" << offset_x
                         << " offset_y:" << offset_y
                         << " outline_width:" << outline_width
                         << " outline_height:" << outline_height;
