@@ -1222,7 +1222,8 @@ void SoraSignaling::DoConnect() {
   dc_.reset(new DataChannel(*config_.io_context, shared_from_this()));
 
   // 接続タイムアウト用の処理
-  connection_timeout_timer_.expires_after(std::chrono::seconds(30));
+  connection_timeout_timer_.expires_after(
+      std::chrono::seconds(config_.websocket_connection_timeout));
   connection_timeout_timer_.async_wait(
       [self = shared_from_this()](boost::system::error_code ec) {
         if (ec) {

@@ -68,6 +68,8 @@
   - @melpon
 - [FIX] Android の `registerReceiver` に `RECEIVER_NOT_EXPORTED` フラグを付与する
   - @melpon
+- [FIX] `SoraSignaling` で接続タイムアウトの値に `SoraSignalingConfig::websocket_connection_timeout` が使用されていなかったのを修正する
+  - @melpon
 
 ### misc
 
