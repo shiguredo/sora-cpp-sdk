@@ -382,7 +382,7 @@ VideoCodecCapability GetVideoCodecCapability(
             << ". Only kCustom_X can be specified here.";
         continue;
       }
-      cap.engines.insert(cap.engines.end(), engines.begin(), engines.end());
+      cap.engines.push_back(engine);
     }
   }
 

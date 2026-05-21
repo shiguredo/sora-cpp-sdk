@@ -1,4 +1,5 @@
 // DataChannel の送受信を確認するテスト
+#include <chrono>
 #include <csignal>
 #include <cstdlib>
 #include <fstream>
@@ -10,11 +11,10 @@
 #include <vector>
 
 // Boost
-#include <boost/asio/deadline_timer.hpp>
 #include <boost/asio/executor_work_guard.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/signal_set.hpp>
-#include <boost/date_time/posix_time/posix_time_duration.hpp>
+#include <boost/asio/steady_timer.hpp>
 #include <boost/system/detail/error_code.hpp>
 
 // WebRTC
@@ -81,8 +81,8 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
     signals.async_wait(
         [this](const boost::system::error_code&, int) { conn_->Disconnect(); });
 
-    timer_.reset(new boost::asio::deadline_timer(*ioc_));
-    timer_->expires_from_now(boost::posix_time::seconds(3));
+    timer_.reset(new boost::asio::steady_timer(*ioc_));
+    timer_->expires_after(std::chrono::seconds(3));
     timer_->async_wait([this, labels](boost::system::error_code ec) {
       if (ec) {
         return;
@@ -150,7 +150,7 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
   SoraClientConfig config_;
   std::shared_ptr<sora::SoraSignaling> conn_;
   std::unique_ptr<boost::asio::io_context> ioc_;
-  std::unique_ptr<boost::asio::deadline_timer> timer_;
+  std::unique_ptr<boost::asio::steady_timer> timer_;
   std::set<std::string> opened_;
   bool ok_ = false;
 };

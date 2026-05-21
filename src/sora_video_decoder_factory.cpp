@@ -32,7 +32,7 @@
 #include "sora/hwenc_nvcodec/nvcodec_video_decoder.h"
 #endif
 
-#if USE_VPL_ENCODER
+#if defined(USE_VPL_ENCODER)
 #include "sora/hwenc_vpl/vpl_video_decoder.h"
 #endif
 
@@ -103,15 +103,10 @@ std::unique_ptr<webrtc::VideoDecoder> SoraVideoDecoderFactory::Create(
       create_video_decoder = dec.create_video_decoder;
     }
 
-    std::unique_ptr<webrtc::VideoDecoder> r;
     for (const auto& f : supported_formats) {
       if (f.IsSameCodec(format)) {
         return create_video_decoder(format);
       }
-    }
-
-    if (r != nullptr) {
-      return r;
     }
   }
 
@@ -183,7 +178,7 @@ SoraVideoDecoderFactoryConfig GetDefaultVideoDecoderFactoryConfig(
   }
 #endif
 
-#if USE_VPL_ENCODER
+#if defined(USE_VPL_ENCODER)
   auto session = VplSession::Create();
   if (VplVideoDecoder::IsSupported(session, webrtc::kVideoCodecVP8)) {
     config.decoders.insert(

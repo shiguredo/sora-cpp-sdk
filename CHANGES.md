@@ -36,9 +36,44 @@
 - [ADD] TURN-TLS のクライアント証明書設定に対応する
   - `SoraSignalingConfig` の `client_cert` / `client_key` を TURN-TLS にも適用する
   - @zztkm
+- [UPDATE] 内部コードのリファクタリングを行う
+  - インクルードガードの命名規則を統一する
+  - 非標準の `__FUNCTION__` をやめて標準の `__func__` に統一する
+  - シグナリング処理の似たような処理をヘルパー関数化してコードを簡潔にする
+  - 不要なコード、変数、include、空のプリプロセッサブロック、誤字を整理する
+  - `SoraAudioManagerBase` から不要な `running` フラグを削除する
+  - @melpon
+- [UPDATE] Boost で deadline_timer が deprecated になったので、代わりに steady_timer を利用する
+  - @melpon
+- [FIX] カスタムエンジンが複数ある場合、`GetVideoCodecCapability()` で重複したエンジンが返されるのを修正
+  - @melpon
+- [FIX] `#if USE_VPL_ENCODER` と `#if defined(USE_VPL_ENCODER)` の不一致を修正する
+  - @melpon
+- [FIX] NvCodec エンコーダで `layer_frames` が空のケースを考慮していなかったのを修正する
+  - @melpon
+- [FIX] VPL デコーダの `MaxLength` 二重加算を修正する
+  - @melpon
+- [FIX] Android で `ReleaseStringUTFChars` の呼び忘れを修正する
+  - @melpon
+- [FIX] V4L2 ランナーで `on_completes_` が空の場合に capture buffer が再エンキューされないのを修正する
+  - @melpon
+- [FIX] libcamera キャプチャラで munmap していなかったのを修正する
+  - @melpon
+- [FIX] AMF エンコーダ/デコーダのコールバック関数がロック無しで利用されていたのを修正する
+  - @melpon
+- [FIX] VPL の `MFXVideoCORE_SyncOperation` のタイムアウトが長すぎるのを修正する
+  - @melpon
+- [FIX] Android の `SoraAudioManagerBluetooth` で `stateToString` の出力が間違っていたのを修正する
+  - @melpon
+- [FIX] Android の `registerReceiver` に `RECEIVER_NOT_EXPORTED` フラグを付与する
+  - @melpon
 
 ### misc
 
+- [FIX] sumomo で `audio_source` の null チェックを追加する
+  - @melpon
+- [FIX] messaging_recvonly_sample で `ec` 付け忘れを修正する
+  - @melpon
 - [CHANGE] GitHub Actions の Slack 通知を `shiguredo/github-actions` に置き換える
   - `rtCamp/action-slack-notify@v2` を `shiguredo/github-actions/.github/actions/slack-notify@main` に置き換える
   - 通知ジョブの `runs-on` を `ubuntu-slim` に変更する

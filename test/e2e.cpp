@@ -1,15 +1,15 @@
 #include <atomic>
+#include <chrono>
 #include <csignal>
 #include <cstdlib>
 #include <memory>
 #include <string>
 
 // Boost
-#include <boost/asio/deadline_timer.hpp>
 #include <boost/asio/executor_work_guard.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/signal_set.hpp>
-#include <boost/date_time/posix_time/posix_time_duration.hpp>
+#include <boost/asio/steady_timer.hpp>
 #include <boost/system/detail/error_code.hpp>
 
 // WebRTC
@@ -104,8 +104,8 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
     signals.async_wait(
         [this](const boost::system::error_code&, int) { conn_->Disconnect(); });
 
-    timer_.reset(new boost::asio::deadline_timer(*ioc_));
-    timer_->expires_from_now(boost::posix_time::seconds(5));
+    timer_.reset(new boost::asio::steady_timer(*ioc_));
+    timer_->expires_after(std::chrono::seconds(5));
     timer_->async_wait([this](boost::system::error_code ec) {
       if (ec) {
         return;
@@ -155,7 +155,7 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
   std::shared_ptr<sora::SoraClientContext> context_;
   std::shared_ptr<sora::SoraSignaling> conn_;
   std::unique_ptr<boost::asio::io_context> ioc_;
-  std::unique_ptr<boost::asio::deadline_timer> timer_;
+  std::unique_ptr<boost::asio::steady_timer> timer_;
   webrtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source_;
   webrtc::scoped_refptr<webrtc::VideoTrackInterface> video_track_;
   std::atomic<bool> ok_{false};

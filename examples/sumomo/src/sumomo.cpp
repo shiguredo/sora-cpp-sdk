@@ -474,6 +474,12 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
         }
       }
 
+      // オーディオソースが作成されているかチェック（オーディオが有効な場合のみ）
+      if (config_.audio && audio_source_ == nullptr) {
+        RTC_LOG(LS_ERROR) << "Failed to create audio source.";
+        return;
+      }
+
       // ビデオソースの作成
       webrtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source;
 

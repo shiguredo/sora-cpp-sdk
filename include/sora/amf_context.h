@@ -1,5 +1,5 @@
-#ifndef AMF_CONTEXT_H_
-#define AMF_CONTEXT_H_
+#ifndef SORA_AMF_CONTEXT_H_
+#define SORA_AMF_CONTEXT_H_
 
 #include <memory>
 

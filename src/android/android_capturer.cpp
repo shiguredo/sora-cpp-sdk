@@ -145,7 +145,9 @@ std::vector<std::string> AndroidCapturer::enumDevices(
   for (int i = 0; i < count; i++) {
     auto device = webrtc::ScopedJavaLocalRef<jstring>::Adopt(
         env, (jstring)env->GetObjectArrayElement(devices.obj(), i));
-    r.push_back(env->GetStringUTFChars(device.obj(), nullptr));
+    auto device_str = env->GetStringUTFChars(device.obj(), nullptr);
+    r.push_back(device_str);
+    env->ReleaseStringUTFChars(device.obj(), device_str);
   }
   return r;
 }

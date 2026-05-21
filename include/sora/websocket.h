@@ -9,11 +9,11 @@
 #include <vector>
 
 // Boost
-#include <boost/asio/deadline_timer.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/ssl/context.hpp>
 #include <boost/asio/ssl/stream.hpp>
+#include <boost/asio/steady_timer.hpp>
 #include <boost/asio/strand.hpp>
 #include <boost/beast/core/flat_buffer.hpp>
 #include <boost/beast/core/multi_buffer.hpp>
@@ -160,7 +160,7 @@ class Websocket {
   };
   std::vector<std::unique_ptr<WriteData>> write_data_;
 
-  boost::asio::deadline_timer close_timeout_timer_;
+  boost::asio::steady_timer close_timeout_timer_;
 
   http_header_value user_agent_;
 

@@ -1,5 +1,6 @@
 #include "sora/websocket.h"
 
+#include <chrono>
 #include <cstddef>
 #include <functional>
 #include <memory>
@@ -38,7 +39,6 @@
 #include <boost/beast/websocket/ssl.hpp>  // IWYU pragma: keep
 #include <boost/beast/websocket/stream.hpp>
 #include <boost/beast/websocket/stream_base.hpp>
-#include <boost/date_time/posix_time/posix_time_duration.hpp>
 #include <boost/system/detail/errc.hpp>
 #include <boost/system/detail/error_code.hpp>
 #include <boost/system/errc.hpp>
@@ -493,7 +493,7 @@ void Websocket::OnRead(read_callback_t on_read,
                    << " ec=" << ec.message();
 
   if (ec) {
-    RTC_LOG(LS_ERROR) << __FUNCTION__ << ": " << ec.message();
+    RTC_LOG(LS_ERROR) << __func__ << ": " << ec.message();
   }
 
   std::string text;
@@ -528,7 +528,7 @@ void Websocket::DoWriteText(std::string text, write_callback_t on_write) {
 void Websocket::DoWrite() {
   auto& data = write_data_.front();
 
-  RTC_LOG(LS_VERBOSE) << __FUNCTION__ << ": "
+  RTC_LOG(LS_VERBOSE) << __func__ << ": "
                       << boost::beast::buffers_to_string(data->buffer.data());
 
   if (IsSSL()) {
@@ -550,7 +550,7 @@ void Websocket::OnWrite(boost::system::error_code ec,
                    << " ec=" << ec.message();
 
   if (ec) {
-    RTC_LOG(LS_ERROR) << __FUNCTION__ << ": " << ec.message();
+    RTC_LOG(LS_ERROR) << __func__ << ": " << ec.message();
   }
 
   if (ec == boost::asio::error::operation_aborted) {
@@ -595,8 +595,7 @@ void Websocket::DoClose(close_callback_t on_close, int timeout_seconds) {
         std::bind(&Websocket::OnClose, this, on_close, std::placeholders::_1));
   }
 
-  close_timeout_timer_.expires_from_now(
-      boost::posix_time::seconds(timeout_seconds));
+  close_timeout_timer_.expires_after(std::chrono::seconds(timeout_seconds));
   close_timeout_timer_.async_wait(
       [on_close, timeout_seconds, this](boost::system::error_code ec) {
         if (ec) {
@@ -613,8 +612,7 @@ void Websocket::OnClose(close_callback_t on_close,
   RTC_LOG(LS_INFO) << "Websocket::OnClose this=" << (void*)this
                    << " ec=" << ec.message() << " code=" << reason().code
                    << " reason=" << reason().reason;
-  boost::system::error_code tec;
-  close_timeout_timer_.cancel(tec);
+  close_timeout_timer_.cancel();
   on_close(ec);
 }
 

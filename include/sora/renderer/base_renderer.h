@@ -1,5 +1,5 @@
-#ifndef BASE_RENDERER_H_
-#define BASE_RENDERER_H_
+#ifndef SORA_BASE_RENDERER_H_
+#define SORA_BASE_RENDERER_H_
 
 #include <atomic>
 #include <cstdint>

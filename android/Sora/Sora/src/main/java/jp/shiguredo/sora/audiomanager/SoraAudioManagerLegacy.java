@@ -27,7 +27,7 @@ class SoraAudioManagerLegacy extends SoraAudioManagerBase {
     private final AudioDevice defaultAudioDevice;
     private final SoraAudioManagerBluetooth bluetoothManager;
     private Set<AudioDevice> audioDevices = new HashSet<>();
-    private boolean running;
+    private boolean running = false;
     private boolean savedIsSpeakerPhoneOn;
     private AudioDevice selectedAudioDevice;
     private AudioDevice lastConnectedAudioDevice;

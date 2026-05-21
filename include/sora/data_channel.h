@@ -8,8 +8,8 @@
 #include <string>
 
 // Boost
-#include <boost/asio/deadline_timer.hpp>
 #include <boost/asio/io_context.hpp>
+#include <boost/asio/steady_timer.hpp>
 #include <boost/system/detail/error_code.hpp>
 
 // WebRTC
@@ -69,7 +69,7 @@ class DataChannel : public std::enable_shared_from_this<DataChannel> {
       labels_;
   std::weak_ptr<DataChannelObserver> observer_;
   std::function<void(boost::system::error_code)> on_close_;
-  boost::asio::deadline_timer timer_;
+  boost::asio::steady_timer timer_;
 };
 
 }  // namespace sora
