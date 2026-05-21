@@ -42,6 +42,7 @@
   - シグナリング処理の似たような処理をヘルパー関数化してコードを簡潔にする
   - 不要なコード、変数、include、空のプリプロセッサブロック、誤字を整理する
   - `SoraAudioManagerBase` から不要な `running` フラグを削除する
+  - AMF エンコーダ/デコーダで AMF_RESULT を WebRTC エラーコードとして返していたのを修正する
   - @melpon
 - [UPDATE] Boost で deadline_timer が deprecated になったので、代わりに steady_timer を利用する
   - @melpon
