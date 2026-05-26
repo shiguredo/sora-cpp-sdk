@@ -85,12 +85,8 @@
   - `rtCamp/action-slack-notify@v2` を `shiguredo/github-actions/.github/actions/slack-notify@main` に置き換える
   - 通知ジョブの `runs-on` を `ubuntu-slim` に変更する
   - @miosakuma
-- [UPDATE] WEBRTC_BUILD_VERSION を m149.7827.0.0 にあげる
-  - test の iOS ビルドで C++ 20 を利用するようにアップデートする
-    - project.pbxproj の `CLANG_CXX_LANGUAGE_STANDARD` を `gnu++20` に上げる
-    - m148 で libwebrtc が C++ 標準の `std::span` を使用するようになり、`std::span` が対応する C++ のバージョンまで上げる必要があるため
-    - 参考 : C++ 日本語リファレンスの `std::span` のページ
-      - リンク : https://cpprefjp.github.io/reference/span/span.html
+- [UPDATE] Examples の DEPS を更新する
+  - WEBRTC_BUILD_VERSION を m149.7827.0.0 にあげる
   - @torikizi @zztkm
 - [UPDATE] GitHub Actions の `macos-14` を `macos-15` に上げる
   - macos-14 を利用しているときに SDL3 のビルドエラーが発生するようになったが `macos-15` に上げることでビルドエラーを解消できた
@@ -111,6 +107,12 @@
   - @torikizi
 - [UPDATE] E2E テストで `sumomo` の標準出力と標準エラー出力を表示するようにする
   - @zztkm
+- [UPDATE] test の iOS ビルドで C++ 20 を利用するようにアップデートする
+  - project.pbxproj の `CLANG_CXX_LANGUAGE_STANDARD` を `gnu++20` に上げる
+  - m148 で libwebrtc が C++ 標準の `std::span` を使用するようになり、`std::span` が対応する C++ のバージョンまで上げる必要があるため
+  - 参考 : C++ 日本語リファレンスの `std::span` のページ
+    - リンク : https://cpprefjp.github.io/reference/span/span.html
+  - @torikizi
 
 ## 2026.1.2
 
