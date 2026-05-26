@@ -107,6 +107,12 @@
   - @torikizi
 - [UPDATE] E2E テストで `sumomo` の標準出力と標準エラー出力を表示するようにする
   - @zztkm
+- [UPDATE] test の iOS ビルドで C++ 20 を利用するようにアップデートする
+  - project.pbxproj の `CLANG_CXX_LANGUAGE_STANDARD` を `gnu++20` に上げる
+  - m148 で libwebrtc が C++ 標準の `std::span` を使用するようになり、`std::span` が対応する C++ のバージョンまで上げる必要があるため
+  - 参考 : C++ 日本語リファレンスの `std::span` のページ
+    - リンク : https://cpprefjp.github.io/reference/span/span.html
+  - @torikizi
 
 ## 2026.1.2
 
