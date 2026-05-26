@@ -16,13 +16,12 @@
     - libwebrtc で `RtcEventLogFactory` の `TaskQueueFactory` が削除されたため、変更に追従する
     - 参考 : libwebrtc で削除の入ったコミットのリンク
       - https://source.chromium.org/chromium/_/webrtc/src/+/987aa57ba46fe759284caa9a2cdad3c52ea5d13a
+  - libwebrtc m146 追従に伴うハードウェアエンコーダーのエラーハンドリングを修正する
+    - 切断中に `OnEncodedImage()` のコールバックエラーにより abort することがある問題に対応する
+    - `OnEncodedImage()` のコールバックエラーではエラーを返さず、`LS_WARNING` のログ出力のみに変更する
+    - 参考 : 追従する libwebrtc のコミットのリンク
+      - https://source.chromium.org/chromium/_/webrtc/src/+/54e6613e4005f449ea609eaa19491d0c36e73824
   - @torikizi @zztkm
-- [UPDATE] libwebrtc m146 追従に伴うハードウェアエンコーダーのエラーハンドリングを修正する
-  - 切断中に `OnEncodedImage()` のコールバックエラーにより abort することがある問題に対応する
-  - `OnEncodedImage()` のコールバックエラーではエラーを返さず、`LS_WARNING` のログ出力のみに変更する
-  - 参考 : 追従する libwebrtc のコミットのリンク
-    - https://source.chromium.org/chromium/_/webrtc/src/+/54e6613e4005f449ea609eaa19491d0c36e73824
-  - @torikizi
 - [UPDATE] cmake のバージョンを 4.3.2 にあげる
   - @torikizi
 - [UPDATE] Boost のバージョンを 1.91.0 に上げる
@@ -85,20 +84,19 @@
   - `rtCamp/action-slack-notify@v2` を `shiguredo/github-actions/.github/actions/slack-notify@main` に置き換える
   - 通知ジョブの `runs-on` を `ubuntu-slim` に変更する
   - @miosakuma
-- [UPDATE] Examples の DEPS を更新する
-  - WEBRTC_BUILD_VERSION を m149.7827.0.0 にあげる
+- [UPDATE] Examples の WEBRTC_BUILD_VERSION を m149.7827.0.0 にあげる
   - @torikizi @zztkm
 - [UPDATE] GitHub Actions の `macos-14` を `macos-15` に上げる
   - macos-14 を利用しているときに SDL3 のビルドエラーが発生するようになったが `macos-15` に上げることでビルドエラーを解消できた
   - 発生したエラーは ` /Applications/Xcode_15.4.app/.../Foundation.framework/Headers/NSObjCRuntime.h:615:74: error: unknown type name 'NSUInteger'` のように Foundation 系ヘッダーが解決できない問題だった
   - @zztkm
-- [UPDATE] cli11 のバージョンを v2.6.2 にあげる
+- [UPDATE] Examples の cli11 のバージョンを v2.6.2 にあげる
   - @torikizi
 - [UPDATE] Examples の Boost のバージョンを 1.91.0 に上げる
   - sumomo の macOS 向け CMake 設定に `-DBOOST_ASIO_DISABLE_STD_ATOMIC_WAIT` を追加する
     - sora-cpp-sdk 本体側にも同じ定義が必要 (片方だけ外すと kqueue_reactor の mutex 型が TU 間で食い違って ABI ミスマッチを起こす)
   - @voluntas @torikizi
-- [UPDATE] Homebrew/actions/setup-homebrew@master を Homebrew/actions/setup-homebrew@main に変更する
+- [UPDATE] GitHub Actions の Homebrew/actions/setup-homebrew@master を Homebrew/actions/setup-homebrew@main に変更する
   - 2026 年 6 月 10 日以降のリリースで `Homebrew/actions/setup-homebrew` の master ブランチは無効化されるため、main ブランチを使用するように変更する
   - 参考: Homebrew/actions/setup-homebrew で、main ブランチへの移行を促す警告が表示されるようになったことを示すコミット
     - https://github.com/Homebrew/actions/commit/675fcd27b59e54d310c5484c8c27c01d03da660c
@@ -107,6 +105,12 @@
   - @torikizi
 - [UPDATE] E2E テストで `sumomo` の標準出力と標準エラー出力を表示するようにする
   - @zztkm
+- [UPDATE] test の iOS ビルドで C++ 20 を利用するようにアップデートする
+  - project.pbxproj の `CLANG_CXX_LANGUAGE_STANDARD` を `gnu++20` に上げる
+  - m148 で libwebrtc が C++ 標準の `std::span` を使用するようになり、`std::span` が対応する C++ のバージョンまで上げる必要があるため
+  - 参考 : C++ 日本語リファレンスの `std::span` のページ
+    - リンク : https://cpprefjp.github.io/reference/span/span.html
+  - @torikizi
 
 ## 2026.1.2
 
