@@ -169,7 +169,11 @@ def get_common_cmake_args(
         args.append("-DBLEND2D_NO_JIT=ON")
         path = cmake_path(os.path.join(webrtc_info.libcxx_dir, "include"))
         args.append(f"-DCMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES={path}")
-        cxxflags = ["-nostdinc++", "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE"]
+        cxxflags = [
+            "-nostdinc++",
+            "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE",
+            "-DBOOST_ASIO_DISABLE_STD_ATOMIC_WAIT",
+        ]
         args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
     if platform.target.os == "android":
         android_ndk = os.path.join(install_dir, "android-ndk")
