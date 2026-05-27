@@ -172,6 +172,12 @@ def get_common_cmake_args(
         cxxflags = [
             "-nostdinc++",
             "-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE",
+            # boost 1.91.0 で asio に atomic_slim_mutex が導入され、 kqueue_reactor
+            # の内部 mutex がこの実装に切り替わった。 atomic_slim_mutex は
+            # std::atomic<int>::wait / notify_one (C++20 atomic wait) を利用するが、
+            # webrtc-build 同梱の libc++ ヘッダ + 実行時 libc++ の組み合わせで
+            # iOS 17.4 以上がターゲットの場合 async_connect が kevent から完了通知を受け取れずハングする
+            # 事象を確認したため、 旧来の pthread ベース mutex に戻すために本マクロを定義している。
             "-DBOOST_ASIO_DISABLE_STD_ATOMIC_WAIT",
         ]
         args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")

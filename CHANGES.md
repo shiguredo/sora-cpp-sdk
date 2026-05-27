@@ -25,9 +25,10 @@
 - [UPDATE] cmake のバージョンを 4.3.2 にあげる
   - @torikizi
 - [UPDATE] Boost のバージョンを 1.91.0 に上げる
-  - macOS ビルドの cxxflags に `-DBOOST_ASIO_DISABLE_STD_ATOMIC_WAIT` を追加する
+  - macOS ビルドと iOS ビルドの cxxflags に `-DBOOST_ASIO_DISABLE_STD_ATOMIC_WAIT` を追加する
     - boost 1.91.0 で asio の `kqueue_reactor` 内部 mutex が `atomic_slim_mutex` (`std::atomic::wait` / `notify_one` を利用) に切り替わったが、 webrtc-build 同梱の libc++ + macOS の組み合わせで kevent から完了通知が届かず async_connect がハングする現象を確認した
     - 旧来の pthread ベース mutex 実装に戻すことで回避する
+    - IPHONEOS_DEPLOYMENT_TARGET が iOS 17.4 以上の場合に発生する問題であり 14.0 でビルドしているため影響はないが、今後バージョンを上げた際の問題を回避するため macOS ビルドと同様に修正する
   - @voluntas @torikizi
 - [UPDATE] WSS / TURN-TLS のクライアント証明書設定で証明書チェーンを利用できるようにする
   - `SoraSignalingConfig` の `client_cert` はこれまで単体の証明書が前提になっていたが、証明書チェーンを指定できるようにする
