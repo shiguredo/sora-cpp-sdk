@@ -74,6 +74,8 @@
   - @melpon
 - [FIX] `SoraSignaling` で接続タイムアウトの値に `SoraSignalingConfig::websocket_connection_timeout` が使用されていなかったのを修正する
   - @melpon
+- [FIX] SoraVideoDecoderFactory / SoraVideoEncoderFactory の formats_ 並行アクセスによる abort を修正する
+  - @melpon
 
 ### misc
 

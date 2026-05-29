@@ -67,7 +67,6 @@ class SoraVideoDecoderFactory : public webrtc::VideoDecoderFactory {
 
  private:
   SoraVideoDecoderFactoryConfig config_;
-  mutable std::vector<std::vector<webrtc::SdpVideoFormat>> formats_;
 };
 
 // ハードウェアデコーダを出来るだけ使おうとして、見つからなければソフトウェアデコーダを使う設定を返す

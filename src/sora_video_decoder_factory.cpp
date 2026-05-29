@@ -42,37 +42,42 @@
 
 namespace sora {
 
+namespace {
+
+std::vector<webrtc::SdpVideoFormat> GetSupportedFormatsForConfig(
+    const VideoDecoderConfig& config) {
+  // factory が定義されてればそれを使う
+  // get_supported_formats が定義されてればそれを使う
+  // どちらも無ければ codec ごとのデフォルト設定を利用する
+  if (config.factory != nullptr) {
+    if (config.codec == webrtc::kVideoCodecGeneric) {
+      return config.factory->GetSupportedFormats();
+    }
+    std::vector<webrtc::SdpVideoFormat> formats;
+    for (const auto& f : config.factory->GetSupportedFormats()) {
+      if (f.name == webrtc::CodecTypeToPayloadString(config.codec)) {
+        formats.push_back(f);
+      }
+    }
+    return formats;
+  } else if (config.get_supported_formats != nullptr) {
+    return config.get_supported_formats();
+  }
+  return GetDefaultVideoFormats(config.codec);
+}
+
+}  // namespace
+
 SoraVideoDecoderFactory::SoraVideoDecoderFactory(
     SoraVideoDecoderFactoryConfig config)
     : config_(std::move(config)) {}
 
 std::vector<webrtc::SdpVideoFormat>
 SoraVideoDecoderFactory::GetSupportedFormats() const {
-  formats_.clear();
-
   std::vector<webrtc::SdpVideoFormat> r;
-  for (auto& dec : config_.decoders) {
-    // factory が定義されてればそれを使う
-    // get_supported_formats が定義されてればそれを使う
-    // どちらも無ければ codec ごとのデフォルト設定を利用する
-    std::vector<webrtc::SdpVideoFormat> formats;
-    if (dec.factory != nullptr) {
-      if (dec.codec == webrtc::kVideoCodecGeneric) {
-        formats = dec.factory->GetSupportedFormats();
-      } else {
-        for (const auto& f : dec.factory->GetSupportedFormats()) {
-          if (f.name == webrtc::CodecTypeToPayloadString(dec.codec)) {
-            formats.push_back(f);
-          }
-        }
-      }
-    } else if (dec.get_supported_formats != nullptr) {
-      formats = dec.get_supported_formats();
-    } else {
-      formats = GetDefaultVideoFormats(dec.codec);
-    }
+  for (const auto& dec : config_.decoders) {
+    auto formats = GetSupportedFormatsForConfig(dec);
     r.insert(r.end(), formats.begin(), formats.end());
-    formats_.push_back(formats);
   }
 
   return r;
@@ -84,7 +89,6 @@ std::unique_ptr<webrtc::VideoDecoder> SoraVideoDecoderFactory::Create(
   webrtc::VideoCodecType specified_codec =
       webrtc::PayloadStringToCodecType(format.name);
 
-  int n = 0;
   for (auto& dec : config_.decoders) {
     // 対応していないフォーマットを CreateVideoDecoder に渡した時の挙動は未定義なので
     // 確実に対応してるフォーマットのみを CreateVideoDecoder に渡すようにする。
@@ -92,7 +96,8 @@ std::unique_ptr<webrtc::VideoDecoder> SoraVideoDecoderFactory::Create(
     std::function<std::unique_ptr<webrtc::VideoDecoder>(
         const webrtc::SdpVideoFormat&)>
         create_video_decoder;
-    std::vector<webrtc::SdpVideoFormat> supported_formats = formats_[n++];
+    std::vector<webrtc::SdpVideoFormat> supported_formats =
+        GetSupportedFormatsForConfig(dec);
 
     if (dec.factory != nullptr) {
       create_video_decoder = [factory = dec.factory.get(),

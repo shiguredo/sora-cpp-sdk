@@ -1130,6 +1130,7 @@ def _build(
                     and platform.build.arch == platform.target.arch
                 ):
                     cmake_args.append("-DTEST_E2E=ON")
+                    cmake_args.append("-DTEST_VIDEO_FACTORY_DATA_RACE=ON")
 
                 cmd(["cmake", os.path.join(BASE_DIR, "test")] + cmake_args)
                 cmd(
@@ -1159,6 +1160,16 @@ def _build(
                             cmd([os.path.join(test_build_dir, configuration, "e2e.exe")])
                         else:
                             cmd([os.path.join(test_build_dir, "e2e")])
+                        if platform.target.os == "windows":
+                            cmd(
+                                [
+                                    os.path.join(
+                                        test_build_dir, configuration, "video_factory_data_race.exe"
+                                    )
+                                ]
+                            )
+                        else:
+                            cmd([os.path.join(test_build_dir, "video_factory_data_race")])
 
     if package:
         mkdir_p(package_dir)

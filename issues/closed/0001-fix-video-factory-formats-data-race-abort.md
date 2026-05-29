@@ -2,6 +2,7 @@
 
 - Priority: High
 - Created: 2026-05-27
+- Completed: 2026-05-29
 - Model: Opus 4.7
 - Branch: feature/fix-video-factory-formats-data-race-abort
 - Polished: 2026-05-28
@@ -94,13 +95,18 @@ High とする。
 
 ## 解決方法
 
-未着手。
+案 1 を採用した。`formats_` メンバを廃止し、`Create()` / `CreateInternalVideoEncoder()` 内でその場で再計算する方式に変更した。
 
-実装時の指針:
+### 行った変更
 
-- 修正対象は `src/sora_video_decoder_factory.cpp` / `include/sora/sora_video_decoder_factory.h` と `src/sora_video_encoder_factory.cpp` / `include/sora/sora_video_encoder_factory.h`。設計方針で採用した案に従い `formats_` 由来の競合を解消する (案ごとの実装上の注意は設計方針を参照)。
-- 再現テストは Catch2 ベースで `test/` 配下に、`e2e` とは独立した実行ファイルとして追加する (`e2e` は `TEST_SIGNALING_URL` 等を要求し実 Sora サーバへ接続するため混ぜない)。本テストは Sora サーバ・環境変数に依存しない。`test/CMakeLists.txt` は `find_package(Catch2)` 済みで、新ターゲットを `TEST_*` フラグでガードし `Catch2::Catch2WithMain` をリンクする。
-- テスト構成: `GetSoftwareOnlyVideoDecoderFactoryConfig()` で config を作って `SoraVideoDecoderFactory` を構築し、`webrtc::CreateEnvironment()` (`api/environment/environment_factory.h`) で `Environment` を用意する。2 スレッドを `std::barrier<>` (完了関数は渡さない。完了関数付きは libc++ の dylib シンボルに依存する) か `std::atomic<bool>` のスピンで同時開始し、一方が `GetSupportedFormats()`、他方が `Create(env, format)` を各数千回ループで叩く。
-- テスト検証: `format` は `GetSupportedFormats()` の戻り値 (最も単純には VP8) を渡す。abort せず完走し、かつ `Create` が非 null を返すことを確認する (競合解消後にデコーダ生成が壊れていないことも担保する)。実行は数秒〜十数秒に収める。
-- 再現に ThreadSanitizer は使わない (プロジェクトに導入されておらず、`run.py` / CMake に sanitizer オプションが無い)。再現は `_LIBCPP_HARDENING_MODE_EXTENSIVE` が効いた SDK 本体の `Create` が abort することに依存する。テストは `Sora::sora` をリンクしてその `Create` を呼ぶため、テストターゲット側に hardening フラグは不要。
-- テスト実行経路: `run.py` のテストビルドは `--test` でガードされ、native ビルド (`build == target`) のみが対象。既存 `e2e` の実行は `--run-e2e-test` ガード下にあるが、本テストは Sora 非依存なので `--run-e2e-test` には乗せず、`--test` の native ビルドでビルド後そのまま実行する経路を追加する。起動は既存 `e2e` の呼び出しに倣う (Windows は実行ファイルが `configuration` サブディレクトリに出るパス分岐がある)。
+- `src/sora_video_decoder_factory.cpp` / `src/sora_video_encoder_factory.cpp` に、それぞれ無名名前空間で `GetSupportedFormatsForConfig()` ヘルパー関数を追加した。
+- `GetSupportedFormats()` から `formats_.clear()` / `formats_.push_back()` を削除し、ヘルパー関数で置換した。
+- `Create()` / `CreateInternalVideoEncoder()` から `formats_[n++]` を削除し、ヘルパー関数でその場算出するようにした。エンコーダ側の `if (formats_.empty()) GetSupportedFormats();` 遅延初期化ガードも不要になったため削除した。
+- `include/sora/sora_video_decoder_factory.h` / `include/sora/sora_video_encoder_factory.h` から `formats_` メンバ変数を削除した。
+- `test/video_factory_data_race.cpp` に `GetSupportedFormats()` と `Create()` を 2 スレッドで並行呼び出しする再現テストを追加した。
+- `run.py` にテストビルド・実行経路を追加した。
+
+### 確認結果
+
+- 修正前: `vector[] index out of bounds` のハードニングチェックが発火し SIGABRT で abort することを確認
+- 修正後: `All tests passed (3 assertions in 1 test case)` で正常終了することを確認
