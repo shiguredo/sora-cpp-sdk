@@ -23,15 +23,13 @@ TEST_CASE("SoraVideoDecoderFactory の並行アクセスで abort しないこ�
   std::atomic<bool> start{false};
   std::atomic<bool> gs_done{false};
   std::atomic<bool> create_done{false};
+  std::atomic<int> create_non_null_count{0};
 
   auto gs_thread = std::thread([&]() {
     while (!start.load()) {
     }
     for (int i = 0; i < 10000; i++) {
-      auto f = factory.GetSupportedFormats();
-      if (f.empty()) {
-        // abort せず空が返ってきた場合もある（明確な期待動作ではないが、空でも通ることは確認する）
-      }
+      factory.GetSupportedFormats();
     }
     gs_done.store(true);
   });
@@ -41,7 +39,9 @@ TEST_CASE("SoraVideoDecoderFactory の並行アクセスで abort しないこ�
     }
     for (int i = 0; i < 10000; i++) {
       auto dec = factory.Create(env, format);
-      // abort しなければ、nullptr でも OK（競合解消後に非 null を期待するかの確認はフェーズ 2 で行う）
+      if (dec != nullptr) {
+        create_non_null_count.fetch_add(1);
+      }
     }
     create_done.store(true);
   });
@@ -62,4 +62,5 @@ TEST_CASE("SoraVideoDecoderFactory の並行アクセスで abort しないこ�
 
   REQUIRE(gs_done.load());
   REQUIRE(create_done.load());
+  REQUIRE(create_non_null_count.load() == 10000);
 }
