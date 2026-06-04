@@ -22,11 +22,11 @@
     - 参考 : 追従する libwebrtc のコミットのリンク
       - https://source.chromium.org/chromium/_/webrtc/src/+/54e6613e4005f449ea609eaa19491d0c36e73824
   - MakeVal の stringstream フォールバック削除に対応する
-      - WebRTC M150 で `MakeVal` の stringstream フォールバックが削除された
-      - `boost::system::error_code` 等が直接 `RTC_LOG` に渡せなくなるため、`ec` → `ec.message()`、`endpoint` → `address().to_string()` + `port()` に修正
-      - 対象ファイル: `src/sora_signaling.cpp`、`src/websocket.cpp`
-      - 参考 : WebRTC の MakeVal の stringstream フォールバック削除に対応するコミットリンク
-        - https://webrtc-review.googlesource.com/c/src/+/469260 ）
+    - WebRTC M150 で `MakeVal` の stringstream フォールバックが削除された
+    - `boost::system::error_code` 等が直接 `RTC_LOG` に渡せなくなるため、`ec` → `ec.message()`、`endpoint` → `address().to_string()` + `port()` に修正
+    - 対象ファイル: `src/sora_signaling.cpp`、`src/websocket.cpp`
+    - 参考 : WebRTC の MakeVal の stringstream フォールバック削除に対応するコミットリンク
+      - https://webrtc-review.googlesource.com/c/src/+/469260
   - @torikizi @zztkm
 - [UPDATE] cmake のバージョンを 4.3.2 にあげる
   - @torikizi
