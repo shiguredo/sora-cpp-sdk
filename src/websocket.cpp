@@ -264,7 +264,8 @@ void Websocket::OnResolve(
 
   for (const auto& r : results) {
     RTC_LOG(LS_INFO) << "host=" << host << ":" << port
-                     << " resolved=" << r.endpoint();
+                     << " resolved=" << r.endpoint().address().to_string() << ":"
+                     << r.endpoint().port();
   }
 
   // DNS ルックアップで得られたエンドポイントに対して接続する
@@ -409,7 +410,8 @@ void Websocket::OnResolveProxy(
 
   for (const auto& r : results) {
     RTC_LOG(LS_INFO) << "host=" << host << ":" << port
-                     << " resolved=" << r.endpoint();
+                     << " resolved=" << r.endpoint().address().to_string() << ":"
+                     << r.endpoint().port();
   }
 
   boost::asio::async_connect(
