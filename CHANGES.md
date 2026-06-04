@@ -11,7 +11,7 @@
 
 ## develop
 
-- [UPDATE] libwebrtc のバージョンを m149.7827.0.0 に上げる
+- [UPDATE] libwebrtc のバージョンを m150.7871.0.0 に上げる
   - `webrtc::RtcEventLogFactory` のコンストラクタ不一致を修正する
     - libwebrtc で `RtcEventLogFactory` の `TaskQueueFactory` が削除されたため、変更に追従する
     - 参考 : libwebrtc で削除の入ったコミットのリンク
@@ -21,6 +21,12 @@
     - `OnEncodedImage()` のコールバックエラーではエラーを返さず、`LS_WARNING` のログ出力のみに変更する
     - 参考 : 追従する libwebrtc のコミットのリンク
       - https://source.chromium.org/chromium/_/webrtc/src/+/54e6613e4005f449ea609eaa19491d0c36e73824
+  - MakeVal の stringstream フォールバック削除に対応する
+      - WebRTC M150 で `MakeVal` の stringstream フォールバックが削除された
+      - `boost::system::error_code` 等が直接 `RTC_LOG` に渡せなくなるため、`ec` → `ec.message()`、`endpoint` → `address().to_string()` + `port()` に修正
+      - 対象ファイル: `src/sora_signaling.cpp`、`src/websocket.cpp`
+      - 参考 : WebRTC の MakeVal の stringstream フォールバック削除に対応するコミットリンク
+        - https://webrtc-review.googlesource.com/c/src/+/469260 ）
   - @torikizi @zztkm
 - [UPDATE] cmake のバージョンを 4.3.2 にあげる
   - @torikizi
