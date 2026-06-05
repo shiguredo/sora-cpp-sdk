@@ -24,7 +24,7 @@
   - MakeVal の stringstream フォールバック削除に対応する
     - libwebrtc m150 で `rtc::MakeVal` の stringstream フォールバックが削除された
     - これにより `RTC_LOG` に `boost::system::error_code` や `boost::asio::ip::tcp::endpoint` を直接渡せなくなった
-    - 以下のように修正した
+    - `RTC_LOG` は `std::string` なら直接扱えるため、`std::string` に文字列化してから渡すよう修正した
       - `boost::system::error_code` は `to_string()` で文字列化してから渡す
       - `boost::asio::ip::tcp::endpoint` は `std::ostringstream` で文字列化してから渡す
     - 対象ファイル: `src/sora_signaling.cpp`、`src/websocket.cpp`
