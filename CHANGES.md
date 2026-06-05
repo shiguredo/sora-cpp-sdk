@@ -22,10 +22,10 @@
     - 参考 : 追従する libwebrtc のコミットのリンク
       - https://source.chromium.org/chromium/_/webrtc/src/+/54e6613e4005f449ea609eaa19491d0c36e73824
   - MakeVal の stringstream フォールバック削除に対応する
-    - WebRTC M150 で `rtc::MakeVal` の stringstream フォールバックが削除された
+    - libwebrtc m150 で `rtc::MakeVal` の stringstream フォールバックが削除された
     - これにより `RTC_LOG` に `boost::system::error_code` や `boost::asio::ip::tcp::endpoint` を直接渡せなくなった
     - 以下のように修正した
-      - `boost::system::error_code` は `message()` で文字列化してから渡す
+      - `boost::system::error_code` は `to_string()` で文字列化してから渡す
       - `boost::asio::ip::tcp::endpoint` は `std::ostringstream` で文字列化してから渡す
     - 対象ファイル: `src/sora_signaling.cpp`、`src/websocket.cpp`
     - 参考 : https://webrtc-review.googlesource.com/c/src/+/469260

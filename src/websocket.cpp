@@ -264,7 +264,7 @@ void Websocket::OnResolve(
   }
 
   for (const auto& r : results) {
-    // M150 で MakeVal の stringstream フォールバックが削除されたため、
+    // m150 で MakeVal の stringstream フォールバックが削除されたため、
     // tcp::endpoint を RTC_LOG に直接渡せなくなった。
     // 代わりに ostringstream で文字列化してから渡す。
     std::ostringstream ss;
@@ -414,7 +414,7 @@ void Websocket::OnResolveProxy(
   }
 
   for (const auto& r : results) {
-    // M150 で MakeVal の stringstream フォールバックが削除されたため、
+    // m150 で MakeVal の stringstream フォールバックが削除されたため、
     // tcp::endpoint を RTC_LOG に直接渡せなくなった。
     // 代わりに ostringstream で文字列化してから渡す。
     std::ostringstream ss;
