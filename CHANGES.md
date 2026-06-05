@@ -11,7 +11,7 @@
 
 ## develop
 
-- [UPDATE] libwebrtc のバージョンを m149.7827.0.0 に上げる
+- [UPDATE] libwebrtc のバージョンを m150.7871.0.0 に上げる
   - `webrtc::RtcEventLogFactory` のコンストラクタ不一致を修正する
     - libwebrtc で `RtcEventLogFactory` の `TaskQueueFactory` が削除されたため、変更に追従する
     - 参考 : libwebrtc で削除の入ったコミットのリンク
@@ -21,6 +21,14 @@
     - `OnEncodedImage()` のコールバックエラーではエラーを返さず、`LS_WARNING` のログ出力のみに変更する
     - 参考 : 追従する libwebrtc のコミットのリンク
       - https://source.chromium.org/chromium/_/webrtc/src/+/54e6613e4005f449ea609eaa19491d0c36e73824
+  - MakeVal の stringstream フォールバック削除に対応する
+    - libwebrtc m150 で `rtc::MakeVal` の stringstream フォールバックが削除された
+    - これにより `RTC_LOG` に `boost::system::error_code` や `boost::asio::ip::tcp::endpoint` を直接渡せなくなった
+    - `RTC_LOG` は `std::string` なら直接扱えるため、`std::string` に文字列化してから渡すよう修正した
+      - `boost::system::error_code` は `to_string()` で文字列化してから渡す
+      - `boost::asio::ip::tcp::endpoint` は `std::ostringstream` で文字列化してから渡す
+    - 対象ファイル: `src/sora_signaling.cpp`、`src/websocket.cpp`
+    - 参考 : https://webrtc-review.googlesource.com/c/src/+/469260
   - @torikizi @zztkm
 - [UPDATE] cmake のバージョンを 4.3.2 にあげる
   - @torikizi
@@ -87,7 +95,7 @@
   - `rtCamp/action-slack-notify@v2` を `shiguredo/github-actions/.github/actions/slack-notify@main` に置き換える
   - 通知ジョブの `runs-on` を `ubuntu-slim` に変更する
   - @miosakuma
-- [UPDATE] Examples の WEBRTC_BUILD_VERSION を m149.7827.0.0 にあげる
+- [UPDATE] Examples の WEBRTC_BUILD_VERSION を m150.7871.0.0 にあげる
   - @torikizi @zztkm
 - [UPDATE] GitHub Actions の `macos-14` を `macos-15` に上げる
   - macos-14 を利用しているときに SDL3 のビルドエラーが発生するようになったが `macos-15` に上げることでビルドエラーを解消できた

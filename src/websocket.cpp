@@ -5,6 +5,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <sstream>
 #include <string>
 #include <utility>
 
@@ -263,8 +264,10 @@ void Websocket::OnResolve(
   }
 
   for (const auto& r : results) {
+    std::ostringstream oss;
+    oss << r.endpoint();
     RTC_LOG(LS_INFO) << "host=" << host << ":" << port
-                     << " resolved=" << r.endpoint();
+                     << " resolved=" << oss.str();
   }
 
   // DNS ルックアップで得られたエンドポイントに対して接続する
@@ -408,8 +411,10 @@ void Websocket::OnResolveProxy(
   }
 
   for (const auto& r : results) {
+    std::ostringstream oss;
+    oss << r.endpoint();
     RTC_LOG(LS_INFO) << "host=" << host << ":" << port
-                     << " resolved=" << r.endpoint();
+                     << " resolved=" << oss.str();
   }
 
   boost::asio::async_connect(

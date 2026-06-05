@@ -828,7 +828,7 @@ void SoraSignaling::OnConnect(boost::system::error_code ec,
       connecting_wss_.end());
 
   if (ec) {
-    RTC_LOG(LS_WARNING) << "Failed Websocket handshake: " << ec
+    RTC_LOG(LS_WARNING) << "Failed Websocket handshake: " << ec.to_string()
                         << " url=" << url << " state=" << (int)state_
                         << " wss_len=" << connecting_wss_.size();
     // すべての接続がうまくいかなかったら終了する
