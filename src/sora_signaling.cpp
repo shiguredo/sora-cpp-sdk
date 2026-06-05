@@ -828,6 +828,9 @@ void SoraSignaling::OnConnect(boost::system::error_code ec,
       connecting_wss_.end());
 
   if (ec) {
+    // M150 で MakeVal の stringstream フォールバックが削除されたため、
+    // boost::system::error_code を RTC_LOG に直接渡せなくなった。
+    // 代わりに message() で文字列に変換してから渡す。
     RTC_LOG(LS_WARNING) << "Failed Websocket handshake: " << ec.message()
                         << " url=" << url << " state=" << (int)state_
                         << " wss_len=" << connecting_wss_.size();

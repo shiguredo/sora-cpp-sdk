@@ -22,11 +22,13 @@
     - 参考 : 追従する libwebrtc のコミットのリンク
       - https://source.chromium.org/chromium/_/webrtc/src/+/54e6613e4005f449ea609eaa19491d0c36e73824
   - MakeVal の stringstream フォールバック削除に対応する
-    - WebRTC M150 で `MakeVal` の stringstream フォールバックが削除された
-    - `boost::system::error_code` 等が直接 `RTC_LOG` に渡せなくなるため、`ec` → `ec.message()`、`endpoint` → `address().to_string()` + `port()` に修正
+    - WebRTC M150 で `rtc::MakeVal` の stringstream フォールバックが削除された
+    - これにより `RTC_LOG` に `boost::system::error_code` や `boost::asio::ip::tcp::endpoint` を直接渡せなくなった
+    - 以下のように修正した
+      - `boost::system::error_code` は `message()` で文字列化してから渡す
+      - `boost::asio::ip::tcp::endpoint` は `std::ostringstream` で文字列化してから渡す
     - 対象ファイル: `src/sora_signaling.cpp`、`src/websocket.cpp`
-    - 参考 : WebRTC の MakeVal の stringstream フォールバック削除に対応するコミットリンク
-      - https://webrtc-review.googlesource.com/c/src/+/469260
+    - 参考 : https://webrtc-review.googlesource.com/c/src/+/469260
   - @torikizi @zztkm
 - [UPDATE] cmake のバージョンを 4.3.2 にあげる
   - @torikizi
@@ -93,7 +95,7 @@
   - `rtCamp/action-slack-notify@v2` を `shiguredo/github-actions/.github/actions/slack-notify@main` に置き換える
   - 通知ジョブの `runs-on` を `ubuntu-slim` に変更する
   - @miosakuma
-- [UPDATE] Examples の WEBRTC_BUILD_VERSION を m149.7827.0.0 にあげる
+- [UPDATE] Examples の WEBRTC_BUILD_VERSION を m150.7871.0.0 にあげる
   - @torikizi @zztkm
 - [UPDATE] GitHub Actions の `macos-14` を `macos-15` に上げる
   - macos-14 を利用しているときに SDL3 のビルドエラーが発生するようになったが `macos-15` に上げることでビルドエラーを解消できた

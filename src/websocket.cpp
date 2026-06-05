@@ -5,6 +5,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <sstream>
 #include <string>
 #include <utility>
 
@@ -263,9 +264,13 @@ void Websocket::OnResolve(
   }
 
   for (const auto& r : results) {
+    // M150 で MakeVal の stringstream フォールバックが削除されたため、
+    // tcp::endpoint を RTC_LOG に直接渡せなくなった。
+    // 代わりに ostringstream で文字列化してから渡す。
+    std::ostringstream ss;
+    ss << r.endpoint();
     RTC_LOG(LS_INFO) << "host=" << host << ":" << port
-                     << " resolved=" << r.endpoint().address().to_string()
-                     << ":" << r.endpoint().port();
+                     << " resolved=" << ss.str();
   }
 
   // DNS ルックアップで得られたエンドポイントに対して接続する
@@ -409,9 +414,13 @@ void Websocket::OnResolveProxy(
   }
 
   for (const auto& r : results) {
+    // M150 で MakeVal の stringstream フォールバックが削除されたため、
+    // tcp::endpoint を RTC_LOG に直接渡せなくなった。
+    // 代わりに ostringstream で文字列化してから渡す。
+    std::ostringstream ss;
+    ss << r.endpoint();
     RTC_LOG(LS_INFO) << "host=" << host << ":" << port
-                     << " resolved=" << r.endpoint().address().to_string()
-                     << ":" << r.endpoint().port();
+                     << " resolved=" << ss.str();
   }
 
   boost::asio::async_connect(
