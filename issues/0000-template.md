@@ -6,6 +6,7 @@
 - Model: {モデル名} {モデルバージョン} (例: Opus 4.7 / GPT 5.5 / Composer 2.5)
 - Branch: {Git-Flow のブランチ名} (例: feature/xxx-yyy)
 - Polished: {YYYY-MM-DD} (例: 2024-07-15)
+- Reporter: @{ユーザー名} (任意。フィードバック / バグ報告由来の issue のみ、複数なら `@a, @b` のようにカンマ区切り)
 
 ## 目的
 
