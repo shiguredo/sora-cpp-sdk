@@ -1,0 +1,17 @@
+{
+    "arch": "arm64",
+    "repos": [
+        {
+            "url": "http://ports.ubuntu.com",
+            "suites": "jammy",
+            "components": "main universe",
+            "packages": [
+                "libstdc++-10-dev",
+                "libc6-dev",
+                "libxext-dev",
+                "libdbus-1-dev"
+            ],
+            "insecure": true
+        }
+    ]
+}

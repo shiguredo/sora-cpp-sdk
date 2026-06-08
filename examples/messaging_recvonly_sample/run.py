@@ -26,7 +26,7 @@ from buildbase import (  # noqa: E402
     install_cli11,
     install_cmake,
     install_llvm,
-    install_rootfs,
+    install_sysroot,
     install_sora_and_deps,
     install_webrtc,
     mkdir_p,
@@ -53,17 +53,18 @@ def install_deps(
             "ubuntu-24.04_armv8",
             "raspberry-pi-os_armv8",
         ):
-            # multistrap を使った sysroot の構築
-            conf = os.path.join(BASE_DIR, "multistrap", f"{platform}.conf")
-            # conf ファイルのハッシュ値をバージョンとする
-            version_md5 = hashlib.md5(open(conf, "rb").read()).hexdigest()
-            install_rootfs_args = {
+            # sysroot の構築
+            config_path = os.path.join(BASE_DIR, "..", "sysroot", f"{platform}.json")
+            # config ファイルのハッシュ値をバージョンとする
+            with open(config_path, "rb") as f:
+                version_md5 = hashlib.md5(f.read()).hexdigest()
+            install_sysroot_args = {
                 "version": version_md5,
                 "version_file": os.path.join(install_dir, "rootfs.version"),
                 "install_dir": install_dir,
-                "conf": conf,
+                "config_path": config_path,
             }
-            install_rootfs(**install_rootfs_args)
+            install_sysroot(**install_sysroot_args)
 
         # WebRTC
         if local_webrtc_build_dir is None:

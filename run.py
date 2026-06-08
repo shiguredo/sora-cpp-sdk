@@ -37,7 +37,7 @@ from buildbase import (
     install_cuda_windows,
     install_llvm,
     install_openh264,
-    install_rootfs,
+    install_sysroot,
     install_vpl,
     install_webrtc,
     mkdir_p,
@@ -219,24 +219,23 @@ def install_deps(
     with cd(BASE_DIR):
         deps = read_version_file("DEPS")
 
-        # multistrap を使った sysroot の構築
+        # sysroot の構築
         if platform.target.package_name in (
             "ubuntu-22.04_armv8",
             "ubuntu-24.04_armv8",
             "raspberry-pi-os_armv8",
-            "ubuntu-20.04_armv8_jetson",
-            "ubuntu-22.04_armv8_jetson",
         ):
-            conf = os.path.join(BASE_DIR, "multistrap", f"{platform.target.package_name}.conf")
-            # conf ファイルのハッシュ値をバージョンとする
-            version_md5 = hashlib.md5(open(conf, "rb").read()).hexdigest()
-            install_rootfs_args = {
+            config_path = os.path.join(BASE_DIR, "sysroot", f"{platform.target.package_name}.json")
+            # config ファイルのハッシュ値をバージョンとする
+            with open(config_path, "rb") as f:
+                version_md5 = hashlib.md5(f.read()).hexdigest()
+            install_sysroot_args = {
                 "version": version_md5,
                 "version_file": os.path.join(install_dir, "rootfs.version"),
                 "install_dir": install_dir,
-                "conf": conf,
+                "config_path": config_path,
             }
-            install_rootfs(**install_rootfs_args)
+            install_sysroot(**install_sysroot_args)
 
         # Android NDK
         if platform.target.os == "android":

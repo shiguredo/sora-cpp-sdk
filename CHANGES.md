@@ -145,6 +145,8 @@
   - `rtCamp/action-slack-notify@v2` を `shiguredo/github-actions/.github/actions/slack-notify@main` に置き換える
   - 通知ジョブの `runs-on` を `ubuntu-slim` に変更する
   - @miosakuma
+- [CHANGE] multistrap を廃止し apt-get + dpkg-deb による sysroot 構築に置き換える
+  - @voluntas
 - [UPDATE] Examples の WEBRTC_BUILD_VERSION を m150.7871.3.0 にあげる
   - @torikizi @zztkm
 - [UPDATE] GitHub Actions の `macos-14` を `macos-15` に上げる

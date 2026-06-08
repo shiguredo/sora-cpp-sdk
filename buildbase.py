@@ -26,6 +26,7 @@
 import filecmp
 import glob
 import hashlib
+import json
 import logging
 import multiprocessing
 import os
@@ -1111,11 +1112,110 @@ def get_sora_info(
 
 
 @versioned
-def install_rootfs(version, install_dir, conf, arch="arm64"):
+def install_sysroot(version, install_dir, config_path):
+    # JSON 設定ファイルを読み込む
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            config = json.load(f)
+    except json.JSONDecodeError as e:
+        raise RuntimeError(f"Invalid JSON in {config_path}: {e}")
+    except FileNotFoundError:
+        raise RuntimeError(f"Config file not found: {config_path}")
+
+    arch = config.get("arch")
+    repos = config.get("repos")
+    if not arch or not repos:
+        raise RuntimeError(f"Missing required keys in {config_path}: arch or repos")
+    if not isinstance(repos, list):
+        raise RuntimeError(f"repos must be a list in {config_path}")
+
     rootfs_dir = os.path.join(install_dir, "rootfs")
+    apt_dir = os.path.join(install_dir, "_apt")
+
+    # 1. 初期化とクリーンアップ
     rm_rf(rootfs_dir)
-    cmd(["multistrap", "--no-auth", "-a", arch, "-d", rootfs_dir, "-f", conf])
-    # 絶対パスのシンボリックリンクを相対パスに置き換えていく
+    rm_rf(apt_dir)
+
+    # 2. APT 隔離環境の作成
+    apt_etc_apt_dir = os.path.join(apt_dir, "etc", "apt")
+    mkdir_p(apt_etc_apt_dir)
+    mkdir_p(os.path.join(apt_dir, "var", "lib", "apt", "lists"))
+    mkdir_p(os.path.join(apt_dir, "var", "cache", "apt", "archives"))
+    mkdir_p(os.path.join(apt_dir, "var", "lib", "dpkg"))
+
+    # 空の dpkg ステータスファイルを作成
+    status_file = os.path.join(apt_dir, "var", "lib", "dpkg", "status")
+    cmd(["touch", status_file])
+
+    # apt.conf を生成
+    apt_conf_path = os.path.join(apt_etc_apt_dir, "apt.conf")
+    apt_conf_lines = [
+        f'Dir "{os.path.abspath(apt_dir)}";',
+        f'APT::Architecture "{arch}";',
+    ]
+    # insecure なリポジトリが 1 つでもあれば設定を追加
+    if any(repo.get("insecure", False) for repo in repos):
+        apt_conf_lines.append('Acquire::AllowInsecureRepositories "true";')
+        apt_conf_lines.append('APT::Get::AllowUnauthenticated "true";')
+    with open(apt_conf_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(apt_conf_lines) + "\n")
+
+    # sources.list を生成
+    sources_list_path = os.path.join(apt_etc_apt_dir, "sources.list")
+    sources_lines = []
+    for repo in repos:
+        url = repo["url"]
+        suites = repo["suites"]
+        components = repo["components"]
+        sources_lines.append(f"deb [arch={arch}] {url} {suites} {components}")
+    with open(sources_list_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(sources_lines) + "\n")
+
+    apt_config_env = os.path.abspath(apt_conf_path)
+    apt_env = os.environ.copy()
+    apt_env["APT_CONFIG"] = apt_config_env
+
+    # 3. apt-get update の実行
+    try:
+        cmd(["apt-get", "update"], env=apt_env)
+    except subprocess.CalledProcessError:
+        rm_rf(rootfs_dir)
+        rm_rf(apt_dir)
+        raise
+
+    # 4. パッケージのダウンロード
+    all_packages = [p for repo in repos for p in repo["packages"]]
+    if not all_packages:
+        rm_rf(rootfs_dir)
+        rm_rf(apt_dir)
+        raise RuntimeError(f"No packages specified in {config_path}")
+    try:
+        cmd(
+            ["apt-get", "-d", "-y", "--no-install-recommends", "install"] + all_packages,
+            env=apt_env,
+        )
+    except subprocess.CalledProcessError:
+        rm_rf(rootfs_dir)
+        rm_rf(apt_dir)
+        raise
+
+    # 5. .deb の展開
+    archives_dir = os.path.join(apt_dir, "var", "cache", "apt", "archives")
+    deb_files = sorted(glob.glob(os.path.join(archives_dir, "*.deb")))
+    if not deb_files:
+        rm_rf(rootfs_dir)
+        rm_rf(apt_dir)
+        raise RuntimeError(f"No .deb files found in {archives_dir}")
+    for deb_file in deb_files:
+        try:
+            cmd(["dpkg-deb", "-x", deb_file, rootfs_dir])
+        except subprocess.CalledProcessError:
+            logging.error(f"Failed to extract {deb_file}")
+            rm_rf(rootfs_dir)
+            rm_rf(apt_dir)
+            raise
+
+    # 6. 絶対パスシンボリックリンクの相対パス化
     for dir, _, filenames in os.walk(rootfs_dir):
         for filename in filenames:
             linkpath = os.path.join(dir, filename)
@@ -1128,33 +1228,28 @@ def install_rootfs(version, install_dir, conf, arch="arm64"):
                 continue
             # rootfs_dir を先頭に付けることで、
             # rootfs の外から見て正しい絶対パスにする
-            targetpath = rootfs_dir + target
+            targetpath = os.path.join(rootfs_dir, target.lstrip("/"))
             # 参照先の絶対パスが存在するかどうか
             if not os.path.exists(targetpath):
                 continue
             # 相対パスに置き換える
             relpath = os.path.relpath(targetpath, dir)
-            logging.debug(f"{linkpath[len(rootfs_dir) :]} targets {target} to {relpath}")
+            logging.debug(
+                f"Rewrote symlink {linkpath[len(rootfs_dir):]}: {target} -> {relpath}"
+            )
             os.remove(linkpath)
             os.symlink(relpath, linkpath)
 
-    # なぜかシンボリックリンクが登録されていないので作っておく
-    link = os.path.join(rootfs_dir, "usr", "lib", "aarch64-linux-gnu", "tegra", "libnvbuf_fdmap.so")
-    file = os.path.join(
-        rootfs_dir, "usr", "lib", "aarch64-linux-gnu", "tegra", "libnvbuf_fdmap.so.1.0.0"
-    )
-    if os.path.exists(file) and not os.path.exists(link):
-        os.symlink(os.path.basename(file), link)
-
-    # JetPack 6 から tegra → nvidia になった
-    link = os.path.join(
-        rootfs_dir, "usr", "lib", "aarch64-linux-gnu", "nvidia", "libnvbuf_fdmap.so"
-    )
-    file = os.path.join(
-        rootfs_dir, "usr", "lib", "aarch64-linux-gnu", "nvidia", "libnvbuf_fdmap.so.1.0.0"
-    )
-    if os.path.exists(file) and not os.path.exists(link):
-        os.symlink(os.path.basename(file), link)
+    # 7. usrmerge シンボリックリンクの確認
+    link_specs = [
+        ("bin", "usr/bin"),
+        ("sbin", "usr/sbin"),
+        ("lib", "usr/lib"),
+    ]
+    for link_name, target in link_specs:
+        link_path = os.path.join(rootfs_dir, link_name)
+        if not os.path.exists(link_path):
+            os.symlink(target, link_path)
 
 
 @versioned

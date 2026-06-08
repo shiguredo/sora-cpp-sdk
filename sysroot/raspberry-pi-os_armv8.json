@@ -1,0 +1,31 @@
+{
+    "arch": "arm64",
+    "repos": [
+        {
+            "url": "http://deb.debian.org/debian",
+            "suites": "trixie",
+            "components": "main",
+            "packages": [
+                "libc6-dev",
+                "libstdc++-14-dev",
+                "libasound2-dev",
+                "libpulse-dev",
+                "libudev-dev",
+                "libexpat1-dev",
+                "libnss3-dev",
+                "libxext-dev",
+                "libxtst-dev"
+            ],
+            "insecure": true
+        },
+        {
+            "url": "http://archive.raspberrypi.org/debian",
+            "suites": "trixie",
+            "components": "main",
+            "packages": [
+                "libcamera-dev"
+            ],
+            "insecure": true
+        }
+    ]
+}
