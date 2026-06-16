@@ -1,4 +1,6 @@
-// オーディオデバイスのマッチングロジックを固定のダミーデータで検証する
+// FindAudioDeviceIndex() のマッチングロジックを固定のダミーデータで検証する
+// 実際の ADM を使わず、名前/GUID の完全一致、存在しないデバイス名、
+// 空のデバイス一覧の各ケースを確認する
 #include <string>
 #include <tuple>
 #include <vector>

@@ -8,6 +8,13 @@
 namespace sora {
 
 // デバイス名または GUID と一致するデバイスのインデックスを探す
+//
+// Args:
+//   device_name: 検索するデバイス名または GUID
+//   devices: (名前, GUID) のタプル一覧
+//
+// Returns:
+//   一致したデバイスのインデックス。一致しない場合は -1
 int FindAudioDeviceIndex(
     const std::string& device_name,
     const std::vector<std::tuple<std::string, std::string> >& devices);

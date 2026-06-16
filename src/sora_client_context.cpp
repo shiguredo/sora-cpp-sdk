@@ -32,6 +32,8 @@
 
 namespace sora {
 
+// デバイス名または GUID と一致するデバイスのインデックスを返す
+// 一致するデバイスがない場合は -1 を返す
 int FindAudioDeviceIndex(
     const std::string& device_name,
     const std::vector<std::tuple<std::string, std::string> >& devices) {
@@ -121,6 +123,8 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
     c->config_.configure_dependencies(dependencies);
     // ADM が差し替えられた可能性があるので再取得する
     c->worker_thread_->BlockingCall([&] { adm = dependencies.adm; });
+    // configure_dependencies で ADM が外された場合、後続のデバイス設定が
+    // 不可能なので Create() を失敗させる
     if (adm == nullptr) {
       RTC_LOG(LS_ERROR)
           << "dependencies.adm is null after configure_dependencies";
@@ -169,6 +173,7 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
           }
           return true;
         }
+        // 空文字列は未指定とは区別して、存在しないデバイス名として扱う
         if (device_name->empty()) {
           RTC_LOG(LS_ERROR)
               << "Empty " << (is_recording ? "recording" : "playout")
@@ -224,6 +229,8 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
         return devices;
       }
 
+      // ダミー ADM の場合は IsAvailable が常に -1 を返すため、
+      // 無駄な WARNING ログを避けるために呼ばない
       if (c->config_.use_audio_device) {
         bool available = false;
         int err = is_recording ? adm->RecordingIsAvailable(&available)
@@ -244,6 +251,8 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
         char guid[webrtc::kAdmMaxGuidSize] = {0};
         int err = is_recording ? adm->RecordingDeviceName(i, name, guid)
                                : adm->PlayoutDeviceName(i, name, guid);
+        // 名前の取得に失敗したデバイスは一覧に含めず、
+        // 後続のデバイスを続けて列挙する
         if (err != 0) {
           RTC_LOG(LS_WARNING)
               << "Failed to "
@@ -255,6 +264,7 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
                                           : "PlayoutDeviceName")
                          << ": index=" << i << " name=" << name
                          << " guid=" << guid;
+        // 取得に成功したデバイスのみ一覧に追加する
         devices.emplace_back(name, guid);
       }
       return devices;
