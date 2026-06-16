@@ -2,14 +2,84 @@
 
 import json
 import platform
+import re
 import shlex
 import subprocess
 import time
+from dataclasses import dataclass
 from pathlib import Path
 from types import TracebackType
 from typing import Any, Literal, Self
 
 import httpx
+
+
+@dataclass
+class DeviceLists:
+    """sumomo --list-devices の結果を保持するデータクラス"""
+
+    audio_recording: list[str]
+    audio_playout: list[str]
+    video: list[tuple[str, str]]  # (device_path, card_name)
+
+
+def get_device_lists() -> DeviceLists:
+    """sumomo --list-devices を実行してデバイス一覧をパースして返す"""
+    sumomo_path = get_sumomo_executable_path()
+    result = subprocess.run(
+        [sumomo_path, "--list-devices"],
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"--list-devices が異常終了した\n"
+            f"returncode: {result.returncode}\n"
+            f"stderr: {result.stderr}"
+        )
+
+    output = result.stdout
+    audio_recording: list[str] = []
+    audio_playout: list[str] = []
+    video: list[tuple[str, str]] = []
+
+    current_section: str | None = None
+    for line in output.splitlines():
+        if line == "=== Available audio input devices ===":
+            current_section = "audio_input"
+            continue
+        elif line == "=== Available audio output devices ===":
+            current_section = "audio_output"
+            continue
+        elif line == "=== Available video devices ===":
+            current_section = "video"
+            continue
+
+        if current_section in ("audio_input", "audio_output"):
+            # パース: "  [N] device_name" または "  [N] device_name (unique_name)"
+            m = re.match(r"\s*\[\d+\]\s+(.+)$", line)
+            if m:
+                name = m.group(1).strip()
+                # unique_name 部分を取り除く (device_name (unique_name) の形式)
+                name = re.sub(r"\s*\(.*\)\s*$", "", name).strip()
+                if current_section == "audio_input":
+                    audio_recording.append(name)
+                else:
+                    audio_playout.append(name)
+        elif current_section == "video":
+            # パース: "  [/dev/videoN] card_name (bus_info):"
+            m = re.match(r"\s*(\[/dev/video\d+\])\s+(.+?)\s*\(.*\):\s*$", line)
+            if m:
+                device_path = m.group(1).strip("[]")
+                card_name = m.group(2).strip()
+                video.append((device_path, card_name))
+
+    return DeviceLists(
+        audio_recording=audio_recording,
+        audio_playout=audio_playout,
+        video=video,
+    )
 
 
 def get_sumomo_executable_path() -> str:

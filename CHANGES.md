@@ -19,6 +19,8 @@
   - `use_audio_device = false`（ダミー ADM）時に無駄な `RecordingIsAvailable()` / `PlayoutIsAvailable()` の WARNING ログが出力されないようにする
   - iOS でも Android と同様に `RecordingDeviceName()` / `PlayoutDeviceName()` を呼ばないようにする
   - @voluntas
+- [ADD] sumomo の E2E テストで `--audio-recording-device` を複数の音声録音デバイスに対して個別に検証するテストを追加する
+  - @melpon
 - [UPDATE] libwebrtc のバージョンを m150.7871.0.0 に上げる
   - `webrtc::RtcEventLogFactory` のコンストラクタ不一致を修正する
     - libwebrtc で `RtcEventLogFactory` の `TaskQueueFactory` が削除されたため、変更に追従する

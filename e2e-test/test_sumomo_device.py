@@ -10,7 +10,7 @@ import time
 from typing import Any
 
 from helper import get_outbound_rtp, get_transport
-from sumomo import Sumomo, get_sumomo_executable_path
+from sumomo import Sumomo, get_device_lists, get_sumomo_executable_path
 
 
 def test_list_devices():
@@ -50,10 +50,24 @@ def test_list_devices():
 def test_capture_device(sora_settings, free_port):
     """実機カメラ・マイクから取得した映像・音声が送信されることを確認する
 
-    デバイス名は指定せず Sumomo のデフォルト (最初に見つかったデバイス) を利用する。
-    特定デバイスを指定しないことでプラットフォーム依存の文字列パースを避けつつ
-    「実機からキャプチャして送信できる」ことだけを検証する。
+    --list-devices で列挙されたデバイスを明示的に指定してキャプチャを行う。
     """
+    # --list-devices で列挙されたデバイスを取得する
+    device_lists = get_device_lists()
+
+    assert len(device_lists.audio_recording) > 0, "音声入力デバイスが 1 つも見つからない"
+    assert len(device_lists.video) > 0, "ビデオデバイスが 1 つも見つからない"
+
+    # 録音デバイス: "default:" プレフィクスが付いたデバイス名をそのまま使用する
+    # "default:" は PulseAudio のデフォルトデバイス指定であり、そのまま指定する必要がある
+    recording_device = device_lists.audio_recording[0]
+
+    # ビデオデバイス: V4L2 のデバイスパスを指定する
+    video_device = device_lists.video[0][0]
+
+    print(f"音声録音デバイス: {recording_device}")
+    print(f"ビデオデバイス: {video_device}")
+
     with Sumomo(
         signaling_url=sora_settings.signaling_url,
         channel_id=sora_settings.channel_id,
@@ -66,6 +80,9 @@ def test_capture_device(sora_settings, free_port):
         audio=True,
         # デフォルト解像度への暗黙依存を避けるため明示する
         resolution="VGA",
+        # 列挙されたデバイスを明示的に指定する
+        audio_recording_device=recording_device,
+        video_device=video_device,
     ) as s:
         # 接続確立後、映像/音声フレームが流れるまで十分な待機時間を確保する
         time.sleep(3)
@@ -90,6 +107,62 @@ def test_capture_device(sora_settings, free_port):
         audio_outbound = get_outbound_rtp(stats, "audio")
         assert audio_outbound is not None, "audio の outbound-rtp が見つからない"
         assert audio_outbound["packetsSent"] > 0, "audio パケットが 1 つも送信されていない"
+
+        # DTLS が確立していることを確認する
+        transport = get_transport(stats)
+        assert transport is not None, "transport が見つからない"
+        assert transport["dtlsState"] == "connected", (
+            f"DTLS が確立していない: dtlsState={transport['dtlsState']}"
+        )
+
+
+def pytest_generate_tests(metafunc):
+    """音声録音デバイスを個別にテストするためのパラメータを生成する"""
+    if "audio_recording_device" in metafunc.fixturenames:
+        device_lists = get_device_lists()
+        metafunc.parametrize("audio_recording_device", device_lists.audio_recording)
+
+
+def test_audio_recording_device(sora_settings, free_port, audio_recording_device):
+    """--audio-recording-device で指定した音声録音デバイスから音声が送信されることを確認する
+
+    --list-devices で列挙された各音声録音デバイスを個別に指定し、それぞれで
+    音声フレームが送信されることを確認する。
+    """
+    print(f"音声録音デバイスをテスト: {audio_recording_device}")
+
+    with Sumomo(
+        signaling_url=sora_settings.signaling_url,
+        channel_id=sora_settings.channel_id,
+        role="sendonly",
+        metadata=sora_settings.metadata,
+        http_port=free_port,
+        # 実機キャプチャを行うため fake_capture_device を明示的に無効化する
+        fake_capture_device=False,
+        # 音声録音デバイスのみを対象にするため映像は無効化する
+        video=False,
+        audio=True,
+        # 列挙された音声録音デバイスを明示的に指定する
+        audio_recording_device=audio_recording_device,
+    ) as s:
+        # 接続確立後、音声フレームが流れるまで十分な待機時間を確保する
+        time.sleep(3)
+
+        stats: list[dict[str, Any]] = s.get_stats()
+        # キャプチャ失敗時は HTTP サーバーが起動しないか stats が空になる
+        assert stats, (
+            f"デバイス {audio_recording_device} で get_stats() の結果が空のため、"
+            "音声キャプチャに失敗した可能性がある"
+        )
+
+        # 音声が送信されていることを確認する
+        audio_outbound = get_outbound_rtp(stats, "audio")
+        assert audio_outbound is not None, (
+            f"デバイス {audio_recording_device} で audio の outbound-rtp が見つからない"
+        )
+        assert audio_outbound["packetsSent"] > 0, (
+            f"デバイス {audio_recording_device} で audio パケットが 1 つも送信されていない"
+        )
 
         # DTLS が確立していることを確認する
         transport = get_transport(stats)

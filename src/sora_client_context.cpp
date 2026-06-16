@@ -32,21 +32,6 @@
 
 namespace sora {
 
-// デバイス名または GUID と一致するデバイスのインデックスを返す
-// 一致するデバイスがない場合は -1 を返す
-int FindAudioDeviceIndex(
-    const std::string& device_name,
-    const std::vector<std::tuple<std::string, std::string> >& devices) {
-  for (int i = 0; i < devices.size(); i++) {
-    const auto& name = std::get<0>(devices[i]);
-    const auto& guid = std::get<1>(devices[i]);
-    if (device_name == name || device_name == guid) {
-      return i;
-    }
-  }
-  return -1;
-}
-
 SoraClientContext::~SoraClientContext() {
   config_ = SoraClientContextConfig();
   connection_context_ = nullptr;
@@ -180,11 +165,38 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
               << " device name is not allowed";
           return false;
         }
-        int index = FindAudioDeviceIndex(*device_name, devices);
+        int index = -1;
+        for (int i = 0; i < devices.size(); i++) {
+          const auto& name = std::get<0>(devices[i]);
+          const auto& guid = std::get<1>(devices[i]);
+          if (*device_name == name || *device_name == guid) {
+            index = i;
+            break;
+          }
+        }
         if (index == -1) {
-          RTC_LOG(LS_ERROR) << "No " << (is_recording ? "recording" : "playout")
-                            << " device found: name=" << *device_name;
-          return false;
+          // デバイス一覧が空の場合や指定されたデバイス名が見つからない場合は、
+          // デフォルトデバイス (index 0) にフォールバックして処理を続行する。
+          // デバイス一覧が空になるのは、特に Linux PulseAudio 環境で
+          // ADM の二重初期化等により RecordingDevices() が 0 を返す場合に発生する。
+          // デバイス一覧が空の場合は SetRecordingDevice/SetPlayoutDevice を
+          // 呼び出さずに ADM 内部のデフォルトに任せる。
+          // (PulseAudio ADM が適切に初期化されていない状態で
+          //  SetRecordingDevice(0) を呼び出すとハングするため)
+          if (!devices.empty()) {
+            RTC_LOG(LS_WARNING)
+                << "No " << (is_recording ? "recording" : "playout")
+                << " device found: name=" << *device_name
+                << ", falling back to default device (index 0): name="
+                << std::get<0>(devices[0]);
+            index = 0;
+          } else {
+            RTC_LOG(LS_WARNING)
+                << "No " << (is_recording ? "recording" : "playout")
+                << " device found: name=" << *device_name
+                << ", device list is empty, skip setting device";
+            return true;
+          }
         }
 
         const auto& name = std::get<0>(devices[index]);
