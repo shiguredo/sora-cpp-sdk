@@ -32,6 +32,24 @@
 
 namespace sora {
 
+// デバイス名または GUID と一致するデバイスのインデックスを返す
+// 一致するデバイスがない場合は -1 を返す
+//
+// 注意: SoraClientContext 内では set_audio_device() ラムダにインライン展開して
+// 使用しているが、test/audio_device.cpp からの単体テスト対象として残している。
+int FindAudioDeviceIndex(
+    const std::string& device_name,
+    const std::vector<std::tuple<std::string, std::string> >& devices) {
+  for (int i = 0; i < devices.size(); i++) {
+    const auto& name = std::get<0>(devices[i]);
+    const auto& guid = std::get<1>(devices[i]);
+    if (device_name == name || device_name == guid) {
+      return i;
+    }
+  }
+  return -1;
+}
+
 SoraClientContext::~SoraClientContext() {
   config_ = SoraClientContextConfig();
   connection_context_ = nullptr;
