@@ -371,6 +371,15 @@ jobs:
             test-target: test_sumomo_nvidia_video_codec.py
             env-vars: |
               NVIDIA_VIDEO_CODEC=true
+          # Self-hosted runner for sumomo device tests
+          # NVIDIA Video Codec ランナーは実機カメラ・マイクが接続されているため、
+          # --list-devices と実機キャプチャの検証をこのランナーで実行する
+          - name: device
+            platform-name: ubuntu-24.04_x86_64
+            runs-on:
+              group: Self
+              labels: [self-hosted, linux, x64, NVIDIA-Video-Codec-SDK]
+            test-target: test_sumomo_device.py
           # Self-hosted runner for Intel VPL
           - name: intel_vpl
             platform-name: ubuntu-24.04_x86_64
