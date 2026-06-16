@@ -24,12 +24,26 @@
 #include <rtc_base/ssl_stream_adapter.h>
 #include <rtc_base/thread.h>
 
+#include "sora/audio_device_helper.h"
 #include "sora/audio_device_module.h"
 #include "sora/java_context.h"
 #include "sora/sora_peer_connection_factory.h"
 #include "sora/sora_video_codec_factory.h"
 
 namespace sora {
+
+int FindAudioDeviceIndex(
+    const std::string& device_name,
+    const std::vector<std::tuple<std::string, std::string> >& devices) {
+  for (int i = 0; i < devices.size(); i++) {
+    const auto& name = std::get<0>(devices[i]);
+    const auto& guid = std::get<1>(devices[i]);
+    if (device_name == name || device_name == guid) {
+      return i;
+    }
+  }
+  return -1;
+}
 
 SoraClientContext::~SoraClientContext() {
   config_ = SoraClientContextConfig();
@@ -107,6 +121,11 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
     c->config_.configure_dependencies(dependencies);
     // ADM が差し替えられた可能性があるので再取得する
     c->worker_thread_->BlockingCall([&] { adm = dependencies.adm; });
+    if (adm == nullptr) {
+      RTC_LOG(LS_ERROR)
+          << "dependencies.adm is null after configure_dependencies";
+      return nullptr;
+    }
   }
 
   webrtc::EnableMedia(dependencies);
@@ -128,8 +147,8 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
   factory_options.ssl_max_version = webrtc::SSL_PROTOCOL_DTLS_12;
   c->factory_->SetOptions(factory_options);
 
-#if defined(SORA_CPP_SDK_ANDROID)
-  // Android はデバイスの数が１個として返される上に、
+#if defined(SORA_CPP_SDK_ANDROID) || defined(SORA_CPP_SDK_IOS)
+  // Android と iOS はデバイスの数が１個として返される上に、
   // RecordingDeviceName() や PlayoutDeviceName() を呼び出すとクラッシュする実装になっているので
   // オーディオデバイスの列挙と設定を行わない。
   // ref: https://source.chromium.org/chromium/chromium/src/+/main:third_party/webrtc/sdk/android/src/jni/audio_device/audio_device_module.cc;l=145-161;drc=d4937d3336bcf86f2fb3363cb6a64a0eb1a36576
@@ -150,15 +169,13 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
           }
           return true;
         }
-        int index = -1;
-        for (int i = 0; i < devices.size(); i++) {
-          const auto& name = std::get<0>(devices[i]);
-          const auto& guid = std::get<1>(devices[i]);
-          if (*device_name == name || *device_name == guid) {
-            index = i;
-            break;
-          }
+        if (device_name->empty()) {
+          RTC_LOG(LS_ERROR)
+              << "Empty " << (is_recording ? "recording" : "playout")
+              << " device name is not allowed";
+          return false;
         }
+        int index = FindAudioDeviceIndex(*device_name, devices);
         if (index == -1) {
           RTC_LOG(LS_ERROR) << "No " << (is_recording ? "recording" : "playout")
                             << " device found: name=" << *device_name;
@@ -198,33 +215,35 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
     }
 
     // オーディオデバイス名を列挙する
-    auto get_audio_devices = [adm](bool is_recording) {
+    auto get_audio_devices = [adm, &c](bool is_recording) {
       std::vector<std::tuple<std::string, std::string> > devices;
       int device_count =
           is_recording ? adm->RecordingDevices() : adm->PlayoutDevices();
       // RecordingDevices, PlayoutDevice がマイナスの値を返すことがある
-      if (device_count >= 0) {
-        devices.resize(device_count);
+      if (device_count < 0) {
+        return devices;
       }
 
-      bool available = false;
-      int err = is_recording ? adm->RecordingIsAvailable(&available)
-                             : adm->PlayoutIsAvailable(&available);
-      if (err != 0) {
-        RTC_LOG(LS_WARNING)
-            << "Failed to "
-            << (is_recording ? "RecordingIsAvailable" : "PlayoutIsAvailable")
-            << ", continue to enumerate devices";
-      } else if (!available) {
-        RTC_LOG(LS_INFO) << (is_recording ? "Recording" : "Playout")
-                         << " is not available, continue to enumerate devices";
+      if (c->config_.use_audio_device) {
+        bool available = false;
+        int err = is_recording ? adm->RecordingIsAvailable(&available)
+                               : adm->PlayoutIsAvailable(&available);
+        if (err != 0) {
+          RTC_LOG(LS_WARNING)
+              << "Failed to "
+              << (is_recording ? "RecordingIsAvailable" : "PlayoutIsAvailable")
+              << ", continue to enumerate devices";
+        } else if (!available) {
+          RTC_LOG(LS_INFO) << (is_recording ? "Recording" : "Playout")
+                           << " is not available, continue to enumerate devices";
+        }
       }
 
       for (int i = 0; i < device_count; i++) {
         char name[webrtc::kAdmMaxDeviceNameSize] = {0};
         char guid[webrtc::kAdmMaxGuidSize] = {0};
-        err = is_recording ? adm->RecordingDeviceName(i, name, guid)
-                           : adm->PlayoutDeviceName(i, name, guid);
+        int err = is_recording ? adm->RecordingDeviceName(i, name, guid)
+                               : adm->PlayoutDeviceName(i, name, guid);
         if (err != 0) {
           RTC_LOG(LS_WARNING)
               << "Failed to "
@@ -236,8 +255,7 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
                                           : "PlayoutDeviceName")
                          << ": index=" << i << " name=" << name
                          << " guid=" << guid;
-        std::get<0>(devices[i]) = name;
-        std::get<1>(devices[i]) = guid;
+        devices.emplace_back(name, guid);
       }
       return devices;
     };
