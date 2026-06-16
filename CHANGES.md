@@ -11,6 +11,14 @@
 
 ## develop
 
+- [FIX] Linux で `--audio-recording-device` / `--audio-playout-device` を指定しても正しく音声デバイスが認識されない問題を修正する
+  - ADM の初期化 (`adm->Init()`) が行われていないために Linux の PulseAudio/ALSA 実装でデバイス列挙に失敗していた
+  - さらに `PeerConnectionFactory` 作成時の `adm_helpers::Init()` で `SetRecordingDevice(0)` / `SetPlayoutDevice(0)` に上書きされていた
+  - `SoraClientContext::Create()` 内で `adm->Init()` を事前に呼び、Factory 作成後にもう一度指定デバイスを設定し直すようにする
+  - 空文字列のデバイス名を指定した場合や `configure_dependencies` 後に ADM が `nullptr` になった場合は `Create()` を失敗させるようにする
+  - `use_audio_device = false`（ダミー ADM）時に無駄な `RecordingIsAvailable()` / `PlayoutIsAvailable()` の WARNING ログが出力されないようにする
+  - iOS でも Android と同様に `RecordingDeviceName()` / `PlayoutDeviceName()` を呼ばないようにする
+  - @voluntas
 - [UPDATE] libwebrtc のバージョンを m150.7871.0.0 に上げる
   - `webrtc::RtcEventLogFactory` のコンストラクタ不一致を修正する
     - libwebrtc で `RtcEventLogFactory` の `TaskQueueFactory` が削除されたため、変更に追従する

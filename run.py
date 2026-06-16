@@ -1131,6 +1131,7 @@ def _build(
                 ):
                     cmake_args.append("-DTEST_E2E=ON")
                     cmake_args.append("-DTEST_VIDEO_FACTORY_DATA_RACE=ON")
+                    cmake_args.append("-DTEST_AUDIO_DEVICE=ON")
 
                 cmd(["cmake", os.path.join(BASE_DIR, "test")] + cmake_args)
                 cmd(
