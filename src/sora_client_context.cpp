@@ -134,7 +134,69 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
   // オーディオデバイスの列挙と設定を行わない。
   // ref: https://source.chromium.org/chromium/chromium/src/+/main:third_party/webrtc/sdk/android/src/jni/audio_device/audio_device_module.cc;l=145-161;drc=d4937d3336bcf86f2fb3363cb6a64a0eb1a36576
 #else
+  std::vector<std::tuple<std::string, std::string> > recording_devices;
+  std::vector<std::tuple<std::string, std::string> > playout_devices;
+
+  auto set_audio_device =
+      [adm](std::optional<std::string> device_name,
+            const std::vector<std::tuple<std::string, std::string> >& devices,
+            bool is_recording) {
+        if (!device_name) {
+          // デバイス名が指定されていない場合はデフォルトデバイスを使う
+          // 明示的に 0 を指定しないと、Windows の場合は -1（無効なデバイス）が使われてしまう
+          if (!devices.empty()) {
+            is_recording ? adm->SetRecordingDevice(0)
+                         : adm->SetPlayoutDevice(0);
+          }
+          return true;
+        }
+        int index = -1;
+        for (int i = 0; i < devices.size(); i++) {
+          const auto& name = std::get<0>(devices[i]);
+          const auto& guid = std::get<1>(devices[i]);
+          if (*device_name == name || *device_name == guid) {
+            index = i;
+            break;
+          }
+        }
+        if (index == -1) {
+          RTC_LOG(LS_ERROR) << "No " << (is_recording ? "recording" : "playout")
+                            << " device found: name=" << *device_name;
+          return false;
+        }
+
+        const auto& name = std::get<0>(devices[index]);
+        const auto& guid = std::get<1>(devices[index]);
+        int err = is_recording ? adm->SetRecordingDevice(index)
+                               : adm->SetPlayoutDevice(index);
+        if (err != 0) {
+          RTC_LOG(LS_ERROR)
+              << "Failed to "
+              << (is_recording ? "SetRecordingDevice" : "SetPlayoutDevice")
+              << ": index=" << index << " name=" << name << " guid=" << guid;
+          return false;
+        }
+        RTC_LOG(LS_INFO) << "Succeeded "
+                         << (is_recording ? "SetRecordingDevice"
+                                          : "SetPlayoutDevice")
+                         << ": index=" << index << " name=" << name
+                         << " guid=" << guid;
+        return true;
+      };
+
   auto success = c->worker_thread_->BlockingCall([&]() -> bool {
+    // ADM を事前に初期化しておかないと、Linux の PulseAudio/ALSA 実装で
+    // RecordingDevices() や RecordingIsAvailable() が失敗する。
+    // 一方、adm_helpers::Init() も PeerConnectionFactory 作成時に呼ばれ、
+    // そこで SetRecordingDevice(0) / SetPlayoutDevice(0) が実行されて
+    // ここで設定したデバイスが上書きされる可能性がある。
+    // そのため、 PeerConnectionFactory 作成後にもう一度 set_audio_device()
+    // を呼び出している。
+    if (adm->Init() != 0) {
+      RTC_LOG(LS_WARNING) << "Failed to ADM Init";
+      return false;
+    }
+
     // オーディオデバイス名を列挙する
     auto get_audio_devices = [adm](bool is_recording) {
       std::vector<std::tuple<std::string, std::string> > devices;
@@ -151,18 +213,16 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
       if (err != 0) {
         RTC_LOG(LS_WARNING)
             << "Failed to "
-            << (is_recording ? "RecordingIsAvailable" : "PlayoutIsAvailable");
-        return devices;
-      }
-      if (!available) {
+            << (is_recording ? "RecordingIsAvailable" : "PlayoutIsAvailable")
+            << ", continue to enumerate devices";
+      } else if (!available) {
         RTC_LOG(LS_INFO) << (is_recording ? "Recording" : "Playout")
-                         << " is not available";
-        return devices;
+                         << " is not available, continue to enumerate devices";
       }
 
       for (int i = 0; i < device_count; i++) {
-        char name[webrtc::kAdmMaxDeviceNameSize];
-        char guid[webrtc::kAdmMaxGuidSize];
+        char name[webrtc::kAdmMaxDeviceNameSize] = {0};
+        char guid[webrtc::kAdmMaxGuidSize] = {0};
         err = is_recording ? adm->RecordingDeviceName(i, name, guid)
                            : adm->PlayoutDeviceName(i, name, guid);
         if (err != 0) {
@@ -181,58 +241,9 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
       }
       return devices;
     };
-    std::vector<std::tuple<std::string, std::string> > recording_devices =
-        get_audio_devices(true);
-    std::vector<std::tuple<std::string, std::string> > playout_devices =
-        get_audio_devices(false);
+    recording_devices = get_audio_devices(true);
+    playout_devices = get_audio_devices(false);
 
-    auto set_audio_device =
-        [adm](std::optional<std::string> device_name,
-              const std::vector<std::tuple<std::string, std::string> >& devices,
-              bool is_recording) {
-          if (!device_name) {
-            // デバイス名が指定されていない場合はデフォルトデバイスを使う
-            // 明示的に 0 を指定しないと、Windows の場合は -1（無効なデバイス）が使われてしまう
-            if (!devices.empty()) {
-              is_recording ? adm->SetRecordingDevice(0)
-                           : adm->SetPlayoutDevice(0);
-            }
-            return true;
-          }
-          int index = -1;
-          for (int i = 0; i < devices.size(); i++) {
-            const auto& name = std::get<0>(devices[i]);
-            const auto& guid = std::get<1>(devices[i]);
-            if (*device_name == name || *device_name == guid) {
-              index = i;
-              break;
-            }
-          }
-          if (index == -1) {
-            RTC_LOG(LS_ERROR)
-                << "No " << (is_recording ? "recording" : "playout")
-                << " device found: name=" << *device_name;
-            return false;
-          }
-
-          const auto& name = std::get<0>(devices[index]);
-          const auto& guid = std::get<1>(devices[index]);
-          int err = is_recording ? adm->SetRecordingDevice(index)
-                                 : adm->SetPlayoutDevice(index);
-          if (err != 0) {
-            RTC_LOG(LS_ERROR)
-                << "Failed to "
-                << (is_recording ? "SetRecordingDevice" : "SetPlayoutDevice")
-                << ": index=" << index << " name=" << name << " guid=" << guid;
-            return false;
-          }
-          RTC_LOG(LS_INFO) << "Succeeded "
-                           << (is_recording ? "SetRecordingDevice"
-                                            : "SetPlayoutDevice")
-                           << ": index=" << index << " name=" << name
-                           << " guid=" << guid;
-          return true;
-        };
     if (!set_audio_device(c->config_.audio_recording_device, recording_devices,
                           true)) {
       return false;
@@ -244,6 +255,42 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
     return true;
   });
   if (!success) {
+    c->worker_thread_->BlockingCall([&] {
+      adm = nullptr;
+      dependencies.adm = nullptr;
+    });
+    return nullptr;
+  }
+
+  // PeerConnectionFactory 作成時に WebRtcVoiceEngine::Init() から
+  // adm_helpers::Init() が呼ばれ、SetRecordingDevice(0) / SetPlayoutDevice(0)
+  // で上書きされる可能性があるため、ここでもう一度指定デバイスを設定し直す。
+  auto reconfigure_audio_device = [&]() -> bool {
+    if (!set_audio_device(c->config_.audio_recording_device, recording_devices,
+                          true)) {
+      return false;
+    }
+    if (!set_audio_device(c->config_.audio_playout_device, playout_devices,
+                          false)) {
+      return false;
+    }
+
+    // adm_helpers::Init() 内で InitMicrophone() / InitSpeaker() も呼ばれているが、
+    // その際のデバイスは index 0 の可能性があるので、指定デバイスに対して
+    // 再度初期化しておく。
+    if (c->config_.audio_recording_device && !recording_devices.empty()) {
+      if (adm->InitMicrophone() != 0) {
+        RTC_LOG(LS_WARNING) << "Failed to InitMicrophone";
+      }
+    }
+    if (c->config_.audio_playout_device && !playout_devices.empty()) {
+      if (adm->InitSpeaker() != 0) {
+        RTC_LOG(LS_WARNING) << "Failed to InitSpeaker";
+      }
+    }
+    return true;
+  };
+  if (!c->worker_thread_->BlockingCall(reconfigure_audio_device)) {
     c->worker_thread_->BlockingCall([&] {
       adm = nullptr;
       dependencies.adm = nullptr;
