@@ -12,6 +12,100 @@ from typing import Any, Literal, Self
 import httpx
 
 
+def get_sumomo_executable_path() -> str:
+    """ビルド済みの sumomo 実行ファイルのパスを自動検出"""
+    project_root = Path(__file__).parent.parent
+    build_dir = project_root / "examples" / "_build"
+
+    # _build ディレクトリ内の実際のビルドターゲットを検出
+    if not build_dir.exists():
+        raise RuntimeError(
+            f"Build directory {build_dir} does not exist. "
+            f"Please build with: python3 run.py build <target>"
+        )
+
+    # Windows の場合は .exe 拡張子を考慮
+    system = platform.system().lower()
+    exe_suffix = ".exe" if system == "windows" else ""
+
+    available_targets = [
+        d.name
+        for d in build_dir.iterdir()
+        if d.is_dir() and (d / "release" / "sumomo" / f"sumomo{exe_suffix}").exists()
+    ]
+
+    if not available_targets:
+        raise RuntimeError(
+            f"No built sumomo executables found in {build_dir}. "
+            f"Please build with: python3 run.py build <target>"
+        )
+
+    if len(available_targets) == 1:
+        # ビルドが1つだけの場合は自動選択
+        target = available_targets[0]
+        print(f"Auto-detected sumomo target: {target}")
+    else:
+        # 複数ビルドがある場合は、プラットフォームに応じて優先順位を決める
+        machine = platform.machine().lower()
+
+        # プラットフォームに応じた優先順位リスト
+        if system == "darwin":
+            if machine == "arm64" or machine == "aarch64":
+                preferred = ["macos_arm64", "macos_x86_64"]
+            else:
+                preferred = ["macos_x86_64", "macos_arm64"]
+        elif system == "linux":
+            if machine == "aarch64":
+                preferred = ["ubuntu-24.04_armv8", "ubuntu-22.04_armv8", "ubuntu-20.04_armv8"]
+            else:
+                preferred = [
+                    "ubuntu-24.04_x86_64",
+                    "ubuntu-22.04_x86_64",
+                    "ubuntu-20.04_x86_64",
+                ]
+        elif system == "windows":
+            preferred = ["windows_x86_64"]
+        else:
+            preferred = []
+
+        # 優先順位に従って選択
+        target = None
+        for pref in preferred:
+            if pref in available_targets:
+                target = pref
+                print(
+                    f"Auto-detected sumomo target: {target} (from {len(available_targets)} available)"
+                )
+                break
+
+        if not target:
+            # 優先順位で見つからない場合は最初のものを使用
+            target = available_targets[0]
+            print(
+                f"Using first available target: {target} (available: {', '.join(available_targets)})"
+            )
+
+    # sumomo のパスを構築
+    assert target is not None
+    sumomo_path = (
+        project_root
+        / "examples"
+        / "_build"
+        / target
+        / "release"
+        / "sumomo"
+        / f"sumomo{exe_suffix}"
+    )
+
+    if not sumomo_path.exists():
+        raise RuntimeError(
+            f"sumomo executable not found at {sumomo_path}. "
+            f"Please build with: python3 run.py build {target}"
+        )
+
+    return str(sumomo_path)
+
+
 class Sumomo:
     """Sumomo プロセスを管理するクラス"""
 
@@ -211,7 +305,7 @@ class Sumomo:
                 stats = s.get_stats()
         """
         # 実行ファイルのパスを自動検出
-        self.executable_path = self._get_sumomo_executable_path()
+        self.executable_path = get_sumomo_executable_path()
         self.process: subprocess.Popen[Any] | None = None
         self.http_port = http_port if http_port is not None else 0
         self.http_host = "127.0.0.1"
@@ -285,99 +379,6 @@ class Sumomo:
 
         # HTTP クライアントの初期化（None で初期化）
         self._http_client: httpx.Client | None = None
-
-    def _get_sumomo_executable_path(self) -> str:
-        """ビルド済みの sumomo 実行ファイルのパスを自動検出"""
-        project_root = Path(__file__).parent.parent
-        build_dir = project_root / "examples" / "_build"
-
-        # _build ディレクトリ内の実際のビルドターゲットを検出
-        if not build_dir.exists():
-            raise RuntimeError(
-                f"Build directory {build_dir} does not exist. "
-                f"Please build with: python3 run.py build <target>"
-            )
-
-        # Windows の場合は .exe 拡張子を考慮
-        system = platform.system().lower()
-        exe_suffix = ".exe" if system == "windows" else ""
-
-        available_targets = [
-            d.name
-            for d in build_dir.iterdir()
-            if d.is_dir() and (d / "release" / "sumomo" / f"sumomo{exe_suffix}").exists()
-        ]
-
-        if not available_targets:
-            raise RuntimeError(
-                f"No built sumomo executables found in {build_dir}. "
-                f"Please build with: python3 run.py build <target>"
-            )
-
-        if len(available_targets) == 1:
-            # ビルドが1つだけの場合は自動選択
-            target = available_targets[0]
-            print(f"Auto-detected sumomo target: {target}")
-        else:
-            # 複数ビルドがある場合は、プラットフォームに応じて優先順位を決める
-            machine = platform.machine().lower()
-
-            # プラットフォームに応じた優先順位リスト
-            if system == "darwin":
-                if machine == "arm64" or machine == "aarch64":
-                    preferred = ["macos_arm64", "macos_x86_64"]
-                else:
-                    preferred = ["macos_x86_64", "macos_arm64"]
-            elif system == "linux":
-                if machine == "aarch64":
-                    preferred = ["ubuntu-24.04_armv8", "ubuntu-22.04_armv8", "ubuntu-20.04_armv8"]
-                else:
-                    preferred = [
-                        "ubuntu-24.04_x86_64",
-                        "ubuntu-22.04_x86_64",
-                        "ubuntu-20.04_x86_64",
-                    ]
-            elif system == "windows":
-                preferred = ["windows_x86_64"]
-            else:
-                preferred = []
-
-            # 優先順位に従って選択
-            target = None
-            for pref in preferred:
-                if pref in available_targets:
-                    target = pref
-                    print(
-                        f"Auto-detected sumomo target: {target} (from {len(available_targets)} available)"
-                    )
-                    break
-
-            if not target:
-                # 優先順位で見つからない場合は最初のものを使用
-                target = available_targets[0]
-                print(
-                    f"Using first available target: {target} (available: {', '.join(available_targets)})"
-                )
-
-        # sumomo のパスを構築
-        assert target is not None
-        sumomo_path = (
-            project_root
-            / "examples"
-            / "_build"
-            / target
-            / "release"
-            / "sumomo"
-            / f"sumomo{exe_suffix}"
-        )
-
-        if not sumomo_path.exists():
-            raise RuntimeError(
-                f"sumomo executable not found at {sumomo_path}. "
-                f"Please build with: python3 run.py build {target}"
-            )
-
-        return str(sumomo_path)
 
     def __enter__(self) -> Self:
         """コンテキストマネージャーの開始"""
