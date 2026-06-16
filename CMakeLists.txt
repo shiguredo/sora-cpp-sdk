@@ -136,6 +136,7 @@ target_sources(sora
 )
 
 target_compile_definitions(sora PRIVATE ${SORA_TARGET_DEF})
+target_compile_definitions(sora PUBLIC BOOST_ASIO_ENABLE_VERSION_NAMESPACE)
 
 set(BUNDLE_STATIC_LIBS)
 

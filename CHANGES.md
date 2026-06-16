@@ -58,6 +58,19 @@
   - @melpon
 - [UPDATE] BitrateAdjuster の２引数コンストラクタが deprecated になったので、代わりに３引数コンストラクタを利用する
   - @melpon
+- [UPDATE] macOS Unity Editor とのシンボル衝突を回避する
+  - Unity Editor 6000.3 がエクスポートする `asio_detail_posix_thread_function` と
+     Boost.Asio の同名の `extern "C"` 関数が衝突し、 Sora インスタンス破棄時に
+    SIGSEGV が発生する問題を修正する
+  - `BOOST_ASIO_ENABLE_VERSION_NAMESPACE` を有効化し、
+    `BOOST_ASIO_VERSIONED_NAME` で生成される関数名にバージョン識別子を付加することで
+    シンボル名を変えて衝突を回避する
+  - 本問題は sora-cpp-sdk を Boost 1.91 にアップグレードした際に
+    `boost_asio_detail_posix_thread_function` から `asio_detail_posix_thread_function`
+    への関数名変更がトリガーとなり顕在化した
+  - 本問題は macOS で発見したが、 `BOOST_ASIO_ENABLE_VERSION_NAMESPACE` は
+    全プラットフォームで有効化する
+  - @torikizi
 - [FIX] カスタムエンジンが複数ある場合、`GetVideoCodecCapability()` で重複したエンジンが返されるのを修正
   - @melpon
 - [FIX] `#if USE_VPL_ENCODER` と `#if defined(USE_VPL_ENCODER)` の不一致を修正する
