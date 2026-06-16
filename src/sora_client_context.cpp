@@ -206,82 +206,83 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
         return true;
       };
 
-  auto success = c->worker_thread_->BlockingCall([&]() -> bool {
-    // ADM を事前に初期化しておかないと、Linux の PulseAudio/ALSA 実装で
-    // RecordingDevices() や RecordingIsAvailable() が失敗する。
-    // 一方、adm_helpers::Init() も PeerConnectionFactory 作成時に呼ばれ、
-    // そこで SetRecordingDevice(0) / SetPlayoutDevice(0) が実行されて
-    // ここで設定したデバイスが上書きされる可能性がある。
-    // そのため、 PeerConnectionFactory 作成後にもう一度 set_audio_device()
-    // を呼び出している。
-    if (adm->Init() != 0) {
-      RTC_LOG(LS_WARNING) << "Failed to ADM Init";
-      return false;
-    }
-
-    // オーディオデバイス名を列挙する
-    auto get_audio_devices = [adm, &c](bool is_recording) {
-      std::vector<std::tuple<std::string, std::string> > devices;
-      int device_count =
-          is_recording ? adm->RecordingDevices() : adm->PlayoutDevices();
-      // RecordingDevices, PlayoutDevice がマイナスの値を返すことがある
-      if (device_count < 0) {
-        return devices;
-      }
-
-      // ダミー ADM の場合は IsAvailable が常に -1 を返すため、
-      // 無駄な WARNING ログを避けるために呼ばない
-      if (c->config_.use_audio_device) {
-        bool available = false;
-        int err = is_recording ? adm->RecordingIsAvailable(&available)
-                               : adm->PlayoutIsAvailable(&available);
-        if (err != 0) {
-          RTC_LOG(LS_WARNING)
-              << "Failed to "
-              << (is_recording ? "RecordingIsAvailable" : "PlayoutIsAvailable")
-              << ", continue to enumerate devices";
-        } else if (!available) {
-          RTC_LOG(LS_INFO) << (is_recording ? "Recording" : "Playout")
-                           << " is not available, continue to enumerate devices";
+  auto success =
+      c->worker_thread_->BlockingCall([&]() -> bool {
+        // ADM を事前に初期化しておかないと、Linux の PulseAudio/ALSA 実装で
+        // RecordingDevices() や RecordingIsAvailable() が失敗する。
+        // 一方、adm_helpers::Init() も PeerConnectionFactory 作成時に呼ばれ、
+        // そこで SetRecordingDevice(0) / SetPlayoutDevice(0) が実行されて
+        // ここで設定したデバイスが上書きされる可能性がある。
+        // そのため、 PeerConnectionFactory 作成後にもう一度 set_audio_device()
+        // を呼び出している。
+        if (adm->Init() != 0) {
+          RTC_LOG(LS_WARNING) << "Failed to ADM Init";
+          return false;
         }
-      }
 
-      for (int i = 0; i < device_count; i++) {
-        char name[webrtc::kAdmMaxDeviceNameSize] = {0};
-        char guid[webrtc::kAdmMaxGuidSize] = {0};
-        int err = is_recording ? adm->RecordingDeviceName(i, name, guid)
-                               : adm->PlayoutDeviceName(i, name, guid);
-        // 名前の取得に失敗したデバイスは一覧に含めず、
-        // 後続のデバイスを続けて列挙する
-        if (err != 0) {
-          RTC_LOG(LS_WARNING)
-              << "Failed to "
-              << (is_recording ? "RecordingDeviceName" : "PlayoutDeviceName")
-              << ": index=" << i;
-          continue;
+        // オーディオデバイス名を列挙する
+        auto get_audio_devices = [adm, &c](bool is_recording) {
+          std::vector<std::tuple<std::string, std::string> > devices;
+          int device_count =
+              is_recording ? adm->RecordingDevices() : adm->PlayoutDevices();
+          // RecordingDevices, PlayoutDevice がマイナスの値を返すことがある
+          if (device_count < 0) {
+            return devices;
+          }
+
+          // ダミー ADM の場合は IsAvailable が常に -1 を返すため、
+          // 無駄な WARNING ログを避けるために呼ばない
+          if (c->config_.use_audio_device) {
+            bool available = false;
+            int err = is_recording ? adm->RecordingIsAvailable(&available)
+                                   : adm->PlayoutIsAvailable(&available);
+            if (err != 0) {
+              RTC_LOG(LS_WARNING) << "Failed to "
+                                  << (is_recording ? "RecordingIsAvailable"
+                                                   : "PlayoutIsAvailable")
+                                  << ", continue to enumerate devices";
+            } else if (!available) {
+              RTC_LOG(LS_INFO)
+                  << (is_recording ? "Recording" : "Playout")
+                  << " is not available, continue to enumerate devices";
+            }
+          }
+
+          for (int i = 0; i < device_count; i++) {
+            char name[webrtc::kAdmMaxDeviceNameSize] = {0};
+            char guid[webrtc::kAdmMaxGuidSize] = {0};
+            int err = is_recording ? adm->RecordingDeviceName(i, name, guid)
+                                   : adm->PlayoutDeviceName(i, name, guid);
+            // 名前の取得に失敗したデバイスは一覧に含めず、
+            // 後続のデバイスを続けて列挙する
+            if (err != 0) {
+              RTC_LOG(LS_WARNING) << "Failed to "
+                                  << (is_recording ? "RecordingDeviceName"
+                                                   : "PlayoutDeviceName")
+                                  << ": index=" << i;
+              continue;
+            }
+            RTC_LOG(LS_INFO)
+                << (is_recording ? "RecordingDeviceName" : "PlayoutDeviceName")
+                << ": index=" << i << " name=" << name << " guid=" << guid;
+            // 取得に成功したデバイスのみ一覧に追加する
+            devices.emplace_back(name, guid);
+          }
+          return devices;
+        };
+        recording_devices = get_audio_devices(true);
+        playout_devices = get_audio_devices(false);
+
+        if (!set_audio_device(c->config_.audio_recording_device,
+                              recording_devices, true)) {
+          return false;
         }
-        RTC_LOG(LS_INFO) << (is_recording ? "RecordingDeviceName"
-                                          : "PlayoutDeviceName")
-                         << ": index=" << i << " name=" << name
-                         << " guid=" << guid;
-        // 取得に成功したデバイスのみ一覧に追加する
-        devices.emplace_back(name, guid);
-      }
-      return devices;
-    };
-    recording_devices = get_audio_devices(true);
-    playout_devices = get_audio_devices(false);
-
-    if (!set_audio_device(c->config_.audio_recording_device, recording_devices,
-                          true)) {
-      return false;
-    }
-    if (!set_audio_device(c->config_.audio_playout_device, playout_devices,
-                          false)) {
-      return false;
-    }
-    return true;
-  });
+        if (!set_audio_device(c->config_.audio_playout_device, playout_devices,
+                              false)) {
+          return false;
+        }
+        return true;
+      });
   if (!success) {
     c->worker_thread_->BlockingCall([&] {
       adm = nullptr;

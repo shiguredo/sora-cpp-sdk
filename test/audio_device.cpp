@@ -42,8 +42,7 @@ TEST_CASE("FindAudioDeviceIndex は存在しないデバイス名で -1 を返�
   REQUIRE(sora::FindAudioDeviceIndex("guid-c", devices) == -1);
 }
 
-TEST_CASE("FindAudioDeviceIndex は空の一覧で -1 を返すこと",
-          "[audio_device]") {
+TEST_CASE("FindAudioDeviceIndex は空の一覧で -1 を返すこと", "[audio_device]") {
   std::vector<std::tuple<std::string, std::string> > devices;
 
   REQUIRE(sora::FindAudioDeviceIndex("Device A", devices) == -1);
