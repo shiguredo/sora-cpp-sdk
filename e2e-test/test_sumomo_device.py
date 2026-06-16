@@ -5,6 +5,7 @@ nvidia self-hosted runner で実行する想定。GitHub-hosted runner で実機
 テストコード側では実行環境を判定する仕組み (skipif や環境変数) は持たない。
 """
 
+import re
 import subprocess
 import time
 from typing import Any
@@ -123,11 +124,14 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize("audio_recording_device", device_lists.audio_recording)
 
 
-def test_audio_recording_device(sora_settings, free_port, audio_recording_device):
+def test_audio_recording_device(
+    sora_settings, free_port, audio_recording_device, capfd
+):
     """--audio-recording-device で指定した音声録音デバイスから音声が送信されることを確認する
 
     --list-devices で列挙された各音声録音デバイスを個別に指定し、それぞれで
     音声フレームが送信されることを確認する。
+    さらに標準エラー出力を確認し、指定したデバイスが実際に選択されていることを検証する。
     """
     print(f"音声録音デバイスをテスト: {audio_recording_device}")
 
@@ -170,3 +174,19 @@ def test_audio_recording_device(sora_settings, free_port, audio_recording_device
         assert transport["dtlsState"] == "connected", (
             f"DTLS が確立していない: dtlsState={transport['dtlsState']}"
         )
+
+    # sumomo プロセス終了後に標準エラー出力を取得する
+    captured = capfd.readouterr()
+
+    # 実際に選択された音声録音デバイス名をログから抽出する
+    m = re.search(
+        r"Succeeded SetRecordingDevice:.* name=(.+?) guid=", captured.err
+    )
+    assert m is not None, (
+        f"デバイス {audio_recording_device} で SetRecordingDevice 成功ログが見つからない"
+    )
+    selected_device = m.group(1).strip()
+    assert selected_device == audio_recording_device, (
+        f"指定したデバイス {audio_recording_device} が選択されていない。 "
+        f"実際に選択されたデバイス: {selected_device}"
+    )
