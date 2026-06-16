@@ -513,6 +513,22 @@ jobs:
 
           ls -la examples/_build/${{ matrix.platform.platform-name }}/release/sumomo/
 
+      # self-hosted Linux ランナーでは GitHub Actions サービス環境から
+      # PulseAudio/PipeWire のソケットが見つからないことがあり、
+      # 音声デバイスが列挙されない。その対策として XDG_RUNTIME_DIR を設定する。
+      - name: Setup XDG_RUNTIME_DIR for self-hosted Linux device tests
+        if: ${{ runner.environment == 'self-hosted' && runner.os == 'Linux' && matrix.platform.name == 'device' }}
+        run: |
+          if [ -z "$XDG_RUNTIME_DIR" ]; then
+            RUNTIME_DIR="/run/user/$(id - u)"
+            if [ -d "$RUNTIME_DIR" ]; then
+              echo "XDG_RUNTIME_DIR=$RUNTIME_DIR" >> "$GITHUB_ENV"
+              echo "Set XDG_RUNTIME_DIR=$RUNTIME_DIR"
+            else
+              echo "Warning: $RUNTIME_DIR does not exist"
+            fi
+          fi
+
       - name: Run E2E tests
         run: |
           # テストを実行（最初の失敗で停止、詳細ログ出力）
