@@ -335,24 +335,31 @@ jobs:
       fail-fast: false
       matrix:
         platform:
+          # GitHub-hosted runner では実機デバイスを必要とする test_sumomo_device.py は実行しない
           - name: ubuntu-24.04_x86_64
             platform-name: ubuntu-24.04_x86_64
             runs-on: ubuntu-24.04
+            test-target: test_sumomo_basic.py test_sumomo_openh264.py
           - name: ubuntu-22.04_x86_64
             platform-name: ubuntu-22.04_x86_64
             runs-on: ubuntu-22.04
+            test-target: test_sumomo_basic.py test_sumomo_openh264.py
           - name: ubuntu-24.04_armv8
             platform-name: ubuntu-24.04_armv8
             runs-on: ubuntu-24.04-arm
+            test-target: test_sumomo_basic.py test_sumomo_openh264.py
           - name: ubuntu-22.04_armv8
             platform-name: ubuntu-22.04_armv8
             runs-on: ubuntu-22.04-arm
+            test-target: test_sumomo_basic.py test_sumomo_openh264.py
           - name: macos_arm64
             platform-name: macos_arm64
             runs-on: macos-15
+            test-target: test_sumomo_basic.py test_sumomo_openh264.py
           - name: windows_x86_64
             platform-name: windows_x86_64
             runs-on: windows-2025
+            test-target: test_sumomo_basic.py test_sumomo_openh264.py
           # Self-hosted runner for Apple Video Toolbox
           - name: apple_video_toolbox
             platform-name: macos_arm64
@@ -371,6 +378,15 @@ jobs:
             test-target: test_sumomo_nvidia_video_codec.py
             env-vars: |
               NVIDIA_VIDEO_CODEC=true
+          # Self-hosted runner for sumomo device tests
+          # NVIDIA Video Codec ランナーは実機カメラ・マイクが接続されているため、
+          # --list-devices と実機キャプチャの検証をこのランナーで実行する
+          - name: device
+            platform-name: ubuntu-24.04_x86_64
+            runs-on:
+              group: Self
+              labels: [self-hosted, linux, x64, NVIDIA-Video-Codec-SDK]
+            test-target: test_sumomo_device.py
           # Self-hosted runner for Intel VPL
           - name: intel_vpl
             platform-name: ubuntu-24.04_x86_64
@@ -496,6 +512,22 @@ jobs:
           fi
 
           ls -la examples/_build/${{ matrix.platform.platform-name }}/release/sumomo/
+
+      # self-hosted Linux ランナーでは GitHub Actions サービス環境から
+      # PulseAudio/PipeWire のソケットが見つからないことがあり、
+      # 音声デバイスが列挙されない。その対策として XDG_RUNTIME_DIR を設定する。
+      - name: Setup XDG_RUNTIME_DIR for self-hosted Linux device tests
+        if: ${{ runner.environment == 'self-hosted' && runner.os == 'Linux' && matrix.platform.name == 'device' }}
+        run: |
+          if [ -z "$XDG_RUNTIME_DIR" ]; then
+            RUNTIME_DIR="/run/user/$(id -u)"
+            if [ -d "$RUNTIME_DIR" ]; then
+              echo "XDG_RUNTIME_DIR=$RUNTIME_DIR" >> "$GITHUB_ENV"
+              echo "Set XDG_RUNTIME_DIR=$RUNTIME_DIR"
+            else
+              echo "Warning: $RUNTIME_DIR does not exist"
+            fi
+          fi
 
       - name: Run E2E tests
         run: |
