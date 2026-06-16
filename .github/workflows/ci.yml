@@ -520,7 +520,7 @@ jobs:
         if: ${{ runner.environment == 'self-hosted' && runner.os == 'Linux' && matrix.platform.name == 'device' }}
         run: |
           if [ -z "$XDG_RUNTIME_DIR" ]; then
-            RUNTIME_DIR="/run/user/$(id - u)"
+            RUNTIME_DIR="/run/user/$(id -u)"
             if [ -d "$RUNTIME_DIR" ]; then
               echo "XDG_RUNTIME_DIR=$RUNTIME_DIR" >> "$GITHUB_ENV"
               echo "Set XDG_RUNTIME_DIR=$RUNTIME_DIR"
