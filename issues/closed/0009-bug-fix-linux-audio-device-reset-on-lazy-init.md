@@ -2,7 +2,7 @@
 
 - Priority: High
 - Created: 2026-06-22
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-06-22
 - Model: Kimi Code CLI
 - Branch: feature/change-linux-audio-device-reset-on-lazy-init
 - Polished: 2026-06-22
@@ -71,7 +71,13 @@ sendonly / sendrecv / recvonly を問わず、最初の `PeerConnection` 作成�
    ```cpp
    SoraClientContext::~SoraClientContext() {
      config_ = SoraClientContextConfig();
-     worker_thread_->BlockingCall([&] { media_engine_ref_.reset(); });
+     if (media_engine_ref_) {
+       if (worker_thread_->IsCurrent()) {
+         media_engine_ref_.reset();
+       } else {
+         worker_thread_->BlockingCall([&] { media_engine_ref_.reset(); });
+       }
+     }
      connection_context_ = nullptr;
      factory_ = nullptr;
      network_thread_->Stop();
@@ -80,15 +86,13 @@ sendonly / sendrecv / recvonly を問わず、最初の `PeerConnection` 作成�
    }
    ```
 3. `src/sora_client_context.cpp` の `SoraClientContext::Create()` で、 `factory_` 作成後の `#else` ブロック内を次のように変更する。
-   - worker thread 上で `adm->Init()` を実行し、失敗時は `adm` と `dependencies.adm` の両方を `nullptr` にして `false` を返す。 ADM の解放を worker thread 上で行うためである。
-   - 同じく worker thread 上で `MediaEngineReference` を作成する。 `connection_context_->is_configured_for_media()` が false の場合は音声メディアが無効化されているため、作成しない。
+   - worker thread 上で `adm->Init()` を実行し、失敗時は `adm` を `nullptr` にして `false` を返す。 ADM の解放を worker thread 上で行うためである。
+   - 同じく worker thread 上で `MediaEngineReference` を作成する。 `connection_context_->is_configured_for_media()` が false の場合は ConnectionContext がメディアエンジン用に構成されていないため、作成しない。
    - `MediaEngineReference` 作成後にデバイス列挙、デバイス設定、 `InitMicrophone()` / `InitSpeaker()` を行う。
    ```cpp
    auto success = c->worker_thread_->BlockingCall([&]() -> bool {
      if (adm->Init() != 0) {
        RTC_LOG(LS_ERROR) << "Failed to initialize ADM";
-       adm = nullptr;
-       dependencies.adm = nullptr;
        return false;
      }
 
@@ -102,6 +106,7 @@ sendonly / sendrecv / recvonly を問わず、最初の `PeerConnection` 作成�
      return true;
    });
    if (!success) {
+     c->worker_thread_->BlockingCall([&] { adm = nullptr; });
      return nullptr;
    }
    ```
@@ -112,12 +117,12 @@ sendonly / sendrecv / recvonly を問わず、最初の `PeerConnection` 作成�
    // ここで ConnectionContext::MediaEngineReference を作成して強制的に Init を
    // 完了させ、その後に ADM のデバイス設定を行う。
    ```
-5. `CHANGES.md` の `## develop` 先頭に、例えば次のような `[CHANGE]` エントリを追加する。既存の同問題に関する `[FIX] Linux で --audio-recording-device ...` エントリから、本対応で陳腐化する「Factory 作成後の二回目設定」「 `adm->Init()` 事前呼び出し」に関する記述を削除する。既存エントリ内の「 `PeerConnectionFactory` 作成時の `adm_helpers::Init()` で上書きされていた」という記述も、実際には最初の `PeerConnection` 作成時に上書きされるため、修正または削除する。既存エントリ内の他の修正は維持する。
+5. `CHANGES.md` の `## develop` 先頭に、次のような `[CHANGE]` エントリを追加する。既存の同問題に関する `[FIX] Linux で --audio-recording-device ...` エントリから、本対応で陳腐化する「Factory 作成後の二回目設定」「 `adm->Init()` 事前呼び出し」に関する記述を削除する。既存エントリ内の「 `PeerConnectionFactory` 作成時の `adm_helpers::Init()` で上書きされていた」という記述も、実際には最初の `PeerConnection` 作成時に上書きされるため、削除する。既存エントリ内の他の修正は維持する。
    ```md
-   - [CHANGE] `SoraClientContext::Create()` 内で `ConnectionContext::MediaEngineReference` を保持し、
+   - [CHANGE] `SoraClientContext` に `ConnectionContext::MediaEngineReference` を保持し、
        `PeerConnection` 作成時の遅延 Init により指定オーディオデバイスがデフォルトに戻っていた問題を修正する
-       - `include/sora/sora_client_context.h` に `media_engine_ref_` メンバーを追加し ABI を変更する
-       - 非 Android / iOS では `SoraClientContext::Create()` 完了時に `WebRtcVoiceEngine::Init()` を発生させ、指定デバイス設定後に `InitMicrophone()` / `InitSpeaker()` を行う
+       - `SoraClientContext` の ABI を変更する
+       - 非 Android / iOS では `SoraClientContext::Create()` 内で同期的に `WebRtcVoiceEngine::Init()` を実行させ、指定デバイス設定後に `InitMicrophone()` / `InitSpeaker()` を行う
        - Android / iOS では `media_engine_ref_` を作成せず、既存挙動に影響しない
        - @voluntas
    ```

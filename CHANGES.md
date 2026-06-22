@@ -11,10 +11,14 @@
 
 ## develop
 
+- [CHANGE] `SoraClientContext` に `ConnectionContext::MediaEngineReference` を保持し、
+    `PeerConnection` 作成時の遅延 Init により指定オーディオデバイスがデフォルトに戻っていた問題を修正する
+  - `SoraClientContext` の ABI を変更する
+  - 非 Android / iOS では `SoraClientContext::Create()` 内で同期的に `WebRtcVoiceEngine::Init()` を実行させ、指定デバイス設定後に `InitMicrophone()` / `InitSpeaker()` を行う
+  - Android / iOS では `media_engine_ref_` を作成せず、既存挙動に影響しない
+  - @voluntas
 - [FIX] Linux で `--audio-recording-device` / `--audio-playout-device` を指定しても正しく音声デバイスが認識されない問題を修正する
   - ADM の初期化 (`adm->Init()`) が行われていないために Linux の PulseAudio/ALSA 実装でデバイス列挙に失敗していた
-  - さらに `PeerConnectionFactory` 作成時の `adm_helpers::Init()` で `SetRecordingDevice(0)` / `SetPlayoutDevice(0)` に上書きされていた
-  - `SoraClientContext::Create()` 内で `adm->Init()` を事前に呼び、Factory 作成後にもう一度指定デバイスを設定し直すようにする
   - 空文字列のデバイス名を指定した場合や `configure_dependencies` 後に ADM が `nullptr` になった場合は `Create()` を失敗させるようにする
   - `use_audio_device = false`（ダミー ADM）時に無駄な `RecordingIsAvailable()` / `PlayoutIsAvailable()` の WARNING ログが出力されないようにする
   - iOS でも Android と同様に `RecordingDeviceName()` / `PlayoutDeviceName()` を呼ばないようにする
