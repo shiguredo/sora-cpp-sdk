@@ -85,6 +85,8 @@ class SoraClientContext {
   std::unique_ptr<webrtc::Thread> signaling_thread_;
   webrtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> factory_;
   webrtc::scoped_refptr<webrtc::ConnectionContext> connection_context_;
+  std::unique_ptr<webrtc::ConnectionContext::MediaEngineReference>
+      media_engine_ref_;
 };
 
 }  // namespace sora

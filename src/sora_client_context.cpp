@@ -51,6 +51,19 @@ int FindAudioDeviceIndex(
 
 SoraClientContext::~SoraClientContext() {
   config_ = SoraClientContextConfig();
+  // ConnectionContext::MediaEngineReference は worker thread 上で作成・破棄する
+  // 必要があるため、worker thread 停止前に明示的に解放する。
+  // デストラクタが worker thread 上で呼ばれた場合は同じスレッドなので直接解放し、
+  // それ以外の場合は worker thread 上で解放する。
+  // Android / iOS やメディアエンジンが無効化されている場合は nullptr のため、
+  // 解放が不要な場合は BlockingCall を呼ばない。
+  if (media_engine_ref_) {
+    if (worker_thread_->IsCurrent()) {
+      media_engine_ref_.reset();
+    } else {
+      worker_thread_->BlockingCall([&] { media_engine_ref_.reset(); });
+    }
+  }
   connection_context_ = nullptr;
   factory_ = nullptr;
   network_thread_->Stop();
@@ -106,10 +119,7 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
       CreateVideoCodecFactory(c->config_.video_codec_factory_config);
   if (!codec_factory) {
     RTC_LOG(LS_ERROR) << "Failed to create VideoCodecFactory";
-    c->worker_thread_->BlockingCall([&] {
-      adm = nullptr;
-      dependencies.adm = nullptr;
-    });
+    c->worker_thread_->BlockingCall([&] { adm = nullptr; });
     return nullptr;
   }
   dependencies.video_encoder_factory =
@@ -140,10 +150,7 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
       std::move(dependencies), c->connection_context_);
 
   if (c->factory_ == nullptr) {
-    c->worker_thread_->BlockingCall([&] {
-      adm = nullptr;
-      dependencies.adm = nullptr;
-    });
+    c->worker_thread_->BlockingCall([&] { adm = nullptr; });
     RTC_LOG(LS_ERROR) << "Failed to create PeerConnectionFactory";
     return nullptr;
   }
@@ -229,16 +236,26 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
 
   auto success =
       c->worker_thread_->BlockingCall([&]() -> bool {
-        // ADM を事前に初期化しておかないと、Linux の PulseAudio/ALSA 実装で
-        // RecordingDevices() や RecordingIsAvailable() が失敗する。
-        // 一方、adm_helpers::Init() も PeerConnectionFactory 作成時に呼ばれ、
-        // そこで SetRecordingDevice(0) / SetPlayoutDevice(0) が実行されて
-        // ここで設定したデバイスが上書きされる可能性がある。
-        // そのため、 PeerConnectionFactory 作成後にもう一度 set_audio_device()
-        // を呼び出している。
+        // WebRtcVoiceEngine::Init() / adm_helpers::Init() は PeerConnectionFactory
+        // 作成時ではなく、最初の PeerConnection 作成時まで遅延される。
+        // ここで ConnectionContext::MediaEngineReference を作成して強制的に Init を
+        // 完了させ、その後に ADM のデバイス設定を行う。
+        // MediaEngineReference 作成時の adm_helpers::Init() 内でも adm->Init()
+        // が呼ばれるため、ここでの adm->Init() は二重呼び出しの一部となる。
+        // ただし、adm_helpers::Init() 内では RTC_CHECK_EQ(0, ...) で失敗時に
+        // abort するため、事前に成功させておくことでそのリスクを低減する。
         if (adm->Init() != 0) {
-          RTC_LOG(LS_WARNING) << "Failed to ADM Init";
+          RTC_LOG(LS_ERROR) << "Failed to initialize ADM";
           return false;
+        }
+
+        // ConnectionContext::MediaEngineReference は worker thread 上で作成する
+        // 必要がある。ConnectionContext がメディアエンジン用に構成されていない
+        // 場合は作成しないが、ADM 自体の設定は従来通り行う。
+        if (c->connection_context_->is_configured_for_media()) {
+          c->media_engine_ref_ =
+              std::make_unique<webrtc::ConnectionContext::MediaEngineReference>(
+                  c->connection_context_);
         }
 
         // オーディオデバイス名を列挙する
@@ -302,49 +319,25 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
                               false)) {
           return false;
         }
+
+        // MediaEngineReference 作成時の adm_helpers::Init() 内で
+        // InitMicrophone() / InitSpeaker() が index 0 のデバイスに対して
+        // 呼ばれる可能性があるため、指定デバイスに対して再度初期化する。
+        // 失敗しても接続を継続できるよう WARNING ログを出力して処理を続行する。
+        if (c->config_.audio_recording_device && !recording_devices.empty()) {
+          if (adm->InitMicrophone() != 0) {
+            RTC_LOG(LS_WARNING) << "Failed to initialize microphone";
+          }
+        }
+        if (c->config_.audio_playout_device && !playout_devices.empty()) {
+          if (adm->InitSpeaker() != 0) {
+            RTC_LOG(LS_WARNING) << "Failed to initialize speaker";
+          }
+        }
         return true;
       });
   if (!success) {
-    c->worker_thread_->BlockingCall([&] {
-      adm = nullptr;
-      dependencies.adm = nullptr;
-    });
-    return nullptr;
-  }
-
-  // PeerConnectionFactory 作成時に WebRtcVoiceEngine::Init() から
-  // adm_helpers::Init() が呼ばれ、SetRecordingDevice(0) / SetPlayoutDevice(0)
-  // で上書きされる可能性があるため、ここでもう一度指定デバイスを設定し直す。
-  auto reconfigure_audio_device = [&]() -> bool {
-    if (!set_audio_device(c->config_.audio_recording_device, recording_devices,
-                          true)) {
-      return false;
-    }
-    if (!set_audio_device(c->config_.audio_playout_device, playout_devices,
-                          false)) {
-      return false;
-    }
-
-    // adm_helpers::Init() 内で InitMicrophone() / InitSpeaker() も呼ばれているが、
-    // その際のデバイスは index 0 の可能性があるので、指定デバイスに対して
-    // 再度初期化しておく。
-    if (c->config_.audio_recording_device && !recording_devices.empty()) {
-      if (adm->InitMicrophone() != 0) {
-        RTC_LOG(LS_WARNING) << "Failed to InitMicrophone";
-      }
-    }
-    if (c->config_.audio_playout_device && !playout_devices.empty()) {
-      if (adm->InitSpeaker() != 0) {
-        RTC_LOG(LS_WARNING) << "Failed to InitSpeaker";
-      }
-    }
-    return true;
-  };
-  if (!c->worker_thread_->BlockingCall(reconfigure_audio_device)) {
-    c->worker_thread_->BlockingCall([&] {
-      adm = nullptr;
-      dependencies.adm = nullptr;
-    });
+    c->worker_thread_->BlockingCall([&] { adm = nullptr; });
     return nullptr;
   }
 #endif
