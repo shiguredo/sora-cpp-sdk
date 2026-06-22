@@ -18,6 +18,7 @@
 #include <api/environment/environment_factory.h>
 #include <api/peer_connection_interface.h>
 #include <api/rtc_event_log/rtc_event_log_factory.h>
+#include <pc/connection_context.h>
 #include <pc/media_factory.h>
 #include <rtc_base/logging.h>
 #include <rtc_base/ssl_adapter.h>
