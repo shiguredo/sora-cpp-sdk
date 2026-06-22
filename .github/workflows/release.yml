@@ -20,7 +20,7 @@ jobs:
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
       TEST_MATRIX_NAME: ${{ matrix.name }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: microsoft/setup-msbuild@v3
       - name: Env to output
         run: |
@@ -105,7 +105,7 @@ jobs:
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
       TEST_MATRIX_NAME: ${{ matrix.name }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Env to output
         run: |
           echo "user=`users`" >> $GITHUB_OUTPUT
@@ -185,7 +185,7 @@ jobs:
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
       TEST_MATRIX_NAME: ${{ matrix.platform.name }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Disk cleanup
         run: |
           set -x
@@ -404,7 +404,7 @@ jobs:
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
       OPENH264_VERSION: 2.6.0
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       # Homebrew のセットアップ (self-hosted macOS ランナー用)
       - name: Setup Homebrew
@@ -508,7 +508,7 @@ jobs:
       - e2e-test
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/download
         with:
           platform: windows_x86_64
@@ -571,7 +571,7 @@ jobs:
         working-directory: ${{ github.workspace }}/examples
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       # リリースされた SDK バイナリを使ってサンプルをビルドする
       - name: Build Example
         run: |
@@ -602,7 +602,7 @@ jobs:
         working-directory: ${{ github.workspace }}/examples
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       # リリースされた SDK バイナリを使ってサンプルをビルドする
       - name: Build Example
         run: |
@@ -642,7 +642,7 @@ jobs:
         working-directory: ${{ github.workspace }}/examples
     runs-on: ${{ matrix.platform.runs-on }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Install deps
         run: |
           sudo apt-get update
@@ -704,7 +704,7 @@ jobs:
           - raspberry-pi-os_armv8.tar.gz
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - uses: actions/download-artifact@v8
         with:
           name: ${{ matrix.example }}_${{ matrix.archive }}
