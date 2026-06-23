@@ -30,6 +30,8 @@
 - [ADD] sumomo の E2E テストヘルパーに `capture_stderr` オプションを追加する
   - 標準エラー出力をキャプチャしてテストから検証できるようにする
   - @voluntas
+- [ADD] sumomo の E2E テストで `--audio-playout-device` を複数の音声再生デバイスに対して個別に検証するテストを追加する
+  - @voluntas
 - [UPDATE] libwebrtc のバージョンを m150.7871.0.0 に上げる
   - `webrtc::RtcEventLogFactory` のコンストラクタ不一致を修正する
     - libwebrtc で `RtcEventLogFactory` の `TaskQueueFactory` が削除されたため、変更に追従する
