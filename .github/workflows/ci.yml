@@ -31,8 +31,8 @@ jobs:
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
       TEST_MATRIX_NAME: ${{ matrix.name }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: microsoft/setup-msbuild@v3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7
+      - uses: microsoft/setup-msbuild@30375c66a4eea26614e0d39710365f22f8b0af57  # v3
       - name: Env to output
         run: |
           echo "userprofile=${Env:USERPROFILE}" >> ${Env:GITHUB_OUTPUT}
@@ -52,7 +52,7 @@ jobs:
       # （インストールする nvcc は解凍後で 100MB 程度なのでキャッシュ可能）
       - name: Cache CUDA ${{ steps.versions.outputs.cuda_version }}
         id: cache-cuda
-        uses: actions/cache@v5
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae  # v5.0.5
         with:
           path: _install\windows_x86_64\release\cuda
           key: windows-cuda-${{ steps.versions.outputs.cuda_version }}.v1
@@ -72,17 +72,17 @@ jobs:
           echo "boost_name=${BOOST_PACKAGE_NAME}" >> ${Env:GITHUB_OUTPUT}
         id: package_name
       - name: Upload Artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
         with:
           name: ${{ steps.package_name.outputs.name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.name }}
       - name: Upload Boost Artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
         with:
           name: ${{ steps.package_name.outputs.boost_name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.boost_name }}
       - name: Upload Environment
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
         with:
           name: ${{ matrix.name }}.env
           path: _package/${{ matrix.name }}/release/sora.env
@@ -96,7 +96,7 @@ jobs:
             cp "_build\${{ matrix.name }}\release\$app\Release\$app.exe" "examples_${{ matrix.name }}"
           }
       - name: Upload Examples Artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
         with:
           name: examples_${{ matrix.name }}
           path: examples/examples_${{ matrix.name }}
@@ -116,7 +116,7 @@ jobs:
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
       TEST_MATRIX_NAME: ${{ matrix.name }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7
       - name: Env to output
         run: |
           echo "user=`users`" >> $GITHUB_OUTPUT
@@ -129,17 +129,17 @@ jobs:
           echo "boost_name=${BOOST_PACKAGE_NAME}" >> $GITHUB_OUTPUT
         id: package_name
       - name: Upload Artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
         with:
           name: ${{ steps.package_name.outputs.name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.name }}
       - name: Upload Boost Artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
         with:
           name: ${{ steps.package_name.outputs.boost_name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.boost_name }}
       - name: Upload Environment
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
         with:
           name: ${{ matrix.name }}.env
           path: _package/${{ matrix.name }}/release/sora.env
@@ -154,7 +154,7 @@ jobs:
           done
         if: matrix.name == 'macos_arm64'
       - name: Upload Examples Artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
         with:
           name: examples_${{ matrix.name }}
           path: examples/examples_${{ matrix.name }}
@@ -196,7 +196,7 @@ jobs:
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
       TEST_MATRIX_NAME: ${{ matrix.platform.name }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7
       - name: Disk cleanup
         run: |
           set -x
@@ -267,13 +267,13 @@ jobs:
       # JDK を指定しないとデフォルトの JDK 11 で動作するため指定する
       - name: Setup JDK 17
         if: matrix.platform.os == 'android'
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@ad2b38190b15e4d6bdf0c97fb4fca8412226d287  # v5
         with:
           java-version: "17"
           distribution: "temurin"
       - name: Setup Android SDK
         if: matrix.platform.os == 'android'
-        uses: android-actions/setup-android@v4
+        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699  # v4
       - run: python3 run.py build --test --run-e2e-test --package ${{ matrix.platform.name }}
       - name: Get package name
         run: |
@@ -282,17 +282,17 @@ jobs:
           echo "boost_name=${BOOST_PACKAGE_NAME}" >> $GITHUB_OUTPUT
         id: package_name
       - name: Upload Artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
         with:
           name: ${{ steps.package_name.outputs.name }}
           path: _package/${{ matrix.platform.name }}/release/${{ steps.package_name.outputs.name }}
       - name: Upload Boost Artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
         with:
           name: ${{ steps.package_name.outputs.boost_name }}
           path: _package/${{ matrix.platform.name }}/release/${{ steps.package_name.outputs.boost_name }}
       - name: Upload Environment
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
         with:
           name: ${{ matrix.platform.name }}.env
           path: _package/${{ matrix.platform.name }}/release/sora.env
@@ -320,7 +320,7 @@ jobs:
           done
       - name: Upload Examples Artifact
         if: matrix.platform.os == 'ubuntu' || matrix.platform.os == 'raspberry-pi-os'
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
         with:
           name: examples_${{ matrix.platform.name }}
           path: examples/examples_${{ matrix.platform.name }}
@@ -424,12 +424,12 @@ jobs:
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
       OPENH264_VERSION: 2.6.0
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7
 
       # Homebrew のセットアップ (self-hosted macOS ランナー用)
       - name: Setup Homebrew
         if: ${{ runner.environment == 'self-hosted' && startsWith(matrix.platform.platform-name, 'macos') }}
-        uses: Homebrew/actions/setup-homebrew@main
+        uses: Homebrew/actions/setup-homebrew@6315ef70a8bfcd2c71104383846591ac113ace33  # main
 
       # GitHub CLI のインストール (self-hosted macOS ランナー用)
       - name: Install GitHub CLI
@@ -443,7 +443,7 @@ jobs:
           fi
 
       # UV のセットアップ
-      - uses: astral-sh/setup-uv@v7
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39  # v8.2.0
       - run: uv sync
         working-directory: ./e2e-test
 
@@ -482,7 +482,7 @@ jobs:
         run: echo "OPENH264_PATH=${{ steps.openh264.outputs.openh264_path }}" >> $GITHUB_ENV
 
       - name: Download sumomo artifact
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8
         with:
           name: examples_${{ matrix.platform.platform-name }}
           path: ./sumomo_binary
