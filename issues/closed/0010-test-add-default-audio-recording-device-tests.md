@@ -51,7 +51,16 @@ issue 0009 の完了条件に「デバイス名未指定、存在しないデバ
 
 ## 解決方法
 
-1. `test_sumomo_device.py` に `test_default_audio_recording_device` を追加する。`--audio-recording-device` を指定せず、`fake_capture_device=False`、`video=False`、`audio=True`、`log_level="info"` で sendonly 接続し、音声フレームが送信されることを確認する。録音デバイスが 0 個の場合は `pytest.skip` する。さらに標準エラー出力から `Succeeded SetRecordingDevice:.* name=(.+?) guid=` の正規表現で実際に選択されたデバイス名を抽出し、デフォルトデバイス名（`device_lists.audio_recording[0]`）と一致することを検証する。
-2. `test_sumomo_device.py` に `test_invalid_audio_recording_device` を追加する。`--audio-recording-device` に実在するデバイス名と衝突しない空でない無効名（例: `__nonexistent_device_for_test__`、またはタイムスタンプ・UUID を含む動的な文字列）を指定し、`fake_capture_device=False`、`video=False`、`audio=True`、`log_level="info"` で sendonly 接続する。録音デバイスが 0 個の場合は `pytest.skip` する。デフォルトデバイスにフォールバックして音声フレームが送信されることを確認する。さらに標準エラー出力から `Succeeded SetRecordingDevice:.* name=(.+?) guid=` の正規表現で実際に選択されたデバイス名を抽出し、フォールバック先のデフォルトデバイス名（`device_lists.audio_recording[0]`）と一致することを検証する。
-3. 既存の `test_audio_recording_device` の `Sumomo` 呼び出しに `log_level="info"` を追加する。
-4. `CHANGES.md` の `## develop` に、追加するテスト内容を記載した `[ADD]` エントリを追加する。既存の `[ADD]` エントリ「sumomo の E2E テストで `--audio-recording-device` を複数の音声録音デバイスに対して個別に検証するテストを追加する」の直後に配置する。
+`1e3e7dd5` のコミットで以下の変更を行った。
+
+- `e2e-test/test_sumomo_device.py` に `test_default_audio_recording_device` を追加する
+  - `--audio-recording-device` を指定せず、`fake_capture_device=False`、`video=False`、`audio=True` で sendonly 接続する
+  - 録音デバイスが 0 個の場合は `pytest.skip` する
+  - 音声フレームが送信されること、DTLS が確立することを検証する
+- `e2e-test/test_sumomo_device.py` に `test_invalid_audio_recording_device` を追加する
+  - `--audio-recording-device` に実在しない無効名 `__nonexistent_device_for_test__` を指定する
+  - `fake_capture_device=False`、`video=False`、`audio=True`、`log_level="info"` で sendonly 接続する
+  - 録音デバイスが 0 個の場合は `pytest.skip` する
+  - 標準エラー出力から `Succeeded SetRecordingDevice:.* name=(.+?) guid=` の正規表現で実際に選択されたデバイス名を抽出し、デフォルトデバイス名（`device_lists.audio_recording[0]`）と一致することを検証する
+- 既存の `test_audio_recording_device` の `Sumomo` 呼び出しに `log_level="info"` を追加し、標準エラー出力から実際に選択されたデバイス名を検証できるようにする
+- `CHANGES.md` の `## develop` に `[ADD]` エントリを追加する
