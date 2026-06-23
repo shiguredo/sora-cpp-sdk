@@ -79,6 +79,15 @@ def free_port(port_allocator):
 
 
 @pytest.fixture
+def free_port2(port_allocator):
+    """2 つ目のポート番号を提供するフィクスチャ
+
+    同一テスト内で複数の Sumomo プロセスを起動する際に使用する。
+    """
+    return next(port_allocator)
+
+
+@pytest.fixture
 def sumomo(sora_settings, free_port):
     """Sumomo インスタンスを提供するフィクスチャ
 

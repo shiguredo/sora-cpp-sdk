@@ -12,7 +12,7 @@ from typing import Any
 
 import pytest
 
-from helper import get_outbound_rtp, get_transport
+from helper import get_inbound_rtp, get_outbound_rtp, get_transport
 from sumomo import Sumomo, get_device_lists, get_sumomo_executable_path
 
 
@@ -120,10 +120,13 @@ def test_capture_device(sora_settings, free_port):
 
 
 def pytest_generate_tests(metafunc):
-    """音声録音デバイスを個別にテストするためのパラメータを生成する"""
+    """音声録音デバイス・再生デバイスを個別にテストするためのパラメータを生成する"""
     if "audio_recording_device" in metafunc.fixturenames:
         device_lists = get_device_lists()
         metafunc.parametrize("audio_recording_device", device_lists.audio_recording)
+    if "audio_playout_device" in metafunc.fixturenames:
+        device_lists = get_device_lists()
+        metafunc.parametrize("audio_playout_device", device_lists.audio_playout)
 
 
 def test_audio_recording_device(
@@ -302,5 +305,111 @@ def test_invalid_audio_recording_device(sora_settings, free_port):
     selected_device = m.group(1).strip()
     assert selected_device == default_device, (
         f"無効なデバイス名を指定した場合のフォールバック先 {default_device} が選択されていない。 "
+        f"実際に選択されたデバイス: {selected_device}"
+    )
+
+
+def test_audio_playout_device(
+    sora_settings, free_port, free_port2, audio_playout_device
+):
+    """--audio-playout-device で指定した音声再生デバイスで音声が受信されることを確認する
+
+    --list-devices で列挙された各音声再生デバイスを個別に指定し、recvonly 側で
+    音声フレームを受信できることを確認する。
+    さらに標準エラー出力を確認し、指定したデバイスが実際に選択されていることを検証する。
+    """
+    print(f"音声再生デバイスをテスト: {audio_playout_device}")
+
+    # 同じチャネルに音声を送信する sendonly プロセスを起動する
+    with Sumomo(
+        signaling_url=sora_settings.signaling_url,
+        channel_id=sora_settings.channel_id,
+        role="sendonly",
+        metadata=sora_settings.metadata,
+        http_port=free_port2,
+        # 実機キャプチャを行うため fake_capture_device を明示的に無効化する
+        fake_capture_device=False,
+        # 音声のみを対象にするため映像は無効化する
+        video=False,
+        audio=True,
+    ) as sendonly:
+        # sendonly 側の接続が確立するまで待つ
+        time.sleep(3)
+
+        sendonly_stats: list[dict[str, Any]] = sendonly.get_stats()
+        assert sendonly_stats, "sendonly 側の get_stats() の結果が空"
+
+        # sendonly 側で音声が送信されていることを確認する
+        sendonly_audio_outbound = get_outbound_rtp(sendonly_stats, "audio")
+        assert sendonly_audio_outbound is not None, (
+            "sendonly 側の audio の outbound-rtp が見つからない"
+        )
+        assert sendonly_audio_outbound["packetsSent"] > 0, (
+            "sendonly 側の audio パケットが 1 つも送信されていない"
+        )
+
+        # sendonly 側で DTLS が確立していることを確認する
+        sendonly_transport = get_transport(sendonly_stats)
+        assert sendonly_transport is not None, "sendonly 側の transport が見つからない"
+        assert sendonly_transport["dtlsState"] == "connected", (
+            f"sendonly 側の DTLS が確立していない: "
+            f"dtlsState={sendonly_transport['dtlsState']}"
+        )
+
+        # recvonly プロセスを起動する
+        with Sumomo(
+            signaling_url=sora_settings.signaling_url,
+            channel_id=sora_settings.channel_id,
+            role="recvonly",
+            metadata=sora_settings.metadata,
+            http_port=free_port,
+            # 実機キャプチャを行うため fake_capture_device を明示的に無効化する
+            fake_capture_device=False,
+            # 音声のみを対象にするため映像は無効化する
+            video=False,
+            audio=True,
+            # 列挙された音声再生デバイスを明示的に指定する
+            audio_playout_device=audio_playout_device,
+            # 標準エラー出力からデバイス選択ログを取得するため info レベルを有効にする
+            log_level="info",
+            # 標準エラー出力をキャプチャしてデバイス選択ログを検証する
+            capture_stderr=True,
+        ) as recvonly:
+            # recvonly 側で音声フレームが受信されるまで待つ
+            time.sleep(3)
+
+            recvonly_stats: list[dict[str, Any]] = recvonly.get_stats()
+            assert recvonly_stats, "recvonly 側の get_stats() の結果が空"
+
+            # recvonly 側で音声が受信されていることを確認する
+            recvonly_audio_inbound = get_inbound_rtp(recvonly_stats, "audio")
+            assert recvonly_audio_inbound is not None, (
+                "recvonly 側の audio の inbound-rtp が見つからない"
+            )
+            assert recvonly_audio_inbound["packetsReceived"] > 0, (
+                "recvonly 側の audio パケットが 1 つも受信されていない"
+            )
+
+            # recvonly 側で DTLS が確立していることを確認する
+            recvonly_transport = get_transport(recvonly_stats)
+            assert recvonly_transport is not None, "recvonly 側の transport が見つからない"
+            assert recvonly_transport["dtlsState"] == "connected", (
+                f"recvonly 側の DTLS が確立していない: "
+                f"dtlsState={recvonly_transport['dtlsState']}"
+            )
+
+    # sumomo プロセス終了後にキャプチャした標準エラー出力を取得する
+    assert recvonly.stderr_output is not None, "標準エラー出力がキャプチャされていない"
+
+    # 実際に選択された音声再生デバイス名をログから抽出する
+    m = re.search(
+        r"Succeeded SetPlayoutDevice:.* name=(.+?) guid=", recvonly.stderr_output
+    )
+    assert m is not None, (
+        f"デバイス {audio_playout_device} で SetPlayoutDevice 成功ログが見つからない"
+    )
+    selected_device = m.group(1).strip()
+    assert selected_device == audio_playout_device, (
+        f"指定したデバイス {audio_playout_device} が選択されていない。 "
         f"実際に選択されたデバイス: {selected_device}"
     )
