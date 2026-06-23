@@ -62,8 +62,10 @@ def get_device_lists() -> DeviceLists:
             m = re.match(r"\s*\[\d+\]\s+(.+)$", line)
             if m:
                 name = m.group(1).strip()
-                # unique_name 部分を取り除く (device_name (unique_name) の形式)
-                name = re.sub(r"\s*\(.*\)\s*$", "", name).strip()
+                # 末尾の (unique_name) を削除していたが、実際のデバイス名と一致しなくなるため、
+                # 完全な名前をそのまま保持する。
+                # SoraClientContext::FindAudioDeviceIndex ではデバイス名の完全一致で検索するため、
+                # --list-devices の出力と同じ文字列を指定する必要がある。
                 if current_section == "audio_input":
                     audio_recording.append(name)
                 else:
