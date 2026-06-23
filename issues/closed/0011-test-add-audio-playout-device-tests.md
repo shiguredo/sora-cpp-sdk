@@ -2,7 +2,7 @@
 
 - Priority: Medium
 - Created: 2026-06-23
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-06-23
 - Model: Kimi Code CLI
 - Branch: feature/add-audio-playout-device-tests
 - Polished: 2026-06-23
