@@ -5,11 +5,12 @@ import platform
 import re
 import shlex
 import subprocess
+import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
 from types import TracebackType
-from typing import Any, Literal, Self
+from typing import Any, Literal, Self, TextIO
 
 import httpx
 
@@ -474,7 +475,8 @@ class Sumomo:
                 # 注意: stderr=subprocess.PIPE に変更すると Windows でテストが通らなくなる
                 # Windows ではパイプバッファが小さく、stderr を定期的に読み取らないと
                 # バッファがいっぱいになってプロセスがブロックされる可能性がある
-                # そのため capture_stderr オプションで明示的に指定した場合のみパイプを使用する
+                # そのため capture_stderr オプションで明示的に指定した場合のみパイプを使用し、
+                # 別スレッドで stderr を継続的に読み取ってバッファが詰まらないようにする
                 stderr_arg = subprocess.PIPE if self.capture_stderr else None
                 self.process = subprocess.Popen(
                     cmd,
@@ -483,6 +485,18 @@ class Sumomo:
                     text=True,
                 )
                 print(f"Started sumomo process with PID: {self.process.pid}")
+
+                # capture_stderr 時は別スレッドで stderr を読み取る
+                self._stderr_lines: list[str] = []
+                if self.capture_stderr:
+                    assert self.process.stderr is not None
+                    stderr_reader = threading.Thread(
+                        target=self._read_stderr,
+                        args=(self.process.stderr,),
+                        daemon=True,
+                    )
+                    stderr_reader.start()
+                    self._stderr_reader = stderr_reader
             except FileNotFoundError:
                 raise RuntimeError(
                     f"Sumomo executable not found at {self.executable_path}. "
@@ -528,6 +542,14 @@ class Sumomo:
 
         self._cleanup()
         return False
+
+    def _read_stderr(self, stderr: TextIO) -> None:
+        """標準エラー出力を別スレッドで読み取り、 self._stderr_lines に蓄積する"""
+        try:
+            for line in stderr:
+                self._stderr_lines.append(line)
+        finally:
+            stderr.close()
 
     def _build_args(self, **kwargs: Any) -> list[str]:
         """コマンドライン引数を構築"""
@@ -846,19 +868,19 @@ class Sumomo:
             self.process.terminate()
             try:
                 # 短めのタイムアウトで終了を待つ
-                # capture_stderr 時は stderr も同時に読み取る
-                _stdout, stderr = self.process.communicate(timeout=5)
-                if self.capture_stderr:
-                    self.stderr_output = stderr
+                self.process.wait(timeout=5)
                 print(f"Sumomo process (PID: {pid}) terminated gracefully")
             except subprocess.TimeoutExpired:
                 # タイムアウトした場合は強制終了
                 print(f"Force killing sumomo process (PID: {pid})")
                 self.process.kill()
-                _stdout, stderr = self.process.communicate()
-                if self.capture_stderr:
-                    self.stderr_output = stderr
+                self.process.wait()
                 print(f"Sumomo process (PID: {pid}) killed")
+
+            # stderr 読み取りスレッドがいれば終了を待って結果を取得する
+            if self.capture_stderr and hasattr(self, "_stderr_reader"):
+                self._stderr_reader.join(timeout=5)
+                self.stderr_output = "".join(self._stderr_lines)
 
             # stderr の残りを読み取ってリソースを解放
             if hasattr(self.process, "stderr") and self.process.stderr:
