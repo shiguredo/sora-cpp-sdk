@@ -127,7 +127,7 @@ def pytest_generate_tests(metafunc):
 
 
 def test_audio_recording_device(
-    sora_settings, free_port, audio_recording_device, capfd
+    sora_settings, free_port, audio_recording_device
 ):
     """--audio-recording-device で指定した音声録音デバイスから音声が送信されることを確認する
 
@@ -152,6 +152,8 @@ def test_audio_recording_device(
         audio_recording_device=audio_recording_device,
         # 標準エラー出力からデバイス選択ログを取得するため info レベルを有効にする
         log_level="info",
+        # 標準エラー出力をキャプチャしてデバイス選択ログを検証する
+        capture_stderr=True,
     ) as s:
         # 接続確立後、音声フレームが流れるまで十分な待機時間を確保する
         time.sleep(3)
@@ -179,12 +181,12 @@ def test_audio_recording_device(
             f"DTLS が確立していない: dtlsState={transport['dtlsState']}"
         )
 
-    # sumomo プロセス終了後に標準エラー出力を取得する
-    captured = capfd.readouterr()
+    # sumomo プロセス終了後にキャプチャした標準エラー出力を取得する
+    assert s.stderr_output is not None, "標準エラー出力がキャプチャされていない"
 
     # 実際に選択された音声録音デバイス名をログから抽出する
     m = re.search(
-        r"Succeeded SetRecordingDevice:.* name=(.+?) guid=", captured.err
+        r"Succeeded SetRecordingDevice:.* name=(.+?) guid=", s.stderr_output
     )
     assert m is not None, (
         f"デバイス {audio_recording_device} で SetRecordingDevice 成功ログが見つからない"
@@ -196,7 +198,7 @@ def test_audio_recording_device(
     )
 
 
-def test_default_audio_recording_device(sora_settings, free_port, capfd):
+def test_default_audio_recording_device(sora_settings, free_port):
     """録音デバイス名を指定しない場合、デフォルトデバイスが選択されることを確認する
 
     デバイスリストの先頭をデフォルトデバイスとして扱い、明示的に指定しなくても
@@ -221,6 +223,8 @@ def test_default_audio_recording_device(sora_settings, free_port, capfd):
         audio=True,
         # 標準エラー出力からデバイス選択ログを取得するため info レベルを有効にする
         log_level="info",
+        # 標準エラー出力をキャプチャしてデバイス選択ログを検証する
+        capture_stderr=True,
     ) as s:
         # 接続確立後、音声フレームが流れるまで十分な待機時間を確保する
         time.sleep(3)
@@ -241,11 +245,11 @@ def test_default_audio_recording_device(sora_settings, free_port, capfd):
             f"DTLS が確立していない: dtlsState={transport['dtlsState']}"
         )
 
-    # sumomo プロセス終了後に標準エラー出力を取得する
-    captured = capfd.readouterr()
+    # sumomo プロセス終了後にキャプチャした標準エラー出力を取得する
+    assert s.stderr_output is not None, "標準エラー出力がキャプチャされていない"
 
     # 実際に選択された音声録音デバイス名をログから抽出する
-    m = re.search(r"Succeeded SetRecordingDevice:.* name=(.+?) guid=", captured.err)
+    m = re.search(r"Succeeded SetRecordingDevice:.* name=(.+?) guid=", s.stderr_output)
     assert m is not None, "SetRecordingDevice 成功ログが見つからない"
     selected_device = m.group(1).strip()
     assert selected_device == default_device, (
@@ -254,7 +258,7 @@ def test_default_audio_recording_device(sora_settings, free_port, capfd):
     )
 
 
-def test_invalid_audio_recording_device(sora_settings, free_port, capfd):
+def test_invalid_audio_recording_device(sora_settings, free_port):
     """存在しない録音デバイス名を指定した場合、デフォルトデバイスにフォールバックすることを確認する
 
     無効なデバイス名を指定しても接続が成功し、かつデフォルトデバイスが
@@ -283,6 +287,8 @@ def test_invalid_audio_recording_device(sora_settings, free_port, capfd):
         audio_recording_device=invalid_device,
         # 標準エラー出力からデバイス選択ログを取得するため info レベルを有効にする
         log_level="info",
+        # 標準エラー出力をキャプチャしてデバイス選択ログを検証する
+        capture_stderr=True,
     ) as s:
         # 接続確立後、音声フレームが流れるまで十分な待機時間を確保する
         time.sleep(3)
@@ -303,11 +309,11 @@ def test_invalid_audio_recording_device(sora_settings, free_port, capfd):
             f"DTLS が確立していない: dtlsState={transport['dtlsState']}"
         )
 
-    # sumomo プロセス終了後に標準エラー出力を取得する
-    captured = capfd.readouterr()
+    # sumomo プロセス終了後にキャプチャした標準エラー出力を取得する
+    assert s.stderr_output is not None, "標準エラー出力がキャプチャされていない"
 
     # 実際に選択された音声録音デバイス名をログから抽出する
-    m = re.search(r"Succeeded SetRecordingDevice:.* name=(.+?) guid=", captured.err)
+    m = re.search(r"Succeeded SetRecordingDevice:.* name=(.+?) guid=", s.stderr_output)
     assert m is not None, "SetRecordingDevice 成功ログが見つからない"
     selected_device = m.group(1).strip()
     assert selected_device == default_device, (

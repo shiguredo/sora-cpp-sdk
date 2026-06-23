@@ -337,6 +337,9 @@ class Sumomo:
         | None = None,
         # ログレベル
         log_level: Literal["verbose", "info", "warning", "error"] | None = None,
+        # 標準エラー出力をキャプチャするかどうか
+        # True にするとプロセス終了後に self.stderr_output から取得できる
+        capture_stderr: bool = False,
         # その他のカスタム引数
         extra_args: list[str] | None = None,
         # 起動待機時間
@@ -381,6 +384,9 @@ class Sumomo:
         self.http_host = "127.0.0.1"
         # デフォルトの初期待機時間を設定
         self.initial_wait = initial_wait if initial_wait is not None else 2
+        # 標準エラー出力のキャプチャ設定
+        self.capture_stderr = capture_stderr
+        self.stderr_output: str | None = None
 
         # すべての引数を保存
         self.kwargs: dict[str, Any] = {
@@ -444,6 +450,7 @@ class Sumomo:
             "av1_encoder": av1_encoder,
             "av1_decoder": av1_decoder,
             "log_level": log_level,
+            "capture_stderr": capture_stderr,
             "extra_args": extra_args,
         }
 
@@ -467,10 +474,13 @@ class Sumomo:
                 # 注意: stderr=subprocess.PIPE に変更すると Windows でテストが通らなくなる
                 # Windows ではパイプバッファが小さく、stderr を定期的に読み取らないと
                 # バッファがいっぱいになってプロセスがブロックされる可能性がある
+                # そのため capture_stderr オプションで明示的に指定した場合のみパイプを使用する
+                stderr_arg = subprocess.PIPE if self.capture_stderr else None
                 self.process = subprocess.Popen(
                     cmd,
                     stdout=None,
-                    stderr=None,
+                    stderr=stderr_arg,
+                    text=True,
                 )
                 print(f"Started sumomo process with PID: {self.process.pid}")
             except FileNotFoundError:
@@ -836,13 +846,18 @@ class Sumomo:
             self.process.terminate()
             try:
                 # 短めのタイムアウトで終了を待つ
-                self.process.wait(timeout=5)
+                # capture_stderr 時は stderr も同時に読み取る
+                _stdout, stderr = self.process.communicate(timeout=5)
+                if self.capture_stderr:
+                    self.stderr_output = stderr
                 print(f"Sumomo process (PID: {pid}) terminated gracefully")
             except subprocess.TimeoutExpired:
                 # タイムアウトした場合は強制終了
                 print(f"Force killing sumomo process (PID: {pid})")
                 self.process.kill()
-                self.process.wait()
+                _stdout, stderr = self.process.communicate()
+                if self.capture_stderr:
+                    self.stderr_output = stderr
                 print(f"Sumomo process (PID: {pid}) killed")
 
             # stderr の残りを読み取ってリソースを解放
