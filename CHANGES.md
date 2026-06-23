@@ -54,7 +54,7 @@
 - [UPDATE] cmake のバージョンを 4.3.2 にあげる
   - @torikizi
 - [UPDATE] Boost のバージョンを 1.91.0 に上げる
-  - macOS ビルドと iOS ビルドの cxxflags に `-DBOOST_ASIO_DISABLE_STD_ATOMIC_WAIT` を追加する
+  - CMakeLists.txt の macOS ビルドと iOS ビルドの `target_compile_definitions` に PUBLIC で `BOOST_ASIO_DISABLE_STD_ATOMIC_WAIT` を追加する
     - boost 1.91.0 で asio の `kqueue_reactor` 内部 mutex が `atomic_slim_mutex` (`std::atomic::wait` / `notify_one` を利用) に切り替わったが、 webrtc-build 同梱の libc++ + macOS の組み合わせで kevent から完了通知が届かず async_connect がハングする現象を確認した
     - 旧来の pthread ベース mutex 実装に戻すことで回避する
     - IPHONEOS_DEPLOYMENT_TARGET が iOS 17.4 以上の場合に発生する問題であり 14.0 でビルドしているため影響はないが、今後バージョンを上げた際の問題を回避するため macOS ビルドと同様に修正する
@@ -136,10 +136,6 @@
   - @zztkm
 - [UPDATE] Examples の cli11 のバージョンを v2.6.2 にあげる
   - @torikizi
-- [UPDATE] Examples の Boost のバージョンを 1.91.0 に上げる
-  - sumomo の macOS 向け CMake 設定に `-DBOOST_ASIO_DISABLE_STD_ATOMIC_WAIT` を追加する
-    - sora-cpp-sdk 本体側にも同じ定義が必要 (片方だけ外すと kqueue_reactor の mutex 型が TU 間で食い違って ABI ミスマッチを起こす)
-  - @voluntas @torikizi
 - [UPDATE] GitHub Actions の Homebrew/actions/setup-homebrew@master を Homebrew/actions/setup-homebrew@main に変更する
   - 2026 年 6 月 10 日以降のリリースで `Homebrew/actions/setup-homebrew` の master ブランチは無効化されるため、main ブランチを使用するように変更する
   - 参考: Homebrew/actions/setup-homebrew で、main ブランチへの移行を促す警告が表示されるようになったことを示すコミット

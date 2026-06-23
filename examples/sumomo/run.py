@@ -342,16 +342,6 @@ def _build(args):
                 f"-DCMAKE_C_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang')}",
                 f"-DCMAKE_CXX_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang++')}",
                 f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}",
-                # boost 1.91.0 で asio に atomic_slim_mutex が導入され、 kqueue_reactor
-                # の内部 mutex がこの実装に切り替わった。 atomic_slim_mutex は
-                # std::atomic<int>::wait / notify_one (C++20 atomic wait) を利用するが、
-                # webrtc-build 同梱の libc++ ヘッダ + 実行時 libc++ の組み合わせで
-                # macOS の async_connect が kevent から完了通知を受け取れずハングする
-                # 事象を確認したため、 旧来の pthread ベース mutex に戻すために本マクロ
-                # を定義している。 sora-cpp-sdk 本体のビルド (run.py) 側にも同じ定義が
-                # 必要 (片方だけ外すと kqueue_reactor のクラスサイズ・mutex 型が TU 間で
-                # 食い違って ABI ミスマッチを起こす)。
-                "-DCMAKE_CXX_FLAGS=-DBOOST_ASIO_DISABLE_STD_ATOMIC_WAIT",
             ]
         elif platform in ("ubuntu-22.04_x86_64", "ubuntu-24.04_x86_64"):
             cmake_args += [
