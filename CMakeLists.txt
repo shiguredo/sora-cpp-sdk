@@ -417,6 +417,14 @@ elseif (SORA_TARGET_OS STREQUAL "macos")
       _LIBCXXABI_DISABLE_VISIBILITY_ANNOTATIONS
       _LIBCPP_ENABLE_NODISCARD
       _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE
+      # Boost 1.91.0 で Asio の kqueue_reactor が atomic_slim_mutex
+      # (std::atomic::wait / notify_one ベース) に切り替わった。
+      # webrtc-build 同梱の libc++ と macOS の組み合わせで
+      # async_connect が kevent から完了通知を受け取れずハングするため、
+      # 旧来の pthread ベース mutex に戻す。
+      # PUBLIC で定義することで Sora::sora にリンクする全 TU で
+      # 定義を統一し ABI ミスマッチを防ぐ。
+      BOOST_ASIO_DISABLE_STD_ATOMIC_WAIT
   )
 
   target_link_libraries(sora
@@ -469,6 +477,14 @@ elseif (SORA_TARGET_OS STREQUAL "ios")
       _LIBCXXABI_DISABLE_VISIBILITY_ANNOTATIONS
       _LIBCPP_ENABLE_NODISCARD
       _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE
+      # Boost 1.91.0 で Asio の kqueue_reactor が atomic_slim_mutex
+      # (std::atomic::wait / notify_one ベース) に切り替わった。
+      # webrtc-build 同梱の libc++ と iOS の組み合わせで
+      # async_connect が kevent から完了通知を受け取れずハングするため、
+      # 旧来の pthread ベース mutex に戻す。
+      # PUBLIC で定義することで Sora::sora にリンクする全 TU で
+      # 定義を統一し ABI ミスマッチを防ぐ。
+      BOOST_ASIO_DISABLE_STD_ATOMIC_WAIT
   )
 
 elseif (SORA_TARGET_OS STREQUAL "android")
