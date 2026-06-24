@@ -25,8 +25,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
-import androidx.core.content.ContextCompat;
-
 import java.util.List;
 
 class SoraAudioManagerBluetooth {
@@ -210,7 +208,7 @@ class SoraAudioManagerBluetooth {
         filter.addAction(BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED);
         // bluetooth ヘッドセットのオーディオの状態変化を取得する
         filter.addAction(BluetoothHeadset.ACTION_AUDIO_STATE_CHANGED);
-        ContextCompat.registerReceiver(context, bluetoothHeadsetReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
+        context.registerReceiver(bluetoothHeadsetReceiver, filter);
         bluetoothState = State.HEADSET_UNAVAILABLE;
     }
 

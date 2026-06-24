@@ -23,8 +23,6 @@ import android.media.AudioManager;
 import android.os.Build;
 import android.util.Log;
 
-import androidx.core.content.ContextCompat;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -98,7 +96,7 @@ class SoraAudioManager2 extends SoraAudioManagerBase {
         IntentFilter filter = new IntentFilter();
         // bluetooth SCO の状態変化を取得する
         filter.addAction(AudioManager.ACTION_SCO_AUDIO_STATE_UPDATED);
-        ContextCompat.registerReceiver(context, bluetoothHeadsetReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
+        context.registerReceiver(bluetoothHeadsetReceiver, filter);
 
         // 初期化を行った状態でデバイスの設定を行う
         updateAudioDeviceState();
