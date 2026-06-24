@@ -111,8 +111,6 @@
   - @melpon
 - [FIX] Android の `SoraAudioManagerBluetooth` で `stateToString` の出力が間違っていたのを修正する
   - @melpon
-- [FIX] Android の `registerReceiver` に `RECEIVER_NOT_EXPORTED` フラグを付与する
-  - @melpon
 - [FIX] `SoraSignaling` で接続タイムアウトの値に `SoraSignalingConfig::websocket_connection_timeout` が使用されていなかったのを修正する
   - @melpon
 - [FIX] SoraVideoDecoderFactory / SoraVideoEncoderFactory の formats_ 並行アクセスによる abort を修正する
