@@ -29,8 +29,8 @@ set -eu
 
 # container コマンドの存在確認
 if ! command -v container &> /dev/null; then
-  echo "Error: 'container' コマンドが見つかりません。"
-  echo "https://github.com/apple/container からインストールしてください。"
+  echo "Error: 'container' command not found."
+  echo "Please install from https://github.com/apple/container"
   exit 1
 fi
 
@@ -43,10 +43,10 @@ CONTAINER_ARCH="${CONTAINER_ARCH:-amd64}"
 CONTAINER_CPUS="${CONTAINER_CPUS:-4}"
 CONTAINER_MEMORY="${CONTAINER_MEMORY:-4g}"
 
-echo "==> ${IMAGE} (${CONTAINER_ARCH}) イメージを取得しています..."
+echo "==> Pulling ${IMAGE} (${CONTAINER_ARCH}) image..."
 container image pull --arch "${CONTAINER_ARCH}" "${IMAGE}"
 
-echo "==> コンテナ内で formatter チェックを実行しています..."
+echo "==> Running formatter check in container..."
 echo "    Arch: ${CONTAINER_ARCH}, CPU: ${CONTAINER_CPUS}, Memory: ${CONTAINER_MEMORY}"
 
 container run \
@@ -86,15 +86,15 @@ container run \
     if ! git diff --exit-code; then
       echo ''
       echo '========================================='
-      echo '  チェックに失敗しました'
-      echo '  IWYU または clang-format による差分があります'
-      echo '  以下のコマンドをローカルで実行して修正してください:'
+      echo '  Check failed'
+      echo '  There are diffs from IWYU or clang-format'
+      echo '  Run the following command locally to fix:'
       echo '    python3 run.py format'
       echo '========================================='
-      # 変更を元に戻す（コンテナ内で root 実行のため所有者が変わらないように）
+      # Revert changes (to avoid ownership changes since running as root in container)
       git checkout -- .
       exit 1
     fi
 
-    echo 'チェックに成功しました'
+    echo 'All checks passed'
   "
