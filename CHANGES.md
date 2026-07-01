@@ -88,6 +88,13 @@
   - 本問題は macOS で発見したが、 `BOOST_ASIO_ENABLE_VERSION_NAMESPACE` は
     全プラットフォームで有効化する
   - @torikizi
+- [UPDATE] BOOST_ASIO_ENABLE_VERSION_NAMESPACE 有効時に Boost.Beast 1.91 の
+    basic_stream.hpp にある boost::asio::ssl::stream の前方宣言が
+    inline namespace に対応しておらずビルドエラーが発生する問題を修正する
+  - basic_stream.hpp の前方宣言を
+    `BOOST_ASIO_INLINE_NAMESPACE_BEGIN` / `BOOST_ASIO_INLINE_NAMESPACE_END` で
+    ラップするパッチを buildbase.py に追加する
+  - @torikizi
 - [ADD] TURN-TLS のクライアント証明書設定に対応する
   - `SoraSignalingConfig` の `client_cert` / `client_key` を TURN-TLS にも適用する
   - @zztkm
