@@ -695,7 +695,7 @@ def install_boost(
     extract(archive, output_dir=install_dir, output_dirname="boost")
 
 
-# Sora C++ SDK 2026.2.0-canary.15 以降で BOOST_ASIO_ENABLE_VERSION_NAMESPACE が有効になると
+# BOOST_ASIO_ENABLE_VERSION_NAMESPACE が有効になると
 # Boost.Asio が inline namespace (例: v103801_kmn) を使用するようになる。
 # これは異なるバージョンの Asio が同一プロセス内で共存できるようにするための機能で、
 # Unity Editor 6000.3 とのシンボル衝突回避のために有効化された。
