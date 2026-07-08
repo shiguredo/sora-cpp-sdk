@@ -5,11 +5,11 @@
 - Completed: {YYYY-MM-DD}
 - Model: glm-5.2
 - Branch: feature/change-update-intel-vpl-v2.17.0
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-07-08
 
 ## 目的
 
-Intel VPL (libvpl) の最新版 v2.17.0 が 2025-06-25 にリリースされている。
+Intel VPL (libvpl) の最新版 v2.17.0 が 2026-06-25 にリリースされている。
 現在は v2.16.0 を使用中のため、最新版に追従する。
 
 v2.17.0 の主な変更:
