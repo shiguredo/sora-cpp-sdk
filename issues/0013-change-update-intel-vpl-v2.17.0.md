@@ -5,11 +5,11 @@
 - Completed: {YYYY-MM-DD}
 - Model: glm-5.2
 - Branch: feature/change-update-intel-vpl-v2.17.0
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-07-08
 
 ## 目的
 
-Intel VPL (libvpl) の最新版 v2.17.0 が 2025-06-25 にリリースされている。
+Intel VPL (libvpl) の最新版 v2.17.0 が 2026-06-25 にリリースされている。
 現在は v2.16.0 を使用中のため、最新版に追従する。
 
 v2.17.0 の主な変更:
@@ -35,6 +35,8 @@ Medium。バグ修正や緊急対応ではなく、依存ライブラリの定�
 - `CHANGES.md` に `[UPDATE] Intel VPL を v2.17.0 にあげる` のエントリが追加されていること
 
 ## 解決方法
+
+CI ([#279](https://github.com/shiguredo/sora-cpp-sdk/actions/runs/28917520757)) がすべて成功していることを確認済み
 
 1. `DEPS` の `VPL_VERSION` を `v2.16.0` → `v2.17.0` に変更する
 2. `buildbase.py` でビルドして Windows / Ubuntu 両方でビルドが通ることを確認する
