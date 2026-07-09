@@ -55,7 +55,6 @@
   - @torikizi
 - [UPDATE] SDL3 を 3.4.12 にあげる
   - 3.4.0 で SDL_X11_XTEST オプションが追加 (デフォルト ON) されたため `buildbase.py` に `-DSDL_X11_XTEST=OFF` を追加する
-  - 3.2.28 から 3.4.12 の間でサンプルコード使用 API に破壊的変更はない
   - @torikizi
 - [UPDATE] Boost のバージョンを 1.91.0 に上げる
   - CMakeLists.txt の macOS ビルドと iOS ビルドの `target_compile_definitions` に PUBLIC で `BOOST_ASIO_DISABLE_STD_ATOMIC_WAIT` を追加する
