@@ -39,18 +39,20 @@ Medium。バグ修正や緊急対応ではなく、依存ライブラリの定�
 
 `examples/DEPS` の `SDL3_VERSION` を `3.2.28` から `3.4.12` に変更するのが基本。
 サンプルコード (sdl_sample, sumomo) で使用している SDL3 API はコア API のみで、3.2.28 と 3.4.12 の間で破壊的変更は確認されていない。
-`buildbase.py` の `install_sdl3` 関数の CMake オプションも現状のままで問題ない見込み。
+`buildbase.py` の `install_sdl3` 関数の Linux 用 CMake オプションに `-DSDL_X11_XTEST=OFF` を追加する必要がある（SDL 3.4.0 で追加された `SDL_X11_XTEST` はデフォルト ON のため）。
 
 ### 事前調査結果: 破壊的変更の有無
 
 #### CMake オプション
-3.2.28 と 3.4.12 の `option(SDL_...)` 一覧を比較した結果、`buildbase.py` で使用している全オプション (`SDL_AUDIO`, `SDL_VIDEO`, `SDL_RENDER`, `SDL_OPENGL`, `SDL_OPENGLES`, `SDL_METAL`, `SDL_VULKAN`, `SDL_JOYSTICK`, `SDL_HAPTIC`, `SDL_POWER`, `SDL_SENSOR`, `SDL_KMSDRM`, `SDL_RPI`, `SDL_WAYLAND`, `SDL_X11`, `SDL_X11_SHARED`, `SDL_X11_XCURSOR`, `SDL_X11_XDBE`, `SDL_X11_XFIXES`, `SDL_X11_XINPUT`, `SDL_X11_XRANDR`, `SDL_X11_XSCRNSAVER`, `SDL_X11_XSHAPE`, `SDL_X11_XSYNC`, `SDL_STATIC`, `SDL_SHARED`) に**削除・リネーム・意味変更はなし**。以下が 3.4.12 で追加された新オプションだが、いずれもデフォルト OFF または opt-in で既存ビルドに影響しない:
+3.2.28 と 3.4.12 の `option(SDL_...)` 一覧を比較した結果、`buildbase.py` で使用している全オプション (`SDL_AUDIO`, `SDL_VIDEO`, `SDL_RENDER`, `SDL_OPENGL`, `SDL_OPENGLES`, `SDL_METAL`, `SDL_VULKAN`, `SDL_JOYSTICK`, `SDL_HAPTIC`, `SDL_POWER`, `SDL_SENSOR`, `SDL_KMSDRM`, `SDL_RPI`, `SDL_WAYLAND`, `SDL_X11`, `SDL_X11_SHARED`, `SDL_X11_XCURSOR`, `SDL_X11_XDBE`, `SDL_X11_XFIXES`, `SDL_X11_XINPUT`, `SDL_X11_XRANDR`, `SDL_X11_XSCRNSAVER`, `SDL_X11_XSHAPE`, `SDL_X11_XSYNC`, `SDL_STATIC`, `SDL_SHARED`) に**削除・リネーム・意味変更はなし**。以下が 3.4.12 で追加された新オプション。`SDL_X11_XTEST` 以外はデフォルト OFF または opt-in で既存ビルドに影響しない:
 
-- `SDL_DLOPEN_NOTES` - dlopen 依存関係を ELF ノートに記録
-- `SDL_FRIBIDI` / `SDL_FRIBIDI_SHARED` - Fribidi サポート
+- `SDL_DLOPEN_NOTES` - dlopen 依存関係を ELF ノートに記録。デフォルト OFF
+- `SDL_FRIBIDI` / `SDL_FRIBIDI_SHARED` - Fribidi サポート。`pkg_check_modules` で検出できなければ静かに無効化
 - `SDL_LEAN_AND_MEAN` - リーンモード
-- `SDL_LIBTHAI` / `SDL_LIBTHAI_SHARED` - Thai 言語サポート
-- `SDL_X11_XTEST` - XTest サポート
+- `SDL_LIBTHAI` / `SDL_LIBTHAI_SHARED` - Thai 言語サポート。`pkg_check_modules` で検出できなければ静かに無効化
+- `SDL_X11_XTEST` - XTest サポート。**デフォルト ON** で、`libXtst-dev` が見つからないと `SDL_missing_dependency(XTEST)` でビルドエラーになる
+  - 導入コミット: https://github.com/libsdl-org/SDL/commit/794ff283e26bedd63e0737b51b1cd2def3676ce3
+  - `buildbase.py` の Linux セクションに `-DSDL_X11_XTEST=OFF` を追加して回避する
 
 `SDL_VULKAN` の条件に `OPENBSD` が追加されたが、`buildbase.py` では `-DSDL_VULKAN=OFF` と明示しているため影響なし。
 
