@@ -36,6 +36,8 @@ Medium。バグ修正や緊急対応ではなく、依存ライブラリの定�
 
 ## 解決方法
 
+CI ([#279](https://github.com/shiguredo/sora-cpp-sdk/actions/runs/28917520757)) がすべて成功していることを確認済み
+
 1. `DEPS` の `VPL_VERSION` を `v2.16.0` → `v2.17.0` に変更する
 2. `buildbase.py` でビルドして Windows / Ubuntu 両方でビルドが通ることを確認する
 3. E2E テスト `test_sumomo_intel_vpl.py` を実行してデコーダ/エンコーダが正常動作することを確認する
