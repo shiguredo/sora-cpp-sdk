@@ -1,9 +1,0 @@
-repos:
-  - repo: local
-    hooks:
-      - id: clang-format
-        name: clang-format
-        entry: python3 run.py format
-        language: system
-        pass_filenames: false
-        types_or: [c, c++, objective-c, objective-c++]
