@@ -53,7 +53,7 @@ V4L2 デバイスのバッファ割り当て失敗時にメモリリークが発
 1. mmap + QBUF まで成功したバッファの `munmap`（mmap 失敗パス (350 行目) と同様の `for` ループで）
 2. `delete[] _pool`
 3. `_pool = nullptr`
-4. `_buffersAllocatedByDevice = -1`（コンストラクタ初期値と一致）
+4. `_buffersAllocatedByDevice = -1`（コンストラクタ初期値と一致。Step 1 の移動後は `AllocateVideoBuffers()` 内のエラーパスでは常に `-1` のままのため実質的には冗長だが、将来の安全のために明示する）
 
 ### `_buffersAllocatedByDevice` の設定タイミング
 
@@ -63,10 +63,10 @@ V4L2 デバイスのバッファ割り当て失敗時にメモリリークが発
 
 `StartCapture()` で `AllocateVideoBuffers()` が失敗した場合、クリーンアップは `AllocateVideoBuffers()` 内部で完結させる。`StartCapture()` 側では追加のクリーンアップは不要。
 
-`AllocateVideoBuffers()` が成功したが後続の `VIDIOC_STREAMON` (281 行目) が失敗した場合、ストリーム開始前のため `VIDIOC_STREAMOFF` を実行する `DeAllocateVideoBuffers()` を呼び出すのは不適切（不要なエラーログが発生する）。このケースでは `return -1` の直前に `AllocateVideoBuffers()` 内と同様のインラインクリーンアップを実行する:
+`AllocateVideoBuffers()` が成功したが後続の `VIDIOC_STREAMON` (281 行目) が失敗した場合、ストリーム開始前のため `VIDIOC_STREAMOFF` を実行する `DeAllocateVideoBuffers()` を呼び出すのは不適切（不要なエラーログが発生する）。このケースでは `return -1` の直前に `AllocateVideoBuffers()` 内と同様のインラインクリーンアップを実行する。ループ上限には `_buffersAllocatedByDevice`（Step 1 の移動により `rbuffer.count` の実割り当て数が設定済み）を使用する（`kNoOfV4L2Bufffers` は定数 4 だが `rbuffer.count` がそれより小さい場合に範囲外アクセスとなるため）:
 
 ```cpp
-for (unsigned int j = 0; j < kNoOfV4L2Bufffers; j++)
+for (int j = 0; j < _buffersAllocatedByDevice; j++)
     munmap(_pool[j].start, _pool[j].length);
 delete[] _pool;
 _pool = nullptr;
@@ -81,15 +81,15 @@ _buffersAllocatedByDevice = -1;
 
 | エラーポイント | 行番号 | リークするリソース | 対応 |
 |---------------|--------|-------------------|------|
-| `VIDIOC_REQBUFS` 失敗 | 322-324 | なし（割り当て前） | 対応不要 |
-| `rbuffer.count == 0` | 327-328 | なし（割り当て前） | 対応不要 |
-| `new Buffer[N]` 失敗（`std::bad_alloc`） | 333 | なし | `_buffersAllocatedByDevice` は移動後のため設定前 |
+| `VIDIOC_REQBUFS` 失敗 | 322-324 | なし | 対応不要。`_pool` の確保前に return false するため |
+| `rbuffer.count == 0` | 327-328 | なし | 対応不要。`VIDIOC_REQBUFS` は成功しているが、Linux カーネルの V4L2 実装上 `count == 0` は返り得ない。仮に発生しても `_buffersAllocatedByDevice = 0` → STREAMON 失敗 → Step 5 のクリーンアップ（`j < 0` でループ不実行）により安全 |
+| `new Buffer[N]` 失敗（`std::bad_alloc`） | 333 | なし | Step 1 の移動後は `_buffersAllocatedByDevice` が `-1` のままのため安全。`MutexLock` は RAII で解放され、デストラクタが `_deviceFd` を close する |
 | `VIDIOC_QUERYBUF` 失敗 (i > 0) | 342-343 | `_pool` + mmap 領域 (0..i-1) | クリーンアップパス追加 |
 | `QUERYBUF` 失敗 (i == 0) | 342-343 | `_pool`（mmap 領域なし） | クリーンアップパス追加 |
 | `mmap` 失敗 (i > 0) | 349-352 | `_pool`（mmap 領域は既存コードで解放済み） | `_pool` の `delete[]` 追加 |
 | `mmap` 失敗 (i == 0) | 349-352 | `_pool`（mmap 領域なし） | `_pool` の `delete[]` 追加 |
 | `VIDIOC_QBUF` 失敗 (i >= 0) | 357-358 | `_pool` + mmap 領域 (0..i) | クリーンアップパス追加 |
-| `VIDIOC_STREAMON` 失敗 | 281-284 | `_pool` + 全 mmap 領域 | インラインクリーンアップ追加 |
+| `VIDIOC_STREAMON` 失敗 | 281-284 | `_pool` + 全 mmap 領域 | インラインクリーンアップ追加（ループ上限に `_buffersAllocatedByDevice` を使用） |
 
 ### 後方互換
 
@@ -142,11 +142,12 @@ V4L2 デバイスが実機に依存するため、部分割り当て失敗を意
    _pool = nullptr;
    _buffersAllocatedByDevice = -1;
    ```
-5. `StartCapture()` の `VIDIOC_STREAMON` 失敗パス (281-284 行目): `return -1` の前に以下を追加:
+5. `StartCapture()` の `VIDIOC_STREAMON` 失敗パス (281-284 行目): `return -1` の前に以下を追加（ループ上限には Step 1 の移動により正しい値が設定済みの `_buffersAllocatedByDevice` を使用する。`kNoOfV4L2Bufffers` は使わないこと）:
    ```cpp
-   for (unsigned int j = 0; j < kNoOfV4L2Bufffers; j++)
+   for (int j = 0; j < _buffersAllocatedByDevice; j++)
        munmap(_pool[j].start, _pool[j].length);
    delete[] _pool;
    _pool = nullptr;
    _buffersAllocatedByDevice = -1;
    ```
+6. `CHANGES.md` の `## develop` 配下に `[FIX]` エントリを追記する（`### misc` セクションではなく、他の `src/` コア修正と同じブロックに追記する）
