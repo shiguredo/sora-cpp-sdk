@@ -2,10 +2,10 @@
 
 - Priority: Low
 - Created: 2026-06-11
-- Polished: 2026-07-10
+- Completed: {YYYY-MM-DD}
 - Model: Opus 4.7
 - Branch: feature/refactor-suppress-hyperv-nic-log-noise
-
+- Polished: 2026-07-10
 ## 目的
 
 Windows GitHub-hosted runner (`windows-2025`) 上での E2E テストで、libwebrtc の ICE 候補収集時に Hyper-V 仮想 NIC からの UDP send が `error 10051 (WSAENETUNREACH)` で大量に失敗するログが出力されている。実害はなく、別 NIC (`Microsoft:10.1.0.x`) 経由で TURN allocate と ICE 確立は成功しているが、ログが汚れて本物の問題との切り分けが困難になる。CI workflow の Windows E2E ジョブで該当 NIC を pytest 実行前に無効化することでログを抑制する。

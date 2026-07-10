@@ -2,10 +2,10 @@
 
 - Priority: Low
 - Created: 2026-06-11
-- Polished: 2026-07-10
+- Completed: {YYYY-MM-DD}
 - Model: Opus 4.7
 - Branch: feature/fix-sumomo-py-windows-exit-detection
-
+- Polished: 2026-07-10
 ## 目的
 
 `e2e-test/sumomo.py:919-922` および `e2e-test/sumomo.py:929-937` は Windows 上で `get_stats()` 呼び出し時にプロセスが既に終了していると exit code に関係なく `RuntimeError("sumomo.exe has crashed ...")` を投げる。Sora 側からの WS 切断 (`wscode=4490`) や WS の graceful close で sumomo が正常終了するケース (exit code 0) でも "has crashed" と表示されてしまい、本物のクラッシュ (segfault や abort) との切り分けが困難になっている。exit code に応じて表現を分岐し、`sumomo.py:521-522` で既に使われている `exited unexpectedly with code N` の語彙と統一する。

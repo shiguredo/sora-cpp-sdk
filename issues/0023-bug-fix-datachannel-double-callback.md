@@ -2,8 +2,10 @@
 
 - Priority: High
 - Created: 2026-07-10
+- Completed: {YYYY-MM-DD}
+- Model: DeepSeek V4 Pro
+- Branch: feature/fix-datachannel-double-callback
 - Polished: 2026-07-10
-
 ## 目的
 
 `src/data_channel.cpp` の `Close()` でタイマーコールバックと `OnStateChange` の両方が `on_close` を呼び出す可能性がある。タイマーが先に発火した場合、`on_close(timed_out)` が呼ばれた後、`OnStateChange` から `on_close(success)` が再度呼ばれ二重コールバックとなる。また `DataChannel` デストラクタが Thunk の observer を解除しないため UAF の可能性もある。

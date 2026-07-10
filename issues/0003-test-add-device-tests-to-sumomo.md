@@ -2,10 +2,10 @@
 
 - Priority: Medium
 - Created: 2026-06-08
-- Polished: 2026-07-10
+- Completed: {YYYY-MM-DD}
 - Model: DeepSeek V4 Pro
 - Branch: feature/add-sumomo-device-tests
-
+- Polished: 2026-07-10
 ## 目的
 
 sumomo のデバイス関連機能（`--list-devices`、実機デバイス指定）に対する E2E テストを追加する。

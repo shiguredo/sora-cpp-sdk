@@ -2,8 +2,10 @@
 
 - Priority: High
 - Created: 2026-07-10
+- Completed: {YYYY-MM-DD}
+- Model: DeepSeek V4 Pro
+- Branch: feature/fix-send-on-disconnect-double-notify
 - Polished: 2026-07-10
-
 ## 目的
 
 `SendOnDisconnect()` は `state_` をチェックせず、呼ばれるたびに無条件で `Clear()` + `OnDisconnect` を post する。`SoraSignaling` の処理はすべて単一の `io_context` に post して直列実行されるため、これはスレッド競合 (data race) ではない。しかし同一の `io_context` キューに `SendOnDisconnect` の post が複数積まれると、それぞれの post ラムダが `OnDisconnect` を呼び出し、`OnDisconnect` が複数回通知されてしまう。

@@ -2,8 +2,10 @@
 
 - Priority: High
 - Created: 2026-07-10
+- Completed: {YYYY-MM-DD}
+- Model: DeepSeek V4 Pro
+- Branch: feature/fix-v4l2-buffer-leak
 - Polished: 2026-07-10
-
 ## 目的
 
 `src/v4l2/v4l2_video_capturer.cpp` の `AllocateVideoBuffers()` でバッファ割り当ての途中で失敗した場合、すでに確保済みの `_pool` 配列と `mmap` 済み領域が解放されずリークする。`_captureStarted` ゲートによりデストラクタからも到達不能。

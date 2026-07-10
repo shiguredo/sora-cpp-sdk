@@ -2,8 +2,10 @@
 
 - Priority: High
 - Created: 2026-07-10
+- Completed: {YYYY-MM-DD}
+- Model: DeepSeek V4 Pro
+- Branch: feature/fix-amf-decoder-resolution-change
 - Polished: 2026-07-10
-
 ## 目的
 
 `src/hwenc_amf/amf_video_decoder.cpp` の `Decode()` 内で `AMF_RESOLUTION_CHANGED` または `AMF_RESOLUTION_UPDATED` 発生時に `InitAMF()` の戻り値が無視されている。`InitAMF()` が失敗して `decoder_` が nullptr のまま次ループに入ると `decoder_->SubmitInput(nullptr)` で null deref が発生する。

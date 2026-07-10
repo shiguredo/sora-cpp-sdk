@@ -2,8 +2,10 @@
 
 - Priority: High
 - Created: 2026-07-10
+- Completed: {YYYY-MM-DD}
+- Model: DeepSeek V4 Pro
+- Branch: feature/fix-set-local-description-failure
 - Polished: 2026-07-10
-
 ## 目的
 
 `SessionDescription::CreateAnswer()` 内で `SetLocalDescription` を呼ぶ際に `SetSessionDescriptionThunk::Create(nullptr, nullptr)` により成功/失敗両方のコールバックが nullptr で渡されている。`SetLocalDescription` が失敗してもログ出力もなく処理が継続され、無条件に `on_success(desc)` が呼ばれる。ローカルに設定できていない SDP をリモートに送信することになり、後続のメディア通信が失敗する。

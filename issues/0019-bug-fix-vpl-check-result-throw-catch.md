@@ -2,8 +2,10 @@
 
 - Priority: High
 - Created: 2026-07-10
+- Completed: {YYYY-MM-DD}
+- Model: DeepSeek V4 Pro
+- Branch: feature/fix-vpl-check-result-throw-catch
 - Polished: 2026-07-10
-
 ## 目的
 
 `src/hwenc_vpl/vpl_utils.h` の `VPL_CHECK_RESULT` マクロが `mfxStatus` の整数値を `throw` するが、全コールサイト (`vpl_video_encoder.cpp:536,555,575,578,752,758`, `vpl_video_decoder.cpp:191,306,309`) に `catch` ブロックが存在しない。例外が捕捉されない場合 `std::terminate()` が呼ばれプロセスがクラッシュする。

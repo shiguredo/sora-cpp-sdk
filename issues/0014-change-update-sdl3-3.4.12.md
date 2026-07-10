@@ -2,10 +2,10 @@
 
 - Priority: Medium
 - Created: 2026-07-09
+- Completed: {YYYY-MM-DD}
 - Model: deepseek-v4-flash
 - Branch: feature/change-update-sdl3-3.4.12
 - Polished: 2026-07-10
-
 ## 目的
 
 SDL3 の最新安定版 3.4.12 が 2026-07-01 にリリースされている。

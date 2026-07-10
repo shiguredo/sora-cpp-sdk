@@ -2,8 +2,10 @@
 
 - Priority: High
 - Created: 2026-07-10
+- Completed: {YYYY-MM-DD}
+- Model: DeepSeek V4 Pro
+- Branch: feature/fix-examples-addtrack-return-value
 - Polished: 2026-07-10
-
 ## 目的
 
 `examples/sumomo/src/sumomo.cpp`, `examples/sdl_sample/src/sdl_sample.cpp`, `examples/messaging_recvonly_sample/src/messaging_recvonly_sample.cpp` の全サンプルで `OnSetOffer` 内の `AddTrack` 呼び出しの戻り値 (`RTCErrorOr`) が変数に代入されているが一度も参照されていない。`AddTrack` が失敗してもサイレントに継続され、コンパイラ警告の対象にもなる。

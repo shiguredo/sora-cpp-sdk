@@ -2,8 +2,10 @@
 
 - Priority: High
 - Created: 2026-07-10
+- Completed: {YYYY-MM-DD}
+- Model: DeepSeek V4 Pro
+- Branch: feature/fix-disconnect-redirecting-state
 - Polished: 2026-07-10
-
 ## 目的
 
 `SoraSignaling::Disconnect()` が `Redirecting` 状態を処理しないため、`Redirecting` 中に切断すると `DoInternalDisconnect()` にフォールスルーする。debug ビルドでは冒頭の `assert(state_ == State::Connected)` でクラッシュし、release ビルドでは assert が無視されて `Closing` に遷移し、リダイレクト中の旧 WebSocket に対して切断処理が走って状態が不整合になる（`DoInternalDisconnect()` は `Connected` 状態を前提とする）。メカニズムの詳細は「現状」に記す。

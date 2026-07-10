@@ -2,8 +2,10 @@
 
 - Priority: High
 - Created: 2026-07-10
+- Completed: {YYYY-MM-DD}
+- Model: DeepSeek V4 Pro
+- Branch: feature/fix-vpl-decoder-initvpl-null-check
 - Polished: 2026-07-10
-
 ## 目的
 
 `src/hwenc_vpl/vpl_video_decoder.cpp` の `InitVpl()` 関数内で `CreateDecoder()` の戻り値が nullptr チェックされずに `decoder_->GetVideoParam()` が呼ばれている。エンコーダ側 (`vpl_video_encoder.cpp:739`) では正しく nullptr チェックが行われている。

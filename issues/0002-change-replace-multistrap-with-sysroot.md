@@ -2,10 +2,10 @@
 
 - Priority: Medium
 - Created: 2026-06-08
-- Polished: 2026-07-10
+- Completed: {YYYY-MM-DD}
 - Model: DeepSeek V4 Pro
 - Branch: feature/change-replace-multistrap-with-sysroot
-
+- Polished: 2026-07-10
 ## 目的
 
 multistrap は Debian unstable から 2025-01-24 に削除され、Ubuntu でも 25.04 (plucky) 以降から消えているため、代替手段として `apt-get` + `dpkg-deb` を直接利用した sysroot 構築方式に移行する。

@@ -2,8 +2,10 @@
 
 - Priority: High
 - Created: 2026-07-10
+- Completed: {YYYY-MM-DD}
+- Model: DeepSeek V4 Pro
+- Branch: feature/fix-initialize-ssl-return-value
 - Polished: 2026-07-10
-
 ## 目的
 
 `src/sora_client_context.cpp` の `Create()` 関数内で `webrtc::InitializeSSL()` の bool 戻り値が無視されている。SSL 初期化に失敗した場合、後続の TLS 接続で不可解なエラーが発生し、原因特定が困難になる。

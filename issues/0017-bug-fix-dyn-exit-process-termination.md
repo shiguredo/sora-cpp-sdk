@@ -2,8 +2,10 @@
 
 - Priority: High
 - Created: 2026-07-10
+- Completed: {YYYY-MM-DD}
+- Model: DeepSeek V4 Pro
+- Branch: feature/fix-dyn-exit-process-termination
 - Polished: 2026-07-10
-
 ## 目的
 
 `include/sora/dyn/dyn.h` の `DYN_REGISTER` マクロが動的ライブラリの関数解決失敗時に `exit(1)` を呼び、プロセス全体を強制終了する。SDK ライブラリがプロセスを終了させることは許容されない。

@@ -2,8 +2,10 @@
 
 - Priority: High
 - Created: 2026-07-10
+- Completed: {YYYY-MM-DD}
+- Model: DeepSeek V4 Pro
+- Branch: feature/fix-disconnect-dc-ws-timeout
 - Polished: 2026-07-10
-
 ## 目的
 
 `DoInternalDisconnect` の `using_datachannel_ && ws_connected_` パスでは DC の切断タイムアウト （`disconnect_wait_timeout`, デフォルト 5 秒） があることを理由に、WS 側の `closing_timeout_timer_` を使用していない。しかし DC と WS のタイムアウトは独立した保護であり、一方が他方を代替できない。

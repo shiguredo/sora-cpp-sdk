@@ -2,8 +2,10 @@
 
 - Priority: High
 - Created: 2026-07-10
+- Completed: {YYYY-MM-DD}
+- Model: DeepSeek V4 Pro
+- Branch: feature/fix-ci-version-deps-bug
 - Polished: 2026-07-10
-
 ## 目的
 
 `.github/workflows/ci.yml` と `.github/workflows/release.yml` で CUDA バージョンの取得に `Get-Content "VERSION"` を使用しているが、`VERSION` ファイルはバージョン文字列 1 行のみで `CUDA_VERSION` キーは存在しない。正しくは `Get-Content "DEPS"` を読み取る必要がある。

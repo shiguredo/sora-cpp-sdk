@@ -2,8 +2,10 @@
 
 - Priority: High
 - Created: 2026-07-10
+- Completed: {YYYY-MM-DD}
+- Model: DeepSeek V4 Pro
+- Branch: feature/fix-device-video-capturer-null-check
 - Polished: 2026-07-10
-
 ## 目的
 
 `src/device_video_capturer.cpp` の `Init()` 関数内で `CreateDeviceInfo()` が `nullptr` を返しうるのに null チェックがない。同ファイルの `Create()` 関数 (122-127 行目) では正しく null チェックを行っている。

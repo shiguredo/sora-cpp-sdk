@@ -2,8 +2,10 @@
 
 - Priority: High
 - Created: 2026-07-10
+- Completed: {YYYY-MM-DD}
+- Model: DeepSeek V4 Pro
+- Branch: feature/fix-buildbase-return-missing
 - Polished: 2026-07-10
-
 ## 目的
 
 `buildbase.py` の `get_macos_osver()` 関数が `platform.mac_ver()[0]` の結果を変数に代入しているが `return` 文が欠落している。暗黙的に `None` が返り、macOS ビルドのプラットフォーム検出が破綻する。

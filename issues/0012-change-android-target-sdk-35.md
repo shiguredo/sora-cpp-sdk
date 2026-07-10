@@ -2,8 +2,10 @@
 
 - Priority: Medium
 - Created: 2026-06-25
+- Completed: {YYYY-MM-DD}
+- Model: DeepSeek V4 Pro
+- Branch: feature/change-android-target-sdk-35
 - Polished: 2026-07-10
-
 ## 目的
 
 現在の compileSdk / targetSdk 34 を 35 (Android 15) に引き上げるかどうかを

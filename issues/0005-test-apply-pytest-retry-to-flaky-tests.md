@@ -2,10 +2,10 @@
 
 - Priority: Medium
 - Created: 2026-06-11
-- Polished: 2026-07-10
+- Completed: {YYYY-MM-DD}
 - Model: Opus 4.7
 - Branch: feature/add-pytest-retry-to-flaky-tests
-
+- Polished: 2026-07-10
 ## 目的
 
 E2E テストのうち Sora Labo 環境に依存するテストは、Sora 側からの WS 切断 (`wscode=4490`) やネットワーク不安定による間欠失敗を起こす可能性がある。`pytest-retry` の `pytest.mark.flaky` は `test_sumomo_raspberry_pi.py` で実績運用されており、同様のマーカーを他テストファイルにも横展開して予防的に間欠失敗耐性を上げる。

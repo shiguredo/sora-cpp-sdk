@@ -2,8 +2,10 @@
 
 - Priority: High
 - Created: 2026-07-10
+- Completed: {YYYY-MM-DD}
+- Model: DeepSeek V4 Pro
+- Branch: feature/fix-ssl-ctx-new-null-check
 - Polished: 2026-07-10
-
 ## 目的
 
 `src/websocket.cpp` の `CreateSSLContext()` 関数内で `SSL_CTX_new()` の戻り値 `handle` が null チェックされずに後続の `SSL_CTX_set_min_proto_version()` 等に渡されている。メモリ不足時に null deref でクラッシュする可能性がある。
