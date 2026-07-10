@@ -2,10 +2,7 @@
 
 - Priority: High
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
-- Model: DeepSeek V4 Pro
-- Branch: feature/fix-vpl-decoder-initvpl-null-check
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-07-10
 
 ## 目的
 
@@ -47,3 +44,9 @@ if (encoder_ == nullptr) {
 ## 完了条件
 
 - `CreateDecoder()` が nullptr を返した場合に null deref せずエラーリターンすること
+- エンコーダ側 (`vpl_video_encoder.cpp:736-742`) と同様の nullptr チェックが追加されていること
+- `CHANGES.md` の `## develop` 配下、`### misc` セクションに `[FIX]` エントリを追記する:
+  ```
+  - [FIX] VPL デコーダ InitVpl で CreateDecoder の nullptr 戻り値未チェックを修正する
+    - @<担当者>
+  ```

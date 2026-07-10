@@ -2,10 +2,7 @@
 
 - Priority: High
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
-- Model: DeepSeek V4 Pro
-- Branch: feature/fix-initialize-ssl-return-value
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-07-10
 
 ## 目的
 
@@ -32,3 +29,9 @@ webrtc::InitializeSSL();
 ## 完了条件
 
 - `InitializeSSL()` の戻り値がチェックされ、失敗時に適切なエラー処理が行われること
+- `src/sora_client_context.cpp:79` の呼び出しで戻り値 `false` 時にエラーログ出力と `nullptr` リターンが行われること
+- `CHANGES.md` の `## develop` 配下、`### misc` セクションに以下の形式で `[FIX]` エントリを追記する:
+  ```
+  - [FIX] webrtc::InitializeSSL() の戻り値が無視されているのを修正する
+    - @<担当者>
+  ```

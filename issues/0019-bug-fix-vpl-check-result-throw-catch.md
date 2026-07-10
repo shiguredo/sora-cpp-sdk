@@ -2,10 +2,7 @@
 
 - Priority: High
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
-- Model: DeepSeek V4 Pro
-- Branch: feature/fix-vpl-check-result-throw-catch
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-07-10
 
 ## 目的
 
@@ -38,3 +35,9 @@ VPL ハードウェアエンコーダ/デコーダ使用時にハードウェア
 ## 完了条件
 
 - VPL エンコーダ/デコーダでハードウェアエラー発生時に `std::terminate()` が呼ばれないこと
+- `VPL_CHECK_RESULT` マクロが throw ではなく return 文を使用し、呼び出し側が `WEBRTC_VIDEO_CODEC_ERROR` を返すこと
+- `CHANGES.md` の `## develop` 配下、`### misc` セクションに `[FIX]` エントリを追記する:
+  ```
+  - [FIX] VPL_CHECK_RESULT マクロが throw した例外を catch するコードが不在だったのを修正する
+    - @<担当者>
+  ```

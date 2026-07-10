@@ -2,10 +2,7 @@
 
 - Priority: High
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
-- Model: DeepSeek V4 Pro
-- Branch: feature/fix-ci-version-deps-bug
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-07-10
 
 ## 目的
 
@@ -37,3 +34,9 @@ CI パイプラインで CUDA キャッシュキーが空になり、キャッ�
 ## 完了条件
 
 - CI が正しく `DEPS` から `CUDA_VERSION` を読み取ること
+- `.github/workflows/ci.yml` と `.github/workflows/release.yml` の両方で `Get-Content "VERSION"` が `Get-Content "DEPS"` に修正されていること
+- `CHANGES.md` の `## develop` 配下、`### misc` セクションに `[FIX]` エントリを追記する:
+  ```
+  - [FIX] CI が VERSION ファイルから CUDA_VERSION を読み取ろうとするバグを修正する
+    - @<担当者>
+  ```

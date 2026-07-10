@@ -2,10 +2,7 @@
 
 - Priority: High
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
-- Model: DeepSeek V4 Pro
-- Branch: feature/fix-dyn-exit-process-termination
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-07-10
 
 ## 目的
 
@@ -38,4 +35,13 @@ if (f == nullptr) {
 ## 完了条件
 
 - `DYN_REGISTER` マクロで関数解決失敗時に `exit(1)` が呼ばれないこと
-- `<iostream>` の IWYU pragma: export が削除されていること
+- `<iostream>` のインクルードと `IWYU pragma: export` が削除されていること
+- `std::cerr` 出力が `RTC_LOG(LS_ERROR)` に置き換えられていること（`#include "rtc_base/logging.h"` を追加すること）
+- `CHANGES.md` の `## develop` 配下、`### misc` セクションに以下の形式で `[FIX]` エントリを追記する:
+  ```
+  - [FIX] DYN_REGISTER マクロが exit(1) でプロセスを強制終了するのを修正する
+    - exit(1) を throw std::runtime_error に置き換える
+    - std::cerr 出力を RTC_LOG(LS_ERROR) に置き換える
+    - <iostream> のインクルードと IWYU pragma: export を削除する
+    - @<担当者>
+  ```

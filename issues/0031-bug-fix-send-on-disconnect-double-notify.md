@@ -2,10 +2,7 @@
 
 - Priority: High
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
-- Model: DeepSeek V4 Pro
-- Branch: feature/fix-send-on-disconnect-double-notify
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-07-10
 
 ## 目的
 
@@ -42,3 +39,9 @@ void SoraSignaling::SendOnDisconnect(SoraSignalingErrorCode ec,
 ## 完了条件
 
 - 切断時に `OnDisconnect` が最大 1 回しか呼ばれないこと
+- `src/sora_signaling.cpp:1415-1428` の `SendOnDisconnect` に `state_` ガード（`Closed` なら return）が追加されていること
+- `CHANGES.md` の `## develop` 配下、`### misc` セクションに `[FIX]` エントリを追記する:
+  ```
+  - [FIX] SendOnDisconnect に多重呼び出しガードがなく OnDisconnect が二重通知される競合を修正する
+    - @<担当者>
+  ```

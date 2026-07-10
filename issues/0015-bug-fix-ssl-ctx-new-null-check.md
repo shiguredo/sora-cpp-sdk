@@ -2,10 +2,7 @@
 
 - Priority: High
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
-- Model: DeepSeek V4 Pro
-- Branch: feature/fix-ssl-ctx-new-null-check
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-07-10
 
 ## 目的
 
@@ -35,3 +32,9 @@ auto ctx = std::make_shared<boost::asio::ssl::context>(handle); // 同上
 ## 完了条件
 
 - `SSL_CTX_new()` の戻り値が null の場合に null deref せずにエラー処理されること
+- `src/websocket.cpp:64-66` の `CreateSSLContext()` 内で `handle == nullptr` 時に空の `shared_ptr` を返し、呼び出し元で適切に処理されること
+- `CHANGES.md` の `## develop` 配下、`### misc` セクションに以下の形式で `[FIX]` エントリを追記する:
+  ```
+  - [FIX] SSL_CTX_new の戻り値未チェックで null deref の可能性があるのを修正する
+    - @<担当者>
+  ```

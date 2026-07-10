@@ -2,15 +2,15 @@
 
 - Priority: Medium
 - Created: 2026-06-08
-- Polished: 2026-06-08
+- Polished: 2026-07-10
 - Model: DeepSeek V4 Pro
 - Branch: feature/add-sumomo-device-tests
 
 ## 目的
 
-sumomo のデバイス関連機能 (`--list-devices`、実機デバイス指定) に対する E2E テストが存在しないため、pytest によるテストを追加する。
+sumomo のデバイス関連機能（`--list-devices`、実機デバイス指定）に対する E2E テストを追加する。
 
-なお `--fake-capture-device` を使用した映像 / 音声フレームの疎通確認は、既存の `test_sumomo_basic.py` の全テストが `Sumomo` クラスのデフォルト (`fake_capture_device=True`) により既にカバーしているため、本 issue の対象外とする。
+なお `--fake-capture-device` を使用した映像 / 音声フレームの疎通確認は、既存の `test_sumomo_basic.py` の全テストが `Sumomo` クラスのデフォルト（`fake_capture_device=True`）により既にカバーしているため、本 issue の対象外とする。
 
 ## 優先度根拠
 
@@ -20,32 +20,29 @@ sumomo のデバイス関連機能 (`--list-devices`、実機デバイス指定)
 
 - `e2e-test/test_sumomo_basic.py` が fake capture device を使った sendonly/recvonly/sendrecv の疎通テストを提供しているが、デバイス列挙や実機デバイス指定のテストはない
 - `test/device_list.cpp` がスタンドアロンの C++ デバイス列挙テストとして存在するが、pytest による E2E テストではない
-- ハードウェア依存のテスト (`test_sumomo_nvidia_video_codec.py` 等 ) はモジュールレベルの `pytest.mark.skipif` + 環境変数でスキップ制御している
+- ハードウェア依存のテスト（`test_sumomo_nvidia_video_codec.py` 等）はモジュールレベルの `pytest.mark.skipif` + 環境変数でスキップ制御している
 
 ## 設計方針
 
 ### 1. sumomo.py の事前リファクタリング
 
-`test_sumomo_device.py` では `--list-devices` 実行のために sumomo バイナリのパスが必要だが、`Sumomo` クラスはシグナリング接続を前提としており `--list-devices` 用途には過剰である。そのため以下のリファクタリングを事前に行う:
+`test_sumomo_device.py` では `--list-devices` の出力を構造化データとして取得する必要がある。以下のリファクタリングを行う:
 
-- `Sumomo._get_sumomo_executable_path()` (`sumomo.py:289`) をモジュールレベルの関数 `get_sumomo_executable_path()` として切り出す
-- `Sumomo.__init__` 内の `self._get_sumomo_executable_path()` 呼び出しを `get_sumomo_executable_path()` に置き換える
-- 既存のテストコードには影響しない（内部リファクタリングのため）
+- **`get_sumomo_executable_path()`**: `Sumomo._get_sumomo_executable_path()`（`sumomo.py:289`）をモジュールレベル関数として切り出す。`Sumomo.__init__` 内の呼び出しを置き換える
+- **`DeviceLists` データクラス**（`sumomo.py:19`）: `--list-devices` の出力をパースして保持するデータクラス。`audio_recording: list[str]`、`audio_playout: list[str]`、`video: list[str]` の 3 フィールドを持つ
+- **`get_device_lists()` 関数**（`sumomo.py:27`）: `subprocess.run` で sumomo を `--list-devices` 付きで実行し、標準出力をパースして `DeviceLists` を返す。`timeout=10` を指定
+- **`capture_stderr` オプション**（`sumomo.py:345`）: `Sumomo` クラスに追加。`True` にすると別スレッドで stderr を読み取り、プロセス終了後に `self.stderr_output` から取得可能
+- **`log_level` オプション**（`sumomo.py:342`）: `Sumomo` クラスに追加。`"verbose" | "info" | "warning" | "error" | None` で sumomo のログレベルを指定可能
 
 ### 2. テストファイル構成
 
-以下の 2 ファイルを新規作成する:
+`e2e-test/test_sumomo_device.py` 1 ファイルに `--list-devices` の検証と実機デバイスキャプチャのテストの両方を集約する。ファイル分割のメリットが薄く、1 ファイルの方が管理しやすいため。
 
-| ファイル | 対象 | 実行環境 | 必要な環境変数 |
-|---|---|---|---|
-| `e2e-test/test_sumomo_device.py` | `--list-devices` の検証 | GitHub-hosted runner で実行可能 | 不要 |
-| `e2e-test/test_sumomo_device_hardware.py` | 実機デバイスを使ったキャプチャテスト | self-hosted runner のみ | `SELF_HOSTED_RUNNER`、`TEST_SIGNALING_URL` 等、デバイス名指定用の環境変数 |
+テストコード側では実行環境を判定する仕組み（skipif や環境変数）は持たない。self-hosted runner での実行制御は CI ワークフロー側で行う。
 
-### 3. `test_sumomo_device.py`
+### 3. `test_sumomo_device.py` のテスト一覧
 
-`--list-devices` はシグナリング接続が不要であり、また HTTP サーバー起動前にプロセスが終了する (`sumomo.cpp` で `ListDevices()` 実行後 `return 0` する) ため、`Sumomo` クラスを使わず `subprocess.run` で直接実行する。実行ファイルのパスは `from sumomo import get_sumomo_executable_path` で取得する。
-
-#### `test_list_devices`
+#### `test_list_devices()`
 
 `subprocess.run` で sumomo を `--list-devices` 付きで実行し、以下を確認する:
 
@@ -55,102 +52,83 @@ sumomo のデバイス関連機能 (`--list-devices`、実機デバイス指定)
    - `=== Available audio output devices ===`
    - `=== Available video devices ===`
 
-デバイスが存在しない環境ではセクションヘッダーのみ出力され、各セクションの内容は `(none)` になる。そのため、デバイス数の検証は行わない。
+デバイス名の出力形式はプラットフォーム間で異なるため、セクションヘッダーのみを検証する。`timeout=10` を指定する。
 
-プラットフォーム間でデバイス名の出力形式が異なるが (Linux では V4L2 形式、macOS/Windows では `DeviceList::EnumVideoCapturer()` の形式)、セクションヘッダーのみを検証することでプラットフォーム差を吸収する。
+#### `test_capture_device(sora_settings, free_port)`
 
-注意点:
-- `subprocess.run` には `timeout=10` を指定し、デバイス列挙がハングした場合にテストが永遠にブロックされないようにする
-- Linux 環境で V4L2 列挙が失敗した場合、`=== Available video devices ===` ヘッダーは出力されるが `Failed to enumerate video devices` が stderr に出力される。セクションヘッダーの確認のみではこのケースを検出できないが、終了コードが 0 以外になる場合はテストが失敗するためカバーされる
+実機カメラ・マイクから取得した映像・音声が送信されることを確認する。`get_device_lists()` で列挙されたデバイスを明示的に指定してキャプチャを行う。映像・音声の同時キャプチャを検証する。
 
-### 4. `test_sumomo_device_hardware.py`
-
-self-hosted runner でのみ実行するテスト。モジュールレベルのスキップ制御:
-
-```python
-import os
-import pytest
-
-pytestmark = pytest.mark.skipif(
-    not os.environ.get("SELF_HOSTED_RUNNER"),
-    reason="SELF_HOSTED_RUNNER not set in environment",
-)
-```
-
-デバイス名は以下の環境変数から取得し、未設定の場合は各テスト内で個別に `pytest.skip()` する:
-
-| 環境変数 | 用途 |
-|---|---|
-| `TEST_VIDEO_DEVICE_NAME` | 実カメラのデバイス名 |
-| `TEST_AUDIO_RECORDING_DEVICE_NAME` | 実マイクのデバイス名 |
-| `TEST_AUDIO_PLAYOUT_DEVICE_NAME` | 実スピーカーのデバイス名 |
-
-テストでは既存テストのパターンに従い `from helper import get_outbound_rtp, get_inbound_rtp, get_transport` を使用して stats から必要な情報を取得する。各ヘルパー関数は stats に対象のエントリが存在しない場合 `None` を返すため、assert の前に `is not None` の確認を行う。
-
-#### `test_enumerate_devices`
-
-`subprocess.run` で sumomo を `--list-devices` 付きで実行し、映像 / 音声デバイスが 1 つ以上列挙されることを確認する。具体的には、標準出力の各セクションヘッダーの直後に `  [0]` から始まるエントリ行が存在することを確認する（`(none)` 以外の出力があることの確認）。`--list-devices` はデバイス名の環境変数を必要としないため、追加の skip 条件は不要。パス解決は `get_sumomo_executable_path()` を使用し、`timeout=10` を指定する。
-
-#### `test_real_video_device_capture(sora_settings, free_port)`
-
-- `Sumomo` クラスを使用し、sendonly で接続する
-- `fake_capture_device=False` を明示的に指定する（デフォルトは `True` のため）
-- `--video-device` に `TEST_VIDEO_DEVICE_NAME` を指定する
-- `resolution` は `VGA` (640x480) を明示指定する（デフォルト値への暗黙依存を避けるため）
-- 環境変数 `TEST_VIDEO_DEVICE_NAME` が未設定の場合は `pytest.skip()` する
 - 確認内容:
   - `get_stats()` が空でないこと
   - `get_outbound_rtp(stats, "video")["frameWidth"]` が正の値であること
-  - `get_outbound_rtp(stats, "video")["frameHeight"]` が正の値であること
   - `get_outbound_rtp(stats, "video")["packetsSent"]` が 0 より大きいこと
+  - `get_outbound_rtp(stats, "audio")["packetsSent"]` が 0 より大きいこと
   - `get_transport(stats)["dtlsState"]` が `"connected"` であること
 
-#### `test_real_audio_recording_device_capture(sora_settings, free_port)`
+#### `test_audio_recording_device(sora_settings, free_port, audio_recording_device)`
 
-- `Sumomo` クラスを使用し、sendonly で接続する
-- `fake_capture_device=False` を明示的に指定する
-- `--audio-recording-device` に `TEST_AUDIO_RECORDING_DEVICE_NAME` を指定する
-- `--video false` を指定する（映像は不要）
-- 環境変数 `TEST_AUDIO_RECORDING_DEVICE_NAME` が未設定の場合は `pytest.skip()` する
+`@pytest.mark.parametrize` で `get_device_lists()` から取得した全音声録音デバイスに対して実行する。`--audio-recording-device` でデバイスを指定し、`--video false` で映像を無効化する。`capture_stderr=True` で stderr をキャプチャし、指定デバイス名がログに含まれることを検証する。
+
 - 確認内容:
   - `get_stats()` が空でないこと
   - `get_outbound_rtp(stats, "audio")["packetsSent"]` が 0 より大きいこと
   - `get_transport(stats)["dtlsState"]` が `"connected"` であること
+  - stderr に指定デバイス名が含まれること
 
-#### `test_real_audio_playout_device(sora_settings, port_allocator)`
+#### `test_default_audio_recording_device(sora_settings, free_port)`
 
-- 受信側 (recvonly) にパケットを送るため、送信側 (sendonly) と受信側の 2 つの `Sumomo` インスタンスを使用する
-- 送信側 : `audio=True`, `fake_capture_device=True`（デフォルト）、sendonly
-- 受信側 : `audio=True`, `fake_capture_device=False`, `--audio-playout-device` に `TEST_AUDIO_PLAYOUT_DEVICE_NAME` を指定、recvonly
-- 環境変数 `TEST_AUDIO_PLAYOUT_DEVICE_NAME` が未設定の場合は `pytest.skip()` する
+録音デバイス名を指定しない場合、デフォルトデバイスが選択されることを確認する。`--video false` を指定。
+
+- 確認内容: 上記 `test_audio_recording_device` と同様（デバイス名検証を除く）
+
+#### `test_invalid_audio_recording_device(sora_settings, free_port)`
+
+存在しない録音デバイス名を指定した場合、デフォルトデバイスにフォールバックすることを確認する。`capture_stderr=True` で警告ログを検証する。
+
+- 確認内容:
+  - 接続が成功し stats が取得できること
+  - stderr に警告が含まれること
+
+#### `test_audio_playout_device(sora_settings, free_port, free_port2, audio_playout_device)`
+
+`@pytest.mark.parametrize` で `get_device_lists()` から取得した全音声再生デバイスに対して実行する。sendonly + recvonly のペアでテストし、`--audio-playout-device` で受信側の再生デバイスを指定する。
+
 - 確認内容:
   - 受信側の `get_inbound_rtp(stats, "audio")["packetsReceived"]` が 0 より大きいこと
   - 受信側の `get_transport(stats)["dtlsState"]` が `"connected"` であること
-- 制約 : 本テストはパケット受信の確認までであり、実際の音声出力デバイスへのルーティング検証は E2E テストの限界により行わない
+- 制約: 本テストはパケット受信の確認までであり、実際の音声出力デバイスへのルーティング検証は E2E テストの限界により行わない
 
-### 5. 実機デバイステスト共通の注意点
+### 4. 実機デバイステスト共通の注意点
 
-- キャプチャ失敗時 (`CreateCameraDeviceCapturer` が `nullptr` を返した場合)、sumomo の `Sumomo::Run()` が早期リターンし、HTTP サーバーが起動しないまたは stats が空になる。テスト側では `get_stats()` が空でないことの確認によってこのケースを検出する。stderr の内容は `Sumomo` クラスが `subprocess.Popen` を `stderr=None`（親プロセスに継承）で起動しているため、テストコードからプログラムで読み取ることはできない。
+- デバイス名はテスト実行時に `get_device_lists()` で動的列挙する。環境変数による事前設定は不要
+- キャプチャ失敗時は sumomo の `Sumomo::Run()` が早期リターンし、stats が空になる。テスト側では `get_stats()` が空でないことの確認によってこのケースを検出する
 - 実機カメラの解像度は要求解像度と異なる場合があるため、`frameWidth` / `frameHeight` の assert は正の値であることのみとする
-- `packetsSent` 等の確認は、接続後に十分な待機時間 (`time.sleep(3)` 等 ) を設けた上で単一の `get_stats()` の値が 0 より大きいことを確認する方式とする（2 時点の差分比較は不要。fake capture device の既存テストと同じ方式）
+- `packetsSent` 等の確認は、接続後に十分な待機時間（`time.sleep(3)` 等）を設けた上で単一の `get_stats()` の値が 0 より大きいことを確認する方式とする（2 時点の差分比較は不要。fake capture device の既存テストと同じ方式）
+- `capture_stderr=True` を使用することで、指定デバイスが実際に選択されたかや警告の有無をプログラムから検証可能
 
-### 6. `.env.template` の更新
+### 5. CI ワークフロー側の制御
 
-既存エントリはそのまま維持し、以下の 4 行を追記する。`SELF_HOSTED_RUNNER` 行は self-hosted runner でのみ設定する（GitHub-hosted runner の `.env` では削除またはコメントアウトする）。
+テストコード側では環境変数によるスキップ制御を行わない。self-hosted runner での実行可否は CI ワークフロー（`.github/workflows/ci.yml`）側でテストターゲットの指定により制御する。
 
-```
-SELF_HOSTED_RUNNER=1
-TEST_VIDEO_DEVICE_NAME=
-TEST_AUDIO_RECORDING_DEVICE_NAME=
-TEST_AUDIO_PLAYOUT_DEVICE_NAME=
-```
-
-既存のハードウェアテスト用環境変数 (`NVIDIA_VIDEO_CODEC` 等 ) の `.env.template` への追加は本 issue のスコープ外とする。
+`.env.template` の更新は不要（動的列挙方式に移行したため、デバイス名の環境変数が不要になった）。
 
 ## 完了条件
 
-- `e2e-test/sumomo.py` から `get_sumomo_executable_path()` がモジュールレベル関数として切り出されている
-- `e2e-test/test_sumomo_device.py` が追加され、GitHub-hosted runner 上で `test_list_devices` がパスする
-- `e2e-test/test_sumomo_device_hardware.py` が追加され、self-hosted runner 上で全テストがパスする
-- `e2e-test/.env.template` に上記 4 行が追記されている
-- `CHANGES.md` の `## develop` 内 `### misc` セクションに `[ADD]` エントリを追記する（AGENTS.md の種別順序 `CHANGE → ADD → UPDATE → FIX` に従い、`[CHANGE]` エントリの後、`[UPDATE]` エントリの前に配置する）
+- `e2e-test/sumomo.py` に以下の追加が行われている:
+  - `get_sumomo_executable_path()` がモジュールレベル関数として切り出されている
+  - `DeviceLists` データクラスが追加されている
+  - `get_device_lists()` 関数が追加されている
+  - `Sumomo` クラスに `capture_stderr` オプションが追加されている
+  - `Sumomo` クラスに `log_level` オプションが追加されている
+- `e2e-test/test_sumomo_device.py` が追加され、以下のテストがすべてパスすること:
+  - `test_list_devices`（GitHub-hosted runner）
+  - `test_capture_device`（self-hosted runner）
+  - `test_audio_recording_device`（self-hosted runner、parametrized）
+  - `test_default_audio_recording_device`（self-hosted runner）
+  - `test_invalid_audio_recording_device`（self-hosted runner）
+  - `test_audio_playout_device`（self-hosted runner、parametrized）
+- `CHANGES.md` の `## develop` 内 `### misc` セクションに以下の `[ADD]` エントリが追記されている（既に実装済み）:
+  - sumomo の E2E テストで `--audio-recording-device` を複数の音声録音デバイスに対して個別に検証するテストを追加する
+  - sumomo の E2E テストで録音デバイス未指定時・無効指定時の挙動を検証するテストを追加する
+  - sumomo の E2E テストヘルパーに `capture_stderr` オプションを追加する
+  - sumomo の E2E テストで `--audio-playout-device` を複数の音声再生デバイスに対して個別に検証するテストを追加する

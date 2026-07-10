@@ -2,10 +2,7 @@
 
 - Priority: High
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
-- Model: DeepSeek V4 Pro
-- Branch: feature/fix-set-local-description-failure
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-07-10
 
 ## 目的
 
@@ -34,3 +31,9 @@ on_success(desc);  // 無条件に成功扱い
 ## 完了条件
 
 - `SetLocalDescription` 失敗時に `on_failure` が呼ばれ、無効な SDP が送信されないこと
+- `src/session_description.cpp:101-104` の `SetSessionDescriptionThunk::Create` に適切な成功/失敗コールバックが設定されていること
+- `CHANGES.md` の `## develop` 配下、`### misc` セクションに `[FIX]` エントリを追記する:
+  ```
+  - [FIX] CreateAnswer 内 SetLocalDescription 失敗時に nullptr コールバックで続行するのを修正する
+    - @<担当者>
+  ```

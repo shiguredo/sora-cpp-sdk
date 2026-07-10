@@ -2,10 +2,7 @@
 
 - Priority: High
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
-- Model: DeepSeek V4 Pro
-- Branch: feature/fix-amf-decoder-resolution-change
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-07-10
 
 ## 目的
 
@@ -35,4 +32,9 @@
 
 ## 完了条件
 
-- 解像度変更時に `InitAMF()` が失敗した場合、null deref せずエラーリターンすること
+- 解像度変更時に `InitAMF()` が失敗した場合、null deref せず `WEBRTC_VIDEO_CODEC_ERROR` を返すこと
+- `CHANGES.md` の `## develop` 配下、`### misc` セクションに `[FIX]` エントリを追記する:
+  ```
+  - [FIX] AMF デコーダの解像度変更時に InitAMF の戻り値が無視されているのを修正する
+    - @<担当者>
+  ```

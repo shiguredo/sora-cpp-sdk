@@ -2,10 +2,7 @@
 
 - Priority: Medium
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
-- Model: DeepSeek V4 Pro
-- Branch: feature/fix-disconnect-init-state
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-07-10
 
 ## 目的
 
@@ -36,3 +33,9 @@ void SoraSignaling::Disconnect() {
 ## 完了条件
 
 - `Init` 状態の `Disconnect()` でも `Clear()` が呼ばれること
+- `src/sora_signaling.cpp:178-180` の `Init` 状態処理で `Clear()` が実行されること
+- `CHANGES.md` の `## develop` 配下、`### misc` セクションに `[FIX]` エントリを追記する:
+  ```
+  - [FIX] Disconnect() during Init で OnDisconnect 未呼び出し・Clear() 未実行を修正する
+    - @<担当者>
+  ```

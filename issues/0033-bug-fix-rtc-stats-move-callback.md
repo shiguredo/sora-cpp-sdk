@@ -2,10 +2,7 @@
 
 - Priority: Medium
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
-- Model: DeepSeek V4 Pro
-- Branch: feature/fix-rtc-stats-move-callback
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-07-10
 
 ## 目的
 
@@ -34,3 +31,9 @@ void OnStatsDelivered(
 ## 完了条件
 
 - `OnStatsDelivered` が複数回呼ばれても未定義動作が発生しないこと
+- `src/rtc_stats.cpp:25` の `std::move(result_callback_)(report)` 呼び出し後にガードが追加されていること
+- `CHANGES.md` の `## develop` 配下、`### misc` セクションに `[FIX]` エントリを追記する:
+  ```
+  - [FIX] RTCStatsCallback::OnStatsDelivered で move 後のコールバック再呼び出しリスクを修正する
+    - @<担当者>
+  ```

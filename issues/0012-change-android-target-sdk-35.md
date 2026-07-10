@@ -2,10 +2,7 @@
 
 - Priority: Medium
 - Created: 2026-06-25
-- Completed: {YYYY-MM-DD}
-- Model: deepseek-v4-flash
-- Branch: feature/change-android-target-sdk-35
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-07-10
 
 ## 目的
 
@@ -236,8 +233,16 @@ PR #336 の revert は正しい判断だった。理由は以下の 1 点に集�
 
 ### 選択肢 C を選んだ場合の具体手順
 
-- `Sora` モジュールの build.gradle の compileSdk を 34 → 35 に変更
-- テストアプリの build.gradle の compileSdk/targetSdk を 34 → 35 に変更
-- `SoraAudioManagerBase` の Audio Focus 失敗時のログレベルを `Log.e` → `Log.w` に変更 (任意)
-- CI に Android 35 platform が存在することを確認
-- `CHANGES.md` にエントリを追加
+- `android/Sora/Sora/build.gradle:7` の compileSdk を 34 → 35 に変更
+- `test/android/app/build.gradle:19` の compileSdk を 34 → 35 に変更
+- `test/android/app/build.gradle:24` の targetSdk を 34 → 35 に変更
+- `android/Sora/Sora/src/main/java/jp/shiguredo/sora/audiomanager/SoraAudioManagerBase.java:85` の Audio Focus 失敗時のログレベルを `Log.e` → `Log.w` に変更
+- CI に Android 35 platform が存在することを確認 (`sdkmanager --list | grep 'platforms;android-35'` で確認、なければ `sdkmanager 'platforms;android-35'` でインストール)
+- `CHANGES.md` の `## develop` 配下に以下の形式で `[CHANGE]` エントリを追記する。担当者ハンドル `@<担当者>` は PR 作成者のものに書き換える:
+
+  ```
+  - [CHANGE] Android の targetSdk を 35 に引き上げる
+    - compileSdk と targetSdk を 34 から 35 に変更する
+    - Android 15 の Audio Focus 制限に対応し、requestAudioFocus() 失敗時のログレベルを Log.e から Log.w に下げる
+    - @<担当者>
+  ```

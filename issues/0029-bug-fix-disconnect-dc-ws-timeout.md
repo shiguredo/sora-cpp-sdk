@@ -2,10 +2,7 @@
 
 - Priority: High
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
-- Model: DeepSeek V4 Pro
-- Branch: feature/fix-disconnect-dc-ws-timeout
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-07-10
 
 ## 目的
 
@@ -39,3 +36,9 @@ DC close 成功時も `closing_timeout_timer_` による WS close のタイム�
 ## 完了条件
 
 - DC+WS パスで切断がタイムアウトしてもハングしないこと
+- `src/sora_signaling.cpp:669-727` の DC close 成功パスに `closing_timeout_timer_` による WS close のタイムアウト保護が追加されていること
+- `CHANGES.md` の `## develop` 配下、`### misc` セクションに `[FIX]` エントリを追記する:
+  ```
+  - [FIX] DoInternalDisconnect DC+WS パスで WebSocket close にタイムアウト保護がないのを修正する
+    - @<担当者>
+  ```

@@ -2,10 +2,7 @@
 
 - Priority: High
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
-- Model: DeepSeek V4 Pro
-- Branch: feature/fix-assert-release-build
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-07-10
 
 ## 目的
 
@@ -38,3 +35,9 @@ assert(chain.GetSize() > 0);
 ## 完了条件
 
 - 全 `assert()` がリリースビルドでも有効な検証に置き換えられていること
+- 特に `rtc_ssl_verifier.cpp:65` の `assert(chain.GetSize() > 0)` が `RTC_CHECK` または早期リターン + エラーログに置き換えられていること
+- `CHANGES.md` の `## develop` 配下、`### misc` セクションに `[FIX]` エントリを追記する:
+  ```
+  - [FIX] assert() がリリースビルドで無効化され状態検証が行われないのを修正する
+    - @<担当者>
+  ```

@@ -2,10 +2,7 @@
 
 - Priority: High
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
-- Model: DeepSeek V4 Pro
-- Branch: feature/fix-examples-addtrack-return-value
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-07-10
 
 ## 目的
 
@@ -32,3 +29,12 @@ auto video_result = pc->AddTrack(video_source, {stream_id});
 ## 完了条件
 
 - 全サンプルで `AddTrack` の戻り値がチェックされるか、意図的な無視が明示されること
+- 以下の 3 ファイルすべてで対応が行われていること:
+  - `examples/sumomo/src/sumomo.cpp`
+  - `examples/sdl_sample/src/sdl_sample.cpp`
+  - `examples/messaging_recvonly_sample/src/messaging_recvonly_sample.cpp`
+- `CHANGES.md` の `## develop` 配下、`### misc` セクションに `[FIX]` エントリを追記する:
+  ```
+  - [FIX] 全サンプルの OnSetOffer 内 AddTrack の RTCErrorOr 戻り値が無視されているのを修正する
+    - @<担当者>
+  ```

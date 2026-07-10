@@ -2,10 +2,7 @@
 
 - Priority: High
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
-- Model: DeepSeek V4 Pro
-- Branch: feature/fix-v4l2-buffer-leak
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-07-10
 
 ## 目的
 
@@ -33,3 +30,9 @@ V4L2 デバイスのバッファ割り当て失敗時にメモリリークが発
 ## 完了条件
 
 - `AllocateVideoBuffers()` の途中失敗時にすでに確保したリソースがすべて解放されること
+- エラーリターン前に `_pool` の `delete[]` と `munmap` が実行されるクリーンアップパスが追加されていること
+- `CHANGES.md` の `## develop` 配下、`### misc` セクションに `[FIX]` エントリを追記する:
+  ```
+  - [FIX] V4L2 AllocateVideoBuffers の部分割り当て失敗時にバッファリークするのを修正する
+    - @<担当者>
+  ```

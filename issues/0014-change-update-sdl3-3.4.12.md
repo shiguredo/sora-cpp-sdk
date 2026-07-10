@@ -4,7 +4,7 @@
 - Created: 2026-07-09
 - Model: deepseek-v4-flash
 - Branch: feature/change-update-sdl3-3.4.12
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-07-10
 
 ## 目的
 
@@ -104,12 +104,10 @@ Medium。バグ修正や緊急対応ではなく、依存ライブラリの定�
 - macOS / Windows / Linux / Ubuntu ARMv8 の各プラットフォームでビルドが通ること
 - `sdl_sample` が正しく動作すること
 - `sumomo` の `--no-video --no-audio` モードなどで最低限の SDL ウィンドウ表示が動作すること
-- `CHANGES.md` に `[UPDATE] SDL3 を 3.4.12 にあげる` のエントリが追加されていること
+- `CHANGES.md` に `[UPDATE] SDL3 を 3.4.12 にあげる` のエントリが追加されていること。`## develop` 配下、`### misc` セクション内で凡例順（CHANGE → ADD → UPDATE → FIX）を尊重して追記する。担当者ハンドル `@<担当者>` は PR 作成者のものに書き換える:
 
-## 解決方法
-
-1. `examples/DEPS` の `SDL3_VERSION` を `3.2.28` → `3.4.12` に変更する
-2. macOS でローカルビルドし、sdl_sample が動作することを確認する
-3. `buildbase.py` の CMake オプションに新規オプションや廃止オプションがないか確認する
-4. CI で全プラットフォームのビルドが通ることを確認する
-5. `CHANGES.md` にエントリを追加する
+  ```
+  - [UPDATE] SDL3 を 3.4.12 にあげる
+    - examples/DEPS の SDL3_VERSION を 3.2.28 から 3.4.12 に変更する
+    - @<担当者>
+  ```

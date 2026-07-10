@@ -2,10 +2,7 @@
 
 - Priority: High
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
-- Model: DeepSeek V4 Pro
-- Branch: feature/fix-device-video-capturer-null-check
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-07-10
 
 ## 目的
 
@@ -46,3 +43,9 @@ if (!info) {
 ## 完了条件
 
 - `CreateDeviceInfo()` が nullptr を返した場合に null deref せずエラーリターンすること
+- `src/device_video_capturer.cpp:48-55` の `Init()` 内で `Create()` と同様の null チェックが追加されていること
+- `CHANGES.md` の `## develop` 配下、`### misc` セクションに以下の形式で `[FIX]` エントリを追記する:
+  ```
+  - [FIX] DeviceVideoCapturer::Init で CreateDeviceInfo の戻り値未チェックを修正する
+    - @<担当者>
+  ```

@@ -2,10 +2,7 @@
 
 - Priority: High
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
-- Model: DeepSeek V4 Pro
-- Branch: feature/fix-disconnect-redirecting-state
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-07-10
 
 ## 目的
 
@@ -38,3 +35,9 @@ void SoraSignaling::Disconnect() {
 ## 完了条件
 
 - `Redirecting` 状態で `Disconnect()` が呼ばれても assert クラッシュや状態矛盾が発生しないこと
+- `src/sora_signaling.cpp:176-195` の `Disconnect()` に `State::Redirecting` のチェックが追加されていること
+- `CHANGES.md` の `## develop` 配下、`### misc` セクションに `[FIX]` エントリを追記する:
+  ```
+  - [FIX] Disconnect が Redirecting 状態を処理せず DoInternalDisconnect の assert クラッシュするのを修正する
+    - @<担当者>
+  ```

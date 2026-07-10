@@ -2,10 +2,7 @@
 
 - Priority: High
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
-- Model: DeepSeek V4 Pro
-- Branch: feature/fix-datachannel-double-callback
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-07-10
 
 ## 目的
 
@@ -45,3 +42,8 @@ on_close(boost::system::error_code());       // 二度目のコールバック
 
 - `Close()` で `on_close` が最大 1 回しか呼ばれないこと
 - デストラクタで Thunk の observer が適切に解除されること
+- `CHANGES.md` の `## develop` 配下、`### misc` セクションに `[FIX]` エントリを追記する:
+  ```
+  - [FIX] DataChannel::Close でタイマーと OnStateChange が on_close を二重呼び出しするのを修正する
+    - @<担当者>
+  ```
