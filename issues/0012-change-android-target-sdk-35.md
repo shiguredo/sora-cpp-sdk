@@ -6,6 +6,7 @@
 - Model: DeepSeek V4 Pro
 - Branch: feature/change-android-target-sdk-35
 - Polished: 2026-07-10
+
 ## 目的
 
 現在の compileSdk / targetSdk 34 を 35 (Android 15) に引き上げるかどうかを
@@ -54,6 +55,7 @@ Android 15 の behavior changes のうち、sora-cpp-sdk に影響するもの:
 | **TLS 1.0/1.1 禁止** | 影響なし | 全アプリ対象。サーバー側が TLS 1.2+ 対応済みであることの確認は必要だが SDK 側の変更は不要 |
 
 影響なしと判断した主な変更:
+
 - Bluetooth / SCO 関連の変更は Android 15 には存在しない
 - `setCommunicationDevice()` / `getAvailableCommunicationDevices()` に変更なし
 - BOOT_COMPLETED レシーバ制限: SDK は未使用
@@ -199,6 +201,7 @@ PR #336 の revert は正しい判断だった。理由は以下の 1 点に集�
 ### 推奨
 
 選択肢 C。理由:
+
 - compileSdk と targetSdk の乖離を避けられる
 - OpenJDK 変更や Audio Focus 制限への影響は実際のコード audit と動作確認で軽微と予想
 - 最新のツールチェインに追従できる
