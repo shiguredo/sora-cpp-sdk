@@ -3,6 +3,7 @@
 - Priority: Medium
 - Created: 2026-07-10
 - Polished: 2026-07-10
+- Completed: 2026-07-10
 
 ## 目的
 
@@ -39,3 +40,13 @@ void SoraSignaling::Disconnect() {
   - [FIX] Disconnect() during Init で OnDisconnect 未呼び出し・Clear() 未実行を修正する
     - @<担当者>
   ```
+
+## 解決方法
+
+ポリッシュ時の必要性判断で、本 issue が主張する「`connection_timeout_timer_` や `connecting_wss_` が残留する」問題は実在しないと判定された。
+
+- `Init` 状態では `connection_timeout_timer_` はコンストラクタ (`sora_signaling.cpp:128`) で構築されるのみで `async_wait` は `DoConnect()` (`sora_signaling.cpp:1239`) 内でしか設定されない
+- `Init` 状態では `connecting_wss_` は空であり、要素は `DoConnect()` (`sora_signaling.cpp:1289`) 内でしか追加されない
+- `DoConnect()` は `Closed` 状態からも実行可能 (`sora_signaling.cpp:1230`) であり、`Init` → `Closed` 遷移後も再接続に問題はない
+
+以上の理由によりコード変更は不要と判断し closed とする。
