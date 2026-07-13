@@ -2,7 +2,7 @@
 
 - Priority: High
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-07-14
 - Model: DeepSeek V4 Pro
 - Branch: feature/fix-ci-version-deps-bug
 - Polished: 2026-07-10
@@ -85,4 +85,11 @@ ci.yml と同一のバグ。
   ```
   - [FIX] CI が VERSION ファイルから CUDA_VERSION を読み取ろうとするバグを修正する
     - @<担当者>
+
+## 解決方法
+
+`.github/workflows/ci.yml` と `.github/workflows/release.yml` の Windows ビルドジョブで以下の修正を行った。
+
+- `Get-Content "VERSION"` を `Get-Content "DEPS"` に修正し、`DEPS` から `CUDA_VERSION` を正しく取得するようにした
+- キャッシュヒット時の `echo "${CUDA_VERSION}"` を `echo "${{ steps.versions.outputs.cuda_version }}"` に修正し、前ステップの出力から正しいバージョン文字列を取得するようにした
   ```
