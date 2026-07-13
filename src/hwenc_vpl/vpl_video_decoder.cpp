@@ -349,6 +349,10 @@ const char* VplVideoDecoderImpl::ImplementationName() const {
 bool VplVideoDecoderImpl::InitVpl() {
   decoder_ = CreateDecoder(session_, codec_, {{4096, 4096}, {2048, 2048}}, true,
                            &alloc_request_);
+  if (decoder_ == nullptr) {
+    RTC_LOG(LS_ERROR) << "Failed to create decoder";
+    return false;
+  }
 
   mfxStatus sts = MFX_ERR_NONE;
 
