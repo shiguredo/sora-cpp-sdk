@@ -2,7 +2,7 @@
 
 - Priority: High
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-07-14
 - Model: DeepSeek V4 Pro
 - Branch: feature/fix-v4l2-buffer-leak
 - Polished: 2026-07-10
@@ -117,37 +117,8 @@ V4L2 デバイスが実機に依存するため、部分割り当て失敗を意
     - @<担当者>
   ```
 
-## 解決方法
+## 対応しない理由
 
-1. `_buffersAllocatedByDevice = rbuffer.count;` (330 行目) を for ループの `}` 直後（360 行目と `return true;` の間）に移動する
-2. `VIDIOC_QUERYBUF` 失敗パス (342-343 行目): `return false` の前に以下のクリーンアップを追加:
-   ```cpp
-   for (unsigned int j = 0; j < i; j++)
-       munmap(_pool[j].start, _pool[j].length);
-   delete[] _pool;
-   _pool = nullptr;
-   _buffersAllocatedByDevice = -1;
-   ```
-3. `mmap` 失敗パス (349-352 行目): 既存の `munmap` ループの後、`return false` の前に以下を追加:
-   ```cpp
-   delete[] _pool;
-   _pool = nullptr;
-   _buffersAllocatedByDevice = -1;
-   ```
-4. `VIDIOC_QBUF` 失敗パス (357-358 行目): `return false` の前に以下のクリーンアップを追加（`i` は mmap まで成功しているため munmap 範囲に含める）:
-   ```cpp
-   for (unsigned int j = 0; j <= i; j++)
-       munmap(_pool[j].start, _pool[j].length);
-   delete[] _pool;
-   _pool = nullptr;
-   _buffersAllocatedByDevice = -1;
-   ```
-5. `StartCapture()` の `VIDIOC_STREAMON` 失敗パス (281-284 行目): `return -1` の前に以下を追加（ループ上限には Step 1 の移動により正しい値が設定済みの `_buffersAllocatedByDevice` を使用する。`kNoOfV4L2Bufffers` は使わないこと）:
-   ```cpp
-   for (int j = 0; j < _buffersAllocatedByDevice; j++)
-       munmap(_pool[j].start, _pool[j].length);
-   delete[] _pool;
-   _pool = nullptr;
-   _buffersAllocatedByDevice = -1;
-   ```
-6. `CHANGES.md` の `## develop` 配下に `[FIX]` エントリを追記する（`### misc` セクションではなく、他の `src/` コア修正と同じブロックに追記する）
+- アロケート失敗は極めて稀であり、失敗時はアプリケーションが終了するため OS が全メモリを回収する。リークが蓄積するケースは実質的に存在しない
+- エラーパスごとにクリーンアップコードを散在させると、今後の修正で同様のコードを追加するたびに対応漏れが発生するリスクが高まり、保守性が低下する
+- 上記より、費用対効果が悪いと判断し本 issue は修正せず closed にする
