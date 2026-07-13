@@ -2,7 +2,7 @@
 
 - Priority: Medium
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-07-14
 - Model: DeepSeek V4 Pro
 - Branch: feature/fix-examples-addtrack-return-value
 - Polished: 2026-07-10
@@ -79,3 +79,9 @@ if (audio_track_ != nullptr) {
   - [FIX] sumomo と sdl_sample で AddTrack の戻り値チェックを追加する
     - @<担当者>
   ```
+
+## 解決方法
+
+- `examples/sumomo/src/sumomo.cpp` と `examples/sdl_sample/src/sdl_sample.cpp` の `OnSetOffer` 内で、
+  `AddTrack` の戻り値 `RTCErrorOr` を `.ok()` でチェックし、失敗時に `RTC_LOG(LS_ERROR)` でエラーメッセージを出力するように修正した
+- `CHANGES.md` の `## develop` に `[FIX]` エントリを追加した
