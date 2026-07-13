@@ -2,9 +2,9 @@
 
 - Priority: Medium
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-07-13
 - Model: DeepSeek V4 Pro
-- Branch: feature/fix-dyn-exit-process-termination
+- Branch: feature/fix-iroiro
 - Polished: 2026-07-10
 
 ## 目的
@@ -121,3 +121,14 @@ DYN_REGISTER 関数の呼び出し元と既存の例外保護状況:
   - CUDA 非搭載環境ではテストを自動スキップする仕組みを入れる
   - → **未実施**: テスト追加は別 issue で対応する
 - [x] `CudaContext::CanCreate()` が例外捕捉時に `false` を返すことを検証するテストを追加する → **不要**: try/catch 追加を見送ったため
+
+## 解決方法
+
+`include/sora/dyn/dyn.h` の `DYN_REGISTER` マクロを修正した:
+
+- `exit(1)` を `throw std::runtime_error` に置き換えた
+- `std::cerr` 出力を削除し、エラー情報を例外メッセージに含めた
+- `#include <iostream>` を削除し、`#include <stdexcept>` を追加した
+
+呼び出し元への try/catch 追加は不要と判断した。
+全呼び出し箇所で事前に `IsLoadable()` チェックが入っており、シンボル欠損時にのみ `throw` に到達するが、`IsLoadable` が成功している以上シンボル欠損の可能性は極めて低いため。
