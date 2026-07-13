@@ -11,6 +11,8 @@
 
 ## develop
 
+- [FIX] sumomo と sdl_sample で AddTrack の戻り値チェックを追加する
+  - @melpon
 - [CHANGE] `SoraClientContext` に `ConnectionContext::MediaEngineReference` を保持し、
     `PeerConnection` 作成時の遅延 Init により指定オーディオデバイスがデフォルトに戻っていた問題を修正する
   - `SoraClientContext` の ABI を変更する

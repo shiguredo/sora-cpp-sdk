@@ -128,11 +128,19 @@ class SDLSample : public std::enable_shared_from_this<SDLSample>,
       webrtc::RTCErrorOr<webrtc::scoped_refptr<webrtc::RtpSenderInterface>>
           audio_result =
               conn_->GetPeerConnection()->AddTrack(audio_track_, {stream_id});
+      if (!audio_result.ok()) {
+        RTC_LOG(LS_ERROR) << "Failed to add audio track: error="
+                          << audio_result.error().message();
+      }
     }
     if (video_track_ != nullptr) {
       webrtc::RTCErrorOr<webrtc::scoped_refptr<webrtc::RtpSenderInterface>>
           video_result =
               conn_->GetPeerConnection()->AddTrack(video_track_, {stream_id});
+      if (!video_result.ok()) {
+        RTC_LOG(LS_ERROR) << "Failed to add video track: error="
+                          << video_result.error().message();
+      }
     }
   }
   void OnDisconnect(sora::SoraSignalingErrorCode ec,
