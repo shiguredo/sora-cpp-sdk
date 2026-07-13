@@ -193,8 +193,8 @@ int32_t AMFVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
       // デコードするサイズが変わったらデコーダを作り直す
       ReleaseAMF();
       res = InitAMF();
-      WEBRTC_RETURN_IF_FAILED(res,
-                              "Failed to re-init AMF decoder after resolution change");
+      WEBRTC_RETURN_IF_FAILED(
+          res, "Failed to re-init AMF decoder after resolution change");
       continue;
     } else {
       WEBRTC_RETURN_IF_FAILED(res, L"Failed to SubmitInput()");
