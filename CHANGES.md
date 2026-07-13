@@ -156,6 +156,9 @@
   - `SoraClientContext::Create()` で `InitializeSSL()` が `false` を返した場合にエラーログを出力し `nullptr` を返すようにする
   - @melpon
 
+- [FIX] Disconnect が Redirecting 状態を処理せず DoInternalDisconnect の assert でクラッシュする問題を修正する
+  - @melpon
+
 ### misc
 
 - [FIX] sumomo で `audio_source` の null チェックを追加する

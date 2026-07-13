@@ -184,6 +184,11 @@ void SoraSignaling::Disconnect() {
                              "Close was called in connecting");
       return;
     }
+    if (self->state_ == State::Redirecting) {
+      self->SendOnDisconnect(SoraSignalingErrorCode::CLOSE_SUCCEEDED,
+                             "Close was called in redirecting");
+      return;
+    }
     if (self->state_ == State::Closing) {
       return;
     }
