@@ -144,6 +144,10 @@
   - std::cerr 出力を削除し <iostream> の依存を除去する
   - @melpon
 
+- [FIX] webrtc::InitializeSSL() の戻り値が無視されているのを修正する
+  - `SoraClientContext::Create()` で `InitializeSSL()` が `false` を返した場合にエラーログを出力し `nullptr` を返すようにする
+  - @melpon
+
 ### misc
 
 - [FIX] sumomo で `audio_source` の null チェックを追加する
