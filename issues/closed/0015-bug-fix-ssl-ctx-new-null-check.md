@@ -2,7 +2,7 @@
 
 - Priority: High
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-07-13
 - Model: DeepSeek V4 Pro
 - Branch: feature/fix-ssl-ctx-new-null-check
 - Polished: 2026-07-10
@@ -89,4 +89,10 @@ auto ctx = std::make_shared<boost::asio::ssl::context>(handle);
   - [FIX] `SSL_CTX_new` の戻り値未チェックで null deref の可能性があるのを修正する
     - `CreateSSLContext()` で `SSL_CTX_new()` が nullptr を返した場合にエラーログを出力し例外を送出するようにする
     - @<担当者>
+
+## 解決方法
+
+`src/websocket.cpp` の `CreateSSLContext()` 内で `::SSL_CTX_new(::TLS_method())` の直後に nullptr チェックを追加した。nullptr の場合は `ERR_get_error()` でエラー情報を取得し、
+`RTC_LOG(LS_ERROR)` でログ出力したうえで `boost::system::system_error` 例外を送出する。
+また、例外送出に必要な `#include <boost/system/system_error.hpp>` を追加した。
   ```
