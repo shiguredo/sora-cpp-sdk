@@ -168,6 +168,12 @@
   - 参考 : C++ 日本語リファレンスの `std::span` のページ
     - リンク : https://cpprefjp.github.io/reference/span/span.html
   - @torikizi
+- [UPDATE] Examples の SDL3 を 3.4.12 にあげる
+  - SDL3 3.4.0 で `SDL_X11_XTEST` オプションが追加 (デフォルト ON) されたため `buildbase.py` に `-DSDL_X11_XTEST=OFF` を追加する
+    - 指定しない場合、Linux ビルド環境で libXtst-dev がインストールされていないとビルドエラーになる
+  - 参考 : SDL_X11_XTEST が追加された SDL3 のコミット
+    - リンク : https://github.com/libsdl-org/SDL/commit/794ff283e26bedd63e0737b51b1cd2def3676ce3
+  - @torikizi
 
 ## 2026.1.2
 

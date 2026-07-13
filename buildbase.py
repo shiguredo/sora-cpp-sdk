@@ -1472,6 +1472,7 @@ def install_sdl3(
                 "-DSDL_X11_XSCRNSAVER=OFF",
                 "-DSDL_X11_XSHAPE=OFF",
                 "-DSDL_X11_XSYNC=OFF",
+                "-DSDL_X11_XTEST=OFF",
                 "-DSDL_WAYLAND=OFF",
                 "-DSDL_VULKAN=OFF",
                 "-DSDL_KMSDRM=OFF",
