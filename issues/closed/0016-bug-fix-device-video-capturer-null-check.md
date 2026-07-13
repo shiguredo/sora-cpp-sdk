@@ -70,8 +70,13 @@ if (!device_info) {
 - `CreateDeviceInfo()` が nullptr を返した場合に null deref せず、`RTC_LOG(LS_WARNING)` でエラーログを出力して `false` を返すこと
 - nullptr チェックが `CreateDeviceInfo()` 呼び出しの直後、`device_info->GetDeviceName()` (53 行目) より前に追加されていること (これにより 66 行目の `device_info->GetCapability()` も同時に保護される)
 - `CreateDeviceInfo()` の失敗は環境依存であり単体テストでの再現は困難である。`tests/` 配下に `DeviceVideoCapturer` を対象とした既存テストはないため、コードレビューにより nullptr チェックが正しく追加されていることを確認する
-- `CHANGES.md` の `## develop` 直下（`### misc` セクションより前）に `[FIX]` エントリを追記する。`### misc` は Examples / CI / tooling 用のため使わない:
-  ```
-  - [FIX] `DeviceVideoCapturer::Init` で `CreateDeviceInfo` の戻り値未チェックを修正する
-    - @<担当者>
-  ```
+## 解決方法
+
+`Init()` で呼んでいる `CreateDeviceInfo()` は引数なし版であり、実装を追跡した結果:
+
+- `VideoCaptureFactory::CreateDeviceInfo()` (引数なし) は `WEBRTC_ANDROID` / `WEBRTC_MAC` の場合のみ `nullptr` を返す
+- Linux では `VideoCaptureImpl::CreateDeviceInfo()` に委譲され、`device_info_linux.cc:25` で `new DeviceInfoV4l2()` している
+- C++ の標準 `new` は失敗時に `std::bad_alloc` を送出し、`nullptr` を返すことはない
+
+したがって、本プロジェクトのターゲットである Linux (Ubuntu 24.04 x86_64) では `nullptr` が返るコードパスは存在しない。
+nullptr チェックの追加は不要と判断し、本 issue は修正不要で closed とする。

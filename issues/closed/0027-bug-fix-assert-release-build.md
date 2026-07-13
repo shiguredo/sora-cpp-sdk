@@ -2,7 +2,7 @@
 
 - Priority: High
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-07-14
 - Model: DeepSeek V4 Pro
 - Branch: feature/fix-assert-release-build
 - Polished: 2026-07-10
@@ -84,5 +84,14 @@ include の扱い:
 - `CHANGES.md` の `## develop` 配下、`### misc` セクションより前の `src/` コア修正の `[FIX]` 群に、以下の `[FIX]` エントリを追記する（`### misc` は Examples / CI / tooling 用のため使わない）。担当者は実装者が確定する:
   ```
   - [FIX] assert() がリリースビルドで無効化され状態検証が行われないのを修正する
-    - @<担当者>
+     - @<担当者>
   ```
+
+## 解決方法
+
+各 assert の不変条件を精査した結果、以下の理由によりコード変更は不要と判断した。
+
+- `rtc_ssl_verifier.cpp:65`: WebRTC 側で空チェーンが除外される前提であり、依存先の契約に基づく表明である。契約違反は WebRTC 側のバグであり、assert のままとする。
+- `sora_signaling.cpp:221` (`Redirect`): 呼び出し元 `OnRead:930` で `state_ == State::Connected` がガードされており、不変条件は成立している。
+- `sora_signaling.cpp:653` (`DoInternalDisconnect`): `Disconnect()` で `Redirecting` がガードされていない問題は issue 0028 で修正される。0028 のマージ後は不変条件が成立する。
+- `sora_signaling.cpp:874` (`OnRead`): 後続コードで安全に処理されており、assert は冗長だが、表明としての価値があるため削除せず維持する。
