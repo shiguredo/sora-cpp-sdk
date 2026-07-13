@@ -43,6 +43,7 @@
 #include <boost/system/detail/errc.hpp>
 #include <boost/system/detail/error_code.hpp>
 #include <boost/system/errc.hpp>
+#include <boost/system/system_error.hpp>
 
 // OpenSSL
 #include <openssl/base.h>
@@ -62,6 +63,12 @@ static std::shared_ptr<boost::asio::ssl::context> CreateSSLContext(
     const std::optional<std::string>& client_key) {
   // TLS 1.2 と 1.3 のみ対応
   SSL_CTX* handle = ::SSL_CTX_new(::TLS_method());
+  if (handle == nullptr) {
+    boost::system::error_code ec{static_cast<int>(::ERR_get_error()),
+                                 boost::asio::error::get_ssl_category()};
+    RTC_LOG(LS_ERROR) << "Failed to SSL_CTX_new: " << ec.message();
+    throw boost::system::system_error(ec);
+  }
   SSL_CTX_set_min_proto_version(handle, TLS1_2_VERSION);
   SSL_CTX_set_max_proto_version(handle, TLS1_3_VERSION);
   auto ctx = std::make_shared<boost::asio::ssl::context>(handle);

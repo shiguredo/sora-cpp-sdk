@@ -134,6 +134,9 @@
   - @melpon
 - [FIX] SoraVideoDecoderFactory / SoraVideoEncoderFactory の formats_ 並行アクセスによる abort を修正する
   - @melpon
+- [FIX] `SSL_CTX_new` の戻り値未チェックで null deref の可能性があるのを修正する
+  - `CreateSSLContext()` で `SSL_CTX_new()` が nullptr を返した場合にエラーログを出力し例外を送出するようにする
+  - @melpon
 
 ### misc
 
