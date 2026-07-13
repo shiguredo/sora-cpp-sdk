@@ -2,7 +2,7 @@
 
 - Priority: High
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-07-14
 - Model: DeepSeek V4 Pro
 - Branch: feature/fix-amf-decoder-resolution-change
 - Polished: 2026-07-10
@@ -64,3 +64,27 @@ null deref に至る経路は以下のとおり。
   - [FIX] AMF デコーダの解像度変更時に InitAMF の戻り値が無視されているのを修正する
     - @<担当者>
   ```
+
+## 解決方法
+
+`src/hwenc_amf/amf_video_decoder.cpp:194-198` の `ReleaseAMF()` 呼び出し後に `InitAMF()` の戻り値を `res` に代入し、`WEBRTC_RETURN_IF_FAILED` マクロでチェックするよう修正した。失敗時は `WEBRTC_VIDEO_CODEC_ERROR` を返し、`continue` に到達しないため null deref が発生しない。
+
+変更前:
+
+```cpp
+ReleaseAMF();
+InitAMF();
+continue;
+```
+
+変更後:
+
+```cpp
+ReleaseAMF();
+res = InitAMF();
+WEBRTC_RETURN_IF_FAILED(res,
+                        "Failed to re-init AMF decoder after resolution change");
+continue;
+```
+
+合わせて `CHANGES.md` の `## develop` 配下に `[FIX]` エントリを追記した。
