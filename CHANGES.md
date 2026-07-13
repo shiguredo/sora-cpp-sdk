@@ -25,6 +25,8 @@
   - `use_audio_device = false`（ダミー ADM）時に無駄な `RecordingIsAvailable()` / `PlayoutIsAvailable()` の WARNING ログが出力されないようにする
   - iOS でも Android と同様に `RecordingDeviceName()` / `PlayoutDeviceName()` を呼ばないようにする
   - @voluntas
+- [FIX] AMF デコーダの解像度変更時に `InitAMF` の戻り値が無視されているのを修正する
+  - @melpon
 - [ADD] sumomo の E2E テストで `--audio-recording-device` を複数の音声録音デバイスに対して個別に検証するテストを追加する
   - @melpon
 - [ADD] sumomo の E2E テストで録音デバイス未指定時・無効指定時の挙動を検証するテストを追加する
