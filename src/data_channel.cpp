@@ -37,6 +37,9 @@ DataChannel::DataChannel(boost::asio::io_context& ioc,
     : ioc_(&ioc), timer_(ioc), observer_(observer) {}
 DataChannel::~DataChannel() {
   RTC_LOG(LS_INFO) << "dtor DataChannel";
+  for (auto& [thunk, dc] : thunks_) {
+    dc->UnregisterObserver();
+  }
 }
 bool DataChannel::IsOpen(std::string label) const {
   auto it = labels_.find(label);
@@ -77,12 +80,16 @@ void DataChannel::Close(const webrtc::DataBuffer& disconnect_message,
 
   timer_.expires_after(
       std::chrono::milliseconds((int)(disconnect_wait_timeout * 1000)));
-  timer_.async_wait([on_close](boost::system::error_code ec) {
+  timer_.async_wait([on_close,
+                     wself = weak_from_this()](boost::system::error_code ec) {
     if (ec == boost::asio::error::operation_aborted) {
       return;
     }
     on_close(
         boost::system::errc::make_error_code(boost::system::errc::timed_out));
+    if (auto self = wself.lock()) {
+      self->on_close_ = nullptr;
+    }
   });
 
   on_close_ = on_close;
