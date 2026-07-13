@@ -2287,7 +2287,7 @@ def get_windows_osver():
 
 
 def get_macos_osver():
-    platform.mac_ver()[0]
+    return platform.mac_ver()[0]
 
 
 def get_build_platform() -> PlatformTarget:

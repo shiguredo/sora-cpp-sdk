@@ -162,6 +162,8 @@
   - @melpon
 - [FIX] VPL_CHECK_RESULT マクロが throw した例外が catch されずプロセスがクラッシュしうる問題を修正する
   - @melpon
+- [FIX] buildbase.py の get_macos_osver() が return を欠き None を返すのを修正する
+  - @melpon
 - [CHANGE] GitHub Actions の Slack 通知を `shiguredo/github-actions` に置き換える
   - `rtCamp/action-slack-notify@v2` を `shiguredo/github-actions/.github/actions/slack-notify@main` に置き換える
   - 通知ジョブの `runs-on` を `ubuntu-slim` に変更する
