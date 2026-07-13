@@ -2,7 +2,7 @@
 
 - Priority: High
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-07-13
 - Model: DeepSeek V4 Pro
 - Branch: feature/fix-vpl-check-result-throw-catch
 - Polished: 2026-07-10
@@ -78,4 +78,11 @@ VPL ハードウェアエンコーダ/デコーダ使用時にハードウェア
   ```
   - [FIX] VPL_CHECK_RESULT マクロが throw した例外が catch されずプロセスがクラッシュしうる問題を修正する
     - @<担当者>
+
+## 解決方法
+
+- `VPL_CHECK_RESULT` マクロに第 4 引数 `RET` を追加し、`throw ERR` を `return RET` に変更した
+- `src/hwenc_vpl/vpl_video_encoder.cpp` の 6 箇所のコールサイトに `WEBRTC_VIDEO_CODEC_ERROR` を第 4 引数として追加した
+- `src/hwenc_vpl/vpl_video_decoder.cpp` の `CreateDecoderInternal()` 内のコールサイトには `nullptr` を、`Decode()` 内の 2 箇所には `WEBRTC_VIDEO_CODEC_ERROR` を第 4 引数として追加した
+- 修正後 `grep -rn "throw\|catch" src/hwenc_vpl/` が 0 件であることを確認した
   ```
