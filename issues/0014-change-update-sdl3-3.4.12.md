@@ -2,10 +2,10 @@
 
 - Priority: Medium
 - Created: 2026-07-09
+- Completed: {YYYY-MM-DD}
 - Model: deepseek-v4-flash
-- Branch: feature/update-sdl3-3.4.12
-- Polished: 2026-07-13
-
+- Branch: feature/change-update-sdl3-3.4.12
+- Polished: 2026-07-10
 ## 目的
 
 SDL3 の最新安定版 3.4.12 が 2026-07-01 にリリースされている。
@@ -107,7 +107,7 @@ Medium。バグ修正や緊急対応ではなく、依存ライブラリの定�
 - macOS / Windows / Linux / Ubuntu ARMv8 の各プラットフォームでビルドが通ること
 - `sdl_sample` が正しく動作すること
 - `sumomo` の `--no-video --no-audio` モードなどで最低限の SDL ウィンドウ表示が動作すること
-- `CHANGES.md` に `[UPDATE] SDL3 を 3.4.12 にあげる` のエントリが追加されていること
+- `CHANGES.md` に `[UPDATE] SDL3 を 3.4.12 にあげる` のエントリが追加されていること。`## develop` 配下、`### misc` セクション内で凡例順（CHANGE → ADD → UPDATE → FIX）を尊重して追記する。担当者ハンドル `@<担当者>` は PR 作成者のものに書き換える:
 
 ## 解決方法
 

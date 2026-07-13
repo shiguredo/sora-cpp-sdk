@@ -2,17 +2,17 @@
 
 - Priority: Low
 - Created: 2026-06-11
-- Polished: 2026-06-11
+- Completed: {YYYY-MM-DD}
 - Model: Opus 4.7
 - Branch: feature/refactor-suppress-hyperv-nic-log-noise
-
+- Polished: 2026-07-10
 ## 目的
 
 Windows GitHub-hosted runner (`windows-2025`) 上での E2E テストで、libwebrtc の ICE 候補収集時に Hyper-V 仮想 NIC からの UDP send が `error 10051 (WSAENETUNREACH)` で大量に失敗するログが出力されている。実害はなく、別 NIC (`Microsoft:10.1.0.x`) 経由で TURN allocate と ICE 確立は成功しているが、ログが汚れて本物の問題との切り分けが困難になる。CI workflow の Windows E2E ジョブで該当 NIC を pytest 実行前に無効化することでログを抑制する。
 
 ## 優先度根拠
 
-実害はないため Low。0004 のフレーキー切り分けの際にノイズが多いと一次切り分け時間がかかるため副次的に改善したい程度。shiguredo-issues 規約「番号順対応」の例外として、本 issue は親 issue 0004 の着手順序 (`feature/refactor-e2e-schedule-flaky-failures-tracking` の表で 0005 マージ後に Priority に従って個別進行) に従い、0005 マージとは独立に着手して問題ない。
+実害はないため Low。フレーキー発生時の一次切り分けの際にノイズが多いと判別時間がかかるため副次的に改善したい程度。本 issue は他の issue の完了を待たず独立して着手可能。
 
 ## 現状
 
@@ -49,22 +49,23 @@ SDK 側で NIC フィルタ機能を新規追加するのは Priority Low の本
 
 ## 完了条件
 
-- `.github/workflows/ci.yml` の E2E ジョブ matrix `windows_x86_64` で、`uv run pytest -v -x` ステップ (現状 `.github/workflows/ci.yml:503`) より前に `vEthernet (Default Switch)` を無効化する PowerShell ステップが追加されている
+- `.github/workflows/ci.yml` の E2E ジョブ matrix `windows_x86_64` で、`uv run pytest -v -x` ステップ（現状 `.github/workflows/ci.yml:535`）より前に `vEthernet (Default Switch)` を無効化する PowerShell ステップが追加されている
 - 当該ステップは `if: ${{ matrix.platform.name == 'windows_x86_64' }}` で windows_x86_64 ジョブのみに適用される
-- 当該ステップが PR の同 windows_x86_64 ジョブで成功し、無効化対象 NIC が 1 つ以上 disable できたログ (例: `Disabling NIC: vEthernet (Default Switch) ...`) を残している
-- 同 PR の windows_x86_64 ジョブの後段 pytest ステップで `Hyper-V:172.17.80.x/32` を含む `error 10051` 行がゼロになっていることを実機ログ (`gh run view --job=<windows_x86_64_job_id> --log-failed | grep -E 'Hyper-V:[0-9.]+/[0-9]+.*error 10051' | wc -l` の出力が 0) で確認する。Hyper-V Default Switch 以外の経路 (例: `vEthernet (nat)` 等) で `10051` が出る場合は本 issue のスコープ外とし、別途必要なら新規 issue で扱う
-- `CHANGES.md` の `## develop` 配下、既存の `### misc` セクション (`CHANGES.md:88` 付近) に以下の形式で `[FIX]` エントリを追記する。挿入位置は既存 `[CHANGE]` エントリの直後、既存 `[UPDATE]` エントリの直前 (0003 / 0005 / 0006 と同じ位置取り)。`### misc` 内既存エントリの並べ替えは本 issue のスコープ外。担当者ハンドルは PR 作成者のものに書き換える:
+- 当該ステップが PR の同 windows_x86_64 ジョブで成功し、無効化対象 NIC が 1 つ以上 disable できたログ（例: `Disabling NIC: vEthernet (Default Switch) ...`）を残している
+- 同 PR の windows_x86_64 ジョブの後段 pytest ステップで `Hyper-V:172.17.80.x/32` を含む `error 10051` 行がゼロになっていることを実機ログで確認する。Hyper-V Default Switch 以外の経路で `10051` が出る場合は本 issue のスコープ外とし、別途必要なら新規 issue で扱う
+- `CHANGES.md` の `## develop` 配下、`### misc` セクションに以下の形式で `[FIX]` エントリを追記する。`### misc` セクション内では凡例順（CHANGE → ADD → UPDATE → FIX）を尊重し、先頭の `[FIX]` エントリの直後に挿入する。`### misc` 内既存エントリの並べ替えは本 issue のスコープ外。担当者ハンドル `@<担当者>` は PR 作成者のものに書き換える:
 
   ```
   - [FIX] Windows E2E の Hyper-V NIC UDP send エラーログノイズを抑制する
     - GitHub-hosted Windows runner の Hyper-V 仮想 NIC が原因で libwebrtc が WSAENETUNREACH (10051) を大量に吐いていたのを修正する
     - .github/workflows/ci.yml の E2E windows_x86_64 ジョブのテスト実行前に Hyper-V 仮想 NIC を無効化するステップを追加する
-    - @<PR 作成者のハンドル>
+    - @<担当者>
   ```
+
 
 ## 解決方法
 
-`.github/workflows/ci.yml` の E2E ジョブ matrix `windows_x86_64` の `uv run pytest -v -x` ステップ (現状 503 行付近) の直前に、以下の PowerShell ステップを追加する。対象 NIC を `vEthernet (Default Switch)` の 1 つに限定し、無効化前後の `Get-NetAdapter` 出力をログに残す。
+`.github/workflows/ci.yml` の E2E ジョブ matrix `windows_x86_64` の `uv run pytest -v -x` ステップ（現状 535 行付近）の直前に、以下の PowerShell ステップを追加する。対象 NIC を `vEthernet (Default Switch)` の 1 つに限定し、無効化前後の `Get-NetAdapter` 出力をログに残す。
 
 ```yaml
       - name: Disable Hyper-V Default Switch NIC (windows_x86_64 only)
