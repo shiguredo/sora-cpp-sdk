@@ -138,6 +138,12 @@
   - `CreateSSLContext()` で `SSL_CTX_new()` が nullptr を返した場合にエラーログを出力し例外を送出するようにする
   - @melpon
 
+- [FIX] include/sora/dyn/dyn.h の DYN_REGISTER マクロが exit(1) でプロセスを強制終了するのを修正する
+  - exit(1) を throw std::runtime_error に置き換える
+  - エラー情報を例外メッセージに含める
+  - std::cerr 出力を削除し <iostream> の依存を除去する
+  - @melpon
+
 ### misc
 
 - [FIX] sumomo で `audio_source` の null チェックを追加する
