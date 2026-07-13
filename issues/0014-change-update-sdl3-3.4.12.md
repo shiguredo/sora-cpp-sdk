@@ -3,8 +3,8 @@
 - Priority: Medium
 - Created: 2026-07-09
 - Model: deepseek-v4-flash
-- Branch: feature/change-update-sdl3-3.4.12
-- Polished: {YYYY-MM-DD}
+- Branch: feature/update-sdl3-3.4.12
+- Polished: 2026-07-13
 
 ## 目的
 
@@ -73,10 +73,10 @@ Medium。バグ修正や緊急対応ではなく、依存ライブラリの定�
 - `SDL_RenderPresent`, `SDL_Delay` (sdl_sample のみ)
 
 #### 結論
-`examples/DEPS` のバージョン番号変更のみで対応可能。サンプルコードの修正は不要。
+`examples/DEPS` のバージョン番号変更と `buildbase.py` への `-DSDL_X11_XTEST=OFF` 追加で対応可能。サンプルコードの修正は不要。
 
 #### ビルド影響
-- SDL3 自体のビルド: 全 CMake オプション互換。新たに追加された `SDL_LEAN_AND_MEAN` 等はデフォルト OFF のため影響しない
+- SDL3 自体のビルド: 全 CMake オプション互換。`SDL_X11_XTEST` を除き、新たに追加されたオプションはデフォルト OFF のため影響しない
 - サンプルコードのコンパイル: 全インクルードヘッダが存続、全 API シグネチャ変更なしのため修正不要
 - リンク: リンク対象ライブラリに変更なし
 
@@ -92,7 +92,7 @@ Medium。バグ修正や緊急対応ではなく、依存ライブラリの定�
 #### 動作確認手順
 1. macOS で `sdl_sample` を起動し、ウィンドウ表示・Fキーフルスクリーン・Qキー終了を確認
 2. macOS で `sdl_sample` の映像レンダリングに色味やアスペクト比の異常がないか目視確認
-3. Windows / Linux でも同様の動作確認
+3. Windows / Linux は CI でカバーされているため手動確認は必須ではない
 4. `sumomo --no-video --no-audio` で最低限のウィンドウ表示確認
 
 ### スコープ外
@@ -103,6 +103,7 @@ Medium。バグ修正や緊急対応ではなく、依存ライブラリの定�
 ## 完了条件
 
 - `examples/DEPS` の `SDL3_VERSION` が `3.4.12` になっていること
+- `buildbase.py` の Linux 用 CMake オプションに `-DSDL_X11_XTEST=OFF` が追加されていること
 - macOS / Windows / Linux / Ubuntu ARMv8 の各プラットフォームでビルドが通ること
 - `sdl_sample` が正しく動作すること
 - `sumomo` の `--no-video --no-audio` モードなどで最低限の SDL ウィンドウ表示が動作すること
@@ -112,6 +113,6 @@ Medium。バグ修正や緊急対応ではなく、依存ライブラリの定�
 
 1. `examples/DEPS` の `SDL3_VERSION` を `3.2.28` → `3.4.12` に変更する
 2. macOS でローカルビルドし、sdl_sample が動作することを確認する
-3. `buildbase.py` の CMake オプションに新規オプションや廃止オプションがないか確認する
+3. `buildbase.py` の `install_sdl3` 関数の Linux 用 CMake オプションに `-DSDL_X11_XTEST=OFF` を追加する
 4. CI で全プラットフォームのビルドが通ることを確認する
 5. `CHANGES.md` にエントリを追加する
