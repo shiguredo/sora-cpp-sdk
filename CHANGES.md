@@ -53,9 +53,6 @@
   - @torikizi @zztkm
 - [UPDATE] cmake のバージョンを 4.3.2 にあげる
   - @torikizi
-- [UPDATE] SDL3 を 3.4.12 にあげる
-  - 3.4.0 で SDL_X11_XTEST オプションが追加 (デフォルト ON) されたため `buildbase.py` に `-DSDL_X11_XTEST=OFF` を追加する
-  - @torikizi
 - [UPDATE] Boost のバージョンを 1.91.0 に上げる
   - CMakeLists.txt の macOS ビルドと iOS ビルドの `target_compile_definitions` に PUBLIC で `BOOST_ASIO_DISABLE_STD_ATOMIC_WAIT` を追加する
     - boost 1.91.0 で asio の `kqueue_reactor` 内部 mutex が `atomic_slim_mutex` (`std::atomic::wait` / `notify_one` を利用) に切り替わったが、 webrtc-build 同梱の libc++ + macOS の組み合わせで kevent から完了通知が届かず async_connect がハングする現象を確認した
@@ -170,6 +167,9 @@
   - m148 で libwebrtc が C++ 標準の `std::span` を使用するようになり、`std::span` が対応する C++ のバージョンまで上げる必要があるため
   - 参考 : C++ 日本語リファレンスの `std::span` のページ
     - リンク : https://cpprefjp.github.io/reference/span/span.html
+  - @torikizi
+- [UPDATE] SDL3 を 3.4.12 にあげる
+  - 3.4.0 で SDL_X11_XTEST オプションが追加 (デフォルト ON) されたため `buildbase.py` に `-DSDL_X11_XTEST=OFF` を追加する
   - @torikizi
 
 ## 2026.1.2
