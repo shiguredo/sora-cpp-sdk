@@ -1,4 +1,4 @@
-# SDL3 を 3.4.12 にあげる
+# Examples の SDL3 を 3.4.12 にあげる
 
 - Priority: Medium
 - Created: 2026-07-09
@@ -8,7 +8,7 @@
 - Polished: 2026-07-13
 ## 目的
 
-SDL3 の最新安定版 3.4.12 が 2026-07-01 にリリースされた。
+Examples で利用している SDL3 の最新安定版 3.4.12 が 2026-07-01 にリリースされた。
 現在は 3.2.28 を使用しているため、最新版に追従する。
 
 3.2.28 から 3.4.12 の間には 3.4.0 メジャーアップデートを含む複数リリースがある。
@@ -78,12 +78,13 @@ Medium。バグ修正や緊急対応ではなく、依存ライブラリの定�
 - macOS / Windows / Linux / Ubuntu ARMv8 の各プラットフォームでビルドが通ること
 - `sdl_sample` が正しく動作すること
 - `sumomo` の `--use-sdl` モードでビデオ表示が正しく動作すること
-- `CHANGES.md` の `## develop` 配下の既存 SDL3 エントリ（存在する場合）を以下の内容で差し替えること（凡例順 CHANGE → ADD → UPDATE → FIX を尊重）。担当者ハンドル `@<担当者>` は PR 作成者のものに書き換える:
+- `CHANGES.md` の `## develop` → `### misc` に以下のエントリが追加されていること（凡例順 CHANGE → ADD → UPDATE → FIX を尊重）。担当者ハンドル `@<担当者>` は PR 作成者のものに書き換える:
 
 ```
-- [UPDATE] SDL3 を 3.4.12 にあげる
-  - examples/DEPS の SDL3_VERSION を 3.4.12 に変更する
-  - SDL 3.4.0 で追加された SDL_X11_XTEST オプション（デフォルト ON）が Linux ビルドでエラーになるため、buildbase.py に -DSDL_X11_XTEST=OFF を追加する
+- [UPDATE] Examples の SDL3 を 3.4.12 にあげる
+  - SDL3 3.4.0 で SDL_X11_XTEST オプションが追加 (デフォルト ON) されたため `buildbase.py` に `-DSDL_X11_XTEST=OFF` を追加する
+  - 参考 : SDL_X11_XTEST が追加された SDL3 のコミット
+    - リンク : https://github.com/libsdl-org/SDL/commit/794ff283e26bedd63e0737b51b1cd2def3676ce3
   - @<担当者>
 ```
 
@@ -93,4 +94,4 @@ Medium。バグ修正や緊急対応ではなく、依存ライブラリの定�
 2. macOS でローカルビルドし、`sdl_sample` と `sumomo --use-sdl` が動作することを確認する
 3. `buildbase.py` の `install_sdl3` 関数の Linux 用 CMake オプションに `-DSDL_X11_XTEST=OFF` を追加する（L1475 付近、`-DSDL_X11_XSYNC=OFF` の次）
 4. CI で全プラットフォームのビルドが通ることを確認する
-5. `CHANGES.md` の `## develop` 配下の既存 SDL3 エントリを差し替える。`[UPDATE] cmake のバージョンを 4.3.2 にあげる` の次に配置する
+5. `CHANGES.md` の `### misc` セクションにエントリを追加する（`[UPDATE] test の iOS ビルドで C++ 20 を利用するようにアップデートする` の次）
