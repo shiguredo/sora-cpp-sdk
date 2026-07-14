@@ -2,7 +2,7 @@
 
 - Priority: High
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-07-14
 - Model: DeepSeek V4 Pro
 - Branch: feature/fix-send-on-disconnect-double-notify
 - Polished: 2026-07-10
@@ -92,3 +92,7 @@ void SoraSignaling::SendOnDisconnect(SoraSignalingErrorCode ec,
   - [FIX] SendOnDisconnect にガードがなく OnDisconnect が二重通知される問題を修正する
     - @<担当者>
   ```
+
+## 解決方法
+
+`SendOnDisconnect` の post ラムダ内、`Clear()` 呼び出しの前に `state_ == State::Closed` のガードを追加した。これにより、先行する post ラムダで既に `Clear()` が呼ばれ `state_` が `Closed` になっている場合、後続の post ラムダは `OnDisconnect` を通知せずに return する。`CHANGES.md` にも `[FIX]` エントリを追記した。
