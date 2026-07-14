@@ -162,6 +162,9 @@
 - [FIX] DoInternalDisconnect DC+WS パスで DC close 成功後に WS close が来ないと切断がハングするのを修正する
   - @melpon
 
+- [FIX] SendOnDisconnect にガードがなく OnDisconnect が二重通知される問題を修正する
+  - @melpon
+
 ### misc
 
 - [FIX] sumomo で `audio_source` の null チェックを追加する

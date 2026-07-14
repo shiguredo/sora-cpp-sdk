@@ -1447,6 +1447,11 @@ void SoraSignaling::SendOnDisconnect(SoraSignalingErrorCode ec,
   }
   boost::asio::post(*config_.io_context, [self = shared_from_this(), ec,
                                           message = std::move(message)]() {
+    // 先行する SendOnDisconnect の post ラムダで既に Clear() が呼ばれ
+    // state_ == Closed になっている場合、二重通知になるため return する
+    if (self->state_ == State::Closed) {
+      return;
+    }
     self->Clear();
     auto ob = self->config_.observer.lock();
     if (ob != nullptr) {
