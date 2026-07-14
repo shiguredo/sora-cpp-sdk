@@ -2,7 +2,7 @@
 
 - Priority: High
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-07-14
 - Model: DeepSeek V4 Pro
 - Branch: feature/fix-disconnect-redirecting-state
 - Polished: 2026-07-10
@@ -74,6 +74,12 @@ if (self->state_ == State::Redirecting) {
 - 検証方法: リダイレクト中に `Disconnect()` を呼ぶ手動確認、または `e2e-test/` へリダイレクト中切断のケースを追加して確認する（状態遷移だけを対象とする単体テストの仕組みは無い）
 - `CHANGES.md` の `## develop` 配下（`### misc` より前の `src/` コア修正の `[FIX]` 群）に `[FIX]` エントリを追記する。`### misc` は Examples / CI / tooling 用のため使わない:
   ```
-  - [FIX] Disconnect が Redirecting 状態を処理せず DoInternalDisconnect の assert でクラッシュする問題を修正する
+- [FIX] Disconnect が Redirecting 状態を処理せず DoInternalDisconnect の assert でクラッシュする問題を修正する
     - @<担当者>
-  ```
+```
+
+## 解決方法
+
+`SoraSignaling::Disconnect()` に `State::Redirecting` の分岐を追加した。
+`Connecting` 分岐と同様に、`SendOnDisconnect()` を呼び出して `DoInternalDisconnect()` に到達しないようにした。
+これにより `Redirecting` 状態で切断しても assert クラッシュや状態不整合が発生しなくなる。

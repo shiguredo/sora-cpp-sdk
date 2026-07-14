@@ -184,6 +184,11 @@ void SoraSignaling::Disconnect() {
                              "Close was called in connecting");
       return;
     }
+    if (self->state_ == State::Redirecting) {
+      self->SendOnDisconnect(SoraSignalingErrorCode::CLOSE_SUCCEEDED,
+                             "Close was called in redirecting");
+      return;
+    }
     if (self->state_ == State::Closing) {
       return;
     }
@@ -667,18 +672,32 @@ void SoraSignaling::DoInternalDisconnect(
   };
 
   if (using_datachannel_ && ws_connected_) {
-    // DC の切断タイムアウトがあるので、closing_timeout_timer_ は使わない
+    // DC の切断には disconnect_wait_timeout を、
+    // DC 成功後の WS close には closing_timeout_timer_ をそれぞれ使う
     std::shared_ptr<bool> ws_close_called = std::make_shared<bool>(false);
     std::shared_ptr<bool> dc_close_called = std::make_shared<bool>(false);
     on_ws_close_ = [self = shared_from_this(), on_close, ws_close_called,
                     dc_close_called](boost::system::error_code ec) {
-      // 既に DC 側で処理済み
-      if (*dc_close_called) {
+      // タイマーをキャンセルする
+      self->closing_timeout_timer_.cancel();
+
+      // DC 側で処理済み、または既にこのコールバックが処理済みなら何もしない
+      if (*dc_close_called || *ws_close_called) {
         return;
       }
       *ws_close_called = true;
-      auto reason = self->ws_->reason();
+
+      // タイムアウト時は reason を自作する
+      boost::beast::websocket::close_reason reason;
+      if (ec == boost::asio::error::operation_aborted) {
+        reason = boost::beast::websocket::close_reason(
+            (boost::beast::websocket::close_code)4999,
+            "DISCONNECT-WAIT-TIMEOUT-ERROR");
+      } else {
+        reason = self->ws_->reason();
+      }
       self->SendOnWsClose(reason);
+
       if (ec != boost::beast::websocket::error::closed) {
         std::string message = "Failed to close WebSocket: ec=" + ec.message() +
                               " wscode=" + std::to_string(reason.code) +
@@ -699,8 +718,17 @@ void SoraSignaling::DoInternalDisconnect(
         disconnect,
         [self = shared_from_this(), on_close, ws_close_called,
          dc_close_called](boost::system::error_code ec) {
-          // 正常な切断なら何もしない
+          // DC close 成功後も WS close を待つ必要があるため closing_timeout_timer_ で保護する
           if (!ec) {
+            self->closing_timeout_timer_.expires_after(
+                std::chrono::seconds(self->config_.websocket_close_timeout));
+            self->closing_timeout_timer_.async_wait(
+                [self](boost::system::error_code ec) {
+                  if (ec) {
+                    return;
+                  }
+                  self->ws_->Cancel();
+                });
             return;
           }
           // 既に WS 側で処理済み
@@ -1419,6 +1447,11 @@ void SoraSignaling::SendOnDisconnect(SoraSignalingErrorCode ec,
   }
   boost::asio::post(*config_.io_context, [self = shared_from_this(), ec,
                                           message = std::move(message)]() {
+    // 先行する SendOnDisconnect の post ラムダで既に Clear() が呼ばれ
+    // state_ == Closed になっている場合、二重通知になるため return する
+    if (self->state_ == State::Closed) {
+      return;
+    }
     self->Clear();
     auto ob = self->config_.observer.lock();
     if (ob != nullptr) {

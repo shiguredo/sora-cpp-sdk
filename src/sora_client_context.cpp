@@ -76,7 +76,13 @@ SoraClientContext::~SoraClientContext() {
 
 std::shared_ptr<SoraClientContext> SoraClientContext::Create(
     const SoraClientContextConfig& config) {
-  webrtc::InitializeSSL();
+  // BoringSSL の OPENSSL_init_ssl は常に 1 を返す実装（ssl_lib.cc: return 1;）であり、
+  // 現状 false を返すことはないが、将来的な BoringSSL の変更や OpenSSL 利用時に備えて
+  // 戻り値をチェックする
+  if (!webrtc::InitializeSSL()) {
+    RTC_LOG(LS_ERROR) << "Failed to initialize SSL";
+    return nullptr;
+  }
 
   std::shared_ptr<SoraClientContext> c = std::make_shared<SoraClientContext>();
 

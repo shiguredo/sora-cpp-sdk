@@ -2,7 +2,7 @@
 
 - Priority: High
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-07-14
 - Model: DeepSeek V4 Pro
 - Branch: feature/fix-vpl-decoder-initvpl-null-check
 - Polished: 2026-07-10
@@ -70,4 +70,10 @@ bool VplVideoDecoderImpl::InitVpl() {
   ```
   - [FIX] VPL デコーダ `InitVpl` で `CreateDecoder` の nullptr 戻り値未チェックを修正する
     - @<担当者>
+
+## 解決方法
+
+`VplVideoDecoderImpl::InitVpl()` 内の `CreateDecoder()` 呼び出し直後に nullptr チェックを追加した。
+エンコーダ側の `InitVpl()` と同様に、nullptr の場合は `RTC_LOG(LS_ERROR)` でエラーログを出力し `false` を返す。
+`CHANGES.md` に `[FIX]` エントリを追加した。
   ```

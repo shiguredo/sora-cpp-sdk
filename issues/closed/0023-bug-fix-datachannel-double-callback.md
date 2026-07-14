@@ -2,7 +2,7 @@
 
 - Priority: High
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-07-14
 - Model: DeepSeek V4 Pro
 - Branch: feature/fix-datachannel-double-callback
 - Polished: 2026-07-10
@@ -81,7 +81,7 @@ struct Thunk : webrtc::DataChannelObserver,
 
 ### on_close 二重呼び出し修正
 
-タイマーラムダに `shared_from_this()` をキャプチャさせ、`on_close` 呼び出し後に `on_close_ = nullptr` を設定する。これによりタイマーが先に発火しても `OnStateChange` 側の `on_close_` が `nullptr` になり二重回入を防止できる。`OnStateChange` には既にガードが存在するため追加の修正は不要。
+タイマーラムダに `weak_from_this()` をキャプチャさせ、`on_close` 呼び出し後に `lock()` 成功時のみ `on_close_ = nullptr` を設定する。正常系では `on_close` コールバックが `shared_ptr<SoraSignaling>` → `dc_` → `shared_ptr<DataChannel>` の連鎖で生存を保証しているため `lock()` は成功する。異常系で DataChannel が既に破棄済みの場合は `lock()` が `nullptr` を返し安全にスキップされる。`shared_from_this()` と異なり不要な延命を発生させない。`OnStateChange` には既にガードが存在するため追加の修正は不要。
 
 ### デストラクタ UAF 修正
 
@@ -104,7 +104,7 @@ struct Thunk : webrtc::DataChannelObserver,
 | `signaling` ラベル不在 | `on_close(error)` が同期的に呼ばれ早期 return。タイマーも `on_close_` も設定されない | 変更なし |
 | `Close()` 複数回呼び出し | タイマーが上書きされ、`on_close_` も上書きされる | 変更なし。1 回目の `on_close` が破棄されるのは既存動作 |
 | `Close()` と `SetOnClose()` の競合 | `on_close_` が後勝ちで上書きされる | 変更なし。両方が同時に使われるシナリオは現実的に存在しない |
-| `DataChannel` がタイマー発火前に外部から破棄される | タイマー完了ハンドラが `operation_aborted` で return するため安全 | `shared_from_this()` キャプチャにより `DataChannel` の寿命がタイマー完了まで延長される。切断フロー中は `DataChannel` は `shared_ptr` で管理されており、この延長は既存の切断シーケンスに影響しない |
+| `DataChannel` がタイマー発火前に外部から破棄される | タイマー完了ハンドラが `operation_aborted` で return するため安全 | タイマーが `operation_aborted` で早期 return するか、正常発火時も `weak_from_this().lock()` が `nullptr` を返し `on_close_` へのアクセスをスキップする。`shared_from_this()` と異なり不要な延命を発生させない |
 | Thunk が 0 個の状態で `OnStateChange` | `thunks_.find` で早期 return | 変更なし |
 
 ## 完了条件
@@ -120,22 +120,24 @@ struct Thunk : webrtc::DataChannelObserver,
 
 ## 解決方法
 
-### 変更 1: タイマーラムダに `shared_from_this()` をキャプチャさせ `on_close_` をクリアする
+### 変更 1: タイマーラムダに `weak_from_this()` をキャプチャさせ `on_close_` をクリアする
 
 `src/data_channel.cpp:80-86` のタイマーラムダを以下のように修正する:
 
 ```cpp
-timer_.async_wait([on_close, self = shared_from_this()](boost::system::error_code ec) {
+timer_.async_wait([on_close, wself = weak_from_this()](boost::system::error_code ec) {
   if (ec == boost::asio::error::operation_aborted) {
     return;
   }
   on_close(
       boost::system::errc::make_error_code(boost::system::errc::timed_out));
-  self->on_close_ = nullptr;
+  if (auto self = wself.lock()) {
+    self->on_close_ = nullptr;
+  }
 });
 ```
 
-`shared_from_this()` をキャプチャすることでタイマー完了まで `DataChannel` の寿命を保証し、`on_close_` への安全なアクセスを確保する。
+`weak_from_this()` をキャプチャすることで、正常系では `on_close` コールバック経由の生存連鎖により `lock()` が成功し `on_close_` を安全にクリアできる。異常系では `lock()` が `nullptr` を返すため UAF を回避しつつ、`shared_from_this()` のような不要な延命も発生させない。
 
 ### 変更 2: デストラクタで Thunk observer を解除する
 

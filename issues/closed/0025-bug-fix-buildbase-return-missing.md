@@ -2,7 +2,7 @@
 
 - Priority: Low
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-07-14
 - Model: DeepSeek V4 Pro
 - Branch: feature/fix-buildbase-return-missing
 - Polished: 2026-07-10
@@ -44,3 +44,7 @@ def get_macos_osver():
   - [FIX] buildbase.py の get_macos_osver() が return を欠き None を返すのを修正する
     - @<担当者>
   ```
+
+## 解決方法
+
+`buildbase.py:2290` の `platform.mac_ver()[0]` を `return platform.mac_ver()[0]` に修正した。また `CHANGES.md` の `## develop` → `### misc` に `[FIX]` エントリを追加した。

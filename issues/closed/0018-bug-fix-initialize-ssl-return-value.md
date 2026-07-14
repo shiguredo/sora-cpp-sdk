@@ -2,7 +2,7 @@
 
 - Priority: High
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-07-13
 - Model: DeepSeek V4 Pro
 - Branch: feature/fix-initialize-ssl-return-value
 - Polished: 2026-07-10
@@ -48,4 +48,13 @@ webrtc::InitializeSSL();
   - [FIX] webrtc::InitializeSSL() の戻り値が無視されているのを修正する
     - `SoraClientContext::Create()` で `InitializeSSL()` が `false` を返した場合にエラーログを出力し `nullptr` を返すようにする
     - @<担当者>
+
+## 解決方法
+
+`SoraClientContext::Create()` 先頭の `webrtc::InitializeSSL()` 呼び出しに戻り値チェックを追加した。
+`false` が返った場合は `RTC_LOG(LS_ERROR) << "Failed to initialize SSL"` を出力し `nullptr` を返す。
+
+BoringSSL の `OPENSSL_init_ssl` は常に `return 1;` であり現状 `false` を返すことはないが、
+将来的な BoringSSL の変更や OpenSSL 利用時に備えて戻り値をチェックする。
+
   ```

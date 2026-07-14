@@ -2,7 +2,7 @@
 
 - Priority: High
 - Created: 2026-07-10
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-07-14
 - Model: DeepSeek V4 Pro
 - Branch: feature/fix-disconnect-dc-ws-timeout
 - Polished: 2026-07-10
@@ -107,7 +107,7 @@ DC close 成功時に `closing_timeout_timer_` による WS close のタイム�
 
 ## 解決方法
 
-`src/sora_signaling.cpp` の `DoInternalDisconnect` 内、`using_datachannel_ && ws_connected_` パスを以下のように修正する。
+`src/sora_signaling.cpp` の `DoInternalDisconnect` 内、`using_datachannel_ && ws_connected_` パスを以下のように修正し、コミット `aabba85` で適用済み。
 
 ### 変更 1: DC close 成功時にタイマーを開始する
 

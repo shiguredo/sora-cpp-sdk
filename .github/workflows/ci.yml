@@ -40,7 +40,7 @@ jobs:
         id: env
       - name: Get Versions
         run: |
-          Get-Content "VERSION" | Foreach-Object {
+          Get-Content "DEPS" | Foreach-Object {
             if (!$_) { continue }
             $var = $_.Split('=')
             New-Variable -Name $var[0] -Value $var[1] -Force
@@ -56,7 +56,7 @@ jobs:
         with:
           path: _install\windows_x86_64\release\cuda
           key: windows-cuda-${{ steps.versions.outputs.cuda_version }}.v1
-      - run: echo "${CUDA_VERSION}" > _install\windows_x86_64\release\cuda.version
+      - run: echo "${{ steps.versions.outputs.cuda_version }}" > _install\windows_x86_64\release\cuda.version
         if: steps.cache-cuda.outputs.cache-hit == 'true'
       - run: python3 run.py build --test --run-e2e-test --package ${{ matrix.name }}
         env:
