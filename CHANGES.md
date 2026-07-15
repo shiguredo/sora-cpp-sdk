@@ -2,35 +2,21 @@
 
 - CHANGE
   - 下位互換のない変更
-- UPDATE
-  - 下位互換がある変更
 - ADD
   - 下位互換がある追加
+- UPDATE
+  - 下位互換がある変更
 - FIX
   - バグ修正
 
 ## develop
 
-- [FIX] sumomo と sdl_sample で AddTrack の戻り値チェックを追加する
-  - @melpon
 - [CHANGE] `SoraClientContext` に `ConnectionContext::MediaEngineReference` を保持し、
     `PeerConnection` 作成時の遅延 Init により指定オーディオデバイスがデフォルトに戻っていた問題を修正する
   - `SoraClientContext` の ABI を変更する
   - 非 Android / iOS では `SoraClientContext::Create()` 内で同期的に `WebRtcVoiceEngine::Init()` を実行させ、指定デバイス設定後に `InitMicrophone()` / `InitSpeaker()` を行う
   - Android / iOS では `media_engine_ref_` を作成せず、既存挙動に影響しない
   - @voluntas
-- [FIX] VPL デコーダ `InitVpl` で `CreateDecoder` の nullptr 戻り値未チェックを修正する
-  - @voluntas
-- [FIX] Linux で `--audio-recording-device` / `--audio-playout-device` を指定しても正しく音声デバイスが認識されない問題を修正する
-  - ADM の初期化 (`adm->Init()`) が行われていないために Linux の PulseAudio/ALSA 実装でデバイス列挙に失敗していた
-  - 空文字列のデバイス名を指定した場合や `configure_dependencies` 後に ADM が `nullptr` になった場合は `Create()` を失敗させるようにする
-  - `use_audio_device = false`（ダミー ADM）時に無駄な `RecordingIsAvailable()` / `PlayoutIsAvailable()` の WARNING ログが出力されないようにする
-  - iOS でも Android と同様に `RecordingDeviceName()` / `PlayoutDeviceName()` を呼ばないようにする
-  - @voluntas
-- [FIX] AMF デコーダの解像度変更時に `InitAMF` の戻り値が無視されているのを修正する
-  - @melpon
-- [FIX] CI が VERSION ファイルから CUDA_VERSION を読み取ろうとするバグを修正する
-  - @melpon
 - [ADD] sumomo の E2E テストで `--audio-recording-device` を複数の音声録音デバイスに対して個別に検証するテストを追加する
   - @melpon
 - [ADD] sumomo の E2E テストで録音デバイス未指定時・無効指定時の挙動を検証するテストを追加する
@@ -40,6 +26,9 @@
   - @voluntas
 - [ADD] sumomo の E2E テストで `--audio-playout-device` を複数の音声再生デバイスに対して個別に検証するテストを追加する
   - @voluntas
+- [ADD] TURN-TLS のクライアント証明書設定に対応する
+  - `SoraSignalingConfig` の `client_cert` / `client_key` を TURN-TLS にも適用する
+  - @zztkm
 - [UPDATE] libwebrtc のバージョンを m150.7871.3.0 に上げる
   - `webrtc::RtcEventLogFactory` のコンストラクタ不一致を修正する
     - libwebrtc で `RtcEventLogFactory` の `TaskQueueFactory` が削除されたため、変更に追従する
@@ -115,9 +104,20 @@
     ```
     - リンク : https://www.boost.org/doc/libs/1_91_0/doc/html/boost_asio/history.html
   - @torikizi
-- [ADD] TURN-TLS のクライアント証明書設定に対応する
-  - `SoraSignalingConfig` の `client_cert` / `client_key` を TURN-TLS にも適用する
-  - @zztkm
+- [FIX] sumomo と sdl_sample で AddTrack の戻り値チェックを追加する
+  - @melpon
+- [FIX] VPL デコーダ `InitVpl` で `CreateDecoder` の nullptr 戻り値未チェックを修正する
+  - @voluntas
+- [FIX] Linux で `--audio-recording-device` / `--audio-playout-device` を指定しても正しく音声デバイスが認識されない問題を修正する
+  - ADM の初期化 (`adm->Init()`) が行われていないために Linux の PulseAudio/ALSA 実装でデバイス列挙に失敗していた
+  - 空文字列のデバイス名を指定した場合や `configure_dependencies` 後に ADM が `nullptr` になった場合は `Create()` を失敗させるようにする
+  - `use_audio_device = false`（ダミー ADM）時に無駄な `RecordingIsAvailable()` / `PlayoutIsAvailable()` の WARNING ログが出力されないようにする
+  - iOS でも Android と同様に `RecordingDeviceName()` / `PlayoutDeviceName()` を呼ばないようにする
+  - @voluntas
+- [FIX] AMF デコーダの解像度変更時に `InitAMF` の戻り値が無視されているのを修正する
+  - @melpon
+- [FIX] CI が VERSION ファイルから CUDA_VERSION を読み取ろうとするバグを修正する
+  - @melpon
 - [FIX] カスタムエンジンが複数ある場合、`GetVideoCodecCapability()` で重複したエンジンが返されるのを修正
   - @melpon
 - [FIX] `#if USE_VPL_ENCODER` と `#if defined(USE_VPL_ENCODER)` の不一致を修正する
@@ -145,36 +145,23 @@
 - [FIX] `SSL_CTX_new` の戻り値未チェックで null deref の可能性があるのを修正する
   - `CreateSSLContext()` で `SSL_CTX_new()` が nullptr を返した場合にエラーログを出力し例外を送出するようにする
   - @melpon
-
 - [FIX] include/sora/dyn/dyn.h の DYN_REGISTER マクロが exit(1) でプロセスを強制終了するのを修正する
   - exit(1) を throw std::runtime_error に置き換える
   - エラー情報を例外メッセージに含める
   - std::cerr 出力を削除し <iostream> の依存を除去する
   - @melpon
-
 - [FIX] webrtc::InitializeSSL() の戻り値が無視されているのを修正する
   - `SoraClientContext::Create()` で `InitializeSSL()` が `false` を返した場合にエラーログを出力し `nullptr` を返すようにする
   - @melpon
-
 - [FIX] Disconnect が Redirecting 状態を処理せず DoInternalDisconnect の assert でクラッシュする問題を修正する
   - @melpon
-
 - [FIX] DoInternalDisconnect DC+WS パスで DC close 成功後に WS close が来ないと切断がハングするのを修正する
   - @melpon
-
 - [FIX] SendOnDisconnect にガードがなく OnDisconnect が二重通知される問題を修正する
   - @melpon
 
 ### misc
 
-- [FIX] sumomo で `audio_source` の null チェックを追加する
-  - @melpon
-- [FIX] messaging_recvonly_sample で `ec` 付け忘れを修正する
-  - @melpon
-- [FIX] VPL_CHECK_RESULT マクロが throw した例外が catch されずプロセスがクラッシュしうる問題を修正する
-  - @melpon
-- [FIX] buildbase.py の get_macos_osver() が return を欠き None を返すのを修正する
-  - @melpon
 - [CHANGE] GitHub Actions の Slack 通知を `shiguredo/github-actions` に置き換える
   - `rtCamp/action-slack-notify@v2` を `shiguredo/github-actions/.github/actions/slack-notify@main` に置き換える
   - 通知ジョブの `runs-on` を `ubuntu-slim` に変更する
@@ -208,6 +195,14 @@
   - 参考 : SDL_X11_XTEST が追加された SDL3 のコミット
     - リンク : https://github.com/libsdl-org/SDL/commit/794ff283e26bedd63e0737b51b1cd2def3676ce3
   - @torikizi
+- [FIX] sumomo で `audio_source` の null チェックを追加する
+  - @melpon
+- [FIX] messaging_recvonly_sample で `ec` 付け忘れを修正する
+  - @melpon
+- [FIX] VPL_CHECK_RESULT マクロが throw した例外が catch されずプロセスがクラッシュしうる問題を修正する
+  - @melpon
+- [FIX] buildbase.py の get_macos_osver() が return を欠き None を返すのを修正する
+  - @melpon
 
 ## 2026.1.2
 
