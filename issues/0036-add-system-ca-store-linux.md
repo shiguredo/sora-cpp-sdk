@@ -4,7 +4,7 @@
 - Created: 2026-07-16
 - Completed: {YYYY-MM-DD}
 - Model: Composer 2.5
-- Branch: feature/add-system-ca-store-linux
+- Branch: feature/change-system-ca-store-linux
 - Polished: 2026-07-16
 
 ## 目的
@@ -19,7 +19,7 @@ Medium。親 0035 と同じ。Linux は `/etc/ssl/certs` が存在する環境�
 
 ## 現状
 
-親 0035 の PR がマージされた後、Linux ターゲットは共通差し込み口 `SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE*)` を経由するが、実装は `src/ssl_verifier_stub.cpp` の暫定実装（現行 4 段ロード相当）に閉じ込められている。本 issue で `src/ssl_verifier_ubuntu.cpp` を追加し、Linux ターゲットの `LoadSystemSSLRootCertificates` を Debian 系の CA バンドル読み込みに置き換える。
+親 0035 の PR がマージされた後、Linux ターゲットは他 4 OS 用ヘルパー `SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE*)` を経由するが、実装は `src/ssl_verifier_stub.cpp` の暫定実装（現行 4 段ロード相当）に閉じ込められている。本 issue で `src/ssl_verifier_ubuntu.cpp` を追加し、Linux ターゲットの `LoadSystemSSLRootCertificates` を Debian 系の CA バンドル読み込みに置き換える。
 
 ## 対象ビルドターゲット
 
