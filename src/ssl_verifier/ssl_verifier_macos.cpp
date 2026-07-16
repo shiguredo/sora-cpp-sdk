@@ -17,9 +17,9 @@ bool SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE* store) {
   CFArrayRef anchors = nullptr;
   OSStatus status = SecTrustCopyAnchorCertificates(&anchors);
   if (status != errSecSuccess || anchors == nullptr) {
-    RTC_LOG(LS_ERROR)
-        << "LoadSystemSSLRootCertificates: SecTrustCopyAnchorCertificates failed: status="
-        << status;
+    RTC_LOG(LS_ERROR) << "LoadSystemSSLRootCertificates: "
+                         "SecTrustCopyAnchorCertificates failed: status="
+                      << status;
     return false;
   }
   struct Guard {
@@ -54,17 +54,16 @@ bool SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE* store) {
     if (cert == nullptr) {
       // d2i_X509 失敗でエラーキューが積まれるため 1 回取り出してクリアする（現行 AddCert と同型）
       ERR_get_error();
-      RTC_LOG(LS_WARNING)
-          << "LoadSystemSSLRootCertificates: d2i_X509 failed";
+      RTC_LOG(LS_WARNING) << "LoadSystemSSLRootCertificates: d2i_X509 failed";
       continue;
     }
     int r = X509_STORE_add_cert(store, cert);
     if (r == 0) {
       char subject[256] = {0};
       X509_NAME_oneline(X509_get_subject_name(cert), subject, sizeof(subject));
-      RTC_LOG(LS_WARNING)
-          << "LoadSystemSSLRootCertificates: X509_STORE_add_cert failed: subject="
-          << subject;
+      RTC_LOG(LS_WARNING) << "LoadSystemSSLRootCertificates: "
+                             "X509_STORE_add_cert failed: subject="
+                          << subject;
     } else {
       ++added;
     }
@@ -72,13 +71,12 @@ bool SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE* store) {
   }
 
   if (added == 0) {
-    RTC_LOG(LS_ERROR)
-        << "LoadSystemSSLRootCertificates: no certificates loaded from Keychain System Roots: count="
-        << count;
+    RTC_LOG(LS_ERROR) << "LoadSystemSSLRootCertificates: no certificates "
+                         "loaded from Keychain System Roots: count="
+                      << count;
     return false;
   }
-  RTC_LOG(LS_INFO)
-      << "LoadSystemSSLRootCertificates: added=" << added;
+  RTC_LOG(LS_INFO) << "LoadSystemSSLRootCertificates: added=" << added;
   return true;
 }
 

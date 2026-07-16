@@ -42,9 +42,9 @@ bool SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE* store) {
     if (r == 0) {
       char subject[256] = {0};
       X509_NAME_oneline(X509_get_subject_name(cert), subject, sizeof(subject));
-      RTC_LOG(LS_WARNING)
-          << "LoadSystemSSLRootCertificates: X509_STORE_add_cert failed: subject="
-          << subject;
+      RTC_LOG(LS_WARNING) << "LoadSystemSSLRootCertificates: "
+                             "X509_STORE_add_cert failed: subject="
+                          << subject;
     } else {
       ++added;
     }
@@ -53,7 +53,8 @@ bool SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE* store) {
 
   if (added == 0) {
     RTC_LOG(LS_ERROR)
-        << "LoadSystemSSLRootCertificates: no certificates loaded: path=" << path;
+        << "LoadSystemSSLRootCertificates: no certificates loaded: path="
+        << path;
     return false;
   }
   return true;
