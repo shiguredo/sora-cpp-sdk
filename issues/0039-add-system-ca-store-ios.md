@@ -9,17 +9,25 @@
 
 ## 目的
 
-iOS 上の WSS / TURN-TLS 証明書検証で、Apple の公開 Trust Store（iOS がプリインストールする信頼ルート CA の一覧）に相当する PEM を SDK にバンドルし、それを信頼の根拠として使う。親 issue 0035 の iOS 実装。
+iOS 上の WSS / TURN-TLS 証明書検証で、iOS のシステム trust store を信頼アンカーとして使う。親 issue 0035 の iOS 実装。
+
+iOS は Apple のサンドボックス設計上、アプリから system trust store のアンカーを列挙する public API が存在しない（`SecTrustCopyAnchorCertificates` / `SecTrustSettingsCopyCertificates` は macOS 専用）。そのため実装手段としては、他 4 OS のような「アンカー列挙型」（`LoadSystemSSLRootCertificates` でシステム CA を `X509_STORE` に投入）を採らず、「検証委譲型」（`SSLVerifier::VerifyX509` を丸ごと差し替えて Security.framework の `SecTrustEvaluateWithError` に検証を渡す）を採る。信頼の根拠が iOS のシステム trust store になるという結果は他 4 OS と同じ。iOS 例外方針の詳細は親 0035 の該当節を参照。
 
 ## 優先度根拠
 
-Medium。親 0035 と同じ。iOS では macOS の `SecTrustCopyAnchorCertificates` に相当するシステム信頼アンカー列挙 API が公開されていない（Apple SDK ヘッダで `__IPHONE_NA` により iOS 未提供と明示、0037 の補足参照）。BoringSSL の `X509_STORE_set_default_paths` も iOS では実質無効。そのため iOS だけは「Apple が公開している iOS Trust Store の PEM を SDK にバンドルする」方式で、他 OS の「システムから取得」と同等の信頼範囲を提供する。
+Medium。親 0035 と同じ。iOS の TLS 検証は現状ハードコード PEM + WebRTC `ssl_roots.h` に依存しており、Apple の system trust store が更新されても SDK 側で追従できない。Security.framework に委譲すれば Apple の trust store 更新（CT log、revocation、新 CA 収録など）を自動で取り込める。
 
 ## 現状
 
-親 0035 の PR がマージされた後、iOS ターゲットは共通差し込み口 `SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE*)` を経由するが、実装は `src/ssl_verifier_stub.cpp` の暫定実装（現行 4 段ロード相当）に閉じ込められている。本 issue で `src/ssl_verifier_ios.cpp` を追加し、iOS ターゲットの `LoadSystemSSLRootCertificates` を Apple 公開 Trust Store の PEM バンドル読み込みに置き換える。
+親 0035 の PR がマージされた後、iOS ターゲットは親 PR 時点で「共通の `src/ssl_verifier.cpp` + 暫定 `src/ssl_verifier_stub.cpp`」の 2 ファイルビルドで、`SSLVerifier::VerifyX509` の `ca_cert` 未指定分岐は `LoadSystemSSLRootCertificates(store)` を経由するが、実装は `src/ssl_verifier_stub.cpp` の暫定実装（現行 4 段ロード相当）に閉じ込められている。
 
-sumomo は iOS 非対応だが、SDK 本体の `ios` ターゲットは WSS / TURN-TLS 検証を含む。動作検証は `sora-ios-sdk` などの iOS 向けクライアントから間接的に行う。
+本 issue で `src/ssl_verifier_ios.mm` を新規追加し、iOS ターゲットのビルド構成を「`src/ssl_verifier_ios.mm` の 1 ファイル単独」に切り替えて、`SSLVerifier::VerifyX509` を Security.framework に検証委譲する形に置き換える。
+
+sumomo は iOS 非対応（`examples/sumomo/run.py` の `AVAILABLE_TARGETS` に `ios` が含まれない）。SDK 本体の `ios` ターゲットは WSS / TURN-TLS 検証を含むため、動作検証は sora-ios-sdk などの iOS 向けクライアントから間接的に行う。
+
+### マージ順序制約
+
+本 issue の PR は 0036〜0038 / 0040 と同順（親 0035 マージ後、0040 マージ前）。0040 は 0036〜0039 全てがマージされた後にマージされる。
 
 ## 対象ビルドターゲット
 
@@ -27,131 +35,256 @@ sumomo は iOS 非対応だが、SDK 本体の `ios` ターゲットは WSS / TU
 |---|---|
 | `ios` | `ios` |
 
-`python3 run.py build ios` は Device 向け arm64 のみをビルドする（`run.py` に Simulator SDK 向けの分岐はない）。sora-cpp-sdk リポジトリ単体では Simulator ビルドを提供せず、Simulator 向けのビルドは sora-ios-sdk 側の XCFramework 化で担保する。ランタイム差分はなく、バンドル PEM は不変データで Device / Simulator 共通。
+`python3 run.py build ios` は Device / Simulator（arm64）両方のスライスを含む `.xcframework` をビルドする。本 issue で追加する実装はスライス非依存の Objective-C++ / Security.framework 呼び出しのみ。
 
 ## 想定する動作環境
 
-- iOS 14 以降。webrtc-build の `IOS_DEPLOYMENT_TARGET=14.0` と一致する
-- バンドル PEM に ISRG Root X1 が収録されていること（iOS 14 以降の Apple 公開 Trust Store には収録済み）
-- Keychain / MDM Configuration Profile 経由で iOS 端末に配布された独自 CA は本実装では反映されない。反映が必要な利用者は `SoraSignalingConfig::ca_cert` への PEM 明示指定で対応する
-- macOS 0037 は `SecTrustCopyAnchorCertificates` の System Roots をそのまま使うため、iOS よりも広い trust set になる場合がある（Apple 内部 CA や macOS 専用ルートが含まれる可能性）。同じ Sora サーバーに対して macOS で成功しても iOS で失敗するケースが構造的に発生し得る
+- iOS 14 以降（webrtc-build の `IOS_DEPLOYMENT_TARGET=14.0` と一致）。Security.framework の `SecTrustEvaluateWithError` は iOS 12+ で利用可能なため、下限には制約を加えない
+- iOS のシステム trust store に接続先サーバの信頼アンカー（例: Sora Labo の `ISRG Root X1`）が収録されていること。iOS 14 のシステム trust store は ISRG Root X1 を含む
+- 上記を満たさない環境や、独自 CA を信頼させたい場合は `SoraSignalingConfig::ca_cert` への PEM 明示指定で対応する
 
 ## 設計方針
 
-### 信頼アンカーの取得元
+### 実装方式: 検証委譲型
 
-Apple が公開している iOS Trust Store のルート CA リストの PEM を SDK にバンドルし、実行時にメモリ上の PEM バッファから列挙する。次の理由:
+`SSLVerifier::VerifyX509(X509* x509, STACK_OF(X509)* chain, const std::optional<std::string>& ca_cert)` を Objective-C++ で丸ごと別実装する。BoringSSL の `X509_STORE` は使わず、以下の流れで Security.framework に検証委譲する:
 
-1. iOS には「システム信頼アンカーを列挙する」公開 API が存在しない（`SecTrustCopyAnchorCertificates` は iOS では利用不可）。実運用で `X509_STORE` にアンカーを流し込む手段はハードコード / バンドル方式に限られる
-2. Apple 公開 Trust Store と揃えることで「iOS がプリインストールする信頼範囲」を明確に定義でき、任意のハードコード（Let's Encrypt R3 の埋め込み等）よりトレーサビリティが高い
-3. C API のみで完結するため実装ファイルを `.cpp` にできる（Objective-C ランタイム不要、Security.framework のリンクも不要）
-4. 親 0035 の `LoadSystemSSLRootCertificates` 契約「1 件以上追加できたら `true`」を計測するには追加件数を数える必要がある。PEM ループで `X509_STORE_add_cert` すればこれが自然に測れる（0036 Linux と同型のパターン）
+1. 引数の `x509` と `chain` を DER にエンコード（`i2d_X509`）し、`SecCertificateCreateWithData` で `SecCertificateRef` の配列に変換する
+2. `SecPolicyCreateBasicX509()` で SSL policy を作る。hostname 検証は BoringSSL 側（TLS ハンドシェイクの内部処理）が担うため、Security.framework には X509 chain 検証のみを委譲する
+3. `SecTrustCreateWithCertificates(cert_array, policy, &trust)` で `SecTrustRef` を生成する
+4. `ca_cert` が指定されている場合、指定 PEM を `SecCertificateRef` に変換して `SecTrustSetAnchorCertificates` で trust に設定し、`SecTrustSetAnchorCertificatesOnly(trust, true)` を呼んで system CA を混ぜないようにする。`ca_cert` 未指定の場合はこの手順をスキップして system trust store を使う
+5. `SecTrustEvaluateWithError(trust, &error)` で検証を実行。成功なら `true`、失敗なら `CFErrorCopyDescription` でエラー文字列を取り出して `RTC_LOG(LS_WARNING)` に出し `false` を返す
 
-`SecTrustEvaluateWithError` 等で iOS の信頼判定に委任する経路は親 0035 の `LoadSystemSSLRootCertificates(X509_STORE*)` 契約と衝突するため採用しない（本 issue のスコープ外）。
+`SoraSignalingConfig::ca_cert` の契約（指定 PEM のみを使い、system CA と混ぜない）は `SecTrustSetAnchorCertificatesOnly(true)` によって維持される。
 
-`X509_STORE_set_default_paths` は本実装では呼ばない。理由はセキュリティ配慮で、環境変数 `SSL_CERT_FILE` / `SSL_CERT_DIR` を注入されると信頼ストアを乗っ取れる経路が残るため、その経路を遮断する（0036 と同じ方針）。
+`SoraSignalingConfig::insecure == true` の分岐は呼び出し側（`src/websocket.cpp:184`、`src/rtc_ssl_verifier.cpp:55`）に据え置きで、`SSLVerifier::VerifyX509` は insecure 時には呼ばれない。
 
-Apple 公開 Trust Store の PEM は各 CA に用途タグ（Web / S/MIME / EAP-TLS 等）が付いているが、本実装は用途を区別せず全証明書を TLS アンカーとして扱う。iOS 標準検証より permissive になる可能性があるが、設計上の割り切りとしてこれを許容する（0037 と同じ整理）。
+### 実装されない関数
 
-### PEM バンドルの取得と管理
+iOS では `SSLVerifier::VerifyX509` を丸ごと差し替えるため、次の関数は iOS ターゲットでは定義されない（他 4 OS では共通の `src/ssl_verifier.cpp` に定義される）:
 
-- 取得先: Apple 公式ドキュメントページ「Lists of available trusted root certificates in iOS」（実 URL は PR 時点の Apple 公式ページを参照する。iOS メジャーバージョンごとに別ページになる場合がある）
-- 抽出方針: 本 issue のスコープは「iOS 実機の Trust Store と実質的に一致する PEM バンドルを SDK に含めること」と、実装ファイル・CMake 分岐の書き換えのみ。具体的な抽出コマンド・SHA-256 突合・スクリプト化などの実務手順は本 PR で決定し、PR 本文に記載する。抽出成果物の再現手順（抽出に使ったコマンドライン、Apple 公式ページの参照 URL、参照日、抽出時の macOS / Xcode バージョン）は PR 本文と実装ソース冒頭コメントの両方に記録する
-- 配置: 生 PEM は `src/ssl_verifier_ios_trust_store.inc` に分離し、`src/ssl_verifier_ios.cpp` から `#include` する。`.inc` の中身は **C++ の生文字列リテラル 1 本** の形式にする（既存 `src/ssl_verifier.cpp` の `isrg_root` の `R"(...)"` パターンと同型）:
-  ```
-  R"sora_ios_trust_store(
-  -----BEGIN CERTIFICATE-----
-  MIIF...
-  -----END CERTIFICATE-----
-  -----BEGIN CERTIFICATE-----
-  ...
-  )sora_ios_trust_store"
-  ```
-  デリミタは PEM 本文と衝突しないよう `sora_ios_trust_store` のように衝突不能な長さの識別子を使う。`.inc` の外側にコメント等の他のトークンを置いてはならない（`#include` 展開が壊れる）
-- 内容: iOS 14 以降の Trust Store に含まれる全ルート CA の PEM（`BEGIN CERTIFICATE` ブロックのみ、`TRUSTED CERTIFICATE` は含めない。`PEM_read_bio_X509_AUX` は使わないため）。件数はおおむね 150 前後、平均 1.5-2 KB/PEM で合計 225-300 KB 程度と見込まれる
-- スナップショット記録: `src/ssl_verifier_ios.cpp` 冒頭コメントに `// Apple Trust Store snapshot: iOS <対応 iOS バージョン>, extracted <YYYY-MM-DD>, source <Apple 公式ページ URL>, macOS <抽出に使った macOS バージョン>` を必ず記載する。バージョン識別子は Apple 公式ページのタイトル文字列と参照日で一意化する（Apple が独自の `YYYY-MM` 形式を付与するとは限らないため）
-- 更新運用: SDK バージョンリリースに追従して手動更新する。SDK リリース手順の checklist に「PEM スナップショットの再抽出と差分確認」を追加する
-- 自動化: 本 issue の PR 完了後に別 issue として自動化を起票する
-- バイナリサイズへの影響: 静的ライブラリ（`libsora.a`）の `.rodata` セクションに 225-300 KB 追加される。この代償を許容する
-- diff レビュー実務対応: `.gitattributes` に `src/ssl_verifier_ios_trust_store.inc linguist-generated=true` を追加して GitHub PR で折り畳ませる。抽出成果物は決定的なもの（並び順・改行コード）にしてバージョン間の diff を最小化する
+- `SSLVerifier::AddCert(const std::string&, X509_STORE*)`
+- `SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE*)`
+
+いずれも SDK 内部の `SSLVerifier::VerifyX509` からのみ呼ばれ、iOS 実装の `SSLVerifier::VerifyX509` はこれらを呼ばないため、iOS ターゲットで未解決シンボルにはならない。header の宣言は残る（他 4 OS が必要とするため）が、iOS では対応する定義はリンクされない。
 
 ### 実装骨格
 
-BoringSSL の `BIO_new_mem_buf` → `PEM_read_bio_X509` ループ → `X509_STORE_add_cert` の流れで実装する（0036 Linux とほぼ同型、ただし BIO の生成元がファイルではなくメモリバッファ）。`BIO` の解放漏れを防ぐため、Guard パターン（`src/ssl_verifier.cpp:176-180` の `Guard` 構造体と同型）で `BIO_free` を保証する。`X509` は `X509_STORE_add_cert` 成功・失敗どちらの分岐でも直後に `X509_free` する。
-
-`X509_STORE_add_cert` 失敗時は現行 `LoadBuiltinSSLRootCertificates`（`src/ssl_verifier.cpp:138-142`）と同じく `RTC_LOG(LS_WARNING)` を出して続行する。`SSLVerifier::AddCert` は失敗即 `false` を返し親 0035 の「部分失敗は続行、0 件で `false`」契約と衝突するため使わない。失敗時ログには `X509_NAME_oneline(X509_get_subject_name(cert), ...)` で subject 名を含めて原因追跡できるようにする。`PEM_read_bio_X509` が `nullptr` を返した際は現行 `AddCert` 実装（`src/ssl_verifier.cpp:106-110`）と同じく `ERR_get_error()` を 1 回呼んでエラーキューをクリアしループを抜ける。
-
-関数が `true` を返す経路の return 直前に `RTC_LOG(LS_INFO) << "LoadSystemSSLRootCertificates: added=" << added` を出す。これが「Apple 公開 Trust Store バンドルからアンカーを読んだ件数」の運用証跡になる。
-
-```cpp
-// src/ssl_verifier_ios.cpp
-// Apple Trust Store snapshot: iOS <対応 iOS バージョン>, extracted <YYYY-MM-DD>, source <Apple 公式ページ URL>, macOS <抽出に使った macOS バージョン>
+```objectivec++
+// src/ssl_verifier_ios.mm
 #include "sora/ssl_verifier.h"
 
 #include <functional>
 #include <utility>
+#include <vector>
 
-#include <openssl/base.h>
+#import <CoreFoundation/CoreFoundation.h>
+#import <Security/Security.h>
+
+// OpenSSL
 #include <openssl/bio.h>
 #include <openssl/err.h>
 #include <openssl/pem.h>
 #include <openssl/x509.h>
 
+// WebRTC
 #include <rtc_base/logging.h>
 
 namespace sora {
 namespace {
 
-// Apple 公開 Trust Store の PEM バンドル（生文字列リテラルを .inc に分離）
-const char kAppleTrustStorePEM[] =
-#include "ssl_verifier_ios_trust_store.inc"
-    ;
+struct Guard {
+  std::function<void()> f;
+  Guard(std::function<void()> f) : f(std::move(f)) {}
+  ~Guard() { f(); }
+};
 
-}  // namespace
-
-bool SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE* store) {
-  // kAppleTrustStorePEM は const char[] のためコンパイル時に長さが確定する
-  BIO* bio = BIO_new_mem_buf(kAppleTrustStorePEM,
-                              static_cast<int>(sizeof(kAppleTrustStorePEM) - 1));
-  if (bio == nullptr) {
-    RTC_LOG(LS_ERROR)
-        << "LoadSystemSSLRootCertificates: BIO_new_mem_buf failed";
-    return false;
+// X509 を DER にエンコードして SecCertificateRef を作る。失敗時は nullptr
+SecCertificateRef CreateSecCertificate(X509* cert) {
+  unsigned char* der = nullptr;
+  int len = i2d_X509(cert, &der);
+  if (len <= 0 || der == nullptr) {
+    return nullptr;
   }
-  struct Guard {
-    std::function<void()> f;
-    Guard(std::function<void()> f) : f(std::move(f)) {}
-    ~Guard() { f(); }
-  };
+  CFDataRef data = CFDataCreate(nullptr, der, len);
+  OPENSSL_free(der);
+  if (data == nullptr) {
+    return nullptr;
+  }
+  SecCertificateRef sec_cert = SecCertificateCreateWithData(nullptr, data);
+  CFRelease(data);
+  return sec_cert;
+}
+
+// ca_cert の PEM 文字列から SecCertificateRef の配列を作る。
+// PEM は複数の CERTIFICATE ブロックを含みうる。1 件も取れなければ空
+std::vector<SecCertificateRef> LoadCACertsFromPem(const std::string& pem) {
+  std::vector<SecCertificateRef> result;
+  BIO* bio = BIO_new_mem_buf(pem.c_str(), pem.size());
+  if (bio == nullptr) {
+    return result;
+  }
   Guard bio_guard([bio]() { BIO_free(bio); });
 
-  int added = 0;
   while (true) {
     X509* cert = PEM_read_bio_X509(bio, nullptr, nullptr, nullptr);
     if (cert == nullptr) {
       ERR_get_error();
       break;
     }
-    int r = X509_STORE_add_cert(store, cert);
-    if (r == 0) {
-      char subject[256] = {0};
-      X509_NAME_oneline(X509_get_subject_name(cert), subject, sizeof(subject));
-      RTC_LOG(LS_WARNING)
-          << "LoadSystemSSLRootCertificates: X509_STORE_add_cert failed: subject="
-          << subject;
-    } else {
-      ++added;
-    }
+    SecCertificateRef sec_cert = CreateSecCertificate(cert);
     X509_free(cert);
+    if (sec_cert == nullptr) {
+      RTC_LOG(LS_WARNING)
+          << "VerifyX509: failed to convert ca_cert PEM entry to SecCertificateRef";
+      continue;
+    }
+    result.push_back(sec_cert);
+  }
+  return result;
+}
+
+}  // namespace
+
+bool SSLVerifier::VerifyX509(X509* x509,
+                             STACK_OF(X509) * chain,
+                             const std::optional<std::string>& ca_cert) {
+  // 診断ログ（他 4 OS の src/ssl_verifier.cpp:152-171 と同型）
+  {
+    char data[256];
+    RTC_LOG(LS_INFO) << "cert:";
+    X509_NAME_oneline(X509_get_subject_name(x509), data, sizeof(data));
+    RTC_LOG(LS_INFO) << "  subject = " << data;
+    X509_NAME_oneline(X509_get_issuer_name(x509), data, sizeof(data));
+    RTC_LOG(LS_INFO) << "  issuer  = " << data;
+    if (chain != nullptr) {
+      int n = sk_X509_num(chain);
+      for (int i = 0; i < n; i++) {
+        X509* x = sk_X509_value(chain, i);
+        RTC_LOG(LS_INFO) << "chain[" << i << "]:";
+        X509_NAME_oneline(X509_get_subject_name(x), data, sizeof(data));
+        RTC_LOG(LS_INFO) << "  subject = " << data;
+        X509_NAME_oneline(X509_get_issuer_name(x), data, sizeof(data));
+        RTC_LOG(LS_INFO) << "  issuer  = " << data;
+      }
+    }
   }
 
-  if (added == 0) {
-    RTC_LOG(LS_ERROR)
-        << "LoadSystemSSLRootCertificates: no certificates loaded from Apple Trust Store bundle";
+  // 引数の X509 と chain を SecCertificateRef の配列に変換
+  std::vector<SecCertificateRef> sec_certs;
+  Guard certs_guard([&sec_certs]() {
+    for (SecCertificateRef c : sec_certs) {
+      CFRelease(c);
+    }
+  });
+
+  SecCertificateRef leaf = CreateSecCertificate(x509);
+  if (leaf == nullptr) {
+    RTC_LOG(LS_ERROR) << "VerifyX509: failed to convert leaf certificate";
     return false;
   }
-  RTC_LOG(LS_INFO)
-      << "LoadSystemSSLRootCertificates: added=" << added;
+  sec_certs.push_back(leaf);
+
+  if (chain != nullptr) {
+    int n = sk_X509_num(chain);
+    for (int i = 0; i < n; i++) {
+      SecCertificateRef mid = CreateSecCertificate(sk_X509_value(chain, i));
+      if (mid == nullptr) {
+        // 中間証明書 1 個の変換失敗は続行。chain が構築できなければ最終的に SecTrust 側で失敗する
+        RTC_LOG(LS_WARNING)
+            << "VerifyX509: failed to convert intermediate certificate: index=" << i;
+        continue;
+      }
+      sec_certs.push_back(mid);
+    }
+  }
+
+  CFArrayRef cert_array = CFArrayCreate(
+      nullptr, reinterpret_cast<const void**>(sec_certs.data()),
+      sec_certs.size(), &kCFTypeArrayCallBacks);
+  if (cert_array == nullptr) {
+    RTC_LOG(LS_ERROR) << "VerifyX509: CFArrayCreate failed";
+    return false;
+  }
+  Guard cert_array_guard([cert_array]() { CFRelease(cert_array); });
+
+  // hostname 検証は BoringSSL 側で行うため、ここでは basic X509 policy のみ
+  SecPolicyRef policy = SecPolicyCreateBasicX509();
+  if (policy == nullptr) {
+    RTC_LOG(LS_ERROR) << "VerifyX509: SecPolicyCreateBasicX509 failed";
+    return false;
+  }
+  Guard policy_guard([policy]() { CFRelease(policy); });
+
+  SecTrustRef trust = nullptr;
+  OSStatus status =
+      SecTrustCreateWithCertificates(cert_array, policy, &trust);
+  if (status != errSecSuccess || trust == nullptr) {
+    RTC_LOG(LS_ERROR)
+        << "VerifyX509: SecTrustCreateWithCertificates failed: status=" << status;
+    return false;
+  }
+  Guard trust_guard([trust]() { CFRelease(trust); });
+
+  if (ca_cert) {
+    // ca_cert 指定時: 指定 PEM のみを anchor にし、system CA と混ぜない
+    std::vector<SecCertificateRef> anchors = LoadCACertsFromPem(*ca_cert);
+    Guard anchors_guard([&anchors]() {
+      for (SecCertificateRef c : anchors) {
+        CFRelease(c);
+      }
+    });
+    if (anchors.empty()) {
+      RTC_LOG(LS_ERROR)
+          << "VerifyX509: no anchors loaded from ca_cert: ca_cert_length="
+          << ca_cert->size();
+      return false;
+    }
+    CFArrayRef anchor_array = CFArrayCreate(
+        nullptr, reinterpret_cast<const void**>(anchors.data()),
+        anchors.size(), &kCFTypeArrayCallBacks);
+    if (anchor_array == nullptr) {
+      RTC_LOG(LS_ERROR) << "VerifyX509: CFArrayCreate for anchors failed";
+      return false;
+    }
+    Guard anchor_array_guard([anchor_array]() { CFRelease(anchor_array); });
+
+    status = SecTrustSetAnchorCertificates(trust, anchor_array);
+    if (status != errSecSuccess) {
+      RTC_LOG(LS_ERROR)
+          << "VerifyX509: SecTrustSetAnchorCertificates failed: status=" << status;
+      return false;
+    }
+    status = SecTrustSetAnchorCertificatesOnly(trust, true);
+    if (status != errSecSuccess) {
+      RTC_LOG(LS_ERROR)
+          << "VerifyX509: SecTrustSetAnchorCertificatesOnly failed: status="
+          << status;
+      return false;
+    }
+  }
+  // ca_cert 未指定時: SecTrust は system trust store をそのまま使う
+
+  CFErrorRef error = nullptr;
+  bool verified = SecTrustEvaluateWithError(trust, &error);
+  if (!verified) {
+    if (error != nullptr) {
+      CFStringRef desc = CFErrorCopyDescription(error);
+      char buf[512] = {0};
+      if (desc != nullptr) {
+        CFStringGetCString(desc, buf, sizeof(buf), kCFStringEncodingUTF8);
+        CFRelease(desc);
+      }
+      RTC_LOG(LS_WARNING)
+          << "VerifyX509: SecTrustEvaluateWithError failed: " << buf;
+      CFRelease(error);
+    } else {
+      RTC_LOG(LS_WARNING)
+          << "VerifyX509: SecTrustEvaluateWithError failed: no error info";
+    }
+    return false;
+  }
+  RTC_LOG(LS_INFO) << "VerifyX509: SecTrustEvaluateWithError succeeded";
   return true;
 }
 
@@ -160,69 +293,87 @@ bool SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE* store) {
 
 ### CMakeLists.txt の変更
 
-親 0035 が用意した「共通差し込み口の切り替え分岐」（`SORA_SYSTEM_CA_IMPL` を選ぶ if / elseif ブロック）の `elseif (SORA_TARGET_OS STREQUAL "ios")` ブロックの `set(SORA_SYSTEM_CA_IMPL src/ssl_verifier_stub.cpp)` を `set(SORA_SYSTEM_CA_IMPL src/ssl_verifier_ios.cpp)` に書き換えるのみ。既存の iOS プラットフォーム分岐（`CMakeLists.txt:452-488` 付近）には手を入れない（Security.framework などの追加リンクは不要、BoringSSL のみで完結）。
+親 0035 が用意した分岐骨格の iOS 分岐で、`src/ssl_verifier.cpp` を含む `SORA_SSL_VERIFIER_SOURCES` を「`src/ssl_verifier_ios.mm` の 1 ファイルのみ」に書き換える。
+
+```cmake
+# 変更前（親 0035 の骨格）:
+elseif (SORA_TARGET_OS STREQUAL "ios")
+  set(SORA_SSL_VERIFIER_SOURCES src/ssl_verifier.cpp src/ssl_verifier_stub.cpp)
+
+# 変更後:
+elseif (SORA_TARGET_OS STREQUAL "ios")
+  set(SORA_SSL_VERIFIER_SOURCES src/ssl_verifier_ios.mm)
+```
+
+iOS プラットフォーム分岐の既存 `target_link_libraries` に `-framework Security` と `-framework CoreFoundation` を追加する（CoreFoundation は WebRTC 経由でリンクされる可能性が高いが、Security.framework を直接使うため明示的にリンクしておく）。
+
+Objective-C++ ファイルなので `.mm` 拡張子を選ぶ（`.cpp` では `#import` や Objective-C 型が使えない）。iOS プラットフォーム分岐の既存 `target_sources()`（Simulator / Device の両方をビルドする xcframework 生成の設定）は変更しない。
 
 ### スレッド安全性
 
-`VerifyX509`（`src/ssl_verifier.cpp:149`）は毎回 `X509_STORE_new()` で新規ストアを作り、これに対して `LoadSystemSSLRootCertificates` を呼ぶ。1 スレッドが 1 ストアを扱う関係のため、`X509_STORE_add_cert` の並列競合は発生しない。`BIO_new_mem_buf` / `PEM_read_bio_X509` は独立のリソースを扱うため BoringSSL 慣行上スレッドセーフ。`kAppleTrustStorePEM` は read-only の静的 const データで並列読み出しに関して安全。
+`SSLVerifier::VerifyX509` は複数スレッド（Signaling スレッド、ICE スレッド）から並列に呼ばれ得る。実装内では次のリソースを使うが、いずれもスレッドセーフ:
+
+- `SecCertificateCreateWithData` / `SecPolicyCreateBasicX509` / `SecTrustCreateWithCertificates` / `SecTrustSetAnchorCertificates` / `SecTrustSetAnchorCertificatesOnly` / `SecTrustEvaluateWithError`: Apple のドキュメントで明示的にスレッドセーフ（各呼び出しが独立の `SecTrustRef` を扱う限り）
+- `i2d_X509` / `PEM_read_bio_X509` / `BIO_new_mem_buf`: BoringSSL の慣行上、独立のリソースを扱う限りスレッドセーフ
+- 引数の `X509* x509` と `STACK_OF(X509)* chain`: 呼び出し側で並列共有されない前提（`RTCSSLVerifier` は呼び出しごとに独立のオブジェクトを渡す）
+
+`SecTrustEvaluateWithError` は OCSP / CRL / CT の revocation チェックのためにネットワーク I/O を伴う可能性があり、ブロッキングになる。呼び出し元スレッドがネットワーク I/O 前提でないと想定外の遅延が起き得るが、これは他 4 OS の `X509_STORE_add_cert` を経た `X509_verify_cert` でも同じ性質（`X509_STORE_set_default_paths` 経由の OCSP responder 参照は起きうる）で、iOS だけの特殊事情ではない。
 
 ## 完了条件
 
-- `src/ssl_verifier_ios.cpp` が新規追加され、`SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE*)` の iOS 実装を `SSLVerifier::` メンバ関数として保持している
-- `src/ssl_verifier_ios_trust_store.inc` が新規追加され、Apple 公開 Trust Store の PEM バンドルを生文字列リテラル 1 本の形式で保持している。`src/ssl_verifier_ios.cpp` 冒頭コメントに取得元 URL・スナップショット日付・抽出時の macOS バージョンが記録されている
-- `CMakeLists.txt` の共通差し込み口の `elseif (SORA_TARGET_OS STREQUAL "ios")` ブロックの `set(SORA_SYSTEM_CA_IMPL src/ssl_verifier_stub.cpp)` が `set(SORA_SYSTEM_CA_IMPL src/ssl_verifier_ios.cpp)` に書き換わっている
-- 既存の iOS プラットフォーム分岐は変更されていない（Security.framework 等の追加リンクなし）
-- 親 0035 の `LoadSystemSSLRootCertificates` 契約を満たしている（1 件以上追加で `true` / 部分失敗は `RTC_LOG(LS_WARNING)` 続行 / 0 件は `RTC_LOG(LS_ERROR)` で `false` / キャッシュなし / スレッドセーフ）
-- iOS 実装は `SSLVerifier::AddCert` / `X509_STORE_set_default_paths` / Security.framework の C API を呼ばない
-- 関数が `true` を返す経路の return 直前に `RTC_LOG(LS_INFO) << "LoadSystemSSLRootCertificates: added=" << added` が 1 回出力される
+- `src/ssl_verifier_ios.mm` が新規追加され、`SSLVerifier::VerifyX509(X509*, STACK_OF(X509)*, const std::optional<std::string>&)` を Security.framework の `SecTrustEvaluateWithError` に検証委譲する形で実装している
+- `CMakeLists.txt` の親 0035 分岐骨格の iOS 分岐が `set(SORA_SSL_VERIFIER_SOURCES src/ssl_verifier_ios.mm)` に書き換わっている（`src/ssl_verifier.cpp` も `src/ssl_verifier_stub.cpp` も iOS では target_sources に含まれない）
+- iOS プラットフォーム分岐の `target_link_libraries` に `-framework Security` と `-framework CoreFoundation` が追加されている
+- iOS 実装は `ca_cert` 未指定時に system trust store を使い、指定時は `SecTrustSetAnchorCertificates` + `SecTrustSetAnchorCertificatesOnly(true)` で指定 PEM のみを trusted anchor にする
+- iOS 実装は `SSLVerifier::AddCert` / `SSLVerifier::LoadSystemSSLRootCertificates` を呼ばない（両関数は iOS では未定義）
+- 検証成功時に `RTC_LOG(LS_INFO) << "VerifyX509: SecTrustEvaluateWithError succeeded"` が出力される
+- 検証失敗時に `RTC_LOG(LS_WARNING)` に `CFErrorCopyDescription` の内容を含めて出力される
+- `python3 run.py build ios` が Device / Simulator の両方で通ること
+- `python3 run.py build ubuntu-24.04_x86_64` / `python3 run.py build macos_arm64` / `python3 run.py build windows_x86_64` / `python3 run.py build android` は本 issue の変更対象外だが、GitHub Actions の CI 実行 URL を PR 本文に添付して他 OS の CMake 差分（iOS 分岐のみ）が他 OS を壊していないことを確認する
 - テスト戦略節の全項目（ビルド確認・接続確認・回帰確認・証跡取得）を実施し、証跡ログを PR 本文に添付している
-- `CHANGES.md` に `[CHANGE]` エントリを 1 本追加し、次を記載する: (a) iOS の TLS 検証を Apple 公開 Trust Store のバンドル PEM に切り替えた旨、(b) 対応 iOS バージョン（iOS 14 以降）と Trust Store スナップショット日付、(c) Keychain / MDM Configuration Profile 経由で配布された独自 CA は反映されない旨、(d) 独自 CA は `SoraSignalingConfig::ca_cert` で明示指定する旨、(e) Trust Store のバンドル PEM は SDK バージョンリリースに追従して手動更新される旨
+- `CHANGES.md` に `[CHANGE]` エントリを 1 本追加している。内容: (a) iOS の TLS 検証を iOS のシステム trust store（Apple 管理）に切り替えた旨、(b) 実装手段は Security.framework の `SecTrustEvaluateWithError` に検証委譲する形（sandbox 制約でアンカーの直接列挙が不可のため、他 4 OS の直接投入とは手段が異なる）である旨の補足、(c) 動作環境（iOS 14 以降、`IOS_DEPLOYMENT_TARGET=14.0` と一致）、(d) iOS のシステム trust store から Apple 公式の信頼判定（CT / revocation を含む）が反映される旨、(e) 独自 CA は `SoraSignalingConfig::ca_cert` で明示指定する旨
 
 ## 解決方法
 
-1. `src/ssl_verifier_ios_trust_store.inc` を新規追加し、Apple 公開 Trust Store の PEM バンドルを生文字列リテラル 1 本の形式で配置する
-2. `src/ssl_verifier_ios.cpp` を新規追加し、上記の設計方針・実装骨格に従って `SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE*)` を実装する。ファイル冒頭にスナップショット記録コメントを記載する
-3. `CMakeLists.txt` の共通差し込み口の iOS 分岐で `set` 行を `src/ssl_verifier_ios.cpp` に書き換える
+1. `src/ssl_verifier_ios.mm` を新規追加し、上記の設計方針・実装骨格に従って `SSLVerifier::VerifyX509` を実装する
+2. `CMakeLists.txt` の親 0035 分岐骨格の iOS 分岐の `set` 行を書き換える
+3. iOS プラットフォーム分岐の `target_link_libraries` に `-framework Security` と `-framework CoreFoundation` を追加する
 4. テスト戦略節に従い、ビルド確認・接続確認・回帰確認・証跡取得を行う
 5. `CHANGES.md` に `[CHANGE]` エントリを追加する
 
 ## 変更対象ファイル
 
-- `src/ssl_verifier_ios.cpp`（新規追加）
-- `src/ssl_verifier_ios_trust_store.inc`（新規追加、Apple 公開 Trust Store の PEM バンドル）
-- `CMakeLists.txt`（共通差し込み口の `set` 行 1 行を書き換え）
-- `CHANGES.md`（`[CHANGE]` エントリ追加）
+- `src/ssl_verifier_ios.mm`（新規追加）
+- `CMakeLists.txt`（iOS 分岐の `SORA_SSL_VERIFIER_SOURCES` 書き換え、iOS プラットフォーム分岐の `target_link_libraries` に `-framework Security` / `-framework CoreFoundation` 追加）
+- `CHANGES.md`（`[CHANGE]` エントリ 1 本追加）
 
-`include/sora/ssl_verifier.h` / `src/ssl_verifier.cpp` / `src/ssl_verifier_stub.cpp` / `src/websocket.cpp` / `src/rtc_ssl_verifier.cpp` は本 issue では変更しない。既存の iOS プラットフォーム分岐（`CMakeLists.txt:452-488` 付近）も変更しない。
+本 issue では `include/sora/ssl_verifier.h` / `src/ssl_verifier.cpp` / `src/ssl_verifier_stub.cpp` / `src/websocket.cpp` / `src/rtc_ssl_verifier.cpp` / `include/sora/rtc_ssl_verifier.h` は変更しない。
 
 ## テスト戦略
 
 ### ビルド確認
 
-- `python3 run.py build ios` が通ることを確認する（Device 向け arm64 のみ、`run.py` の現行仕様に沿う）
+- 実装者ローカル: `python3 run.py build ios` が Device / Simulator 両方で通ることを確認する
+- CI: GitHub Actions で他 OS ターゲット（Ubuntu / macOS / Windows / Android）のビルドが通ることを確認し、実行 URL を PR 本文に添付する（iOS 分岐外の差分は無いはずだが、`SORA_SSL_VERIFIER_SOURCES` 分岐骨格自体を触るためのセーフティネット）
 
 ### 接続確認
 
-- sora-ios-sdk の WSS で Sora へ接続する任意のサンプルアプリを通じて、Sora Labo 相当の公開 CA サーバー（Let's Encrypt 系、信頼アンカーは ISRG Root X1）に対して WSS で接続できることを確認する。実 CA / 実サーバーを使う（AGENTS.md「モックやスタブは絶対に利用しないこと」に従う）
-- TURN-TLS 経路も同経由で通ることを確認する（Sora のサーバー設定で TURN-TLS を強制する）
-- 使用する sora-ios-sdk のバージョンと具体的なサンプルアプリ名は PR 作成時に決めて PR 本文に記載する
+- sora-ios-sdk のサンプルアプリを通じて、Sora Labo 相当の公開 CA サーバー（Let's Encrypt 系、信頼アンカーは ISRG Root X1）に対して WSS で接続できることを確認する。実 CA / 実サーバーを使う（AGENTS.md「モックやスタブは絶対に利用しないこと」に従う）
+- TURN-TLS 経路も同経由で通ることを確認する
+- 使用する sora-ios-sdk のバージョン、サンプルアプリ名、動作確認した iOS バージョン / 実機 or Simulator は PR 本文に記載する
 
 ### 回帰確認
 
-- `SoraSignalingConfig::ca_cert` 明示指定時と `insecure == true` の既存挙動が回帰していないことを、既存 E2E テスト（`e2e-test/` 配下）を CLAUDE.md 記載の形式（`uv run --directory=e2e-test pytest ... -v -s --timeout=60`）で回して確認する。iOS ターゲットは pytest 対象外の場合があるため、その場合は sora-ios-sdk 側での回帰確認手順を PR 本文に記載する
+- `SoraSignalingConfig::ca_cert` 明示指定時と `insecure == true` の既存挙動が回帰していないことを、他 OS の E2E テスト（`e2e-test/` 配下）を CLAUDE.md 記載の形式（`uv run --directory=e2e-test pytest ... -v -s --timeout=60`）で回して確認する（0039 の CMake 変更が他 OS のコードパスを壊していないことの担保）。iOS ターゲットは `examples/sumomo/run.py` の `AVAILABLE_TARGETS` に含まれないため pytest 対象外。iOS の実機回帰は sora-ios-sdk 側での回帰確認手順を PR 本文に記載する
 
-### 証跡取得（Apple Trust Store バンドルから読んだことの実証）
+### 証跡取得（Security.framework 経路で検証が通ったことの実証）
 
-- iOS 側で `RTC_LOG` レベルを `LS_INFO` 以上に設定して起動し、WSS 接続成功時に `LoadSystemSSLRootCertificates: added=<N>` が Xcode Console / `os_log` に出力されることを確認する
-- N が 1 以上であれば、バンドル PEM から少なくとも 1 件のアンカーを読み込み、それにより接続の chain building が成功したことになる
-- iOS では Linux の Docker 隔離のような「バンドル PEM を無効化」する手段が事実上ないため、失敗ケースの実証は行わず、成功時ログを証跡とする方針を採る（0037 / 0038 と同じ整理）
-- ログ抜粋を PR 本文に添付する
+- iOS 側で WebRTC の `RTC_LOG` レベルを `LS_INFO` 以上に設定して起動し、WSS 接続成功時に `VerifyX509: SecTrustEvaluateWithError succeeded` が Xcode / Console.app のログに出力されることを確認する（`RTC_LOG` は sora-ios-sdk 経由でロガーにブリッジされる）
+- ログが出れば Security.framework 経路の `SecTrustEvaluateWithError` が成功した事実になる。Sora Labo の TLS 証明書は ISRG Root X1 に連なるため、他の信頼源がない状態で成功する事実がシステム trust store 経由の実証になる
+- ログを PR 本文に添付する
+- 失敗ケース（`SecTrustEvaluateWithError failed:` の WARNING）の実証は行わず、成功時ログを証跡とする方針を採る（0037 / 0038 / 0040 と同じ整理）
 
 ## 関連
 
 - 親: `issues/0035-change-tls-trust-store-system-ca.md`
 - 兄弟: `issues/0036-add-system-ca-store-linux.md` / `issues/0037-add-system-ca-store-macos.md` / `issues/0038-add-system-ca-store-windows.md` / `issues/0040-add-system-ca-store-android.md`
-
-### 補足
-
-- Apple 公開 Trust Store のバンドル PEM 自動更新は本 issue のスコープ外。本 issue の PR 完了後に自動化 issue を別途起票する
