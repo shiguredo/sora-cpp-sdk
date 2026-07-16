@@ -57,8 +57,10 @@ Apple 公開 Trust Store の PEM は各 CA に用途タグ（Web / S/MIME / EAP-
 
 - 取得先: Apple 公式ドキュメントページ「Lists of available trusted root certificates in iOS」（実 URL は PR 時点の Apple 公式ページを参照する。iOS メジャーバージョンごとに別ページになる場合がある）
 - 抽出方針: 本 issue のスコープは「iOS 実機の Trust Store と実質的に一致する PEM バンドルを SDK に含めること」と、実装ファイル・CMake 分岐の書き換えのみ。具体的な抽出コマンド・SHA-256 突合・スクリプト化などの実務手順は本 PR で決定し、PR 本文に記載する。抽出成果物の再現手順（抽出に使ったコマンドライン、Apple 公式ページの参照 URL、参照日、抽出時の macOS / Xcode バージョン）は PR 本文と実装ソース冒頭コメントの両方に記録する
-- 配置: 生 PEM は `src/ssl_verifier_ios_trust_store.inc` に分離し、`src/ssl_verifier_ios.cpp` から `#include` する。`.inc` の中身は **C++ の生文字列リテラル 1 本** の形式にする（既存 `src/ssl_verifier.cpp` の `isrg_root` の `R"(...)"` パターンと同型）:
+- 配置: 生 PEM は `src/ssl_verifier_ios_trust_store.inc` に分離し、`src/ssl_verifier_ios.cpp` から `#include` する。`.inc` の中身は **スナップショット記録コメント + C++ の生文字列リテラル 1 本** の形式にする（更新時は `.inc` だけを差し替えれば済むようにするため、管理情報を `.inc` 側に集約する）:
   ```
+  // Apple Trust Store snapshot: iOS <対応 iOS バージョン>, extracted <YYYY-MM-DD>, source <Apple 公式ページ URL>, macOS <抽出に使った macOS バージョン>
+  // SORA_IOS_TRUST_STORE_EXTRACTED: <YYYY-MM-DD>
   R"sora_ios_trust_store(
   -----BEGIN CERTIFICATE-----
   MIIF...
@@ -67,9 +69,16 @@ Apple 公開 Trust Store の PEM は各 CA に用途タグ（Web / S/MIME / EAP-
   ...
   )sora_ios_trust_store"
   ```
-  デリミタは PEM 本文と衝突しないよう `sora_ios_trust_store` のように衝突不能な長さの識別子を使う。`.inc` の外側にコメント等の他のトークンを置いてはならない（`#include` 展開が壊れる）
+  デリミタは PEM 本文と衝突しないよう `sora_ios_trust_store` のように衝突不能な長さの識別子を使う。生文字列リテラルの前に置くコメント行（`//`）は C++ プリプロセッサ上合法であり `#include` 展開を壊さない。`.inc` ファイルの更新はこれらコメントも含めて 1 ファイルの差し替えで完結する
 - 内容: iOS 14 以降の Trust Store に含まれる全ルート CA の PEM（`BEGIN CERTIFICATE` ブロックのみ、`TRUSTED CERTIFICATE` は含めない。`PEM_read_bio_X509_AUX` は使わないため）。件数はおおむね 150 前後、平均 1.5-2 KB/PEM で合計 225-300 KB 程度と見込まれる
-- スナップショット記録: `src/ssl_verifier_ios.cpp` 冒頭コメントに `// Apple Trust Store snapshot: iOS <対応 iOS バージョン>, extracted <YYYY-MM-DD>, source <Apple 公式ページ URL>, macOS <抽出に使った macOS バージョン>` を必ず記載する。バージョン識別子は Apple 公式ページのタイトル文字列と参照日で一意化する（Apple が独自の `YYYY-MM` 形式を付与するとは限らないため）
+- スナップショット記録: `src/ssl_verifier_ios_trust_store.inc` の先頭に次の 2 行のコメントを必ず記載する。1 行目は人間向けの文脈情報、2 行目は機械可読な取得日（テストが自動解析するため、フォーマットを厳密に守ること）。
+
+  ```
+  // Apple Trust Store snapshot: iOS <対応 iOS バージョン>, extracted <YYYY-MM-DD>, source <Apple 公式ページ URL>, macOS <抽出に使った macOS バージョン>
+  // SORA_IOS_TRUST_STORE_EXTRACTED: <YYYY-MM-DD>
+  ```
+
+  `SORA_IOS_TRUST_STORE_EXTRACTED` 行の日付は必ず ISO 8601 形式（`YYYY-MM-DD`）とし、1 行目の `extracted` 日付と一致させる。バージョン識別子は Apple 公式ページのタイトル文字列と参照日で一意化する（Apple が独自の `YYYY-MM` 形式を付与するとは限らないため）
 - 更新運用: SDK バージョンリリースに追従して手動更新する。SDK リリース手順の checklist に「PEM スナップショットの再抽出と差分確認」を追加する
 - 自動化: 本 issue の PR 完了後に別 issue として自動化を起票する
 - バイナリサイズへの影響: 静的ライブラリ（`libsora.a`）の `.rodata` セクションに 225-300 KB 追加される。この代償を許容する
@@ -85,7 +94,6 @@ BoringSSL の `BIO_new_mem_buf` → `PEM_read_bio_X509` ループ → `X509_STOR
 
 ```cpp
 // src/ssl_verifier_ios.cpp
-// Apple Trust Store snapshot: iOS <対応 iOS バージョン>, extracted <YYYY-MM-DD>, source <Apple 公式ページ URL>, macOS <抽出に使った macOS バージョン>
 #include "sora/ssl_verifier.h"
 
 #include <functional>
@@ -166,10 +174,19 @@ bool SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE* store) {
 
 `VerifyX509`（`src/ssl_verifier.cpp:149`）は毎回 `X509_STORE_new()` で新規ストアを作り、これに対して `LoadSystemSSLRootCertificates` を呼ぶ。1 スレッドが 1 ストアを扱う関係のため、`X509_STORE_add_cert` の並列競合は発生しない。`BIO_new_mem_buf` / `PEM_read_bio_X509` は独立のリソースを扱うため BoringSSL 慣行上スレッドセーフ。`kAppleTrustStorePEM` は read-only の静的 const データで並列読み出しに関して安全。
 
+### 鮮度チェック（Trust Store バンドルの有効期限切れ検出）
+
+- `src/ssl_verifier/ssl_verifier_ios_trust_store.inc` の `SORA_IOS_TRUST_STORE_EXTRACTED` 行から取得日を抽出し、現在日付との差が一定日数を超過していたらテストを失敗させる
+- 許容最大経過日数は 180 日（約 6 か月）とする
+- チェック用スクリプト（例: `tools/check_trust_store_freshness.py`）を新規追加し、CI で実行する
+- Apple が Trust Store を更新していない期間に誤検出しないよう、許容日数は十分に長くとる
+- 緊急の手動更新が必要な場合は `SORA_IOS_TRUST_STORE_EXTRACTED` の日付を手動で更新する（再抽出が不要な場合に限る）。その場合は必ず PR 本文に更新理由を記載する
+
 ## 完了条件
 
 - `src/ssl_verifier_ios.cpp` が新規追加され、`SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE*)` の iOS 実装を `SSLVerifier::` メンバ関数として保持している
-- `src/ssl_verifier_ios_trust_store.inc` が新規追加され、Apple 公開 Trust Store の PEM バンドルを生文字列リテラル 1 本の形式で保持している。`src/ssl_verifier_ios.cpp` 冒頭コメントに取得元 URL・スナップショット日付・抽出時の macOS バージョンが記録されている
+- `src/ssl_verifier_ios_trust_store.inc` が新規追加され、先頭にスナップショット記録コメント（人間向けの文脈行 + 機械可読な `SORA_IOS_TRUST_STORE_EXTRACTED` 行）+ Apple 公開 Trust Store の PEM バンドルを生文字列リテラル 1 本の形式で保持している
+- 鮮度チェック用スクリプト `tools/check_trust_store_freshness.py` が新規追加され、`SORA_IOS_TRUST_STORE_EXTRACTED` の日付を読み取り、取得日から 180 日超過でエラーを返す
 - `CMakeLists.txt` の共通差し込み口の `elseif (SORA_TARGET_OS STREQUAL "ios")` ブロックの `set(SORA_SYSTEM_CA_IMPL src/ssl_verifier_stub.cpp)` が `set(SORA_SYSTEM_CA_IMPL src/ssl_verifier_ios.cpp)` に書き換わっている
 - 既存の iOS プラットフォーム分岐は変更されていない（Security.framework 等の追加リンクなし）
 - 親 0035 の `LoadSystemSSLRootCertificates` 契約を満たしている（1 件以上追加で `true` / 部分失敗は `RTC_LOG(LS_WARNING)` 続行 / 0 件は `RTC_LOG(LS_ERROR)` で `false` / キャッシュなし / スレッドセーフ）
@@ -180,16 +197,18 @@ bool SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE* store) {
 
 ## 解決方法
 
-1. `src/ssl_verifier_ios_trust_store.inc` を新規追加し、Apple 公開 Trust Store の PEM バンドルを生文字列リテラル 1 本の形式で配置する
-2. `src/ssl_verifier_ios.cpp` を新規追加し、上記の設計方針・実装骨格に従って `SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE*)` を実装する。ファイル冒頭にスナップショット記録コメントを記載する
-3. `CMakeLists.txt` の共通差し込み口の iOS 分岐で `set` 行を `src/ssl_verifier_ios.cpp` に書き換える
-4. テスト戦略節に従い、ビルド確認・接続確認・回帰確認・証跡取得を行う
-5. `CHANGES.md` に `[CHANGE]` エントリを追加する
+1. `src/ssl_verifier_ios_trust_store.inc` を新規追加し、先頭のスナップショット記録コメント（人間向けの文脈行 + 機械可読な `SORA_IOS_TRUST_STORE_EXTRACTED` 行）+ Apple 公開 Trust Store の PEM バンドルを生文字列リテラル 1 本の形式で配置する
+2. `src/ssl_verifier_ios.cpp` を新規追加し、上記の設計方針・実装骨格に従って `SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE*)` を実装する。`.inc` は `#include` で読み込む
+3. `tools/check_trust_store_freshness.py` を新規追加し、`src/ssl_verifier/ssl_verifier_ios_trust_store.inc` から `SORA_IOS_TRUST_STORE_EXTRACTED` 行を読み取って 180 日超過を検出するスクリプトを実装する
+4. `CMakeLists.txt` の共通差し込み口の iOS 分岐で `set` 行を `src/ssl_verifier_ios.cpp` に書き換える
+5. テスト戦略節に従い、ビルド確認・接続確認・回帰確認・証跡取得を行う
+6. `CHANGES.md` に `[CHANGE]` エントリを追加する
 
 ## 変更対象ファイル
 
 - `src/ssl_verifier_ios.cpp`（新規追加）
 - `src/ssl_verifier_ios_trust_store.inc`（新規追加、Apple 公開 Trust Store の PEM バンドル）
+- `tools/check_trust_store_freshness.py`（新規追加、PEM バンドルの取得日鮮度チェック）
 - `CMakeLists.txt`（共通差し込み口の `set` 行 1 行を書き換え）
 - `CHANGES.md`（`[CHANGE]` エントリ追加）
 
@@ -217,6 +236,12 @@ bool SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE* store) {
 - N が 1 以上であれば、バンドル PEM から少なくとも 1 件のアンカーを読み込み、それにより接続の chain building が成功したことになる
 - iOS では Linux の Docker 隔離のような「バンドル PEM を無効化」する手段が事実上ないため、失敗ケースの実証は行わず、成功時ログを証跡とする方針を採る（0037 / 0038 と同じ整理）
 - ログ抜粋を PR 本文に添付する
+
+### 鮮度チェック（取得日からの経過日数確認）
+
+- `tools/check_trust_store_freshness.py` を実行し、`src/ssl_verifier/ssl_verifier_ios_trust_store.inc` の `SORA_IOS_TRUST_STORE_EXTRACTED` の日付から 180 日以上経過していないか確認する
+- 180 日超過の場合はスクリプトが非ゼロの終了コードを返す
+- CI ワークフローにこのチェックを組み込む
 
 ## 関連
 
