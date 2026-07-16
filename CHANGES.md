@@ -29,6 +29,11 @@
 - [ADD] TURN-TLS のクライアント証明書設定に対応する
   - `SoraSignalingConfig` の `client_cert` / `client_key` を TURN-TLS にも適用する
   - @zztkm
+- [UPDATE] TLS 検証の共通差し込み口 `SSLVerifier::LoadSystemSSLRootCertificates` を追加する
+  - `ca_cert` 未指定時の信頼ストア構築を `LoadSystemSSLRootCertificates` に集約する
+  - 現時点では `src/ssl_verifier/stub.cpp` による暫定実装で、挙動は現行維持
+  - `SSLVerifier::LoadBuiltinSSLRootCertificates` は private static メンバであり、公開 API の破壊は伴わない
+  - @melpon
 - [UPDATE] libwebrtc のバージョンを m150.7871.3.0 に上げる
   - `webrtc::RtcEventLogFactory` のコンストラクタ不一致を修正する
     - libwebrtc で `RtcEventLogFactory` の `TaskQueueFactory` が削除されたため、変更に追従する

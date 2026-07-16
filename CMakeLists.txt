@@ -135,6 +135,21 @@ target_sources(sora
     src/zlib_helper.cpp
 )
 
+if (SORA_TARGET_OS STREQUAL "ubuntu")
+  set(SORA_SYSTEM_CA_IMPL src/ssl_verifier/ssl_verifier_stub.cpp)
+elseif (SORA_TARGET_OS STREQUAL "macos")
+  set(SORA_SYSTEM_CA_IMPL src/ssl_verifier/ssl_verifier_stub.cpp)
+elseif (SORA_TARGET_OS STREQUAL "windows")
+  set(SORA_SYSTEM_CA_IMPL src/ssl_verifier/ssl_verifier_stub.cpp)
+elseif (SORA_TARGET_OS STREQUAL "ios")
+  set(SORA_SYSTEM_CA_IMPL src/ssl_verifier/ssl_verifier_stub.cpp)
+elseif (SORA_TARGET_OS STREQUAL "android")
+  set(SORA_SYSTEM_CA_IMPL src/ssl_verifier/ssl_verifier_stub.cpp)
+else ()
+  message(FATAL_ERROR "Unknown SORA_TARGET_OS: ${SORA_TARGET_OS}")
+endif ()
+target_sources(sora PRIVATE ${SORA_SYSTEM_CA_IMPL})
+
 target_compile_definitions(sora PRIVATE ${SORA_TARGET_DEF})
 target_compile_definitions(sora PUBLIC BOOST_ASIO_ENABLE_VERSION_NAMESPACE)
 
