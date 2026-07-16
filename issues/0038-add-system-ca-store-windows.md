@@ -4,7 +4,7 @@
 - Created: 2026-07-16
 - Completed: {YYYY-MM-DD}
 - Model: Composer 2.5
-- Branch: feature/add-system-ca-store-windows
+- Branch: feature/change-system-ca-store-windows
 - Polished: 2026-07-16
 
 ## 目的
@@ -19,7 +19,7 @@ Medium。親 0035 と同じ。Windows には `/etc/ssl/...` 相当のパスが�
 
 ## 現状
 
-親 0035 の PR がマージされた後、Windows ターゲットは共通差し込み口 `SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE*)` を経由するが、実装は `src/ssl_verifier_stub.cpp` の暫定実装（現行 4 段ロード相当）に閉じ込められている。本 issue で `src/ssl_verifier_windows.cpp` を追加し、Windows ターゲットの `LoadSystemSSLRootCertificates` を Windows 証明書ストア経由の `ROOT` 読み込みに置き換える。
+親 0035 の PR がマージされた後、Windows ターゲットは他 4 OS 用ヘルパー `SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE*)` を経由するが、実装は `src/ssl_verifier_stub.cpp` の暫定実装（現行 4 段ロード相当）に閉じ込められている。本 issue で `src/ssl_verifier_windows.cpp` を追加し、Windows ターゲットの `LoadSystemSSLRootCertificates` を Windows 証明書ストア経由の `ROOT` 読み込みに置き換える。
 
 ## 対象ビルドターゲット
 
@@ -167,9 +167,9 @@ bool SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE* store) {
 
 ### CMakeLists.txt の変更
 
-CMakeLists.txt には親 0035 が用意した「共通差し込み口の切り替え分岐」（`SORA_SSL_VERIFIER_SOURCES` を選ぶ if / elseif ブロック）と、既存の Windows プラットフォーム分岐（`CMakeLists.txt:239` 付近から始まる `if (SORA_TARGET_OS STREQUAL "windows")` ブロック）の 2 箇所に手を入れる。
+CMakeLists.txt には親 0035 が用意した「分岐骨格の切り替え分岐」（`SORA_SSL_VERIFIER_SOURCES` を選ぶ if / elseif ブロック）と、既存の Windows プラットフォーム分岐（`CMakeLists.txt:239` 付近から始まる `if (SORA_TARGET_OS STREQUAL "windows")` ブロック）の 2 箇所に手を入れる。
 
-- 共通差し込み口の分岐: `elseif (SORA_TARGET_OS STREQUAL "windows")` ブロックの `set(SORA_SSL_VERIFIER_SOURCES src/ssl_verifier.cpp src/ssl_verifier_stub.cpp)` を `set(SORA_SSL_VERIFIER_SOURCES src/ssl_verifier.cpp src/ssl_verifier_windows.cpp)` に書き換える
+- 分岐骨格の分岐: `elseif (SORA_TARGET_OS STREQUAL "windows")` ブロックの `set(SORA_SSL_VERIFIER_SOURCES src/ssl_verifier.cpp src/ssl_verifier_stub.cpp)` を `set(SORA_SSL_VERIFIER_SOURCES src/ssl_verifier.cpp src/ssl_verifier_windows.cpp)` に書き換える
 - 既存の Windows プラットフォーム分岐: `CMakeLists.txt:265` 付近にコメントアウトされている `#    crypt32.lib` の行のコメントを外して有効化する。既存の `Secur32.lib` などと同じ `target_link_libraries(sora PUBLIC ...)` ブロック内に位置しているため、可視性は既存の他 Windows ライブラリと揃って `PUBLIC` になる（`sora` は静的ライブラリのため下流ターゲット `sumomo` 等でも解決する必要がある）。既存の `Secur32.lib` / `winmm.lib` などとスタイルが混在しているため、`crypt32.lib` は既存流に合わせて小文字始まりのままとする
 
 ### スレッド安全性
@@ -179,7 +179,7 @@ CMakeLists.txt には親 0035 が用意した「共通差し込み口の切り�
 ## 完了条件
 
 - `src/ssl_verifier_windows.cpp` が新規追加され、`SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE*)` の Windows 実装を `SSLVerifier::` メンバ関数として保持している
-- `CMakeLists.txt` の共通差し込み口の `elseif (SORA_TARGET_OS STREQUAL "windows")` ブロックの `set(SORA_SSL_VERIFIER_SOURCES src/ssl_verifier.cpp src/ssl_verifier_stub.cpp)` が `set(SORA_SSL_VERIFIER_SOURCES src/ssl_verifier.cpp src/ssl_verifier_windows.cpp)` に書き換わっている
+- `CMakeLists.txt` の分岐骨格の `elseif (SORA_TARGET_OS STREQUAL "windows")` ブロックの `set(SORA_SSL_VERIFIER_SOURCES src/ssl_verifier.cpp src/ssl_verifier_stub.cpp)` が `set(SORA_SSL_VERIFIER_SOURCES src/ssl_verifier.cpp src/ssl_verifier_windows.cpp)` に書き換わっている
 - 既存の Windows プラットフォーム分岐で `CMakeLists.txt:265` 付近の `#    crypt32.lib` のコメントが外れて有効になっている
 - 親 0035 の `LoadSystemSSLRootCertificates` 契約を満たしている（1 件以上追加で `true` / 部分失敗は `RTC_LOG(LS_WARNING)` 続行 / 0 件は `RTC_LOG(LS_ERROR)` で `false` / キャッシュなし / スレッドセーフ）
 - Windows 実装は `CertOpenSystemStoreW(NULL, L"ROOT")` のみを取得元とし、`CA` / `AuthRoot` ストアや `X509_STORE_set_default_paths` / `SSLVerifier::AddCert` を呼ばない
@@ -197,7 +197,7 @@ CMakeLists.txt には親 0035 が用意した「共通差し込み口の切り�
 ## 変更対象ファイル
 
 - `src/ssl_verifier_windows.cpp`（新規追加）
-- `CMakeLists.txt`（共通差し込み口の `set` 行書き換えと `crypt32.lib` のコメント解除）
+- `CMakeLists.txt`（分岐骨格の `set` 行書き換えと `crypt32.lib` のコメント解除）
 - `CHANGES.md`（`[CHANGE]` エントリ追加）
 
 `include/sora/ssl_verifier.h` / `src/ssl_verifier.cpp` / `src/ssl_verifier_stub.cpp` / `src/websocket.cpp` / `src/rtc_ssl_verifier.cpp` は本 issue では変更しない。
