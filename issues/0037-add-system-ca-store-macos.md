@@ -2,7 +2,7 @@
 
 - Priority: Medium
 - Created: 2026-07-16
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-07-16
 - Model: Composer 2.5
 - Branch: feature/add-system-ca-store-macos
 - Polished: 2026-07-16
@@ -218,3 +218,13 @@ CMakeLists.txt には親 0035 が用意した「共通差し込み口の切り�
 ### 補足
 
 - `SecTrustCopyAnchorCertificates` は iOS では利用不可（SDK ヘッダの `__OSX_AVAILABLE_STARTING(__MAC_10_3, __IPHONE_NA)` で `__IPHONE_NA` により iOS 未提供と明示されている）。本実装は iOS 0039 には流用できない
+
+## 解決方法
+
+- `src/ssl_verifier/ssl_verifier_macos.cpp` を新規追加し、issue 本文の実装骨格に従って実装した
+- `CMakeLists.txt` の `SORA_SYSTEM_CA_IMPL` 分岐を `ssl_verifier_macos.cpp` に切り替えた
+- `CMakeLists.txt` の macOS プラットフォーム分岐の `target_link_libraries` に `-framework Security` を追加した
+- `CHANGES.md` に `[CHANGE]` エントリを追加した
+- `python3 run.py build macos_arm64` のビルドが成功することを確認した
+- sumomo 経由で Sora Labo に WSS 接続し、`LoadSystemSSLRootCertificates: added=157` の証跡ログを確認した
+- E2E 回帰テスト 13 件が全通過することを確認した
