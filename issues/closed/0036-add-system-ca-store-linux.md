@@ -4,7 +4,7 @@
 - Created: 2026-07-16
 - Completed: 2026-07-16
 - Model: Composer 2.5
-- Branch: feature/add-system-ca-store-linux
+- Branch: feature/change-system-ca-store-linux
 - Polished: 2026-07-16
 
 ## 目的
@@ -19,7 +19,7 @@ Medium。親 0035 と同じ。Linux は `/etc/ssl/certs` が存在する環境�
 
 ## 現状
 
-親 0035 の PR がマージされた後、Linux ターゲットは共通差し込み口 `SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE*)` を経由するが、実装は `src/ssl_verifier_stub.cpp` の暫定実装（現行 4 段ロード相当）に閉じ込められている。本 issue で `src/ssl_verifier_ubuntu.cpp` を追加し、Linux ターゲットの `LoadSystemSSLRootCertificates` を Debian 系の CA バンドル読み込みに置き換える。
+親 0035 の PR がマージされた後、Linux ターゲットは他 4 OS 用ヘルパー `SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE*)` を経由するが、実装は `src/ssl_verifier_stub.cpp` の暫定実装（現行 4 段ロード相当）に閉じ込められている。本 issue で `src/ssl_verifier_ubuntu.cpp` を追加し、Linux ターゲットの `LoadSystemSSLRootCertificates` を Debian 系の CA バンドル読み込みに置き換える。
 
 ## 対象ビルドターゲット
 
@@ -129,7 +129,7 @@ bool SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE* store) {
 ## 完了条件
 
 - `src/ssl_verifier_ubuntu.cpp` が新規追加され、`SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE*)` の Linux 実装を `SSLVerifier::` メンバ関数として保持している
-- `CMakeLists.txt` の `if (SORA_TARGET_OS STREQUAL "ubuntu")` ブロックの `set(SORA_SYSTEM_CA_IMPL src/ssl_verifier_stub.cpp)` が `set(SORA_SYSTEM_CA_IMPL src/ssl_verifier_ubuntu.cpp)` に書き換わっている（親 0035 の CMake 骨格では Ubuntu は最初の `if` 分岐）
+- `CMakeLists.txt` の `if (SORA_TARGET_OS STREQUAL "ubuntu")` ブロックの `set(SORA_SSL_VERIFIER_SOURCES src/ssl_verifier.cpp src/ssl_verifier_stub.cpp)` が `set(SORA_SSL_VERIFIER_SOURCES src/ssl_verifier.cpp src/ssl_verifier_ubuntu.cpp)` に書き換わっている（親 0035 の CMake 骨格では Ubuntu は最初の `if` 分岐）
 - 親 0035 の `LoadSystemSSLRootCertificates` 契約を満たしている（1 件以上追加で `true` / 部分失敗は `RTC_LOG(LS_WARNING)` 続行 / 0 件は `RTC_LOG(LS_ERROR)` で `false` / キャッシュなし / スレッドセーフ）
 - Linux 実装で `X509_STORE_set_default_paths` を呼んでいない
 - Linux 実装は `SSLVerifier::AddCert` を呼ばない（`AddCert` は失敗即 `false` のため親 0035 の「部分失敗は続行」契約と衝突する）
@@ -140,14 +140,14 @@ bool SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE* store) {
 ## 解決方法
 
 1. `src/ssl_verifier_ubuntu.cpp` を新規追加し、上記の設計方針・実装骨格に従って `SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE*)` を実装する
-2. `CMakeLists.txt` の `if (SORA_TARGET_OS STREQUAL "ubuntu")` ブロックの `set` 行を `src/ssl_verifier_stub.cpp` から `src/ssl_verifier_ubuntu.cpp` に書き換える
+2. `CMakeLists.txt` の `if (SORA_TARGET_OS STREQUAL "ubuntu")` ブロックの `set(SORA_SSL_VERIFIER_SOURCES ...)` 行の 2 番目のファイルを `src/ssl_verifier_stub.cpp` から `src/ssl_verifier_ubuntu.cpp` に書き換える
 3. テスト戦略節に従い、ビルド確認・接続確認・回帰確認・システム CA のみでの担保確認を行う
 4. `CHANGES.md` に `[CHANGE]` エントリを追加する
 
 ## 変更対象ファイル
 
 - `src/ssl_verifier_ubuntu.cpp`（新規追加）
-- `CMakeLists.txt`（`if (SORA_TARGET_OS STREQUAL "ubuntu")` ブロックの `set` 行 1 行を書き換え）
+- `CMakeLists.txt`（`if (SORA_TARGET_OS STREQUAL "ubuntu")` ブロックの `set(SORA_SSL_VERIFIER_SOURCES ...)` 行の 2 番目のファイルを書き換え）
 - `CHANGES.md`（`[CHANGE]` エントリ追加）
 
 `include/sora/ssl_verifier.h` / `src/ssl_verifier.cpp` / `src/ssl_verifier_stub.cpp` / `src/websocket.cpp` / `src/rtc_ssl_verifier.cpp` は本 issue では変更しない。
