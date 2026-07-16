@@ -209,25 +209,25 @@ bool SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE* store) {
 
 ### CMakeLists.txt の変更
 
-親 0035 が用意した共通差し込み口の切り替え分岐（`SORA_SYSTEM_CA_IMPL` 変数と、直後の無条件 `target_sources(sora PRIVATE ${SORA_SYSTEM_CA_IMPL})`）を、次の形に置き換える:
+親 0035 が用意した共通差し込み口の切り替え分岐（`SORA_SSL_VERIFIER_SOURCES` 変数と、直後の無条件 `target_sources(sora PRIVATE ${SORA_SSL_VERIFIER_SOURCES})`）を、次の形に置き換える。iOS は `src/ssl_verifier_ios.mm` の 1 ファイル単独、他 4 OS は `src/ssl_verifier.cpp` + OS 別ソースの 2 ファイル:
 
 ```cmake
 if (SORA_TARGET_OS STREQUAL "ubuntu")
-  target_sources(sora PRIVATE src/ssl_verifier_ubuntu.cpp)
+  target_sources(sora PRIVATE src/ssl_verifier.cpp src/ssl_verifier_ubuntu.cpp)
 elseif (SORA_TARGET_OS STREQUAL "macos")
-  target_sources(sora PRIVATE src/ssl_verifier_macos.cpp)
+  target_sources(sora PRIVATE src/ssl_verifier.cpp src/ssl_verifier_macos.cpp)
 elseif (SORA_TARGET_OS STREQUAL "windows")
-  target_sources(sora PRIVATE src/ssl_verifier_windows.cpp)
+  target_sources(sora PRIVATE src/ssl_verifier.cpp src/ssl_verifier_windows.cpp)
 elseif (SORA_TARGET_OS STREQUAL "ios")
-  target_sources(sora PRIVATE src/ssl_verifier_ios.cpp)
+  target_sources(sora PRIVATE src/ssl_verifier_ios.mm)
 elseif (SORA_TARGET_OS STREQUAL "android")
-  target_sources(sora PRIVATE src/ssl_verifier_android.cpp)
+  target_sources(sora PRIVATE src/ssl_verifier.cpp src/ssl_verifier_android.cpp)
 else ()
   message(FATAL_ERROR "Unknown SORA_TARGET_OS: ${SORA_TARGET_OS}")
 endif ()
 ```
 
-親 0035 の骨格が保っていた `SORA_TARGET_OS` に応じた排他選択と、未知 OS 検知の `FATAL_ERROR` ガードは維持する。`SORA_SYSTEM_CA_IMPL` 変数と後続の `target_sources(sora PRIVATE ${SORA_SYSTEM_CA_IMPL})` の 2 行は不要になるため削除する。各 OS プラットフォーム分岐（Windows / macOS / iOS / Android / Ubuntu）の内部には手を入れない。
+親 0035 の骨格が保っていた `SORA_TARGET_OS` に応じた排他選択と、未知 OS 検知の `FATAL_ERROR` ガードは維持する。`SORA_SSL_VERIFIER_SOURCES` 変数と後続の `target_sources(sora PRIVATE ${SORA_SSL_VERIFIER_SOURCES})` の 2 行は不要になるため削除する。各 OS プラットフォーム分岐（Windows / macOS / iOS / Android / Ubuntu）の内部には手を入れない（iOS の `-framework Security` / `-framework CoreFoundation` は 0039 で追加済み）。
 
 既存の Android プラットフォーム分岐に対する追加リンクは不要（`opendir` / `readdir` / `BIO_*` / `PEM_*` / `X509_*` は bionic libc と BoringSSL で解決される。BoringSSL は WebRTC 内部にリンクされており、`find_package(WebRTC REQUIRED)` を経由して sora の全 OS ターゲットで既にリンク済み）。
 
@@ -242,7 +242,7 @@ Android 14+ 端末では両ディレクトリで概ね 130 件前後（apex/syst
 ## 完了条件
 
 - `src/ssl_verifier_android.cpp` が新規追加され、`SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE*)` の Android 実装を `SSLVerifier::` メンバ関数として保持している
-- `CMakeLists.txt` から親 0035 が用意した `SORA_SYSTEM_CA_IMPL` 変数と後続の無条件 `target_sources(sora PRIVATE ${SORA_SYSTEM_CA_IMPL})` が削除され、代わりに `if (SORA_TARGET_OS STREQUAL "ubuntu") ... elseif ... elseif ... else () message(FATAL_ERROR ...) endif ()` 分岐内で各 OS 別ソース（`src/ssl_verifier_ubuntu.cpp` / `src/ssl_verifier_macos.cpp` / `src/ssl_verifier_windows.cpp` / `src/ssl_verifier_ios.cpp` / `src/ssl_verifier_android.cpp`）が `target_sources(sora PRIVATE ...)` で直接指定されている
+- `CMakeLists.txt` から親 0035 が用意した `SORA_SSL_VERIFIER_SOURCES` 変数と後続の無条件 `target_sources(sora PRIVATE ${SORA_SSL_VERIFIER_SOURCES})` が削除され、代わりに `if (SORA_TARGET_OS STREQUAL "ubuntu") ... elseif ... elseif ... else () message(FATAL_ERROR ...) endif ()` 分岐内で各 OS 別ソースが `target_sources(sora PRIVATE ...)` で直接指定されている（他 4 OS は `src/ssl_verifier.cpp` + `src/ssl_verifier_<os>.cpp` の 2 ファイル、iOS は `src/ssl_verifier_ios.mm` の 1 ファイル）
 - `src/ssl_verifier_stub.cpp` が削除されている
 - `src/sora_signaling.cpp` の該当箇所コメント（親 PR 時点で「rtc_base/ssl_roots.h には Let's Encrypt が無い」旨が残っている）がシステム CA 方針に合わせて更新されている
 - 親 0035 の `LoadSystemSSLRootCertificates` 契約を満たしている（1 件以上追加で `true` / 部分失敗は `RTC_LOG(LS_WARNING)` 続行 / 0 件は `RTC_LOG(LS_ERROR)` で `false` / キャッシュなし / スレッドセーフ）
@@ -260,7 +260,7 @@ Android 14+ 端末では両ディレクトリで概ね 130 件前後（apex/syst
 ## 解決方法
 
 1. `src/ssl_verifier_android.cpp` を新規追加し、上記の設計方針・実装骨格に従って `SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE*)` を実装する
-2. `CMakeLists.txt` の `SORA_SYSTEM_CA_IMPL` 変数と後続 `target_sources` を削除し、上記の「### CMakeLists.txt の変更」節のとおり `if / elseif / else` 分岐内で直接 `target_sources` を呼ぶ形に置き換える
+2. `CMakeLists.txt` の `SORA_SSL_VERIFIER_SOURCES` 変数と後続 `target_sources` を削除し、上記の「### CMakeLists.txt の変更」節のとおり `if / elseif / else` 分岐内で直接 `target_sources` を呼ぶ形に置き換える
 3. `src/ssl_verifier_stub.cpp` を削除する
 4. `src/sora_signaling.cpp` の該当コメントを更新する
 5. テスト戦略節に従い、ビルド確認・接続確認・回帰確認・証跡取得を行う
@@ -271,7 +271,7 @@ Android 14+ 端末では両ディレクトリで概ね 130 件前後（apex/syst
 - `src/ssl_verifier_android.cpp`（新規追加）
 - `src/ssl_verifier_stub.cpp`（削除）
 - `src/sora_signaling.cpp`（該当コメントの更新）
-- `CMakeLists.txt`（`SORA_SYSTEM_CA_IMPL` 変数と後続 `target_sources` の削除、if / elseif / else 分岐内での直接指定への置き換え）
+- `CMakeLists.txt`（`SORA_SSL_VERIFIER_SOURCES` 変数と後続 `target_sources` の削除、if / elseif / else 分岐内での直接指定への置き換え）
 - `CHANGES.md`（`[CHANGE]` エントリ 2 本追加）
 
 本 issue では `include/sora/ssl_verifier.h` / `src/ssl_verifier.cpp` / `src/websocket.cpp` / `src/rtc_ssl_verifier.cpp` / `include/sora/rtc_ssl_verifier.h` は変更しない。
