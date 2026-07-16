@@ -134,17 +134,17 @@ class SSLVerifier {
 ```cmake
 # CMakeLists.txt の target_sources ブロック直後に置く。
 # 親 PR 時点では全 OS で ssl_verifier_stub.cpp を選ぶ。
-# 各子 PR は該当 OS の elseif ブロックの set 行のみを OS 別ソースに書き換える。
+# 各子 PR は該当 OS の分岐ブロックの set 行のみを OS 別ソースに書き換える。
 if (SORA_TARGET_OS STREQUAL "ubuntu")
-  set(SORA_SYSTEM_CA_IMPL src/ssl_verifier_stub.cpp)   # 子 0036 で src/ssl_verifier_ubuntu.cpp に差し替える
+  set(SORA_SYSTEM_CA_IMPL src/ssl_verifier_stub.cpp)
 elseif (SORA_TARGET_OS STREQUAL "macos")
-  set(SORA_SYSTEM_CA_IMPL src/ssl_verifier_stub.cpp)   # 子 0037 で src/ssl_verifier_macos.mm に差し替える
+  set(SORA_SYSTEM_CA_IMPL src/ssl_verifier_stub.cpp)
 elseif (SORA_TARGET_OS STREQUAL "windows")
-  set(SORA_SYSTEM_CA_IMPL src/ssl_verifier_stub.cpp)   # 子 0038 で src/ssl_verifier_windows.cpp に差し替える
+  set(SORA_SYSTEM_CA_IMPL src/ssl_verifier_stub.cpp)
 elseif (SORA_TARGET_OS STREQUAL "ios")
-  set(SORA_SYSTEM_CA_IMPL src/ssl_verifier_stub.cpp)   # 子 0039 で src/ssl_verifier_ios.mm に差し替える
+  set(SORA_SYSTEM_CA_IMPL src/ssl_verifier_stub.cpp)
 elseif (SORA_TARGET_OS STREQUAL "android")
-  set(SORA_SYSTEM_CA_IMPL src/ssl_verifier_stub.cpp)   # 子 0040 で src/ssl_verifier_android.cpp に差し替える
+  set(SORA_SYSTEM_CA_IMPL src/ssl_verifier_stub.cpp)
 else ()
   message(FATAL_ERROR "Unknown SORA_TARGET_OS: ${SORA_TARGET_OS}")
 endif ()
@@ -152,7 +152,8 @@ target_sources(sora PRIVATE ${SORA_SYSTEM_CA_IMPL})
 ```
 
 - `SORA_TARGET_OS` は `CMakeLists.txt:20-62` で `windows` / `macos` / `ios` / `android` / `ubuntu` のいずれかにセットされる（Raspberry Pi OS も `ubuntu` に集約される）
-- 各子 PR は自 OS の `elseif` ブロックの `set` 行のみを書き換えるため、子 PR 間で同一行を触らず CMakeLists.txt のコンフリクトは発生しない
+- 各子 PR は自 OS の分岐ブロックの `set` 行のみを書き換えるため、子 PR 間で同一行を触らず CMakeLists.txt のコンフリクトは発生しない
+- CMake 内には issue 番号への言及コメント（`# 子 XXXX で 〜` など）を残さない（`shiguredo-issues` の規約に従い、ソースコード本体に issue 番号を持ち込まない）
 - 0040 完了時にはこの分岐ブロックごと削除し、`ssl_verifier_stub.cpp` も削除する
 
 ### 暫定実装の戻り値（stub 専用の例外）
