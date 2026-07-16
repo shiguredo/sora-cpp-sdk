@@ -17,6 +17,11 @@
   - 非 Android / iOS では `SoraClientContext::Create()` 内で同期的に `WebRtcVoiceEngine::Init()` を実行させ、指定デバイス設定後に `InitMicrophone()` / `InitSpeaker()` を行う
   - Android / iOS では `media_engine_ref_` を作成せず、既存挙動に影響しない
   - @voluntas
+- [CHANGE] macOS の TLS 検証を OS のシステム CA（Keychain System Roots）に切り替える
+  - macOS Sonoma (14.x) 以降が対象
+  - Keychain の Admin / User ドメインの trust settings と MDM Configuration Profile で配布された CA は反映されない
+  - 独自 CA が必要な場合は `SoraSignalingConfig::ca_cert` で明示指定する
+  - @melpon
 - [CHANGE] Linux の TLS 検証を OS のシステム CA に切り替える
   - Ubuntu 22.04 / 24.04、Raspberry Pi OS bookworm 以降が対象
   - `ca-certificates` 未導入や上記より古い Raspberry Pi OS 等、前提を満たさない環境では TLS 検証が失敗する

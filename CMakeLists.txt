@@ -138,7 +138,7 @@ target_sources(sora
 if (SORA_TARGET_OS STREQUAL "ubuntu")
   set(SORA_SYSTEM_CA_IMPL src/ssl_verifier/ssl_verifier_ubuntu.cpp)
 elseif (SORA_TARGET_OS STREQUAL "macos")
-  set(SORA_SYSTEM_CA_IMPL src/ssl_verifier/ssl_verifier_stub.cpp)
+  set(SORA_SYSTEM_CA_IMPL src/ssl_verifier/ssl_verifier_macos.cpp)
 elseif (SORA_TARGET_OS STREQUAL "windows")
   set(SORA_SYSTEM_CA_IMPL src/ssl_verifier/ssl_verifier_stub.cpp)
 elseif (SORA_TARGET_OS STREQUAL "ios")
@@ -462,6 +462,7 @@ elseif (SORA_TARGET_OS STREQUAL "macos")
       "-framework OpenGL"
       "-framework IOSurface"
       "-framework ScreenCaptureKit"
+      "-framework Security"
   )
 
 elseif (SORA_TARGET_OS STREQUAL "ios")
