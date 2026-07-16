@@ -151,9 +151,9 @@ bool SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE* store) {
 
 ### CMakeLists.txt の変更
 
-CMakeLists.txt には親 0035 が用意した「共通差し込み口の切り替え分岐」（`SORA_SYSTEM_CA_IMPL` を選ぶ if / elseif ブロック）と、既存の macOS プラットフォーム分岐（`CMakeLists.txt:395` 付近から始まる `elseif (SORA_TARGET_OS STREQUAL "macos")` ブロック）の 2 箇所に手を入れる。
+CMakeLists.txt には親 0035 が用意した「共通差し込み口の切り替え分岐」（`SORA_SSL_VERIFIER_SOURCES` を選ぶ if / elseif ブロック）と、既存の macOS プラットフォーム分岐（`CMakeLists.txt:395` 付近から始まる `elseif (SORA_TARGET_OS STREQUAL "macos")` ブロック）の 2 箇所に手を入れる。
 
-- 共通差し込み口の分岐: 該当する `elseif (SORA_TARGET_OS STREQUAL "macos")` ブロックの `set(SORA_SYSTEM_CA_IMPL src/ssl_verifier_stub.cpp)` を `set(SORA_SYSTEM_CA_IMPL src/ssl_verifier_macos.cpp)` に書き換える
+- 共通差し込み口の分岐: 該当する `elseif (SORA_TARGET_OS STREQUAL "macos")` ブロックの `set(SORA_SSL_VERIFIER_SOURCES src/ssl_verifier.cpp src/ssl_verifier_stub.cpp)` を `set(SORA_SSL_VERIFIER_SOURCES src/ssl_verifier.cpp src/ssl_verifier_macos.cpp)` に書き換える
 - 既存の macOS プラットフォーム分岐（395 行付近）の `target_link_libraries(sora PUBLIC ...)` ブロック（430 行付近、`AVFoundation` / `AudioToolbox` / `QuartzCore` などが列挙されている）の末尾に `"-framework Security"` を 1 行追加する。可視性は既存の他フレームワークと揃えて `PUBLIC` にする（`sora` は静的ライブラリのため下流ターゲット `sumomo` 等でも解決する必要がある）
 - CoreFoundation は Security の依存として自動リンクされるため明示追加はしない
 
@@ -164,7 +164,7 @@ CMakeLists.txt には親 0035 が用意した「共通差し込み口の切り�
 ## 完了条件
 
 - `src/ssl_verifier_macos.cpp` が新規追加され、`SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE*)` の macOS 実装を `SSLVerifier::` メンバ関数として保持している
-- `CMakeLists.txt` の共通差し込み口の `elseif (SORA_TARGET_OS STREQUAL "macos")` ブロックの `set(SORA_SYSTEM_CA_IMPL src/ssl_verifier_stub.cpp)` が `set(SORA_SYSTEM_CA_IMPL src/ssl_verifier_macos.cpp)` に書き換わっている
+- `CMakeLists.txt` の共通差し込み口の `elseif (SORA_TARGET_OS STREQUAL "macos")` ブロックの `set(SORA_SSL_VERIFIER_SOURCES src/ssl_verifier.cpp src/ssl_verifier_stub.cpp)` が `set(SORA_SSL_VERIFIER_SOURCES src/ssl_verifier.cpp src/ssl_verifier_macos.cpp)` に書き換わっている
 - 既存の macOS プラットフォーム分岐（`CMakeLists.txt:395` 付近から始まる別の `elseif (SORA_TARGET_OS STREQUAL "macos")`）の既存 `target_link_libraries(sora PUBLIC ...)` に `-framework Security` が追加されている
 - 親 0035 の `LoadSystemSSLRootCertificates` 契約を満たしている（1 件以上追加で `true` / 部分失敗は `RTC_LOG(LS_WARNING)` 続行 / 0 件は `RTC_LOG(LS_ERROR)` で `false` / キャッシュなし / スレッドセーフ）
 - macOS 実装は `SecTrustCopyAnchorCertificates` のみを取得元とし、`SecTrustSettingsCopyCertificates` / `X509_STORE_set_default_paths` / `SSLVerifier::AddCert` を呼ばない
