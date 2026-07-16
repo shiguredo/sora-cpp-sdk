@@ -2,7 +2,7 @@
 
 - Priority: Medium
 - Created: 2026-07-16
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-07-16
 - Model: Composer 2.5
 - Branch: feature/add-system-ca-store-linux
 - Polished: 2026-07-16
@@ -182,6 +182,11 @@ bool SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE* store) {
 - ホスト OS で直接ファイルを退避しない（他プロセスの TLS 通信を巻き込むため）
 - Ubuntu 22.04 / Raspberry Pi OS bookworm の代表性: Debian 系は `update-ca-certificates` が生成する `ca-certificates.crt` の形式（`BEGIN CERTIFICATE` ブロックの単純連結）が共通で、実装が touch するのはこのファイルのみのため、Ubuntu 24.04 の隔離テストで他ターゲットを代表できる
 - 本試験は意図的に ERROR ログを発生させるため CI には組み込まない（PR 本文への手動証跡添付のみ）
+
+- `src/ssl_verifier/ssl_verifier_ubuntu.cpp` を新規追加し、`SSLVerifier::LoadSystemSSLRootCertificates` の Linux 実装を記述した
+- 実装は `/etc/ssl/certs/ca-certificates.crt` を `BIO_new_file` → `PEM_read_bio_X509` ループ → `X509_STORE_add_cert` の流れでシステム CA を読み込む
+- `CMakeLists.txt` の `if (SORA_TARGET_OS STREQUAL "ubuntu")` ブロックの `set` 行を `src/ssl_verifier/ssl_verifier_stub.cpp` から `src/ssl_verifier/ssl_verifier_ubuntu.cpp` に切り替えた
+- `CHANGES.md` に `[CHANGE]` エントリを追加した
 
 ## 関連
 
