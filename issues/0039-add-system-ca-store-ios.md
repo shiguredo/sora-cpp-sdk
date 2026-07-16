@@ -4,14 +4,14 @@
 - Created: 2026-07-16
 - Completed: {YYYY-MM-DD}
 - Model: Composer 2.5
-- Branch: feature/add-system-ca-store-ios
+- Branch: feature/change-system-ca-store-ios
 - Polished: 2026-07-16
 
 ## 目的
 
 iOS 上の WSS / TURN-TLS 証明書検証で、iOS のシステム trust store を信頼アンカーとして使う。親 issue 0035 の iOS 実装。
 
-iOS は Apple のサンドボックス設計上、アプリから system trust store のアンカーを列挙する public API が存在しない（`SecTrustCopyAnchorCertificates` / `SecTrustSettingsCopyCertificates` は macOS 専用）。そのため実装手段としては、他 4 OS のような「アンカー列挙型」（`LoadSystemSSLRootCertificates` でシステム CA を `X509_STORE` に投入）を採らず、「検証委譲型」（`SSLVerifier::VerifyX509` を丸ごと差し替えて Security.framework の `SecTrustEvaluateWithError` に検証を渡す）を採る。信頼の根拠が iOS のシステム trust store になるという結果は他 4 OS と同じ。iOS 例外方針の詳細は親 0035 の該当節を参照。
+iOS は Apple のサンドボックス設計上、アプリから system trust store のアンカーを列挙する public API が存在しない（`SecTrustCopyAnchorCertificates` / `SecTrustSettingsCopyCertificates` は macOS 専用）。そのため実装手段としては、他 4 OS のような「アンカー列挙型」（`LoadSystemSSLRootCertificates` でシステム CA を `X509_STORE` に投入）を採らず、「検証委譲型」（`SSLVerifier::VerifyX509` を丸ごと差し替えて Security.framework の `SecTrustEvaluateWithError` に検証を渡す）を採る。信頼の根拠が iOS のシステム trust store になるという結果は他 4 OS と同じ。iOS の実装手段の詳細は親 0035 の「iOS の実装手段」節を参照。
 
 ## 優先度根拠
 
