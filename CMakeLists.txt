@@ -136,7 +136,7 @@ target_sources(sora
 )
 
 if (SORA_TARGET_OS STREQUAL "ubuntu")
-  set(SORA_SYSTEM_CA_IMPL src/ssl_verifier/ssl_verifier_stub.cpp)
+  set(SORA_SYSTEM_CA_IMPL src/ssl_verifier/ssl_verifier_ubuntu.cpp)
 elseif (SORA_TARGET_OS STREQUAL "macos")
   set(SORA_SYSTEM_CA_IMPL src/ssl_verifier/ssl_verifier_stub.cpp)
 elseif (SORA_TARGET_OS STREQUAL "windows")

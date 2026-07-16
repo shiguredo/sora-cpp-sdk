@@ -17,6 +17,11 @@
   - 非 Android / iOS では `SoraClientContext::Create()` 内で同期的に `WebRtcVoiceEngine::Init()` を実行させ、指定デバイス設定後に `InitMicrophone()` / `InitSpeaker()` を行う
   - Android / iOS では `media_engine_ref_` を作成せず、既存挙動に影響しない
   - @voluntas
+- [CHANGE] Linux の TLS 検証を OS のシステム CA に切り替える
+  - Ubuntu 22.04 / 24.04、Raspberry Pi OS bookworm 以降が対象
+  - `ca-certificates` 未導入や上記より古い Raspberry Pi OS 等、前提を満たさない環境では TLS 検証が失敗する
+  - 回避するには `SoraSignalingConfig::ca_cert` に PEM を明示指定する
+  - @melpon
 - [ADD] sumomo の E2E テストで `--audio-recording-device` を複数の音声録音デバイスに対して個別に検証するテストを追加する
   - @melpon
 - [ADD] sumomo の E2E テストで録音デバイス未指定時・無効指定時の挙動を検証するテストを追加する
