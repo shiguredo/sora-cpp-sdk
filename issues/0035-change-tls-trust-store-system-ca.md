@@ -45,7 +45,7 @@ WSS と TURN-TLS はともに最終的に `SSLVerifier::VerifyX509`（`src/ssl_v
 | 子 issue | `SORA_TARGET_OS` | 対象 `SORA_TARGET` | OS 別ソースファイル名 |
 |---|---|---|---|
 | 0036 | `ubuntu` | `ubuntu-22.04_x86_64` / `ubuntu-24.04_x86_64` / `ubuntu-22.04_armv8` / `ubuntu-24.04_armv8` / `raspberry-pi-os_armv8` | `src/ssl_verifier_ubuntu.cpp` |
-| 0037 | `macos` | `macos_arm64` | `src/ssl_verifier_macos.mm` |
+| 0037 | `macos` | `macos_arm64` | `src/ssl_verifier_macos.cpp` |
 | 0038 | `windows` | `windows_x86_64` | `src/ssl_verifier_windows.cpp` |
 | 0039 | `ios` | `ios`（Device / Simulator の両方） | `src/ssl_verifier_ios.mm` |
 | 0040 | `android` | `android` | `src/ssl_verifier_android.cpp` |
@@ -57,7 +57,7 @@ Raspberry Pi OS は Debian ベースであり `SORA_TARGET_OS` は `ubuntu` に�
 各 OS のシステム CA ストアに ISRG Root X1 が収録されていることを前提にする。実務上の下限:
 
 - Ubuntu / Raspberry Pi OS: `ca-certificates` パッケージが導入され、`/etc/ssl/certs/ca-certificates.crt` を含む標準構成であること
-- macOS: 現行サポート範囲（Ventura 以降）はいずれも収録済み
+- macOS: webrtc-build の `MACOS_DEPLOYMENT_TARGET=14` と一致する Sonoma (14.x) 以降。いずれも収録済み
 - Windows: 現行サポート範囲（Windows 10 以降）で AuthRoot が更新されていれば収録済み
 - iOS: サポート最小バージョン以降で収録済み
 - Android: DEPS の `ANDROID_NATIVE_API_LEVEL=29`（Android 10）以降を対象とする。この API level のシステム CA ストアには ISRG Root X1 が含まれる
