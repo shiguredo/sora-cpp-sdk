@@ -167,9 +167,9 @@ bool SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE* store) {
 
 ### CMakeLists.txt の変更
 
-CMakeLists.txt には親 0035 が用意した「共通差し込み口の切り替え分岐」（`SORA_SYSTEM_CA_IMPL` を選ぶ if / elseif ブロック）と、既存の Windows プラットフォーム分岐（`CMakeLists.txt:239` 付近から始まる `if (SORA_TARGET_OS STREQUAL "windows")` ブロック）の 2 箇所に手を入れる。
+CMakeLists.txt には親 0035 が用意した「共通差し込み口の切り替え分岐」（`SORA_SSL_VERIFIER_SOURCES` を選ぶ if / elseif ブロック）と、既存の Windows プラットフォーム分岐（`CMakeLists.txt:239` 付近から始まる `if (SORA_TARGET_OS STREQUAL "windows")` ブロック）の 2 箇所に手を入れる。
 
-- 共通差し込み口の分岐: `elseif (SORA_TARGET_OS STREQUAL "windows")` ブロックの `set(SORA_SYSTEM_CA_IMPL src/ssl_verifier_stub.cpp)` を `set(SORA_SYSTEM_CA_IMPL src/ssl_verifier_windows.cpp)` に書き換える
+- 共通差し込み口の分岐: `elseif (SORA_TARGET_OS STREQUAL "windows")` ブロックの `set(SORA_SSL_VERIFIER_SOURCES src/ssl_verifier.cpp src/ssl_verifier_stub.cpp)` を `set(SORA_SSL_VERIFIER_SOURCES src/ssl_verifier.cpp src/ssl_verifier_windows.cpp)` に書き換える
 - 既存の Windows プラットフォーム分岐: `CMakeLists.txt:265` 付近にコメントアウトされている `#    crypt32.lib` の行のコメントを外して有効化する。既存の `Secur32.lib` などと同じ `target_link_libraries(sora PUBLIC ...)` ブロック内に位置しているため、可視性は既存の他 Windows ライブラリと揃って `PUBLIC` になる（`sora` は静的ライブラリのため下流ターゲット `sumomo` 等でも解決する必要がある）。既存の `Secur32.lib` / `winmm.lib` などとスタイルが混在しているため、`crypt32.lib` は既存流に合わせて小文字始まりのままとする
 
 ### スレッド安全性
@@ -179,7 +179,7 @@ CMakeLists.txt には親 0035 が用意した「共通差し込み口の切り�
 ## 完了条件
 
 - `src/ssl_verifier_windows.cpp` が新規追加され、`SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE*)` の Windows 実装を `SSLVerifier::` メンバ関数として保持している
-- `CMakeLists.txt` の共通差し込み口の `elseif (SORA_TARGET_OS STREQUAL "windows")` ブロックの `set(SORA_SYSTEM_CA_IMPL src/ssl_verifier_stub.cpp)` が `set(SORA_SYSTEM_CA_IMPL src/ssl_verifier_windows.cpp)` に書き換わっている
+- `CMakeLists.txt` の共通差し込み口の `elseif (SORA_TARGET_OS STREQUAL "windows")` ブロックの `set(SORA_SSL_VERIFIER_SOURCES src/ssl_verifier.cpp src/ssl_verifier_stub.cpp)` が `set(SORA_SSL_VERIFIER_SOURCES src/ssl_verifier.cpp src/ssl_verifier_windows.cpp)` に書き換わっている
 - 既存の Windows プラットフォーム分岐で `CMakeLists.txt:265` 付近の `#    crypt32.lib` のコメントが外れて有効になっている
 - 親 0035 の `LoadSystemSSLRootCertificates` 契約を満たしている（1 件以上追加で `true` / 部分失敗は `RTC_LOG(LS_WARNING)` 続行 / 0 件は `RTC_LOG(LS_ERROR)` で `false` / キャッシュなし / スレッドセーフ）
 - Windows 実装は `CertOpenSystemStoreW(NULL, L"ROOT")` のみを取得元とし、`CA` / `AuthRoot` ストアや `X509_STORE_set_default_paths` / `SSLVerifier::AddCert` を呼ばない
