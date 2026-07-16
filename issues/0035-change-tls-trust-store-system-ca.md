@@ -47,7 +47,7 @@ WSS と TURN-TLS はともに最終的に `SSLVerifier::VerifyX509`（`src/ssl_v
 | 0036 | `ubuntu` | `ubuntu-22.04_x86_64` / `ubuntu-24.04_x86_64` / `ubuntu-22.04_armv8` / `ubuntu-24.04_armv8` / `raspberry-pi-os_armv8` | `src/ssl_verifier_ubuntu.cpp` |
 | 0037 | `macos` | `macos_arm64` | `src/ssl_verifier_macos.cpp` |
 | 0038 | `windows` | `windows_x86_64` | `src/ssl_verifier_windows.cpp` |
-| 0039 | `ios` | `ios`（Device / Simulator の両方） | `src/ssl_verifier_ios.mm` |
+| 0039 | `ios` | `ios`（Device / Simulator の両方） | `src/ssl_verifier_ios.cpp` |
 | 0040 | `android` | `android` | `src/ssl_verifier_android.cpp` |
 
 Raspberry Pi OS は Debian ベースであり `SORA_TARGET_OS` は `ubuntu` に集約される（`CMakeLists.txt:58-61`）。Ubuntu 系ソース `src/ssl_verifier_ubuntu.cpp` をそのまま使う前提とする。
