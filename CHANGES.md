@@ -27,6 +27,11 @@
   - `ca-certificates` 未導入や上記より古い Raspberry Pi OS 等、前提を満たさない環境では TLS 検証が失敗する
   - 回避するには `SoraSignalingConfig::ca_cert` に PEM を明示指定する
   - @melpon
+- [CHANGE] Windows の TLS 検証を OS のシステム CA（Windows 証明書ストア `ROOT`）に切り替える
+  - Windows 10 以降が対象
+  - `ROOT` ストアに ISRG Root X1 等の必要なルート CA が反映されていない環境では TLS 検証が失敗する
+  - 回避するには `SoraSignalingConfig::ca_cert` に PEM を明示指定する
+  - @melpon
 - [ADD] sumomo の E2E テストで `--audio-recording-device` を複数の音声録音デバイスに対して個別に検証するテストを追加する
   - @melpon
 - [ADD] sumomo の E2E テストで録音デバイス未指定時・無効指定時の挙動を検証するテストを追加する

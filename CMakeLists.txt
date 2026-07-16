@@ -140,7 +140,7 @@ if (SORA_TARGET_OS STREQUAL "ubuntu")
 elseif (SORA_TARGET_OS STREQUAL "macos")
   set(SORA_SYSTEM_CA_IMPL src/ssl_verifier/ssl_verifier_macos.cpp)
 elseif (SORA_TARGET_OS STREQUAL "windows")
-  set(SORA_SYSTEM_CA_IMPL src/ssl_verifier/ssl_verifier_stub.cpp)
+  set(SORA_SYSTEM_CA_IMPL src/ssl_verifier/ssl_verifier_windows.cpp)
 elseif (SORA_TARGET_OS STREQUAL "ios")
   set(SORA_SYSTEM_CA_IMPL src/ssl_verifier/ssl_verifier_stub.cpp)
 elseif (SORA_TARGET_OS STREQUAL "android")
@@ -277,7 +277,7 @@ if (SORA_TARGET_OS STREQUAL "windows")
       ws2_32.lib
   #    amstrmid.lib
       Strmiids.lib
-  #    crypt32.lib
+      crypt32.lib
       dmoguids.lib
       iphlpapi.lib
       msdmo.lib
