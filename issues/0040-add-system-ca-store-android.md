@@ -4,7 +4,7 @@
 - Created: 2026-07-16
 - Completed: {YYYY-MM-DD}
 - Model: Composer 2.5
-- Branch: feature/add-system-ca-store-android
+- Branch: feature/change-system-ca-store-android
 - Polished: 2026-07-16
 
 ## 目的
@@ -17,7 +17,7 @@ Medium。親 0035 と同じ。Android のシステム CA は `/system/etc/securi
 
 ## 現状
 
-親 0035 の PR がマージされた後、Android ターゲットは共通差し込み口 `SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE*)` を経由するが、実装は `src/ssl_verifier_stub.cpp` の暫定実装に閉じ込められている。
+親 0035 の PR がマージされた後、Android ターゲットは他 4 OS 用ヘルパー `SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE*)` を経由するが、実装は `src/ssl_verifier_stub.cpp` の暫定実装に閉じ込められている。
 
 本 issue で `src/ssl_verifier_android.cpp` を追加し、Android ターゲットの `LoadSystemSSLRootCertificates` を Android のシステム CA ディレクトリ読み込みに置き換える。
 
@@ -209,7 +209,7 @@ bool SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE* store) {
 
 ### CMakeLists.txt の変更
 
-親 0035 が用意した共通差し込み口の切り替え分岐（`SORA_SSL_VERIFIER_SOURCES` 変数と、直後の無条件 `target_sources(sora PRIVATE ${SORA_SSL_VERIFIER_SOURCES})`）を、次の形に置き換える。iOS は `src/ssl_verifier_ios.mm` の 1 ファイル単独、他 4 OS は `src/ssl_verifier.cpp` + OS 別ソースの 2 ファイル:
+親 0035 が用意した分岐骨格の切り替え分岐（`SORA_SSL_VERIFIER_SOURCES` 変数と、直後の無条件 `target_sources(sora PRIVATE ${SORA_SSL_VERIFIER_SOURCES})`）を、次の形に置き換える。iOS は `src/ssl_verifier_ios.mm` の 1 ファイル単独、他 4 OS は `src/ssl_verifier.cpp` + OS 別ソースの 2 ファイル:
 
 ```cmake
 if (SORA_TARGET_OS STREQUAL "ubuntu")
