@@ -17,36 +17,16 @@
   - 非 Android / iOS では `SoraClientContext::Create()` 内で同期的に `WebRtcVoiceEngine::Init()` を実行させ、指定デバイス設定後に `InitMicrophone()` / `InitSpeaker()` を行う
   - Android / iOS では `media_engine_ref_` を作成せず、既存挙動に影響しない
   - @voluntas
-- [CHANGE] macOS の TLS 検証を OS のシステム CA（Keychain System Roots）に切り替える
-  - macOS Sonoma (14.x) 以降が対象
-  - Keychain の Admin / User ドメインの trust settings と MDM Configuration Profile で配布された CA は反映されない
-  - 独自 CA が必要な場合は `SoraSignalingConfig::ca_cert` で明示指定する
-  - @melpon
-- [CHANGE] Linux の TLS 検証を OS のシステム CA に切り替える
-  - Ubuntu 22.04 / 24.04、Raspberry Pi OS bookworm 以降が対象
-  - `ca-certificates` 未導入や上記より古い Raspberry Pi OS 等、前提を満たさない環境では TLS 検証が失敗する
-  - 回避するには `SoraSignalingConfig::ca_cert` に PEM を明示指定する
-  - @melpon
-- [CHANGE] Windows の TLS 検証を OS のシステム CA（Windows 証明書ストア `ROOT`）に切り替える
-  - Windows 10 以降が対象
-  - `ROOT` ストアに ISRG Root X1 等の必要なルート CA が反映されていない環境では TLS 検証が失敗する
-  - 回避するには `SoraSignalingConfig::ca_cert` に PEM を明示指定する
-  - @melpon
-- [CHANGE] iOS の TLS 検証を OS のシステム CA（iOS のシステム trust store）に切り替える
-  - iOS 14 以降が対象
-  - iOS の sandbox 制約によりアンカーの直接列挙が不可能なため、Security.framework の `SecTrustEvaluateWithError` に検証委譲する方式で実装している
-  - Apple 管理のシステム trust store に基づく信頼判定（CT / revocation を含む）が反映される
-  - 独自 CA が必要な場合は `SoraSignalingConfig::ca_cert` で明示指定する
-  - @melpon
-- [CHANGE] Android の TLS 検証を OS のシステム CA（`/apex/com.android.conscrypt/cacerts/` と `/system/etc/security/cacerts/`）に切り替える
-  - Android 10 以降（`ANDROID_NATIVE_API_LEVEL=29`）が対象
-  - Conscrypt Mainline module 経由の CA ストア（Android 14 以降）を優先し、AOSP 標準パスをフォールバックとして読む
-  - `KeyChain` API 経由の Trusted credentials や Network Security Config の `<trust-anchors>` は反映されない
-  - 独自 CA が必要な場合は `SoraSignalingConfig::ca_cert` で明示指定する
-  - @melpon
-- [CHANGE] `src/ssl_verifier/ssl_verifier_stub.cpp` を削除し、全 OS で TLS 検証の信頼ストア切り替えを完了する
-  - 旧ハードコード PEM（`isrg_root` / `lets_encrypt_r3`）と WebRTC `rtc_base/ssl_roots.h` 依存を完全に撤廃した
-  - Android も他 OS と同様に OS のシステム CA ストアを信頼の根拠とする方式に統一した
+- [CHANGE] TLS 検証の信頼ストアを OS のシステム CA に切り替える
+  - 全 OS（macOS, Linux, Windows, iOS, Android）でシステム CA を信頼の根拠とする方式に統一する
+  - 独自 CA が必要な場合は全プラットフォーム共通で `SoraSignalingConfig::ca_cert` に PEM を明示指定する
+  - macOS: Sonoma (14.x) 以降が対象、Keychain の Admin / User ドメインの trust settings と MDM Configuration Profile で配布された CA は反映されない
+  - Linux: Ubuntu 22.04 / 24.04、Raspberry Pi OS bookworm 以降が対象、前提を満たさない環境では `ca_cert` 指定が必要
+  - Windows: Windows 10 以降が対象、`ROOT` ストアに必要なルート CA がない環境では `ca_cert` 指定が必要
+  - iOS: iOS 14 以降が対象、sandbox 制約により `SecTrustEvaluateWithError` に検証委譲する方式で実装
+  - Android: Android 10 以降が対象、Conscrypt Mainline module 経由の CA ストアを優先し AOSP 標準パスをフォールバック
+  - `SSLVerifier::LoadSystemSSLRootCertificates` を共通差し込み口として追加し、`ca_cert` 未指定時の信頼ストア構築を集約する
+  - `src/ssl_verifier/ssl_verifier_stub.cpp` を削除し、旧ハードコード PEM（isrg_root / lets_encrypt_r3）と WebRTC `rtc_base/ssl_roots.h` 依存を完全に撤廃する
   - @melpon
 - [ADD] sumomo の E2E テストで `--audio-recording-device` を複数の音声録音デバイスに対して個別に検証するテストを追加する
   - @melpon
@@ -60,11 +40,6 @@
 - [ADD] TURN-TLS のクライアント証明書設定に対応する
   - `SoraSignalingConfig` の `client_cert` / `client_key` を TURN-TLS にも適用する
   - @zztkm
-- [UPDATE] TLS 検証の共通差し込み口 `SSLVerifier::LoadSystemSSLRootCertificates` を追加する
-  - `ca_cert` 未指定時の信頼ストア構築を `LoadSystemSSLRootCertificates` に集約する
-  - 現時点では `src/ssl_verifier/stub.cpp` による暫定実装で、挙動は現行維持
-  - `SSLVerifier::LoadBuiltinSSLRootCertificates` は private static メンバであり、公開 API の破壊は伴わない
-  - @melpon
 - [UPDATE] libwebrtc のバージョンを m150.7871.3.0 に上げる
   - `webrtc::RtcEventLogFactory` のコンストラクタ不一致を修正する
     - libwebrtc で `RtcEventLogFactory` の `TaskQueueFactory` が削除されたため、変更に追従する
