@@ -3,30 +3,26 @@
 #include <dirent.h>
 #include <errno.h>
 
-#include <functional>
 #include <string>
-#include <utility>
 
+// OpenSSL
 #include <openssl/bio.h>
 #include <openssl/err.h>
 #include <openssl/pem.h>
 #include <openssl/x509.h>
 
+// WebRTC
 #include <rtc_base/logging.h>
+
+#include "ssl_verifier_guard.h"
 
 namespace sora {
 namespace {
 
 // 単一ディレクトリを走査してストアに追加、追加件数を返す。
-// opendir 失敗時は errno == ENOENT なら無音で 0（Android バージョンで片方の経路が無いケース）、
+// opendir 失敗時は errno == ENOENT なら無音で 0 （Android バージョンで片方の経路が無いケース）、
 // それ以外は WARNING を出して 0 を返す
 int LoadFromDir(X509_STORE* store, const char* dir_path) {
-  struct Guard {
-    std::function<void()> f;
-    Guard(std::function<void()> f) : f(std::move(f)) {}
-    ~Guard() { f(); }
-  };
-
   DIR* dir = opendir(dir_path);
   if (dir == nullptr) {
     int e = errno;

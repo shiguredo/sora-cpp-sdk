@@ -1,8 +1,5 @@
 #include "sora/ssl_verifier.h"
 
-#include <functional>
-#include <utility>
-
 // OpenSSL
 #include <openssl/bio.h>
 #include <openssl/err.h>
@@ -11,6 +8,8 @@
 
 // WebRTC
 #include <rtc_base/logging.h>
+
+#include "ssl_verifier_guard.h"
 
 namespace sora {
 
@@ -23,11 +22,6 @@ bool SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE* store) {
     return false;
   }
   // BIO の解放は必ず通す
-  struct Guard {
-    std::function<void()> f;
-    Guard(std::function<void()> f) : f(std::move(f)) {}
-    ~Guard() { f(); }
-  };
   // bio は以降再代入されない前提で値捕捉する
   Guard bio_guard([bio]() { BIO_free(bio); });
 
@@ -40,6 +34,7 @@ bool SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE* store) {
     }
     int r = X509_STORE_add_cert(store, cert);
     if (r == 0) {
+      ERR_get_error();
       char subject[256] = {0};
       X509_NAME_oneline(X509_get_subject_name(cert), subject, sizeof(subject));
       RTC_LOG(LS_WARNING) << "LoadSystemSSLRootCertificates: "

@@ -1,15 +1,16 @@
 #include "sora/ssl_verifier.h"
 
-#include <functional>
-#include <utility>
-
 #include <CoreFoundation/CoreFoundation.h>
 #include <Security/Security.h>
 
+// OpenSSL
 #include <openssl/err.h>
 #include <openssl/x509.h>
 
+// WebRTC
 #include <rtc_base/logging.h>
+
+#include "ssl_verifier_guard.h"
 
 namespace sora {
 
@@ -22,11 +23,6 @@ bool SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE* store) {
                       << status;
     return false;
   }
-  struct Guard {
-    std::function<void()> f;
-    Guard(std::function<void()> f) : f(std::move(f)) {}
-    ~Guard() { f(); }
-  };
   Guard anchors_guard([anchors]() { CFRelease(anchors); });
 
   int added = 0;
@@ -59,6 +55,7 @@ bool SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE* store) {
     }
     int r = X509_STORE_add_cert(store, cert);
     if (r == 0) {
+      ERR_get_error();
       char subject[256] = {0};
       X509_NAME_oneline(X509_get_subject_name(cert), subject, sizeof(subject));
       RTC_LOG(LS_WARNING) << "LoadSystemSSLRootCertificates: "

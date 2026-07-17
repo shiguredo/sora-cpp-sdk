@@ -26,7 +26,7 @@
   - iOS: iOS 14 以降が対象、sandbox 制約により `SecTrustEvaluateWithError` に検証委譲する方式で実装
   - Android: Android 10 以降が対象、Conscrypt Mainline module 経由の CA ストアを優先し AOSP 標準パスをフォールバック
   - `SSLVerifier::LoadSystemSSLRootCertificates` を共通差し込み口として追加し、`ca_cert` 未指定時の信頼ストア構築を集約する
-  - `src/ssl_verifier/ssl_verifier_stub.cpp` を削除し、旧ハードコード PEM（isrg_root / lets_encrypt_r3）と WebRTC `rtc_base/ssl_roots.h` 依存を完全に撤廃する
+  - 旧ハードコード PEM（isrg_root / lets_encrypt_r3）と WebRTC `rtc_base/ssl_roots.h` 依存を完全に撤廃し、`src/ssl_verifier/ssl_verifier_guard.h` に共通ユーティリティを抽出する
   - @melpon
 - [ADD] sumomo の E2E テストで `--audio-recording-device` を複数の音声録音デバイスに対して個別に検証するテストを追加する
   - @melpon

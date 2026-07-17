@@ -1,6 +1,5 @@
 #include "sora/ssl_verifier.h"
 
-#include <functional>
 #include <utility>
 #include <vector>
 
@@ -16,14 +15,10 @@
 // WebRTC
 #include <rtc_base/logging.h>
 
+#include "ssl_verifier_guard.h"
+
 namespace sora {
 namespace {
-
-struct Guard {
-  std::function<void()> f;
-  Guard(std::function<void()> f) : f(std::move(f)) {}
-  ~Guard() { f(); }
-};
 
 // X509 を DER にエンコードして SecCertificateRef を作る
 // 失敗時は nullptr を返す
@@ -79,26 +74,7 @@ std::vector<SecCertificateRef> LoadCACertsFromPem(const std::string& pem) {
 bool SSLVerifier::VerifyX509(X509* x509,
                              STACK_OF(X509) * chain,
                              const std::optional<std::string>& ca_cert) {
-  // 診断ログ（他 4 OS の src/ssl_verifier.cpp と同型）
-  {
-    char data[256];
-    RTC_LOG(LS_INFO) << "cert:";
-    X509_NAME_oneline(X509_get_subject_name(x509), data, sizeof(data));
-    RTC_LOG(LS_INFO) << "  subject = " << data;
-    X509_NAME_oneline(X509_get_issuer_name(x509), data, sizeof(data));
-    RTC_LOG(LS_INFO) << "  issuer  = " << data;
-    if (chain != nullptr) {
-      int n = sk_X509_num(chain);
-      for (int i = 0; i < n; i++) {
-        X509* x = sk_X509_value(chain, i);
-        RTC_LOG(LS_INFO) << "chain[" << i << "]:";
-        X509_NAME_oneline(X509_get_subject_name(x), data, sizeof(data));
-        RTC_LOG(LS_INFO) << "  subject = " << data;
-        X509_NAME_oneline(X509_get_issuer_name(x), data, sizeof(data));
-        RTC_LOG(LS_INFO) << "  issuer  = " << data;
-      }
-    }
-  }
+  DumpX509CertificateInfo(x509, chain);
 
   // 引数の X509 と chain を SecCertificateRef の配列に変換する
   std::vector<SecCertificateRef> sec_certs;

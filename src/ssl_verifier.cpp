@@ -1,13 +1,8 @@
 #include "sora/ssl_verifier.h"
 
 #include <cstddef>
-#include <functional>
 #include <optional>
 #include <string>
-#include <utility>
-
-// WebRTC
-#include <rtc_base/logging.h>
 
 // OpenSSL
 #include <openssl/base.h>
@@ -16,6 +11,11 @@
 #include <openssl/pem.h>
 #include <openssl/stack.h>
 #include <openssl/x509.h>
+
+// WebRTC
+#include <rtc_base/logging.h>
+
+#include "ssl_verifier/ssl_verifier_guard.h"
 
 namespace sora {
 
@@ -34,6 +34,7 @@ bool SSLVerifier::AddCert(const std::string& pem, X509_STORE* store) {
 
     int r = X509_STORE_add_cert(store, cert);
     if (r == 0) {
+      ERR_get_error();
       X509_free(cert);
       BIO_free(bio);
       RTC_LOG(LS_ERROR) << "X509_STORE_add_cert failed";
@@ -49,35 +50,11 @@ bool SSLVerifier::AddCert(const std::string& pem, X509_STORE* store) {
 bool SSLVerifier::VerifyX509(X509* x509,
                              STACK_OF(X509) * chain,
                              const std::optional<std::string>& ca_cert) {
-  {
-    char data[256];
-    RTC_LOG(LS_INFO) << "cert:";
-    X509_NAME_oneline(X509_get_subject_name(x509), data, sizeof(data));
-    RTC_LOG(LS_INFO) << "  subject = " << data;
-    X509_NAME_oneline(X509_get_issuer_name(x509), data, sizeof(data));
-    RTC_LOG(LS_INFO) << "  issuer  = " << data;
-
-    if (chain != nullptr) {
-      int n = sk_X509_num(chain);
-      for (int i = 0; i < n; i++) {
-        X509* x = sk_X509_value(chain, i);
-        RTC_LOG(LS_INFO) << "chain[" << i << "]:";
-        X509_NAME_oneline(X509_get_subject_name(x), data, sizeof(data));
-        RTC_LOG(LS_INFO) << "  subject = " << data;
-        X509_NAME_oneline(X509_get_issuer_name(x), data, sizeof(data));
-        RTC_LOG(LS_INFO) << "  issuer  = " << data;
-      }
-    }
-  }
+  DumpX509CertificateInfo(x509, chain);
 
   X509_STORE* store = nullptr;
   X509_STORE_CTX* ctx = nullptr;
 
-  struct Guard {
-    std::function<void()> f;
-    Guard(std::function<void()> f) : f(std::move(f)) {}
-    ~Guard() { f(); }
-  };
   Guard guard([&]() {
     // nullptr を渡しても何もしない
     X509_STORE_CTX_free(ctx);

@@ -1,16 +1,17 @@
 #include "sora/ssl_verifier.h"
 
-#include <functional>
-#include <utility>
-
 // Windows CryptoAPI
-#include <wincrypt.h>
 #include <windows.h>
+#include <wincrypt.h>
 
+// OpenSSL
 #include <openssl/err.h>
 #include <openssl/x509.h>
 
+// WebRTC
 #include <rtc_base/logging.h>
+
+#include "ssl_verifier_guard.h"
 
 namespace sora {
 
@@ -26,11 +27,6 @@ bool SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE* store) {
                       << err;
     return false;
   }
-  struct Guard {
-    std::function<void()> f;
-    Guard(std::function<void()> f) : f(std::move(f)) {}
-    ~Guard() { f(); }
-  };
   Guard store_guard([h_store]() { CertCloseStore(h_store, 0); });
 
   int added = 0;
