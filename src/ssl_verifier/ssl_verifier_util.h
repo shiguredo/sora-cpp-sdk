@@ -28,6 +28,31 @@ struct Guard {
   Guard& operator=(const Guard&) = delete;
 };
 
+// X509_STORE_add_cert を実行し、エラー処理を共通化する。
+// 成功時は true を返す。
+// X509_R_CERT_ALREADY_IN_HASH_TABLE の重複は無視し false を返す（WARNING ログなし）。
+// それ以外のエラーは subject を含む LS_WARNING ログを出力し false を返す。
+// 呼び出し元は cert の所有権を保持し、別途 X509_free すること。
+inline bool TryAddCertToStore(X509* cert,
+                              X509_STORE* store,
+                              const char* context) {
+  int r = X509_STORE_add_cert(store, cert);
+  if (r != 0) {
+    return true;
+  }
+  unsigned long err = ERR_peek_last_error();
+  if (ERR_GET_REASON(err) == X509_R_CERT_ALREADY_IN_HASH_TABLE) {
+    ERR_get_error();
+    return false;
+  }
+  char subject[256] = {0};
+  X509_NAME_oneline(X509_get_subject_name(cert), subject, sizeof(subject));
+  RTC_LOG(LS_WARNING) << context
+                      << ": X509_STORE_add_cert failed: subject=" << subject;
+  ERR_get_error();
+  return false;
+}
+
 // PEM 形式の文字列から X509 証明書のリストをパースする
 // 戻り値の各 X509* は呼び出し元で X509_free すること
 inline std::vector<X509*> ParsePEMCerts(const std::string& pem) {
@@ -51,7 +76,7 @@ inline std::vector<X509*> ParsePEMCerts(const std::string& pem) {
 
 // 証明書とチェーンの subject / issuer を INFO ログに出力する
 inline void DumpX509CertificateInfo(X509* x509, STACK_OF(X509) * chain) {
-  char data[256];
+  char data[256] = {0};
   RTC_LOG(LS_INFO) << "cert:";
   X509_NAME_oneline(X509_get_subject_name(x509), data, sizeof(data));
   RTC_LOG(LS_INFO) << "  subject = " << data;

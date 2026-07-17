@@ -1,8 +1,8 @@
-#include "sora/ssl_verifier.h"
-
+// clang-format off
 // Windows CryptoAPI
-#include <wincrypt.h>
 #include <windows.h>
+#include <wincrypt.h>
+// clang-format on
 
 // OpenSSL
 #include <openssl/err.h>
@@ -57,27 +57,7 @@ bool LoadSystemSSLRootCertificates(X509_STORE* store) {
       RTC_LOG(LS_WARNING) << "LoadSystemSSLRootCertificates: d2i_X509 failed";
       continue;
     }
-    int r = X509_STORE_add_cert(store, cert);
-    if (r == 0) {
-      unsigned long err = ERR_peek_last_error();
-      if (ERR_GET_REASON(err) == X509_R_CERT_ALREADY_IN_HASH_TABLE) {
-        // ROOT ストアの 5 経路仮想ビューでは同一 CA が繰り返し追加を試みられ、
-        // その都度 X509_R_CERT_ALREADY_IN_HASH_TABLE がキューに積まれる。
-        // 重複拒否なのでエラーキューから 1 件取り出すのみで WARNING は出さない。
-        ERR_get_error();
-      } else {
-        char subject[256] = {0};
-        // subject が 256 バイト超なら切り詰められるが、X509_NAME_oneline は NUL 終端保証あり
-        X509_NAME_oneline(X509_get_subject_name(cert), subject,
-                          sizeof(subject));
-        RTC_LOG(LS_WARNING) << "LoadSystemSSLRootCertificates: "
-                               "X509_STORE_add_cert failed: subject="
-                            << subject;
-        // 他 reason（allocation 失敗等）はエラーキューから 1 件取り出してクリアし、
-        // 次イテレーションのエラー報告を汚染しないようにする
-        ERR_get_error();
-      }
-    } else {
+    if (TryAddCertToStore(cert, store, "LoadSystemSSLRootCertificates")) {
       ++added;
     }
     X509_free(cert);

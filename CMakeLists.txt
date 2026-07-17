@@ -141,6 +141,8 @@ elseif (SORA_TARGET_OS STREQUAL "macos")
 elseif (SORA_TARGET_OS STREQUAL "windows")
   target_sources(sora PRIVATE src/ssl_verifier.cpp src/ssl_verifier/ssl_verifier_windows.cpp)
 elseif (SORA_TARGET_OS STREQUAL "ios")
+  # iOS では VerifyX509 を ssl_verifier_ios.mm で SecTrust API を用いて独自実装するため、
+  # ssl_verifier.cpp はビルド対象に含めない
   target_sources(sora PRIVATE src/ssl_verifier/ssl_verifier_ios.mm)
 elseif (SORA_TARGET_OS STREQUAL "android")
   target_sources(sora PRIVATE src/ssl_verifier.cpp src/ssl_verifier/ssl_verifier_android.cpp)
@@ -460,6 +462,7 @@ elseif (SORA_TARGET_OS STREQUAL "macos")
       "-framework OpenGL"
       "-framework IOSurface"
       "-framework ScreenCaptureKit"
+      "-framework CoreFoundation"
       "-framework Security"
   )
 

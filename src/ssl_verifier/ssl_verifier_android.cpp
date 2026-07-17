@@ -1,5 +1,3 @@
-#include "sora/ssl_verifier.h"
-
 #include <dirent.h>
 #include <errno.h>
 #include <cstdio>
@@ -113,24 +111,7 @@ int LoadFromDir(X509_STORE* store, const char* dir_path) {
           << "LoadSystemSSLRootCertificates: d2i_X509 failed: path=" << path;
       continue;
     }
-    int r = X509_STORE_add_cert(store, cert);
-    if (r == 0) {
-      // 重複拒否する版の BoringSSL では X509_R_CERT_ALREADY_IN_HASH_TABLE が積まれる。
-      // この場合はエラーキューから 1 件取り出すのみで WARNING は出さない。
-      // 他 reason（allocation 失敗等）は WARNING を出す
-      unsigned long err = ERR_peek_last_error();
-      if (ERR_GET_REASON(err) == X509_R_CERT_ALREADY_IN_HASH_TABLE) {
-        ERR_get_error();
-      } else {
-        char subject[256] = {0};
-        X509_NAME_oneline(X509_get_subject_name(cert), subject,
-                          sizeof(subject));
-        RTC_LOG(LS_WARNING) << "LoadSystemSSLRootCertificates: "
-                               "X509_STORE_add_cert failed: file="
-                            << entry->d_name << " subject=" << subject;
-        ERR_get_error();
-      }
-    } else {
+    if (TryAddCertToStore(cert, store, path.c_str())) {
       ++added;
     }
     X509_free(cert);

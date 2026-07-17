@@ -1,12 +1,11 @@
 #include "sora/ssl_verifier.h"
 
+#include <cstddef>
 #include <optional>
 #include <string>
 #include <vector>
 
 // OpenSSL
-#include <openssl/base.h>
-#include <openssl/bio.h>
 #include <openssl/err.h>
 #include <openssl/stack.h>
 #include <openssl/x509.h>
@@ -27,19 +26,29 @@ namespace {
 // 1 件も追加できなかった場合は false を返す
 bool AddCert(const std::string& pem, X509_STORE* store) {
   std::vector<X509*> certs = ParsePEMCerts(pem);
-  if (certs.empty()) {
-    return false;
-  }
   bool added = false;
-  for (X509* cert : certs) {
+  for (size_t i = 0; i < certs.size(); ++i) {
+    X509* cert = certs[i];
     int r = X509_STORE_add_cert(store, cert);
     if (r == 0) {
-      ERR_get_error();
-      X509_free(cert);
-      RTC_LOG(LS_ERROR) << "X509_STORE_add_cert failed";
-      return false;
+      unsigned long err = ERR_peek_last_error();
+      if (ERR_GET_REASON(err) == X509_R_CERT_ALREADY_IN_HASH_TABLE) {
+        ERR_get_error();
+      } else {
+        char subject[256] = {0};
+        X509_NAME_oneline(X509_get_subject_name(cert), subject,
+                          sizeof(subject));
+        ERR_get_error();
+        RTC_LOG(LS_ERROR) << "X509_STORE_add_cert failed: subject=" << subject;
+        // 現在の cert と残りの cert を解放する
+        for (; i < certs.size(); ++i) {
+          X509_free(certs[i]);
+        }
+        return false;
+      }
+    } else {
+      added = true;
     }
-    added = true;
     X509_free(cert);
   }
   return added;
