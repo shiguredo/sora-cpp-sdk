@@ -46,7 +46,7 @@ bool LoadSystemSSLRootCertificates(X509_STORE* store) {
     X509* cert = d2i_X509(nullptr, &p, static_cast<long>(CFDataGetLength(der)));
     CFRelease(der);
     if (cert == nullptr) {
-      // d2i_X509 失敗でエラーキューが積まれるため 1 回取り出してクリアする（現行 AddCert と同型）
+      // d2i_X509 失敗でエラーキューが積まれるため 1 回取り出してクリアする（TryAddCertToStore と同型）
       ERR_get_error();
       RTC_LOG(LS_WARNING) << "LoadSystemSSLRootCertificates: d2i_X509 failed";
       continue;

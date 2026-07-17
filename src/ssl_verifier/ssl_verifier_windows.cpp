@@ -52,7 +52,7 @@ bool LoadSystemSSLRootCertificates(X509_STORE* store) {
     // 以降 ctx（および ctx が指すバイト列）の寿命は気にしなくてよい
     X509* cert = d2i_X509(nullptr, &p, static_cast<long>(ctx->cbCertEncoded));
     if (cert == nullptr) {
-      // d2i_X509 失敗でエラーキューが積まれるため 1 回取り出してクリアする（現行 AddCert と同型）
+      // d2i_X509 失敗でエラーキューが積まれるため 1 回取り出してクリアする（TryAddCertToStore と同型）
       ERR_get_error();
       RTC_LOG(LS_WARNING) << "LoadSystemSSLRootCertificates: d2i_X509 failed";
       continue;

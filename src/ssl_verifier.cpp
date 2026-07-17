@@ -23,30 +23,14 @@ bool LoadSystemSSLRootCertificates(X509_STORE* store);
 namespace {
 
 // PEM 形式の文字列からルート証明書を読み込んでストアに追加する
-// 内部で ParsePEMCerts と CheckAddCertResult を利用する
 // 1 件も追加できなかった場合は false を返す
 bool LoadCertsFromPEM(const std::string& pem, X509_STORE* store) {
   std::vector<X509*> certs = ParsePEMCerts(pem);
   bool added = false;
-  for (size_t i = 0; i < certs.size(); ++i) {
-    X509* cert = certs[i];
-    AddCertResult result = CheckAddCertResult(cert, store);
-    if (result == AddCertResult::kSuccess) {
+  for (X509* cert : certs) {
+    if (TryAddCertToStore(cert, store, "LoadCertsFromPEM")) {
       added = true;
-    } else if (result == AddCertResult::kError) {
-      char subject[256] = {0};
-      X509_NAME_oneline(X509_get_subject_name(cert), subject, sizeof(subject));
-      ERR_get_error();
-      RTC_LOG(LS_ERROR)
-          << "LoadCertsFromPEM: X509_STORE_add_cert failed: subject="
-          << subject;
-      // 現在の cert と残りの cert を解放する
-      for (; i < certs.size(); ++i) {
-        X509_free(certs[i]);
-      }
-      return false;
     }
-    // kDuplicate の場合は重複無視して継続
     X509_free(cert);
   }
   return added;

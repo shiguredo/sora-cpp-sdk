@@ -32,7 +32,7 @@ bool LoadSystemSSLRootCertificates(X509_STORE* store) {
       ERR_get_error();
       break;
     }
-    if (TryAddCertToStore(cert, store, "LoadSystemSSLRootCertificates")) {
+    if (TryAddCertToStore(cert, store, kCACertPath)) {
       ++added;
     }
     X509_free(cert);
