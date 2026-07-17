@@ -2,12 +2,12 @@
 
 #include <optional>
 #include <string>
+#include <vector>
 
 // OpenSSL
 #include <openssl/base.h>
 #include <openssl/bio.h>
 #include <openssl/err.h>
-#include <openssl/pem.h>
 #include <openssl/stack.h>
 #include <openssl/x509.h>
 
@@ -24,32 +24,25 @@ bool LoadSystemSSLRootCertificates(X509_STORE* store);
 namespace {
 
 // PEM 形式のルート証明書を追加する
+// 1 件も追加できなかった場合は false を返す
 bool AddCert(const std::string& pem, X509_STORE* store) {
-  BIO* bio = BIO_new_mem_buf(pem.c_str(), pem.size());
-  if (bio == nullptr) {
-    RTC_LOG(LS_ERROR) << "BIO_new_mem_buf failed";
+  std::vector<X509*> certs = ParsePEMCerts(pem);
+  if (certs.empty()) {
     return false;
   }
-  while (true) {
-    X509* cert = PEM_read_bio_X509(bio, nullptr, nullptr, nullptr);
-    if (cert == nullptr) {
-      ERR_get_error();
-      break;
-    }
-
+  bool added = false;
+  for (X509* cert : certs) {
     int r = X509_STORE_add_cert(store, cert);
     if (r == 0) {
       ERR_get_error();
       X509_free(cert);
-      BIO_free(bio);
       RTC_LOG(LS_ERROR) << "X509_STORE_add_cert failed";
       return false;
     }
+    added = true;
     X509_free(cert);
   }
-
-  BIO_free(bio);
-  return true;
+  return added;
 }
 
 }  // namespace

@@ -33,7 +33,15 @@ bool LoadSystemSSLRootCertificates(X509_STORE* store) {
   // CertEnumCertificatesInStore は次回呼び出しで前回の PCCERT_CONTEXT を
   // 自動解放するため、ループ中の CertFreeCertificateContext は呼ばない
   PCCERT_CONTEXT ctx = nullptr;
-  while ((ctx = CertEnumCertificatesInStore(h_store, ctx)) != nullptr) {
+  DWORD enum_last_error = CRYPT_E_NOT_FOUND;
+  while (true) {
+    ctx = CertEnumCertificatesInStore(h_store, ctx);
+    if (ctx == nullptr) {
+      // ループ本体内の操作が SetLastError() を上書きする可能性があるため、
+      // CertEnumCertificatesInStore が nullptr を返した直後にエラー値を保存する
+      enum_last_error = GetLastError();
+      break;
+    }
     // dwCertEncodingType には通常 X509_ASN_ENCODING (0x1) のみが入るが、
     // 将来の CryptoAPI 拡張で他エンコーディングが混ざった場合の防御としてビット判定する
     if ((ctx->dwCertEncodingType & X509_ASN_ENCODING) == 0) {
@@ -51,25 +59,31 @@ bool LoadSystemSSLRootCertificates(X509_STORE* store) {
     }
     int r = X509_STORE_add_cert(store, cert);
     if (r == 0) {
-      char subject[256] = {0};
-      // subject が 256 バイト超なら切り詰められるが、X509_NAME_oneline は NUL 終端保証あり
-      X509_NAME_oneline(X509_get_subject_name(cert), subject, sizeof(subject));
-      RTC_LOG(LS_WARNING) << "LoadSystemSSLRootCertificates: "
-                             "X509_STORE_add_cert failed: subject="
-                          << subject;
-      // ROOT ストアの 5 経路仮想ビューでは同一 CA が繰り返し追加を試みられ、
-      // その都度 X509_R_CERT_ALREADY_IN_HASH_TABLE 等のエラーがキューに積まれるため
-      // 次イテレーションの d2i_X509 / X509_STORE_add_cert のエラー報告を汚染しないよう
-      // 1 回取り出してクリアする
-      ERR_get_error();
+      unsigned long err = ERR_peek_last_error();
+      if (ERR_GET_REASON(err) == X509_R_CERT_ALREADY_IN_HASH_TABLE) {
+        // ROOT ストアの 5 経路仮想ビューでは同一 CA が繰り返し追加を試みられ、
+        // その都度 X509_R_CERT_ALREADY_IN_HASH_TABLE がキューに積まれる。
+        // 重複拒否なのでエラーキューから 1 件取り出すのみで WARNING は出さない。
+        ERR_get_error();
+      } else {
+        char subject[256] = {0};
+        // subject が 256 バイト超なら切り詰められるが、X509_NAME_oneline は NUL 終端保証あり
+        X509_NAME_oneline(X509_get_subject_name(cert), subject,
+                          sizeof(subject));
+        RTC_LOG(LS_WARNING) << "LoadSystemSSLRootCertificates: "
+                               "X509_STORE_add_cert failed: subject="
+                            << subject;
+        // 他 reason（allocation 失敗等）はエラーキューから 1 件取り出してクリアし、
+        // 次イテレーションのエラー報告を汚染しないようにする
+        ERR_get_error();
+      }
     } else {
       ++added;
     }
     X509_free(cert);
   }
   // ループを抜けた時点で ctx == nullptr。MSDN 仕様上 nullptr は「列挙完了」と
-  // 「途中エラー」の両方を意味するため GetLastError() で識別する
-  DWORD enum_last_error = GetLastError();
+  // 「途中エラー」の両方を意味するため、上で保存した enum_last_error で識別する
   if (enum_last_error != CRYPT_E_NOT_FOUND) {
     RTC_LOG(LS_WARNING)
         << "LoadSystemSSLRootCertificates: CertEnumCertificatesInStore ended "

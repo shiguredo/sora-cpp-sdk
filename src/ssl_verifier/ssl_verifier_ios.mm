@@ -44,19 +44,8 @@ SecCertificateRef CreateSecCertificate(X509* cert) {
 // 1 件も取れなければ空を返す
 std::vector<SecCertificateRef> LoadCACertsFromPem(const std::string& pem) {
   std::vector<SecCertificateRef> result;
-  BIO* bio = BIO_new_mem_buf(pem.c_str(), pem.size());
-  if (bio == nullptr) {
-    ERR_get_error();
-    return result;
-  }
-  Guard bio_guard([bio]() { BIO_free(bio); });
-
-  while (true) {
-    X509* cert = PEM_read_bio_X509(bio, nullptr, nullptr, nullptr);
-    if (cert == nullptr) {
-      ERR_get_error();
-      break;
-    }
+  std::vector<X509*> certs = ParsePEMCerts(pem);
+  for (X509* cert : certs) {
     SecCertificateRef sec_cert = CreateSecCertificate(cert);
     X509_free(cert);
     if (sec_cert == nullptr) {
@@ -92,8 +81,8 @@ bool SSLVerifier::VerifyX509(X509* x509,
   sec_certs.push_back(leaf);
 
   if (chain != nullptr) {
-    int n = sk_X509_num(chain);
-    for (int i = 0; i < n; i++) {
+    size_t n = sk_X509_num(chain);
+    for (size_t i = 0; i < n; i++) {
       SecCertificateRef mid = CreateSecCertificate(sk_X509_value(chain, i));
       if (mid == nullptr) {
         // 中間証明書 1 個の変換失敗は続行する
@@ -193,17 +182,18 @@ bool SSLVerifier::VerifyX509(X509* x509,
       if (desc != nullptr) {
         if (!CFStringGetCString(desc, buf, sizeof(buf),
                                 kCFStringEncodingUTF8)) {
-          RTC_LOG(LS_INFO) << "VerifyX509: SecTrustEvaluateWithError failed: "
-                              "unable to copy error description";
+          RTC_LOG(LS_WARNING)
+              << "VerifyX509: SecTrustEvaluateWithError failed: "
+                 "unable to copy error description";
         } else {
-          RTC_LOG(LS_INFO) << "VerifyX509: SecTrustEvaluateWithError failed: "
-                           << buf;
+          RTC_LOG(LS_WARNING)
+              << "VerifyX509: SecTrustEvaluateWithError failed: " << buf;
         }
         CFRelease(desc);
       }
       CFRelease(error);
     } else {
-      RTC_LOG(LS_INFO)
+      RTC_LOG(LS_WARNING)
           << "VerifyX509: SecTrustEvaluateWithError failed: no error info";
     }
     return false;

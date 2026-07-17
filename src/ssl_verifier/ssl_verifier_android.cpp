@@ -37,8 +37,17 @@ int LoadFromDir(X509_STORE* store, const char* dir_path) {
 
   int added = 0;
   struct dirent* entry;
-  errno = 0;
-  while ((entry = readdir(dir)) != nullptr) {
+  while (true) {
+    errno = 0;
+    entry = readdir(dir);
+    if (entry == nullptr) {
+      if (errno != 0) {
+        RTC_LOG(LS_WARNING)
+            << "LoadSystemSSLRootCertificates: readdir error: path=" << dir_path
+            << " errno=" << errno;
+      }
+      break;
+    }
     if (entry->d_name[0] == '.') {
       // AOSP CA ファイルは <subject_hash>.<n> 命名でドット始まりを含まないため
       // "." / ".." およびドット始まりの隠しファイルは対象外で安全
@@ -53,9 +62,29 @@ int LoadFromDir(X509_STORE* store, const char* dir_path) {
           << "LoadSystemSSLRootCertificates: fopen failed: path=" << path;
       continue;
     }
-    fseek(fp, 0, SEEK_END);
+    if (fseek(fp, 0, SEEK_END) != 0) {
+      int e = errno;
+      fclose(fp);
+      RTC_LOG(LS_WARNING)
+          << "LoadSystemSSLRootCertificates: fseek failed: path=" << path
+          << " errno=" << e;
+      continue;
+    }
     long file_size = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
+    if (file_size == -1L) {
+      fclose(fp);
+      RTC_LOG(LS_WARNING)
+          << "LoadSystemSSLRootCertificates: ftell failed: path=" << path;
+      continue;
+    }
+    if (fseek(fp, 0, SEEK_SET) != 0) {
+      int e = errno;
+      fclose(fp);
+      RTC_LOG(LS_WARNING)
+          << "LoadSystemSSLRootCertificates: fseek failed: path=" << path
+          << " errno=" << e;
+      continue;
+    }
     if (file_size <= 0) {
       fclose(fp);
       RTC_LOG(LS_WARNING)
@@ -70,7 +99,12 @@ int LoadFromDir(X509_STORE* store, const char* dir_path) {
           << "LoadSystemSSLRootCertificates: fread failed: path=" << path;
       continue;
     }
-    fclose(fp);
+    if (fclose(fp) != 0) {
+      int e = errno;
+      RTC_LOG(LS_WARNING)
+          << "LoadSystemSSLRootCertificates: fclose failed: path=" << path
+          << " errno=" << e;
+    }
     const unsigned char* p = buf.data();
     X509* cert = d2i_X509(nullptr, &p, static_cast<long>(file_size));
     if (cert == nullptr) {
@@ -101,13 +135,6 @@ int LoadFromDir(X509_STORE* store, const char* dir_path) {
     }
     X509_free(cert);
   }
-  // readdir がエラーで nullptr を返した場合は WARNING を出す
-  // （走査完了の場合は errno は書き換えられない）
-  if (errno != 0) {
-    RTC_LOG(LS_WARNING) << "LoadSystemSSLRootCertificates: readdir error: path="
-                        << dir_path << " errno=" << errno;
-  }
-
   return added;
 }
 
