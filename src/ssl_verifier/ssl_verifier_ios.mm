@@ -65,8 +65,8 @@ std::vector<SecCertificateRef> LoadCACertsFromPem(const std::string& pem) {
     SecCertificateRef sec_cert = CreateSecCertificate(cert);
     X509_free(cert);
     if (sec_cert == nullptr) {
-      RTC_LOG(LS_WARNING)
-          << "VerifyX509: failed to convert ca_cert PEM entry to SecCertificateRef";
+      RTC_LOG(LS_WARNING) << "VerifyX509: failed to convert ca_cert PEM entry "
+                             "to SecCertificateRef";
       continue;
     }
     result.push_back(sec_cert);
@@ -137,8 +137,8 @@ bool SSLVerifier::VerifyX509(X509* x509,
   for (auto c : sec_certs) {
     raw_ptrs.push_back(static_cast<const void*>(c));
   }
-  CFArrayRef cert_array =
-      CFArrayCreate(nullptr, raw_ptrs.data(), raw_ptrs.size(), &kCFTypeArrayCallBacks);
+  CFArrayRef cert_array = CFArrayCreate(
+      nullptr, raw_ptrs.data(), raw_ptrs.size(), &kCFTypeArrayCallBacks);
   if (cert_array == nullptr) {
     RTC_LOG(LS_ERROR) << "VerifyX509: CFArrayCreate failed";
     return false;
@@ -154,8 +154,7 @@ bool SSLVerifier::VerifyX509(X509* x509,
   Guard policy_guard([policy]() { CFRelease(policy); });
 
   SecTrustRef trust = nullptr;
-  OSStatus status =
-      SecTrustCreateWithCertificates(cert_array, policy, &trust);
+  OSStatus status = SecTrustCreateWithCertificates(cert_array, policy, &trust);
   if (status != errSecSuccess || trust == nullptr) {
     RTC_LOG(LS_ERROR)
         << "VerifyX509: SecTrustCreateWithCertificates failed: status="
@@ -183,8 +182,9 @@ bool SSLVerifier::VerifyX509(X509* x509,
     for (auto c : anchors) {
       anchor_ptrs.push_back(static_cast<const void*>(c));
     }
-    CFArrayRef anchor_array = CFArrayCreate(
-        nullptr, anchor_ptrs.data(), anchor_ptrs.size(), &kCFTypeArrayCallBacks);
+    CFArrayRef anchor_array =
+        CFArrayCreate(nullptr, anchor_ptrs.data(), anchor_ptrs.size(),
+                      &kCFTypeArrayCallBacks);
     if (anchor_array == nullptr) {
       RTC_LOG(LS_ERROR) << "VerifyX509: CFArrayCreate for anchors failed";
       return false;
@@ -218,8 +218,8 @@ bool SSLVerifier::VerifyX509(X509* x509,
         CFStringGetCString(desc, buf, sizeof(buf), kCFStringEncodingUTF8);
         CFRelease(desc);
       }
-      RTC_LOG(LS_WARNING)
-          << "VerifyX509: SecTrustEvaluateWithError failed: " << buf;
+      RTC_LOG(LS_WARNING) << "VerifyX509: SecTrustEvaluateWithError failed: "
+                          << buf;
       CFRelease(error);
     } else {
       RTC_LOG(LS_WARNING)

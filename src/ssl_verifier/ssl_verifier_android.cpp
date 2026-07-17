@@ -52,7 +52,8 @@ int LoadFromDir(X509_STORE* store, const char* dir_path) {
     if (bio == nullptr) {
       ERR_get_error();
       RTC_LOG(LS_WARNING)
-          << "LoadSystemSSLRootCertificates: BIO_new_file failed: path=" << path;
+          << "LoadSystemSSLRootCertificates: BIO_new_file failed: path="
+          << path;
       continue;
     }
     Guard bio_guard([bio]() { BIO_free(bio); });
@@ -73,10 +74,11 @@ int LoadFromDir(X509_STORE* store, const char* dir_path) {
           ERR_get_error();
         } else {
           char subject[256] = {0};
-          X509_NAME_oneline(X509_get_subject_name(cert), subject, sizeof(subject));
-          RTC_LOG(LS_WARNING)
-              << "LoadSystemSSLRootCertificates: X509_STORE_add_cert failed: file="
-              << entry->d_name << " subject=" << subject;
+          X509_NAME_oneline(X509_get_subject_name(cert), subject,
+                            sizeof(subject));
+          RTC_LOG(LS_WARNING) << "LoadSystemSSLRootCertificates: "
+                                 "X509_STORE_add_cert failed: file="
+                              << entry->d_name << " subject=" << subject;
           ERR_get_error();
         }
       } else {
@@ -104,9 +106,8 @@ bool SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE* store) {
         << " apex=" << added_apex << " system=" << added_system;
     return false;
   }
-  RTC_LOG(LS_INFO)
-      << "LoadSystemSSLRootCertificates: added=" << added
-      << ", apex=" << added_apex << ", system=" << added_system;
+  RTC_LOG(LS_INFO) << "LoadSystemSSLRootCertificates: added=" << added
+                   << ", apex=" << added_apex << ", system=" << added_system;
   return true;
 }
 
