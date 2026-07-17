@@ -38,6 +38,16 @@
   - Apple 管理のシステム trust store に基づく信頼判定（CT / revocation を含む）が反映される
   - 独自 CA が必要な場合は `SoraSignalingConfig::ca_cert` で明示指定する
   - @melpon
+- [CHANGE] Android の TLS 検証を OS のシステム CA（`/apex/com.android.conscrypt/cacerts/` と `/system/etc/security/cacerts/`）に切り替える
+  - Android 10 以降（`ANDROID_NATIVE_API_LEVEL=29`）が対象
+  - Conscrypt Mainline module 経由の CA ストア（Android 14 以降）を優先し、AOSP 標準パスをフォールバックとして読む
+  - `KeyChain` API 経由の Trusted credentials や Network Security Config の `<trust-anchors>` は反映されない
+  - 独自 CA が必要な場合は `SoraSignalingConfig::ca_cert` で明示指定する
+  - @melpon
+- [CHANGE] `src/ssl_verifier/ssl_verifier_stub.cpp` を削除し、全 OS で TLS 検証の信頼ストア切り替えを完了する
+  - 旧ハードコード PEM（`isrg_root` / `lets_encrypt_r3`）と WebRTC `rtc_base/ssl_roots.h` 依存を完全に撤廃した
+  - Android も他 OS と同様に OS のシステム CA ストアを信頼の根拠とする方式に統一した
+  - @melpon
 - [ADD] sumomo の E2E テストで `--audio-recording-device` を複数の音声録音デバイスに対して個別に検証するテストを追加する
   - @melpon
 - [ADD] sumomo の E2E テストで録音デバイス未指定時・無効指定時の挙動を検証するテストを追加する
