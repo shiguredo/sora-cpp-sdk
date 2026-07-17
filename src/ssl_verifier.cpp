@@ -1,6 +1,5 @@
 #include "sora/ssl_verifier.h"
 
-#include <cstddef>
 #include <optional>
 #include <string>
 
@@ -15,11 +14,17 @@
 // WebRTC
 #include <rtc_base/logging.h>
 
-#include "ssl_verifier/ssl_verifier_guard.h"
+#include "ssl_verifier/ssl_verifier_util.h"
 
 namespace sora {
 
-bool SSLVerifier::AddCert(const std::string& pem, X509_STORE* store) {
+// 各プラットフォームの ssl_verifier_<os>.cpp で定義される
+bool LoadSystemSSLRootCertificates(X509_STORE* store);
+
+namespace {
+
+// PEM 形式のルート証明書を追加する
+bool AddCert(const std::string& pem, X509_STORE* store) {
   BIO* bio = BIO_new_mem_buf(pem.c_str(), pem.size());
   if (bio == nullptr) {
     RTC_LOG(LS_ERROR) << "BIO_new_mem_buf failed";
@@ -46,6 +51,8 @@ bool SSLVerifier::AddCert(const std::string& pem, X509_STORE* store) {
   BIO_free(bio);
   return true;
 }
+
+}  // namespace
 
 bool SSLVerifier::VerifyX509(X509* x509,
                              STACK_OF(X509) * chain,

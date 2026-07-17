@@ -1,11 +1,10 @@
-#ifndef SORA_SSL_VERIFIER_GUARD_H_
-#define SORA_SSL_VERIFIER_GUARD_H_
+#ifndef SORA_SSL_VERIFIER_UTIL_H_
+#define SORA_SSL_VERIFIER_UTIL_H_
 
 #include <functional>
 #include <utility>
 
 // OpenSSL
-#include <openssl/ssl.h>
 #include <openssl/stack.h>
 #include <openssl/x509.h>
 
@@ -19,6 +18,8 @@ struct Guard {
   std::function<void()> f;
   Guard(std::function<void()> f) : f(std::move(f)) {}
   ~Guard() { f(); }
+  Guard(const Guard&) = delete;
+  Guard& operator=(const Guard&) = delete;
 };
 
 // 証明書とチェーンの subject / issuer を INFO ログに出力する

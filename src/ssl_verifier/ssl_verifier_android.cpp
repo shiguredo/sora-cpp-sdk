@@ -1,20 +1,20 @@
 #include "sora/ssl_verifier.h"
 
+#include <cstdio>
 #include <dirent.h>
 #include <errno.h>
 
 #include <string>
+#include <vector>
 
 // OpenSSL
-#include <openssl/bio.h>
 #include <openssl/err.h>
-#include <openssl/pem.h>
 #include <openssl/x509.h>
 
 // WebRTC
 #include <rtc_base/logging.h>
 
-#include "ssl_verifier_guard.h"
+#include "ssl_verifier_util.h"
 
 namespace sora {
 namespace {
@@ -37,6 +37,7 @@ int LoadFromDir(X509_STORE* store, const char* dir_path) {
 
   int added = 0;
   struct dirent* entry;
+  errno = 0;
   while ((entry = readdir(dir)) != nullptr) {
     if (entry->d_name[0] == '.') {
       // AOSP CA ファイルは <subject_hash>.<n> 命名でドット始まりを含まないため
@@ -44,44 +45,68 @@ int LoadFromDir(X509_STORE* store, const char* dir_path) {
       continue;
     }
     std::string path = std::string(dir_path) + "/" + entry->d_name;
-    BIO* bio = BIO_new_file(path.c_str(), "r");
-    if (bio == nullptr) {
-      ERR_get_error();
+    // Android のシステム CA 証明書ファイルは DER 形式のため、
+    // fopen/fread でファイル全体を読み込み d2i_X509 でパースする
+    FILE* fp = fopen(path.c_str(), "rb");
+    if (fp == nullptr) {
       RTC_LOG(LS_WARNING)
-          << "LoadSystemSSLRootCertificates: BIO_new_file failed: path="
+          << "LoadSystemSSLRootCertificates: fopen failed: path=" << path;
+      continue;
+    }
+    fseek(fp, 0, SEEK_END);
+    long file_size = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+    if (file_size <= 0) {
+      fclose(fp);
+      RTC_LOG(LS_WARNING)
+          << "LoadSystemSSLRootCertificates: empty or unreadable file: path="
           << path;
       continue;
     }
-    Guard bio_guard([bio]() { BIO_free(bio); });
-
-    while (true) {
-      X509* cert = PEM_read_bio_X509(bio, nullptr, nullptr, nullptr);
-      if (cert == nullptr) {
-        ERR_get_error();
-        break;
-      }
-      int r = X509_STORE_add_cert(store, cert);
-      if (r == 0) {
-        // 重複拒否する版の BoringSSL では X509_R_CERT_ALREADY_IN_HASH_TABLE が積まれる。
-        // この場合はエラーキューから 1 件取り出すのみで WARNING は出さない。
-        // 他 reason（allocation 失敗等）は WARNING を出す
-        unsigned long err = ERR_peek_last_error();
-        if (ERR_GET_REASON(err) == X509_R_CERT_ALREADY_IN_HASH_TABLE) {
-          ERR_get_error();
-        } else {
-          char subject[256] = {0};
-          X509_NAME_oneline(X509_get_subject_name(cert), subject,
-                            sizeof(subject));
-          RTC_LOG(LS_WARNING) << "LoadSystemSSLRootCertificates: "
-                                 "X509_STORE_add_cert failed: file="
-                              << entry->d_name << " subject=" << subject;
-          ERR_get_error();
-        }
-      } else {
-        ++added;
-      }
-      X509_free(cert);
+    std::vector<unsigned char> buf(file_size);
+    if (fread(buf.data(), 1, file_size, fp) != static_cast<size_t>(file_size)) {
+      fclose(fp);
+      RTC_LOG(LS_WARNING)
+          << "LoadSystemSSLRootCertificates: fread failed: path=" << path;
+      continue;
     }
+    fclose(fp);
+    const unsigned char* p = buf.data();
+    X509* cert = d2i_X509(nullptr, &p, static_cast<long>(file_size));
+    if (cert == nullptr) {
+      ERR_get_error();
+      RTC_LOG(LS_WARNING)
+          << "LoadSystemSSLRootCertificates: d2i_X509 failed: path=" << path;
+      continue;
+    }
+    int r = X509_STORE_add_cert(store, cert);
+    if (r == 0) {
+      // 重複拒否する版の BoringSSL では X509_R_CERT_ALREADY_IN_HASH_TABLE が積まれる。
+      // この場合はエラーキューから 1 件取り出すのみで WARNING は出さない。
+      // 他 reason（allocation 失敗等）は WARNING を出す
+      unsigned long err = ERR_peek_last_error();
+      if (ERR_GET_REASON(err) == X509_R_CERT_ALREADY_IN_HASH_TABLE) {
+        ERR_get_error();
+      } else {
+        char subject[256] = {0};
+        X509_NAME_oneline(X509_get_subject_name(cert), subject,
+                          sizeof(subject));
+        RTC_LOG(LS_WARNING) << "LoadSystemSSLRootCertificates: "
+                               "X509_STORE_add_cert failed: file="
+                            << entry->d_name << " subject=" << subject;
+        ERR_get_error();
+      }
+    } else {
+      ++added;
+    }
+    X509_free(cert);
+  }
+  // readdir がエラーで nullptr を返した場合は WARNING を出す
+  // （走査完了の場合は errno は書き換えられない）
+  if (errno != 0) {
+    RTC_LOG(LS_WARNING)
+        << "LoadSystemSSLRootCertificates: readdir error: path=" << dir_path
+        << " errno=" << errno;
   }
 
   return added;
@@ -89,7 +114,7 @@ int LoadFromDir(X509_STORE* store, const char* dir_path) {
 
 }  // namespace
 
-bool SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE* store) {
+bool LoadSystemSSLRootCertificates(X509_STORE* store) {
   // Conscrypt Mainline module 経由の更新可能な CA ストア（Android 14 以降で提供）を優先
   int added_apex = LoadFromDir(store, "/apex/com.android.conscrypt/cacerts");
   // AOSP 標準の system パス（Android 10-13 の主要ストア、Android 14+ でも残る）

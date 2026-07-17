@@ -9,11 +9,11 @@
 // WebRTC
 #include <rtc_base/logging.h>
 
-#include "ssl_verifier_guard.h"
+#include "ssl_verifier_util.h"
 
 namespace sora {
 
-bool SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE* store) {
+bool LoadSystemSSLRootCertificates(X509_STORE* store) {
   const char* path = "/etc/ssl/certs/ca-certificates.crt";
   BIO* bio = BIO_new_file(path, "r");
   if (bio == nullptr) {
@@ -52,6 +52,7 @@ bool SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE* store) {
         << path;
     return false;
   }
+  RTC_LOG(LS_INFO) << "LoadSystemSSLRootCertificates: added=" << added;
   return true;
 }
 

@@ -11,11 +11,11 @@
 // WebRTC
 #include <rtc_base/logging.h>
 
-#include "ssl_verifier_guard.h"
+#include "ssl_verifier_util.h"
 
 namespace sora {
 
-bool SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE* store) {
+bool LoadSystemSSLRootCertificates(X509_STORE* store) {
   // 第 1 引数 hProv は MSDN 仕様どおり NULL を渡す（本引数は使用されない）
   // 第 2 引数 L"ROOT" は Windows の「信頼されたルート証明機関」ストア
   HCERTSTORE h_store = CertOpenSystemStoreW(NULL, L"ROOT");

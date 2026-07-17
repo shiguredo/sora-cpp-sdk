@@ -1,6 +1,5 @@
 #include "sora/ssl_verifier.h"
 
-#include <utility>
 #include <vector>
 
 #import <CoreFoundation/CoreFoundation.h>
@@ -15,7 +14,7 @@
 // WebRTC
 #include <rtc_base/logging.h>
 
-#include "ssl_verifier_guard.h"
+#include "ssl_verifier_util.h"
 
 namespace sora {
 namespace {
@@ -47,6 +46,7 @@ std::vector<SecCertificateRef> LoadCACertsFromPem(const std::string& pem) {
   std::vector<SecCertificateRef> result;
   BIO* bio = BIO_new_mem_buf(pem.c_str(), pem.size());
   if (bio == nullptr) {
+    ERR_get_error();
     return result;
   }
   Guard bio_guard([bio]() { BIO_free(bio); });
@@ -191,14 +191,18 @@ bool SSLVerifier::VerifyX509(X509* x509,
       CFStringRef desc = CFErrorCopyDescription(error);
       char buf[512] = {0};
       if (desc != nullptr) {
-        CFStringGetCString(desc, buf, sizeof(buf), kCFStringEncodingUTF8);
+        if (!CFStringGetCString(desc, buf, sizeof(buf), kCFStringEncodingUTF8)) {
+          RTC_LOG(LS_INFO) << "VerifyX509: SecTrustEvaluateWithError failed: "
+                              "unable to copy error description";
+        } else {
+          RTC_LOG(LS_INFO) << "VerifyX509: SecTrustEvaluateWithError failed: "
+                           << buf;
+        }
         CFRelease(desc);
       }
-      RTC_LOG(LS_WARNING) << "VerifyX509: SecTrustEvaluateWithError failed: "
-                          << buf;
       CFRelease(error);
     } else {
-      RTC_LOG(LS_WARNING)
+      RTC_LOG(LS_INFO)
           << "VerifyX509: SecTrustEvaluateWithError failed: no error info";
     }
     return false;

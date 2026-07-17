@@ -10,11 +10,11 @@
 // WebRTC
 #include <rtc_base/logging.h>
 
-#include "ssl_verifier_guard.h"
+#include "ssl_verifier_util.h"
 
 namespace sora {
 
-bool SSLVerifier::LoadSystemSSLRootCertificates(X509_STORE* store) {
+bool LoadSystemSSLRootCertificates(X509_STORE* store) {
   CFArrayRef anchors = nullptr;
   OSStatus status = SecTrustCopyAnchorCertificates(&anchors);
   if (status != errSecSuccess || anchors == nullptr) {
