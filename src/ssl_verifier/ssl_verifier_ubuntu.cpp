@@ -12,11 +12,13 @@
 namespace sora {
 
 bool LoadSystemSSLRootCertificates(X509_STORE* store) {
-  const char* path = "/etc/ssl/certs/ca-certificates.crt";
-  BIO* bio = BIO_new_file(path, "r");
+  constexpr const char* kCACertPath = "/etc/ssl/certs/ca-certificates.crt";
+  BIO* bio = BIO_new_file(kCACertPath, "r");
   if (bio == nullptr) {
+    ERR_get_error();
     RTC_LOG(LS_ERROR)
-        << "LoadSystemSSLRootCertificates: BIO_new_file failed: path=" << path;
+        << "LoadSystemSSLRootCertificates: BIO_new_file failed: path="
+        << kCACertPath;
     return false;
   }
   // BIO の解放は必ず通す
@@ -39,7 +41,7 @@ bool LoadSystemSSLRootCertificates(X509_STORE* store) {
   if (added == 0) {
     RTC_LOG(LS_ERROR)
         << "LoadSystemSSLRootCertificates: no certificates loaded: path="
-        << path;
+        << kCACertPath;
     return false;
   }
   RTC_LOG(LS_INFO) << "LoadSystemSSLRootCertificates: added=" << added;

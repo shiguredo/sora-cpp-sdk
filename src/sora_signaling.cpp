@@ -593,7 +593,8 @@ SoraSignaling::CreatePeerConnection(boost::json::value jconfig) {
   rtc_config.crypto_options.srtp.enable_gcm_crypto_suites = true;
   webrtc::PeerConnectionDependencies dependencies(this);
 
-  // OS のシステム CA ストアを信頼の根拠とする自前の SSL 証明書検証を行い、
+  // ca_cert 未指定時は OS のシステム CA ストアを信頼の根拠とし、
+  // ca_cert 指定時は指定された PEM のみを信頼アンカーとして SSL 証明書検証を行う。
   // 検証失敗時は接続を拒否する。
   //
   // デバッグ用に insecure モード（証明書検証スキップ）も用意している。

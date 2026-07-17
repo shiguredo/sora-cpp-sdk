@@ -17,6 +17,67 @@
 namespace sora {
 namespace {
 
+// DER 形式の証明書ファイルを読み込んで X509* を返す
+// 失敗時は nullptr を返し、エラー内容を WARNING ログに出力する
+// 戻り値は呼び出し元で X509_free すること
+X509* ReadDERFile(const std::string& path) {
+  FILE* fp = fopen(path.c_str(), "rb");
+  if (fp == nullptr) {
+    RTC_LOG(LS_WARNING) << "LoadSystemSSLRootCertificates: fopen failed: path="
+                        << path;
+    return nullptr;
+  }
+  if (fseek(fp, 0, SEEK_END) != 0) {
+    int e = errno;
+    fclose(fp);
+    RTC_LOG(LS_WARNING) << "LoadSystemSSLRootCertificates: fseek failed: path="
+                        << path << " errno=" << e;
+    return nullptr;
+  }
+  long file_size = ftell(fp);
+  if (file_size == -1L) {
+    fclose(fp);
+    RTC_LOG(LS_WARNING) << "LoadSystemSSLRootCertificates: ftell failed: path="
+                        << path;
+    return nullptr;
+  }
+  if (fseek(fp, 0, SEEK_SET) != 0) {
+    int e = errno;
+    fclose(fp);
+    RTC_LOG(LS_WARNING) << "LoadSystemSSLRootCertificates: fseek failed: path="
+                        << path << " errno=" << e;
+    return nullptr;
+  }
+  if (file_size <= 0) {
+    fclose(fp);
+    RTC_LOG(LS_WARNING)
+        << "LoadSystemSSLRootCertificates: empty or unreadable file: path="
+        << path;
+    return nullptr;
+  }
+  std::vector<unsigned char> buf(file_size);
+  if (fread(buf.data(), 1, file_size, fp) != static_cast<size_t>(file_size)) {
+    fclose(fp);
+    RTC_LOG(LS_WARNING) << "LoadSystemSSLRootCertificates: fread failed: path="
+                        << path;
+    return nullptr;
+  }
+  if (fclose(fp) != 0) {
+    int e = errno;
+    RTC_LOG(LS_WARNING) << "LoadSystemSSLRootCertificates: fclose failed: path="
+                        << path << " errno=" << e;
+  }
+  const unsigned char* p = buf.data();
+  X509* cert = d2i_X509(nullptr, &p, static_cast<long>(file_size));
+  if (cert == nullptr) {
+    ERR_get_error();
+    RTC_LOG(LS_WARNING)
+        << "LoadSystemSSLRootCertificates: d2i_X509 failed: path=" << path;
+    return nullptr;
+  }
+  return cert;
+}
+
 // 単一ディレクトリを走査してストアに追加、追加件数を返す。
 // opendir 失敗時は errno == ENOENT なら無音で 0 （Android バージョンで片方の経路が無いケース）、
 // それ以外は WARNING を出して 0 を返す
@@ -52,63 +113,8 @@ int LoadFromDir(X509_STORE* store, const char* dir_path) {
       continue;
     }
     std::string path = std::string(dir_path) + "/" + entry->d_name;
-    // Android のシステム CA 証明書ファイルは DER 形式のため、
-    // fopen/fread でファイル全体を読み込み d2i_X509 でパースする
-    FILE* fp = fopen(path.c_str(), "rb");
-    if (fp == nullptr) {
-      RTC_LOG(LS_WARNING)
-          << "LoadSystemSSLRootCertificates: fopen failed: path=" << path;
-      continue;
-    }
-    if (fseek(fp, 0, SEEK_END) != 0) {
-      int e = errno;
-      fclose(fp);
-      RTC_LOG(LS_WARNING)
-          << "LoadSystemSSLRootCertificates: fseek failed: path=" << path
-          << " errno=" << e;
-      continue;
-    }
-    long file_size = ftell(fp);
-    if (file_size == -1L) {
-      fclose(fp);
-      RTC_LOG(LS_WARNING)
-          << "LoadSystemSSLRootCertificates: ftell failed: path=" << path;
-      continue;
-    }
-    if (fseek(fp, 0, SEEK_SET) != 0) {
-      int e = errno;
-      fclose(fp);
-      RTC_LOG(LS_WARNING)
-          << "LoadSystemSSLRootCertificates: fseek failed: path=" << path
-          << " errno=" << e;
-      continue;
-    }
-    if (file_size <= 0) {
-      fclose(fp);
-      RTC_LOG(LS_WARNING)
-          << "LoadSystemSSLRootCertificates: empty or unreadable file: path="
-          << path;
-      continue;
-    }
-    std::vector<unsigned char> buf(file_size);
-    if (fread(buf.data(), 1, file_size, fp) != static_cast<size_t>(file_size)) {
-      fclose(fp);
-      RTC_LOG(LS_WARNING)
-          << "LoadSystemSSLRootCertificates: fread failed: path=" << path;
-      continue;
-    }
-    if (fclose(fp) != 0) {
-      int e = errno;
-      RTC_LOG(LS_WARNING)
-          << "LoadSystemSSLRootCertificates: fclose failed: path=" << path
-          << " errno=" << e;
-    }
-    const unsigned char* p = buf.data();
-    X509* cert = d2i_X509(nullptr, &p, static_cast<long>(file_size));
+    X509* cert = ReadDERFile(path);
     if (cert == nullptr) {
-      ERR_get_error();
-      RTC_LOG(LS_WARNING)
-          << "LoadSystemSSLRootCertificates: d2i_X509 failed: path=" << path;
       continue;
     }
     if (TryAddCertToStore(cert, store, path.c_str())) {

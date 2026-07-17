@@ -28,6 +28,29 @@ struct Guard {
   Guard& operator=(const Guard&) = delete;
 };
 
+// X509_STORE_add_cert の戻り値を解釈する。
+// kSuccess: 追加成功
+// kDuplicate: X509_R_CERT_ALREADY_IN_HASH_TABLE 重複（エラーキューはクリア済み）
+// kError: その他のエラー（エラーキューは未クリア、呼び出し元で取得してからクリアすること）
+enum class AddCertResult {
+  kSuccess,
+  kDuplicate,
+  kError,
+};
+
+inline AddCertResult CheckAddCertResult(X509* cert, X509_STORE* store) {
+  int r = X509_STORE_add_cert(store, cert);
+  if (r != 0) {
+    return AddCertResult::kSuccess;
+  }
+  unsigned long err = ERR_peek_last_error();
+  if (ERR_GET_REASON(err) == X509_R_CERT_ALREADY_IN_HASH_TABLE) {
+    ERR_get_error();
+    return AddCertResult::kDuplicate;
+  }
+  return AddCertResult::kError;
+}
+
 // X509_STORE_add_cert を実行し、エラー処理を共通化する。
 // 成功時は true を返す。
 // X509_R_CERT_ALREADY_IN_HASH_TABLE の重複は無視し false を返す（WARNING ログなし）。
@@ -36,13 +59,11 @@ struct Guard {
 inline bool TryAddCertToStore(X509* cert,
                               X509_STORE* store,
                               const char* context) {
-  int r = X509_STORE_add_cert(store, cert);
-  if (r != 0) {
+  AddCertResult result = CheckAddCertResult(cert, store);
+  if (result == AddCertResult::kSuccess) {
     return true;
   }
-  unsigned long err = ERR_peek_last_error();
-  if (ERR_GET_REASON(err) == X509_R_CERT_ALREADY_IN_HASH_TABLE) {
-    ERR_get_error();
+  if (result == AddCertResult::kDuplicate) {
     return false;
   }
   char subject[256] = {0};

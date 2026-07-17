@@ -22,33 +22,31 @@ bool LoadSystemSSLRootCertificates(X509_STORE* store);
 
 namespace {
 
-// PEM 形式のルート証明書を追加する
+// PEM 形式の文字列からルート証明書を読み込んでストアに追加する
+// 内部で ParsePEMCerts と CheckAddCertResult を利用する
 // 1 件も追加できなかった場合は false を返す
-bool AddCert(const std::string& pem, X509_STORE* store) {
+bool LoadCertsFromPEM(const std::string& pem, X509_STORE* store) {
   std::vector<X509*> certs = ParsePEMCerts(pem);
   bool added = false;
   for (size_t i = 0; i < certs.size(); ++i) {
     X509* cert = certs[i];
-    int r = X509_STORE_add_cert(store, cert);
-    if (r == 0) {
-      unsigned long err = ERR_peek_last_error();
-      if (ERR_GET_REASON(err) == X509_R_CERT_ALREADY_IN_HASH_TABLE) {
-        ERR_get_error();
-      } else {
-        char subject[256] = {0};
-        X509_NAME_oneline(X509_get_subject_name(cert), subject,
-                          sizeof(subject));
-        ERR_get_error();
-        RTC_LOG(LS_ERROR) << "X509_STORE_add_cert failed: subject=" << subject;
-        // 現在の cert と残りの cert を解放する
-        for (; i < certs.size(); ++i) {
-          X509_free(certs[i]);
-        }
-        return false;
-      }
-    } else {
+    AddCertResult result = CheckAddCertResult(cert, store);
+    if (result == AddCertResult::kSuccess) {
       added = true;
+    } else if (result == AddCertResult::kError) {
+      char subject[256] = {0};
+      X509_NAME_oneline(X509_get_subject_name(cert), subject, sizeof(subject));
+      ERR_get_error();
+      RTC_LOG(LS_ERROR)
+          << "LoadCertsFromPEM: X509_STORE_add_cert failed: subject="
+          << subject;
+      // 現在の cert と残りの cert を解放する
+      for (; i < certs.size(); ++i) {
+        X509_free(certs[i]);
+      }
+      return false;
     }
+    // kDuplicate の場合は重複無視して継続
     X509_free(cert);
   }
   return added;
@@ -90,7 +88,7 @@ bool SSLVerifier::VerifyX509(X509* x509,
     }
   } else {
     // ルート証明書が指定されている場合、その証明書以外は読み込まない
-    if (!AddCert(*ca_cert, store)) {
+    if (!LoadCertsFromPEM(*ca_cert, store)) {
       RTC_LOG(LS_ERROR) << "Failed to add ca_cert: ca_cert_length="
                         << ca_cert->size();
       return false;
