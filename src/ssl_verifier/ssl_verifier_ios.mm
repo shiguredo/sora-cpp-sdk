@@ -191,7 +191,8 @@ bool SSLVerifier::VerifyX509(X509* x509,
       CFStringRef desc = CFErrorCopyDescription(error);
       char buf[512] = {0};
       if (desc != nullptr) {
-        if (!CFStringGetCString(desc, buf, sizeof(buf), kCFStringEncodingUTF8)) {
+        if (!CFStringGetCString(desc, buf, sizeof(buf),
+                                kCFStringEncodingUTF8)) {
           RTC_LOG(LS_INFO) << "VerifyX509: SecTrustEvaluateWithError failed: "
                               "unable to copy error description";
         } else {

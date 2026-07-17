@@ -1,8 +1,8 @@
 #include "sora/ssl_verifier.h"
 
 // Windows CryptoAPI
-#include <windows.h>
 #include <wincrypt.h>
+#include <windows.h>
 
 // OpenSSL
 #include <openssl/err.h>

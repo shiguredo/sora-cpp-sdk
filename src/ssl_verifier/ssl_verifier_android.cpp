@@ -1,8 +1,8 @@
 #include "sora/ssl_verifier.h"
 
-#include <cstdio>
 #include <dirent.h>
 #include <errno.h>
+#include <cstdio>
 
 #include <string>
 #include <vector>
@@ -104,9 +104,8 @@ int LoadFromDir(X509_STORE* store, const char* dir_path) {
   // readdir がエラーで nullptr を返した場合は WARNING を出す
   // （走査完了の場合は errno は書き換えられない）
   if (errno != 0) {
-    RTC_LOG(LS_WARNING)
-        << "LoadSystemSSLRootCertificates: readdir error: path=" << dir_path
-        << " errno=" << errno;
+    RTC_LOG(LS_WARNING) << "LoadSystemSSLRootCertificates: readdir error: path="
+                        << dir_path << " errno=" << errno;
   }
 
   return added;
