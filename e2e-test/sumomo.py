@@ -763,14 +763,10 @@ class Sumomo:
                 if poll_result is not None:
                     # プロセスが終了している場合のみ stderr を読む
                     error_msg = f"Process exited unexpectedly with code {poll_result}"
-                    if self.process.stderr:
-                        # プロセスが終了しているので read() はブロックしない
-                        try:
-                            stderr_output = self.process.stderr.read()
-                            if stderr_output:
-                                error_msg += f"\nStderr output:\n{stderr_output}"
-                        except Exception:
-                            pass
+                    self._capture_stderr_on_exit(error_msg)
+                    stderr_output = self._get_stderr_output()
+                    if stderr_output:
+                        error_msg += f"\nStderr output:\n{stderr_output}"
                     raise RuntimeError(error_msg)
 
                 # HTTP エンドポイントをチェック
@@ -798,16 +794,13 @@ class Sumomo:
 
                 # プロセスが終了していた場合、即座に終了して stderr/stdout を確認
                 if poll_result_after is not None:
-                    # この時点でプロセスは既に終了しているため、read() はブロックしない
+                    # プロセスが終了していた場合、即座に終了して stderr/stdout を確認
                     error_msg = f"Process exited with code {poll_result_after} during startup"
 
-                    if self.process.stderr:
-                        try:
-                            stderr_output = self.process.stderr.read()
-                            if stderr_output:
-                                error_msg += f"\n\nStderr:\n{stderr_output}"
-                        except Exception:
-                            pass
+                    self._capture_stderr_on_exit(error_msg)
+                    stderr_output = self._get_stderr_output()
+                    if stderr_output:
+                        error_msg += f"\n\nStderr:\n{stderr_output}"
 
                     if self.process.stdout:
                         try:
@@ -838,13 +831,10 @@ class Sumomo:
                 # プロセスが終了したので stderr/stdout を読む
                 error_msg = f"sumomo process failed to start within {timeout} seconds"
 
-                if self.process.stderr:
-                    try:
-                        stderr_output = self.process.stderr.read()
-                        if stderr_output:
-                            error_msg += f"\n\nStderr (last 2000 chars):\n{stderr_output[-2000:]}"
-                    except Exception:
-                        pass
+                self._capture_stderr_on_exit(error_msg)
+                stderr_output = self._get_stderr_output()
+                if stderr_output:
+                    error_msg += f"\n\nStderr (last 2000 chars):\n{stderr_output[-2000:]}"
 
                 if self.process.stdout:
                     try:
@@ -859,6 +849,25 @@ class Sumomo:
 
             self._cleanup()
             raise RuntimeError(f"sumomo process failed to start within {timeout} seconds")
+
+    def _capture_stderr_on_exit(self, error_msg: str) -> None:
+        """capture_stderr 有効時、リーダースレッドの終了を待って stderr を取得する"""
+        if not self.capture_stderr or not hasattr(self, "_stderr_reader"):
+            return
+        self._stderr_reader.join(timeout=5)
+        self.stderr_output = "".join(self._stderr_lines)
+
+    def _get_stderr_output(self) -> str | None:
+        """stderr の内容を取得する"""
+        if self.capture_stderr and hasattr(self, "_stderr_reader"):
+            self._stderr_reader.join(timeout=5)
+            return "".join(self._stderr_lines)
+        if hasattr(self, "process") and self.process and self.process.stderr:
+            try:
+                return self.process.stderr.read()
+            except Exception:
+                pass
+        return None
 
     def _cleanup(self) -> None:
         """プロセスをクリーンアップ"""
