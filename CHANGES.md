@@ -32,6 +32,12 @@
   - `ROOT` ストアに ISRG Root X1 等の必要なルート CA が反映されていない環境では TLS 検証が失敗する
   - 回避するには `SoraSignalingConfig::ca_cert` に PEM を明示指定する
   - @melpon
+- [CHANGE] iOS の TLS 検証を OS のシステム CA（iOS のシステム trust store）に切り替える
+  - iOS 14 以降が対象
+  - iOS の sandbox 制約によりアンカーの直接列挙が不可能なため、Security.framework の `SecTrustEvaluateWithError` に検証委譲する方式で実装している
+  - Apple 管理のシステム trust store に基づく信頼判定（CT / revocation を含む）が反映される
+  - 独自 CA が必要な場合は `SoraSignalingConfig::ca_cert` で明示指定する
+  - @melpon
 - [ADD] sumomo の E2E テストで `--audio-recording-device` を複数の音声録音デバイスに対して個別に検証するテストを追加する
   - @melpon
 - [ADD] sumomo の E2E テストで録音デバイス未指定時・無効指定時の挙動を検証するテストを追加する

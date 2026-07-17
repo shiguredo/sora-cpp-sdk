@@ -127,7 +127,6 @@ target_sources(sora
     src/sora_video_codec_factory.cpp
     src/sora_video_decoder_factory.cpp
     src/sora_video_encoder_factory.cpp
-    src/ssl_verifier.cpp
     src/url_parts.cpp
     src/version.cpp
     src/vpl_session_impl.cpp
@@ -136,15 +135,15 @@ target_sources(sora
 )
 
 if (SORA_TARGET_OS STREQUAL "ubuntu")
-  set(SORA_SYSTEM_CA_IMPL src/ssl_verifier/ssl_verifier_ubuntu.cpp)
+  set(SORA_SYSTEM_CA_IMPL src/ssl_verifier.cpp src/ssl_verifier/ssl_verifier_ubuntu.cpp)
 elseif (SORA_TARGET_OS STREQUAL "macos")
-  set(SORA_SYSTEM_CA_IMPL src/ssl_verifier/ssl_verifier_macos.cpp)
+  set(SORA_SYSTEM_CA_IMPL src/ssl_verifier.cpp src/ssl_verifier/ssl_verifier_macos.cpp)
 elseif (SORA_TARGET_OS STREQUAL "windows")
-  set(SORA_SYSTEM_CA_IMPL src/ssl_verifier/ssl_verifier_windows.cpp)
+  set(SORA_SYSTEM_CA_IMPL src/ssl_verifier.cpp src/ssl_verifier/ssl_verifier_windows.cpp)
 elseif (SORA_TARGET_OS STREQUAL "ios")
-  set(SORA_SYSTEM_CA_IMPL src/ssl_verifier/ssl_verifier_stub.cpp)
+  set(SORA_SYSTEM_CA_IMPL src/ssl_verifier/ssl_verifier_ios.mm)
 elseif (SORA_TARGET_OS STREQUAL "android")
-  set(SORA_SYSTEM_CA_IMPL src/ssl_verifier/ssl_verifier_stub.cpp)
+  set(SORA_SYSTEM_CA_IMPL src/ssl_verifier.cpp src/ssl_verifier/ssl_verifier_stub.cpp)
 else ()
   message(FATAL_ERROR "Unknown SORA_TARGET_OS: ${SORA_TARGET_OS}")
 endif ()
@@ -501,6 +500,12 @@ elseif (SORA_TARGET_OS STREQUAL "ios")
       # PUBLIC で定義することで Sora::sora にリンクする全 TU で
       # 定義を統一し ABI ミスマッチを防ぐ。
       BOOST_ASIO_DISABLE_STD_ATOMIC_WAIT
+  )
+
+  target_link_libraries(sora
+    PUBLIC
+      "-framework Security"
+      "-framework CoreFoundation"
   )
 
 elseif (SORA_TARGET_OS STREQUAL "android")
