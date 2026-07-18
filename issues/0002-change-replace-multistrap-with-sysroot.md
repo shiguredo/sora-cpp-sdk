@@ -9,7 +9,7 @@
 
 ## 目的
 
-`multistrap` は Debian unstable から 2025-01-24 に削除され、Ubuntu でも 25.04 (plucky) 以降で消えているため、代替手段として `apt-get` + `dpkg-deb` を直接利用した sysroot 構築方式に移行する。実装は webrtc-build (`shiguredo-webrtc-build/webrtc-build`) の `feature/sysroot` ブランチのコミット `2c15196` (`ARM 向け sysroot 生成を独自実装へ移行する`) 時点の `sysroot_builder.py` を移植し、両プロジェクトで sysroot ビルド基盤を統一する。以降本文で「参照コミット」と表記した場合はこの `2c15196` を指す (gc による消失リスクへの対策は「完了条件」の「PR マージ後の後始末」で規定)。
+`multistrap` は Debian unstable から 2025-01-24 に削除され、Ubuntu でも 25.04 (plucky) 以降で消えているため、代替手段として `apt-get` + `dpkg-deb` を直接利用した sysroot 構築方式に移行する。実装は webrtc-build (`shiguredo-webrtc-build/webrtc-build`) の `feature/sysroot` ブランチのコミット `59a0ce0` (`sysroot_builder.py に設計意図を説明するコメントを追加する`) 時点の `sysroot_builder.py` を移植し、両プロジェクトで sysroot ビルド基盤を統一する。以降本文で「参照コミット」と表記した場合はこの `59a0ce0` を指す (gc による消失リスクへの対策は「完了条件」の「PR マージ後の後始末」で規定)。
 
 本 issue は本体 (リポジトリルート) とサンプル (`examples/`) の両方の ARM64 クロスコンパイル用 sysroot 構築を対象とする。両者はパッケージ構成が異なる (後述) ため別々の設定ファイル群として扱う。副次的に、multistrap 分岐に残っていた Jetson 系の到達不能な dead code (`install_deps()` の 2 ターゲット、`buildbase.py` の `libnvbuf_fdmap.so` symlink 補正) も削除する。これは multistrap 分岐と一体で消えるコードに限定し、`run.py` の他所に散在する Jetson 参照は本 issue のスコープ外とする。
 
@@ -85,9 +85,9 @@
 
 sed パッチはいずれも `Acquire::AllowInsecureRepositories=true` を `multistrap` に注入するもの。HTTP リポジトリからの取得を許可するために入れられている。
 
-### webrtc-build 側の参考実装 (参照コミット `2c15196`)
+### webrtc-build 側の参考実装 (参照コミット `59a0ce0`)
 
-`shiguredo-webrtc-build/webrtc-build` の `feature/sysroot` ブランチ参照コミット時点に、`apt-get` + `dpkg-deb` を用いた sysroot 構築モジュール `sysroot_builder.py` (399 行、テスト付き) が実装済み。要点のみ列挙する:
+`shiguredo-webrtc-build/webrtc-build` の `feature/sysroot` ブランチ参照コミット時点に、`apt-get` + `dpkg-deb` を用いた sysroot 構築モジュール `sysroot_builder.py` (503 行、テスト付き) が実装済み。要点のみ列挙する:
 
 - `SysrootConfig` / `RepositoryConfig` の frozen dataclass
 - `load_sysroot_config(path)`: JSON を validation 付きでロード。`CONFIG_TOKEN_PATTERN` (`^[A-Za-z0-9._+:/-]+$`) で使用可能文字を制限し、`SysrootConfigError` で詳細な検証エラーを返す。**副作用**: このパターンは resolve 後の絶対パスも検査するため、`install_dir` 配下の親パスに空白や `()` を含むと failure する
@@ -246,9 +246,9 @@ deb [arch=arm64 signed-by=<abs>/sysroot/keyrings/raspberrypi-archive-keyring.asc
 移植は `curl` で参照コミットの生ファイルを取得する:
 
 ```
-curl -sSL https://raw.githubusercontent.com/shiguredo-webrtc-build/webrtc-build/2c15196/sysroot_builder.py -o sysroot_builder.py
+curl -sSL https://raw.githubusercontent.com/shiguredo-webrtc-build/webrtc-build/59a0ce0/sysroot_builder.py -o sysroot_builder.py
 mkdir -p tests
-curl -sSL https://raw.githubusercontent.com/shiguredo-webrtc-build/webrtc-build/2c15196/tests/test_sysroot_builder.py -o tests/test_sysroot_builder.py
+curl -sSL https://raw.githubusercontent.com/shiguredo-webrtc-build/webrtc-build/59a0ce0/tests/test_sysroot_builder.py -o tests/test_sysroot_builder.py
 ```
 
 GitHub の raw URL は content-addressed (commit hash 指定) のため取得内容の一意性は担保される。`webrtc-build` と `sora-cpp-sdk` は同一 shiguredo プロジェクトで共に Apache-2.0 ライセンス、リポジトリに NOTICE ファイルが無いためクレジット表示や NOTICE 追記は不要。ルート `pyproject.toml` は新設しない (既存 `e2e-test/pyproject.toml` との名前空間衝突を避けるため)。テスト実行は「テスト戦略」で規定する `uv run --with pytest --with pytest-timeout python -m pytest ...` (`python -m pytest` の形式で、cwd をリポジトリルートにして sys.path に `sysroot_builder.py` を含める) に集約する。
@@ -432,9 +432,9 @@ git worktree remove /tmp/sora-cpp-sdk-multistrap
 **PR マージ後の後始末** (maintainer が実施、PR 内には含めない): sora-cpp-sdk の main / develop 上で参照コミットにタグを打ち push する。
 
 ```
-git fetch git@github.com:shiguredo-webrtc-build/webrtc-build.git 2c15196
-git tag -a git-vendor/webrtc-build-2c15196 2c15196 -m "vendored source of sysroot_builder.py"
-git push origin git-vendor/webrtc-build-2c15196
+git fetch git@github.com:shiguredo-webrtc-build/webrtc-build.git 59a0ce0
+git tag -a git-vendor/webrtc-build-59a0ce0 59a0ce0 -m "vendored source of sysroot_builder.py"
+git push origin git-vendor/webrtc-build-59a0ce0
 ```
 
 ### 成果物
