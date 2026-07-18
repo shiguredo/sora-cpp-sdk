@@ -25,6 +25,10 @@
   - 非 Android / iOS では `SoraClientContext::Create()` 内で同期的に `WebRtcVoiceEngine::Init()` を実行させ、指定デバイス設定後に `InitMicrophone()` / `InitSpeaker()` を行う
   - Android / iOS では `media_engine_ref_` を作成せず、既存挙動に影響しない
   - @voluntas
+- [CHANGE] NVIDIA Pascal 世代以前の GPU サポートを廃止する
+  - CUDA 13 で Maxwell / Pascal / Volta (sm_50 〜 sm_70) のサポートが廃止されたため、CUDA カーネルのターゲットを `sm_60` から `sm_75` (Turing) 以降に変更する
+  - GTX 10 シリーズ (GTX 1060 / 1080 など) では NVIDIA ハードウェアエンコーダー / デコーダーが利用できなくなる
+  - @voluntas
 - [ADD] Ubuntu 26.04 ARM64 向けの sysroot とビルドターゲットを追加する
   - @voluntas
 - [ADD] Ubuntu 26.04 x86_64 向けのビルドターゲットを追加する
@@ -73,6 +77,7 @@
 - [UPDATE] CUDA のバージョンを `13.3.1-1` に上げる
   - Ubuntu 26.04 の CUDA リポジトリが `13.3.0` / `13.3.1` のみのため、全プラットフォームを揃える
   - Windows では CUDA 13 で分離された `cuda_crt` もインストール対象に含める
+  - CUDA 13 で `cuCtxCreate` が `cuCtxCreate_v4` (4 引数) に変わったため、呼び出しを新しいシグネチャに追従する
   - @voluntas
 - [UPDATE] clang のバージョンを 22 に上げる
   - CUDA 13.3 を clang でコンパイルするために必要
