@@ -27,6 +27,8 @@
   - @voluntas
 - [ADD] Ubuntu 26.04 ARM64 向けの sysroot とビルドターゲットを追加する
   - @voluntas
+- [ADD] Ubuntu 26.04 x86_64 向けのビルドターゲットを追加する
+  - @voluntas
 - [ADD] sumomo の E2E テストで `--audio-recording-device` を複数の音声録音デバイスに対して個別に検証するテストを追加する
   - @melpon
 - [ADD] sumomo の E2E テストで録音デバイス未指定時・無効指定時の挙動を検証するテストを追加する

@@ -88,6 +88,7 @@ def install_deps(
             "macos_arm64",
             "ubuntu-22.04_x86_64",
             "ubuntu-24.04_x86_64",
+            "ubuntu-26.04_x86_64",
             "ubuntu-22.04_armv8",
             "ubuntu-24.04_armv8",
             "ubuntu-26.04_armv8",
@@ -146,6 +147,7 @@ def install_deps(
             "raspberry-pi-os_armv8",
             "ubuntu-22.04_x86_64",
             "ubuntu-24.04_x86_64",
+            "ubuntu-26.04_x86_64",
             "ubuntu-22.04_armv8",
             "ubuntu-24.04_armv8",
             "ubuntu-26.04_armv8",
@@ -198,7 +200,7 @@ def install_deps(
                     f"-DCMAKE_SYSROOT={sysroot}",
                 ],
             }
-        elif platform in ("ubuntu-22.04_x86_64", "ubuntu-24.04_x86_64"):
+        elif platform in ("ubuntu-22.04_x86_64", "ubuntu-24.04_x86_64", "ubuntu-26.04_x86_64"):
             install_sdl3_args = {
                 "version": deps["SDL3_VERSION"],
                 "version_file": os.path.join(install_dir, "sdl3.version"),
@@ -282,6 +284,7 @@ AVAILABLE_TARGETS = [
     "macos_arm64",
     "ubuntu-22.04_x86_64",
     "ubuntu-24.04_x86_64",
+    "ubuntu-26.04_x86_64",
     "ubuntu-22.04_armv8",
     "ubuntu-24.04_armv8",
     "ubuntu-26.04_armv8",
@@ -348,7 +351,7 @@ def _build(args):
                 f"-DCMAKE_CXX_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang++')}",
                 f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}",
             ]
-        elif platform in ("ubuntu-22.04_x86_64", "ubuntu-24.04_x86_64"):
+        elif platform in ("ubuntu-22.04_x86_64", "ubuntu-24.04_x86_64", "ubuntu-26.04_x86_64"):
             cmake_args += [
                 f"-DCMAKE_C_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang')}",
                 f"-DCMAKE_CXX_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang++')}",

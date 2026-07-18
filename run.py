@@ -102,6 +102,7 @@ def get_common_cmake_args(
         if platform.target.package_name in (
             "ubuntu-22.04_x86_64",
             "ubuntu-24.04_x86_64",
+            "ubuntu-26.04_x86_64",
         ):
             apt_install_llvm_version = deps["APT_INSTALL_LLVM_VERSION"]
             args.append(f"-DCMAKE_C_COMPILER=clang-{apt_install_llvm_version}")
@@ -666,6 +667,7 @@ AVAILABLE_TARGETS = [
     "macos_arm64",
     "ubuntu-22.04_x86_64",
     "ubuntu-24.04_x86_64",
+    "ubuntu-26.04_x86_64",
     "ubuntu-22.04_armv8",
     "ubuntu-24.04_armv8",
     "ubuntu-26.04_armv8",
@@ -685,6 +687,8 @@ def _get_platform(target: str) -> Platform:
         platform = Platform("ubuntu", "22.04", "x86_64")
     elif target == "ubuntu-24.04_x86_64":
         platform = Platform("ubuntu", "24.04", "x86_64")
+    elif target == "ubuntu-26.04_x86_64":
+        platform = Platform("ubuntu", "26.04", "x86_64")
     elif target == "ubuntu-22.04_armv8":
         platform = Platform("ubuntu", "22.04", "armv8")
     elif target == "ubuntu-24.04_armv8":
@@ -781,6 +785,7 @@ def _build(
             if platform.target.package_name in (
                 "ubuntu-22.04_x86_64",
                 "ubuntu-24.04_x86_64",
+                "ubuntu-26.04_x86_64",
             ):
                 cmake_args.append(f"-DCMAKE_C_COMPILER=clang-{apt_install_llvm_version}")
                 cmake_args.append(f"-DCMAKE_CXX_COMPILER=clang++-{apt_install_llvm_version}")
@@ -1058,6 +1063,7 @@ def _build(
                     if platform.target.package_name in (
                         "ubuntu-22.04_x86_64",
                         "ubuntu-24.04_x86_64",
+                        "ubuntu-26.04_x86_64",
                     ):
                         cmake_args.append(f"-DCMAKE_C_COMPILER=clang-{apt_install_llvm_version}")
                         cmake_args.append(

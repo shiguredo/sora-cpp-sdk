@@ -181,6 +181,10 @@ jobs:
             runs-on: ubuntu-24.04
             os: ubuntu
             arch: x86_64
+          - name: ubuntu-26.04_x86_64
+            runs-on: ubuntu-26.04
+            os: ubuntu
+            arch: x86_64
           - name: ubuntu-22.04_armv8
             runs-on: ubuntu-22.04
             os: ubuntu
@@ -349,6 +353,10 @@ jobs:
           - name: ubuntu-24.04_x86_64
             platform-name: ubuntu-24.04_x86_64
             runs-on: ubuntu-24.04
+            test-target: test_sumomo_basic.py test_sumomo_openh264.py
+          - name: ubuntu-26.04_x86_64
+            platform-name: ubuntu-26.04_x86_64
+            runs-on: ubuntu-26.04
             test-target: test_sumomo_basic.py test_sumomo_openh264.py
           - name: ubuntu-22.04_x86_64
             platform-name: ubuntu-22.04_x86_64

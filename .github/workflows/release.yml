@@ -162,6 +162,10 @@ jobs:
             runs-on: ubuntu-24.04
             os: ubuntu
             arch: x86_64
+          - name: ubuntu-26.04_x86_64
+            runs-on: ubuntu-26.04
+            os: ubuntu
+            arch: x86_64
           - name: ubuntu-22.04_armv8
             runs-on: ubuntu-22.04
             os: ubuntu
@@ -330,6 +334,10 @@ jobs:
           - name: ubuntu-24.04_x86_64
             platform-name: ubuntu-24.04_x86_64
             runs-on: ubuntu-24.04
+            test-target: test_sumomo_basic.py test_sumomo_openh264.py
+          - name: ubuntu-26.04_x86_64
+            platform-name: ubuntu-26.04_x86_64
+            runs-on: ubuntu-26.04
             test-target: test_sumomo_basic.py test_sumomo_openh264.py
           - name: ubuntu-22.04_x86_64
             platform-name: ubuntu-22.04_x86_64
@@ -532,6 +540,9 @@ jobs:
           platform: ubuntu-24.04_x86_64
       - uses: ./.github/actions/download
         with:
+          platform: ubuntu-26.04_x86_64
+      - uses: ./.github/actions/download
+        with:
           platform: ubuntu-22.04_armv8
       - uses: ./.github/actions/download
         with:
@@ -642,6 +653,8 @@ jobs:
             runs-on: ubuntu-22.04
           - name: ubuntu-24.04_x86_64
             runs-on: ubuntu-24.04
+          - name: ubuntu-26.04_x86_64
+            runs-on: ubuntu-26.04
           - name: ubuntu-24.04_armv8
             runs-on: ubuntu-24.04
           - name: ubuntu-26.04_armv8
@@ -709,6 +722,7 @@ jobs:
           - macos_arm64.tar.gz
           - ubuntu-22.04_x86_64.tar.gz
           - ubuntu-24.04_x86_64.tar.gz
+          - ubuntu-26.04_x86_64.tar.gz
           - ubuntu-24.04_armv8.tar.gz
           - ubuntu-26.04_armv8.tar.gz
           - raspberry-pi-os_armv8.tar.gz
