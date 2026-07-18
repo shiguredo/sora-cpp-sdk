@@ -70,6 +70,9 @@
   - @voluntas @torikizi
 - [UPDATE] Intel VPL を v2.17.0 にあげる
   - @torikizi
+- [UPDATE] CUDA のバージョンを `13.3.1-1` に上げる
+  - Ubuntu 26.04 の CUDA リポジトリが `13.3.0` / `13.3.1` のみのため、全プラットフォームを揃える
+  - @voluntas
 - [UPDATE] WSS / TURN-TLS のクライアント証明書設定で証明書チェーンを利用できるようにする
   - `SoraSignalingConfig` の `client_cert` はこれまで単体の証明書が前提になっていたが、証明書チェーンを指定できるようにする
   - @zztkm
