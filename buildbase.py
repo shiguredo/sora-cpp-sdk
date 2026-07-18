@@ -1524,6 +1524,14 @@ def install_cuda_windows(version, source_dir, build_dir, install_dir):
         raise Exception(
             f"cuda_crt not found for CUDA {version}: expected {cuda_crt_src}"
         )
+    # CUDA 13 以降は cicc (nvvm) が libnvvm に分離されている
+    libnvvm_src = os.path.join(build_dir, "cuda", "libnvvm", "nvvm")
+    if os.path.exists(libnvvm_src):
+        copytree(libnvvm_src, os.path.join(install_dir, "cuda", "nvvm"))
+    elif version.startswith("13."):
+        raise Exception(
+            f"libnvvm not found for CUDA {version}: expected {libnvvm_src}"
+        )
 
 
 @versioned

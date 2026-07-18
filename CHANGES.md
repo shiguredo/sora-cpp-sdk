@@ -77,6 +77,7 @@
 - [UPDATE] CUDA のバージョンを `13.3.1-1` に上げる
   - Ubuntu 26.04 の CUDA リポジトリが `13.3.0` / `13.3.1` のみのため、全プラットフォームを揃える
   - Windows では CUDA 13 で分離された `cuda_crt` もインストール対象に含める
+  - Windows では CUDA 13 で `cicc` (nvvm) が `libnvvm` に分離されたため、これもインストール対象に含める
   - CUDA 13 で `cuCtxCreate` が `cuCtxCreate_v4` (4 引数) に変わったため、呼び出しを新しいシグネチャに追従する
   - @voluntas
 - [UPDATE] clang のバージョンを 22 に上げる

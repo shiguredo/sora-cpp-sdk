@@ -44,7 +44,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: _install\windows_x86_64\release\cuda
-          key: windows-cuda-${{ steps.versions.outputs.cuda_version }}.v1
+          key: windows-cuda-${{ steps.versions.outputs.cuda_version }}.v2
       - run: echo "${{ steps.versions.outputs.cuda_version }}" > _install\windows_x86_64\release\cuda.version
         if: steps.cache-cuda.outputs.cache-hit == 'true'
       - run: python3 run.py build --test --run-e2e-test --package ${{ matrix.name }}
