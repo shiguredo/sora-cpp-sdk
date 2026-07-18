@@ -1,5 +1,4 @@
 import argparse
-import hashlib
 import multiprocessing
 import os
 import sys
@@ -26,7 +25,7 @@ from buildbase import (  # noqa: E402
     install_cli11,
     install_cmake,
     install_llvm,
-    install_rootfs,
+    install_sysroot,
     install_sora_and_deps,
     install_webrtc,
     mkdir_p,
@@ -44,6 +43,7 @@ def install_deps(
     local_webrtc_build_args: List[str],
     local_sora_cpp_sdk_dir: Optional[str],
     local_sora_cpp_sdk_args: List[str],
+    rootfs_fetch_force: bool,
 ):
     with cd(BASE_DIR):
         deps = read_version_file("DEPS")
@@ -53,17 +53,13 @@ def install_deps(
             "ubuntu-24.04_armv8",
             "raspberry-pi-os_armv8",
         ):
-            # multistrap を使った sysroot の構築
-            conf = os.path.join(BASE_DIR, "multistrap", f"{platform}.conf")
-            # conf ファイルのハッシュ値をバージョンとする
-            version_md5 = hashlib.md5(open(conf, "rb").read()).hexdigest()
-            install_rootfs_args = {
-                "version": version_md5,
-                "version_file": os.path.join(install_dir, "rootfs.version"),
-                "install_dir": install_dir,
-                "conf": conf,
-            }
-            install_rootfs(**install_rootfs_args)
+            # apt-get + dpkg-deb を使った sysroot の構築
+            config_path = os.path.join(BASE_DIR, "sysroot", f"{platform}.json")
+            install_sysroot(
+                config_path=config_path,
+                install_dir=install_dir,
+                force=rootfs_fetch_force,
+            )
 
         # WebRTC
         if local_webrtc_build_dir is None:
@@ -208,6 +204,7 @@ def _build(args):
         args.local_webrtc_build_args,
         args.local_sora_cpp_sdk_dir,
         args.local_sora_cpp_sdk_args,
+        args.rootfs_fetch_force,
     )
 
     configuration = "Debug" if args.debug else "Release"
@@ -307,6 +304,7 @@ def main():
     bp = sp.add_parser("build")
     bp.add_argument("--debug", action="store_true")
     bp.add_argument("--install-dir")
+    bp.add_argument("--rootfs-fetch-force", action="store_true")
     add_webrtc_build_arguments(bp)
     add_sora_arguments(bp)
     bp.add_argument("target", choices=AVAILABLE_TARGETS)
