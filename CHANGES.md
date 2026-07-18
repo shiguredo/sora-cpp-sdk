@@ -72,6 +72,10 @@
   - @torikizi
 - [UPDATE] CUDA のバージョンを `13.3.1-1` に上げる
   - Ubuntu 26.04 の CUDA リポジトリが `13.3.0` / `13.3.1` のみのため、全プラットフォームを揃える
+  - Windows では CUDA 13 で分離された `cuda_crt` もインストール対象に含める
+  - @voluntas
+- [UPDATE] clang のバージョンを 22 に上げる
+  - CUDA 13.3 を clang でコンパイルするために必要
   - @voluntas
 - [UPDATE] WSS / TURN-TLS のクライアント証明書設定で証明書チェーンを利用できるようにする
   - `SoraSignalingConfig` の `client_cert` はこれまで単体の証明書が前提になっていたが、証明書チェーンを指定できるようにする

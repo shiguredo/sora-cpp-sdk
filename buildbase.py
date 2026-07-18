@@ -1516,6 +1516,14 @@ def install_cuda_windows(version, source_dir, build_dir, install_dir):
     copytree(
         os.path.join(build_dir, "cuda", "cuda_cudart", "cudart"), os.path.join(install_dir, "cuda")
     )
+    # CUDA 13 以降は crt/host_config.h 等が cuda_crt に分離されている
+    cuda_crt_src = os.path.join(build_dir, "cuda", "cuda_crt", "crt")
+    if os.path.exists(cuda_crt_src):
+        copytree(cuda_crt_src, os.path.join(install_dir, "cuda"))
+    elif version.startswith("13."):
+        raise Exception(
+            f"cuda_crt not found for CUDA {version}: expected {cuda_crt_src}"
+        )
 
 
 @versioned
