@@ -1,12 +1,12 @@
+// OpenSSL
+#include <openssl/err.h>
+#include <openssl/x509.h>
+
 // clang-format off
 // Windows CryptoAPI
 #include <windows.h>
 #include <wincrypt.h>
 // clang-format on
-
-// OpenSSL
-#include <openssl/err.h>
-#include <openssl/x509.h>
 
 // WebRTC
 #include <rtc_base/logging.h>
