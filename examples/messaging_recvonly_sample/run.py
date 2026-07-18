@@ -51,6 +51,7 @@ def install_deps(
         if platform in (
             "ubuntu-22.04_armv8",
             "ubuntu-24.04_armv8",
+            "ubuntu-26.04_armv8",
             "raspberry-pi-os_armv8",
         ):
             # apt-get + dpkg-deb を使った sysroot の構築
@@ -88,6 +89,7 @@ def install_deps(
             "ubuntu-24.04_x86_64",
             "ubuntu-22.04_armv8",
             "ubuntu-24.04_armv8",
+            "ubuntu-26.04_armv8",
             "raspberry-pi-os_armv8",
         ):
             webrtc_version = read_version_file(webrtc_info.version_file)
@@ -145,6 +147,7 @@ def install_deps(
             "ubuntu-24.04_x86_64",
             "ubuntu-22.04_armv8",
             "ubuntu-24.04_armv8",
+            "ubuntu-26.04_armv8",
         ):
             cmake_platform = "linux-x86_64"
             cmake_ext = "tar.gz"
@@ -178,6 +181,7 @@ AVAILABLE_TARGETS = [
     "ubuntu-24.04_x86_64",
     "ubuntu-22.04_armv8",
     "ubuntu-24.04_armv8",
+    "ubuntu-26.04_armv8",
     "raspberry-pi-os_armv8",
 ]
 
@@ -246,7 +250,11 @@ def _build(args):
                 f"-DCMAKE_CXX_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang++')}",
                 f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}",
             ]
-        elif platform in ("ubuntu-22.04_armv8", "ubuntu-24.04_armv8"):
+        elif platform in (
+            "ubuntu-22.04_armv8",
+            "ubuntu-24.04_armv8",
+            "ubuntu-26.04_armv8",
+        ):
             sysroot = os.path.join(install_dir, "rootfs")
             cmake_args += [
                 f"-DCMAKE_C_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang')}",

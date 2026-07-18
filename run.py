@@ -224,6 +224,7 @@ def install_deps(
         if platform.target.package_name in (
             "ubuntu-22.04_armv8",
             "ubuntu-24.04_armv8",
+            "ubuntu-26.04_armv8",
             "raspberry-pi-os_armv8",
         ):
             config_path = os.path.join(BASE_DIR, "sysroot", f"{platform.target.package_name}.json")
@@ -667,6 +668,7 @@ AVAILABLE_TARGETS = [
     "ubuntu-24.04_x86_64",
     "ubuntu-22.04_armv8",
     "ubuntu-24.04_armv8",
+    "ubuntu-26.04_armv8",
     "raspberry-pi-os_armv8",
     "ios",
     "android",
@@ -687,6 +689,8 @@ def _get_platform(target: str) -> Platform:
         platform = Platform("ubuntu", "22.04", "armv8")
     elif target == "ubuntu-24.04_armv8":
         platform = Platform("ubuntu", "24.04", "armv8")
+    elif target == "ubuntu-26.04_armv8":
+        platform = Platform("ubuntu", "26.04", "armv8")
     elif target == "raspberry-pi-os_armv8":
         platform = Platform("raspberry-pi-os", None, "armv8")
     elif target == "ios":

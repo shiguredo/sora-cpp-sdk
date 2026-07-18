@@ -170,6 +170,10 @@ jobs:
             runs-on: ubuntu-24.04
             os: ubuntu
             arch: armv8
+          - name: ubuntu-26.04_armv8
+            runs-on: ubuntu-24.04
+            os: ubuntu
+            arch: armv8
           - name: raspberry-pi-os_armv8
             runs-on: ubuntu-24.04
             os: raspberry-pi-os
@@ -334,6 +338,10 @@ jobs:
           - name: ubuntu-24.04_armv8
             platform-name: ubuntu-24.04_armv8
             runs-on: ubuntu-24.04-arm
+            test-target: test_sumomo_basic.py test_sumomo_openh264.py
+          - name: ubuntu-26.04_armv8
+            platform-name: ubuntu-26.04_armv8
+            runs-on: ubuntu-26.04-arm
             test-target: test_sumomo_basic.py test_sumomo_openh264.py
           - name: ubuntu-22.04_armv8
             platform-name: ubuntu-22.04_armv8
@@ -530,6 +538,9 @@ jobs:
           platform: ubuntu-24.04_armv8
       - uses: ./.github/actions/download
         with:
+          platform: ubuntu-26.04_armv8
+      - uses: ./.github/actions/download
+        with:
           platform: raspberry-pi-os_armv8
       - uses: ./.github/actions/download
         with:
@@ -633,6 +644,8 @@ jobs:
             runs-on: ubuntu-24.04
           - name: ubuntu-24.04_armv8
             runs-on: ubuntu-24.04
+          - name: ubuntu-26.04_armv8
+            runs-on: ubuntu-24.04
           - name: raspberry-pi-os_armv8
             runs-on: ubuntu-24.04
     defaults:
@@ -652,8 +665,8 @@ jobs:
           sudo apt-get install -y libgl-dev
 
       # ARM はクロスコンパイルのために追加のパッケージが必要なのでインストールする
-      - name: Install deps Ubuntu 24.04 ARM
-        if: matrix.platform.name == 'ubuntu-24.04_armv8' || matrix.platform.name == 'raspberry-pi-os_armv8'
+      - name: Install deps Ubuntu ARM
+        if: matrix.platform.name == 'ubuntu-24.04_armv8' || matrix.platform.name == 'ubuntu-26.04_armv8' || matrix.platform.name == 'raspberry-pi-os_armv8'
         run: |
           sudo apt-get install -y binutils-aarch64-linux-gnu debian-archive-keyring
       # リリースされた SDK バイナリを使ってサンプルをビルドする
@@ -697,6 +710,7 @@ jobs:
           - ubuntu-22.04_x86_64.tar.gz
           - ubuntu-24.04_x86_64.tar.gz
           - ubuntu-24.04_armv8.tar.gz
+          - ubuntu-26.04_armv8.tar.gz
           - raspberry-pi-os_armv8.tar.gz
     runs-on: ubuntu-24.04
     steps:

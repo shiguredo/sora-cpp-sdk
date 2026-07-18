@@ -25,6 +25,8 @@
   - 非 Android / iOS では `SoraClientContext::Create()` 内で同期的に `WebRtcVoiceEngine::Init()` を実行させ、指定デバイス設定後に `InitMicrophone()` / `InitSpeaker()` を行う
   - Android / iOS では `media_engine_ref_` を作成せず、既存挙動に影響しない
   - @voluntas
+- [ADD] Ubuntu 26.04 ARM64 向けの sysroot とビルドターゲットを追加する
+  - @voluntas
 - [ADD] sumomo の E2E テストで `--audio-recording-device` を複数の音声録音デバイスに対して個別に検証するテストを追加する
   - @melpon
 - [ADD] sumomo の E2E テストで録音デバイス未指定時・無効指定時の挙動を検証するテストを追加する
@@ -37,7 +39,7 @@
 - [ADD] TURN-TLS のクライアント証明書設定に対応する
   - `SoraSignalingConfig` の `client_cert` / `client_key` を TURN-TLS にも適用する
   - @zztkm
-- [UPDATE] libwebrtc のバージョンを m150.7871.3.0 に上げる
+- [UPDATE] libwebrtc のバージョンを m150.7871.3.1 に上げる
   - `webrtc::RtcEventLogFactory` のコンストラクタ不一致を修正する
     - libwebrtc で `RtcEventLogFactory` の `TaskQueueFactory` が削除されたため、変更に追従する
     - 参考 : libwebrtc で削除の入ったコミットのリンク
@@ -174,7 +176,7 @@
   - `rtCamp/action-slack-notify@v2` を `shiguredo/github-actions/.github/actions/slack-notify@main` に置き換える
   - 通知ジョブの `runs-on` を `ubuntu-slim` に変更する
   - @miosakuma
-- [UPDATE] Examples の WEBRTC_BUILD_VERSION を m150.7871.3.0 にあげる
+- [UPDATE] Examples の WEBRTC_BUILD_VERSION を m150.7871.3.1 にあげる
   - @torikizi @zztkm
 - [UPDATE] GitHub Actions の `macos-14` を `macos-15` に上げる
   - macos-14 を利用しているときに SDL3 のビルドエラーが発生するようになったが `macos-15` に上げることでビルドエラーを解消できた
