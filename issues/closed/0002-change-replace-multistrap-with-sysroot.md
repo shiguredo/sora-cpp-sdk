@@ -2,14 +2,14 @@
 
 - Priority: Medium
 - Created: 2026-06-08
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-07-18
 - Model: DeepSeek V4 Pro
 - Branch: feature/change-replace-multistrap-with-sysroot
 - Polished: 2026-07-17
 
 ## 目的
 
-`multistrap` は Debian unstable から 2025-01-24 に削除され、Ubuntu でも 25.04 (plucky) 以降で消えているため、代替手段として `apt-get` + `dpkg-deb` を直接利用した sysroot 構築方式に移行する。実装は webrtc-build (`shiguredo-webrtc-build/webrtc-build`) の `feature/sysroot` ブランチのコミット `59a0ce0` (`sysroot_builder.py に設計意図を説明するコメントを追加する`) 時点の `sysroot_builder.py` を移植し、両プロジェクトで sysroot ビルド基盤を統一する。以降本文で「参照コミット」と表記した場合はこの `59a0ce0` を指す (gc による消失リスクへの対策は「完了条件」の「PR マージ後の後始末」で規定)。
+`multistrap` は Debian unstable から 2025-01-24 に削除され、Ubuntu でも 25.04 (plucky) 以降で消えているため、代替手段として `apt-get` + `dpkg-deb` を直接利用した sysroot 構築方式に移行する。実装は webrtc-build (`shiguredo-webrtc-build/webrtc-build`) の `feature/sysroot` ブランチのコミット `59a0ce0` (`sysroot_builder.py に設計意図を説明するコメントを追加する`) 時点の `sysroot_builder.py` を移植し、両プロジェクトで sysroot ビルド基盤を統一する。以降本文で「参照コミット」と表記した場合はこの `59a0ce0` を指す。
 
 本 issue は本体 (リポジトリルート) とサンプル (`examples/`) の両方の ARM64 クロスコンパイル用 sysroot 構築を対象とする。両者はパッケージ構成が異なる (後述) ため別々の設定ファイル群として扱う。副次的に、multistrap 分岐に残っていた Jetson 系の到達不能な dead code (`install_deps()` の 2 ターゲット、`buildbase.py` の `libnvbuf_fdmap.so` symlink 補正) も削除する。これは multistrap 分岐と一体で消えるコードに限定し、`run.py` の他所に散在する Jetson 参照は本 issue のスコープ外とする。
 
@@ -91,8 +91,8 @@ sed パッチはいずれも `Acquire::AllowInsecureRepositories=true` を `mult
 
 - `SysrootConfig` / `RepositoryConfig` の frozen dataclass
 - `load_sysroot_config(path)`: JSON を validation 付きでロード。`CONFIG_TOKEN_PATTERN` (`^[A-Za-z0-9._+:/-]+$`) で使用可能文字を制限し、`SysrootConfigError` で詳細な検証エラーを返す。**副作用**: このパターンは resolve 後の絶対パスも検査するため、`install_dir` 配下の親パスに空白や `()` を含むと failure する
-- `build_sysroot(config, output_dir, force=False)`: `tempfile.TemporaryDirectory` で隔離環境を作り、`APT_CONFIG` 環境変数 + `_apt_options()` が返す `-o` オプション群 + `apt.conf` 内 `Dir::Etc::main "/dev/null";` / `Dir::Etc::parts "/dev/null";` の合わせ技でホスト `/etc/apt/apt.conf.d/` を完全無効化した状態で `apt-get update` → `apt-get --download-only --yes --no-install-recommends --no-install-suggests install` → `dpkg-deb --extract` → 後処理 → tempfile → rename で atomic install。`apt-get` は `sudo` なしで呼ばれる (隔離環境の状態ディレクトリはすべて `output_dir` 配下)
-- `_apt_options()` が返す 8 項目には **`-o Dir::Etc::preferences=/dev/null` と `-o Dir::Etc::preferencesparts=/dev/null` が含まれる**。これは pin 設定を一律無視する挙動であり、二次対応 (pin) を実装するときに必ず解除が必要となる (「設計方針 1.」参照)
+- `build_sysroot(config, output_dir, force=False)`: `tempfile.TemporaryDirectory` で隔離環境を作り、`APT_CONFIG` 環境変数 + `_apt_options()` が返す `-o` オプション群 + `apt.conf` でホストの APT 設定を完全無効化した状態で `apt-get update` → `apt-get --download-only --yes --no-install-recommends --no-install-suggests install` → `dpkg-deb --extract` → 後処理 → tempfile → rename で atomic install。`apt-get` は `sudo` なしで呼ばれる (隔離環境の状態ディレクトリはすべて `output_dir` 配下)
+- `_apt_options()` が返す 8 項目には **APT preferences を無効化する 2 項目が含まれる**。これは pin 設定を一律無視する挙動であり、二次対応 (pin) を実装するときに必ず解除が必要となる (「設計方針 1.」参照)
 - `sysroot_config_fingerprint(config)`: 設定内容 + GPG キーの中身 (SHA256) を合成した SHA256 fingerprint。sysroot ルートに `.webrtc-build-sysroot.json` (manifest) として保存
 - 後処理: 絶対パス symlink → 相対パスへの補正、`bin`/`sbin`/`lib`/`lib64` の usrmerge symlink 補完、`usr/share/pkgconfig/{name}` から `../../lib/<triplet>/pkgconfig/{name}` を指す symlink 作成
 - 既存 `output_dir` が存在し manifest 不一致・欠落の場合は `force=False` だと `SysrootBuildError` を送出。fingerprint 一致で skip し `False` を返す
@@ -110,7 +110,7 @@ JSON スキーマ:
 
 **Python バージョン依存**: `sysroot_builder.py` は `from __future__ import annotations` 前提で `tuple[str, ...]` / `dict[str, str] | None` などの PEP 604 記法を使う。関数シグネチャの `X | Y` 記法が評価される箇所で Python 3.10 以上必須。CI ランナー `ubuntu-22.04` / `ubuntu-24.04` の `python3` は既定で 3.10 以上のため実行できる。
 
-**`sysroot_config_fingerprint` とランナー画像更新**: `signed_by` の絶対パス (`/usr/share/keyrings/ubuntu-archive-keyring.gpg` / `/usr/share/keyrings/debian-archive-keyring.gpg`) は CI ランナー画像に含まれる keyring パッケージのバージョンに依存する。ランナー画像更新のたびに fingerprint がずれるため、GitHub Actions キャッシュ (`actions/cache`) を導入しても頻繁に無効化される。本 issue ではキャッシュ導入は行わない。
+**`sysroot_config_fingerprint` とランナー画像更新**: `signed_by` が参照する Ubuntu / Debian の archive keyring は CI ランナー画像に含まれる keyring パッケージのバージョンに依存する。ランナー画像更新のたびに fingerprint がずれるため、GitHub Actions キャッシュ (`actions/cache`) を導入しても頻繁に無効化される。本 issue ではキャッシュ導入は行わない。
 
 ## 設計方針
 
@@ -135,7 +135,7 @@ JSON スキーマ:
             "url": "https://ports.ubuntu.com/ubuntu-ports",
             "suite": "jammy",
             "components": ["main", "universe"],
-            "signed_by": "/usr/share/keyrings/ubuntu-archive-keyring.gpg"
+            "signed_by": "<ubuntu-archive-keyring>"
         }
     ]
 }
@@ -156,7 +156,7 @@ JSON スキーマ:
             "url": "https://ports.ubuntu.com/ubuntu-ports",
             "suite": "noble",
             "components": ["main", "universe"],
-            "signed_by": "/usr/share/keyrings/ubuntu-archive-keyring.gpg"
+            "signed_by": "<ubuntu-archive-keyring>"
         }
     ]
 }
@@ -186,7 +186,7 @@ JSON スキーマ:
             "url": "https://deb.debian.org/debian",
             "suite": "trixie",
             "components": ["main"],
-            "signed_by": "/usr/share/keyrings/debian-archive-keyring.gpg"
+            "signed_by": "<debian-archive-keyring>"
         },
         {
             "url": "https://archive.raspberrypi.com/debian",
@@ -198,12 +198,7 @@ JSON スキーマ:
 }
 ```
 
-`sysroot_builder.py` は上記から次のような `sources.list` を生成する (arch と signed-by が同じ `deb` 行に含まれる):
-
-```
-deb [arch=arm64 signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] https://deb.debian.org/debian trixie main
-deb [arch=arm64 signed-by=<abs>/sysroot/keyrings/raspberrypi-archive-keyring.asc] https://archive.raspberrypi.com/debian trixie main
-```
+`sysroot_builder.py` は `arch` と `signed-by` を同じ `deb` 行に含む `sources.list` を生成する。鍵パスは設定ファイルを基準に解決する。
 
 サンプル用 `examples/sysroot/*.json` は本体用と以下の点だけが異なる:
 
@@ -211,24 +206,24 @@ deb [arch=arm64 signed-by=<abs>/sysroot/keyrings/raspberrypi-archive-keyring.asc
 - **`examples/sysroot/ubuntu-24.04_armv8.json`**: `packages` を `["libstdc++-13-dev", "libc6-dev", "libxext-dev", "libdbus-1-dev", "libudev-dev", "libgles-dev"]` とする
 - **`examples/sysroot/raspberry-pi-os_armv8.json`**: 本体用と完全に同一
 
-**`libcamera-dev` の取得元制御**: `libcamera-dev` は Debian trixie の `main` にも Raspberry Pi trixie の `main` にも存在し、実行時に必要なのは Raspberry Pi Foundation 版 (soname に `+rpt` suffix が付く)。
+**`libcamera-dev` の取得元制御**: `libcamera-dev` は Debian trixie の `main` にも Raspberry Pi trixie の `main` にも存在し、実行時に必要なのは Raspberry Pi Foundation 版である。Raspberry Pi 版であることは deb ファイル名の `+rpt` suffix で判定する。
 
-- **一次対応 (実測)**: 実装フェーズで `raspberry-pi-os_armv8` の sysroot 生成後 (`_install/raspberry-pi-os_armv8/rootfs/` に生成される) に以下を実行し、`+rpt` を含む soname が取れていることを確認する:
+- **一次対応 (実測)**: 実装フェーズで `raspberry-pi-os_armv8` の sysroot 生成後、`_install/raspberry-pi-os_armv8/rootfs/.webrtc-build-sysroot.json` の `deb_files` に `libcamera-dev_*+rpt*.deb` が含まれることを確認する。併せて次のコマンドで生成された共有ライブラリ名を確認する:
 
     ```
     find _install/raspberry-pi-os_armv8/rootfs/usr/lib/aarch64-linux-gnu/ -name 'libcamera.so.*' -printf '%f\n'
     ```
 
-    - Raspberry Pi 版: soname 文字列に `+rpt` を含む → OK
-    - Debian 版: `+rpt` を含まない → 期待外、二次対応へ進む
+    - `deb_files` に `libcamera-dev_*+rpt*.deb` を含む → Raspberry Pi 版、OK
+    - `deb_files` に `libcamera-dev_*+rpt*.deb` を含まない → Debian 版、二次対応へ進む
 
-    確認結果を実装 PR 本文の「libcamera-dev soname 確認」節に、コマンド出力そのままを貼り付ける
+    確認結果を実装 PR 本文の「libcamera-dev 確認」節に、manifest の該当ファイル名とコマンド出力を記載する
 
 - **二次対応 (pin、条件付き)**: 一次対応で Debian 版が取得された場合のみ実施。以下 5 点を `sysroot_builder.py` に加える (この時点で参照コミットからの fork 状態になる):
   1. `RepositoryConfig` dataclass に `pin_priority: int | None = None` フィールドを追加
   2. `_load_repository()` に `pin_priority` の validation を追加
   3. `build_sysroot()` の APT 隔離環境に `_apt/etc/apt/preferences.d/pin-<suite>.pref` を生成する処理を追加
-  4. **同時に `_apt_options()` の `Dir::Etc::preferences=/dev/null` と `Dir::Etc::preferencesparts=/dev/null` を、それぞれ `Dir::Etc::preferences=<work_dir>/preferences` (空ファイルで OK) と `Dir::Etc::preferencesparts=<work_dir>/preferences.d` に差し替える** (元の `/dev/null` のままでは apt が preferences を読まないため pin が沈黙する。除去だけだとホストの `/etc/apt/preferences` を読み込む副作用が出るため、隔離環境向けの実パスに書き換える必要がある)
+  4. **同時に `_apt_options()` の preferences 無効化設定を、それぞれ `<work_dir>/preferences` (空ファイルで OK) と `<work_dir>/preferences.d` に差し替える** (無効化したままでは apt が preferences を読まないため pin が沈黙する。除去だけだとホストの APT preferences を読み込む副作用が出るため、隔離環境向けの実パスに書き換える必要がある)
   5. `sysroot_config_fingerprint()` に `pin_priority` を含める。`tests/test_sysroot_builder.py` に pin テストケースを追加
   そのうえで `sysroot/raspberry-pi-os_armv8.json` の Raspberry Pi リポジトリに `"pin_priority": 990` を書き足す
 
@@ -259,15 +254,16 @@ GitHub の raw URL は content-addressed (commit hash 指定) のため取得内
 
 - `from pathlib import Path` (未 import なら追加) と `from sysroot_builder import build_sysroot, load_sysroot_config` を import に追加
 - `install_rootfs()` (`buildbase.py:1114-1159`、Jetson 用 `libnvbuf_fdmap.so` symlink 補正含む) を削除
-- 薄いラッパ `install_sysroot(config_path, install_dir)` を新設。処理内容:
+- 薄いラッパ `install_sysroot(config_path, install_dir, force=False)` を新設。処理内容:
   1. `rootfs_dir = os.path.join(install_dir, "rootfs")`
-  2. 旧 multistrap 版 `rootfs/` が manifest `.webrtc-build-sysroot.json` なしで残存している場合、`rm_rf(rootfs_dir)` と `os.remove(os.path.join(install_dir, "rootfs.version"))` (存在すれば) を実行。**削除対象は当該 `install_dir` 配下の `rootfs` と `rootfs.version` のみ**。`boost.version` / `sora.version` / `webrtc.version` などの他 `*.version` は温存
-  3. `config = load_sysroot_config(Path(config_path))`
-  4. `expected_name = Path(config_path).stem`。`config.name != expected_name` なら `RuntimeError(f"Sysroot config name does not match: expected={expected_name}, actual={config.name}")` を送出
-  5. `build_sysroot(config, Path(rootfs_dir))` を呼ぶ (`force=` は渡さない)
+  2. `config = load_sysroot_config(Path(config_path))` を実行し、設定の妥当性を既存成果物の操作前に確認
+  3. `expected_name = Path(config_path).stem`。`config.name != expected_name` なら `RuntimeError(f"Sysroot config name does not match: expected={expected_name}, actual={config.name}")` を送出
+  4. manifest がなく、かつ `rootfs.version` がある場合だけ旧 multistrap 版と判定する。manifest と `rootfs.version` の両方がない由来不明の成果物は削除せず `SysrootBuildError` とする
+  5. `build_sysroot(config, Path(rootfs_dir), force=force or legacy_rootfs)` を呼び、旧成果物も builder の原子的な置換経路へ渡す。生成失敗時は既存 `rootfs/` と `rootfs.version` を温存する
+  6. sysroot の生成または再利用に成功した後で `rootfs.version` のみを削除。`boost.version` / `sora.version` / `webrtc.version` などの他 `*.version` は温存
 - キャッシュ判定は `sysroot_builder` 側の manifest fingerprint に任せるため、`@versioned` デコレータは付けない
 
-強制再構築用の CLI オプションは追加しない。緊急復旧は `rm -rf _install/<target>/rootfs _install/<target>/rootfs.version` の手動オペレーションで対応する。
+本体と 3 サンプルの `build` サブコマンドへ `--rootfs-fetch-force` を追加し、設定、署名鍵、manifest 形式の変更後に安全な強制再生成を選べるようにする。既定値は `False` とし、指定時だけ `install_sysroot(..., force=True)` へ伝播する。
 
 webrtc-build の `run.py sysroot <target>` (build を伴わずに sysroot だけ生成) は sora-cpp-sdk 側に追加しない。sora-cpp-sdk では `build` サブコマンドの前段で必要に応じて自動生成する既存挙動を維持する。webrtc-build 側の `SYSROOT_CONFIGS` dict も引き写さず、`config_path` は `os.path.join(BASE_DIR, "sysroot", f"{package_name}.json")` で直接組み立てる。
 
@@ -286,7 +282,11 @@ if platform.target.package_name in (
     "raspberry-pi-os_armv8",
 ):
     config_path = os.path.join(BASE_DIR, "sysroot", f"{platform.target.package_name}.json")
-    install_sysroot(config_path=config_path, install_dir=install_dir)
+    install_sysroot(
+        config_path=config_path,
+        install_dir=install_dir,
+        force=rootfs_fetch_force,
+    )
 ```
 
 Jetson 2 種 (`ubuntu-20.04_armv8_jetson`、`ubuntu-22.04_armv8_jetson`) は分岐対象から削除する。本体 `run.py` の `import hashlib` は `hashlib.sha256` が他所 (`run.py:1256` 付近) で使用中のため **残す**。examples 3 本の `hashlib` は multistrap 分岐でのみ使われているため import ごと撤去可能。
@@ -297,6 +297,7 @@ examples 配下の 3 つの `run.py` (`sumomo`、`sdl_sample`、`messaging_recvo
 
 - 本体と同様に multistrap 呼び出しを `install_sysroot()` に置き換え、`install_rootfs_args` dict と `hashlib.md5` / `rootfs.version` 生成を廃止する
 - `config_path` は `os.path.join(BASE_DIR, "sysroot", f"{platform}.json")` (実体は `examples/sysroot/` を参照)
+- `--rootfs-fetch-force` を `install_sysroot(..., force=...)` まで伝播する
 - import 文の `install_rootfs` を `install_sysroot` に置き換える (`examples/{sumomo,sdl_sample}/run.py:29`、`examples/messaging_recvonly_sample/run.py:29`)
 
 ### 4. CI の修正
@@ -323,17 +324,17 @@ sysroot-builder-test:
   runs-on: ubuntu-24.04
   steps:
     - uses: actions/checkout@v4
-    - uses: astral-sh/setup-uv@v6
-    - run: uv run --with pytest --with pytest-timeout python -m pytest tests/test_sysroot_builder.py -v -s --timeout=60
+    - uses: astral-sh/setup-uv@v8
+    - run: uv run --with pytest --with pytest-timeout python -m pytest tests/test_sysroot_builder.py tests/test_buildbase.py -v -s --timeout=60
 ```
 
 `python -m pytest` の形式を使う理由: `pytest tests/...` 形式では pytest の rootpath 判定でリポジトリルートが sys.path に載らず、`ModuleNotFoundError: No module named 'sysroot_builder'` で collection 段階から失敗する (参照コミット環境で実測確認済み)。`python -m pytest` にすると cwd (リポジトリルート) が自動的に sys.path に載り、`sysroot_builder` が import できる。`pyproject.toml` / `conftest.py` / `tests/__init__.py` の追加は不要。
 
-`ci.yml` の `build-ubuntu` matrix ジョブと `release.yml` の対応する armv8 系 matrix ジョブに `needs: [sysroot-builder-test]` を追加する。x86_64 / android 系 matrix セルも同じ `needs` によりブロックされるが、`sysroot_builder.py` の共有物として意図的にジョブ全体でブロックする。
+`ci.yml` の `build-ubuntu` matrix ジョブに `needs: [sysroot-builder-test]` を追加する。x86_64 / android 系 matrix セルも同じ `needs` によりブロックされるが、`sysroot_builder.py` の共有物として意図的にジョブ全体でブロックする。`release.yml` は別 workflow のジョブへ依存できないため、同ファイル内へテストジョブや `needs` を重複追加せず、ARM64 ビルド自体を統合確認とする。
 
 ### 5. CHANGES.md の更新
 
-`CHANGES.md` の `## develop` 内 `### misc` サブセクションに以下を追記する。`[CHANGE]` を選ぶ根拠は「CI ホスト側の前提パッケージが変わる (`multistrap` install が不要になる) 下位互換なしの変更」。SDK バイナリ ABI には影響しない。担当者行は 2 スペースインデント (`- @voluntas`) で、実装者が異なる場合は実装者の GitHub handle に置換する。
+`CHANGES.md` の `## develop` 直下に以下を追記する。`[CHANGE]` を選ぶ根拠は「CI ホスト側の前提パッケージが変わる (`multistrap` install が不要になる) 下位互換なしの変更」。SDK バイナリ ABI には影響しない。担当者行は 2 スペースインデント (`- @voluntas`) で、実装者が異なる場合は実装者の GitHub handle に置換する。
 
 ```
 - [CHANGE] multistrap を廃止し apt-get + dpkg-deb による sysroot 構築に置き換える
@@ -353,7 +354,7 @@ sysroot-builder-test:
 `sysroot_builder.py` のテストは以下のコマンドで実行する:
 
 ```
-uv run --with pytest --with pytest-timeout python -m pytest tests/test_sysroot_builder.py -v -s --timeout=60
+uv run --with pytest --with pytest-timeout python -m pytest tests/test_sysroot_builder.py tests/test_buildbase.py -v -s --timeout=60
 ```
 
 CI では `sysroot-builder-test` ジョブが同一コマンドを走らせる。`python -m pytest` を使う理由は「設計方針 4.」参照。timeout 60 秒の根拠は、参照コミットのテスト (`def test_` は 11 個、parametrize 展開後は 15 テスト) が `apt-get` / `dpkg-deb` を叩かないユニットテストのみで実測 30 秒未満で完了することによる (実装フェーズでローカル実測して確定する)。
@@ -368,28 +369,7 @@ CI では `sysroot-builder-test` ジョブが同一コマンドを走らせる�
 
 ### 新旧 rootfs の同等性確認 (初回のみ、multistrap 削除前に実施)
 
-新旧は同じ `_install/<target>/rootfs/` に生成されるため、**別 worktree** で旧方式を走らせて退避する。実装順序ステップ 9 (`multistrap` 削除の直前) で以下を実施:
-
-```
-# 事前準備: 別 worktree で develop HEAD を checkout し、旧方式で生成
-git worktree add /tmp/sora-cpp-sdk-multistrap develop
-cd /tmp/sora-cpp-sdk-multistrap
-python3 run.py build <target>  # 旧 install_rootfs が動作
-mv _install/<target>/rootfs _install/<target>/rootfs.multistrap
-cd -  # 本ブランチ側へ戻る
-
-# 本ブランチで新方式で生成
-python3 run.py build <target>  # 新 install_sysroot が動作
-
-# 差分比較 (本ブランチ側で実行)
-diff <(cd /tmp/sora-cpp-sdk-multistrap/_install/<target>/rootfs.multistrap && find . -type f | sort) \
-     <(cd _install/<target>/rootfs && find . -type f | grep -v '\./\.webrtc-build-sysroot\.json$' | sort)
-diff <(cd /tmp/sora-cpp-sdk-multistrap/_install/<target>/rootfs.multistrap && find . -type l -printf '%P -> %l\n' | sort) \
-     <(cd _install/<target>/rootfs && find . -type l -printf '%P -> %l\n' | sort)
-
-# 後始末
-git worktree remove /tmp/sora-cpp-sdk-multistrap
-```
+新旧は同じ `_install/<target>/rootfs/` に生成されるため、別 worktree で `develop` の旧方式を実行し、`_install/<target>/rootfs.multistrap/` へ退避する。本ブランチで生成した `_install/<target>/rootfs/` と、通常ファイルおよび symlink の一覧を比較する。新方式固有の `_install/<target>/rootfs/.webrtc-build-sysroot.json` は比較対象から除外する。
 
 **判定基準** (新旧いずれか一方にしか存在しないファイルを次のカテゴリに分類する):
 
@@ -403,39 +383,20 @@ git worktree remove /tmp/sora-cpp-sdk-multistrap
 
 薄いラッパ (`install_sysroot()`) が新規に導入する分岐を確認する:
 
-- 既存 multistrap 産 `rootfs/` 残置: 薄いラッパが manifest 不在を検知して `rm_rf` することを確認 (`rootfs` と `rootfs.version` のみ削除、他 `*.version` は温存)
-- `config.name != expected_name`: JSON の `name` を故意に別ターゲット名に書き換えて `RuntimeError` が送出されることを確認
+- `config.name != expected_name`: `RuntimeError` を送出し、既存 `rootfs/` と `rootfs.version` を温存することを確認
+- manifest と `rootfs.version` の両方がない由来不明の `rootfs/` は `SysrootBuildError` を送出し、既存ファイルを温存することを確認
+- 旧 multistrap 版からの移行に失敗した場合、既存 `rootfs/` と `rootfs.version` を温存することを確認
+- manifest を再利用した後で `rootfs.version` だけを削除し、他の `*.version` を温存することを確認
+- `--rootfs-fetch-force` 指定時に stale manifest の sysroot を再生成できることを Linux 環境で確認
 
 ## 完了条件
 
 ### 実装順序
 
-コミットタイトルは `shiguredo-git` に従い `0002 <日本語命令形の要約>` の形式で書く。以下の順序で 1 ステップずつ commit する。**各コミット単独で HEAD がビルド可能な状態を保つ** ため、`install_sysroot()` の追加と `install_rootfs()` の削除は間に呼び出し側切り替えを挟む 3 段構成にする。**本 PR のコミットはすべてまとめて push し、CI は最終状態のみを検証する前提とする** (中間 commit で `sysroot-builder-test` が単独で走ることは想定しない)。
+実装、テスト、`CHANGES.md`、解決済み issue の移動を、`shiguredo-git` に従う `0002 <日本語命令形の要約>` 形式の 1 コミットにまとめる。PR は squash merge するため、作業工程ごとの中間コミットは作成しない。
 
-1. `sysroot_builder.py` と `tests/test_sysroot_builder.py` を参照コミットから `curl` で取得する。同時に `sysroot-builder-test` ジョブを `ci.yml` に追加する (このステップでは既存 `build-ubuntu` matrix への `needs` は張らない。needs 追加はステップ 10 で他の CI 変更と一緒に行う)
-2. `sysroot/*.json` (3 本) + `sysroot/keyrings/raspberrypi-archive-keyring.asc` を追加
-3. `examples/sysroot/*.json` (3 本) + `examples/sysroot/keyrings/raspberrypi-archive-keyring.asc` を `../../../sysroot/keyrings/raspberrypi-archive-keyring.asc` への相対 symlink として追加
-4. `buildbase.py` に `install_sysroot()` **のみ追加** (旧 `install_rootfs()` はまだ残す)。この時点で HEAD は旧方式で引き続きビルド可能
-5. `run.py` (本体) の `install_deps()` 内 multistrap 分岐を `install_sysroot()` 呼び出しに置き換え、Jetson 2 種を分岐対象から削除、`install_rootfs_args` dict を撤去、`hashlib.md5` / `rootfs.version` パス生成を撤去。import の `install_rootfs` を `install_sysroot` に差し替える。`import hashlib` は他所使用中のため残す
-6. `examples/{sumomo,sdl_sample,messaging_recvonly_sample}/run.py` の multistrap 分岐を 1 コミットにまとめて置き換える。各ファイルで `install_rootfs_args` dict、`hashlib.md5`、`rootfs.version` パス生成を撤去し、`import hashlib` も撤去する (他所使用なし)。import の `install_rootfs` を `install_sysroot` に差し替える
-7. `buildbase.py` から `install_rootfs()` を削除する (Jetson 用 `libnvbuf_fdmap.so` symlink 補正含む)。この時点で呼び出し側は既に新方式に切り替わっているため HEAD ビルドは崩れない
-8. `libcamera-dev` の一次対応 (commit を伴わない検証工程): `raspberry-pi-os_armv8` の sysroot を生成し、soname に `+rpt` が含まれることを確認。含まれる場合はステップ 8a-8b をスキップ
-
-    - 8a. (二次対応、条件付き): 一次対応で Debian 版が取得された場合、`sysroot_builder.py` に `pin_priority` を含む 5 点の変更を加える (「設計方針 1.」二次対応節参照)
-    - 8b. (二次対応、条件付き): `sysroot/raspberry-pi-os_armv8.json` の Raspberry Pi リポジトリに `"pin_priority": 990` を追加
-
-9. **新旧 rootfs 同等性確認** (commit を伴わない検証工程): 「テスト戦略」の「新旧 rootfs の同等性確認」節の手順を実施し、判定基準に照らして許容範囲であることを確認する
-10. `multistrap/` と `examples/multistrap/` を削除
-11. CI (`ci.yml` / `release.yml`) の multistrap install と sed パッチを削除し、`debian-archive-keyring` を追加、`ci.yml` の `build-ubuntu` matrix ジョブと `release.yml` の対応 armv8 系 matrix ジョブに `needs: [sysroot-builder-test]` を追加
-12. `CHANGES.md` の `## develop` 内 `### misc` にエントリを追記
-
-**PR マージ後の後始末** (maintainer が実施、PR 内には含めない): sora-cpp-sdk の main / develop 上で参照コミットにタグを打ち push する。
-
-```
-git fetch git@github.com:shiguredo-webrtc-build/webrtc-build.git 59a0ce0
-git tag -a git-vendor/webrtc-build-59a0ce0 59a0ce0 -m "vendored source of sysroot_builder.py"
-git push origin git-vendor/webrtc-build-59a0ce0
-```
+実装は、移植、設定追加、呼び出し側切り替え、旧方式削除、CI 更新、動作確認の順に行う。
+`raspberry-pi-os_armv8` の実生成で Raspberry Pi 版 `libcamera-dev` が選択されない場合に限り、`pin_priority` の二次対応を追加する。
 
 ### 成果物
 
@@ -445,15 +406,24 @@ git push origin git-vendor/webrtc-build-59a0ce0
 - `sysroot_builder.py` および `tests/test_sysroot_builder.py` が参照コミットから移植されている
 - `buildbase.py` に `install_sysroot()` が実装され、`install_rootfs()` が削除されている
 - `run.py` および 3 つの examples `run.py` が `install_sysroot()` を使用するように修正され、`install_rootfs_args` dict と `hashlib.md5` / `rootfs.version` 生成が撤去されている
-- CI から `multistrap` install と sed パッチが削除され、`debian-archive-keyring` の明示 install、`sysroot-builder-test` ジョブ、および `ci.yml` / `release.yml` の armv8 系 matrix ジョブへの `needs: [sysroot-builder-test]` が追加されている
-- `CHANGES.md` の `## develop` 内 `### misc` にサブ箇条書き付き `[CHANGE]` エントリが追記されている
+- 本体と 3 サンプルの `build` サブコマンドが `--rootfs-fetch-force` を受け付ける
+- CI から `multistrap` install と sed パッチが削除され、`debian-archive-keyring` の明示 install、`ci.yml` の `sysroot-builder-test` ジョブ、および `build-ubuntu` matrix ジョブへの `needs: [sysroot-builder-test]` が追加されている
+- `CHANGES.md` の `## develop` 直下にサブ箇条書き付き `[CHANGE]` エントリが追記されている
 
 ### 動作確認
 
-- `uv run --with pytest --with pytest-timeout pytest tests/test_sysroot_builder.py -v -s --timeout=60` がローカル・CI 双方でパスする
+- `uv run --with pytest --with pytest-timeout python -m pytest tests/test_sysroot_builder.py tests/test_buildbase.py -v -s --timeout=60` がローカル・CI 双方でパスする
 - `python3 run.py build ubuntu-22.04_armv8` / `ubuntu-24.04_armv8` / `raspberry-pi-os_armv8` が成功する
 - `python3 examples/sumomo/run.py build <ARM64 ターゲット>` が 3 ターゲット全部で成功する
 - `python3 examples/sdl_sample/run.py build ubuntu-24.04_armv8` が成功する
 - `python3 examples/messaging_recvonly_sample/run.py build ubuntu-24.04_armv8` が成功する
 - 新旧 rootfs の同等性確認 (「テスト戦略」参照) が実施され、PR 本文に diff の抜粋または「差分なし」が記載されている
-- 一次対応の `find` コマンド出力が PR 本文の「libcamera-dev soname 確認」節に貼り付けられ、`+rpt` を含む soname が確認されている (含まれない場合は二次対応の実施内容も PR に反映されている)
+- 一次対応の manifest と `find` コマンドの確認結果が PR 本文の「libcamera-dev 確認」節に記載され、`deb_files` に `libcamera-dev_*+rpt*.deb` が確認されている (含まれない場合は二次対応の実施内容も PR に反映されている)
+
+## 解決方法
+
+- `sysroot_builder.py` と設定ファイルを追加し、multistrap に依存する本体・サンプルの処理を置き換えた
+- 旧 rootfs と由来不明の rootfs を安全に扱い、`--rootfs-fetch-force` による明示的な再生成を追加した
+- sysroot のユニットテスト、CI の事前テストジョブ、HTTPS と署名鍵による APT 取得を追加した
+- Linux 環境で 3 ターゲットの sysroot 生成と stale manifest の強制再生成を確認した
+- Raspberry Pi 版 `libcamera-dev_0.7.1+rpt20260609-1_arm64.deb` の取得と `libcamera.so.0.7` / `libcamera.so.0.7.1` の生成を確認した

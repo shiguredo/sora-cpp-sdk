@@ -17,6 +17,13 @@ on:
   workflow_dispatch:
 
 jobs:
+  sysroot-builder-test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39  # v8.2.0
+      - run: uv run --with pytest --with pytest-timeout python -m pytest tests/test_sysroot_builder.py tests/test_buildbase.py -v -s --timeout=60
+
   build-windows:
     strategy:
       fail-fast: false
@@ -161,6 +168,7 @@ jobs:
         if: matrix.name == 'macos_arm64'
 
   build-ubuntu:
+    needs: [sysroot-builder-test]
     strategy:
       fail-fast: false
       matrix:
@@ -257,9 +265,7 @@ jobs:
           matrix.platform.os == 'raspberry-pi-os' && matrix.platform.arch == 'armv8'
         run: |
           sudo apt-get update
-          sudo apt-get -y install multistrap binutils-aarch64-linux-gnu libgl-dev
-          # multistrap に insecure なリポジトリからの取得を許可する設定を入れる
-          sudo sed -e 's/Apt::Get::AllowUnauthenticated=true/Apt::Get::AllowUnauthenticated=true";\n$config_str .= " -o Acquire::AllowInsecureRepositories=true/' -i /usr/sbin/multistrap
+          sudo apt-get -y install binutils-aarch64-linux-gnu libgl-dev debian-archive-keyring
       - name: Install deps for Android
         if: matrix.platform.os == 'android'
         run: |

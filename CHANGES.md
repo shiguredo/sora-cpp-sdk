@@ -11,6 +11,14 @@
 
 ## develop
 
+- [CHANGE] multistrap を廃止し apt-get + dpkg-deb による sysroot 構築に置き換える
+  - 本体およびサンプルの multistrap 設定を廃止し、JSON 形式の sysroot 設定に置き換える
+  - リポジトリを HTTPS に統一し、GPG `signed_by` による認証済み取得に切り替える
+  - 旧 sysroot 生成関数を廃止し、APT ベースの sysroot 生成モジュールを経由する方式に置き換える
+  - 本体ビルドスクリプトから Jetson 系ターゲットの到達不能な分岐を削除する
+  - manifest 不一致時に sysroot を明示的に再生成するオプションを追加する
+  - CI ランナーへの `multistrap` および sed パッチのインストールを削除し、`debian-archive-keyring` の明示 install を追加する
+  - @voluntas
 - [CHANGE] `SoraClientContext` に `ConnectionContext::MediaEngineReference` を保持し、
     `PeerConnection` 作成時の遅延 Init により指定オーディオデバイスがデフォルトに戻っていた問題を修正する
   - `SoraClientContext` の ABI を変更する
