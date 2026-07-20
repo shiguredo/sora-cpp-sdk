@@ -2,7 +2,7 @@
 
 - Priority: Medium
 - Created: 2026-07-20
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-07-21
 - Model: qwen3.8-max-preview
 - Branch: feature/fix-tls-test-dtls-wait
 - Polished: 2026-07-20
@@ -63,6 +63,12 @@ wait_for_dtls_connected(sumomo)
 `test_sumomo_basic.py` と `test_sumomo_device.py` の同一パターンは本 issue の修正対象外。これらは `time.sleep(3)` が事実上の DTLS 待機を兼ねており、TLS 検証テストほどフレーキーリスクが高くない。将来のポーリング移行は別 issue で扱う。
 
 失敗系 2 テスト（`test_tls_invalid_ca_cert_fails`、`test_tls_empty_ca_cert_fails`）は `_wait_for_startup` 内でプロセスが異常終了するため本変更の影響を受けない。
+
+## 解決方法
+
+`e2e-test/helper.py` に `wait_for_dtls_connected(get_stats, timeout, interval)` 関数を追加し、`get_stats()` をポーリングして DTLS の `connected` を待つ共通処理を導入した。第一引数は `get_stats` コーラブルを受け取り、`Sumomo` オブジェクトへの依存を排除している。ポーリング仕様は設計方針に従い、タイムアウト 10 秒・間隔 0.5 秒・`failed`/`closed` 時の早期離脱を実装した。
+
+`test_sumomo_tls_verification.py` の成功系 3 テスト（`test_tls_system_ca_success`、`test_tls_insecure_skips_verification`、`test_tls_correct_ca_cert_success`）で、`get_stats()` → `get_transport()` → アサートの 4 行ブロックを `wait_for_dtls_connected(sumomo.get_stats, timeout=10, interval=0.5)` の 1 行に置き換えた。使用されなくなった `from helper import get_transport` の import も削除した。
 
 ## 完了条件
 
