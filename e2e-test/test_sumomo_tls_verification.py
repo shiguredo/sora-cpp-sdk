@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from helper import get_transport
+from helper import wait_for_dtls_connected
 from sumomo import Sumomo
 
 
@@ -98,12 +98,7 @@ def test_tls_system_ca_success(sora_settings, free_port):
         log_level="info",
     )
     with sumomo:
-        stats = sumomo.get_stats()
-        transport = get_transport(stats)
-        assert transport is not None, "transport が取得できない"
-        assert transport["dtlsState"] == "connected", (
-            f"DTLS が未接続: {transport['dtlsState']}"
-        )
+        wait_for_dtls_connected(sumomo.get_stats, timeout=10, interval=0.5)
 
     assert sumomo.stderr_output is not None, "stderr が取得できていない"
     _assert_system_ca_log_present(sumomo.stderr_output)
@@ -185,12 +180,7 @@ def test_tls_insecure_skips_verification(sora_settings, free_port, tmp_path):
         log_level="info",
     )
     with sumomo:
-        stats = sumomo.get_stats()
-        transport = get_transport(stats)
-        assert transport is not None, "transport が取得できない"
-        assert transport["dtlsState"] == "connected", (
-            f"DTLS が未接続: {transport['dtlsState']}"
-        )
+        wait_for_dtls_connected(sumomo.get_stats, timeout=10, interval=0.5)
 
     assert sumomo.stderr_output is not None, "stderr が取得できていない"
     assert "X509_verify_cert failed" not in sumomo.stderr_output, (
@@ -217,12 +207,7 @@ def test_tls_correct_ca_cert_success(sora_settings, free_port, tmp_path):
         log_level="info",
     )
     with sumomo:
-        stats = sumomo.get_stats()
-        transport = get_transport(stats)
-        assert transport is not None, "transport が取得できない"
-        assert transport["dtlsState"] == "connected", (
-            f"DTLS が未接続: {transport['dtlsState']}"
-        )
+        wait_for_dtls_connected(sumomo.get_stats, timeout=10, interval=0.5)
 
     assert sumomo.stderr_output is not None, "stderr が取得できていない"
     assert "X509_verify_cert failed" not in sumomo.stderr_output, (
