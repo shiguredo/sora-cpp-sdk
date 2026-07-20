@@ -2,7 +2,7 @@
 
 - Priority: Medium
 - Created: 2026-07-20
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-07-21
 - Model: qwen3.8-max-preview
 - Branch: feature/refactor-sumomo-stderr-capture
 - Polished: 2026-07-20
@@ -45,6 +45,10 @@ stderr_output = self._get_stderr_output()
 - `_cleanup` 内の `stderr.close()`（897-901 行目）は `_get_stderr_output` 呼び出しの後に残す（リソース解放は `_cleanup` の責務）。`_read_stderr`（554 行目）の `finally` でも `stderr.close()` が呼ばれるため二重クローズになるが、既存の `try/except` で吸収済みであり防御的クローズとして意図的に残す
 - 呼び出し側は `_get_stderr_output` の返り値をエラーメッセージ構築に使用する。`self.stderr_output` への設定は副次効果であり、テストコード（`test_sumomo_tls_verification.py:108,135,162,195,227`、`test_sumomo_device.py:188,300,402`）が `with` ブロック終了後に `sumomo.stderr_output` を参照する契約を支えている。`_cleanup` 内の呼び出しは返り値未使用だが `self.stderr_output` の設定のために必要であり、削除してはいけない
 - `_get_stderr_output` の戻り値型は `str | None` のまま維持する（`capture_stderr=False` 時は `None`、`True` 時は `str`）
+
+## 解決方法
+
+`_capture_stderr_on_exit` を削除し、`_get_stderr_output` に一本化した。`_get_stderr_output` 内で `self.stderr_output` への代入も行うようにした。`_cleanup` 内の重複ロジックは `_get_stderr_output` 呼び出しに置き換えた。`_wait_for_startup` 内の 3 箇所の `_capture_stderr_on_exit` 呼び出しは削除した。
 
 ## 完了条件
 
