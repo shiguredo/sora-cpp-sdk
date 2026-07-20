@@ -763,7 +763,6 @@ class Sumomo:
                 if poll_result is not None:
                     # プロセスが終了している場合のみ stderr を読む
                     error_msg = f"Process exited unexpectedly with code {poll_result}"
-                    self._capture_stderr_on_exit(error_msg)
                     stderr_output = self._get_stderr_output()
                     if stderr_output:
                         error_msg += f"\nStderr output:\n{stderr_output}"
@@ -797,7 +796,6 @@ class Sumomo:
                     # プロセスが終了していた場合、即座に終了して stderr/stdout を確認
                     error_msg = f"Process exited with code {poll_result_after} during startup"
 
-                    self._capture_stderr_on_exit(error_msg)
                     stderr_output = self._get_stderr_output()
                     if stderr_output:
                         error_msg += f"\n\nStderr:\n{stderr_output}"
@@ -831,7 +829,6 @@ class Sumomo:
                 # プロセスが終了したので stderr/stdout を読む
                 error_msg = f"sumomo process failed to start within {timeout} seconds"
 
-                self._capture_stderr_on_exit(error_msg)
                 stderr_output = self._get_stderr_output()
                 if stderr_output:
                     error_msg += f"\n\nStderr (last 2000 chars):\n{stderr_output[-2000:]}"
@@ -850,23 +847,12 @@ class Sumomo:
             self._cleanup()
             raise RuntimeError(f"sumomo process failed to start within {timeout} seconds")
 
-    def _capture_stderr_on_exit(self, error_msg: str) -> None:
-        """capture_stderr 有効時、リーダースレッドの終了を待って stderr を取得する"""
-        if not self.capture_stderr or not hasattr(self, "_stderr_reader"):
-            return
-        self._stderr_reader.join(timeout=5)
-        self.stderr_output = "".join(self._stderr_lines)
-
     def _get_stderr_output(self) -> str | None:
         """stderr の内容を取得する"""
         if self.capture_stderr and hasattr(self, "_stderr_reader"):
             self._stderr_reader.join(timeout=5)
-            return "".join(self._stderr_lines)
-        if hasattr(self, "process") and self.process and self.process.stderr:
-            try:
-                return self.process.stderr.read()
-            except Exception:
-                pass
+            self.stderr_output = "".join(self._stderr_lines)
+            return self.stderr_output
         return None
 
     def _cleanup(self) -> None:
@@ -889,9 +875,7 @@ class Sumomo:
                 print(f"Sumomo process (PID: {pid}) killed")
 
             # stderr 読み取りスレッドがいれば終了を待って結果を取得する
-            if self.capture_stderr and hasattr(self, "_stderr_reader"):
-                self._stderr_reader.join(timeout=5)
-                self.stderr_output = "".join(self._stderr_lines)
+            self._get_stderr_output()
 
             # stderr の残りを読み取ってリソースを解放
             if hasattr(self.process, "stderr") and self.process.stderr:
