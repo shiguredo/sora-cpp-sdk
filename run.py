@@ -37,7 +37,7 @@ from buildbase import (
     install_cuda_windows,
     install_llvm,
     install_openh264,
-    install_rootfs,
+    install_sysroot,
     install_vpl,
     install_webrtc,
     mkdir_p,
@@ -102,6 +102,7 @@ def get_common_cmake_args(
         if platform.target.package_name in (
             "ubuntu-22.04_x86_64",
             "ubuntu-24.04_x86_64",
+            "ubuntu-26.04_x86_64",
         ):
             apt_install_llvm_version = deps["APT_INSTALL_LLVM_VERSION"]
             args.append(f"-DCMAKE_C_COMPILER=clang-{apt_install_llvm_version}")
@@ -215,28 +216,24 @@ def install_deps(
     local_webrtc_build_dir: Optional[str],
     local_webrtc_build_args: List[str],
     disable_cuda: bool,
+    rootfs_fetch_force: bool,
 ):
     with cd(BASE_DIR):
         deps = read_version_file("DEPS")
 
-        # multistrap を使った sysroot の構築
+        # apt-get + dpkg-deb を使った sysroot の構築
         if platform.target.package_name in (
             "ubuntu-22.04_armv8",
             "ubuntu-24.04_armv8",
+            "ubuntu-26.04_armv8",
             "raspberry-pi-os_armv8",
-            "ubuntu-20.04_armv8_jetson",
-            "ubuntu-22.04_armv8_jetson",
         ):
-            conf = os.path.join(BASE_DIR, "multistrap", f"{platform.target.package_name}.conf")
-            # conf ファイルのハッシュ値をバージョンとする
-            version_md5 = hashlib.md5(open(conf, "rb").read()).hexdigest()
-            install_rootfs_args = {
-                "version": version_md5,
-                "version_file": os.path.join(install_dir, "rootfs.version"),
-                "install_dir": install_dir,
-                "conf": conf,
-            }
-            install_rootfs(**install_rootfs_args)
+            config_path = os.path.join(BASE_DIR, "sysroot", f"{platform.target.package_name}.json")
+            install_sysroot(
+                config_path=config_path,
+                install_dir=install_dir,
+                force=rootfs_fetch_force,
+            )
 
         # Android NDK
         if platform.target.os == "android":
@@ -670,8 +667,10 @@ AVAILABLE_TARGETS = [
     "macos_arm64",
     "ubuntu-22.04_x86_64",
     "ubuntu-24.04_x86_64",
+    "ubuntu-26.04_x86_64",
     "ubuntu-22.04_armv8",
     "ubuntu-24.04_armv8",
+    "ubuntu-26.04_armv8",
     "raspberry-pi-os_armv8",
     "ios",
     "android",
@@ -688,10 +687,14 @@ def _get_platform(target: str) -> Platform:
         platform = Platform("ubuntu", "22.04", "x86_64")
     elif target == "ubuntu-24.04_x86_64":
         platform = Platform("ubuntu", "24.04", "x86_64")
+    elif target == "ubuntu-26.04_x86_64":
+        platform = Platform("ubuntu", "26.04", "x86_64")
     elif target == "ubuntu-22.04_armv8":
         platform = Platform("ubuntu", "22.04", "armv8")
     elif target == "ubuntu-24.04_armv8":
         platform = Platform("ubuntu", "24.04", "armv8")
+    elif target == "ubuntu-26.04_armv8":
+        platform = Platform("ubuntu", "26.04", "armv8")
     elif target == "raspberry-pi-os_armv8":
         platform = Platform("raspberry-pi-os", None, "armv8")
     elif target == "ios":
@@ -713,6 +716,7 @@ def _build(
     test: bool,
     run_e2e_test: bool,
     package: bool,
+    rootfs_fetch_force: bool,
 ):
     platform = _get_platform(target)
 
@@ -738,6 +742,7 @@ def _build(
         local_webrtc_build_dir=local_webrtc_build_dir,
         local_webrtc_build_args=local_webrtc_build_args,
         disable_cuda=disable_cuda,
+        rootfs_fetch_force=rootfs_fetch_force,
     )
 
     configuration = "Release"
@@ -780,6 +785,7 @@ def _build(
             if platform.target.package_name in (
                 "ubuntu-22.04_x86_64",
                 "ubuntu-24.04_x86_64",
+                "ubuntu-26.04_x86_64",
             ):
                 cmake_args.append(f"-DCMAKE_C_COMPILER=clang-{apt_install_llvm_version}")
                 cmake_args.append(f"-DCMAKE_CXX_COMPILER=clang++-{apt_install_llvm_version}")
@@ -1057,6 +1063,7 @@ def _build(
                     if platform.target.package_name in (
                         "ubuntu-22.04_x86_64",
                         "ubuntu-24.04_x86_64",
+                        "ubuntu-26.04_x86_64",
                     ):
                         cmake_args.append(f"-DCMAKE_C_COMPILER=clang-{apt_install_llvm_version}")
                         cmake_args.append(
@@ -1400,6 +1407,7 @@ def main():
     bp.add_argument("--debug", action="store_true")
     bp.add_argument("--relwithdebinfo", action="store_true")
     bp.add_argument("--disable-cuda", action="store_true")
+    bp.add_argument("--rootfs-fetch-force", action="store_true")
     add_webrtc_build_arguments(bp)
     bp.add_argument("--test", action="store_true")
     bp.add_argument("--run-e2e-test", action="store_true")
@@ -1428,6 +1436,7 @@ def main():
             test=args.test,
             run_e2e_test=args.run_e2e_test,
             package=args.package,
+            rootfs_fetch_force=args.rootfs_fetch_force,
         )
     elif args.op == "iwyu":
         _iwyu(

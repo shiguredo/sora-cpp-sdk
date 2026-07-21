@@ -37,7 +37,10 @@ import subprocess
 import tarfile
 import urllib.parse
 import zipfile
+from pathlib import Path
 from typing import Dict, List, NamedTuple, Optional
+
+from sysroot_builder import build_sysroot, load_sysroot_config
 
 if platform.system() == "Windows":
     import winreg
@@ -1110,51 +1113,30 @@ def get_sora_info(
     )
 
 
-@versioned
-def install_rootfs(version, install_dir, conf, arch="arm64"):
+def install_sysroot(config_path: str, install_dir: str, force: bool = False) -> None:
     rootfs_dir = os.path.join(install_dir, "rootfs")
-    rm_rf(rootfs_dir)
-    cmd(["multistrap", "--no-auth", "-a", arch, "-d", rootfs_dir, "-f", conf])
-    # 絶対パスのシンボリックリンクを相対パスに置き換えていく
-    for dir, _, filenames in os.walk(rootfs_dir):
-        for filename in filenames:
-            linkpath = os.path.join(dir, filename)
-            # symlink かどうか
-            if not os.path.islink(linkpath):
-                continue
-            target = os.readlink(linkpath)
-            # 絶対パスかどうか
-            if not os.path.isabs(target):
-                continue
-            # rootfs_dir を先頭に付けることで、
-            # rootfs の外から見て正しい絶対パスにする
-            targetpath = rootfs_dir + target
-            # 参照先の絶対パスが存在するかどうか
-            if not os.path.exists(targetpath):
-                continue
-            # 相対パスに置き換える
-            relpath = os.path.relpath(targetpath, dir)
-            logging.debug(f"{linkpath[len(rootfs_dir) :]} targets {target} to {relpath}")
-            os.remove(linkpath)
-            os.symlink(relpath, linkpath)
+    manifest_path = os.path.join(rootfs_dir, ".webrtc-build-sysroot.json")
+    rootfs_version_path = os.path.join(install_dir, "rootfs.version")
 
-    # なぜかシンボリックリンクが登録されていないので作っておく
-    link = os.path.join(rootfs_dir, "usr", "lib", "aarch64-linux-gnu", "tegra", "libnvbuf_fdmap.so")
-    file = os.path.join(
-        rootfs_dir, "usr", "lib", "aarch64-linux-gnu", "tegra", "libnvbuf_fdmap.so.1.0.0"
-    )
-    if os.path.exists(file) and not os.path.exists(link):
-        os.symlink(os.path.basename(file), link)
+    config = load_sysroot_config(Path(config_path))
+    expected_name = Path(config_path).stem
+    if config.name != expected_name:
+        raise RuntimeError(
+            f"Sysroot config name does not match: expected={expected_name}, actual={config.name}"
+        )
 
-    # JetPack 6 から tegra → nvidia になった
-    link = os.path.join(
-        rootfs_dir, "usr", "lib", "aarch64-linux-gnu", "nvidia", "libnvbuf_fdmap.so"
+    # multistrap で生成した既存 rootfs には manifest がないため、
+    # 旧方式の version ファイルも存在する場合だけ旧成果物と判定する。
+    legacy_rootfs = (
+        os.path.lexists(rootfs_dir)
+        and not os.path.isfile(manifest_path)
+        and os.path.isfile(rootfs_version_path)
     )
-    file = os.path.join(
-        rootfs_dir, "usr", "lib", "aarch64-linux-gnu", "nvidia", "libnvbuf_fdmap.so.1.0.0"
-    )
-    if os.path.exists(file) and not os.path.exists(link):
-        os.symlink(os.path.basename(file), link)
+
+    # 旧成果物も builder の原子的な置換経路へ渡し、生成失敗時は温存する。
+    build_sysroot(config, Path(rootfs_dir), force=force or legacy_rootfs)
+    if os.path.exists(rootfs_version_path):
+        os.remove(rootfs_version_path)
 
 
 @versioned
@@ -1518,6 +1500,8 @@ def install_cuda_windows(version, source_dir, build_dir, install_dir):
         url = "https://developer.download.nvidia.com/compute/cuda/12.9.1/local_installers/cuda_12.9.1_576.57_windows.exe"  # noqa: E501
     elif version == "13.0.1-1":
         url = "https://developer.download.nvidia.com/compute/cuda/13.0.1/local_installers/cuda_13.0.1_windows.exe"  # noqa: E501
+    elif version == "13.3.1-1":
+        url = "https://developer.download.nvidia.com/compute/cuda/13.3.1/local_installers/cuda_13.3.1_windows.exe"  # noqa: E501
     else:
         raise Exception(f"Unknown CUDA version {version}")
     file = download(url, source_dir)
@@ -1532,6 +1516,23 @@ def install_cuda_windows(version, source_dir, build_dir, install_dir):
     copytree(
         os.path.join(build_dir, "cuda", "cuda_cudart", "cudart"), os.path.join(install_dir, "cuda")
     )
+    # CUDA 13 以降は crt/host_config.h 等が cuda_crt に分離されている
+    cuda_crt_src = os.path.join(build_dir, "cuda", "cuda_crt", "crt")
+    if os.path.exists(cuda_crt_src):
+        copytree(cuda_crt_src, os.path.join(install_dir, "cuda"))
+    elif version.startswith("13."):
+        raise Exception(
+            f"cuda_crt not found for CUDA {version}: expected {cuda_crt_src}"
+        )
+    # CUDA 13 以降は cicc (nvvm) が libnvvm に分離されている
+    # インストーラー内は libnvvm/nvvm/nvvm/{bin,libdevice,...} と nvvm が二重になっている
+    libnvvm_src = os.path.join(build_dir, "cuda", "libnvvm", "nvvm", "nvvm")
+    if os.path.exists(libnvvm_src):
+        copytree(libnvvm_src, os.path.join(install_dir, "cuda", "nvvm"))
+    elif version.startswith("13."):
+        raise Exception(
+            f"libnvvm not found for CUDA {version}: expected {libnvvm_src}"
+        )
 
 
 @versioned

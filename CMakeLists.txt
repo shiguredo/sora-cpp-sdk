@@ -45,6 +45,11 @@ elseif (SORA_TARGET STREQUAL "ubuntu-24.04_x86_64")
   set(SORA_TARGET_OS_VERSION "24.04")
   set(SORA_TARGET_ARCH "x86_64")
   set(SORA_TARGET_DEF "SORA_CPP_SDK_UBUNTU")
+elseif (SORA_TARGET STREQUAL "ubuntu-26.04_x86_64")
+  set(SORA_TARGET_OS "ubuntu")
+  set(SORA_TARGET_OS_VERSION "26.04")
+  set(SORA_TARGET_ARCH "x86_64")
+  set(SORA_TARGET_DEF "SORA_CPP_SDK_UBUNTU")
 elseif (SORA_TARGET STREQUAL "ubuntu-22.04_armv8")
   set(SORA_TARGET_OS "ubuntu")
   set(SORA_TARGET_OS_VERSION "22.04")
@@ -53,6 +58,11 @@ elseif (SORA_TARGET STREQUAL "ubuntu-22.04_armv8")
 elseif (SORA_TARGET STREQUAL "ubuntu-24.04_armv8")
   set(SORA_TARGET_OS "ubuntu")
   set(SORA_TARGET_OS_VERSION "24.04")
+  set(SORA_TARGET_ARCH "armv8")
+  set(SORA_TARGET_DEF "SORA_CPP_SDK_UBUNTU")
+elseif (SORA_TARGET STREQUAL "ubuntu-26.04_armv8")
+  set(SORA_TARGET_OS "ubuntu")
+  set(SORA_TARGET_OS_VERSION "26.04")
   set(SORA_TARGET_ARCH "armv8")
   set(SORA_TARGET_DEF "SORA_CPP_SDK_UBUNTU")
 elseif (SORA_TARGET STREQUAL "raspberry-pi-os_armv8")
@@ -608,7 +618,7 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
         third_party/NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
         third_party/NvCodec/NvCodec/NvEncoder/NvEncoderCuda.cpp
       PROPERTIES
-        COMPILE_OPTIONS "-xcuda;--cuda-gpu-arch=sm_60;-std=gnu++17;-Wno-tautological-constant-out-of-range-compare;-D_ALLOW_UNSUPPORTED_LIBCPP"
+        COMPILE_OPTIONS "-xcuda;--cuda-gpu-arch=sm_75;-std=gnu++17;-Wno-tautological-constant-out-of-range-compare;-D_ALLOW_UNSUPPORTED_LIBCPP"
     )
 
     # CUDA を要求したくないので libsora.a に含める

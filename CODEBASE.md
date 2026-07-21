@@ -16,8 +16,10 @@ python3 run.py build <target>
 - `macos_arm64`
 - `ubuntu-22.04_x86_64`
 - `ubuntu-24.04_x86_64`
+- `ubuntu-26.04_x86_64`
 - `ubuntu-22.04_armv8`
 - `ubuntu-24.04_armv8`
+- `ubuntu-26.04_armv8`
 - `raspberry-pi-os_armv8`
 - `ios`
 - `android`
@@ -68,8 +70,10 @@ iOS と Android を除いた以下のターゲットに対応する。
 - `macos_arm64`
 - `ubuntu-22.04_x86_64`
 - `ubuntu-24.04_x86_64`
+- `ubuntu-26.04_x86_64`
 - `ubuntu-22.04_armv8`
 - `ubuntu-24.04_armv8`
+- `ubuntu-26.04_armv8`
 - `raspberry-pi-os_armv8`
 
 #### サンプル固有の主なオプション

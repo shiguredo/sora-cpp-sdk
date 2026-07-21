@@ -17,6 +17,13 @@ on:
   workflow_dispatch:
 
 jobs:
+  sysroot-builder-test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7
+      - uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990  # v8.3.2
+      - run: uv run --with pytest --with pytest-timeout python -m pytest tests/test_sysroot_builder.py tests/test_buildbase.py -v -s --timeout=60
+
   build-windows:
     strategy:
       fail-fast: false
@@ -55,7 +62,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: _install\windows_x86_64\release\cuda
-          key: windows-cuda-${{ steps.versions.outputs.cuda_version }}.v1
+          key: windows-cuda-${{ steps.versions.outputs.cuda_version }}.v2
       - run: echo "${{ steps.versions.outputs.cuda_version }}" > _install\windows_x86_64\release\cuda.version
         if: steps.cache-cuda.outputs.cache-hit == 'true'
       - run: python3 run.py build --test --run-e2e-test --package ${{ matrix.name }}
@@ -72,17 +79,17 @@ jobs:
           echo "boost_name=${BOOST_PACKAGE_NAME}" >> ${Env:GITHUB_OUTPUT}
         id: package_name
       - name: Upload Artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: ${{ steps.package_name.outputs.name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.name }}
       - name: Upload Boost Artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: ${{ steps.package_name.outputs.boost_name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.boost_name }}
       - name: Upload Environment
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: ${{ matrix.name }}.env
           path: _package/${{ matrix.name }}/release/sora.env
@@ -96,7 +103,7 @@ jobs:
             cp "_build\${{ matrix.name }}\release\$app\Release\$app.exe" "examples_${{ matrix.name }}"
           }
       - name: Upload Examples Artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: examples_${{ matrix.name }}
           path: examples/examples_${{ matrix.name }}
@@ -129,17 +136,17 @@ jobs:
           echo "boost_name=${BOOST_PACKAGE_NAME}" >> $GITHUB_OUTPUT
         id: package_name
       - name: Upload Artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: ${{ steps.package_name.outputs.name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.name }}
       - name: Upload Boost Artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: ${{ steps.package_name.outputs.boost_name }}
           path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.boost_name }}
       - name: Upload Environment
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: ${{ matrix.name }}.env
           path: _package/${{ matrix.name }}/release/sora.env
@@ -154,13 +161,14 @@ jobs:
           done
         if: matrix.name == 'macos_arm64'
       - name: Upload Examples Artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: examples_${{ matrix.name }}
           path: examples/examples_${{ matrix.name }}
         if: matrix.name == 'macos_arm64'
 
   build-ubuntu:
+    needs: [sysroot-builder-test]
     strategy:
       fail-fast: false
       matrix:
@@ -173,11 +181,19 @@ jobs:
             runs-on: ubuntu-24.04
             os: ubuntu
             arch: x86_64
+          - name: ubuntu-26.04_x86_64
+            runs-on: ubuntu-26.04
+            os: ubuntu
+            arch: x86_64
           - name: ubuntu-22.04_armv8
             runs-on: ubuntu-22.04
             os: ubuntu
             arch: armv8
           - name: ubuntu-24.04_armv8
+            runs-on: ubuntu-24.04
+            os: ubuntu
+            arch: armv8
+          - name: ubuntu-26.04_armv8
             runs-on: ubuntu-24.04
             os: ubuntu
             arch: armv8
@@ -257,9 +273,7 @@ jobs:
           matrix.platform.os == 'raspberry-pi-os' && matrix.platform.arch == 'armv8'
         run: |
           sudo apt-get update
-          sudo apt-get -y install multistrap binutils-aarch64-linux-gnu libgl-dev
-          # multistrap に insecure なリポジトリからの取得を許可する設定を入れる
-          sudo sed -e 's/Apt::Get::AllowUnauthenticated=true/Apt::Get::AllowUnauthenticated=true";\n$config_str .= " -o Acquire::AllowInsecureRepositories=true/' -i /usr/sbin/multistrap
+          sudo apt-get -y install binutils-aarch64-linux-gnu libgl-dev debian-archive-keyring
       - name: Install deps for Android
         if: matrix.platform.os == 'android'
         run: |
@@ -267,13 +281,13 @@ jobs:
       # JDK を指定しないとデフォルトの JDK 11 で動作するため指定する
       - name: Setup JDK 17
         if: matrix.platform.os == 'android'
-        uses: actions/setup-java@1bcf9fb12cf4aa7d266a90ae39939e61372fe520  # v5
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95  # v5.6.0
         with:
           java-version: "17"
           distribution: "temurin"
       - name: Setup Android SDK
         if: matrix.platform.os == 'android'
-        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699  # v4
+        uses: android-actions/setup-android@40fd30fb8d7440372e1316f5d1809ec01dcd3699  # v4.0.1
       - run: python3 run.py build --test --run-e2e-test --package ${{ matrix.platform.name }}
       - name: Get package name
         run: |
@@ -282,17 +296,17 @@ jobs:
           echo "boost_name=${BOOST_PACKAGE_NAME}" >> $GITHUB_OUTPUT
         id: package_name
       - name: Upload Artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: ${{ steps.package_name.outputs.name }}
           path: _package/${{ matrix.platform.name }}/release/${{ steps.package_name.outputs.name }}
       - name: Upload Boost Artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: ${{ steps.package_name.outputs.boost_name }}
           path: _package/${{ matrix.platform.name }}/release/${{ steps.package_name.outputs.boost_name }}
       - name: Upload Environment
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: ${{ matrix.platform.name }}.env
           path: _package/${{ matrix.platform.name }}/release/sora.env
@@ -320,7 +334,7 @@ jobs:
           done
       - name: Upload Examples Artifact
         if: matrix.platform.os == 'ubuntu' || matrix.platform.os == 'raspberry-pi-os'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: examples_${{ matrix.platform.name }}
           path: examples/examples_${{ matrix.platform.name }}
@@ -340,6 +354,10 @@ jobs:
             platform-name: ubuntu-24.04_x86_64
             runs-on: ubuntu-24.04
             test-target: test_sumomo_basic.py test_sumomo_openh264.py test_sumomo_tls_verification.py
+          - name: ubuntu-26.04_x86_64
+            platform-name: ubuntu-26.04_x86_64
+            runs-on: ubuntu-26.04
+            test-target: test_sumomo_basic.py test_sumomo_openh264.py test_sumomo_tls_verification.py
           - name: ubuntu-22.04_x86_64
             platform-name: ubuntu-22.04_x86_64
             runs-on: ubuntu-22.04
@@ -347,6 +365,10 @@ jobs:
           - name: ubuntu-24.04_armv8
             platform-name: ubuntu-24.04_armv8
             runs-on: ubuntu-24.04-arm
+            test-target: test_sumomo_basic.py test_sumomo_openh264.py test_sumomo_tls_verification.py
+          - name: ubuntu-26.04_armv8
+            platform-name: ubuntu-26.04_armv8
+            runs-on: ubuntu-26.04-arm
             test-target: test_sumomo_basic.py test_sumomo_openh264.py test_sumomo_tls_verification.py
           - name: ubuntu-22.04_armv8
             platform-name: ubuntu-22.04_armv8
@@ -429,7 +451,7 @@ jobs:
       # Homebrew のセットアップ (self-hosted macOS ランナー用)
       - name: Setup Homebrew
         if: ${{ runner.environment == 'self-hosted' && startsWith(matrix.platform.platform-name, 'macos') }}
-        uses: Homebrew/actions/setup-homebrew@6315ef70a8bfcd2c71104383846591ac113ace33  # main
+        uses: Homebrew/actions/setup-homebrew@df4b09108a1de9d6f995fe68f302b3f68bd6d2ef  # main
 
       # GitHub CLI のインストール (self-hosted macOS ランナー用)
       - name: Install GitHub CLI
@@ -443,7 +465,7 @@ jobs:
           fi
 
       # UV のセットアップ
-      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39  # v8.2.0
+      - uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990  # v8.3.2
       - run: uv sync
         working-directory: ./e2e-test
 
@@ -482,7 +504,7 @@ jobs:
         run: echo "OPENH264_PATH=${{ steps.openh264.outputs.openh264_path }}" >> $GITHUB_ENV
 
       - name: Download sumomo artifact
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         with:
           name: examples_${{ matrix.platform.platform-name }}
           path: ./sumomo_binary

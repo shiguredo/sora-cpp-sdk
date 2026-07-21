@@ -11,11 +11,27 @@
 
 ## develop
 
+- [CHANGE] multistrap を廃止し apt-get + dpkg-deb による sysroot 構築に置き換える
+  - 本体およびサンプルの multistrap 設定を廃止し、JSON 形式の sysroot 設定に置き換える
+  - リポジトリを HTTPS に統一し、GPG `signed_by` による認証済み取得に切り替える
+  - 旧 sysroot 生成関数を廃止し、APT ベースの sysroot 生成モジュールを経由する方式に置き換える
+  - 本体ビルドスクリプトから Jetson 系ターゲットの到達不能な分岐を削除する
+  - manifest 不一致時に sysroot を明示的に再生成するオプションを追加する
+  - CI ランナーへの `multistrap` および sed パッチのインストールを削除し、`debian-archive-keyring` の明示 install を追加する
+  - @voluntas
 - [CHANGE] `SoraClientContext` に `ConnectionContext::MediaEngineReference` を保持し、
     `PeerConnection` 作成時の遅延 Init により指定オーディオデバイスがデフォルトに戻っていた問題を修正する
   - `SoraClientContext` の ABI を変更する
   - 非 Android / iOS では `SoraClientContext::Create()` 内で同期的に `WebRtcVoiceEngine::Init()` を実行させ、指定デバイス設定後に `InitMicrophone()` / `InitSpeaker()` を行う
   - Android / iOS では `media_engine_ref_` を作成せず、既存挙動に影響しない
+  - @voluntas
+- [CHANGE] NVIDIA Pascal 世代以前の GPU サポートを廃止する
+  - CUDA 13 で Maxwell / Pascal / Volta (sm_50 〜 sm_70) のサポートが廃止されたため、CUDA カーネルのターゲットを `sm_60` から `sm_75` (Turing) 以降に変更する
+  - GTX 10 シリーズ (GTX 1060 / 1080 など) では NVIDIA ハードウェアエンコーダー / デコーダーが利用できなくなる
+  - @voluntas
+- [ADD] Ubuntu 26.04 ARM64 向けの sysroot とビルドターゲットを追加する
+  - @voluntas
+- [ADD] Ubuntu 26.04 x86_64 向けのビルドターゲットを追加する
   - @voluntas
 - [CHANGE] TLS 検証の信頼ストアを OS のシステム CA に切り替える
   - 全 OS（macOS, Linux, Windows, iOS, Android）でシステム CA を信頼の根拠とする方式に統一する
@@ -41,7 +57,7 @@
 - [ADD] TURN-TLS のクライアント証明書設定に対応する
   - `SoraSignalingConfig` の `client_cert` / `client_key` を TURN-TLS にも適用する
   - @zztkm
-- [UPDATE] libwebrtc のバージョンを m150.7871.3.0 に上げる
+- [UPDATE] libwebrtc のバージョンを m150.7871.3.1 に上げる
   - `webrtc::RtcEventLogFactory` のコンストラクタ不一致を修正する
     - libwebrtc で `RtcEventLogFactory` の `TaskQueueFactory` が削除されたため、変更に追従する
     - 参考 : libwebrtc で削除の入ったコミットのリンク
@@ -70,6 +86,15 @@
   - @voluntas @torikizi
 - [UPDATE] Intel VPL を v2.17.0 にあげる
   - @torikizi
+- [UPDATE] CUDA のバージョンを `13.3.1-1` に上げる
+  - Ubuntu 26.04 の CUDA リポジトリが `13.3.0` / `13.3.1` のみのため、全プラットフォームを揃える
+  - Windows では CUDA 13 で分離された `cuda_crt` もインストール対象に含める
+  - Windows では CUDA 13 で `cicc` (nvvm) が `libnvvm` に分離されたため、これもインストール対象に含める
+  - CUDA 13 で `cuCtxCreate` が `cuCtxCreate_v4` (4 引数) に変わったため、呼び出しを新しいシグネチャに追従する
+  - @voluntas
+- [UPDATE] clang のバージョンを 22 に上げる
+  - CUDA 13.3 を clang でコンパイルするために必要
+  - @voluntas
 - [UPDATE] WSS / TURN-TLS のクライアント証明書設定で証明書チェーンを利用できるようにする
   - `SoraSignalingConfig` の `client_cert` はこれまで単体の証明書が前提になっていたが、証明書チェーンを指定できるようにする
   - @zztkm
@@ -178,7 +203,7 @@
   - `rtCamp/action-slack-notify@v2` を `shiguredo/github-actions/.github/actions/slack-notify@main` に置き換える
   - 通知ジョブの `runs-on` を `ubuntu-slim` に変更する
   - @miosakuma
-- [UPDATE] Examples の WEBRTC_BUILD_VERSION を m150.7871.3.0 にあげる
+- [UPDATE] Examples の WEBRTC_BUILD_VERSION を m150.7871.3.1 にあげる
   - @torikizi @zztkm
 - [UPDATE] GitHub Actions の `macos-14` を `macos-15` に上げる
   - macos-14 を利用しているときに SDL3 のビルドエラーが発生するようになったが `macos-15` に上げることでビルドエラーを解消できた

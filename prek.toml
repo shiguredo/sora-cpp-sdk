@@ -3,7 +3,7 @@
 #:schema https://www.schemastore.org/prek.json
 
 # ビルド生成物や外部依存はチェック対象から除外する
-exclude = "^(_build/|_install/|_source/|third_party/|multistrap/)"
+exclude = "^(_build/|_install/|_source/|third_party/)"
 
 [[repos]]
 repo = "local"
