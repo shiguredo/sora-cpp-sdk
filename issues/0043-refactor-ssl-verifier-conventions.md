@@ -2,7 +2,7 @@
 
 - Priority: Low
 - Created: 2026-07-20
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-07-21
 - Model: qwen3.8-max-preview
 - Branch: feature/refactor-ssl-verifier-conventions
 - Polished: 2026-07-20
@@ -82,3 +82,16 @@ iOS では BoringSSL の証明書検証パスは通らない。hostname 検証�
 - 重複コメントが削除されている
 - `python3 run.py build macos_arm64` のビルドが成功する
 - `python3 run.py build ios` のビルドが成功する（`.mm` ファイルの include 削除・リネームは macOS ビルドでは検証できないため）
+
+## 解決方法
+
+以下の 3 件を修正した。
+
+- `LoadCACertsFromPem` → `LoadCACertsFromPEM` にリネーム（`src/ssl_verifier/ssl_verifier_ios.mm` 定義・呼び出し側の 2 箇所）
+- iOS の hostname 検証コメントが不正確だったため削除（`src/ssl_verifier/ssl_verifier_ios.mm:113`）
+- `e2e-test/sumomo.py:797` の重複コメントを削除
+
+以下の 2 件は意図的に未対応とした。
+
+- 全角半角スペース修正: 対応不要の判断により未実施
+- 冗長な include 削除: 対応不要の判断により未実施
