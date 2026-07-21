@@ -42,7 +42,7 @@ SecCertificateRef CreateSecCertificate(X509* cert) {
 // ca_cert の PEM 文字列から SecCertificateRef の配列を作る
 // PEM は複数の CERTIFICATE ブロックを含みうる
 // 1 件も取れなければ空を返す
-std::vector<SecCertificateRef> LoadCACertsFromPem(const std::string& pem) {
+std::vector<SecCertificateRef> LoadCACertsFromPEM(const std::string& pem) {
   std::vector<SecCertificateRef> result;
   std::vector<X509*> certs = ParsePEMCerts(pem);
   for (X509* cert : certs) {
@@ -110,7 +110,6 @@ bool SSLVerifier::VerifyX509(X509* x509,
   }
   Guard cert_array_guard([cert_array]() { CFRelease(cert_array); });
 
-  // hostname 検証は BoringSSL 側で行うため、ここでは basic X509 policy のみ
   SecPolicyRef policy = SecPolicyCreateBasicX509();
   if (policy == nullptr) {
     RTC_LOG(LS_ERROR) << "VerifyX509: SecPolicyCreateBasicX509 failed";
@@ -130,7 +129,7 @@ bool SSLVerifier::VerifyX509(X509* x509,
 
   if (ca_cert) {
     // ca_cert 指定時: 指定 PEM のみを anchor にし、system CA と混ぜない
-    std::vector<SecCertificateRef> anchors = LoadCACertsFromPem(*ca_cert);
+    std::vector<SecCertificateRef> anchors = LoadCACertsFromPEM(*ca_cert);
     Guard anchors_guard([&anchors]() {
       for (SecCertificateRef c : anchors) {
         CFRelease(c);

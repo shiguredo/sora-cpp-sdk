@@ -793,7 +793,6 @@ class Sumomo:
 
                 # プロセスが終了していた場合、即座に終了して stderr/stdout を確認
                 if poll_result_after is not None:
-                    # プロセスが終了していた場合、即座に終了して stderr/stdout を確認
                     error_msg = f"Process exited with code {poll_result_after} during startup"
 
                     stderr_output = self._get_stderr_output()
