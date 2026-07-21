@@ -137,13 +137,28 @@ target_sources(sora
     src/sora_video_codec_factory.cpp
     src/sora_video_decoder_factory.cpp
     src/sora_video_encoder_factory.cpp
-    src/ssl_verifier.cpp
     src/url_parts.cpp
     src/version.cpp
     src/vpl_session_impl.cpp
     src/websocket.cpp
     src/zlib_helper.cpp
 )
+
+if (SORA_TARGET_OS STREQUAL "ubuntu")
+  target_sources(sora PRIVATE src/ssl_verifier.cpp src/ssl_verifier/ssl_verifier_ubuntu.cpp)
+elseif (SORA_TARGET_OS STREQUAL "macos")
+  target_sources(sora PRIVATE src/ssl_verifier.cpp src/ssl_verifier/ssl_verifier_macos.cpp)
+elseif (SORA_TARGET_OS STREQUAL "windows")
+  target_sources(sora PRIVATE src/ssl_verifier.cpp src/ssl_verifier/ssl_verifier_windows.cpp)
+elseif (SORA_TARGET_OS STREQUAL "ios")
+  # iOS では VerifyX509 を ssl_verifier_ios.mm で SecTrust API を用いて独自実装するため、
+  # ssl_verifier.cpp はビルド対象に含めない
+  target_sources(sora PRIVATE src/ssl_verifier/ssl_verifier_ios.mm)
+elseif (SORA_TARGET_OS STREQUAL "android")
+  target_sources(sora PRIVATE src/ssl_verifier.cpp src/ssl_verifier/ssl_verifier_android.cpp)
+else ()
+  message(FATAL_ERROR "Unknown SORA_TARGET_OS: ${SORA_TARGET_OS}")
+endif ()
 
 target_compile_definitions(sora PRIVATE ${SORA_TARGET_DEF})
 target_compile_definitions(sora PUBLIC BOOST_ASIO_ENABLE_VERSION_NAMESPACE)
@@ -272,7 +287,7 @@ if (SORA_TARGET_OS STREQUAL "windows")
       ws2_32.lib
   #    amstrmid.lib
       Strmiids.lib
-  #    crypt32.lib
+      crypt32.lib
       dmoguids.lib
       iphlpapi.lib
       msdmo.lib
@@ -457,6 +472,8 @@ elseif (SORA_TARGET_OS STREQUAL "macos")
       "-framework OpenGL"
       "-framework IOSurface"
       "-framework ScreenCaptureKit"
+      "-framework CoreFoundation"
+      "-framework Security"
   )
 
 elseif (SORA_TARGET_OS STREQUAL "ios")
@@ -495,6 +512,12 @@ elseif (SORA_TARGET_OS STREQUAL "ios")
       # PUBLIC で定義することで Sora::sora にリンクする全 TU で
       # 定義を統一し ABI ミスマッチを防ぐ。
       BOOST_ASIO_DISABLE_STD_ATOMIC_WAIT
+  )
+
+  target_link_libraries(sora
+    PUBLIC
+      "-framework Security"
+      "-framework CoreFoundation"
   )
 
 elseif (SORA_TARGET_OS STREQUAL "android")

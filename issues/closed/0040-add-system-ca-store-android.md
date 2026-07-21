@@ -2,7 +2,7 @@
 
 - Priority: Medium
 - Created: 2026-07-16
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-07-17
 - Model: Composer 2.5
 - Branch: feature/change-system-ca-store-android
 - Polished: 2026-07-16
@@ -305,3 +305,12 @@ Android 14+ 端末では両ディレクトリで概ね 130 件前後（apex/syst
 
 - 親: `issues/0035-change-tls-trust-store-system-ca.md`
 - 兄弟: `issues/0036-add-system-ca-store-linux.md` / `issues/0037-add-system-ca-store-macos.md` / `issues/0038-add-system-ca-store-windows.md` / `issues/0039-add-system-ca-store-ios.md`
+
+## 解決方法
+
+- `src/ssl_verifier/ssl_verifier_android.cpp` を新規追加し、`opendir` / `readdir` で Android のシステム CA ディレクトリ（`/apex/com.android.conscrypt/cacerts/` と `/system/etc/security/cacerts/`）を直接走査して PEM 証明書を `X509_STORE_add_cert` で信頼ストアに追加する実装に切り替えた
+- 暫定実装の `src/ssl_verifier/ssl_verifier_stub.cpp` を削除し、ハードコード PEM（`isrg_root` / `lets_encrypt_r3`）と WebRTC `rtc_base/ssl_roots.h` 依存を完全に撤廃した
+- `CMakeLists.txt` の `SORA_SYSTEM_CA_IMPL` 変数を解体し、各 OS 分岐内で直接 `target_sources(sora PRIVATE ...)` を呼ぶ形に統合した
+- `src/sora_signaling.cpp` のコメントを旧来の WebRTC `ssl_roots.h` 依存の説明からシステム CA ストア方針に合わせて更新した
+- ビルドは `python3 run.py build android` で確認済み
+- 接続確認・証跡取得は Android 実機 / エミュレータが必要なため PR 提出時に実施する

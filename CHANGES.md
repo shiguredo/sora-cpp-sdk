@@ -33,6 +33,18 @@
   - @voluntas
 - [ADD] Ubuntu 26.04 x86_64 向けのビルドターゲットを追加する
   - @voluntas
+- [CHANGE] TLS 検証の信頼ストアを OS のシステム CA に切り替える
+  - 全 OS（macOS, Linux, Windows, iOS, Android）でシステム CA を信頼の根拠とする方式に統一する
+  - 独自 CA が必要な場合は全プラットフォーム共通で `SoraSignalingConfig::ca_cert` に PEM を明示指定する
+  - macOS: Sonoma (14.x) 以降が対象、Keychain の Admin / User ドメインの trust settings と MDM Configuration Profile で配布された CA は反映されない
+  - Linux: Ubuntu 22.04 / 24.04、Raspberry Pi OS bookworm 以降が対象、前提を満たさない環境では `ca_cert` 指定が必要
+  - Windows: Windows 10 以降が対象、`ROOT` ストアに必要なルート CA がない環境では `ca_cert` 指定が必要
+  - iOS: iOS 14 以降が対象、sandbox 制約により `SecTrustEvaluateWithError` に検証委譲する方式で実装
+  - Android: Android 10 以降が対象、Conscrypt Mainline module 経由の CA ストアと AOSP 標準パスの両方を読み込む
+  - 内部フリー関数 `sora::LoadSystemSSLRootCertificates` を共通差し込み口とし、`ca_cert` 未指定時の信頼ストア構築を集約する
+  - 旧ハードコード PEM（isrg_root / lets_encrypt_r3）と WebRTC `rtc_base/ssl_roots.h` 依存を完全に撤廃する
+  - sumomo の E2E テストで TLS 検証のシステム CA 経由・`ca_cert` 指定・`insecure` モードの挙動を検証するテストを追加する
+  - @melpon
 - [ADD] sumomo の E2E テストで `--audio-recording-device` を複数の音声録音デバイスに対して個別に検証するテストを追加する
   - @melpon
 - [ADD] sumomo の E2E テストで録音デバイス未指定時・無効指定時の挙動を検証するテストを追加する

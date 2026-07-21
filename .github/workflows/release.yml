@@ -334,35 +334,35 @@ jobs:
           - name: ubuntu-24.04_x86_64
             platform-name: ubuntu-24.04_x86_64
             runs-on: ubuntu-24.04
-            test-target: test_sumomo_basic.py test_sumomo_openh264.py
+            test-target: test_sumomo_basic.py test_sumomo_openh264.py test_sumomo_tls_verification.py
           - name: ubuntu-26.04_x86_64
             platform-name: ubuntu-26.04_x86_64
             runs-on: ubuntu-26.04
-            test-target: test_sumomo_basic.py test_sumomo_openh264.py
+            test-target: test_sumomo_basic.py test_sumomo_openh264.py test_sumomo_tls_verification.py
           - name: ubuntu-22.04_x86_64
             platform-name: ubuntu-22.04_x86_64
             runs-on: ubuntu-22.04
-            test-target: test_sumomo_basic.py test_sumomo_openh264.py
+            test-target: test_sumomo_basic.py test_sumomo_openh264.py test_sumomo_tls_verification.py
           - name: ubuntu-24.04_armv8
             platform-name: ubuntu-24.04_armv8
             runs-on: ubuntu-24.04-arm
-            test-target: test_sumomo_basic.py test_sumomo_openh264.py
+            test-target: test_sumomo_basic.py test_sumomo_openh264.py test_sumomo_tls_verification.py
           - name: ubuntu-26.04_armv8
             platform-name: ubuntu-26.04_armv8
             runs-on: ubuntu-26.04-arm
-            test-target: test_sumomo_basic.py test_sumomo_openh264.py
+            test-target: test_sumomo_basic.py test_sumomo_openh264.py test_sumomo_tls_verification.py
           - name: ubuntu-22.04_armv8
             platform-name: ubuntu-22.04_armv8
             runs-on: ubuntu-22.04-arm
-            test-target: test_sumomo_basic.py test_sumomo_openh264.py
+            test-target: test_sumomo_basic.py test_sumomo_openh264.py test_sumomo_tls_verification.py
           - name: macos_arm64
             platform-name: macos_arm64
             runs-on: macos-15
-            test-target: test_sumomo_basic.py test_sumomo_openh264.py
+            test-target: test_sumomo_basic.py test_sumomo_openh264.py test_sumomo_tls_verification.py
           - name: windows_x86_64
             platform-name: windows_x86_64
             runs-on: windows-2025
-            test-target: test_sumomo_basic.py test_sumomo_openh264.py
+            test-target: test_sumomo_basic.py test_sumomo_openh264.py test_sumomo_tls_verification.py
           # Self-hosted runner for Apple Video Toolbox
           - name: apple_video_toolbox
             platform-name: macos_arm64

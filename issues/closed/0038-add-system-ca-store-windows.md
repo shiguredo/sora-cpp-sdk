@@ -2,7 +2,7 @@
 
 - Priority: Medium
 - Created: 2026-07-16
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-07-16
 - Model: Composer 2.5
 - Branch: feature/change-system-ca-store-windows
 - Polished: 2026-07-16
@@ -229,6 +229,16 @@ CMakeLists.txt には親 0035 が用意した「分岐骨格の切り替え分�
 - 同一 subject の `X509_STORE_add_cert failed` WARNING が複数回出るのは、`ROOT` ストアの 5 経路仮想ビューで同一 CA が複数エントリとして返される正常動作である（設計方針節参照）
 - 実行ログ（`sumomo.stderr.log`）を PR 本文に添付する
 - Windows では Linux の Docker 隔離のような「`ROOT` ストアを一時的に無効化」する手段が事実上ないため、失敗ケースの実証は行わず、成功時ログを証跡とする方針を採る（0037 と同じ整理）
+
+## 解決方法
+
+`src/ssl_verifier/ssl_verifier_windows.cpp` を新規追加し、`CertOpenSystemStoreW(NULL, L"ROOT")` で Windows 証明書ストアの `ROOT`（信頼されたルート証明機関）からルート CA を列挙し、`X509_STORE_add_cert` で BoringSSL の信頼ストアに登録する実装を行った。`CMakeLists.txt` で Windows ターゲットの `SORA_SYSTEM_CA_IMPL` を stub から windows 実装に切り替え、`crypt32.lib` のリンクを有効化した。
+
+テスト結果:
+- ビルド確認: `python3 run.py build windows_x86_64` 成功
+- 接続確認: sumomo で `wss://sora.wandbox.org/signaling` に WSS 接続成功
+- 回帰確認: `test_sumomo_basic.py` 全 12 テスト PASS
+- 証跡ログ: `LoadSystemSSLRootCertificates: added=47`
 
 ## 関連
 

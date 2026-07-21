@@ -2,7 +2,7 @@
 
 - Priority: Medium
 - Created: 2026-07-16
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-07-17
 - Model: Composer 2.5
 - Branch: feature/change-system-ca-store-ios
 - Polished: 2026-07-16
@@ -335,11 +335,13 @@ Objective-C++ ファイルなので `.mm` 拡張子を選ぶ（`.cpp` では `#i
 
 ## 解決方法
 
-1. `src/ssl_verifier_ios.mm` を新規追加し、上記の設計方針・実装骨格に従って `SSLVerifier::VerifyX509` を実装する
-2. `CMakeLists.txt` の親 0035 分岐骨格の iOS 分岐の `set` 行を書き換える
-3. iOS プラットフォーム分岐の `target_link_libraries` に `-framework Security` と `-framework CoreFoundation` を追加する
-4. テスト戦略節に従い、ビルド確認・接続確認・回帰確認・証跡取得を行う
-5. `CHANGES.md` に `[CHANGE]` エントリを追加する
+`src/ssl_verifier/ssl_verifier_ios.mm` を新規追加し、`SSLVerifier::VerifyX509` を Security.framework の `SecTrustEvaluateWithError` に検証委譲する実装を行った。`CMakeLists.txt` で iOS ターゲットの `SORA_SYSTEM_CA_IMPL` を `src/ssl_verifier/ssl_verifier_stub.cpp` から `src/ssl_verifier/ssl_verifier_ios.mm` に切り替え、`-framework Security` と `-framework CoreFoundation` のリンクを追加した。`CHANGES.md` に `[CHANGE]` エントリを追加した。
+
+テスト結果:
+- ビルド確認: `python3 run.py build ios` 成功
+- 接続確認: sora-ios-sdk のサンプルアプリを通じて Sora Labo 相当の公開 CA サーバーに WSS 接続成功
+- 回帰確認: `e2e-test/` の E2E テスト PASS
+- 証跡ログ: `VerifyX509: SecTrustEvaluateWithError succeeded` を確認
 
 ## 変更対象ファイル
 

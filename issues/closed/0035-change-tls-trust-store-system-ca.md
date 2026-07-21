@@ -2,9 +2,9 @@
 
 - Priority: Medium
 - Created: 2026-07-16
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-07-17
 - Model: Composer 2.5
-- Branch: feature/change-tls-trust-store-system-ca
+- Branch: feature/change-tls-trust-store
 - Polished: 2026-07-16
 
 ## 目的
@@ -352,6 +352,31 @@ E2E テストは `e2e-test/` 配下の `test_sumomo_basic.py` に既存の TLS �
 親 PR の CI 実効性: 新契約の失敗パス（`LoadSystemSSLRootCertificates` が `false` を返して検証が失敗する経路）は暫定 stub では発火しないため、親 PR では実行時検証されない。この経路の実効テストは各子 PR で担う。
 
 各 OS 固有の接続確認は各子 issue の完了条件に閉じる。
+
+## 解決方法
+
+実際の開発では、issue の計画（親 PR + 子 PR 5 本の分割マージ）を変更し、1 ブランチ `feature/change-tls-trust-store` に全実装を集約した。`ssl_verifier_stub.cpp` による暫定実装段階も省略し、全 OS 実装を最終形で直接実装した。実装上の主な変更点は以下のとおり。
+
+### 実装
+
+- `include/sora/ssl_verifier.h` から旧 `LoadBuiltinSSLRootCertificates` と `AddCert` の宣言を削除し、`SSLVerifier` クラスは `VerifyX509` のみを持つようになった
+- `src/ssl_verifier.cpp` から PEM 定数（`isrg_root` / `lets_encrypt_r3`）、旧 `LoadBuiltinSSLRootCertificates` 実装、`<rtc_base/ssl_roots.h>` の include を削除した
+- `SSLVerifier::VerifyX509` の `ca_cert` 未指定分岐を内部フリー関数 `sora::LoadSystemSSLRootCertificates(X509_STORE*)` の呼び出し 1 本に置き換えた。同関数の前方宣言は `src/ssl_verifier.cpp:21` に置き、定義は各 OS 別 TU で行う（`SSLVerifier::` メンバではない）
+- `ca_cert` 指定分岐は旧 `AddCert` を削除し、匿名名前空間内の `LoadCertsFromPEM`（`ParsePEMCerts` → `TryAddCertToStore` ループ）に置き換えた
+- 共通ヘルパー（`Guard`、`TryAddCertToStore`、`ParsePEMCerts`、`DumpX509CertificateInfo`）は `src/ssl_verifier/ssl_verifier_util.h` に Haskell-style の inline 関数として集約した
+- 各 OS 別実装:
+  - **Ubuntu** (`src/ssl_verifier/ssl_verifier_ubuntu.cpp`): `/etc/ssl/certs/ca-certificates.crt` を `BIO_new_file` → `PEM_read_bio_X509` ループで読み込む
+  - **macOS** (`src/ssl_verifier/ssl_verifier_macos.cpp`): `SecTrustCopyAnchorCertificates` で Keychain System Roots を取得し、`d2i_X509` で BoringSSL の X509 に変換する。CMake に `-framework Security` と `-framework CoreFoundation` を追加した
+  - **Windows** (`src/ssl_verifier/ssl_verifier_windows.cpp`): `CertOpenSystemStoreW(NULL, L"ROOT")` で `ROOT` ストアを列挙する。CMake の `crypt32.lib` のコメントを解除して有効化した
+  - **iOS** (`src/ssl_verifier/ssl_verifier_ios.mm`): `SSLVerifier::VerifyX509` を丸ごと差し替え、`SecTrustEvaluateWithError` に検証委譲する。iOS は `src/ssl_verifier.cpp` をビルド対象から除外し、`ssl_verifier_ios.mm` 単独でビルドする。CMake に `-framework Security` と `-framework CoreFoundation` を追加した
+  - **Android** (`src/ssl_verifier/ssl_verifier_android.cpp`): `opendir` / `readdir` で `/apex/com.android.conscrypt/cacerts/` と `/system/etc/security/cacerts/` の 2 ディレクトリを走査し、各ファイルを `fopen` + `fread` → `d2i_X509`（BoringSSL 実装は PEM / DER 自動判別）で読み込む
+  - 各 OS 実装は `X509_STORE_add_cert` の失敗を `TryAddCertToStore` 経由で処理し、`X509_R_CERT_ALREADY_IN_HASH_TABLE` 重複は無視、他エラーは `RTC_LOG(LS_WARNING)` で続行、1 件以上追加で `true`、0 件で `RTC_LOG(LS_ERROR)` + `false`
+- `CMakeLists.txt` は `if (SORA_TARGET_OS STREQUAL "...")` 分岐内で各 OS 別ソースを直接 `target_sources(sora PRIVATE ...)` で指定する形にした（他 4 OS は `ssl_verifier.cpp` + `ssl_verifier_<os>.cpp` の 2 ファイル、iOS は `ssl_verifier_ios.mm` 単独）
+- `src/sora_signaling.cpp:593-602` のコメントをシステム CA 方針に合わせて更新した
+- 旧ハードコード PEM（`isrg_root` / `lets_encrypt_r3`）と WebRTC `rtc_base/ssl_roots.h` 依存は完全に撤廃した
+- issue 文書: 0036〜0040 をそれぞれ `issues/closed/` に移動し、0039 と 0040 は polish により内容を大幅に書き換えた
+- `CHANGES.md` に `[CHANGE]` エントリを追加し、E2E の説明を追記した
+- E2E テスト `test_sumomo_tls_verification.py`（5 テスト）を追加し、CI（`ci.yml` / `release.yml`）の GitHub-hosted runner ジョブに組み込んだ
 
 ## 親 issue のライフサイクル
 
