@@ -93,10 +93,9 @@ X509* ReadCertFile(const std::string& path) {
   BIO_free(bio);
   if (cert == nullptr) {
     ERR_get_error();
-    RTC_LOG(LS_WARNING)
-        << "LoadSystemSSLRootCertificates: both d2i_X509 and "
-           "PEM_read_bio_X509 failed: path="
-        << path;
+    RTC_LOG(LS_WARNING) << "LoadSystemSSLRootCertificates: both d2i_X509 and "
+                           "PEM_read_bio_X509 failed: path="
+                        << path;
     return nullptr;
   }
   return cert;
