@@ -6,7 +6,9 @@
 #include <vector>
 
 // OpenSSL
+#include <openssl/bio.h>
 #include <openssl/err.h>
+#include <openssl/pem.h>
 #include <openssl/x509.h>
 
 // WebRTC
@@ -17,10 +19,11 @@
 namespace sora {
 namespace {
 
-// DER 形式の証明書ファイルを読み込んで X509* を返す
-// 失敗時は nullptr を返し、エラー内容を WARNING ログに出力する
+// 証明書ファイルを読み込んで X509* を返す
+// DER 形式を先に試し、失敗した場合は PEM 形式も試す。
+// どちらも失敗した場合は nullptr を返し、エラー内容を WARNING ログに出力する
 // 戻り値は呼び出し元で X509_free すること
-X509* ReadDERFile(const std::string& path) {
+X509* ReadCertFile(const std::string& path) {
   FILE* fp = fopen(path.c_str(), "rb");
   if (fp == nullptr) {
     RTC_LOG(LS_WARNING) << "LoadSystemSSLRootCertificates: fopen failed: path="
@@ -67,12 +70,33 @@ X509* ReadDERFile(const std::string& path) {
     RTC_LOG(LS_WARNING) << "LoadSystemSSLRootCertificates: fclose failed: path="
                         << path << " errno=" << e;
   }
+
+  // DER 形式でパースを試みる
   const unsigned char* p = buf.data();
   X509* cert = d2i_X509(nullptr, &p, static_cast<long>(file_size));
+  if (cert != nullptr) {
+    return cert;
+  }
+  // DER 失敗時はエラーキューをクリアして PEM を試す
+  ERR_get_error();
+
+  // PEM 形式でパースを試みる
+  BIO* bio = BIO_new_mem_buf(buf.data(), file_size);
+  if (bio == nullptr) {
+    ERR_get_error();
+    RTC_LOG(LS_WARNING)
+        << "LoadSystemSSLRootCertificates: BIO_new_mem_buf failed: path="
+        << path;
+    return nullptr;
+  }
+  cert = PEM_read_bio_X509(bio, nullptr, nullptr, nullptr);
+  BIO_free(bio);
   if (cert == nullptr) {
     ERR_get_error();
     RTC_LOG(LS_WARNING)
-        << "LoadSystemSSLRootCertificates: d2i_X509 failed: path=" << path;
+        << "LoadSystemSSLRootCertificates: both d2i_X509 and "
+           "PEM_read_bio_X509 failed: path="
+        << path;
     return nullptr;
   }
   return cert;
@@ -113,7 +137,7 @@ int LoadFromDir(X509_STORE* store, const char* dir_path) {
       continue;
     }
     std::string path = std::string(dir_path) + "/" + entry->d_name;
-    X509* cert = ReadDERFile(path);
+    X509* cert = ReadCertFile(path);
     if (cert == nullptr) {
       continue;
     }
