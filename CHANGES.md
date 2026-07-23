@@ -40,6 +40,7 @@
   - Linux: Ubuntu 22.04 / 24.04、Raspberry Pi OS bookworm 以降が対象、前提を満たさない環境では `ca_cert` 指定が必要
   - Windows: Windows 10 以降が対象、`ROOT` ストアに必要なルート CA がない環境では `ca_cert` 指定が必要
   - iOS: iOS 14 以降が対象、sandbox 制約により `SecTrustEvaluateWithError` に検証委譲する方式で実装
+    - `SecTrustEvaluateWithError` の利用に伴い iOS アプリのビルド時に Security.framework の追加が必要になる
   - Android: Android 10 以降が対象、Conscrypt Mainline module 経由の CA ストアと AOSP 標準パスの両方を読み込む
   - 内部フリー関数 `sora::LoadSystemSSLRootCertificates` を共通差し込み口とし、`ca_cert` 未指定時の信頼ストア構築を集約する
   - 旧ハードコード PEM（isrg_root / lets_encrypt_r3）と WebRTC `rtc_base/ssl_roots.h` 依存を完全に撤廃する
@@ -203,6 +204,8 @@
   - `rtCamp/action-slack-notify@v2` を `shiguredo/github-actions/.github/actions/slack-notify@main` に置き換える
   - 通知ジョブの `runs-on` を `ubuntu-slim` に変更する
   - @miosakuma
+- [ADD] test の iOS プロジェクトに Security.framework を追加する
+  - @torikizi
 - [UPDATE] Examples の WEBRTC_BUILD_VERSION を m150.7871.3.1 にあげる
   - @torikizi @zztkm
 - [UPDATE] GitHub Actions の `macos-14` を `macos-15` に上げる
