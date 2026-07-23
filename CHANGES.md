@@ -203,6 +203,8 @@
   - `rtCamp/action-slack-notify@v2` を `shiguredo/github-actions/.github/actions/slack-notify@main` に置き換える
   - 通知ジョブの `runs-on` を `ubuntu-slim` に変更する
   - @miosakuma
+- [ADD] test の iOS プロジェクトに Security.framework を追加する
+  - @torikizi
 - [UPDATE] Examples の WEBRTC_BUILD_VERSION を m150.7871.3.1 にあげる
   - @torikizi @zztkm
 - [UPDATE] GitHub Actions の `macos-14` を `macos-15` に上げる
