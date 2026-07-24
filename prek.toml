@@ -5,6 +5,21 @@
 # ビルド生成物や外部依存はチェック対象から除外する
 exclude = "^(_build/|_install/|_source/|third_party/)"
 
+# prek 組み込みの汎用フック (オフライン・追加セットアップ不要)
+[[repos]]
+repo = "builtin"
+hooks = [
+  { id = "trailing-whitespace" },
+  { id = "end-of-file-fixer" },
+  { id = "mixed-line-ending" },
+  { id = "check-merge-conflict" },
+  { id = "check-added-large-files" },
+  { id = "detect-private-key" },
+  # .clang-format などマルチドキュメント YAML を許可する
+  { id = "check-yaml", args = ["--allow-multiple-documents"] },
+  { id = "check-toml" }
+]
+
 [[repos]]
 repo = "local"
 hooks = [
@@ -14,12 +29,7 @@ hooks = [
     entry = "python3 run.py format",
     language = "system",
     pass_filenames = false,
-    types_or = [
-      "c",
-      "c++",
-      "objective-c",
-      "objective-c++"
-    ]
+    types_or = ["c", "c++", "objective-c", "objective-c++"]
   },
   # Python の lint と自動修正 (ルートの ruff.toml を利用する)
   {
@@ -37,19 +47,4 @@ hooks = [
     language = "system",
     types = ["python"]
   }
-]
-
-# prek 組み込みの汎用フック (オフライン・追加セットアップ不要)
-[[repos]]
-repo = "builtin"
-hooks = [
-  { id = "trailing-whitespace" },
-  { id = "end-of-file-fixer" },
-  { id = "mixed-line-ending" },
-  { id = "check-merge-conflict" },
-  { id = "check-added-large-files" },
-  { id = "detect-private-key" },
-  # .clang-format などマルチドキュメント YAML を許可する
-  { id = "check-yaml", args = ["--allow-multiple-documents"] },
-  { id = "check-toml" }
 ]
