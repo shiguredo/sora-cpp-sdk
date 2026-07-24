@@ -29,6 +29,8 @@
   - CUDA 13 で Maxwell / Pascal / Volta (sm_50 〜 sm_70) のサポートが廃止されたため、CUDA カーネルのターゲットを `sm_60` から `sm_75` (Turing) 以降に変更する
   - GTX 10 シリーズ (GTX 1060 / 1080 など) では NVIDIA ハードウェアエンコーダー / デコーダーが利用できなくなる
   - @voluntas
+- [CHANGE] E2E テストの Python 要件を 3.14 以上に引き上げる
+  - @voluntas
 - [ADD] Ubuntu 26.04 ARM64 向けの sysroot とビルドターゲットを追加する
   - @voluntas
 - [ADD] Ubuntu 26.04 x86_64 向けのビルドターゲットを追加する
@@ -58,6 +60,8 @@
 - [ADD] TURN-TLS のクライアント証明書設定に対応する
   - `SoraSignalingConfig` の `client_cert` / `client_key` を TURN-TLS にも適用する
   - @zztkm
+- [UPDATE] E2E テストの開発依存ライブラリを最新版に更新する
+  - @voluntas
 - [UPDATE] libwebrtc のバージョンを m150.7871.3.1 に上げる
   - `webrtc::RtcEventLogFactory` のコンストラクタ不一致を修正する
     - libwebrtc で `RtcEventLogFactory` の `TaskQueueFactory` が削除されたため、変更に追従する
