@@ -1,206 +1,189 @@
-# BaseRenderer の描画バッファがウィンドウリサイズ時に再確保されずセグフォする
+# BaseRenderer の描画バッファがウィンドウリサイズ時に境界を超過する
 
 - Priority: High
 - Created: 2026-07-14
 - Completed: {YYYY-MM-DD}
 - Model: DeepSeek V4 Pro
 - Branch: feature/fix-base-renderer-buffer-overflow-on-resize
-- Polished: 2026-07-15
+- Polished: 2026-07-27
 
 ## 目的
 
-`BaseRenderer::RenderThread()` で確保している描画用バッファがウィンドウサイズ変更時に再確保されない。sumomo の `--use-sdl` モードでウィンドウが拡大されると `width_` / `height_` だけが大きくなり、バッファは起動時サイズのまま残る。次回の描画フレームで `memset(image.get(), 0, width_ * height_ * 4)` が拡大後のサイズで実行され、バッファ境界を超過して write し、セグメンテーションフォールト（またはヒープ破壊）が発生する。
+`BaseRenderer::RenderThread()` の描画用バッファは、レンダラー起動時のキャンバス寸法で 1 回だけ確保される。
+sumomo の `--use-sdl` モードでウィンドウを拡大すると、`width_` / `height_` だけが更新され、描画用バッファは起動時のサイズで残る。
+次の描画フレームでは、更新後の寸法を使った `memset()` がバッファ境界を超えて write し、セグメンテーションフォールトまたはヒープ破壊を引き起こしうる。
 
 ## 優先度根拠
 
-sumomo の `--use-sdl` モードで、F キーによるフルスクリーン切替やウィンドウの手動拡大といったユーザー操作だけで、`width_` / `height_` がバッファ確保時より大きくなり確定的に落ちうる。毎フレームの `memset` は sinks 走査前に実行されるため、映像トラックの有無にかかわらずクラッシュする。High。
+F キーによるフルスクリーン切替やウィンドウの手動拡大だけで境界外 write が発生する。
+`memset()` は Sink の走査前に実行されるため、映像トラックの有無にかかわらず発生する。
+ユーザー操作だけでプロセスの異常終了やヒープ破壊につながるメモリ安全性の問題であるため High。
 
 ## 現状
 
-`src/renderer/base_renderer.cpp` の `RenderThread()`:
+`BaseRenderer::RenderThread()` は、描画用バッファをループの前で 1 回だけ確保する。
 
 ```cpp
-// 74 行目: バッファは起動時のサイズで一度だけ確保される
 std::unique_ptr<uint8_t[]> image(new uint8_t[width_ * height_ * 4]);
 
 while (running_) {
-    // 77 行目: width_ / height_ が拡大されていても、確保済みサイズを超えて write する
-    //         sinks 走査前のため、映像トラックが 0 本でも実行される（0 sinks でもクラッシュが確定する要因）
-    memset(image.get(), 0, width_ * height_ * 4);
-
-    {
-        webrtc::MutexLock lock(&sinks_lock_);
-        for (...) {
-            // 92-102 行目: ローカル width/height は Sink のフレーム寸法。
-            //            宛先 stride / Y offset にはメンバ width_ を使う。
-            //            バッファ未再確保のまま width_ が拡大しているとここでも境界超過しうる
-            int width = sink->GetFrameWidth();
-            int height = sink->GetFrameHeight();
-            libyuv::ARGBCopy(sink->GetImage(), width * 4,
-                             image.get() + sink->GetOffsetX() * 4 +
-                                 sink->GetOffsetY() * width_ * 4,
-                             width_ * 4, width, height);
-        }
-    }
-
-    // 117 行目: 拡大後の width_ / height_ で Render() にバッファを渡す
-    Render(image.get(), width_, height_, sink_infos);
+  memset(image.get(), 0, width_ * height_ * 4);
+  // ...
+  Render(image.get(), width_, height_, sink_infos);
 }
 ```
 
-`SetSize()` (`base_renderer.cpp:64-68`) は `sinks_lock_` 取得下で `width_` / `height_` を更新し `SetOutlines()` を呼ぶだけで、描画バッファには触れない。
+`BaseRenderer::SetSize()` は `sinks_lock_` を取得し、`width_` / `height_` と各 Sink の outline を更新するが、描画用バッファを再確保しない。
+sumomo の `SDLRenderer::PollEvent()` は `SDL_EVENT_WINDOW_RESIZED` を受け取ると `SetSize()` を呼ぶ。
+このイベントは、F キーによるフルスクリーン切替、リサイズ可能なウィンドウの手動拡大、`--fullscreen` 起動時に発生しうる。
 
-### 再現経路（sumomo `--use-sdl`）
+例として 640×480 のキャンバスで起動した場合、確保量は 1,228,800 bytes である。
+その後 2560×1440 へ拡大すると、次の `memset()` は同じバッファへ 14,745,600 bytes を書くため、境界外 write が発生する。
 
-1. 起動時、コンストラクタ引数のウィンドウサイズで `RenderThread()` がバッファを一度だけ確保する（例: 640×480）
-2. 次のいずれかで `SDL_EVENT_WINDOW_RESIZED` が発生し、`SDLRenderer::PollEvent()` (`examples/sumomo/src/sdl_renderer.cpp:92-94`) が `SetSize()` を呼ぶ
-   - F キー（`sdl_renderer.cpp:96-99`） → `SetFullScreen()` → `SDL_SetWindowFullscreen`（`sdl_renderer.cpp:80`）
-   - ウィンドウ枠の手動ドラッグ（`SDL_WINDOW_RESIZABLE`、`sdl_renderer.cpp:38-39`）
-   - `--fullscreen` 起動後、`dispatch_` 設定以降に初めて処理される RESIZED イベント
-3. `width_` / `height_` が画面解像度相当に拡大する（例: 2560×1440）
-4. 次回イテレーションの `memset` が確保済みバッファを超えて write する
-
-`SetSize()` はメインスレッド、`RenderThread()` は専用 `std::thread`（`base_renderer.cpp:49`）で、sumomo では両者が並行しうる（描画スレッドから `dispatch_` 経由で `PollEvent` がメインスレッドに post される）。
+`SetSize()` は sumomo のイベント処理スレッド、`RenderThread()` は専用の描画スレッドから実行されるため、両者は並行しうる。
+現行コードでは、`memset()` と `Render()` の `width_` / `height_` 読み取りも `sinks_lock_` の外にあり、1 フレーム内で使用する寸法が一致する保証もない。
 
 ### 再現条件
 
-- sumomo を `--use-sdl` 付きで起動し、次のいずれかを行う（`--role` は sendonly / recvonly / sendrecv のいずれでも可）
-  - F キーでフルスクリーン切替
-  - ウィンドウを起動時より大きく手動リサイズ
-  - `--fullscreen` 付きで起動し、表示後にリサイズイベントが処理されるのを待つ
-- 手動確認コマンド例（リポジトリルートから。シグナリング URL / チャネル ID は環境に合わせる）。修正をバイナリに入れるため、ローカル SDK を紐付けてビルドする:
-  ```bash
-  python3 examples/sumomo/run.py build macos_arm64 --local-sora-cpp-sdk-dir .
-  ./examples/_build/macos_arm64/release/sumomo/sumomo --use-sdl \
-    --signaling-url <URL> --channel-id <ID> \
-    --role recvonly --video-codec-type VP8
-  ```
+sumomo をローカルの SDK 実装と紐付けてデスクトップ向けにビルドし、次のオプションを指定して起動する。
+`--show-me --fake-capture-device` を使うことで、外部の配信者やカメラに依存せず Sink copy 経路まで実行する。
+
+```text
+--use-sdl
+--show-me
+--fake-capture-device
+--role sendonly
+--video-codec-type VP8
+--signaling-url <URL>
+--channel-id <ID>
+```
+
+起動後、次のいずれかを行う。
+
+- F キーでフルスクリーンへ切り替える
+- ウィンドウを起動時より大きく手動リサイズする
+- `--fullscreen` を追加して起動し、初回のリサイズイベントが処理されるまで待つ
 
 ### 影響範囲
 
-- **影響あり**: sumomo の `--use-sdl`（`examples/sumomo/src/sdl_renderer.cpp` が `BaseRenderer` を継承し、`SetSize()` を呼ぶ）
-- **潜在リスクのみ**: Sixel / ANSI レンダラーは `BaseRenderer` を継承するが、現状 `SetSize()` を呼ぶ経路が無いため顕在化しない
-- **影響なし**: `examples/sdl_sample` は `BaseRenderer` を継承せず独自実装（共有描画バッファを使わず各 Sink の `image_` を直接 SDL に渡す）のため本バグの対象外
+- **影響あり**: sumomo の `--use-sdl` モード
+- **潜在リスクあり**: `BaseRenderer` を継承し、`SetSize()` を呼ぶ SDK 利用者の派生レンダラー
+- **リポジトリ内で未顕在化**: Sixel / ANSI レンダラー。`BaseRenderer` を継承するが、リポジトリ内には `SetSize()` の呼び出し経路がない
+- **影響なし**: sdl_sample。`BaseRenderer` を継承せず、各 Sink の画像を独自に描画する
 
 ### 本 issue のスコープ外
 
-- メンバ `width_` / `height_` 自体の atomic 化や、`SetSize` 呼び出し規約の API 文書化など、**描画バッファ経路以外** の data race 設計。描画バッファ経路の寸法参照をスナップショットで直列化する作業は本バグ修正の本体でありスコープ内
-- `width_ * height_ * 4` の包括的な整数オーバーフロー対策（`SIZE_MAX` 超過確認等）。既存コードからの持越しであり本 issue では扱わない。`resize()` の引数型 `size_t` に合わせる `static_cast<size_t>` は自然な型変換であり、包括的なオーバーフロー対策とは別物として本 issue で組み込む
+- `width_ * height_ * 4` が `size_t` の範囲を超える場合の包括的な整数オーバーフロー対策
+- `SetSize()` へ 0 以下の寸法が渡された場合の入力検証と挙動定義
+- `SetSize()` の呼び出し規約の API 文書化
+- 描画用バッファと無関係な既存の並行処理設計
+
+本修正の再現条件と完了条件は、SDL から通知される正の寸法を対象とする。
+`resize()` の引数型に合わせて `static_cast<size_t>` してから乗算することは、包括的なオーバーフロー対策とは別に本修正へ含める。
 
 ## 設計方針
 
-描画バッファを `std::vector<uint8_t>` にし、毎イテレーションで `sinks_lock_` 保持中にキャンバス寸法をスナップショットして `resize()` する。同一スナップショットを `memset` / `ARGBCopy` 宛先 / `Render()` に使い、バッファ実サイズと write サイズを一致させる。
+描画用バッファを `std::vector<uint8_t>` に変更し、ループの外で宣言して capacity をイテレーション間で再利用する。
 
-ロック外で `resize` と `memset` がそれぞれ `width_` を読む実装では、両者の間に `SetSize` が入り再確保後より大きいサイズで write する穴が残る。`SetSize` も `sinks_lock_` を取るため、バッファ操作を同ロック下に置けば寸法の読み書きが直列化され、境界超過は閉じる。フルスクリーン時の再確保（例: 数 MB〜十数 MB）でロック保持時間は増えるが、寸法一貫性のための意図的な選択であり許容する。
+各イテレーションでは、`sinks_lock_` を保持した単一のクリティカルセクション内で次を行う。
 
-`Render()` 仮想関数のシグネチャは変更しない。`vector::data()` を渡す。サブクラス変更は不要。公開ヘッダの ABI 影響なし。`Render()` 自体は現行どおりロック外で呼ぶ（SDL 操作と `dispatch_` を `sinks_lock_` 内に入れると、同期 dispatch 化された場合に自己デッドロックしうる）。
+1. `width_` / `height_` を `canvas_width` / `canvas_height` へスナップショットする
+2. 同じ寸法から算出したサイズへ描画用バッファを `resize()` する
+3. `image.size()` を使って描画用バッファ全体を `memset()` でクリアする
+4. 同じ `canvas_width` を宛先 stride と Y offset の計算に使って各 Sink を合成する
+
+寸法のスナップショットから Sink の合成まで同じロックを保持することで、その途中に `SetSize()` が入り、キャンバス寸法と outline が食い違うことを防ぐ。
+`resize()` と全バッファのクリアもロック内へ移るため、毎フレームのロック保持時間は現行より増える。
+ただし、寸法と書き込み範囲の一貫性を優先し、この影響を許容する。
+
+`Render()` は同じ寸法スナップショットと `image.data()` を受け取るが、現行どおり `sinks_lock_` の外で呼ぶ。
+`Render()` をロック内で呼ぶと、同期的な dispatch 実装から `SetSize()` が呼ばれた場合に自己デッドロックするためである。
+
+`Render()` のシグネチャは変更しないため、公開 ABI への影響はない。
+`vector::resize()` により内部ポインタはイテレーション間で変化しうるが、リポジトリ内の SDL / ANSI / Sixel レンダラーは、`Render()` から戻るまでに同期的に画像を消費し、ポインタを保持しない。
 
 ## 完了条件
 
-- `src/renderer/base_renderer.cpp` の `RenderThread()` について、次をすべて満たすこと
-  1. 描画バッファが `std::vector<uint8_t>` になっている。`while` ループの外で宣言し、イテレーション間で capacity を再利用する
-  2. 毎イテレーション、キャンバス寸法を `canvas_width` / `canvas_height`（Sink フレーム寸法の `width` / `height` と別名）にスナップショットしている
-  3. `sinks_lock_` 保持中に `image.resize(static_cast<size_t>(canvas_width) * static_cast<size_t>(canvas_height) * 4)` と `memset(image.data(), 0, image.size())` を行う
-  4. `ARGBCopy` の宛先 stride / Y offset と `Render(...)` 引数が **同一の `canvas_width` / `canvas_height`** のみを使う（`resize` 後に `width_` を再読しない）
-  5. Sink フレーム寸法用のローカル `width` / `height`（`GetFrameWidth()` / `GetFrameHeight()`）は現状どおり残し、キャンバス寸法と混同しない
-  6. `GetOutlineChanged()` が true の Sink を `continue` する現行分岐を維持する（outline 再計算中の古いフレームを新バッファへ copy しない）
-  7. `Render()` は `sinks_lock_` 外で呼ぶ（理由は設計方針を参照）
-- 既存 E2E の回帰がないこと:
-  ```bash
-  uv run --directory=e2e-test pytest \
-    test_sumomo_basic.py::test_sumomo_sendonly_recvonly[VP8] -v -s --timeout=60
-  ```
-  （フルスクリーン / リサイズの自動テストは GUI 操作が必要で現状存在しない。本バグ自体の検証は手動とする）
-- 手動確認（上記の `--local-sora-cpp-sdk-dir .` 付きビルド成果物を使う。シグナリングサーバーは既存 E2E と同一でよい）:
-  - `--use-sdl` で起動し、F キーによるフルスクリーン切替（入る・戻る）を 3 回以上繰り返してもクラッシュしない
+- `BaseRenderer::RenderThread()` が次をすべて満たすこと
+  1. 描画用バッファが `std::vector<uint8_t>` であり、ループの外で宣言されている
+  2. 毎イテレーション、`sinks_lock_` 保持中にキャンバス寸法を `canvas_width` / `canvas_height` へスナップショットしている
+  3. `sinks_lock_` 保持中に `image.resize(static_cast<size_t>(canvas_width) * static_cast<size_t>(canvas_height) * 4)` と `memset(image.data(), 0, image.size())` を実行している
+  4. `ARGBCopy()` の宛先 stride と Y offset の計算、および `Render()` の引数が同じ `canvas_width` / `canvas_height` だけを使い、`resize()` 後に `width_` / `height_` を再読していない
+  5. Sink のフレーム寸法には、`GetFrameWidth()` / `GetFrameHeight()` から得た別のローカル変数を使っている
+  6. `GetOutlineChanged()` が true の Sink を処理しない現行分岐を維持している
+  7. `Render()` を `sinks_lock_` の外で呼んでいる
+- SDL / ANSI / Sixel レンダラーが `Render()` から戻った後に `image` を保持していないことをコードレビューで確認する
+- sumomo をローカルの SDK 実装と紐付けてビルドできること
+- プロジェクトの E2E 実行規約に従って `test_sumomo_sendonly_recvonly[VP8]` を実行し、既存の接続処理に回帰がないこと
+  - この E2E は SDL レンダラー経路を通らない一般回帰確認であり、本バグ自体は次の手動確認で検証する
+- 再現条件に記載したオプションで sumomo を起動し、次をすべて確認する
+  - F キーによるフルスクリーン切替を、入る・戻るの 1 往復として 3 回以上繰り返してもクラッシュしない
   - ウィンドウを起動時より大きく手動リサイズしてもクラッシュしない
-  - フルスクリーン解除後も映像表示が継続する
-- `CHANGES.md` の `## develop` 直下（`### misc` より前のコア `[FIX]` 群）に追記する。`src/renderer/base_renderer.cpp` は core SDK コードのため `## develop` 直下に置く。担当者は実装者が確定:
-  ```
-  - [FIX] BaseRenderer の描画バッファがウィンドウリサイズ時に再確保されずセグフォする問題を修正する
+  - `--fullscreen` 起動後、初回のリサイズイベントを処理してもクラッシュしない
+  - フルスクリーン解除後も fake 映像の表示が継続する
+- AddressSanitizer を有効にして SDK と sumomo をビルドし、同じ手動確認で `heap-buffer-overflow` が検出されないこと
+  - macOS または Ubuntu のクリーンなビルド構成を使う
+  - SDK の既存 `CMAKE_CXX_FLAGS` を維持したまま `-fsanitize=address` を追加し、sumomo のコンパイルとリンクにも `-fsanitize=address` を指定する
+  - 再現条件に記載した 3 種類のリサイズ操作をすべて実行する
+  - libwebrtc 内部の既知の擬陽性を除外するため、実行時は `ASAN_OPTIONS=detect_container_overflow=0` を指定する
+  - この検証は CMake の設定を使って手動で行い、ビルドスクリプトへの ASan オプション追加は本 issue に含めない
+- 変更履歴の develop にあるコア SDK の `[FIX]` 群へ、次を追記する
+
+  ```text
+  - [FIX] BaseRenderer の描画バッファがウィンドウリサイズ時に境界を超過する問題を修正する
     - @<担当者>
   ```
 
 ## 解決方法
 
-`src/renderer/base_renderer.cpp` の `RenderThread()` を次の形に書き換える（`<vector>` および `<cstring>` は既に include 済み）。
+`BaseRenderer::RenderThread()` を次の順序へ変更する。
+`<vector>` と `<cstring>` は既に利用可能なため、追加の依存は不要である。
+以下は描画用バッファに関係する変更箇所だけを示し、フレームレート制御は省略する。
 
 ```cpp
-void BaseRenderer::RenderThread() {
-  RenderThreadStarted();
+std::vector<uint8_t> image;
 
-  std::vector<uint8_t> image;
+while (running_) {
+  std::vector<SinkInfo> sink_infos;
+  int canvas_width = 0;
+  int canvas_height = 0;
 
-  while (running_) {
-    auto frame_start = std::chrono::steady_clock::now();
-    std::vector<SinkInfo> sink_infos;
-    // ロック外で宣言し、ロック内で代入して Render まで持ち出す
-    int canvas_width = 0;
-    int canvas_height = 0;
-    {
-      webrtc::MutexLock lock(&sinks_lock_);
-      canvas_width = width_;
-      canvas_height = height_;
-      // resize の引数型 size_t に合わせて乗算を行う（int 乗算後の cast にしない）
-      image.resize(static_cast<size_t>(canvas_width) * static_cast<size_t>(canvas_height) * 4);
-      // resize の拡大分ゼロ初期化だけでは既存要素が残るため、フレーム全体をクリアする
-      memset(image.data(), 0, image.size());
+  {
+    webrtc::MutexLock lock(&sinks_lock_);
+    canvas_width = width_;
+    canvas_height = height_;
+    image.resize(static_cast<size_t>(canvas_width) *
+                 static_cast<size_t>(canvas_height) * 4);
+    memset(image.data(), 0, image.size());
 
-      for (const VideoTrackSinkVector::value_type& sinks : sinks_) {
-        Sink* sink = sinks.second.get();
-        webrtc::MutexLock frame_lock(sink->GetMutex());
-        if (sink->GetOutlineChanged()) {
-          continue;
-        }
-        // Sink フレーム寸法（キャンバス寸法 canvas_* と別名を維持する）
-        int width = sink->GetFrameWidth();
-        int height = sink->GetFrameHeight();
-        if (width == 0 || height == 0) {
-          continue;
-        }
-        // ソース stride: width * 4（Sink フレーム幅）
-        // 宛先 stride / Y offset: canvas_width（キャンバス幅）
-        libyuv::ARGBCopy(sink->GetImage(), width * 4,
-                         image.data() + sink->GetOffsetX() * 4 +
-                             sink->GetOffsetY() * canvas_width * 4,
-                         canvas_width * 4, width, height);
-
-        SinkInfo info;
-        info.offset_x = sink->GetOffsetX();
-        info.offset_y = sink->GetOffsetY();
-        info.input_width = sink->GetInputWidth();
-        info.input_height = sink->GetInputHeight();
-        info.frame_width = sink->GetFrameWidth();
-        info.frame_height = sink->GetFrameHeight();
-        info.width = sink->GetWidth();
-        info.height = sink->GetHeight();
-        sink_infos.push_back(info);
+    for (const VideoTrackSinkVector::value_type& sinks : sinks_) {
+      Sink* sink = sinks.second.get();
+      webrtc::MutexLock frame_lock(sink->GetMutex());
+      if (sink->GetOutlineChanged()) {
+        continue;
       }
-    }
 
-    // width_ / height_ を再読しない
-    Render(image.data(), canvas_width, canvas_height, sink_infos);
+      int width = sink->GetFrameWidth();
+      int height = sink->GetFrameHeight();
+      if (width == 0 || height == 0) {
+        continue;
+      }
 
-    // フレームレート制御ロジックは現行どおり（frame_start をループ先頭に移動し、resize / memset コストも elapsed に含まれる）
-    auto frame_end = std::chrono::steady_clock::now();
-    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-                       frame_end - frame_start)
-                       .count();
-    int frame_interval = 1000 / fps_;
-    if (elapsed < frame_interval) {
-      std::this_thread::sleep_for(
-          std::chrono::milliseconds(frame_interval - elapsed));
+      libyuv::ARGBCopy(sink->GetImage(), width * 4,
+                       image.data() + sink->GetOffsetX() * 4 +
+                           sink->GetOffsetY() * canvas_width * 4,
+                       canvas_width * 4, width, height);
+
+      // SinkInfo の構築は現行どおり
     }
   }
 
-  RenderThreadFinished();
+  Render(image.data(), canvas_width, canvas_height, sink_infos);
 }
 ```
 
 ### 注意点
 
-- `resize()` が内部バッファを再確保した場合、それ以前の `data()` は無効になる。必ず `resize()` の後で `data()` を取得する。現行は `unique_ptr` でポインタが全イテレーションを通じて固定だが、修正後は `vector::resize()` の再確保でイテレーション間で `data()` が変化しうる。`Render()` は返るまでにバッファを使い切る前提（現行サブクラスは同期利用）であり、`Render()` 内でポインタを保存してはならない
-- `canvas_width` / `canvas_height` が 0 の場合も安全側に倒れる（`resize(0)` は no-op、sinks は outline 変更またはフレーム寸法 0 で skip され、`Render` は空バッファで呼ばれるが現行サブクラスは安全に処理する。SDL が 0×0 の RESIZED を送ることは現実的にはない）
-- `Sink::image_` は `OnFrame()` 内で outline / 入力解像度変更時に再確保されており、本バグの原因ではない。修正対象外
-- 縮小時は `vector` の capacity が維持され、ピーク解像度分のメモリが残る。デスクトップ向けサンプルを主用途とする本 SDK では許容し、`shrink_to_fit()` は呼ばない
-- ロック順序は現行どおり `sinks_lock_` → `frame_params_lock_` であり、`SetSize` / `OnFrame` とのデッドロックは増えない
+- `resize()` より前に取得した `data()` は再確保によって無効になりうるため、必ず `resize()` の後で `image.data()` を使う
+- Sink ごとの `image_` は `Sink::OnFrame()` 内で outline または入力解像度が変わったときに再確保されるため、本修正の対象外とする
+- ロック順序は現行どおり `sinks_lock_` から Sink の mutex の順とし、逆順の取得を追加しない
