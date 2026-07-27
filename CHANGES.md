@@ -138,7 +138,7 @@
   - 参考: Boost.Asio 1.91 で BOOST_ASIO_ENABLE_VERSION_NAMESPACE による
     inline namespace のバイナリバージョニングが
     追加されたが、前方宣言を壊す可能性があるためデフォルト無効とされている
-    該当記載のある boost のドキュメント : 
+    該当記載のある boost のドキュメント :
     ```
     Added optional binary versioning using an inline namespace. ... The inline
     namespace is disabled by default to avoid breaking existing code that forward
@@ -146,6 +146,8 @@
     ```
     - リンク : https://www.boost.org/doc/libs/1_91_0/doc/html/boost_asio/history.html
   - @torikizi
+- [FIX] BaseRenderer の描画バッファがウィンドウリサイズ時に境界を超過する問題を修正する
+  - @voluntas
 - [FIX] sumomo と sdl_sample で AddTrack の戻り値チェックを追加する
   - @melpon
 - [FIX] VPL デコーダ `InitVpl` で `CreateDecoder` の nullptr 戻り値未チェックを修正する
@@ -562,9 +564,9 @@
 - [UPDATE] Android SDK Command-line tools のバージョンを 13114758 にあげる
   - @melpon
 - [UPDATE] `NVIDIA Video Codec SDK` を [13.0](https://docs.nvidia.com/video-technologies/video-codec-sdk/13.0/index.html) にアップデートする
-  - NVIDIA Video Codec SDK で新たに追加された `NvEncOutputFrame` 構造体に対応する  
-    - `v_packet_` を `std::vector<std::vector<uint8_t>>` から `std::vector<NvEncOutputFrame>` に変更する  
-    - `for (std::vector<uint8_t>& packet : v_packet_)` を `for (NvEncOutputFrame& output : v_packet_)` に変更する  
+  - NVIDIA Video Codec SDK で新たに追加された `NvEncOutputFrame` 構造体に対応する
+    - `v_packet_` を `std::vector<std::vector<uint8_t>>` から `std::vector<NvEncOutputFrame>` に変更する
+    - `for (std::vector<uint8_t>& packet : v_packet_)` を `for (NvEncOutputFrame& output : v_packet_)` に変更する
     - ループ内に `std::vector<uint8_t>& packet = output.frame;` を追加し、既存処理との互換性を維持する
     - コーデックごとに実行していたキーフレーム判定を NvEncOutputFrame のフレーム情報を利用して行うように変更する
   - @torikizi
@@ -697,7 +699,7 @@
   - @melpon
 - [CHANGE] `SoraVideoEncoderFactoryConfig` の `force_i420_conversion_for_simulcast_adapter` を `force_i420_conversion` に変更
   - @melpon
-- [CHANGE] GitHub Actions で macOS 向けビルドで Xcode のバージョンを指定したのを削除する  
+- [CHANGE] GitHub Actions で macOS 向けビルドで Xcode のバージョンを指定したのを削除する
   - libwebrtc の制約で Xcode のバージョンを指定していたが、 m132.6834.5.5 の時点では制約がなくなり、指定しなくてもビルドできるようになったため
   - @torikizi
 - [CHANGE] Ubuntu 20.04 x86_64 の対応を削除
@@ -718,7 +720,7 @@
 - [ADD] OpenH264 デコーダに対応する
   - @melpon
 - [ADD] タグが打たれた場合に sumomo バイナリを Release に追加する
-  - Release 用の sumomo は C++ SDK のリリースバイナリを使用してビルドする  
+  - Release 用の sumomo は C++ SDK のリリースバイナリを使用してビルドする
   - リアルタイムメッセージング以外の機能がほぼ全て含まれている sumomo をリリース時に含めるようにする
   - @torikizi
 - [ADD] NVIDIA Video Codec SDK を AV1 エンコーダー/デコーダーに対応する
