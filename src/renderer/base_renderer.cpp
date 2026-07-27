@@ -71,15 +71,24 @@ void BaseRenderer::SetSize(int width, int height) {
 void BaseRenderer::RenderThread() {
   RenderThreadStarted();
 
-  std::unique_ptr<uint8_t[]> image(new uint8_t[width_ * height_ * 4]);
+  std::vector<uint8_t> image;
 
   while (running_) {
-    memset(image.get(), 0, width_ * height_ * 4);
-
-    auto frame_start = std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point frame_start;
     std::vector<SinkInfo> sink_infos;
+    int canvas_width = 0;
+    int canvas_height = 0;
     {
       webrtc::MutexLock lock(&sinks_lock_);
+      // SetSize() と競合してもキャンバス寸法と描画バッファのサイズが
+      // 食い違わないよう、Sink の合成まで同じロック下で処理する。
+      canvas_width = width_;
+      canvas_height = height_;
+      image.resize(static_cast<size_t>(canvas_width) *
+                   static_cast<size_t>(canvas_height) * 4);
+      memset(image.data(), 0, image.size());
+      frame_start = std::chrono::steady_clock::now();
+
       for (const VideoTrackSinkVector::value_type& sinks : sinks_) {
         Sink* sink = sinks.second.get();
 
@@ -97,9 +106,9 @@ void BaseRenderer::RenderThread() {
         }
 
         libyuv::ARGBCopy(sink->GetImage(), width * 4,
-                         image.get() + sink->GetOffsetX() * 4 +
-                             sink->GetOffsetY() * width_ * 4,
-                         width_ * 4, width, height);
+                         image.data() + sink->GetOffsetX() * 4 +
+                             sink->GetOffsetY() * canvas_width * 4,
+                         canvas_width * 4, width, height);
 
         SinkInfo info;
         info.offset_x = sink->GetOffsetX();
@@ -114,7 +123,7 @@ void BaseRenderer::RenderThread() {
       }
     }
 
-    Render(image.get(), width_, height_, sink_infos);
+    Render(image.data(), canvas_width, canvas_height, sink_infos);
 
     // フレームレート制御
     auto frame_end = std::chrono::steady_clock::now();
