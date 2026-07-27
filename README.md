@@ -24,12 +24,11 @@ Please read <https://github.com/shiguredo/oss/blob/master/README.en.md> before u
     - VP9 / AV1 / H.264 / H.265
   - [NVIDIA Video Codec](https://developer.nvidia.com/video-codec-sdk)
     - VP8 / VP9 / AV1 / H.264 / H.265
-      - VP8 / VP9 はチップセットが対応していないため、デコードのみの対応です
+      - VP8 / VP9 はデコードのみの対応です
   - [NVIDIA JetPack](https://developer.nvidia.com/embedded/jetpack) (JetPack 6)
     - VP9 / AV1 / H.264 / H.265
   - [AMD AMF](https://github.com/GPUOpen-LibrariesAndSDKs/AMF)
     - VP8 / VP9 / AV1 / H.264 / H.265
-      - AV1 は Ubuntu x86_64 ではドライバーがデコードには対応していません
       - VP8 / VP9 はチップセットが対応していないため、デコードのみの対応です
   - [Apple Video Toolbox](https://developer.apple.com/documentation/videotoolbox)
     - H.264 / H.265
@@ -40,7 +39,7 @@ Please read <https://github.com/shiguredo/oss/blob/master/README.en.md> before u
 - [Cisco OpenH264](https://www.openh264.org/) への対応
   - Ubuntu x86_64 / Ubuntu arm64 / macOS arm64 / Windows x86_64
 
-> [!CAUTION]  
+> [!CAUTION]
 > AMD AMF はドライバーが不安定なため、現在非推奨です。
 
 ## ライブラリのバイナリ提供について
