@@ -2,7 +2,7 @@
 
 - Priority: High
 - Created: 2026-07-14
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-07-27
 - Model: DeepSeek V4 Pro
 - Branch: feature/fix-base-renderer-buffer-overflow-on-resize
 - Polished: 2026-07-27
@@ -136,54 +136,19 @@ sumomo をローカルの SDK 実装と紐付けてデスクトップ向けに�
 
 ## 解決方法
 
-`BaseRenderer::RenderThread()` を次の順序へ変更する。
-`<vector>` と `<cstring>` は既に利用可能なため、追加の依存は不要である。
-以下は描画用バッファに関係する変更箇所だけを示し、フレームレート制御は省略する。
+`BaseRenderer::RenderThread()` の描画用バッファを `std::vector<uint8_t>` に変更し、各描画イテレーションで現在のキャンバス寸法に合わせて `resize()` するようにした。
 
-```cpp
-std::vector<uint8_t> image;
+キャンバス寸法のスナップショット、描画用バッファのサイズ変更とクリア、各 Sink の合成を同じ `sinks_lock_` の保持中に実行する。
+これにより、`SetSize()` と描画処理が並行しても、バッファサイズ、Y offset、stride、Sink の outline が同じキャンバス寸法に基づくようにした。
+`Render()` は従来どおりロック外で呼び出し、スナップショットした寸法と `resize()` 後のバッファを渡す。
 
-while (running_) {
-  std::vector<SinkInfo> sink_infos;
-  int canvas_width = 0;
-  int canvas_height = 0;
+SDL、ANSI、Sixel の各レンダラーが `Render()` の呼び出し中に画像を同期的に消費し、返却後にポインタを保持しないことも確認した。
 
-  {
-    webrtc::MutexLock lock(&sinks_lock_);
-    canvas_width = width_;
-    canvas_height = height_;
-    image.resize(static_cast<size_t>(canvas_width) *
-                 static_cast<size_t>(canvas_height) * 4);
-    memset(image.data(), 0, image.size());
+次の検証を実施した。
 
-    for (const VideoTrackSinkVector::value_type& sinks : sinks_) {
-      Sink* sink = sinks.second.get();
-      webrtc::MutexLock frame_lock(sink->GetMutex());
-      if (sink->GetOutlineChanged()) {
-        continue;
-      }
-
-      int width = sink->GetFrameWidth();
-      int height = sink->GetFrameHeight();
-      if (width == 0 || height == 0) {
-        continue;
-      }
-
-      libyuv::ARGBCopy(sink->GetImage(), width * 4,
-                       image.data() + sink->GetOffsetX() * 4 +
-                           sink->GetOffsetY() * canvas_width * 4,
-                       canvas_width * 4, width, height);
-
-      // SinkInfo の構築は現行どおり
-    }
-  }
-
-  Render(image.data(), canvas_width, canvas_height, sink_infos);
-}
-```
-
-### 注意点
-
-- `resize()` より前に取得した `data()` は再確保によって無効になりうるため、必ず `resize()` の後で `image.data()` を使う
-- Sink ごとの `image_` は `Sink::OnFrame()` 内で outline または入力解像度が変わったときに再確保されるため、本修正の対象外とする
-- ロック順序は現行どおり `sinks_lock_` から Sink の mutex の順とし、逆順の取得を追加しない
+- SDK のテストを含む macOS ARM64 ビルド
+- ローカル SDK を使用した sumomo の macOS ARM64 ビルド
+- `test_sumomo_sendonly_recvonly[VP8]` の E2E
+- AddressSanitizer を有効にした SDK と sumomo のクリーンビルド
+- F キー処理と同じ SDL フルスクリーン切替を 3 往復、ウィンドウ拡大、`--fullscreen` 起動
+- 各リサイズ後にクラッシュと `heap-buffer-overflow` が発生せず、fake 映像の描画が継続すること
