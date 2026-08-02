@@ -63,6 +63,7 @@ class BaseRenderer {
 
     webrtc::Mutex* GetMutex();
     bool GetOutlineChanged();
+    bool ConsumeInputSizeDirty();
     int GetOffsetX();
     int GetOffsetY();
     int GetInputWidth();
@@ -82,6 +83,7 @@ class BaseRenderer {
     int outline_width_;
     int outline_height_;
     bool outline_changed_;
+    bool input_size_dirty_;
     float outline_aspect_;
     int input_width_;
     int input_height_;
