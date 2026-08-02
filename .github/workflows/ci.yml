@@ -273,7 +273,7 @@ jobs:
       # JDK を指定しないとデフォルトの JDK 11 で動作するため指定する
       - name: Setup JDK 17
         if: matrix.platform.os == 'android'
-        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95  # v5.6.0
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961  # v5.7.0
         with:
           java-version: "17"
           distribution: "temurin"
@@ -443,7 +443,7 @@ jobs:
       # Homebrew のセットアップ (self-hosted macOS ランナー用)
       - name: Setup Homebrew
         if: ${{ runner.environment == 'self-hosted' && startsWith(matrix.platform.platform-name, 'macos') }}
-        uses: Homebrew/actions/setup-homebrew@f78b97900ce6c3c9c4e99de00a999e5541eeaabb  # main
+        uses: Homebrew/actions/setup-homebrew@5037c6f1012cc5ea0b9f03fedbaf9955ed9e51e0  # main
 
       # GitHub CLI のインストール (self-hosted macOS ランナー用)
       - name: Install GitHub CLI
