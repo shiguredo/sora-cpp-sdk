@@ -2,7 +2,7 @@
 
 - Priority: Medium
 - Created: 2026-07-29
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-08-02
 - Model: Opus 4.7
 - Branch: feature/fix-set-outlines-use-frame-aspect
 - Polished: 2026-07-30
@@ -251,4 +251,21 @@ compose ループと dirty 検出を分離するのは、dirty があった場�
 
 ## 解決方法
 
-(実装完了時に追記する)
+`src/renderer/base_renderer.cpp` の `BaseRenderer::SetOutlines()` を次の 3 方針で修正した。
+
+- **方針 A**: `frame_aspect` を、`sinks_` を登録順で先頭から走査して入力サイズが確定している最初の Sink (代表 Sink) の実測アスペクト (`(float)input_width_ / (float)input_height_`) から決定するようにした。代表 Sink が見つかった時点でループを抜け、どの Sink も入力サイズを持たない場合と `sinks_` が空の場合は、既存の `STD_ASPECT` / `WIDE_ASPECT` の 2 択にフォールバックする。走査時は各 Sink の `frame_params_lock_` を 1 件ずつ取得して解放する
+- **方針 B**: cols/rows 決定後、等分割した枠 (`raw_outline_width_f` / `raw_outline_height_f`) を `frame_aspect` に合わせて幅基準または高さ基準で共通縮小し、`grid_offset_x_f` / `grid_offset_y_f` でウィンドウ中央寄せするようにした。`grid_offset` は `std::max(0.0f, ...)` で必ず非負にクランプし、各 cell の座標は累積式を `std::floor` した値と隣接 cell との差で算出して隣接 cell 間の隙間を 0 にした。右端・下端は `std::min((float)width_, ...)` / `std::min((float)height_, ...)` でクランプしてから `std::floor` する
+- **方針 C**: `Sink` に `input_size_dirty_` フィールドを追加してコンストラクタで `false` に初期化し、`Sink::OnFrame()` の `frame_params_lock_` 取得直後に `frame.width() != input_width_ || frame.height() != input_height_` なら `input_size_dirty_ = true` をセットする 1 文を追加した。`BaseRenderer::RenderThread()` の各イテレーション先頭で全 Sink の `frame_params_lock_` を 1 件ずつ取得して `ConsumeInputSizeDirty()` (確認 + リセットを 1 回の呼び出しに統合) で dirty を検出し、1 件でも dirty があれば `BaseRenderer::sinks_lock_` 保持中に `SetOutlines()` を呼び直してから描画準備と合成を行うようにした。`Sink::OnFrame()` から `SetOutlines()` を直接呼ばないのは、`OnFrame()` が `frame_params_lock_` 保持中に呼ばれるため、非再帰ミューテックスの自己デッドロックと `sinks_lock_` 未保持でのレイアウト変更という競合を起こすためである。ロック順序は既存の `sinks_lock_ → frame_params_lock_` を維持する
+
+変更ファイル:
+
+- `include/sora/renderer/base_renderer.h`: `Sink` に `input_size_dirty_` フィールドと `ConsumeInputSizeDirty()` を追加
+- `src/renderer/base_renderer.cpp`: `SetOutlines()` の方針 A + B、`Sink::OnFrame()` の dirty セット文、`Sink::ConsumeInputSizeDirty()`、`RenderThread()` の dirty 検出フェーズ
+
+テスト:
+
+- ユニットテストの追加は行わなかった (本 issue の完了条件は E2E と手動確認のみ。`SetOutlines()` の枠割り計算に対するユニットテスト追加は別途検討する)
+- `python3 run.py build --test --disable-cuda macos_arm64` でビルドし、`video_factory_data_race` テストが通ることを確認した
+- `python3 run.py format` で clang-format に差分が無いことを確認した
+- E2E テスト (`test_sumomo_basic.py::test_sumomo_sendonly_recvonly[VP8]`) は TEST_SIGNALING_URL が無いローカル環境では実行できないため CI で検証する
+- 再現条件の 2 プロセス構成による目視確認 (フルスクリーン 2560×1440 + FHD + sinks=2、縦長 720×1440 + FHD + sinks=2) は SDL ウィンドウとシグナリングサーバーが必要なため、担当者が別途確認する
