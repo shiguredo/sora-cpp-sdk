@@ -82,6 +82,22 @@ void BaseRenderer::RenderThread() {
       webrtc::MutexLock lock(&sinks_lock_);
       // SetSize() と競合してもキャンバス寸法と描画バッファのサイズが
       // 食い違わないよう、Sink の合成まで同じロック下で処理する。
+      // 入力サイズの変化は Sink::OnFrame() から直接 SetOutlines() を呼ばず、
+      // ここで検出してから再計算する。OnFrame() は Sink の frame_params_lock_
+      // を保持中に呼ばれるため、SetOutlines() を直接呼ぶと非再帰ミューテックスの
+      // 自己デッドロックと、sinks_lock_ 未保持でのレイアウト変更という競合を
+      // 起こすためである。
+      bool outlines_dirty = false;
+      for (const VideoTrackSinkVector::value_type& sinks : sinks_) {
+        Sink* sink = sinks.second.get();
+        webrtc::MutexLock frame_lock(sink->GetMutex());
+        if (sink->ConsumeInputSizeDirty()) {
+          outlines_dirty = true;
+        }
+      }
+      if (outlines_dirty) {
+        SetOutlines();
+      }
       canvas_width = width_;
       canvas_height = height_;
       image.resize(static_cast<size_t>(canvas_width) *
@@ -149,6 +165,7 @@ BaseRenderer::Sink::Sink(BaseRenderer* renderer,
       outline_width_(0),
       outline_height_(0),
       outline_changed_(false),
+      input_size_dirty_(false),
       input_width_(0),
       input_height_(0),
       scaled_(false),
@@ -167,6 +184,8 @@ void BaseRenderer::Sink::OnFrame(const webrtc::VideoFrame& frame) {
   if (frame.width() == 0 || frame.height() == 0)
     return;
   webrtc::MutexLock lock(GetMutex());
+  if (frame.width() != input_width_ || frame.height() != input_height_)
+    input_size_dirty_ = true;
   if (outline_changed_ || frame.width() != input_width_ ||
       frame.height() != input_height_) {
     int width, height;
@@ -239,6 +258,14 @@ bool BaseRenderer::Sink::GetOutlineChanged() {
   return outline_changed_;
 }
 
+bool BaseRenderer::Sink::ConsumeInputSizeDirty() {
+  // 確認とリセットを 1 回の呼び出しにまとめ、リセット忘れで
+  // 毎フレーム SetOutlines() が呼ばれ続けることを防ぐ。
+  bool dirty = input_size_dirty_;
+  input_size_dirty_ = false;
+  return dirty;
+}
+
 int BaseRenderer::Sink::GetOffsetX() {
   return outline_offset_x_ + offset_x_;
 }
@@ -279,6 +306,19 @@ void BaseRenderer::SetOutlines() {
   float window_aspect = (float)width_ / (float)height_;
   bool window_is_wide = window_aspect > ((STD_ASPECT + WIDE_ASPECT) / 2.0);
   float frame_aspect = window_is_wide ? WIDE_ASPECT : STD_ASPECT;
+  // 入力サイズが確定している最初の Sink を代表 Sink とし、
+  // その実測アスペクトを frame_aspect に採用する。
+  // 入力サイズが確定していない間は STD_ASPECT / WIDE_ASPECT の 2 択に
+  // フォールバックする。
+  for (const VideoTrackSinkVector::value_type& sinks : sinks_) {
+    Sink* sink = sinks.second.get();
+    webrtc::MutexLock frame_lock(sink->GetMutex());
+    if (sink->GetInputWidth() != 0 && sink->GetInputHeight() != 0) {
+      frame_aspect =
+          (float)sink->GetInputWidth() / (float)sink->GetInputHeight();
+      break;
+    }
+  }
   int rows = 1;
   int cols = 1;
   if (window_aspect >= frame_aspect) {
@@ -305,13 +345,49 @@ void BaseRenderer::SetOutlines() {
     }
   }
   RTC_LOG(LS_VERBOSE) << __func__ << " rows:" << rows << " cols:" << cols;
-  int outline_width = std::floor(width_ / cols);
-  int outline_height = std::floor(height_ / rows);
+  // cols × rows で等分割した枠を映像アスペクトに合わせて共通縮小し、
+  // ウィンドウ中央寄せする。枠内 letterbox の分がウィンドウ外周に集約される。
+  float raw_outline_width_f = (float)width_ / cols;
+  float raw_outline_height_f = (float)height_ / rows;
+  float raw_outline_aspect = raw_outline_width_f / raw_outline_height_f;
+  float ideal_outline_width_f;
+  float ideal_outline_height_f;
+  if (frame_aspect > raw_outline_aspect) {
+    ideal_outline_width_f = raw_outline_width_f;
+    ideal_outline_height_f = ideal_outline_width_f / frame_aspect;
+  } else {
+    ideal_outline_height_f = raw_outline_height_f;
+    ideal_outline_width_f = ideal_outline_height_f * frame_aspect;
+  }
+  // 負のオフセットが Sink::SetOutlineRect() に渡ると、合成ループが
+  // 描画バッファの手前へ書き出すアンダーランを起こすため、
+  // float の丸めで負になりうるオフセットは必ず非負にクランプする。
+  float grid_offset_x_f =
+      std::max(0.0f, ((float)width_ - ideal_outline_width_f * cols) / 2.0f);
+  float grid_offset_y_f =
+      std::max(0.0f, ((float)height_ - ideal_outline_height_f * rows) / 2.0f);
   int sinks_count = sinks_.size();
   for (int i = 0; i < sinks_count; i++) {
     Sink* sink = sinks_[i].second.get();
-    int offset_x = outline_width * (i % cols);
-    int offset_y = outline_height * std::floor(i / cols);
+    int col = i % cols;
+    int row = i / cols;
+    // 枠の位置とサイズを int に丸めて算出し、隣接 cell 間に隙間を作らない。
+    // 右端・下端は float の丸めでウィンドウを超えうるため、
+    // 描画バッファ境界を超えないようウィンドウ幅・高さでクランプする。
+    float x_begin_f = std::min(
+        (float)width_, grid_offset_x_f + (float)col * ideal_outline_width_f);
+    float y_begin_f = std::min(
+        (float)height_, grid_offset_y_f + (float)row * ideal_outline_height_f);
+    float x_end_f =
+        std::min((float)width_,
+                 grid_offset_x_f + (float)(col + 1) * ideal_outline_width_f);
+    float y_end_f =
+        std::min((float)height_,
+                 grid_offset_y_f + (float)(row + 1) * ideal_outline_height_f);
+    int offset_x = std::floor(x_begin_f);
+    int offset_y = std::floor(y_begin_f);
+    int outline_width = std::floor(x_end_f) - offset_x;
+    int outline_height = std::floor(y_end_f) - offset_y;
     sink->SetOutlineRect(offset_x, offset_y, outline_width, outline_height);
     RTC_LOG(LS_VERBOSE) << __func__ << " offset_x:" << offset_x
                         << " offset_y:" << offset_y

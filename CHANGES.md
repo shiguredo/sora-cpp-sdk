@@ -146,6 +146,8 @@
     ```
     - リンク : https://www.boost.org/doc/libs/1_91_0/doc/html/boost_asio/history.html
   - @torikizi
+- [FIX] BaseRenderer の枠割りが映像アスペクトを無視して映像間に黒帯を広げる問題を修正する
+  - @voluntas
 - [FIX] BaseRenderer の描画バッファがウィンドウリサイズ時に境界を超過する問題を修正する
   - @voluntas
 - [FIX] sumomo と sdl_sample で AddTrack の戻り値チェックを追加する
