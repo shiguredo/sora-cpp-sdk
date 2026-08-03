@@ -575,7 +575,8 @@ def install_deps(
             # Android 側からのコールバックする関数は消してはいけないので、
             # libwebrtc.a の中から消してはいけない関数の一覧を作っておく
             #
-            # readelf を使って libwebrtc.a の関数一覧を列挙して、その中から Java_org_webrtc_ を含む関数を取り出し、
+            # readelf を使って libwebrtc.a の関数一覧を列挙して、その中から
+            # 従来形式の Java_org_webrtc_ と JNI Zero 形式の Java_J_N_ をそれぞれ取り出し、
             # -Wl,--undefined=<関数名> に加工する。
             # （-Wl,--undefined はアプリケーションから参照されていなくても関数を削除しないためのフラグ）
             readelf = os.path.join(
@@ -592,7 +593,7 @@ def install_deps(
             m = cmdcap([readelf, "-Ws", libwebrtc])
             ldflags = []
             for line in m.splitlines():
-                if line.find("Java_org_webrtc_") == -1:
+                if line.find("Java_org_webrtc_") == -1 and line.find("Java_J_N_") == -1:
                     continue
                 # この時点で line は以下のような文字列になっている
                 #    174: 0000000000000000    44 FUNC    GLOBAL DEFAULT    15 Java_org_webrtc_DataChannel_nativeClose
