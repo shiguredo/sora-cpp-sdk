@@ -673,6 +673,7 @@ int32_t VplVideoEncoderImpl::Encode(
       // AV1 の SVC では、まれにエンコード対象のレイヤーフレームが存在しない場合がある。
       // 次のフレームを待つことで正常に継続可能なケースであるため、エラーではなく正常終了で返してスキップする。
       if (layer_frames.empty()) {
+        callback_->OnFrameDropped(frame.rtp_timestamp(), 0, true);
         return WEBRTC_VIDEO_CODEC_OK;
       }
       codec_specific.end_of_picture = true;
@@ -688,6 +689,7 @@ int32_t VplVideoEncoderImpl::Encode(
       }
     }
 
+    encoded_image_.set_end_of_temporal_unit(true);
     webrtc::EncodedImageCallback::Result result =
         callback_->OnEncodedImage(encoded_image_, &codec_specific);
     if (result.error != webrtc::EncodedImageCallback::Result::OK) {

@@ -542,6 +542,12 @@ AMF_RESULT AMFVideoEncoderImpl::ProcessBuffer(amf::AMFBufferPtr buffer,
     // AV1 の SVC では、まれにエンコード対象のレイヤーフレームが存在しない場合がある。
     // 次のフレームを待つことで正常に継続可能なケースであるため、エラーではなく正常終了の AMF_OK を返してスキップする。
     if (layer_frames.empty()) {
+      webrtc::EncodedImageCallback* callback;
+      {
+        std::lock_guard<std::mutex> lock(mutex_);
+        callback = callback_;
+      }
+      callback->OnFrameDropped(rtp_timestamp, 0, true);
       return AMF_OK;
     }
     codec_specific.end_of_picture = true;
@@ -563,6 +569,7 @@ AMF_RESULT AMFVideoEncoderImpl::ProcessBuffer(amf::AMFBufferPtr buffer,
     callback = callback_;
   }
 
+  encoded_image_.set_end_of_temporal_unit(true);
   webrtc::EncodedImageCallback::Result result =
       callback->OnEncodedImage(encoded_image_, &codec_specific);
   if (result.error != webrtc::EncodedImageCallback::Result::OK) {
