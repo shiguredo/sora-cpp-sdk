@@ -12,6 +12,7 @@
 #include <api/media_stream_interface.h>
 #include <api/scoped_refptr.h>
 #include <api/video/video_frame.h>
+#include <api/video/video_rotation.h>
 #include <api/video/video_sink_interface.h>
 #include <rtc_base/synchronization/mutex.h>
 
@@ -73,6 +74,7 @@ class BaseRenderer {
     int GetWidth();
     int GetHeight();
     uint8_t* GetImage();
+    bool IsRotated90Or270();
 
    private:
     BaseRenderer* renderer_;
@@ -93,6 +95,7 @@ class BaseRenderer {
     int offset_y_;
     int width_;
     int height_;
+    webrtc::VideoRotation rotation_;
   };
 
  private:
