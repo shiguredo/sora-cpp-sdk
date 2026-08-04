@@ -179,11 +179,13 @@ BaseRenderer::Sink::~Sink() {
 }
 
 void BaseRenderer::Sink::OnFrame(const webrtc::VideoFrame& frame) {
+  // 枠の未確定チェックを frame_params_lock_ 保護下で行い、
+  // SetOutlineRect() の書き込みと同期させる。
+  webrtc::MutexLock lock(GetMutex());
   if (outline_width_ == 0 || outline_height_ == 0)
     return;
   if (frame.width() == 0 || frame.height() == 0)
     return;
-  webrtc::MutexLock lock(GetMutex());
   if (frame.width() != input_width_ || frame.height() != input_height_)
     input_size_dirty_ = true;
   if (outline_changed_ || frame.width() != input_width_ ||
@@ -236,12 +238,15 @@ void BaseRenderer::Sink::OnFrame(const webrtc::VideoFrame& frame) {
 }
 
 void BaseRenderer::Sink::SetOutlineRect(int x, int y, int width, int height) {
+  // outline_offset_x_ / outline_offset_y_ の書き込みと early return 判定を
+  // frame_params_lock_ 保護下に置き、RenderThread() の合成ループと
+  // OnFrame() の読みと同期させる。
+  webrtc::MutexLock lock(GetMutex());
   outline_offset_x_ = x;
   outline_offset_y_ = y;
   if (outline_width_ == width && outline_height_ == height) {
     return;
   }
-  webrtc::MutexLock lock(GetMutex());
   offset_y_ = 0;
   offset_x_ = 0;
   outline_width_ = width;

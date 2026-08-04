@@ -1,7 +1,7 @@
 # BaseRenderer の枠情報のデータレースを修正する
 
 - Created: 2026-08-02
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-08-04
 - Branch: feature/fix-base-renderer-outline-data-races
 - Polished: 2026-08-04
 - Reporter: @voluntas
@@ -36,3 +36,15 @@
 - ローカルビルド (`python3 run.py build --test --disable-cuda macos_arm64`) と既存テストが通ること
 - `python3 run.py format` で clang-format に差分が出ないこと
 - 変更履歴 (CHANGES.md) の develop にあるコア SDK の `[FIX]` 群の先頭に、本修正のエントリを追記すること
+
+## 解決方法
+
+`src/renderer/base_renderer.cpp` の `Sink::OnFrame()` と `Sink::SetOutlineRect()` のロック取得位置を冒頭へ移動した。
+
+- `Sink::OnFrame()`: 枠未確定チェック (`outline_width_ == 0 || outline_height_ == 0`) を `frame_params_lock_` 取得後に移動し、ロックなし読みを解消した。2 段目の `frame.width() == 0` チェックはフレーム引数のローカル値だけを見るため移動していない
+- `Sink::SetOutlineRect()`: `outline_offset_x_` / `outline_offset_y_` の書き込みと early return 判定を `frame_params_lock_` 取得後に移動し、`sinks_lock_` への暗黙の直列化依存を明示的なロック保護に変えた
+- 既存のロック順序 (`sinks_lock_ → frame_params_lock_`) は維持したまま、ロック取得位置の移動のみで挙動を変えていない
+
+テストの追加は行っていない。完了条件がコードレビューで確認できることを要求しており、メモリレベルのデータレースはサニタイザオプションの無いこのビルド基盤では決定論的なテストにできないためである。ローカルビルド (`python3 run.py build --test --disable-cuda macos_arm64`) とローカルで実行可能な既存テスト (`video_factory_data_race` / `audio_device`) が通ることを確認した。
+
+`CHANGES.md` の develop にあるコア SDK の `[FIX]` 群の先頭にエントリを追記した。
