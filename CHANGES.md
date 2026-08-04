@@ -146,6 +146,9 @@
     ```
     - リンク : https://www.boost.org/doc/libs/1_91_0/doc/html/boost_asio/history.html
   - @torikizi
+- [FIX] BaseRenderer の枠情報のデータレースを修正する
+  - 枠の未確定チェックと枠位置・サイズの書き込みを `frame_params_lock_` 保護下で行う
+  - @voluntas
 - [FIX] BaseRenderer の枠割りが映像アスペクトを無視して映像間に黒帯を広げる問題を修正する
   - @voluntas
 - [FIX] BaseRenderer の描画バッファがウィンドウリサイズ時に境界を超過する問題を修正する
