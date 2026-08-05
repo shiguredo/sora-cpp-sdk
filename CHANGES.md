@@ -146,6 +146,12 @@
     ```
     - リンク : https://www.boost.org/doc/libs/1_91_0/doc/html/boost_asio/history.html
   - @torikizi
+- [FIX] BaseRenderer の枠割りが回転映像のアスペクトを考慮しない問題を修正する
+  - 回転 90° / 270° の映像を回転後寸法基準で枠割りし、scaled / 非 scaled の両経路で回転を適用する
+  - @voluntas
+- [FIX] BaseRenderer の枠情報のデータレースを修正する
+  - 枠の未確定チェックと枠位置・サイズの書き込みを `frame_params_lock_` 保護下で行う
+  - @voluntas
 - [FIX] BaseRenderer の枠割りが映像アスペクトを無視して映像間に黒帯を広げる問題を修正する
   - @voluntas
 - [FIX] BaseRenderer の描画バッファがウィンドウリサイズ時に境界を超過する問題を修正する

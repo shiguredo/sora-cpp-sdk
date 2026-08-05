@@ -168,6 +168,7 @@ BaseRenderer::Sink::Sink(BaseRenderer* renderer,
       input_size_dirty_(false),
       input_width_(0),
       input_height_(0),
+      rotation_(webrtc::kVideoRotation_0),
       scaled_(false),
       width_(0),
       height_(0) {
@@ -179,17 +180,35 @@ BaseRenderer::Sink::~Sink() {
 }
 
 void BaseRenderer::Sink::OnFrame(const webrtc::VideoFrame& frame) {
+  // 枠の未確定チェックを frame_params_lock_ 保護下で行い、
+  // SetOutlineRect() の書き込みと同期させる。
+  webrtc::MutexLock lock(GetMutex());
   if (outline_width_ == 0 || outline_height_ == 0)
     return;
   if (frame.width() == 0 || frame.height() == 0)
     return;
-  webrtc::MutexLock lock(GetMutex());
-  if (frame.width() != input_width_ || frame.height() != input_height_)
+  // 90° / 270° 回転では表示寸法の幅と高さが入れ替わる。
+  bool rotated = frame.rotation() == webrtc::kVideoRotation_90 ||
+                 frame.rotation() == webrtc::kVideoRotation_270;
+  bool was_rotated = IsRotated90Or270();
+  // 入力サイズまたは回転状態の変化は、枠割りの再計算 (SetOutlines) の
+  // トリガーとして記録する。寸法・アスペクトが変わらない 180° 回転と
+  // 90° ↔ 270° の遷移はトリガーに含めない。
+  bool size_or_rotation_changed = frame.width() != input_width_ ||
+                                  frame.height() != input_height_ ||
+                                  rotated != was_rotated;
+  if (size_or_rotation_changed)
     input_size_dirty_ = true;
-  if (outline_changed_ || frame.width() != input_width_ ||
-      frame.height() != input_height_) {
+  if (outline_changed_ || size_or_rotation_changed) {
     int width, height;
-    float frame_aspect = (float)frame.width() / (float)frame.height();
+    // 90° / 270° 回転では表示アスペクトが入れ替わるため、
+    // 回転後寸法からアスペクトを算出する。
+    float frame_aspect;
+    if (rotated) {
+      frame_aspect = (float)frame.height() / (float)frame.width();
+    } else {
+      frame_aspect = (float)frame.width() / (float)frame.height();
+    }
     if (frame_aspect > outline_aspect_) {
       width = outline_width_;
       height = width / frame_aspect;
@@ -207,7 +226,11 @@ void BaseRenderer::Sink::OnFrame(const webrtc::VideoFrame& frame) {
     }
     input_width_ = frame.width();
     input_height_ = frame.height();
-    scaled_ = width_ < input_width_;
+    // scaled_ の判定は回転後の表示寸法と枠の寸法を比較する。
+    // 90° / 270° 回転では表示寸法の幅と高さが入れ替わるため、
+    // 回転後に枠より大きくなる映像を縮小対象に含める。
+    int display_width = rotated ? input_height_ : input_width_;
+    scaled_ = width_ < display_width;
     if (scaled_) {
       image_.reset(new uint8_t[width_ * height_ * 4]);
     } else {
@@ -216,32 +239,55 @@ void BaseRenderer::Sink::OnFrame(const webrtc::VideoFrame& frame) {
     RTC_LOG(LS_VERBOSE) << __func__ << ": scaled_=" << scaled_;
     outline_changed_ = false;
   }
+  // 回転は有効フレームごとに記録する。90° ↔ 270° の遷移は表示寸法・
+  // アスペクトが変わらないため枠割りの再計算は不要だが、
+  // 記録は最新の回転値に保つ。
+  rotation_ = frame.rotation();
   webrtc::scoped_refptr<webrtc::I420BufferInterface> buffer_if;
   if (scaled_) {
+    // 回転 90° / 270° では回転後に幅と高さが入れ替わるため、
+    // 回転前の寸法 (回転後表示寸法の幅と高さを入れ替えた寸法) に
+    // 縮小してから回転し、表示寸法に一致させる。
+    int scale_width = width_;
+    int scale_height = height_;
+    if (rotated) {
+      scale_width = height_;
+      scale_height = width_;
+    }
     webrtc::scoped_refptr<webrtc::I420Buffer> buffer =
-        webrtc::I420Buffer::Create(width_, height_);
+        webrtc::I420Buffer::Create(scale_width, scale_height);
     buffer->ScaleFrom(*frame.video_frame_buffer()->ToI420());
     if (frame.rotation() != webrtc::kVideoRotation_0) {
       buffer = webrtc::I420Buffer::Rotate(*buffer, frame.rotation());
     }
     buffer_if = buffer;
   } else {
-    buffer_if = frame.video_frame_buffer()->ToI420();
+    // 非 scaled 経路でも回転を適用する。
+    if (frame.rotation() != webrtc::kVideoRotation_0) {
+      buffer_if = webrtc::I420Buffer::Rotate(
+          *frame.video_frame_buffer()->ToI420(), frame.rotation());
+    } else {
+      buffer_if = frame.video_frame_buffer()->ToI420();
+    }
   }
+  // ストライドと出力寸法は回転後の表示寸法に合わせる。
   libyuv::ConvertFromI420(
       buffer_if->DataY(), buffer_if->StrideY(), buffer_if->DataU(),
       buffer_if->StrideU(), buffer_if->DataV(), buffer_if->StrideV(),
-      image_.get(), (scaled_ ? width_ : input_width_) * 4, buffer_if->width(),
+      image_.get(), buffer_if->width() * 4, buffer_if->width(),
       buffer_if->height(), libyuv::FOURCC_ARGB);
 }
 
 void BaseRenderer::Sink::SetOutlineRect(int x, int y, int width, int height) {
+  // outline_offset_x_ / outline_offset_y_ の書き込みと early return 判定を
+  // frame_params_lock_ 保護下に置き、RenderThread() の合成ループと
+  // OnFrame() の読みと同期させる。
+  webrtc::MutexLock lock(GetMutex());
   outline_offset_x_ = x;
   outline_offset_y_ = y;
   if (outline_width_ == width && outline_height_ == height) {
     return;
   }
-  webrtc::MutexLock lock(GetMutex());
   offset_y_ = 0;
   offset_x_ = 0;
   outline_width_ = width;
@@ -283,11 +329,17 @@ int BaseRenderer::Sink::GetInputHeight() {
 }
 
 int BaseRenderer::Sink::GetFrameWidth() {
-  return scaled_ ? width_ : input_width_;
+  if (scaled_)
+    return width_;
+  // 90° / 270° 回転では表示寸法の幅と高さが入れ替わる。
+  return IsRotated90Or270() ? input_height_ : input_width_;
 }
 
 int BaseRenderer::Sink::GetFrameHeight() {
-  return scaled_ ? height_ : input_height_;
+  if (scaled_)
+    return height_;
+  // 90° / 270° 回転では表示寸法の幅と高さが入れ替わる。
+  return IsRotated90Or270() ? input_width_ : input_height_;
 }
 
 int BaseRenderer::Sink::GetWidth() {
@@ -302,6 +354,11 @@ uint8_t* BaseRenderer::Sink::GetImage() {
   return image_.get();
 }
 
+bool BaseRenderer::Sink::IsRotated90Or270() {
+  return rotation_ == webrtc::kVideoRotation_90 ||
+         rotation_ == webrtc::kVideoRotation_270;
+}
+
 void BaseRenderer::SetOutlines() {
   float window_aspect = (float)width_ / (float)height_;
   bool window_is_wide = window_aspect > ((STD_ASPECT + WIDE_ASPECT) / 2.0);
@@ -314,8 +371,13 @@ void BaseRenderer::SetOutlines() {
     Sink* sink = sinks.second.get();
     webrtc::MutexLock frame_lock(sink->GetMutex());
     if (sink->GetInputWidth() != 0 && sink->GetInputHeight() != 0) {
-      frame_aspect =
-          (float)sink->GetInputWidth() / (float)sink->GetInputHeight();
+      int input_width = sink->GetInputWidth();
+      int input_height = sink->GetInputHeight();
+      // 90° / 270° 回転では表示アスペクトが入れ替わる。
+      if (sink->IsRotated90Or270()) {
+        std::swap(input_width, input_height);
+      }
+      frame_aspect = (float)input_width / (float)input_height;
       break;
     }
   }
