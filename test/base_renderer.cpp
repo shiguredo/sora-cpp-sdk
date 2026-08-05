@@ -5,7 +5,9 @@
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
+#include <cstdint>
 #include <cstring>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <thread>
@@ -14,6 +16,7 @@
 // WebRTC
 #include <api/make_ref_counted.h>
 #include <api/media_stream_interface.h>
+#include <api/scoped_refptr.h>
 #include <api/video/i420_buffer.h>
 #include <api/video/video_frame.h>
 #include <api/video/video_rotation.h>
