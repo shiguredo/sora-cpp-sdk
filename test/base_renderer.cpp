@@ -256,8 +256,8 @@ TEST_CASE("BaseRenderer が極小の枠でフィット寸法が 0 になって�
   TrackFixture fixture(renderer);
 
   // 枠 1x1 に 16:9 の映像を注入すると、フィット寸法の高さが 0 になる
-  // この状態で回転フレームを処理しても abort しないこと
-  // (修正前は 0 寸法の I420Buffer を回転する際に RTC_CHECK で abort した)
+  // この状態でフレームを処理しても abort しないこと
+  // (修正前は 0 寸法の I420Buffer を生成する際に RTC_CHECK で abort した)
   fixture.StartInjection(1920, 1080, webrtc::kVideoRotation_90);
   std::this_thread::sleep_for(std::chrono::milliseconds(200));
 

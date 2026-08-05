@@ -248,8 +248,8 @@ void BaseRenderer::Sink::OnFrame(const webrtc::VideoFrame& frame) {
     scale_height = width_;
   }
   // 極小の枠ではアスペクトを保ったフィット計算の int 切り捨てで
-  // 片方の寸法が 0 になりうる。0 寸法の I420Buffer はデータ領域が
-  // 確保されず、回転適用時に WebRTC の RTC_CHECK で abort するため、
+  // 片方の寸法が 0 になりうる。I420Buffer::Create は 0 寸法を
+  // WebRTC の RTC_CHECK で拒否して abort するため、
   // スケール対象を生成する前に打ち切る。
   if (scale_width == 0 || scale_height == 0) {
     return;
