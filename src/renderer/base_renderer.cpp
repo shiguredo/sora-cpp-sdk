@@ -226,9 +226,9 @@ void BaseRenderer::Sink::OnFrame(const webrtc::VideoFrame& frame) {
     input_width_ = frame.width();
     input_height_ = frame.height();
     // 映像は常に枠の寸法に合わせて拡大縮小して描画する。
-    // フルスクリーン時など枠が入力映像より大きい場合は拡大して枠を埋める。
-    // ネイティブサイズのまま描画すると枠内で黒帯が広がり、
-    // 映像同士が離れて見えるためである。
+    // フルスクリーン時など枠が入力映像より大きい場合はアスペクトを保ったまま
+    // 拡大して枠内の黒帯を減らす。ネイティブサイズのまま描画すると
+    // 枠内で黒帯が広がり、映像同士が離れて見えるためである。
     image_.reset(new uint8_t[width_ * height_ * 4]);
     RTC_LOG(LS_VERBOSE) << __func__ << ": size=" << width_ << "x" << height_;
     outline_changed_ = false;
@@ -240,12 +240,19 @@ void BaseRenderer::Sink::OnFrame(const webrtc::VideoFrame& frame) {
   webrtc::scoped_refptr<webrtc::I420BufferInterface> buffer_if;
   // 回転 90° / 270° では回転後に幅と高さが入れ替わるため、
   // 回転前の寸法 (回転後表示寸法の幅と高さを入れ替えた寸法) に
-  // 縮小してから回転し、表示寸法に一致させる。
+  // 拡大縮小してから回転し、表示寸法に一致させる。
   int scale_width = width_;
   int scale_height = height_;
   if (rotated) {
     scale_width = height_;
     scale_height = width_;
+  }
+  // 極小の枠ではアスペクトを保ったフィット計算の int 切り捨てで
+  // 片方の寸法が 0 になりうる。0 寸法の I420Buffer はデータ領域が
+  // 確保されず、回転適用時に WebRTC の RTC_CHECK で abort するため、
+  // スケール対象を生成する前に打ち切る。
+  if (scale_width == 0 || scale_height == 0) {
+    return;
   }
   webrtc::scoped_refptr<webrtc::I420Buffer> buffer =
       webrtc::I420Buffer::Create(scale_width, scale_height);
