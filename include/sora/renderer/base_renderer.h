@@ -89,7 +89,6 @@ class BaseRenderer {
     float outline_aspect_;
     int input_width_;
     int input_height_;
-    bool scaled_;
     std::unique_ptr<uint8_t[]> image_;
     int offset_x_;
     int offset_y_;
