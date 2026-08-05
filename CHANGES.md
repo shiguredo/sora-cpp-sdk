@@ -146,6 +146,14 @@
     ```
     - リンク : https://www.boost.org/doc/libs/1_91_0/doc/html/boost_asio/history.html
   - @torikizi
+- [FIX] VideoEncoder がフレームドロップを OnFrameDropped() で通知しない問題を修正する
+  - libwebrtc が要求するフレームドロップ通知とテンポラルユニット境界の設定が独自エンコーダーで行われていなかったのを修正する
+  - OpenH264 エンコーダーは参照実装 (libwebrtc の h264_encoder_impl) に合わせ、送信レイヤー数の事前集計で最後のレイヤーに `set_end_of_temporal_unit` を設定し、エンコーダー内部のフレームスキップ時に `OnFrameDropped()` を呼ぶようにする
+  - NvCodec / VPL / AMF / V4L2 の HWA エンコーダーは送信フレームに `set_end_of_temporal_unit(true)` を設定する
+  - NvCodec / VPL / AMF の AV1 SVC は `layer_frames.empty()` 経路のフレームドロップを `OnFrameDropped()` で通知する
+  - 参考 : libwebrtc で `OnFrameDropped()` が追加されたコミットのリンク
+    - https://source.chromium.org/chromium/_/webrtc/src/+/54ff9c19789b36a18d5ad9576be3775255caa279
+  - @torikizi
 - [FIX] BaseRenderer の枠割りが回転映像のアスペクトを考慮しない問題を修正する
   - 回転 90° / 270° の映像を回転後寸法基準で枠割りし、scaled / 非 scaled の両経路で回転を適用する
   - @voluntas
