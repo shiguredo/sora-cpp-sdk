@@ -169,7 +169,6 @@ BaseRenderer::Sink::Sink(BaseRenderer* renderer,
       input_width_(0),
       input_height_(0),
       rotation_(webrtc::kVideoRotation_0),
-      scaled_(false),
       width_(0),
       height_(0) {
   track_->AddOrUpdateSink(this, webrtc::VideoSinkWants());
@@ -226,17 +225,12 @@ void BaseRenderer::Sink::OnFrame(const webrtc::VideoFrame& frame) {
     }
     input_width_ = frame.width();
     input_height_ = frame.height();
-    // scaled_ の判定は回転後の表示寸法と枠の寸法を比較する。
-    // 90° / 270° 回転では表示寸法の幅と高さが入れ替わるため、
-    // 回転後に枠より大きくなる映像を縮小対象に含める。
-    int display_width = rotated ? input_height_ : input_width_;
-    scaled_ = width_ < display_width;
-    if (scaled_) {
-      image_.reset(new uint8_t[width_ * height_ * 4]);
-    } else {
-      image_.reset(new uint8_t[input_width_ * input_height_ * 4]);
-    }
-    RTC_LOG(LS_VERBOSE) << __func__ << ": scaled_=" << scaled_;
+    // 映像は常に枠の寸法に合わせて拡大縮小して描画する。
+    // フルスクリーン時など枠が入力映像より大きい場合はアスペクトを保ったまま
+    // 拡大して枠内の黒帯を減らす。ネイティブサイズのまま描画すると
+    // 枠内で黒帯が広がり、映像同士が離れて見えるためである。
+    image_.reset(new uint8_t[width_ * height_ * 4]);
+    RTC_LOG(LS_VERBOSE) << __func__ << ": size=" << width_ << "x" << height_;
     outline_changed_ = false;
   }
   // 回転は有効フレームごとに記録する。90° ↔ 270° の遷移は表示寸法・
@@ -244,32 +238,29 @@ void BaseRenderer::Sink::OnFrame(const webrtc::VideoFrame& frame) {
   // 記録は最新の回転値に保つ。
   rotation_ = frame.rotation();
   webrtc::scoped_refptr<webrtc::I420BufferInterface> buffer_if;
-  if (scaled_) {
-    // 回転 90° / 270° では回転後に幅と高さが入れ替わるため、
-    // 回転前の寸法 (回転後表示寸法の幅と高さを入れ替えた寸法) に
-    // 縮小してから回転し、表示寸法に一致させる。
-    int scale_width = width_;
-    int scale_height = height_;
-    if (rotated) {
-      scale_width = height_;
-      scale_height = width_;
-    }
-    webrtc::scoped_refptr<webrtc::I420Buffer> buffer =
-        webrtc::I420Buffer::Create(scale_width, scale_height);
-    buffer->ScaleFrom(*frame.video_frame_buffer()->ToI420());
-    if (frame.rotation() != webrtc::kVideoRotation_0) {
-      buffer = webrtc::I420Buffer::Rotate(*buffer, frame.rotation());
-    }
-    buffer_if = buffer;
-  } else {
-    // 非 scaled 経路でも回転を適用する。
-    if (frame.rotation() != webrtc::kVideoRotation_0) {
-      buffer_if = webrtc::I420Buffer::Rotate(
-          *frame.video_frame_buffer()->ToI420(), frame.rotation());
-    } else {
-      buffer_if = frame.video_frame_buffer()->ToI420();
-    }
+  // 回転 90° / 270° では回転後に幅と高さが入れ替わるため、
+  // 回転前の寸法 (回転後表示寸法の幅と高さを入れ替えた寸法) に
+  // 拡大縮小してから回転し、表示寸法に一致させる。
+  int scale_width = width_;
+  int scale_height = height_;
+  if (rotated) {
+    scale_width = height_;
+    scale_height = width_;
   }
+  // 極小の枠ではアスペクトを保ったフィット計算の int 切り捨てで
+  // 片方の寸法が 0 になりうる。I420Buffer::Create は 0 寸法を
+  // WebRTC の RTC_CHECK で拒否して abort するため、
+  // スケール対象を生成する前に打ち切る。
+  if (scale_width == 0 || scale_height == 0) {
+    return;
+  }
+  webrtc::scoped_refptr<webrtc::I420Buffer> buffer =
+      webrtc::I420Buffer::Create(scale_width, scale_height);
+  buffer->ScaleFrom(*frame.video_frame_buffer()->ToI420());
+  if (frame.rotation() != webrtc::kVideoRotation_0) {
+    buffer = webrtc::I420Buffer::Rotate(*buffer, frame.rotation());
+  }
+  buffer_if = buffer;
   // ストライドと出力寸法は回転後の表示寸法に合わせる。
   libyuv::ConvertFromI420(
       buffer_if->DataY(), buffer_if->StrideY(), buffer_if->DataU(),
@@ -329,17 +320,11 @@ int BaseRenderer::Sink::GetInputHeight() {
 }
 
 int BaseRenderer::Sink::GetFrameWidth() {
-  if (scaled_)
-    return width_;
-  // 90° / 270° 回転では表示寸法の幅と高さが入れ替わる。
-  return IsRotated90Or270() ? input_height_ : input_width_;
+  return width_;
 }
 
 int BaseRenderer::Sink::GetFrameHeight() {
-  if (scaled_)
-    return height_;
-  // 90° / 270° 回転では表示寸法の幅と高さが入れ替わる。
-  return IsRotated90Or270() ? input_width_ : input_height_;
+  return height_;
 }
 
 int BaseRenderer::Sink::GetWidth() {

@@ -1121,6 +1121,7 @@ def _build(
                 ):
                     cmake_args.append("-DTEST_E2E=ON")
                     cmake_args.append("-DTEST_VIDEO_FACTORY_DATA_RACE=ON")
+                    cmake_args.append("-DTEST_BASE_RENDERER=ON")
                     cmake_args.append("-DTEST_AUDIO_DEVICE=ON")
 
                 cmd(["cmake", os.path.join(BASE_DIR, "test")] + cmake_args)
@@ -1161,6 +1162,10 @@ def _build(
                             )
                         else:
                             cmd([os.path.join(test_build_dir, "video_factory_data_race")])
+                        if platform.target.os == "windows":
+                            cmd([os.path.join(test_build_dir, configuration, "base_renderer.exe")])
+                        else:
+                            cmd([os.path.join(test_build_dir, "base_renderer")])
 
     if package:
         mkdir_p(package_dir)

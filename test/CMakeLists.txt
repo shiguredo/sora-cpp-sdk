@@ -104,6 +104,13 @@ if (TEST_VIDEO_FACTORY_DATA_RACE)
   target_link_libraries(video_factory_data_race PRIVATE Catch2::Catch2WithMain Catch2::Catch2)
 endif()
 
+if (TEST_BASE_RENDERER)
+  add_executable(base_renderer)
+  target_sources(base_renderer PRIVATE base_renderer.cpp)
+  init_target(base_renderer)
+  target_link_libraries(base_renderer PRIVATE Catch2::Catch2WithMain Catch2::Catch2)
+endif()
+
 if (TEST_AUDIO_DEVICE)
   add_executable(audio_device)
   target_sources(audio_device PRIVATE audio_device.cpp)

@@ -41,7 +41,8 @@ class BaseRenderer {
     // イメージ領域のサイズ
     int frame_width;
     int frame_height;
-    // 分割された領域のサイズ
+    // 分割された領域のサイズ (枠内にアスペクトを保って収めた映像のフィット寸法。
+    // frame_width / frame_height と同値)
     int width;
     int height;
   };
@@ -89,7 +90,6 @@ class BaseRenderer {
     float outline_aspect_;
     int input_width_;
     int input_height_;
-    bool scaled_;
     std::unique_ptr<uint8_t[]> image_;
     int offset_x_;
     int offset_y_;
