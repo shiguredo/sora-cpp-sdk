@@ -1,7 +1,7 @@
 # BaseRenderer がフルスクリーン時に映像を枠の寸法まで拡大しない
 
 - Created: 2026-08-05
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-08-05
 - Branch: feature/fix-base-renderer-upscale-video-to-fill-outline
 - Polished: {YYYY-MM-DD}
 - Reporter: @voluntas
@@ -90,7 +90,7 @@ sumomo をローカルの SDK 実装と紐付けてビルドしたうえで、�
 
 ## 解決方法
 
-`src/renderer/base_renderer.cpp` の `BaseRenderer::Sink::OnFrame()` を以下のように変更する。
+`src/renderer/base_renderer.cpp` の `BaseRenderer::Sink::OnFrame()` を以下のように変更した。
 
 - `scaled_` 判定を削除し、`image_` を常にフィットサイズ (`width_ * height_ * 4`) で確保する
 - スケール経路を常に実行し、`I420Buffer::Create` + `ScaleFrom()` で枠の寸法へ拡大縮小する
@@ -99,7 +99,7 @@ sumomo をローカルの SDK 実装と紐付けてビルドしたうえで、�
 - 不要になる `scaled_` メンバを `include/sora/renderer/base_renderer.h` から削除する
 - 極小の枠でフィット寸法の片方が 0 になる場合に `I420Buffer::Create` の寸法チェックで abort しないよう、スケール対象の生成前に打ち切るガードを追加する
 
-テストは次の 2 つで行う。
+テストは次の 2 つで行った。
 
-- `test/base_renderer.cpp` のユニットテスト (Catch2)。実フレームを生成するテスト用映像ソースと実トラックで `BaseRenderer::Sink::OnFrame()` のスケール経路を検証し、拡大・縮小・letterbox・回転 90°・ゼロ寸法ガードの各ケースを `Render()` に渡される `SinkInfo` とキャンバスのピクセルで確認する。`test/CMakeLists.txt` の `TEST_BASE_RENDERER` ターゲットとして追加し、`run.py` の `--run-e2e-test` 実行対象に含める
-- sumomo の 2 プロセス構成での目視確認。確認項目は完了条件の各項目に加え、F キーによるフルスクリーン切替の往復で映像配置が破綻しないことを含める
+- `test/base_renderer.cpp` のユニットテスト (Catch2)。実フレームを生成するテスト用映像ソースと実トラックで `BaseRenderer::Sink::OnFrame()` のスケール経路を検証し、拡大・縮小・letterbox・回転 90°・ゼロ寸法ガードの各ケースを `Render()` に渡される `SinkInfo` とキャンバスのピクセルで確認する (13 アサーション)。`test/CMakeLists.txt` の `TEST_BASE_RENDERER` ターゲットとして追加し、`run.py` の `--run-e2e-test` 実行対象に含めた
+- sumomo の 2 プロセス構成での目視確認。フルスクリーン (5120x2160) で 2 つの映像が枠いっぱいに拡大され隣接すること、F キーによるフルスクリーン切替の往復で映像配置が破綻しないことを確認した
