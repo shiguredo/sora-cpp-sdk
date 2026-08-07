@@ -1,7 +1,7 @@
 # VideoEncoder がフレームドロップを OnFrameDropped() で通知しない
 
 - Created: 2026-08-04
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-08-07
 - Branch: feature/fix-video-encoder-frame-drop-notification
 - Polished: 2026-08-05
 - Reporter: @torikizi
@@ -74,3 +74,17 @@ libwebrtc の VideoEncoder は、エンコーダーがフレームをドロッ�
       - https://source.chromium.org/chromium/_/webrtc/src/+/54ff9c19789b36a18d5ad9576be3775255caa279
     - @<担当者>
   ```
+
+## 解決方法
+
+`src/open_h264_video_encoder.cpp` の `OpenH264VideoEncoder::Encode()`、`src/hwenc_nvcodec/nvcodec_video_encoder.cpp` の `NvCodecVideoEncoderImpl::Encode()`、`src/hwenc_vpl/vpl_video_encoder.cpp` の `VplVideoEncoderImpl::Encode()`、`src/hwenc_amf/amf_video_encoder.cpp` の `AMFVideoEncoderImpl::ProcessBuffer()`、`src/hwenc_v4l2/v4l2_h264_encoder.cpp` の `V4L2H264Encoder::SendFrame()` を修正した。
+
+- OpenH264 は参照実装 (libwebrtc の h264_encoder_impl) に合わせた
+  - `Encode()` の冒頭で送信レイヤー数 (`num_layers_to_send`) を事前集計する。送信しないレイヤーは `frame_types_to_send[i] = kEmptyFrame` にし、`kEmptyFrame` 以外を送信レイヤーとして数える
+  - `frame_types` の参照インデックスを `simulcast_idx` に統一した (kEmptyFrame 判定とキーフレーム判定の食い違いを解消)
+  - 各送信レイヤーのエンコード完了時に `--num_layers_to_send` し、最後のレイヤー (0 になったとき) だけ `set_end_of_temporal_unit(true)` を設定する
+  - エンコーダー内部のフレームスキップ (`size() == 0`) の経路で `OnFrameDropped(rtp_timestamp, simulcast_index, is_end_of_temporal_unit)` を呼ぶ
+  - 事前集計と減算の整合を `RTC_DCHECK_EQ(num_layers_to_send, 0)` で検出する
+- HWA エンコーダーは送信フレームの `EncodedImage` に `set_end_of_temporal_unit(true)` を設定した (NvCodec / VPL / AMF / V4L2)
+- NvCodec / VPL / AMF の AV1 SVC `layer_frames.empty()` 経路で `OnFrameDropped(rtp_timestamp, 0, true)` を呼んでから正常終了を返すようにした。AMF は `ProcessBuffer()` が polling スレッドから呼ばれるため、`mutex_` 保護下で取得した callback 経由で呼ぶ
+- 変更履歴 (`CHANGES.md`) の develop にあるコア SDK の `[FIX]` 群の先頭にエントリを追記した
