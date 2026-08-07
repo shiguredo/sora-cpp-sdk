@@ -1,7 +1,7 @@
 # VideoEncoder がフレームドロップを OnFrameDropped() で通知しない
 
 - Created: 2026-08-04
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-08-07
 - Branch: feature/fix-video-encoder-frame-drop-notification
 - Polished: 2026-08-05
 - Reporter: @torikizi
@@ -49,14 +49,14 @@ libwebrtc の VideoEncoder は、エンコーダーがフレームをドロッ�
   - エンコーダー内部のフレームスキップ (`size() == 0`) で `OnFrameDropped()` を呼ぶ。引数は参照実装と同様に `RtpTimestamp()` / `SimulcastIndex()` / `is_end_of_temporal_unit()` から取る
   - 事前集計と減算の整合を `RTC_DCHECK_EQ(num_layers_to_send, 0)` で検出する
   - `frame_types` の参照インデックスを参照実装どおり `simulcast_idx` に統一する (現状は `kEmptyFrame` 判定が `i`、キーフレーム判定が `simulcast_idx` と食い違っている)
-- 単一レイヤーの HWA エンコーダー (`NvCodecVideoEncoderImpl` / `VplVideoEncoderImpl` / `AMFVideoEncoderImpl` / `V4L2H264Encoder`) は、送信フレームの `EncodedImage` に `set_end_of_temporal_unit(true)` を設定する。AV1 以外のコーデック (H.264 / H.265 / VP8 / VP9) は単一テンポラルレイヤーで運用される (1 入力 = 1 出力 = 1 テンポラルユニット) ため true で正しい。AV1 の送信フレームへの `is_end_of_temporal_unit` 設定は本 issue の対象外 (現状維持)。V4L2 はドロップを timestamp 不一致で間接的に検知できるのみで、ドロップしたフレームを特定できないため、通知の追加は行わない
+- 単一レイヤーの HWA エンコーダー (`NvCodecVideoEncoderImpl` / `VplVideoEncoderImpl` / `AMFVideoEncoderImpl` / `V4L2H264Encoder`) は、送信フレームの `EncodedImage` に `set_end_of_temporal_unit(true)` を設定する。H.264 / H.265 / VP8 / VP9 は単一テンポラルレイヤーで運用される (1 入力 = 1 出力 = 1 テンポラルユニット) ため true で正しい。AV1 も参照実装 (libaom の AV1 エンコーダー) が単一空間レイヤー時に `sid == num_spatial_layers - 1` の評価結果として true を設定していることと一致する。なお本実装は `layer_frames[0]` の 1 出力のみを扱い空間レイヤー分割に対応していないため、AV1 は単一空間レイヤー (L1T1 / L1T2 / L1T3) 前提で運用される。空間レイヤー複数 (L2T1 等) は本実装の既知の制約であり、その場合の `is_end_of_temporal_unit` 判定は対象外。V4L2 はドロップを timestamp 不一致で間接的に検知できるのみで、ドロップしたフレームを特定できないため、通知の追加は行わない
 - `NvCodecVideoEncoderImpl` / `VplVideoEncoderImpl` / `AMFVideoEncoderImpl` の AV1 SVC `layer_frames.empty()` 経路で `OnFrameDropped(rtp_timestamp, 0, true)` を呼んでから正常終了を返す。現実装は各 `Encode()` で `layer_frames[0]` の 1 出力のみを扱い空間レイヤー分割を行わないため、spatial_id は 0 で正しい。rtp_timestamp は NvCodec / VPL では `frame.rtp_timestamp()`、AMF では `ProcessBuffer()` がバッファのプロパティから取得した値を用いる。AMF の `ProcessBuffer()` は polling スレッドから呼ばれるため、`OnFrameDropped()` は既存の `OnEncodedImage()` 呼び出しと同様に `mutex_` 保護下で取得した callback を経由して呼ぶ。ハードウェアのレート制御によるドロップは、出力が発生しない事象をバッファリング待ちなどと区別して確定できないため通知対象外
 - 各エンコーダーは `SimulcastEncoderAdapter` 経由で利用される。単一ストリーム (bypass) 時はコールバックが素通しになり本修正がそのまま有効で、サイマルキャスト時は HWA (非 bypass) ではアダプタ側が `is_end_of_temporal_unit` を再計算し、OpenH264 (サイマルキャストでも bypass) ではエンコーダー自身の集計が使われる。どちらの構成でも正しく動作する
 
 ## 完了条件
 
 - `OpenH264VideoEncoder` のエンコーダー内部スキップ (`size() == 0`) と `NvCodecVideoEncoderImpl` / `VplVideoEncoderImpl` / `AMFVideoEncoderImpl` の AV1 SVC `layer_frames.empty()` 経路で `OnFrameDropped()` が呼ばれること
-- OpenH264 と H.264 / H.265 / VP8 / VP9 の送信フレームの `EncodedImage` に `is_end_of_temporal_unit` が設定されること (AV1 の送信フレームは対象外)
+- OpenH264 と HWA エンコーダー (H.264 / H.265 / VP8 / VP9 / AV1) の送信フレームの `EncodedImage` に `is_end_of_temporal_unit` が設定されること (AV1 は単一空間レイヤー前提、空間レイヤー複数は本実装の既知の制約として対象外)
 - `OnFrameDropped()` の呼び出しと `is_end_of_temporal_unit` の設定の 2 点は、ドロップ経路が E2E で決定的に再現できないため、コードレビューで確認する (参照実装の単体テストはモックベースのため、モック・スタブ禁止の規約に従い SDK には導入しない)
 - ローカルビルド (`python3 run.py build --test --disable-cuda macos_arm64`) と既存テストが通ること (回帰がないこと)。OpenH264 の事前集計 (`num_layers_to_send`) は参照実装どおり減算され、デバッグビルドで `RTC_DCHECK_EQ(num_layers_to_send, 0)` が発火しないこと
 - E2E テストの `test_sumomo_openh264_with_simulcast` が通ること (OpenH264 のサイマルキャスト挙動の回帰確認)
@@ -74,3 +74,17 @@ libwebrtc の VideoEncoder は、エンコーダーがフレームをドロッ�
       - https://source.chromium.org/chromium/_/webrtc/src/+/54ff9c19789b36a18d5ad9576be3775255caa279
     - @<担当者>
   ```
+
+## 解決方法
+
+`src/open_h264_video_encoder.cpp` の `OpenH264VideoEncoder::Encode()`、`src/hwenc_nvcodec/nvcodec_video_encoder.cpp` の `NvCodecVideoEncoderImpl::Encode()`、`src/hwenc_vpl/vpl_video_encoder.cpp` の `VplVideoEncoderImpl::Encode()`、`src/hwenc_amf/amf_video_encoder.cpp` の `AMFVideoEncoderImpl::ProcessBuffer()`、`src/hwenc_v4l2/v4l2_h264_encoder.cpp` の `V4L2H264Encoder::SendFrame()` を修正した。
+
+- OpenH264 は参照実装 (libwebrtc の h264_encoder_impl) に合わせた
+  - `Encode()` の冒頭で送信レイヤー数 (`num_layers_to_send`) を事前集計する。送信しないレイヤーは `frame_types_to_send[i] = kEmptyFrame` にし、`kEmptyFrame` 以外を送信レイヤーとして数える
+  - `frame_types` の参照インデックスを `simulcast_idx` に統一した (kEmptyFrame 判定とキーフレーム判定の食い違いを解消)
+  - 各送信レイヤーのエンコード完了時に `--num_layers_to_send` し、最後のレイヤー (0 になったとき) だけ `set_end_of_temporal_unit(true)` を設定する
+  - エンコーダー内部のフレームスキップ (`size() == 0`) の経路で `OnFrameDropped(rtp_timestamp, simulcast_index, is_end_of_temporal_unit)` を呼ぶ
+  - 事前集計と減算の整合を `RTC_DCHECK_EQ(num_layers_to_send, 0)` で検出する
+- HWA エンコーダーは送信フレームの `EncodedImage` に `set_end_of_temporal_unit(true)` を設定した (NvCodec / VPL / AMF / V4L2)
+- NvCodec / VPL / AMF の AV1 SVC `layer_frames.empty()` 経路で `OnFrameDropped(rtp_timestamp, 0, true)` を呼んでから正常終了を返すようにした。AMF は `ProcessBuffer()` が polling スレッドから呼ばれるため、`mutex_` 保護下で取得した callback 経由で呼ぶ
+- 変更履歴 (`CHANGES.md`) の develop にあるコア SDK の `[FIX]` 群の先頭にエントリを追記した
