@@ -31,10 +31,6 @@
   - @voluntas
 - [CHANGE] E2E テストの Python 要件を 3.14 以上に引き上げる
   - @voluntas
-- [ADD] Ubuntu 26.04 ARM64 向けの sysroot とビルドターゲットを追加する
-  - @voluntas
-- [ADD] Ubuntu 26.04 x86_64 向けのビルドターゲットを追加する
-  - @voluntas
 - [CHANGE] TLS 検証の信頼ストアを OS のシステム CA に切り替える
   - 全 OS（macOS, Linux, Windows, iOS, Android）でシステム CA を信頼の根拠とする方式に統一する
   - 独自 CA が必要な場合は全プラットフォーム共通で `SoraSignalingConfig::ca_cert` に PEM を明示指定する
@@ -48,6 +44,10 @@
   - 旧ハードコード PEM（isrg_root / lets_encrypt_r3）と WebRTC `rtc_base/ssl_roots.h` 依存を完全に撤廃する
   - sumomo の E2E テストで TLS 検証のシステム CA 経由・`ca_cert` 指定・`insecure` モードの挙動を検証するテストを追加する
   - @melpon
+- [ADD] Ubuntu 26.04 ARM64 向けの sysroot とビルドターゲットを追加する
+  - @voluntas
+- [ADD] Ubuntu 26.04 x86_64 向けのビルドターゲットを追加する
+  - @voluntas
 - [ADD] sumomo の E2E テストで `--audio-recording-device` を複数の音声録音デバイスに対して個別に検証するテストを追加する
   - @melpon
 - [ADD] sumomo の E2E テストで録音デバイス未指定時・無効指定時の挙動を検証するテストを追加する
@@ -154,8 +154,11 @@
   - 参考 : libwebrtc で `OnFrameDropped()` が追加されたコミットのリンク
     - https://source.chromium.org/chromium/_/webrtc/src/+/54ff9c19789b36a18d5ad9576be3775255caa279
   - @torikizi
+- [FIX] BaseRenderer がフルスクリーン時に映像を枠の寸法まで拡大しない問題を修正する
+  - 枠が入力映像より大きい場合も枠の寸法に合わせて拡大して描画する
+  - @voluntas
 - [FIX] BaseRenderer の枠割りが回転映像のアスペクトを考慮しない問題を修正する
-  - 回転 90° / 270° の映像を回転後寸法基準で枠割りし、scaled / 非 scaled の両経路で回転を適用する
+  - 回転 90° / 270° の映像を回転後寸法基準で枠割りし、拡大縮小と回転を単一経路で適用する
   - @voluntas
 - [FIX] BaseRenderer の枠情報のデータレースを修正する
   - 枠の未確定チェックと枠位置・サイズの書き込みを `frame_params_lock_` 保護下で行う
