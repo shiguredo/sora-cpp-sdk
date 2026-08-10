@@ -1,7 +1,7 @@
 # AddTrack の Sink 登録を sinks_lock_ 保護下に移す
 
 - Created: 2026-08-04
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-08-10
 - Branch: feature/refactor-move-addtrack-sink-registration-under-lock
 - Polished: {YYYY-MM-DD}
 - Reporter: @voluntas
@@ -34,4 +34,6 @@
 
 ## 解決方法
 
-未対応 (open)
+対応不要として closed にする。
+
+`AddOrUpdateSink` とフレーム配信の直列化は WebRTC 内部の `VideoBroadcaster::sinks_and_wants_lock_` と `VideoTrackProxy` の同期マーシャリング (worker thread での実行) により明示的に行われており、`Sink` コンストラクタの初期化リスト完了後にのみ登録される。また `Sink::OnFrame()` は `sinks_lock_` を一切取得しないため、`AddOrUpdateSink` を `sinks_lock_` 保護下に移しても並行実行の性質は変わらず、目的 (暗黙依存の明示化) は構造的に達成できない。むしろ実装すると `sinks_lock_` 保持中の worker thread 同期待ちにより `RenderThread()` がブロックされる。対応不要とする。
