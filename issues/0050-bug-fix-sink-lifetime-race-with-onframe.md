@@ -1,7 +1,7 @@
 # BaseRenderer::Sink の破棄と OnFrame 実行の競合を修正する
 
 - Created: 2026-08-04
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-08-10
 - Branch: feature/fix-sink-lifetime-race-with-onframe
 - Polished: {YYYY-MM-DD}
 - Reporter: @voluntas
@@ -35,4 +35,6 @@ WebRTC の `VideoSourceBaseGuarded` (VideoTrack の基底) は「sinks に対す
 
 ## 解決方法
 
-未対応 (open)
+対応不要として closed にする。
+
+libwebrtc の `VideoSourceInterface::RemoveSink` は返却時に current / future の `OnFrame` 呼び出しが存在しないことを契約として保証しており、`VideoBroadcaster` は `sinks_and_wants_lock_` で `OnFrame` と `RemoveSink` を相互排他して契約を実装している。`Sink::~Sink()` はメモリ解放前に `track_->RemoveSink(this)` を呼ぶため、`RemoveTrack()` が `sinks_lock_` 保持中に `Sink` を破棄しても use-after-free は発生しない。本 issue の前提 (「`RemoveSink` の返却時に `OnFrame` が実行中でない保証はない」) は libwebrtc の実際の契約と一致しないため、対応不要とする。
