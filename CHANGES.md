@@ -225,6 +225,9 @@
 
 ### misc
 
+- [CHANGE] GitHub Actions の Android ジョブのランナーを ubuntu-24.04 に変更する
+  - ubuntu-22.04 は 2026-09-17 に非推奨開始、2027-04-17 にサポート終了予定のため
+  - @t-miya
 - [CHANGE] GitHub Actions の Android ジョブで android-actions/setup-android の利用をやめる
   - Android SDK は GitHub-hosted runner にプリインストールされた SDK を利用する
   - サードパーティ Action への依存を排除する

@@ -1,7 +1,7 @@
 # GitHub Actions の Android ジョブのランナーを ubuntu-24.04 に変更する
 
 - Created: 2026-08-13
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-08-13
 - Branch: feature/change-android-runner-ubuntu-24-04
 - Polished: 2026-08-13
 
@@ -41,12 +41,16 @@ CI / Release ワークフローの Android ジョブが利用している ubuntu
 
 ## 解決方法
 
-1. `ci.yml` / `release.yml` の build-ubuntu ジョブの matrix エントリ `android` の `runs-on` を `ubuntu-22.04` から `ubuntu-24.04` に変更する
-2. Android ジョブが ubuntu-24.04 でビルドに成功することを確認する。確認項目:
-   - ジョブログに `commandlinetools-linux-13114758` のダウンロード行と `sdkmanager` の実行行が現れず、`run.py` の fallback（`install_android_sdk_cmdline_tools`）がスキップされること（`android-ndk-r28b` のダウンロード行は NDK インストールによるもので判断対象外）
-   - gradle ビルド（`assembleRelease` / `assemble`）が ubuntu-24.04 のプリインストール SDK（platform android-34 と、AGP 8.2.0 / 8.10.0 が要求する build-tools）で通ること
-   - `dl.google.com/android/repository` からの直接ダウンロードが `android-ndk-r28b` のみで、AGP による SDK コンポーネントの自動インストールが発生しないこと（Google Maven（`dl.google.com/dl/android/maven2`）からの依存取得は判断対象外）
-   - `actions/setup-java` が JDK 17 を明示指定するため、デフォルト JDK の変化（11→17）はビルドに影響しないことを確認結果に記録すること
-   - `sora-cpp-sdk-..._android.tar.gz` の生成と Artifact アップロードの成功を確認すること
+- `ci.yml` / `release.yml` の build-ubuntu ジョブの matrix エントリ `android` の `runs-on` を `ubuntu-22.04` から `ubuntu-24.04` に変更した
+- `Setup JDK 17` ステップのコメントを「AGP 8.x の Gradle ビルドが要求する JDK 17 を、ランナーイメージのデフォルトに依存せず明示指定する」に更新した（明示指定は維持）
+- `CHANGES.md` の `## develop` 配下の `### misc` に `[CHANGE]` エントリを追加した
 
-   - 注記: Android ジョブでは E2E テストは実行されないため、検証はビルド成功のみで行う
+### 確認結果
+
+- CI の Android ジョブ（`Build sora-cpp-sdk for android`）が ubuntu-24.04 で成功した
+- ジョブログに `commandlinetools-linux-13114758` のダウンロード行と `sdkmanager` の実行行が現れず、`run.py` の fallback（`install_android_sdk_cmdline_tools`）がスキップされたことを確認した（`android-ndk-r28b` のダウンロード行は NDK インストールによるもので判断対象外）
+- gradle ビルド（`assembleRelease` / `assemble`）が `BUILD SUCCESSFUL` で完了し、ubuntu-24.04 のプリインストール SDK（platform android-34 と、AGP 8.2.0 / 8.10.0 が要求する build-tools）で通ることを確認した
+- `dl.google.com/android/repository` からのダウンロードは `android-ndk-r28b` のみで、AGP による SDK コンポーネントの自動インストールが発生しなかった
+- `actions/setup-java` が JDK 17（Temurin 17.0.19-10）を明示指定しており、デフォルト JDK の変化（11→17）はビルドに影響しないことを確認した
+- 成果物（`sora-cpp-sdk-2026.2.0-canary.28_android.tar.gz`）の生成とアップロードが成功したことを確認した
+- release.yml は ci.yml と同じ変更を反映しているため、ci.yml の成功で代替する
