@@ -225,6 +225,10 @@
 
 ### misc
 
+- [CHANGE] GitHub Actions の Android ジョブで android-actions/setup-android の利用をやめる
+  - Android SDK は GitHub-hosted runner にプリインストールされた SDK を利用する
+  - サードパーティ Action への依存を排除する
+  - @t-miya
 - [CHANGE] GitHub Actions の Slack 通知を `shiguredo/github-actions` に置き換える
   - `rtCamp/action-slack-notify@v2` を `shiguredo/github-actions/.github/actions/slack-notify@main` に置き換える
   - 通知ジョブの `runs-on` を `ubuntu-slim` に変更する
