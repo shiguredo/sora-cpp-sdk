@@ -194,7 +194,7 @@ jobs:
             os: raspberry-pi-os
             arch: armv8
           - name: android
-            runs-on: ubuntu-22.04
+            runs-on: ubuntu-24.04
             os: android
     name: Build sora-cpp-sdk for ${{ matrix.platform.name }}
     runs-on: ${{ matrix.platform.runs-on }}
@@ -270,7 +270,7 @@ jobs:
         if: matrix.platform.os == 'android'
         run: |
           sudo apt-get -y install ninja-build
-      # JDK を指定しないとデフォルトの JDK 11 で動作するため指定する
+      # AGP 8.x の Gradle ビルドが要求する JDK 17 を、ランナーイメージのデフォルトに依存せず明示指定する
       - name: Setup JDK 17
         if: matrix.platform.os == 'android'
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961  # v5.7.0
