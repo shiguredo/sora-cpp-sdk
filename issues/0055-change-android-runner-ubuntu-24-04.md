@@ -3,7 +3,7 @@
 - Created: 2026-08-13
 - Completed: {YYYY-MM-DD}
 - Branch: feature/change-android-runner-ubuntu-24-04
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-08-13
 
 ## 目的
 
@@ -13,26 +13,40 @@ CI / Release ワークフローの Android ジョブが利用している ubuntu
 
 - `.github/workflows/ci.yml` と `.github/workflows/release.yml` の Android ジョブの `runs-on` が `ubuntu-22.04`
 - ubuntu-22.04 のデフォルト JDK は 11 のため、`actions/setup-java` で JDK 17 を明示指定している（コメント「JDK を指定しないとデフォルトの JDK 11 で動作するため指定する」）
-- ubuntu-24.04 のデフォルト JDK は 17 で、Android SDK がプリインストールされており、環境変数 `ANDROID_SDK_ROOT=/usr/local/lib/android/sdk` がデフォルトで設定されている
-- 関連 issue の 0054（`android-actions/setup-android` の削除、open）が先に実装されている場合も、ubuntu-24.04 のプリインストール SDK への依存は維持される
+- 0054（`android-actions/setup-android` の削除）は実装済みで、Android SDK は runner のプリインストール SDK（環境変数 `ANDROID_SDK_ROOT=/usr/local/lib/android/sdk`）に依存している
+
+## 移行先の前提（ubuntu-24.04）
+
+- デフォルト JDK は 17
+- Android SDK がプリインストールされており、環境変数 `ANDROID_SDK_ROOT`（および `ANDROID_HOME`）がデフォルトで設定されている
+- プリインストール SDK には platform android-34、build-tools 34.0.0〜37.0.0、cmdline-tools 12.0 が含まれる。platform android-34 と build-tools 34.0.0〜37.0.0 は 22.04 と同一の構成である（actions/runner-images の Ubuntu2204 / Ubuntu2404-Readme で確認）
+- cmdline-tools のバージョンは 22.04（9.0）から 12.0 に変わるが、CI では使用されない（`ANDROID_SDK_CMDLINE_TOOLS_VERSION` は `ANDROID_SDK_ROOT` が未設定、または設定済みでもそのパスが存在しない環境向けの fallback 専用）
 
 ## 設計方針
 
 - Android ジョブの `runs-on` を `ubuntu-24.04` に変更するのみとし、SDK の用意方法は変更しない
-- `actions/setup-java` の JDK 17 明示指定は、ubuntu-24.04 ではデフォルト JDK が 17 になるため、明示指定を残す場合は陳腐化したコメントを更新する。明示指定の要否も確認して決定する
-- 本 issue の対象は Android ジョブのみとする。同じ `ubuntu-22.04` を使う他ジョブ（ubuntu-22.04_x86_64 / ubuntu-22.04_armv8）は対象外とする
+- ubuntu-26.04 ではなく 24.04 を選ぶ理由: 26.04 の runner イメージは public preview であり（actions/runner-images issue #14226）、Android SDK の構成が検証済みの 24.04 へまず移行する。26.04 への移行は別 issue で扱う
+- 0054 で決定済みのとおり `actions/setup-java` の JDK 17 明示指定は削除しない。ubuntu-24.04 ではデフォルト JDK が 17 になるため、デフォルト JDK 11 前提のコメントを「AGP 8.x の gradle ビルドが要求する JDK 17 を、ランナーイメージのデフォルトに依存せず明示指定する」趣旨の内容に更新する
+- 本 issue の対象は Android ジョブのみとする。同じ `ubuntu-22.04` を使う他ジョブ（build-ubuntu / e2e-test の `ubuntu-22.04_x86_64` / `ubuntu-22.04_armv8` エントリと、build-ubuntu-examples の `ubuntu-22.04_x86_64` エントリ）は Android SDK に依存せず本 issue の検証対象に含める必要がないため、ランナー移行は本 issue の範囲外として別 issue で扱う
+- 関連 issue の 0012（Android の targetSdk 35 引き上げ、open）で compileSdk が変更される場合は、ubuntu-24.04 のプリインストール SDK（platform android-34）への依存を再確認する
+- 確認の結果ビルドが失敗した場合は原因を調査し、SDK の用意方法の変更が必要な場合は本 issue のスコープを広げず別 issue として切り出す
 
 ## 完了条件
 
-- `.github/workflows/ci.yml` と `.github/workflows/release.yml` の Android ジョブの `runs-on` が `ubuntu-24.04` になっている
+- `.github/workflows/ci.yml` と `.github/workflows/release.yml` の build-ubuntu ジョブの matrix エントリ `android` の `runs-on` が `ubuntu-24.04` になっている
+- 解決方法 2 の確認項目をすべて実施し、確認結果を「解決方法」セクションに記録している
+- ci.yml / release.yml の両ファイルの `Setup JDK 17` ステップのコメントが、設計方針に記載した趣旨の内容に更新されている（明示指定は維持）
 - 実装ブランチで ci.yml の Android ジョブが通っている。release.yml はタグプッシュ（`202*`）でのみ発火するため直接検証できないが、両ファイルの Android ジョブが同じ構成であることを確認し、ci.yml の成功で代替する。なお ci.yml は CHANGES.md のみの変更では発火しないため、検証は CHANGES.md 以外の変更を含むコミットのプッシュで済ませる
 - `CHANGES.md` の `## develop` 配下の `### misc` に、サブ箇条書きと担当者行（`- @<担当者>`）を含む `[CHANGE]` エントリとして、Android ジョブのランナーを ubuntu-24.04 に変更した旨の記述がある
 
 ## 解決方法
 
-1. `ci.yml` / `release.yml` の Android ジョブの `runs-on` を `ubuntu-22.04` から `ubuntu-24.04` に変更する
-2. Android ジョブが ubuntu-24.04 でビルドに成功し、成果物（`Sora-release.aar` 等）が生成されることを確認する。確認項目:
-   - 環境変数 `ANDROID_SDK_ROOT=/usr/local/lib/android/sdk` が ubuntu-24.04 でもデフォルトで設定されており、`run.py` の分岐（`install_android_sdk_cmdline_tools`）が従来どおりスキップされること
-   - compileSdk 34 の platform / build-tools が ubuntu-24.04 のプリインストール SDK に含まれており、gradle ビルド（`assembleRelease` / `assemble`）が通ること
-   - デフォルト JDK が 17 に変わることの影響を確認し、`actions/setup-java` の明示指定とコメントを適切に更新すること
-3. `CHANGES.md` を更新する
+1. `ci.yml` / `release.yml` の build-ubuntu ジョブの matrix エントリ `android` の `runs-on` を `ubuntu-22.04` から `ubuntu-24.04` に変更する
+2. Android ジョブが ubuntu-24.04 でビルドに成功することを確認する。確認項目:
+   - ジョブログに `commandlinetools-linux-13114758` のダウンロード行と `sdkmanager` の実行行が現れず、`run.py` の fallback（`install_android_sdk_cmdline_tools`）がスキップされること（`android-ndk-r28b` のダウンロード行は NDK インストールによるもので判断対象外）
+   - gradle ビルド（`assembleRelease` / `assemble`）が ubuntu-24.04 のプリインストール SDK（platform android-34 と、AGP 8.2.0 / 8.10.0 が要求する build-tools）で通ること
+   - `dl.google.com/android/repository` からの直接ダウンロードが `android-ndk-r28b` のみで、AGP による SDK コンポーネントの自動インストールが発生しないこと（Google Maven（`dl.google.com/dl/android/maven2`）からの依存取得は判断対象外）
+   - `actions/setup-java` が JDK 17 を明示指定するため、デフォルト JDK の変化（11→17）はビルドに影響しないことを確認結果に記録すること
+   - `sora-cpp-sdk-..._android.tar.gz` の生成と Artifact アップロードの成功を確認すること
+
+   - 注記: Android ジョブでは E2E テストは実行されないため、検証はビルド成功のみで行う
