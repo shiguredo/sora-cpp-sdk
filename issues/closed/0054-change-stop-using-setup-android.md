@@ -1,7 +1,7 @@
 # GitHub Actions から android-actions/setup-android を利用しないようにする
 
 - Created: 2026-08-13
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-08-13
 - Branch: feature/change-stop-using-setup-android
 - Polished: 2026-08-13
 
@@ -35,6 +35,8 @@ setup-android が行う処理（`ANDROID_SDK_ROOT` の export（既存値の維�
 - JDK 17 ステップは gradle ビルド（AGP 8.x）が JDK 17 を要求するため、削除しない
 - 関連 issue の 0012（Android の targetSdk 35 引き上げ、open）で compileSdk が変更される場合は、runner のプリインストール SDK への依存を再確認する
 - ubuntu-22.04 イメージは 2026-09-17 に非推奨開始、2027-04-17 にサポート終了予定のため、runner 移行時（ubuntu-24.04 等）にも Android ジョブがプリインストール SDK で動くことを再確認する
+- 決定: 選択肢 A（runner のプリインストール SDK を利用）
+- 理由: CI の Android ジョブでビルドが成功し、run.py の分岐が従来どおりスキップされた（fallback が実行されていない）ことを確認した。platform / build-tools の供給元は削除の前後で変わらない。選択肢 B は `install_android_sdk_cmdline_tools` が platform / build-tools を入れず拡張が必要になるため不採用とし、選択肢 C は AGP 8.x の gradle ビルドに JDK 17 が必須のため不可とした
 
 ## 完了条件
 
@@ -47,8 +49,16 @@ setup-android が行う処理（`ANDROID_SDK_ROOT` の export（既存値の維�
 
 ## 解決方法
 
-1. `ci.yml` / `release.yml` から `Setup Android SDK`（`android-actions/setup-android`）ステップを削除する
-2. 削除後、Android ジョブのビルドが成功し、成果物（`Sora-release.aar` 等）が従来どおり生成されることを確認する。確認項目:
-   - runner のデフォルト環境変数 `ANDROID_SDK_ROOT` により、従来どおりスキップされること。スキップはログに現れないため、ビルドログに `commandlinetools-linux-13114758` のダウンロード行と、`sdkmanager` と `--licenses` を同一行に含む実行行（`yes | ... sdkmanager --sdk_root=... --licenses` の形）が現れないことで確認する（`android-ndk-r28b` のダウンロード行は NDK インストールによるもので判断対象外）。確認は GitHub Actions のステップログ検索、または `gh run view --log --branch feature/change-stop-using-setup-android` の出力の grep で行う。現れた場合は runner の前提が崩れているため、原因を特定して記録する
-   - gradle ビルド（`assembleRelease` / `assemble`）が runner のプリインストール SDK（platform 34 と、AGP 8.2.0 / 8.10.0 が要求する build-tools（いずれもプリインストール済み）、ライセンス許諾済み）で通ること。gradle は `ANDROID_SDK_ROOT` / `ANDROID_HOME` の環境変数で SDK を解決する（`android/Sora` と `test/android` に local.properties は存在しない）。なお `test/android` の `externalNativeBuild` が要求する CMake 4.3.2（DEPS の `CMAKE_VERSION`）はプリインストール SDK に含まれないため、AGP の自動ダウンロードが発生する想定である。自動ダウンロード（CMake、build-tools 等）の発生は gradle ログの `Downloading https://dl.google.com/...` 行で判定し、その事実を完了条件 2 の「決定:」「理由:」の追記時に含めて記録する
-   - なお、Android ジョブでは E2E テストは実行されないため、検証はビルド成功のみで行う
+- `.github/workflows/ci.yml` と `.github/workflows/release.yml` から `Setup Android SDK`（`android-actions/setup-android`）ステップを削除した
+- `run.py` / `buildbase.py` / `DEPS` は変更していない（選択肢 A）
+- `actions/setup-java`（JDK 17）ステップは変更していない
+- `CHANGES.md` の `## develop` 配下の `### misc` に `[CHANGE]` エントリを追加した
+
+### 確認結果
+
+- CI の Android ジョブ（`Build sora-cpp-sdk for android`）が成功した
+- ジョブログに `commandlinetools-linux-13114758` のダウンロード行と `sdkmanager` の実行行が現れず、run.py の fallback（`install_android_sdk_cmdline_tools`）が実行されていないことを確認した（`android-ndk-r28b` のダウンロード行は NDK インストールによるもので判断対象外）
+- gradle ビルド（`assembleRelease` / `assemble`）が `BUILD SUCCESSFUL` で完了し、runner のプリインストール SDK（platform 34 と AGP が要求する build-tools）で通ることを確認した
+- `dl.google.com` からのダウンロードは `android-ndk-r28b` のみで、AGP の自動ダウンロードは発生していない（CMake 4.3.2 は run.py の `install_cmake` が GitHub Releases から取得した）
+- 成果物（`sora-cpp-sdk-..._android.tar.gz`）のアップロードが成功したことを確認した
+- release.yml は ci.yml と同じ変更（同一ステップの削除）を反映しているため、ci.yml の成功で代替する
