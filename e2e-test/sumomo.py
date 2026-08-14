@@ -2,14 +2,187 @@
 
 import json
 import platform
+import re
 import shlex
 import subprocess
+import threading
 import time
+from dataclasses import dataclass
 from pathlib import Path
 from types import TracebackType
-from typing import Any, Literal, Self
+from typing import Any, Literal, Self, TextIO
 
 import httpx
+
+
+@dataclass
+class DeviceLists:
+    """sumomo --list-devices の結果を保持するデータクラス"""
+
+    audio_recording: list[str]
+    audio_playout: list[str]
+    video: list[tuple[str, str]]  # (device_path, card_name)
+
+
+def get_device_lists() -> DeviceLists:
+    """sumomo --list-devices を実行してデバイス一覧をパースして返す"""
+    sumomo_path = get_sumomo_executable_path()
+    result = subprocess.run(
+        [sumomo_path, "--list-devices"],
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"--list-devices が異常終了した\n"
+            f"returncode: {result.returncode}\n"
+            f"stderr: {result.stderr}"
+        )
+
+    output = result.stdout
+    audio_recording: list[str] = []
+    audio_playout: list[str] = []
+    video: list[tuple[str, str]] = []
+
+    current_section: str | None = None
+    for line in output.splitlines():
+        if line == "=== Available audio input devices ===":
+            current_section = "audio_input"
+            continue
+        elif line == "=== Available audio output devices ===":
+            current_section = "audio_output"
+            continue
+        elif line == "=== Available video devices ===":
+            current_section = "video"
+            continue
+
+        if current_section in ("audio_input", "audio_output"):
+            # パース: "  [N] device_name" または "  [N] device_name (unique_name)"
+            m = re.match(r"\s*\[\d+\]\s+(.+)$", line)
+            if m:
+                name = m.group(1).strip()
+                # 末尾の (unique_name) を削除していたが、実際のデバイス名と一致しなくなるため、
+                # 完全な名前をそのまま保持する。
+                # SoraClientContext::FindAudioDeviceIndex ではデバイス名の完全一致で検索するため、
+                # --list-devices の出力と同じ文字列を指定する必要がある。
+                if current_section == "audio_input":
+                    audio_recording.append(name)
+                else:
+                    audio_playout.append(name)
+        elif current_section == "video":
+            # パース: "  [/dev/videoN] card_name (bus_info):"
+            m = re.match(r"\s*(\[/dev/video\d+\])\s+(.+?)\s*\(.*\):\s*$", line)
+            if m:
+                device_path = m.group(1).strip("[]")
+                card_name = m.group(2).strip()
+                video.append((device_path, card_name))
+
+    return DeviceLists(
+        audio_recording=audio_recording,
+        audio_playout=audio_playout,
+        video=video,
+    )
+
+
+def get_sumomo_executable_path() -> str:
+    """ビルド済みの sumomo 実行ファイルのパスを自動検出"""
+    project_root = Path(__file__).parent.parent
+    build_dir = project_root / "examples" / "_build"
+
+    # _build ディレクトリ内の実際のビルドターゲットを検出
+    if not build_dir.exists():
+        raise RuntimeError(
+            f"Build directory {build_dir} does not exist. "
+            f"Please build with: python3 run.py build <target>"
+        )
+
+    # Windows の場合は .exe 拡張子を考慮
+    system = platform.system().lower()
+    exe_suffix = ".exe" if system == "windows" else ""
+
+    available_targets = [
+        d.name
+        for d in build_dir.iterdir()
+        if d.is_dir() and (d / "release" / "sumomo" / f"sumomo{exe_suffix}").exists()
+    ]
+
+    if not available_targets:
+        raise RuntimeError(
+            f"No built sumomo executables found in {build_dir}. "
+            f"Please build with: python3 run.py build <target>"
+        )
+
+    if len(available_targets) == 1:
+        # ビルドが1つだけの場合は自動選択
+        target = available_targets[0]
+        print(f"Auto-detected sumomo target: {target}")
+    else:
+        # 複数ビルドがある場合は、プラットフォームに応じて優先順位を決める
+        machine = platform.machine().lower()
+
+        # プラットフォームに応じた優先順位リスト
+        if system == "darwin":
+            if machine == "arm64" or machine == "aarch64":
+                preferred = ["macos_arm64", "macos_x86_64"]
+            else:
+                preferred = ["macos_x86_64", "macos_arm64"]
+        elif system == "linux":
+            if machine == "aarch64":
+                preferred = [
+                    "ubuntu-26.04_armv8",
+                    "ubuntu-24.04_armv8",
+                    "ubuntu-22.04_armv8",
+                    "ubuntu-20.04_armv8",
+                ]
+            else:
+                preferred = [
+                    "ubuntu-26.04_x86_64",
+                    "ubuntu-24.04_x86_64",
+                    "ubuntu-22.04_x86_64",
+                    "ubuntu-20.04_x86_64",
+                ]
+        elif system == "windows":
+            preferred = ["windows_x86_64"]
+        else:
+            preferred = []
+
+        # 優先順位に従って選択
+        target = None
+        for pref in preferred:
+            if pref in available_targets:
+                target = pref
+                print(
+                    f"Auto-detected sumomo target: {target} (from {len(available_targets)} available)"
+                )
+                break
+
+        if not target:
+            # 優先順位で見つからない場合は最初のものを使用
+            target = available_targets[0]
+            print(
+                f"Using first available target: {target} (available: {', '.join(available_targets)})"
+            )
+
+    # sumomo のパスを構築
+    assert target is not None
+    sumomo_path = (
+        project_root
+        / "examples"
+        / "_build"
+        / target
+        / "release"
+        / "sumomo"
+        / f"sumomo{exe_suffix}"
+    )
+
+    if not sumomo_path.exists():
+        raise RuntimeError(
+            f"sumomo executable not found at {sumomo_path}. "
+            f"Please build with: python3 run.py build {target}"
+        )
+
+    return str(sumomo_path)
 
 
 class Sumomo:
@@ -173,6 +346,9 @@ class Sumomo:
         | None = None,
         # ログレベル
         log_level: Literal["verbose", "info", "warning", "error"] | None = None,
+        # 標準エラー出力をキャプチャするかどうか
+        # True にするとプロセス終了後に self.stderr_output から取得できる
+        capture_stderr: bool = False,
         # その他のカスタム引数
         extra_args: list[str] | None = None,
         # 起動待機時間
@@ -211,12 +387,15 @@ class Sumomo:
                 stats = s.get_stats()
         """
         # 実行ファイルのパスを自動検出
-        self.executable_path = self._get_sumomo_executable_path()
+        self.executable_path = get_sumomo_executable_path()
         self.process: subprocess.Popen[Any] | None = None
         self.http_port = http_port if http_port is not None else 0
         self.http_host = "127.0.0.1"
         # デフォルトの初期待機時間を設定
         self.initial_wait = initial_wait if initial_wait is not None else 2
+        # 標準エラー出力のキャプチャ設定
+        self.capture_stderr = capture_stderr
+        self.stderr_output: str | None = None
 
         # すべての引数を保存
         self.kwargs: dict[str, Any] = {
@@ -280,104 +459,12 @@ class Sumomo:
             "av1_encoder": av1_encoder,
             "av1_decoder": av1_decoder,
             "log_level": log_level,
+            "capture_stderr": capture_stderr,
             "extra_args": extra_args,
         }
 
         # HTTP クライアントの初期化（None で初期化）
         self._http_client: httpx.Client | None = None
-
-    def _get_sumomo_executable_path(self) -> str:
-        """ビルド済みの sumomo 実行ファイルのパスを自動検出"""
-        project_root = Path(__file__).parent.parent
-        build_dir = project_root / "examples" / "_build"
-
-        # _build ディレクトリ内の実際のビルドターゲットを検出
-        if not build_dir.exists():
-            raise RuntimeError(
-                f"Build directory {build_dir} does not exist. "
-                f"Please build with: python3 run.py build <target>"
-            )
-
-        # Windows の場合は .exe 拡張子を考慮
-        system = platform.system().lower()
-        exe_suffix = ".exe" if system == "windows" else ""
-
-        available_targets = [
-            d.name
-            for d in build_dir.iterdir()
-            if d.is_dir() and (d / "release" / "sumomo" / f"sumomo{exe_suffix}").exists()
-        ]
-
-        if not available_targets:
-            raise RuntimeError(
-                f"No built sumomo executables found in {build_dir}. "
-                f"Please build with: python3 run.py build <target>"
-            )
-
-        if len(available_targets) == 1:
-            # ビルドが1つだけの場合は自動選択
-            target = available_targets[0]
-            print(f"Auto-detected sumomo target: {target}")
-        else:
-            # 複数ビルドがある場合は、プラットフォームに応じて優先順位を決める
-            machine = platform.machine().lower()
-
-            # プラットフォームに応じた優先順位リスト
-            if system == "darwin":
-                if machine == "arm64" or machine == "aarch64":
-                    preferred = ["macos_arm64", "macos_x86_64"]
-                else:
-                    preferred = ["macos_x86_64", "macos_arm64"]
-            elif system == "linux":
-                if machine == "aarch64":
-                    preferred = ["ubuntu-24.04_armv8", "ubuntu-22.04_armv8", "ubuntu-20.04_armv8"]
-                else:
-                    preferred = [
-                        "ubuntu-24.04_x86_64",
-                        "ubuntu-22.04_x86_64",
-                        "ubuntu-20.04_x86_64",
-                    ]
-            elif system == "windows":
-                preferred = ["windows_x86_64"]
-            else:
-                preferred = []
-
-            # 優先順位に従って選択
-            target = None
-            for pref in preferred:
-                if pref in available_targets:
-                    target = pref
-                    print(
-                        f"Auto-detected sumomo target: {target} (from {len(available_targets)} available)"
-                    )
-                    break
-
-            if not target:
-                # 優先順位で見つからない場合は最初のものを使用
-                target = available_targets[0]
-                print(
-                    f"Using first available target: {target} (available: {', '.join(available_targets)})"
-                )
-
-        # sumomo のパスを構築
-        assert target is not None
-        sumomo_path = (
-            project_root
-            / "examples"
-            / "_build"
-            / target
-            / "release"
-            / "sumomo"
-            / f"sumomo{exe_suffix}"
-        )
-
-        if not sumomo_path.exists():
-            raise RuntimeError(
-                f"sumomo executable not found at {sumomo_path}. "
-                f"Please build with: python3 run.py build {target}"
-            )
-
-        return str(sumomo_path)
 
     def __enter__(self) -> Self:
         """コンテキストマネージャーの開始"""
@@ -396,12 +483,28 @@ class Sumomo:
                 # 注意: stderr=subprocess.PIPE に変更すると Windows でテストが通らなくなる
                 # Windows ではパイプバッファが小さく、stderr を定期的に読み取らないと
                 # バッファがいっぱいになってプロセスがブロックされる可能性がある
+                # そのため capture_stderr オプションで明示的に指定した場合のみパイプを使用し、
+                # 別スレッドで stderr を継続的に読み取ってバッファが詰まらないようにする
+                stderr_arg = subprocess.PIPE if self.capture_stderr else None
                 self.process = subprocess.Popen(
                     cmd,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
+                    stdout=None,
+                    stderr=stderr_arg,
+                    text=True,
                 )
                 print(f"Started sumomo process with PID: {self.process.pid}")
+
+                # capture_stderr 時は別スレッドで stderr を読み取る
+                self._stderr_lines: list[str] = []
+                if self.capture_stderr:
+                    assert self.process.stderr is not None
+                    stderr_reader = threading.Thread(
+                        target=self._read_stderr,
+                        args=(self.process.stderr,),
+                        daemon=True,
+                    )
+                    stderr_reader.start()
+                    self._stderr_reader = stderr_reader
             except FileNotFoundError:
                 raise RuntimeError(
                     f"Sumomo executable not found at {self.executable_path}. "
@@ -447,6 +550,14 @@ class Sumomo:
 
         self._cleanup()
         return False
+
+    def _read_stderr(self, stderr: TextIO) -> None:
+        """標準エラー出力を別スレッドで読み取り、 self._stderr_lines に蓄積する"""
+        try:
+            for line in stderr:
+                self._stderr_lines.append(line)
+        finally:
+            stderr.close()
 
     def _build_args(self, **kwargs: Any) -> list[str]:
         """コマンドライン引数を構築"""
@@ -658,14 +769,9 @@ class Sumomo:
                 if poll_result is not None:
                     # プロセスが終了している場合のみ stderr を読む
                     error_msg = f"Process exited unexpectedly with code {poll_result}"
-                    if self.process.stderr:
-                        # プロセスが終了しているので read() はブロックしない
-                        try:
-                            stderr_output = self.process.stderr.read()
-                            if stderr_output:
-                                error_msg += f"\nStderr output:\n{stderr_output}"
-                        except Exception:
-                            pass
+                    stderr_output = self._get_stderr_output()
+                    if stderr_output:
+                        error_msg += f"\nStderr output:\n{stderr_output}"
                     raise RuntimeError(error_msg)
 
                 # HTTP エンドポイントをチェック
@@ -693,16 +799,11 @@ class Sumomo:
 
                 # プロセスが終了していた場合、即座に終了して stderr/stdout を確認
                 if poll_result_after is not None:
-                    # この時点でプロセスは既に終了しているため、read() はブロックしない
                     error_msg = f"Process exited with code {poll_result_after} during startup"
 
-                    if self.process.stderr:
-                        try:
-                            stderr_output = self.process.stderr.read()
-                            if stderr_output:
-                                error_msg += f"\n\nStderr:\n{stderr_output}"
-                        except Exception:
-                            pass
+                    stderr_output = self._get_stderr_output()
+                    if stderr_output:
+                        error_msg += f"\n\nStderr:\n{stderr_output}"
 
                     if self.process.stdout:
                         try:
@@ -733,13 +834,9 @@ class Sumomo:
                 # プロセスが終了したので stderr/stdout を読む
                 error_msg = f"sumomo process failed to start within {timeout} seconds"
 
-                if self.process.stderr:
-                    try:
-                        stderr_output = self.process.stderr.read()
-                        if stderr_output:
-                            error_msg += f"\n\nStderr (last 2000 chars):\n{stderr_output[-2000:]}"
-                    except Exception:
-                        pass
+                stderr_output = self._get_stderr_output()
+                if stderr_output:
+                    error_msg += f"\n\nStderr (last 2000 chars):\n{stderr_output[-2000:]}"
 
                 if self.process.stdout:
                     try:
@@ -754,6 +851,14 @@ class Sumomo:
 
             self._cleanup()
             raise RuntimeError(f"sumomo process failed to start within {timeout} seconds")
+
+    def _get_stderr_output(self) -> str | None:
+        """stderr の内容を取得する"""
+        if self.capture_stderr and hasattr(self, "_stderr_reader"):
+            self._stderr_reader.join(timeout=5)
+            self.stderr_output = "".join(self._stderr_lines)
+            return self.stderr_output
+        return None
 
     def _cleanup(self) -> None:
         """プロセスをクリーンアップ"""
@@ -773,6 +878,9 @@ class Sumomo:
                 self.process.kill()
                 self.process.wait()
                 print(f"Sumomo process (PID: {pid}) killed")
+
+            # stderr 読み取りスレッドがいれば終了を待って結果を取得する
+            self._get_stderr_output()
 
             # stderr の残りを読み取ってリソースを解放
             if hasattr(self.process, "stderr") and self.process.stderr:

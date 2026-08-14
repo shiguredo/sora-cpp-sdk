@@ -31,6 +31,7 @@
 #include <modules/video_coding/svc/scalable_video_controller.h>
 #include <rtc_base/checks.h>
 #include <rtc_base/logging.h>
+#include <system_wrappers/include/clock.h>
 
 // libyuv
 #include <libyuv/convert.h>
@@ -61,6 +62,13 @@
                              amf::AMFFormatResult(res)) \
                       << message;                       \
     return res;                                         \
+  }
+#define WEBRTC_RETURN_IF_FAILED(res, message)           \
+  if (res != AMF_OK) {                                  \
+    RTC_LOG(LS_ERROR) << amf::amf_from_unicode_to_utf8( \
+                             amf::AMFFormatResult(res)) \
+                      << message;                       \
+    return WEBRTC_VIDEO_CODEC_ERROR;                    \
   }
 #define TRACE() RTC_LOG(LS_ERROR) << "TRACE: " << __LINE__
 
@@ -154,7 +162,9 @@ class AMFVideoEncoderImpl : public AMFVideoEncoder {
 AMFVideoEncoderImpl::AMFVideoEncoderImpl(
     std::shared_ptr<AMFContext> amf_context,
     webrtc::VideoCodecType codec)
-    : amf_context_(amf_context), codec_(codec), bitrate_adjuster_(0.5, 0.95) {}
+    : amf_context_(amf_context),
+      codec_(codec),
+      bitrate_adjuster_(webrtc::Clock::GetRealTimeClock(), 0.5, 0.95) {}
 
 AMFVideoEncoderImpl::~AMFVideoEncoderImpl() {
   Release();
@@ -219,7 +229,12 @@ int32_t AMFVideoEncoderImpl::Encode(
   if (encoder_ == nullptr) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
-  if (!callback_) {
+  webrtc::EncodedImageCallback* callback;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    callback = callback_;
+  }
+  if (!callback) {
     RTC_LOG(LS_WARNING)
         << "InitEncode() has been called, but a callback function "
         << "has not been set with RegisterEncodeCompleteCallback()";
@@ -231,17 +246,17 @@ int32_t AMFVideoEncoderImpl::Encode(
     if (codec_ == webrtc::kVideoCodecAV1) {
       res = encoder_->SetProperty(AMF_VIDEO_ENCODER_AV1_TARGET_BITRATE,
                                   target_bitrate_bps_);
-      RETURN_IF_FAILED(
+      WEBRTC_RETURN_IF_FAILED(
           res, "Failed to SetProperty(AMF_VIDEO_ENCODER_AV1_TARGET_BITRATE)");
     } else if (codec_ == webrtc::kVideoCodecH265) {
       res = encoder_->SetProperty(AMF_VIDEO_ENCODER_HEVC_TARGET_BITRATE,
                                   target_bitrate_bps_);
-      RETURN_IF_FAILED(
+      WEBRTC_RETURN_IF_FAILED(
           res, "Failed to SetProperty(AMF_VIDEO_ENCODER_HEVC_TARGET_BITRATE)");
     } else if (codec_ == webrtc::kVideoCodecH264) {
       res = encoder_->SetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE,
                                   target_bitrate_bps_);
-      RETURN_IF_FAILED(
+      WEBRTC_RETURN_IF_FAILED(
           res, "Failed to SetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE)");
     }
     reconfigure_needed_ = false;
@@ -250,7 +265,7 @@ int32_t AMFVideoEncoderImpl::Encode(
   if (surface_ == nullptr) {
     res = context_->AllocSurface(amf::AMF_MEMORY_HOST, amf::AMF_SURFACE_YUV420P,
                                  width_, height_, &surface_);
-    RETURN_IF_FAILED(res, "Failed to AllocSurface");
+    WEBRTC_RETURN_IF_FAILED(res, "Failed to AllocSurface");
   }
   {
     amf::AMFPlane* py = surface_->GetPlane(amf::AMF_PLANE_Y);
@@ -266,21 +281,23 @@ int32_t AMFVideoEncoderImpl::Encode(
 
     res = surface_->SetProperty(FRAME_RTP_TIMESTAMP_PROPERTY,
                                 frame.rtp_timestamp());
-    RETURN_IF_FAILED(res,
-                     "Failed to SetProperty(FRAME_RTP_TIMESTAMP_PROPERTY)");
+    WEBRTC_RETURN_IF_FAILED(
+        res, "Failed to SetProperty(FRAME_RTP_TIMESTAMP_PROPERTY)");
 
     res =
         surface_->SetProperty(FRAME_NTP_TIME_MS_PROPERTY, frame.ntp_time_ms());
-    RETURN_IF_FAILED(res, "Failed to SetProperty(FRAME_NTP_TIME_MS_PROPERTY)");
+    WEBRTC_RETURN_IF_FAILED(
+        res, "Failed to SetProperty(FRAME_NTP_TIME_MS_PROPERTY)");
 
     res = surface_->SetProperty(FRAME_RENDER_TIME_MS_PROPERTY,
                                 frame.render_time_ms());
-    RETURN_IF_FAILED(res,
-                     "Failed to SetProperty(FRAME_RENDER_TIME_MS_PROPERTY)");
+    WEBRTC_RETURN_IF_FAILED(
+        res, "Failed to SetProperty(FRAME_RENDER_TIME_MS_PROPERTY)");
 
     res = surface_->SetProperty(FRAME_ROTATION_PROPERTY,
                                 (int64_t)frame.rotation());
-    RETURN_IF_FAILED(res, "Failed to SetProperty(FRAME_ROTATION_PROPERTY)");
+    WEBRTC_RETURN_IF_FAILED(res,
+                            "Failed to SetProperty(FRAME_ROTATION_PROPERTY)");
   }
 
   bool send_key_frame = false;
@@ -300,31 +317,31 @@ int32_t AMFVideoEncoderImpl::Encode(
     if (codec_ == webrtc::VideoCodecType::kVideoCodecH264) {
       res = surface_->SetProperty(AMF_VIDEO_ENCODER_FORCE_PICTURE_TYPE,
                                   AMF_VIDEO_ENCODER_PICTURE_TYPE_IDR);
-      RETURN_IF_FAILED(
+      WEBRTC_RETURN_IF_FAILED(
           res, "Failed to SetProperty(AMF_VIDEO_ENCODER_FORCE_PICTURE_TYPE)");
       res = surface_->SetProperty(AMF_VIDEO_ENCODER_INSERT_SPS, true);
-      RETURN_IF_FAILED(res,
-                       "Failed to SetProperty(AMF_VIDEO_ENCODER_INSERT_SPS)");
+      WEBRTC_RETURN_IF_FAILED(
+          res, "Failed to SetProperty(AMF_VIDEO_ENCODER_INSERT_SPS)");
       res = surface_->SetProperty(AMF_VIDEO_ENCODER_INSERT_PPS, true);
-      RETURN_IF_FAILED(res,
-                       "Failed to SetProperty(AMF_VIDEO_ENCODER_INSERT_PPS)");
+      WEBRTC_RETURN_IF_FAILED(
+          res, "Failed to SetProperty(AMF_VIDEO_ENCODER_INSERT_PPS)");
     } else if (codec_ == webrtc::VideoCodecType::kVideoCodecH265) {
       res = surface_->SetProperty(AMF_VIDEO_ENCODER_HEVC_FORCE_PICTURE_TYPE,
                                   AMF_VIDEO_ENCODER_HEVC_PICTURE_TYPE_IDR);
-      RETURN_IF_FAILED(
+      WEBRTC_RETURN_IF_FAILED(
           res,
           "Failed to SetProperty(AMF_VIDEO_ENCODER_HEVC_FORCE_PICTURE_TYPE)");
       res = surface_->SetProperty(AMF_VIDEO_ENCODER_HEVC_INSERT_HEADER, true);
-      RETURN_IF_FAILED(
+      WEBRTC_RETURN_IF_FAILED(
           res, "Failed to SetProperty(AMF_VIDEO_ENCODER_HEVC_INSERT_HEADER)");
     } else if (codec_ == webrtc::VideoCodecType::kVideoCodecAV1) {
       res = surface_->SetProperty(AMF_VIDEO_ENCODER_AV1_FORCE_FRAME_TYPE,
                                   AMF_VIDEO_ENCODER_AV1_FORCE_FRAME_TYPE_KEY);
-      RETURN_IF_FAILED(
+      WEBRTC_RETURN_IF_FAILED(
           res, "Failed to SetProperty(AMF_VIDEO_ENCODER_AV1_FORCE_FRAME_TYPE)");
       res = surface_->SetProperty(
           AMF_VIDEO_ENCODER_AV1_FORCE_INSERT_SEQUENCE_HEADER, true);
-      RETURN_IF_FAILED(
+      WEBRTC_RETURN_IF_FAILED(
           res,
           "Failed to "
           "SetProperty(AMF_VIDEO_ENCODER_AV1_FORCE_INSERT_SEQUENCE_HEADER)");
@@ -335,9 +352,11 @@ int32_t AMFVideoEncoderImpl::Encode(
   if (res == AMF_NEED_MORE_INPUT) {
     // do nothing
   } else if (res == AMF_INPUT_FULL || res == AMF_DECODER_NO_FREE_SURFACES) {
-    amf_sleep(1);  // input queue is full: wait, poll and submit again
+    // TODO(melpon): Submit に成功するまでループさせるかどうか考えた方が良いかもしれない
+    // amf_sleep(1);  // input queue is full: wait, poll and submit again
+    return WEBRTC_VIDEO_CODEC_ERROR;
   } else {
-    RETURN_IF_FAILED(res, L"Failed to SubmitInput()");
+    WEBRTC_RETURN_IF_FAILED(res, L"Failed to SubmitInput()");
     surface_ = nullptr;
   }
 
@@ -362,7 +381,7 @@ void AMFVideoEncoderImpl::SetRates(
 
   uint32_t new_framerate = (uint32_t)parameters.framerate_fps;
   uint32_t new_bitrate = parameters.bitrate.get_sum_bps();
-  RTC_LOG(LS_INFO) << __FUNCTION__ << " framerate_:" << framerate_
+  RTC_LOG(LS_INFO) << __func__ << " framerate_:" << framerate_
                    << " new_framerate: " << new_framerate
                    << " target_bitrate_bps_:" << target_bitrate_bps_
                    << " new_bitrate:" << new_bitrate
@@ -523,6 +542,12 @@ AMF_RESULT AMFVideoEncoderImpl::ProcessBuffer(amf::AMFBufferPtr buffer,
     // AV1 の SVC では、まれにエンコード対象のレイヤーフレームが存在しない場合がある。
     // 次のフレームを待つことで正常に継続可能なケースであるため、エラーではなく正常終了の AMF_OK を返してスキップする。
     if (layer_frames.empty()) {
+      webrtc::EncodedImageCallback* callback;
+      {
+        std::lock_guard<std::mutex> lock(mutex_);
+        callback = callback_;
+      }
+      callback->OnFrameDropped(rtp_timestamp, 0, true);
       return AMF_OK;
     }
     codec_specific.end_of_picture = true;
@@ -538,12 +563,18 @@ AMF_RESULT AMFVideoEncoderImpl::ProcessBuffer(amf::AMFBufferPtr buffer,
     }
   }
 
+  webrtc::EncodedImageCallback* callback;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    callback = callback_;
+  }
+
+  encoded_image_.set_end_of_temporal_unit(true);
   webrtc::EncodedImageCallback::Result result =
-      callback_->OnEncodedImage(encoded_image_, &codec_specific);
+      callback->OnEncodedImage(encoded_image_, &codec_specific);
   if (result.error != webrtc::EncodedImageCallback::Result::OK) {
-    RTC_LOG(LS_ERROR) << __FUNCTION__
-                      << " OnEncodedImage failed error:" << result.error;
-    return AMF_FAIL;
+    RTC_LOG(LS_WARNING) << __func__
+                        << " OnEncodedImage failed error:" << result.error;
   }
   bitrate_adjuster_.Update(size);
 

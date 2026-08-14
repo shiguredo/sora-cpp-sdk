@@ -1,0 +1,50 @@
+# Configuration file for `prek`, a git hook framework written in Rust.
+# See https://prek.j178.dev for more information.
+#:schema https://www.schemastore.org/prek.json
+
+# ビルド生成物や外部依存はチェック対象から除外する
+exclude = "^(_build/|_install/|_source/|third_party/)"
+
+# prek 組み込みの汎用フック (オフライン・追加セットアップ不要)
+[[repos]]
+repo = "builtin"
+hooks = [
+  { id = "trailing-whitespace" },
+  { id = "end-of-file-fixer" },
+  { id = "mixed-line-ending" },
+  { id = "check-merge-conflict" },
+  { id = "check-added-large-files" },
+  { id = "detect-private-key" },
+  # .clang-format などマルチドキュメント YAML を許可する
+  { id = "check-yaml", args = ["--allow-multiple-documents"] },
+  { id = "check-toml" }
+]
+
+[[repos]]
+repo = "local"
+hooks = [
+  {
+    id = "clang-format",
+    name = "clang-format",
+    entry = "python3 run.py format",
+    language = "system",
+    pass_filenames = false,
+    types_or = ["c", "c++", "objective-c", "objective-c++"]
+  },
+  # Python の lint と自動修正 (ルートの ruff.toml を利用する)
+  {
+    id = "ruff-check",
+    name = "ruff check",
+    entry = "ruff check --fix",
+    language = "system",
+    types = ["python"]
+  },
+  # Python のフォーマット
+  {
+    id = "ruff-format",
+    name = "ruff format",
+    entry = "ruff format",
+    language = "system",
+    types = ["python"]
+  }
+]

@@ -2,15 +2,291 @@
 
 - CHANGE
   - 下位互換のない変更
-- UPDATE
-  - 下位互換がある変更
 - ADD
   - 下位互換がある追加
+- UPDATE
+  - 下位互換がある変更
 - FIX
   - バグ修正
 
 ## develop
 
+## 2026.2.0
+
+**リリース日**: 2026-08-14
+
+- [CHANGE] multistrap を廃止し apt-get + dpkg-deb による sysroot 構築に置き換える
+  - 本体およびサンプルの multistrap 設定を廃止し、JSON 形式の sysroot 設定に置き換える
+  - リポジトリを HTTPS に統一し、GPG `signed_by` による認証済み取得に切り替える
+  - 旧 sysroot 生成関数を廃止し、APT ベースの sysroot 生成モジュールを経由する方式に置き換える
+  - 本体ビルドスクリプトから Jetson 系ターゲットの到達不能な分岐を削除する
+  - manifest 不一致時に sysroot を明示的に再生成するオプションを追加する
+  - CI ランナーへの `multistrap` および sed パッチのインストールを削除し、`debian-archive-keyring` の明示 install を追加する
+  - @voluntas
+- [CHANGE] `SoraClientContext` に `ConnectionContext::MediaEngineReference` を保持し、
+    `PeerConnection` 作成時の遅延 Init により指定オーディオデバイスがデフォルトに戻っていた問題を修正する
+  - `SoraClientContext` の ABI を変更する
+  - 非 Android / iOS では `SoraClientContext::Create()` 内で同期的に `WebRtcVoiceEngine::Init()` を実行させ、指定デバイス設定後に `InitMicrophone()` / `InitSpeaker()` を行う
+  - Android / iOS では `media_engine_ref_` を作成せず、既存挙動に影響しない
+  - @voluntas
+- [CHANGE] NVIDIA Pascal 世代以前の GPU サポートを廃止する
+  - CUDA 13 で Maxwell / Pascal / Volta (sm_50 〜 sm_70) のサポートが廃止されたため、CUDA カーネルのターゲットを `sm_60` から `sm_75` (Turing) 以降に変更する
+  - GTX 10 シリーズ (GTX 1060 / 1080 など) では NVIDIA ハードウェアエンコーダー / デコーダーが利用できなくなる
+  - @voluntas
+- [CHANGE] E2E テストの Python 要件を 3.14 以上に引き上げる
+  - @voluntas
+- [CHANGE] TLS 検証の信頼ストアを OS のシステム CA に切り替える
+  - 全 OS（macOS, Linux, Windows, iOS, Android）でシステム CA を信頼の根拠とする方式に統一する
+  - 独自 CA が必要な場合は全プラットフォーム共通で `SoraSignalingConfig::ca_cert` に PEM を明示指定する
+  - macOS: Sonoma (14.x) 以降が対象、Keychain の Admin / User ドメインの trust settings と MDM Configuration Profile で配布された CA は反映されない
+  - Linux: Ubuntu 22.04 / 24.04、Raspberry Pi OS bookworm 以降が対象、前提を満たさない環境では `ca_cert` 指定が必要
+  - Windows: Windows 10 以降が対象、`ROOT` ストアに必要なルート CA がない環境では `ca_cert` 指定が必要
+  - iOS: iOS 14 以降が対象、sandbox 制約により `SecTrustEvaluateWithError` に検証委譲する方式で実装
+    - `SecTrustEvaluateWithError` の利用に伴い iOS アプリのビルド時に Security.framework の追加が必要になる
+  - Android: Android 10 以降が対象、Conscrypt Mainline module 経由の CA ストアと AOSP 標準パスの両方を読み込む
+  - 内部フリー関数 `sora::LoadSystemSSLRootCertificates` を共通差し込み口とし、`ca_cert` 未指定時の信頼ストア構築を集約する
+  - 旧ハードコード PEM（isrg_root / lets_encrypt_r3）と WebRTC `rtc_base/ssl_roots.h` 依存を完全に撤廃する
+  - sumomo の E2E テストで TLS 検証のシステム CA 経由・`ca_cert` 指定・`insecure` モードの挙動を検証するテストを追加する
+  - @melpon
+- [ADD] Ubuntu 26.04 ARM64 向けの sysroot とビルドターゲットを追加する
+  - @voluntas
+- [ADD] Ubuntu 26.04 x86_64 向けのビルドターゲットを追加する
+  - @voluntas
+- [ADD] sumomo の E2E テストで `--audio-recording-device` を複数の音声録音デバイスに対して個別に検証するテストを追加する
+  - @melpon
+- [ADD] sumomo の E2E テストで録音デバイス未指定時・無効指定時の挙動を検証するテストを追加する
+  - @voluntas
+- [ADD] sumomo の E2E テストヘルパーに `capture_stderr` オプションを追加する
+  - 標準エラー出力をキャプチャしてテストから検証できるようにする
+  - @voluntas
+- [ADD] sumomo の E2E テストで `--audio-playout-device` を複数の音声再生デバイスに対して個別に検証するテストを追加する
+  - @voluntas
+- [ADD] TURN-TLS のクライアント証明書設定に対応する
+  - `SoraSignalingConfig` の `client_cert` / `client_key` を TURN-TLS にも適用する
+  - @zztkm
+- [UPDATE] E2E テストの開発依存ライブラリを最新版に更新する
+  - @voluntas
+- [UPDATE] libwebrtc のバージョンを m150.7871.3.1 に上げる
+  - `webrtc::RtcEventLogFactory` のコンストラクタ不一致を修正する
+    - libwebrtc で `RtcEventLogFactory` の `TaskQueueFactory` が削除されたため、変更に追従する
+    - 参考 : libwebrtc で削除の入ったコミットのリンク
+      - https://source.chromium.org/chromium/_/webrtc/src/+/987aa57ba46fe759284caa9a2cdad3c52ea5d13a
+  - libwebrtc m146 追従に伴うハードウェアエンコーダーのエラーハンドリングを修正する
+    - 切断中に `OnEncodedImage()` のコールバックエラーにより abort することがある問題に対応する
+    - `OnEncodedImage()` のコールバックエラーではエラーを返さず、`LS_WARNING` のログ出力のみに変更する
+    - 参考 : 追従する libwebrtc のコミットのリンク
+      - https://source.chromium.org/chromium/_/webrtc/src/+/54e6613e4005f449ea609eaa19491d0c36e73824
+  - MakeVal の stringstream フォールバック削除に対応する
+    - libwebrtc m150 で `rtc::MakeVal` の stringstream フォールバックが削除された
+    - これにより `RTC_LOG` に `boost::system::error_code` や `boost::asio::ip::tcp::endpoint` を直接渡せなくなった
+    - `RTC_LOG` は `std::string` なら直接扱えるため、`std::string` に文字列化してから渡すよう修正した
+      - `boost::system::error_code` は `to_string()` で文字列化してから渡す
+      - `boost::asio::ip::tcp::endpoint` は `std::ostringstream` で文字列化してから渡す
+    - 対象ファイル: `src/sora_signaling.cpp`、`src/websocket.cpp`
+    - 参考 : https://webrtc-review.googlesource.com/c/src/+/469260
+  - @torikizi @zztkm
+- [UPDATE] cmake のバージョンを 4.4.2 に上げる
+  - @voluntas
+- [UPDATE] Catch2 のバージョンを v3.15.3 に上げる
+  - @voluntas
+- [UPDATE] AMD AMF のバージョンを v1.5.2 に上げる
+  - @voluntas
+- [UPDATE] Boost のバージョンを 1.91.0 に上げる
+  - CMakeLists.txt の macOS ビルドと iOS ビルドの `target_compile_definitions` に PUBLIC で `BOOST_ASIO_DISABLE_STD_ATOMIC_WAIT` を追加する
+    - boost 1.91.0 で asio の `kqueue_reactor` 内部 mutex が `atomic_slim_mutex` (`std::atomic::wait` / `notify_one` を利用) に切り替わったが、 webrtc-build 同梱の libc++ + macOS の組み合わせで kevent から完了通知が届かず async_connect がハングする現象を確認した
+    - 旧来の pthread ベース mutex 実装に戻すことで回避する
+    - IPHONEOS_DEPLOYMENT_TARGET が iOS 17.4 以上の場合に発生する問題であり 14.0 でビルドしているため影響はないが、今後バージョンを上げた際の問題を回避するため macOS ビルドと同様に修正する
+  - @voluntas @torikizi
+- [UPDATE] Boost のバージョンを 1.92.0 に上げる
+  - @voluntas
+- [UPDATE] Intel VPL を v2.17.0 にあげる
+  - @torikizi
+- [UPDATE] CUDA のバージョンを `13.3.1-1` に上げる
+  - Ubuntu 26.04 の CUDA リポジトリが `13.3.0` / `13.3.1` のみのため、全プラットフォームを揃える
+  - Windows では CUDA 13 で分離された `cuda_crt` もインストール対象に含める
+  - Windows では CUDA 13 で `cicc` (nvvm) が `libnvvm` に分離されたため、これもインストール対象に含める
+  - CUDA 13 で `cuCtxCreate` が `cuCtxCreate_v4` (4 引数) に変わったため、呼び出しを新しいシグネチャに追従する
+  - @voluntas
+- [UPDATE] clang のバージョンを 22 に上げる
+  - CUDA 13.3 を clang でコンパイルするために必要
+  - @voluntas
+- [UPDATE] WSS / TURN-TLS のクライアント証明書設定で証明書チェーンを利用できるようにする
+  - `SoraSignalingConfig` の `client_cert` はこれまで単体の証明書が前提になっていたが、証明書チェーンを指定できるようにする
+  - @zztkm
+- [UPDATE] 内部コードのリファクタリングを行う
+  - インクルードガードの命名規則を統一する
+  - 非標準の `__FUNCTION__` をやめて標準の `__func__` に統一する
+  - シグナリング処理の似たような処理をヘルパー関数化してコードを簡潔にする
+  - `RtpTransceiverInterface` の検索処理をヘルパー関数化してコードを簡潔にする
+  - 不要なコード、不要なロック、変数、include、空のプリプロセッサブロック、誤字を整理する
+  - `SoraAudioManagerBase` から不要な `running` フラグを削除する
+  - AMF エンコーダ/デコーダで AMF_RESULT を WebRTC エラーコードとして返していたのを修正する
+  - AMF エンコーダで入力キューがフルの時に OK を返していたのを修正する
+  - @melpon
+- [UPDATE] Boost で deadline_timer が deprecated になったので、代わりに steady_timer を利用する
+  - @melpon
+- [UPDATE] BitrateAdjuster の２引数コンストラクタが deprecated になったので、代わりに３引数コンストラクタを利用する
+  - @melpon
+- [UPDATE] BOOST_ASIO_ENABLE_VERSION_NAMESPACE を有効化する
+  - Unity Editor 6000.3 がエクスポートする `asio_detail_posix_thread_function` と
+    Boost.Asio の同名の `extern "C"` 関数が衝突し、 Sora インスタンス破棄時に SIGSEGV が発生する問題を修正する
+  - `BOOST_ASIO_ENABLE_VERSION_NAMESPACE` を有効化し、
+    `BOOST_ASIO_VERSIONED_NAME` で生成される関数名にバージョン識別子を付加することで
+    シンボル名を変えて衝突を回避する
+  - 本問題は sora-cpp-sdk を Boost 1.91 にアップグレードした際に
+    `boost_asio_detail_posix_thread_function` から `asio_detail_posix_thread_function`
+    への関数名変更がトリガーとなり顕在化した
+  - 本問題は macOS で発見したが、 `BOOST_ASIO_ENABLE_VERSION_NAMESPACE` は
+    全プラットフォームで有効化する
+  - @torikizi
+- [UPDATE] BOOST_ASIO_ENABLE_VERSION_NAMESPACE 有効時に Boost.Beast 1.91 の
+    basic_stream.hpp にある boost::asio::ssl::stream の前方宣言が
+    inline namespace に対応しておらずビルドエラーが発生する問題を修正する
+  - basic_stream.hpp の前方宣言を
+    `BOOST_ASIO_INLINE_NAMESPACE_BEGIN` / `BOOST_ASIO_INLINE_NAMESPACE_END` で
+    ラップするパッチを buildbase.py に追加する
+  - 参考: Boost.Asio 1.91 で BOOST_ASIO_ENABLE_VERSION_NAMESPACE による
+    inline namespace のバイナリバージョニングが
+    追加されたが、前方宣言を壊す可能性があるためデフォルト無効とされている
+    該当記載のある boost のドキュメント :
+    ```
+    Added optional binary versioning using an inline namespace. ... The inline
+    namespace is disabled by default to avoid breaking existing code that forward
+    declares Asio names
+    ```
+    - リンク : https://www.boost.org/doc/libs/1_91_0/doc/html/boost_asio/history.html
+  - @torikizi
+- [FIX] VideoEncoder がフレームドロップを OnFrameDropped() で通知しない問題を修正する
+  - libwebrtc が要求するフレームドロップ通知とテンポラルユニット境界の設定が独自エンコーダーで行われていなかったのを修正する
+  - OpenH264 エンコーダーは参照実装 (libwebrtc の h264_encoder_impl) に合わせ、送信レイヤー数の事前集計で最後のレイヤーに `set_end_of_temporal_unit` を設定し、エンコーダー内部のフレームスキップ時に `OnFrameDropped()` を呼ぶようにする
+  - NvCodec / VPL / AMF / V4L2 の HWA エンコーダーは送信フレームに `set_end_of_temporal_unit(true)` を設定する
+  - NvCodec / VPL / AMF の AV1 SVC は `layer_frames.empty()` 経路のフレームドロップを `OnFrameDropped()` で通知する
+  - 参考 : libwebrtc で `OnFrameDropped()` が追加されたコミットのリンク
+    - https://source.chromium.org/chromium/_/webrtc/src/+/54ff9c19789b36a18d5ad9576be3775255caa279
+  - @torikizi
+- [FIX] BaseRenderer がフルスクリーン時に映像を枠の寸法まで拡大しない問題を修正する
+  - 枠が入力映像より大きい場合も枠の寸法に合わせて拡大して描画する
+  - @voluntas
+- [FIX] BaseRenderer の枠割りが回転映像のアスペクトを考慮しない問題を修正する
+  - 回転 90° / 270° の映像を回転後寸法基準で枠割りし、拡大縮小と回転を単一経路で適用する
+  - @voluntas
+- [FIX] BaseRenderer の枠情報のデータレースを修正する
+  - 枠の未確定チェックと枠位置・サイズの書き込みを `frame_params_lock_` 保護下で行う
+  - @voluntas
+- [FIX] BaseRenderer の枠割りが映像アスペクトを無視して映像間に黒帯を広げる問題を修正する
+  - @voluntas
+- [FIX] BaseRenderer の描画バッファがウィンドウリサイズ時に境界を超過する問題を修正する
+  - @voluntas
+- [FIX] sumomo と sdl_sample で AddTrack の戻り値チェックを追加する
+  - @melpon
+- [FIX] VPL デコーダ `InitVpl` で `CreateDecoder` の nullptr 戻り値未チェックを修正する
+  - @voluntas
+- [FIX] Linux で `--audio-recording-device` / `--audio-playout-device` を指定しても正しく音声デバイスが認識されない問題を修正する
+  - ADM の初期化 (`adm->Init()`) が行われていないために Linux の PulseAudio/ALSA 実装でデバイス列挙に失敗していた
+  - 空文字列のデバイス名を指定した場合や `configure_dependencies` 後に ADM が `nullptr` になった場合は `Create()` を失敗させるようにする
+  - `use_audio_device = false`（ダミー ADM）時に無駄な `RecordingIsAvailable()` / `PlayoutIsAvailable()` の WARNING ログが出力されないようにする
+  - iOS でも Android と同様に `RecordingDeviceName()` / `PlayoutDeviceName()` を呼ばないようにする
+  - @voluntas
+- [FIX] AMF デコーダの解像度変更時に `InitAMF` の戻り値が無視されているのを修正する
+  - @melpon
+- [FIX] CI が VERSION ファイルから CUDA_VERSION を読み取ろうとするバグを修正する
+  - @melpon
+- [FIX] カスタムエンジンが複数ある場合、`GetVideoCodecCapability()` で重複したエンジンが返されるのを修正
+  - @melpon
+- [FIX] `#if USE_VPL_ENCODER` と `#if defined(USE_VPL_ENCODER)` の不一致を修正する
+  - @melpon
+- [FIX] NvCodec エンコーダで `layer_frames` が空のケースを考慮していなかったのを修正する
+  - @melpon
+- [FIX] VPL デコーダの `MaxLength` 二重加算を修正する
+  - @melpon
+- [FIX] Android で `ReleaseStringUTFChars` の呼び忘れを修正する
+  - @melpon
+- [FIX] V4L2 ランナーで `on_completes_` が空の場合に capture buffer が再エンキューされないのを修正する
+  - @melpon
+- [FIX] libcamera キャプチャラで munmap していなかったのを修正する
+  - @melpon
+- [FIX] AMF エンコーダ/デコーダのコールバック関数がロック無しで利用されていたのを修正する
+  - @melpon
+- [FIX] VPL の `MFXVideoCORE_SyncOperation` のタイムアウトが長すぎるのを修正する
+  - @melpon
+- [FIX] Android の `SoraAudioManagerBluetooth` で `stateToString` の出力が間違っていたのを修正する
+  - @melpon
+- [FIX] `SoraSignaling` で接続タイムアウトの値に `SoraSignalingConfig::websocket_connection_timeout` が使用されていなかったのを修正する
+  - @melpon
+- [FIX] SoraVideoDecoderFactory / SoraVideoEncoderFactory の formats_ 並行アクセスによる abort を修正する
+  - @melpon
+- [FIX] `SSL_CTX_new` の戻り値未チェックで null deref の可能性があるのを修正する
+  - `CreateSSLContext()` で `SSL_CTX_new()` が nullptr を返した場合にエラーログを出力し例外を送出するようにする
+  - @melpon
+- [FIX] include/sora/dyn/dyn.h の DYN_REGISTER マクロが exit(1) でプロセスを強制終了するのを修正する
+  - exit(1) を throw std::runtime_error に置き換える
+  - エラー情報を例外メッセージに含める
+  - std::cerr 出力を削除し <iostream> の依存を除去する
+  - @melpon
+- [FIX] webrtc::InitializeSSL() の戻り値が無視されているのを修正する
+  - `SoraClientContext::Create()` で `InitializeSSL()` が `false` を返した場合にエラーログを出力し `nullptr` を返すようにする
+  - @melpon
+- [FIX] Disconnect が Redirecting 状態を処理せず DoInternalDisconnect の assert でクラッシュする問題を修正する
+  - @melpon
+- [FIX] DoInternalDisconnect DC+WS パスで DC close 成功後に WS close が来ないと切断がハングするのを修正する
+  - @melpon
+- [FIX] SendOnDisconnect にガードがなく OnDisconnect が二重通知される問題を修正する
+  - @melpon
+
+### misc
+
+- [CHANGE] GitHub Actions の Android ジョブのランナーを ubuntu-24.04 に変更する
+  - ubuntu-22.04 は 2026-09-17 に非推奨開始、2027-04-17 にサポート終了予定のため
+  - @t-miya
+- [CHANGE] GitHub Actions の Android ジョブで android-actions/setup-android の利用をやめる
+  - Android SDK は GitHub-hosted runner にプリインストールされた SDK を利用する
+  - サードパーティ Action への依存を排除する
+  - @t-miya
+- [CHANGE] GitHub Actions の Slack 通知を `shiguredo/github-actions` に置き換える
+  - `rtCamp/action-slack-notify@v2` を `shiguredo/github-actions/.github/actions/slack-notify@main` に置き換える
+  - 通知ジョブの `runs-on` を `ubuntu-slim` に変更する
+  - @miosakuma
+- [ADD] test の iOS プロジェクトに Security.framework を追加する
+  - @torikizi
+- [UPDATE] Examples の WEBRTC_BUILD_VERSION を m150.7871.3.1 にあげる
+  - @torikizi @zztkm
+- [UPDATE] Examples の Boost のバージョンを 1.92.0 に上げる
+  - @voluntas
+- [UPDATE] GitHub Actions の `macos-14` を `macos-15` に上げる
+  - macos-14 を利用しているときに SDL3 のビルドエラーが発生するようになったが `macos-15` に上げることでビルドエラーを解消できた
+  - 発生したエラーは ` /Applications/Xcode_15.4.app/.../Foundation.framework/Headers/NSObjCRuntime.h:615:74: error: unknown type name 'NSUInteger'` のように Foundation 系ヘッダーが解決できない問題だった
+  - @zztkm
+- [UPDATE] Examples の cli11 のバージョンを v2.7.2 に上げる
+  - @voluntas
+- [UPDATE] GitHub Actions の Homebrew/actions/setup-homebrew@master を Homebrew/actions/setup-homebrew@main に変更する
+  - 2026 年 6 月 10 日以降のリリースで `Homebrew/actions/setup-homebrew` の master ブランチは無効化されるため、main ブランチを使用するように変更する
+  - 参考: Homebrew/actions/setup-homebrew で、main ブランチへの移行を促す警告が表示されるようになったことを示すコミット
+    - https://github.com/Homebrew/actions/commit/675fcd27b59e54d310c5484c8c27c01d03da660c
+  - @torikizi
+- [UPDATE] Examples の cmake のバージョンを 4.4.2 に上げる
+  - @voluntas
+- [UPDATE] E2E テストで `sumomo` の標準出力と標準エラー出力を表示するようにする
+  - @zztkm
+- [UPDATE] test の iOS ビルドで C++ 20 を利用するようにアップデートする
+  - project.pbxproj の `CLANG_CXX_LANGUAGE_STANDARD` を `gnu++20` に上げる
+  - m148 で libwebrtc が C++ 標準の `std::span` を使用するようになり、`std::span` が対応する C++ のバージョンまで上げる必要があるため
+  - 参考 : C++ 日本語リファレンスの `std::span` のページ
+    - リンク : https://cpprefjp.github.io/reference/span/span.html
+  - @torikizi
+- [UPDATE] Examples の SDL3 を 3.4.12 にあげる
+  - SDL3 3.4.0 で `SDL_X11_XTEST` オプションが追加 (デフォルト ON) されたため `buildbase.py` に `-DSDL_X11_XTEST=OFF` を追加する
+    - 指定しない場合、Linux ビルド環境で libXtst-dev がインストールされていないとビルドエラーになる
+  - 参考 : SDL_X11_XTEST が追加された SDL3 のコミット
+    - リンク : https://github.com/libsdl-org/SDL/commit/794ff283e26bedd63e0737b51b1cd2def3676ce3
+  - @torikizi
+- [FIX] sumomo で `audio_source` の null チェックを追加する
+  - @melpon
+- [FIX] messaging_recvonly_sample で `ec` 付け忘れを修正する
+  - @melpon
+- [FIX] VPL_CHECK_RESULT マクロが throw した例外が catch されずプロセスがクラッシュしうる問題を修正する
+  - @melpon
+- [FIX] buildbase.py の get_macos_osver() が return を欠き None を返すのを修正する
+  - @melpon
 
 ## 2026.1.2
 
@@ -30,6 +306,8 @@
 
 ## 2026.1.0
 
+**リリース日**: 2026-02-02
+
 - [CHANGE] macOS x86_64 ターゲットを削除する
   - @voluntas
 - [UPDATE] libwebrtc のバージョンを m144.7559.2.1 に上げる
@@ -38,13 +316,16 @@
   - @torikizi
 - [UPDATE] Intel VPL を v2.16.0 にあげる
   - @torikizi
+- [UPDATE] RTCSSLVerifier::Verify() を RTCSSLVerifier::VerifyChain() に変更する
+  - @zztkm
 
 ### misc
 
 - [UPDATE] Examples の DEPS を更新する
-  - WEBRTC_BUILD_VERSION を m144.7559.0.0 にあげる
+  - WEBRTC_BUILD_VERSION を m144.7559.2.1 にあげる
   - CMake を 4.2.1 にあげる
   - SDL を 3.2.28 にあげる
+  - test/CMakeLists.txt の set_target_properties で、全プラットフォームの CXX_STANDARD と C_STANDARD を 20 に統一する
   - @torikizi
 
 ## 2025.6.2
@@ -321,9 +602,9 @@
 - [UPDATE] Android SDK Command-line tools のバージョンを 13114758 にあげる
   - @melpon
 - [UPDATE] `NVIDIA Video Codec SDK` を [13.0](https://docs.nvidia.com/video-technologies/video-codec-sdk/13.0/index.html) にアップデートする
-  - NVIDIA Video Codec SDK で新たに追加された `NvEncOutputFrame` 構造体に対応する  
-    - `v_packet_` を `std::vector<std::vector<uint8_t>>` から `std::vector<NvEncOutputFrame>` に変更する  
-    - `for (std::vector<uint8_t>& packet : v_packet_)` を `for (NvEncOutputFrame& output : v_packet_)` に変更する  
+  - NVIDIA Video Codec SDK で新たに追加された `NvEncOutputFrame` 構造体に対応する
+    - `v_packet_` を `std::vector<std::vector<uint8_t>>` から `std::vector<NvEncOutputFrame>` に変更する
+    - `for (std::vector<uint8_t>& packet : v_packet_)` を `for (NvEncOutputFrame& output : v_packet_)` に変更する
     - ループ内に `std::vector<uint8_t>& packet = output.frame;` を追加し、既存処理との互換性を維持する
     - コーデックごとに実行していたキーフレーム判定を NvEncOutputFrame のフレーム情報を利用して行うように変更する
   - @torikizi
@@ -456,7 +737,7 @@
   - @melpon
 - [CHANGE] `SoraVideoEncoderFactoryConfig` の `force_i420_conversion_for_simulcast_adapter` を `force_i420_conversion` に変更
   - @melpon
-- [CHANGE] GitHub Actions で macOS 向けビルドで Xcode のバージョンを指定したのを削除する  
+- [CHANGE] GitHub Actions で macOS 向けビルドで Xcode のバージョンを指定したのを削除する
   - libwebrtc の制約で Xcode のバージョンを指定していたが、 m132.6834.5.5 の時点では制約がなくなり、指定しなくてもビルドできるようになったため
   - @torikizi
 - [CHANGE] Ubuntu 20.04 x86_64 の対応を削除
@@ -477,7 +758,7 @@
 - [ADD] OpenH264 デコーダに対応する
   - @melpon
 - [ADD] タグが打たれた場合に sumomo バイナリを Release に追加する
-  - Release 用の sumomo は C++ SDK のリリースバイナリを使用してビルドする  
+  - Release 用の sumomo は C++ SDK のリリースバイナリを使用してビルドする
   - リアルタイムメッセージング以外の機能がほぼ全て含まれている sumomo をリリース時に含めるようにする
   - @torikizi
 - [ADD] NVIDIA Video Codec SDK を AV1 エンコーダー/デコーダーに対応する

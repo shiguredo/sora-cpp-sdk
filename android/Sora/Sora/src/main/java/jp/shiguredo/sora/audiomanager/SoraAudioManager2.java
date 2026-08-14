@@ -31,6 +31,7 @@ class SoraAudioManager2 extends SoraAudioManagerBase {
     private static final String TAG = "SoraAudioManager2";
     private final BroadcastReceiver bluetoothHeadsetReceiver;
     private final List<AudioDeviceInfo> audioDevices = new ArrayList<>();
+    private boolean running = false;
     private AudioDeviceInfo selectedAudioDevice;
     private AudioDeviceInfo lastConnectedAudioDevice;
 

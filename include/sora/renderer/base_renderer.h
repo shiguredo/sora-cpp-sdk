@@ -1,5 +1,5 @@
-#ifndef BASE_RENDERER_H_
-#define BASE_RENDERER_H_
+#ifndef SORA_BASE_RENDERER_H_
+#define SORA_BASE_RENDERER_H_
 
 #include <atomic>
 #include <cstdint>
@@ -12,6 +12,7 @@
 #include <api/media_stream_interface.h>
 #include <api/scoped_refptr.h>
 #include <api/video/video_frame.h>
+#include <api/video/video_rotation.h>
 #include <api/video/video_sink_interface.h>
 #include <rtc_base/synchronization/mutex.h>
 
@@ -40,7 +41,8 @@ class BaseRenderer {
     // イメージ領域のサイズ
     int frame_width;
     int frame_height;
-    // 分割された領域のサイズ
+    // 分割された領域のサイズ (枠内にアスペクトを保って収めた映像のフィット寸法。
+    // frame_width / frame_height と同値)
     int width;
     int height;
   };
@@ -63,6 +65,7 @@ class BaseRenderer {
 
     webrtc::Mutex* GetMutex();
     bool GetOutlineChanged();
+    bool ConsumeInputSizeDirty();
     int GetOffsetX();
     int GetOffsetY();
     int GetInputWidth();
@@ -72,6 +75,7 @@ class BaseRenderer {
     int GetWidth();
     int GetHeight();
     uint8_t* GetImage();
+    bool IsRotated90Or270();
 
    private:
     BaseRenderer* renderer_;
@@ -82,15 +86,16 @@ class BaseRenderer {
     int outline_width_;
     int outline_height_;
     bool outline_changed_;
+    bool input_size_dirty_;
     float outline_aspect_;
     int input_width_;
     int input_height_;
-    bool scaled_;
     std::unique_ptr<uint8_t[]> image_;
     int offset_x_;
     int offset_y_;
     int width_;
     int height_;
+    webrtc::VideoRotation rotation_;
   };
 
  private:

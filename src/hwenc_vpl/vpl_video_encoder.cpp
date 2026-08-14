@@ -6,7 +6,6 @@
 #include <cstdint>
 #include <cstring>
 #include <memory>
-#include <mutex>
 #include <vector>
 
 // WebRTC
@@ -35,6 +34,7 @@
 #include <modules/video_coding/utility/vp9_uncompressed_header_parser.h>
 #include <rtc_base/checks.h>
 #include <rtc_base/logging.h>
+#include <system_wrappers/include/clock.h>
 
 // libyuv
 #include <libyuv/convert_from.h>
@@ -100,7 +100,6 @@ class VplVideoEncoderImpl : public VplVideoEncoder {
                            ExtBuffer& ext);
 
  private:
-  std::mutex mutex_;
   webrtc::EncodedImageCallback* callback_ = nullptr;
   webrtc::BitrateAdjuster bitrate_adjuster_;
   uint32_t target_bitrate_bps_ = 0;
@@ -144,7 +143,9 @@ const int kHighH264QpThreshold = 40;
 
 VplVideoEncoderImpl::VplVideoEncoderImpl(std::shared_ptr<VplSession> session,
                                          mfxU32 codec)
-    : session_(session), codec_(codec), bitrate_adjuster_(0.5, 0.95) {}
+    : session_(session),
+      codec_(codec),
+      bitrate_adjuster_(webrtc::Clock::GetRealTimeClock(), 0.5, 0.95) {}
 
 VplVideoEncoderImpl::~VplVideoEncoderImpl() {
   Release();
@@ -451,7 +452,6 @@ int32_t VplVideoEncoderImpl::InitEncode(
 }
 int32_t VplVideoEncoderImpl::RegisterEncodeCompleteCallback(
     webrtc::EncodedImageCallback* callback) {
-  std::lock_guard<std::mutex> lock(mutex_);
   callback_ = callback;
   return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -533,7 +533,7 @@ int32_t VplVideoEncoderImpl::Encode(
     memset(&param, 0, sizeof(param));
 
     sts = encoder_->GetVideoParam(&param);
-    VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts, WEBRTC_VIDEO_CODEC_ERROR);
 
     // ビットレートとフレームレートを変更する。
     // なお、encoder_->Reset() はキューイングしているサーフェスを
@@ -552,7 +552,7 @@ int32_t VplVideoEncoderImpl::Encode(
     param.mfx.FrameInfo.FrameRateExtD = 1;
 
     sts = encoder_->Reset(&param);
-    VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+    VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts, WEBRTC_VIDEO_CODEC_ERROR);
 
     reconfigure_needed_ = false;
 
@@ -572,10 +572,10 @@ int32_t VplVideoEncoderImpl::Encode(
     // もっと入力が必要なので出直す
     return WEBRTC_VIDEO_CODEC_OK;
   }
-  VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+  VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts, WEBRTC_VIDEO_CODEC_ERROR);
 
-  sts = MFXVideoCORE_SyncOperation(GetVplSession(session_), syncp, 600000);
-  VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+  sts = MFXVideoCORE_SyncOperation(GetVplSession(session_), syncp, 5000);
+  VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts, WEBRTC_VIDEO_CODEC_ERROR);
 
   //RTC_LOG(LS_ERROR) << "SurfaceSize=" << (surface->Data.U - surface->Data.Y);
   //RTC_LOG(LS_ERROR) << "DataLength=" << bitstream_.DataLength;
@@ -673,6 +673,7 @@ int32_t VplVideoEncoderImpl::Encode(
       // AV1 の SVC では、まれにエンコード対象のレイヤーフレームが存在しない場合がある。
       // 次のフレームを待つことで正常に継続可能なケースであるため、エラーではなく正常終了で返してスキップする。
       if (layer_frames.empty()) {
+        callback_->OnFrameDropped(frame.rtp_timestamp(), 0, true);
         return WEBRTC_VIDEO_CODEC_OK;
       }
       codec_specific.end_of_picture = true;
@@ -688,12 +689,12 @@ int32_t VplVideoEncoderImpl::Encode(
       }
     }
 
+    encoded_image_.set_end_of_temporal_unit(true);
     webrtc::EncodedImageCallback::Result result =
         callback_->OnEncodedImage(encoded_image_, &codec_specific);
     if (result.error != webrtc::EncodedImageCallback::Result::OK) {
-      RTC_LOG(LS_ERROR) << __FUNCTION__
-                        << " OnEncodedImage failed error:" << result.error;
-      return WEBRTC_VIDEO_CODEC_ERROR;
+      RTC_LOG(LS_WARNING) << __func__
+                          << " OnEncodedImage failed error:" << result.error;
     }
     bitrate_adjuster_.Update(size);
   }
@@ -708,7 +709,7 @@ void VplVideoEncoderImpl::SetRates(const RateControlParameters& parameters) {
 
   uint32_t new_framerate = (uint32_t)parameters.framerate_fps;
   uint32_t new_bitrate = parameters.bitrate.get_sum_bps();
-  RTC_LOG(LS_INFO) << __FUNCTION__ << " framerate_:" << framerate_
+  RTC_LOG(LS_INFO) << __func__ << " framerate_:" << framerate_
                    << " new_framerate: " << new_framerate
                    << " target_bitrate_bps_:" << target_bitrate_bps_
                    << " new_bitrate:" << new_bitrate
@@ -750,13 +751,13 @@ int32_t VplVideoEncoderImpl::InitVpl() {
   // Retrieve video parameters selected by encoder.
   // - BufferSizeInKB parameter is required to set bit stream buffer size
   sts = encoder_->GetVideoParam(&param);
-  VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+  VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts, WEBRTC_VIDEO_CODEC_ERROR);
   RTC_LOG(LS_INFO) << "BufferSizeInKB=" << param.mfx.BufferSizeInKB;
 
   // Query number of required surfaces for encoder
   memset(&alloc_request_, 0, sizeof(alloc_request_));
   sts = encoder_->QueryIOSurf(&param, &alloc_request_);
-  VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+  VPL_CHECK_RESULT(sts, MFX_ERR_NONE, sts, WEBRTC_VIDEO_CODEC_ERROR);
 
   RTC_LOG(LS_INFO) << "Encoder NumFrameSuggested="
                    << alloc_request_.NumFrameSuggested;

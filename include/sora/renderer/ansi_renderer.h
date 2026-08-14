@@ -1,5 +1,5 @@
-#ifndef ANSI_RENDERER_H_
-#define ANSI_RENDERER_H_
+#ifndef SORA_ANSI_RENDERER_H_
+#define SORA_ANSI_RENDERER_H_
 
 #include <cstdint>
 #include <string>

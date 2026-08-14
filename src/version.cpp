@@ -165,7 +165,6 @@ std::string Version::GetEnvironmentName() {
     std::stringstream ss;
     std::ifstream fin("/etc/os-release");
     ss << fin.rdbuf();
-    std::string content = ss.str();
     boost::algorithm::split(lines, ss.str(), boost::is_any_of("\n"));
   }
   const std::string PRETTY_NAME = "PRETTY_NAME=";

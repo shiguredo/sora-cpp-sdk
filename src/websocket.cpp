@@ -1,9 +1,11 @@
 #include "sora/websocket.h"
 
+#include <chrono>
 #include <cstddef>
 #include <functional>
 #include <memory>
 #include <optional>
+#include <sstream>
 #include <string>
 #include <utility>
 
@@ -38,10 +40,10 @@
 #include <boost/beast/websocket/ssl.hpp>  // IWYU pragma: keep
 #include <boost/beast/websocket/stream.hpp>
 #include <boost/beast/websocket/stream_base.hpp>
-#include <boost/date_time/posix_time/posix_time_duration.hpp>
 #include <boost/system/detail/errc.hpp>
 #include <boost/system/detail/error_code.hpp>
 #include <boost/system/errc.hpp>
+#include <boost/system/system_error.hpp>
 
 // OpenSSL
 #include <openssl/base.h>
@@ -61,6 +63,12 @@ static std::shared_ptr<boost::asio::ssl::context> CreateSSLContext(
     const std::optional<std::string>& client_key) {
   // TLS 1.2 と 1.3 のみ対応
   SSL_CTX* handle = ::SSL_CTX_new(::TLS_method());
+  if (handle == nullptr) {
+    boost::system::error_code ec{static_cast<int>(::ERR_get_error()),
+                                 boost::asio::error::get_ssl_category()};
+    RTC_LOG(LS_ERROR) << "Failed to SSL_CTX_new: " << ec.message();
+    throw boost::system::system_error(ec);
+  }
   SSL_CTX_set_min_proto_version(handle, TLS1_2_VERSION);
   SSL_CTX_set_max_proto_version(handle, TLS1_3_VERSION);
   auto ctx = std::make_shared<boost::asio::ssl::context>(handle);
@@ -71,11 +79,11 @@ static std::shared_ptr<boost::asio::ssl::context> CreateSSLContext(
                    boost::asio::ssl::context::single_dh_use);
   if (client_cert) {
     boost::system::error_code ec;
-    ctx->use_certificate(boost::asio::buffer(*client_cert),
-                         boost::asio::ssl::context_base::file_format::pem, ec);
+    ctx->use_certificate_chain(boost::asio::buffer(*client_cert), ec);
     if (ec) {
-      RTC_LOG(LS_WARNING) << "client_cert is set, but use_certificate failed: "
-                          << ec.message();
+      RTC_LOG(LS_WARNING)
+          << "client_cert is set, but use_certificate_chain failed: "
+          << ec.message();
     } else {
       RTC_LOG(LS_INFO) << "client_cert is set";
     }
@@ -263,8 +271,10 @@ void Websocket::OnResolve(
   }
 
   for (const auto& r : results) {
+    std::ostringstream oss;
+    oss << r.endpoint();
     RTC_LOG(LS_INFO) << "host=" << host << ":" << port
-                     << " resolved=" << r.endpoint();
+                     << " resolved=" << oss.str();
   }
 
   // DNS ルックアップで得られたエンドポイントに対して接続する
@@ -408,8 +418,10 @@ void Websocket::OnResolveProxy(
   }
 
   for (const auto& r : results) {
+    std::ostringstream oss;
+    oss << r.endpoint();
     RTC_LOG(LS_INFO) << "host=" << host << ":" << port
-                     << " resolved=" << r.endpoint();
+                     << " resolved=" << oss.str();
   }
 
   boost::asio::async_connect(
@@ -493,7 +505,7 @@ void Websocket::OnRead(read_callback_t on_read,
                    << " ec=" << ec.message();
 
   if (ec) {
-    RTC_LOG(LS_ERROR) << __FUNCTION__ << ": " << ec.message();
+    RTC_LOG(LS_ERROR) << __func__ << ": " << ec.message();
   }
 
   std::string text;
@@ -528,7 +540,7 @@ void Websocket::DoWriteText(std::string text, write_callback_t on_write) {
 void Websocket::DoWrite() {
   auto& data = write_data_.front();
 
-  RTC_LOG(LS_VERBOSE) << __FUNCTION__ << ": "
+  RTC_LOG(LS_VERBOSE) << __func__ << ": "
                       << boost::beast::buffers_to_string(data->buffer.data());
 
   if (IsSSL()) {
@@ -550,7 +562,7 @@ void Websocket::OnWrite(boost::system::error_code ec,
                    << " ec=" << ec.message();
 
   if (ec) {
-    RTC_LOG(LS_ERROR) << __FUNCTION__ << ": " << ec.message();
+    RTC_LOG(LS_ERROR) << __func__ << ": " << ec.message();
   }
 
   if (ec == boost::asio::error::operation_aborted) {
@@ -595,8 +607,7 @@ void Websocket::DoClose(close_callback_t on_close, int timeout_seconds) {
         std::bind(&Websocket::OnClose, this, on_close, std::placeholders::_1));
   }
 
-  close_timeout_timer_.expires_from_now(
-      boost::posix_time::seconds(timeout_seconds));
+  close_timeout_timer_.expires_after(std::chrono::seconds(timeout_seconds));
   close_timeout_timer_.async_wait(
       [on_close, timeout_seconds, this](boost::system::error_code ec) {
         if (ec) {
@@ -613,8 +624,7 @@ void Websocket::OnClose(close_callback_t on_close,
   RTC_LOG(LS_INFO) << "Websocket::OnClose this=" << (void*)this
                    << " ec=" << ec.message() << " code=" << reason().code
                    << " reason=" << reason().reason;
-  boost::system::error_code tec;
-  close_timeout_timer_.cancel(tec);
+  close_timeout_timer_.cancel();
   on_close(ec);
 }
 

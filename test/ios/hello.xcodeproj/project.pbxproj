@@ -34,6 +34,7 @@
 		DDBC4BC3282216350099E1F0 /* Network.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DDBC4BC2282216340099E1F0 /* Network.framework */; };
 		DDBC4BC7282216890099E1F0 /* GLKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DDBC4BC6282216890099E1F0 /* GLKit.framework */; };
 		E97B0C172AA9DD2600FB45B9 /* AudioOutputHelperWrapper.mm in Sources */ = {isa = PBXBuildFile; fileRef = E97B0C162AA9DD2600FB45B9 /* AudioOutputHelperWrapper.mm */; };
+		E9A1B0502CB0000000FB45C0 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E9A1B0512CB0000000FB45C0 /* Security.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -72,6 +73,7 @@
 		DDBC4BC6282216890099E1F0 /* GLKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLKit.framework; path = System/Library/Frameworks/GLKit.framework; sourceTree = SDKROOT; };
 		E97B0C152AA9D44F00FB45B9 /* AudioOutputHelperWrapper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AudioOutputHelperWrapper.h; sourceTree = "<group>"; };
 		E97B0C162AA9DD2600FB45B9 /* AudioOutputHelperWrapper.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = AudioOutputHelperWrapper.mm; sourceTree = "<group>"; };
+		E9A1B0512CB0000000FB45C0 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -97,6 +99,7 @@
 				DDBC4BC7282216890099E1F0 /* GLKit.framework in Frameworks */,
 				DD76254E290AFDE100BFE6D8 /* libboost_filesystem.a in Frameworks */,
 				DDBC4BB52820F4090099E1F0 /* libsora.a in Frameworks */,
+				E9A1B0502CB0000000FB45C0 /* Security.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -150,6 +153,7 @@
 				DD5DD92F2E742EFF00F93A3E /* CoreFoundation.framework */,
 				DD5DD92D2E742E9300F93A3E /* CoreVideo.framework */,
 				DD5DD92B2E742E4000F93A3E /* QuartzCore.framework */,
+				E9A1B0512CB0000000FB45C0 /* Security.framework */,
 				DD7A98DC2B22020000B3BF0D /* libblend2d.a */,
 				DD76254D290AFDC600BFE6D8 /* libboost_filesystem.a */,
 				DDBC4BC6282216890099E1F0 /* GLKit.framework */,
@@ -275,7 +279,7 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;
@@ -333,7 +337,7 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_ENABLE_OBJC_WEAK = YES;

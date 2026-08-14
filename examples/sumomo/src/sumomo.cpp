@@ -474,6 +474,12 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
         }
       }
 
+      // オーディオソースが作成されているかチェック（オーディオが有効な場合のみ）
+      if (config_.audio && audio_source_ == nullptr) {
+        RTC_LOG(LS_ERROR) << "Failed to create audio source.";
+        return;
+      }
+
       // ビデオソースの作成
       webrtc::scoped_refptr<webrtc::VideoTrackSourceInterface> video_source;
 
@@ -640,11 +646,19 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
       webrtc::RTCErrorOr<webrtc::scoped_refptr<webrtc::RtpSenderInterface>>
           audio_result =
               conn_->GetPeerConnection()->AddTrack(audio_track_, {stream_id});
+      if (!audio_result.ok()) {
+        RTC_LOG(LS_ERROR) << "Failed to add audio track: error="
+                          << audio_result.error().message();
+      }
     }
     if (video_track_ != nullptr) {
       webrtc::RTCErrorOr<webrtc::scoped_refptr<webrtc::RtpSenderInterface>>
           video_result =
               conn_->GetPeerConnection()->AddTrack(video_track_, {stream_id});
+      if (!video_result.ok()) {
+        RTC_LOG(LS_ERROR) << "Failed to add video track: error="
+                          << video_result.error().message();
+      }
     }
   }
   void OnDisconnect(sora::SoraSignalingErrorCode ec,
@@ -957,7 +971,8 @@ int main(int argc, char* argv[]) {
 
   // 証明書に関するオプション
   app.add_flag("--insecure", config.insecure, "Allow insecure connection");
-  app.add_option("--client-cert", config.client_cert, "Client certificate file")
+  app.add_option("--client-cert", config.client_cert,
+                 "Client certificate or certificate chain file")
       ->check(CLI::ExistingFile);
   app.add_option("--client-key", config.client_key, "Client key file")
       ->check(CLI::ExistingFile);

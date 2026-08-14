@@ -101,7 +101,6 @@ class SoraVideoEncoderFactory : public webrtc::VideoEncoderFactory {
 
  private:
   SoraVideoEncoderFactoryConfig config_;
-  mutable std::vector<std::vector<webrtc::SdpVideoFormat>> formats_;
   std::unique_ptr<SoraVideoEncoderFactory> internal_encoder_factory_;
 };
 

@@ -1,0 +1,21 @@
+{
+    "name": "ubuntu-24.04_armv8",
+    "arch": "arm64",
+    "triplet": "aarch64-linux-gnu",
+    "packages": [
+        "libstdc++-13-dev",
+        "libc6-dev",
+        "libxext-dev",
+        "libdbus-1-dev",
+        "libudev-dev",
+        "libgles-dev"
+    ],
+    "repositories": [
+        {
+            "url": "https://ports.ubuntu.com/ubuntu-ports",
+            "suite": "noble",
+            "components": ["main", "universe"],
+            "signed_by": "/usr/share/keyrings/ubuntu-archive-keyring.gpg"
+        }
+    ]
+}

@@ -1,5 +1,5 @@
-#ifndef SIXEL_RENDERER_H_
-#define SIXEL_RENDERER_H_
+#ifndef SORA_SIXEL_RENDERER_H_
+#define SORA_SIXEL_RENDERER_H_
 
 #include <cstdint>
 #include <map>

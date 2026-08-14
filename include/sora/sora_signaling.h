@@ -1,5 +1,5 @@
-#ifndef SORA_SORA_SIGNALING_H_INCLUDED
-#define SORA_SORA_SIGNALING_H_INCLUDED
+#ifndef SORA_SORA_SIGNALING_H_
+#define SORA_SORA_SIGNALING_H_
 
 #include <cstddef>
 #include <cstdint>
@@ -12,8 +12,8 @@
 #include <vector>
 
 // Boost
-#include <boost/asio/deadline_timer.hpp>
 #include <boost/asio/io_context.hpp>
+#include <boost/asio/steady_timer.hpp>
 #include <boost/beast/websocket/rfc6455.hpp>
 #include <boost/system/detail/error_code.hpp>
 
@@ -340,8 +340,8 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
   std::string video_mid_;
   std::string audio_mid_;
 
-  boost::asio::deadline_timer connection_timeout_timer_;
-  boost::asio::deadline_timer closing_timeout_timer_;
+  boost::asio::steady_timer connection_timeout_timer_;
+  boost::asio::steady_timer closing_timeout_timer_;
   std::function<void(boost::system::error_code ec)> on_ws_close_;
   webrtc::PeerConnectionInterface::IceConnectionState ice_state_ =
       webrtc::PeerConnectionInterface::kIceConnectionNew;

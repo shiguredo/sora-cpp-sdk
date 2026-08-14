@@ -45,6 +45,11 @@ elseif (SORA_TARGET STREQUAL "ubuntu-24.04_x86_64")
   set(SORA_TARGET_OS_VERSION "24.04")
   set(SORA_TARGET_ARCH "x86_64")
   set(SORA_TARGET_DEF "SORA_CPP_SDK_UBUNTU")
+elseif (SORA_TARGET STREQUAL "ubuntu-26.04_x86_64")
+  set(SORA_TARGET_OS "ubuntu")
+  set(SORA_TARGET_OS_VERSION "26.04")
+  set(SORA_TARGET_ARCH "x86_64")
+  set(SORA_TARGET_DEF "SORA_CPP_SDK_UBUNTU")
 elseif (SORA_TARGET STREQUAL "ubuntu-22.04_armv8")
   set(SORA_TARGET_OS "ubuntu")
   set(SORA_TARGET_OS_VERSION "22.04")
@@ -53,6 +58,11 @@ elseif (SORA_TARGET STREQUAL "ubuntu-22.04_armv8")
 elseif (SORA_TARGET STREQUAL "ubuntu-24.04_armv8")
   set(SORA_TARGET_OS "ubuntu")
   set(SORA_TARGET_OS_VERSION "24.04")
+  set(SORA_TARGET_ARCH "armv8")
+  set(SORA_TARGET_DEF "SORA_CPP_SDK_UBUNTU")
+elseif (SORA_TARGET STREQUAL "ubuntu-26.04_armv8")
+  set(SORA_TARGET_OS "ubuntu")
+  set(SORA_TARGET_OS_VERSION "26.04")
   set(SORA_TARGET_ARCH "armv8")
   set(SORA_TARGET_DEF "SORA_CPP_SDK_UBUNTU")
 elseif (SORA_TARGET STREQUAL "raspberry-pi-os_armv8")
@@ -127,7 +137,6 @@ target_sources(sora
     src/sora_video_codec_factory.cpp
     src/sora_video_decoder_factory.cpp
     src/sora_video_encoder_factory.cpp
-    src/ssl_verifier.cpp
     src/url_parts.cpp
     src/version.cpp
     src/vpl_session_impl.cpp
@@ -135,7 +144,24 @@ target_sources(sora
     src/zlib_helper.cpp
 )
 
+if (SORA_TARGET_OS STREQUAL "ubuntu")
+  target_sources(sora PRIVATE src/ssl_verifier.cpp src/ssl_verifier/ssl_verifier_ubuntu.cpp)
+elseif (SORA_TARGET_OS STREQUAL "macos")
+  target_sources(sora PRIVATE src/ssl_verifier.cpp src/ssl_verifier/ssl_verifier_macos.cpp)
+elseif (SORA_TARGET_OS STREQUAL "windows")
+  target_sources(sora PRIVATE src/ssl_verifier.cpp src/ssl_verifier/ssl_verifier_windows.cpp)
+elseif (SORA_TARGET_OS STREQUAL "ios")
+  # iOS では VerifyX509 を ssl_verifier_ios.mm で SecTrust API を用いて独自実装するため、
+  # ssl_verifier.cpp はビルド対象に含めない
+  target_sources(sora PRIVATE src/ssl_verifier/ssl_verifier_ios.mm)
+elseif (SORA_TARGET_OS STREQUAL "android")
+  target_sources(sora PRIVATE src/ssl_verifier.cpp src/ssl_verifier/ssl_verifier_android.cpp)
+else ()
+  message(FATAL_ERROR "Unknown SORA_TARGET_OS: ${SORA_TARGET_OS}")
+endif ()
+
 target_compile_definitions(sora PRIVATE ${SORA_TARGET_DEF})
+target_compile_definitions(sora PUBLIC BOOST_ASIO_ENABLE_VERSION_NAMESPACE)
 
 set(BUNDLE_STATIC_LIBS)
 
@@ -261,7 +287,7 @@ if (SORA_TARGET_OS STREQUAL "windows")
       ws2_32.lib
   #    amstrmid.lib
       Strmiids.lib
-  #    crypt32.lib
+      crypt32.lib
       dmoguids.lib
       iphlpapi.lib
       msdmo.lib
@@ -416,6 +442,14 @@ elseif (SORA_TARGET_OS STREQUAL "macos")
       _LIBCXXABI_DISABLE_VISIBILITY_ANNOTATIONS
       _LIBCPP_ENABLE_NODISCARD
       _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE
+      # Boost 1.91.0 で Asio の kqueue_reactor が atomic_slim_mutex
+      # (std::atomic::wait / notify_one ベース) に切り替わった。
+      # webrtc-build 同梱の libc++ と macOS の組み合わせで
+      # async_connect が kevent から完了通知を受け取れずハングするため、
+      # 旧来の pthread ベース mutex に戻す。
+      # PUBLIC で定義することで Sora::sora にリンクする全 TU で
+      # 定義を統一し ABI ミスマッチを防ぐ。
+      BOOST_ASIO_DISABLE_STD_ATOMIC_WAIT
   )
 
   target_link_libraries(sora
@@ -438,6 +472,8 @@ elseif (SORA_TARGET_OS STREQUAL "macos")
       "-framework OpenGL"
       "-framework IOSurface"
       "-framework ScreenCaptureKit"
+      "-framework CoreFoundation"
+      "-framework Security"
   )
 
 elseif (SORA_TARGET_OS STREQUAL "ios")
@@ -468,6 +504,20 @@ elseif (SORA_TARGET_OS STREQUAL "ios")
       _LIBCXXABI_DISABLE_VISIBILITY_ANNOTATIONS
       _LIBCPP_ENABLE_NODISCARD
       _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE
+      # Boost 1.91.0 で Asio の kqueue_reactor が atomic_slim_mutex
+      # (std::atomic::wait / notify_one ベース) に切り替わった。
+      # webrtc-build 同梱の libc++ と iOS の組み合わせで
+      # async_connect が kevent から完了通知を受け取れずハングするため、
+      # 旧来の pthread ベース mutex に戻す。
+      # PUBLIC で定義することで Sora::sora にリンクする全 TU で
+      # 定義を統一し ABI ミスマッチを防ぐ。
+      BOOST_ASIO_DISABLE_STD_ATOMIC_WAIT
+  )
+
+  target_link_libraries(sora
+    PUBLIC
+      "-framework Security"
+      "-framework CoreFoundation"
   )
 
 elseif (SORA_TARGET_OS STREQUAL "android")
@@ -568,7 +618,7 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
         third_party/NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
         third_party/NvCodec/NvCodec/NvEncoder/NvEncoderCuda.cpp
       PROPERTIES
-        COMPILE_OPTIONS "-xcuda;--cuda-gpu-arch=sm_60;-std=gnu++17;-Wno-tautological-constant-out-of-range-compare;-D_ALLOW_UNSUPPORTED_LIBCPP"
+        COMPILE_OPTIONS "-xcuda;--cuda-gpu-arch=sm_75;-std=gnu++17;-Wno-tautological-constant-out-of-range-compare;-D_ALLOW_UNSUPPORTED_LIBCPP"
     )
 
     # CUDA を要求したくないので libsora.a に含める

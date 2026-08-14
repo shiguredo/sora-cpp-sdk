@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstring>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <thread>
 
@@ -46,6 +47,13 @@
                       << message;                       \
     return res;                                         \
   }
+#define WEBRTC_RETURN_IF_FAILED(res, message)           \
+  if (res != AMF_OK) {                                  \
+    RTC_LOG(LS_ERROR) << amf::amf_from_unicode_to_utf8( \
+                             amf::AMFFormatResult(res)) \
+                      << message;                       \
+    return WEBRTC_VIDEO_CODEC_ERROR;                    \
+  }
 #define TRACE() RTC_LOG(LS_ERROR) << "TRACE: " << __LINE__
 
 namespace sora {
@@ -84,6 +92,8 @@ class AMFVideoDecoderImpl : public AMFVideoDecoder {
   void ReleaseAMF();
   AMF_RESULT ProcessSurface(amf::AMFSurfacePtr surface);
 
+ private:
+  std::mutex mutex_;
   webrtc::DecodedImageCallback* decode_complete_callback_ = nullptr;
   webrtc::VideoFrameBufferPool buffer_pool_;
 
@@ -144,7 +154,12 @@ int32_t AMFVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
   if (decoder_ == nullptr) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
-  if (decode_complete_callback_ == nullptr) {
+  webrtc::DecodedImageCallback* decode_complete_callback;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    decode_complete_callback = decode_complete_callback_;
+  }
+  if (decode_complete_callback == nullptr) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
   if (input_image.data() == nullptr && input_image.size() > 0) {
@@ -155,7 +170,7 @@ int32_t AMFVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
   amf::AMFBufferPtr buffer;
   res =
       context_->AllocBuffer(amf::AMF_MEMORY_HOST, input_image.size(), &buffer);
-  RETURN_IF_FAILED(res, "Failed to AllocBuffer()");
+  WEBRTC_RETURN_IF_FAILED(res, "Failed to AllocBuffer()");
 
   memcpy(buffer->GetNative(), input_image.data(), input_image.size());
 
@@ -177,10 +192,12 @@ int32_t AMFVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
     } else if (res == AMF_RESOLUTION_CHANGED || res == AMF_RESOLUTION_UPDATED) {
       // デコードするサイズが変わったらデコーダを作り直す
       ReleaseAMF();
-      InitAMF();
+      res = InitAMF();
+      WEBRTC_RETURN_IF_FAILED(
+          res, "Failed to re-init AMF decoder after resolution change");
       continue;
     } else {
-      RETURN_IF_FAILED(res, L"Failed to SubmitInput()");
+      WEBRTC_RETURN_IF_FAILED(res, L"Failed to SubmitInput()");
       break;
     }
   }
@@ -190,6 +207,7 @@ int32_t AMFVideoDecoderImpl::Decode(const webrtc::EncodedImage& input_image,
 
 int32_t AMFVideoDecoderImpl::RegisterDecodeCompleteCallback(
     webrtc::DecodedImageCallback* callback) {
+  std::lock_guard<std::mutex> lock(mutex_);
   decode_complete_callback_ = callback;
   return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -231,7 +249,12 @@ AMF_RESULT AMFVideoDecoderImpl::ProcessSurface(amf::AMFSurfacePtr surface) {
                                          .set_video_frame_buffer(i420_buffer)
                                          .set_timestamp_rtp(pts)
                                          .build();
-  decode_complete_callback_->Decoded(decoded_image, std::nullopt, std::nullopt);
+  webrtc::DecodedImageCallback* decode_complete_callback;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    decode_complete_callback = decode_complete_callback_;
+  }
+  decode_complete_callback->Decoded(decoded_image, std::nullopt, std::nullopt);
 
   return res;
 }

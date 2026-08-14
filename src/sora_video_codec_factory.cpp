@@ -23,9 +23,6 @@
 #include "sora/sora_video_encoder_factory.h"
 #include "sora/vpl_session.h"
 
-#if !defined(__arm__) || defined(__aarch64__) || defined(__ARM_NEON__)
-#endif
-
 #if defined(__APPLE__)
 #include "sora/mac/mac_video_factory.h"
 #endif

@@ -1,5 +1,6 @@
 #include "sora/data_channel.h"
 
+#include <chrono>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -10,7 +11,6 @@
 #include <boost/asio/error.hpp>
 #include <boost/asio/io_context.hpp>
 #include <boost/asio/post.hpp>
-#include <boost/date_time/posix_time/posix_time_duration.hpp>
 #include <boost/system/detail/errc.hpp>
 #include <boost/system/detail/error_code.hpp>
 #include <boost/system/errc.hpp>
@@ -37,6 +37,9 @@ DataChannel::DataChannel(boost::asio::io_context& ioc,
     : ioc_(&ioc), timer_(ioc), observer_(observer) {}
 DataChannel::~DataChannel() {
   RTC_LOG(LS_INFO) << "dtor DataChannel";
+  for (auto& [thunk, dc] : thunks_) {
+    dc->UnregisterObserver();
+  }
 }
 bool DataChannel::IsOpen(std::string label) const {
   auto it = labels_.find(label);
@@ -75,14 +78,18 @@ void DataChannel::Close(const webrtc::DataBuffer& disconnect_message,
     return;
   }
 
-  timer_.expires_from_now(
-      boost::posix_time::milliseconds((int)(disconnect_wait_timeout * 1000)));
-  timer_.async_wait([on_close](boost::system::error_code ec) {
+  timer_.expires_after(
+      std::chrono::milliseconds((int)(disconnect_wait_timeout * 1000)));
+  timer_.async_wait([on_close,
+                     wself = weak_from_this()](boost::system::error_code ec) {
     if (ec == boost::asio::error::operation_aborted) {
       return;
     }
     on_close(
         boost::system::errc::make_error_code(boost::system::errc::timed_out));
+    if (auto self = wself.lock()) {
+      self->on_close_ = nullptr;
+    }
   });
 
   on_close_ = on_close;

@@ -1,0 +1,774 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "202*"
+
+jobs:
+  build-windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        name:
+          - windows_x86_64
+    name: Build sora-cpp-sdk for ${{ matrix.name }}
+    runs-on: windows-2022
+    env:
+      TEST_SIGNALING_URL: ${{ secrets.TEST_SIGNALING_URL }}
+      TEST_CHANNEL_ID_PREFIX: ${{ secrets.TEST_CHANNEL_ID_PREFIX }}
+      TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
+      TEST_MATRIX_NAME: ${{ matrix.name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: microsoft/setup-msbuild@30375c66a4eea26614e0d39710365f22f8b0af57  # v3
+      - name: Env to output
+        run: |
+          echo "userprofile=${Env:USERPROFILE}" >> ${Env:GITHUB_OUTPUT}
+          echo "username=${Env:USERNAME}" >> ${Env:GITHUB_OUTPUT}
+        id: env
+      - name: Get Versions
+        run: |
+          Get-Content "DEPS" | Foreach-Object {
+            if (!$_) { continue }
+            $var = $_.Split('=')
+            New-Variable -Name $var[0] -Value $var[1] -Force
+          }
+          echo "cuda_version=${CUDA_VERSION}" >> ${Env:GITHUB_OUTPUT}
+        id: versions
+      # CUDA のインストールバイナリのダウンロードは 3GB ぐらいあって、
+      # ビルドの度に取得するのはつらいのでキャッシュする
+      # （インストールする nvcc は解凍後で 100MB 程度なのでキャッシュ可能）
+      - name: Cache CUDA ${{ steps.versions.outputs.cuda_version }}
+        id: cache-cuda
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: _install\windows_x86_64\release\cuda
+          key: windows-cuda-${{ steps.versions.outputs.cuda_version }}.v2
+      - run: echo "${{ steps.versions.outputs.cuda_version }}" > _install\windows_x86_64\release\cuda.version
+        if: steps.cache-cuda.outputs.cache-hit == 'true'
+      - run: python3 run.py build --test --run-e2e-test --package ${{ matrix.name }}
+        env:
+          SORA_CPP_SDK_TEMP_DIR: C:\
+      - name: Get package name
+        run: |
+          Get-Content "_package\${{ matrix.name }}\release\sora.env" | Foreach-Object {
+            if (!$_) { continue }
+            $var = $_.Split('=')
+            New-Variable -Name $var[0] -Value $var[1] -Force
+          }
+          echo "name=${PACKAGE_NAME}" >> ${Env:GITHUB_OUTPUT}
+          echo "boost_name=${BOOST_PACKAGE_NAME}" >> ${Env:GITHUB_OUTPUT}
+        id: package_name
+      - name: Upload Artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: ${{ steps.package_name.outputs.name }}
+          path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.name }}
+      - name: Upload Boost Artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: ${{ steps.package_name.outputs.boost_name }}
+          path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.boost_name }}
+      - name: Upload Environment
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: ${{ matrix.name }}.env
+          path: _package/${{ matrix.name }}/release/sora.env
+      # ローカルビルドした SDK を使ってサンプルをビルドする
+      - name: Build Examples
+        run: |
+          cd examples
+          mkdir examples_${{ matrix.name }}
+          foreach ($app in @('sdl_sample', 'sumomo', 'messaging_recvonly_sample')) {
+            python3 "$app\run.py" build ${{ matrix.name }} --local-sora-cpp-sdk-dir ..
+            cp "_build\${{ matrix.name }}\release\$app\Release\$app.exe" "examples_${{ matrix.name }}"
+          }
+      - name: Upload Examples Artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: examples_${{ matrix.name }}
+          path: examples/examples_${{ matrix.name }}
+
+  build-macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        name:
+          - macos_arm64
+          - ios
+    name: Build sora-cpp-sdk for ${{ matrix.name }}
+    runs-on: macos-15
+    env:
+      TEST_SIGNALING_URL: ${{ secrets.TEST_SIGNALING_URL }}
+      TEST_CHANNEL_ID_PREFIX: ${{ secrets.TEST_CHANNEL_ID_PREFIX }}
+      TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
+      TEST_MATRIX_NAME: ${{ matrix.name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - name: Env to output
+        run: |
+          echo "user=`users`" >> $GITHUB_OUTPUT
+        id: env
+      - run: python3 run.py build --test --run-e2e-test --package ${{ matrix.name }}
+      - name: Get package name
+        run: |
+          source _package/${{ matrix.name }}/release/sora.env
+          echo "name=${PACKAGE_NAME}" >> $GITHUB_OUTPUT
+          echo "boost_name=${BOOST_PACKAGE_NAME}" >> $GITHUB_OUTPUT
+        id: package_name
+      - name: Upload Artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: ${{ steps.package_name.outputs.name }}
+          path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.name }}
+      - name: Upload Boost Artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: ${{ steps.package_name.outputs.boost_name }}
+          path: _package/${{ matrix.name }}/release/${{ steps.package_name.outputs.boost_name }}
+      - name: Upload Environment
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: ${{ matrix.name }}.env
+          path: _package/${{ matrix.name }}/release/sora.env
+      # ローカルビルドした SDK を使ってサンプルをビルドする
+      - name: Build Examples
+        run: |
+          cd examples
+          mkdir examples_${{ matrix.name }}
+          for app in sdl_sample sumomo messaging_recvonly_sample; do
+            python3 $app/run.py build ${{ matrix.name }} --local-sora-cpp-sdk-dir ..
+            cp _build/${{ matrix.name }}/release/$app/$app examples_${{ matrix.name }}
+          done
+        if: matrix.name == 'macos_arm64'
+      - name: Upload Examples Artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: examples_${{ matrix.name }}
+          path: examples/examples_${{ matrix.name }}
+        if: matrix.name == 'macos_arm64'
+
+  build-ubuntu:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - name: ubuntu-22.04_x86_64
+            runs-on: ubuntu-22.04
+            os: ubuntu
+            arch: x86_64
+          - name: ubuntu-24.04_x86_64
+            runs-on: ubuntu-24.04
+            os: ubuntu
+            arch: x86_64
+          - name: ubuntu-26.04_x86_64
+            runs-on: ubuntu-26.04
+            os: ubuntu
+            arch: x86_64
+          - name: ubuntu-22.04_armv8
+            runs-on: ubuntu-22.04
+            os: ubuntu
+            arch: armv8
+          - name: ubuntu-24.04_armv8
+            runs-on: ubuntu-24.04
+            os: ubuntu
+            arch: armv8
+          - name: ubuntu-26.04_armv8
+            runs-on: ubuntu-24.04
+            os: ubuntu
+            arch: armv8
+          - name: raspberry-pi-os_armv8
+            runs-on: ubuntu-24.04
+            os: raspberry-pi-os
+            arch: armv8
+          - name: android
+            runs-on: ubuntu-24.04
+            os: android
+    name: Build sora-cpp-sdk for ${{ matrix.platform.name }}
+    runs-on: ${{ matrix.platform.runs-on }}
+    env:
+      TEST_SIGNALING_URL: ${{ secrets.TEST_SIGNALING_URL }}
+      TEST_CHANNEL_ID_PREFIX: ${{ secrets.TEST_CHANNEL_ID_PREFIX }}
+      TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
+      TEST_MATRIX_NAME: ${{ matrix.platform.name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - name: Disk cleanup
+        run: |
+          set -x
+          df -h
+          sudo du -h -d1 /usr/local
+          sudo du -h -d1 /usr/local/share
+          sudo du -h -d1 /usr/local/lib
+          sudo du -h -d1 /usr/share
+          RMI=`docker images -q -a`
+          if [ -n "$RMI" ]; then
+            docker rmi $RMI
+          fi
+          # 4.6G
+          sudo rm -rf /usr/local/.ghcup
+          # 1.7G
+          sudo rm -rf /usr/share/swift
+          # 1.4G
+          sudo rm -rf /usr/share/dotnet
+          df -h
+      - name: Install base deps for ${{ matrix.platform.name }}
+        if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y software-properties-common
+      - name: Install X11 for ${{ matrix.platform.name }}
+        if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
+        run: |
+          sudo apt-get install -y libx11-dev libxext-dev
+      - name: Install OpenGL for ${{ matrix.platform.name }}
+        if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
+        run: |
+          sudo apt-get install -y libgl-dev
+
+      - name: Get versions from DEPS
+        if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
+        id: version
+        run: |
+          source DEPS
+          echo "cuda_version=$CUDA_VERSION" >> $GITHUB_OUTPUT
+          echo "apt_install_llvm_version=$APT_INSTALL_LLVM_VERSION" >> $GITHUB_OUTPUT
+
+      - uses: shiguredo/github-actions/.github/actions/setup-cuda-toolkit@main
+        if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
+        id: cuda
+        with:
+          cuda_version: ${{ steps.version.outputs.cuda_version }}
+          platform: ${{ matrix.platform.runs-on }}
+
+      - name: Install clang-${{ steps.version.outputs.apt_install_llvm_version }} for ${{ matrix.platform.name }}
+        if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
+        run: |
+          wget https://apt.llvm.org/llvm.sh
+          chmod a+x llvm.sh
+          sudo ./llvm.sh ${{ steps.version.outputs.apt_install_llvm_version }}
+      - name: Install deps for ${{ matrix.platform.name }}
+        if: |
+          matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'armv8' ||
+          matrix.platform.os == 'raspberry-pi-os' && matrix.platform.arch == 'armv8'
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install binutils-aarch64-linux-gnu libgl-dev debian-archive-keyring
+      - name: Install deps for Android
+        if: matrix.platform.os == 'android'
+        run: |
+          sudo apt-get -y install ninja-build
+      # AGP 8.x の Gradle ビルドが要求する JDK 17 を、ランナーイメージのデフォルトに依存せず明示指定する
+      - name: Setup JDK 17
+        if: matrix.platform.os == 'android'
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961  # v5.7.0
+        with:
+          java-version: "17"
+          distribution: "temurin"
+      - run: python3 run.py build --test --run-e2e-test --package ${{ matrix.platform.name }}
+      - name: Get package name
+        run: |
+          source _package/${{ matrix.platform.name }}/release/sora.env
+          echo "name=${PACKAGE_NAME}" >> $GITHUB_OUTPUT
+          echo "boost_name=${BOOST_PACKAGE_NAME}" >> $GITHUB_OUTPUT
+        id: package_name
+      - name: Upload Artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: ${{ steps.package_name.outputs.name }}
+          path: _package/${{ matrix.platform.name }}/release/${{ steps.package_name.outputs.name }}
+      - name: Upload Boost Artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: ${{ steps.package_name.outputs.boost_name }}
+          path: _package/${{ matrix.platform.name }}/release/${{ steps.package_name.outputs.boost_name }}
+      - name: Upload Environment
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: ${{ matrix.platform.name }}.env
+          path: _package/${{ matrix.platform.name }}/release/sora.env
+      # ローカルビルドした SDK を使ってサンプルをビルドする
+      - name: Build Examples
+        if: matrix.platform.os == 'ubuntu'
+        run: |
+          cd examples
+          mkdir examples_${{ matrix.platform.name }}
+          for app in sdl_sample sumomo messaging_recvonly_sample; do
+            python3 $app/run.py build ${{ matrix.platform.name }} --local-sora-cpp-sdk-dir ..
+            cp _build/${{ matrix.platform.name }}/release/$app/$app examples_${{ matrix.platform.name }}
+          done
+      # ローカルビルドした SDK を使ってサンプルをビルドする
+      - name: Build Examples (Raspberry Pi OS)
+        if: matrix.platform.os == 'raspberry-pi-os' && matrix.platform.arch == 'armv8'
+        run: |
+          cd examples
+          mkdir examples_${{ matrix.platform.name }}
+          for app in sumomo; do
+            python3 $app/run.py build ${{ matrix.platform.name }} --local-sora-cpp-sdk-dir ..
+            cp _build/${{ matrix.platform.name }}/release/$app/$app examples_${{ matrix.platform.name }}
+            # raspberry-pi-os は libcamerac.so も必要
+            cp _build/${{ matrix.platform.name }}/release/$app/libcamerac.so examples_${{ matrix.platform.name }}
+          done
+      - name: Upload Examples Artifact
+        if: matrix.platform.os == 'ubuntu' || matrix.platform.os == 'raspberry-pi-os'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: examples_${{ matrix.platform.name }}
+          path: examples/examples_${{ matrix.platform.name }}
+
+  e2e-test:
+    needs:
+      - build-windows
+      - build-macos
+      - build-ubuntu
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          # GitHub-hosted runner では実機デバイスを必要とする test_sumomo_device.py は実行しない
+          - name: ubuntu-24.04_x86_64
+            platform-name: ubuntu-24.04_x86_64
+            runs-on: ubuntu-24.04
+            test-target: test_sumomo_basic.py test_sumomo_openh264.py test_sumomo_tls_verification.py
+          - name: ubuntu-26.04_x86_64
+            platform-name: ubuntu-26.04_x86_64
+            runs-on: ubuntu-26.04
+            test-target: test_sumomo_basic.py test_sumomo_openh264.py test_sumomo_tls_verification.py
+          - name: ubuntu-22.04_x86_64
+            platform-name: ubuntu-22.04_x86_64
+            runs-on: ubuntu-22.04
+            test-target: test_sumomo_basic.py test_sumomo_openh264.py test_sumomo_tls_verification.py
+          - name: ubuntu-24.04_armv8
+            platform-name: ubuntu-24.04_armv8
+            runs-on: ubuntu-24.04-arm
+            test-target: test_sumomo_basic.py test_sumomo_openh264.py test_sumomo_tls_verification.py
+          - name: ubuntu-26.04_armv8
+            platform-name: ubuntu-26.04_armv8
+            runs-on: ubuntu-26.04-arm
+            test-target: test_sumomo_basic.py test_sumomo_openh264.py test_sumomo_tls_verification.py
+          - name: ubuntu-22.04_armv8
+            platform-name: ubuntu-22.04_armv8
+            runs-on: ubuntu-22.04-arm
+            test-target: test_sumomo_basic.py test_sumomo_openh264.py test_sumomo_tls_verification.py
+          - name: macos_arm64
+            platform-name: macos_arm64
+            runs-on: macos-15
+            test-target: test_sumomo_basic.py test_sumomo_openh264.py test_sumomo_tls_verification.py
+          - name: windows_x86_64
+            platform-name: windows_x86_64
+            runs-on: windows-2025
+            test-target: test_sumomo_basic.py test_sumomo_openh264.py test_sumomo_tls_verification.py
+          # Self-hosted runner for Apple Video Toolbox
+          - name: apple_video_toolbox
+            platform-name: macos_arm64
+            runs-on:
+              group: Self
+              labels: [self-hosted, macOS, ARM64, Apple-M2-Pro]
+            test-target: test_sumomo_apple_video_toolbox.py
+            env-vars: |
+              APPLE_VIDEO_TOOLBOX=true
+          # Self-hosted runner for NVIDIA Video Codec
+          - name: nvidia_video_codec
+            platform-name: ubuntu-24.04_x86_64
+            runs-on:
+              group: Self
+              labels: [self-hosted, linux, x64, NVIDIA-Video-Codec-SDK]
+            test-target: test_sumomo_nvidia_video_codec.py
+            env-vars: |
+              NVIDIA_VIDEO_CODEC=true
+          # Self-hosted runner for Intel VPL
+          - name: intel_vpl
+            platform-name: ubuntu-24.04_x86_64
+            runs-on:
+              group: Self
+              labels: [self-hosted, linux, x64, Intel-VPL]
+            test-target: test_sumomo_intel_vpl.py
+            env-vars: |
+              INTEL_VPL=true
+              LIBVA_MESSAGING_LEVEL=0
+          # Self-hosted runner for AMD AMF
+          # AMD-AMF はあまりにも不安定なため、安定するまでコメントアウトする
+          # - name: amd_amf
+          #   platform-name: ubuntu-24.04_x86_64
+          #   runs-on:
+          #     group: Self
+          #     labels: [self-hosted, linux, x64, AMD-AMF]
+          #   env-vars: |
+          #     AMD_AMF=true
+          #   test-target: test_sumomo_amd_amf.py
+          # Self-hosted runner for Raspberry Pi
+          - name: raspberry_pi
+            platform-name: raspberry-pi-os_armv8
+            runs-on:
+              group: Self
+              labels: [self-hosted, linux, arm64, Raspberry-Pi]
+            test-target: test_sumomo_raspberry_pi.py
+            env-vars: |
+              RASPBERRY_PI=true
+    name: E2E Test for ${{ matrix.platform.name }}
+    runs-on: ${{ matrix.platform.runs-on }}
+    env:
+      TEST_SIGNALING_URL: ${{ secrets.TEST_SIGNALING_URL }}
+      TEST_CHANNEL_ID_PREFIX: ${{ secrets.TEST_CHANNEL_ID_PREFIX }}
+      TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
+      OPENH264_VERSION: 2.6.0
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+
+      # Homebrew のセットアップ (self-hosted macOS ランナー用)
+      - name: Setup Homebrew
+        if: ${{ runner.environment == 'self-hosted' && startsWith(matrix.platform.platform-name, 'macos') }}
+        uses: Homebrew/actions/setup-homebrew@5037c6f1012cc5ea0b9f03fedbaf9955ed9e51e0  # main
+
+      # GitHub CLI のインストール (self-hosted macOS ランナー用)
+      - name: Install GitHub CLI
+        if: ${{ runner.environment == 'self-hosted' && startsWith(matrix.platform.platform-name, 'macos') }}
+        run: |
+          if ! command -v gh &> /dev/null; then
+            echo "gh コマンドが見つかりません。インストールします。"
+            brew install gh
+          else
+            echo "gh コマンドは既にインストールされています。"
+          fi
+
+      # UV のセットアップ
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9  # v9.0.0
+      - run: uv sync
+        working-directory: ./e2e-test
+
+      # ランタイム依存関係のインストール (GitHub-hosted Linux のみ)
+      - name: Install system dependencies
+        if: ${{ runner.environment != 'self-hosted' && runner.os == 'Linux' }}
+        run: |
+          sudo apt-get update
+          # X11
+          sudo apt-get install -y libx11-dev libxext-dev
+          # OpenGL
+          sudo apt-get install -y libgl-dev
+
+      # 環境変数の設定 (HWA テスト用)
+      - name: Set environment variables
+        if: matrix.platform.env-vars
+        run: |
+          echo "${{ matrix.platform.env-vars }}" | while read line; do
+            if [ -n "$line" ]; then
+              echo "$line" >> $GITHUB_ENV
+            fi
+          done
+
+      # OpenH264 のダウンロード (GitHub-hosted ランナーのみ)
+      - name: Download OpenH264
+        if: ${{ runner.environment != 'self-hosted' }}
+        uses: shiguredo/github-actions/.github/actions/download-openh264@main
+        id: openh264
+        with:
+          openh264_version: ${{ env.OPENH264_VERSION }}
+          use-cache: true
+
+      # OpenH264 環境変数の設定 (GitHub-hosted ランナーのみ)
+      - name: Setup OpenH264 environment
+        if: ${{ runner.environment != 'self-hosted' && steps.openh264.outputs.openh264_path }}
+        run: echo "OPENH264_PATH=${{ steps.openh264.outputs.openh264_path }}" >> $GITHUB_ENV
+
+      - name: Download sumomo artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        with:
+          name: examples_${{ matrix.platform.platform-name }}
+          path: ./sumomo_binary
+
+      - name: Setup sumomo binary
+        shell: bash
+        run: |
+          ls -la sumomo_binary/
+
+          mkdir -p examples/_build/${{ matrix.platform.platform-name }}/release/sumomo/
+
+          if [[ "${{ matrix.platform.platform-name }}" == windows_* ]]; then
+            BINARY_NAME="sumomo.exe"
+          else
+            BINARY_NAME="sumomo"
+          fi
+
+          # raspberry-pi-os は libcamerac.so も必要なのですべてコピーする
+          if [[ "${{ matrix.platform.platform-name }}" == "raspberry-pi-os_armv8" ]]; then
+            cp -r sumomo_binary/* examples/_build/${{ matrix.platform.platform-name }}/release/sumomo/
+          else
+            cp sumomo_binary/$BINARY_NAME examples/_build/${{ matrix.platform.platform-name }}/release/sumomo/
+          fi
+
+          if [[ "${{ matrix.platform.platform-name }}" != windows_* ]]; then
+            chmod +x examples/_build/${{ matrix.platform.platform-name }}/release/sumomo/$BINARY_NAME
+          fi
+
+          ls -la examples/_build/${{ matrix.platform.platform-name }}/release/sumomo/
+
+      - name: Run E2E tests
+        run: |
+          # テストを実行（最初の失敗で停止、詳細ログ出力）
+          uv run pytest -v -x ${{ matrix.platform.test-target || '.' }}
+        working-directory: ./e2e-test
+
+  create-release:
+    name: Create Release
+    needs:
+      - build-windows
+      - build-macos
+      - build-ubuntu
+      - e2e-test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: ./.github/actions/download
+        with:
+          platform: windows_x86_64
+      - uses: ./.github/actions/download
+        with:
+          platform: macos_arm64
+      - uses: ./.github/actions/download
+        with:
+          platform: ios
+      - uses: ./.github/actions/download
+        with:
+          platform: ubuntu-22.04_x86_64
+      - uses: ./.github/actions/download
+        with:
+          platform: ubuntu-24.04_x86_64
+      - uses: ./.github/actions/download
+        with:
+          platform: ubuntu-26.04_x86_64
+      - uses: ./.github/actions/download
+        with:
+          platform: ubuntu-22.04_armv8
+      - uses: ./.github/actions/download
+        with:
+          platform: ubuntu-24.04_armv8
+      - uses: ./.github/actions/download
+        with:
+          platform: ubuntu-26.04_armv8
+      - uses: ./.github/actions/download
+        with:
+          platform: raspberry-pi-os_armv8
+      - uses: ./.github/actions/download
+        with:
+          platform: android
+      - name: Env to output
+        run: |
+          # package_paths.env の内容を空白区切りに変換
+          PACKAGE_PATHS=$(tr '\n' ' ' < package_paths.env)
+          echo "package_paths=${PACKAGE_PATHS}" >> $GITHUB_OUTPUT
+        id: env
+      - name: Release (Prerelease)
+        if: contains(github.ref, 'canary')
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --prerelease \
+            --title "${{ github.ref_name }}" \
+            ${{ steps.env.outputs.package_paths }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Release
+        if: ${{ !contains(github.ref, 'canary') }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "${{ github.ref_name }}" \
+            ${{ steps.env.outputs.package_paths }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  build-windows-examples:
+    needs: create-release
+    strategy:
+      matrix:
+        example:
+          - sumomo
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}/examples
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      # リリースされた SDK バイナリを使ってサンプルをビルドする
+      - name: Build Example
+        run: |
+          python3 ${{ matrix.example }}/run.py build windows_x86_64
+      - name: Package Binary
+        run: |
+          # アップロード用のディレクトリを作成する
+          mkdir -p ${{ matrix.example }}_windows_x86_64
+          # バイナリをアップロード用のディレクトリにコピーする
+          cp _build/windows_x86_64/release/${{ matrix.example }}/Release/${{ matrix.example }}.exe ${{ matrix.example }}_windows_x86_64/${{ matrix.example }}.exe
+          # バイナリを圧縮する
+          # 例: sumomo_windows_x86_64.zip
+          Compress-Archive -Path ${{ matrix.example }}_windows_x86_64 -DestinationPath ${{ matrix.example }}_windows_x86_64.zip
+      - name: Upload Examples Artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: ${{ matrix.example }}_windows_x86_64.zip
+          path: examples/${{ matrix.example }}_windows_x86_64.zip
+
+  build-macos-examples:
+    needs: create-release
+    strategy:
+      matrix:
+        example:
+          - sumomo
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}/examples
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      # リリースされた SDK バイナリを使ってサンプルをビルドする
+      - name: Build Example
+        run: |
+          python3 ${{ matrix.example }}/run.py build macos_arm64
+      - name: Package Binary
+        run: |
+          # アップロード用のディレクトリを作成する
+          mkdir -p ${{ matrix.example }}_macos_arm64
+          cp _build/macos_arm64/release/${{ matrix.example }}/${{ matrix.example }} ${{ matrix.example }}_macos_arm64/${{ matrix.example }}
+          # バイナリを圧縮する
+          # 例: sumomo_macos_arm64.tar.gz
+          tar -czf ${{ matrix.example }}_macos_arm64.tar.gz ${{ matrix.example }}_macos_arm64
+      - name: Upload Examples Artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: ${{ matrix.example }}_macos_arm64.tar.gz
+          path: examples/${{ matrix.example }}_macos_arm64.tar.gz
+
+  build-ubuntu-examples:
+    needs: create-release
+    strategy:
+      fail-fast: false
+      matrix:
+        example:
+          - sumomo
+        platform:
+          - name: ubuntu-22.04_x86_64
+            runs-on: ubuntu-22.04
+          - name: ubuntu-24.04_x86_64
+            runs-on: ubuntu-24.04
+          - name: ubuntu-26.04_x86_64
+            runs-on: ubuntu-26.04
+          - name: ubuntu-24.04_armv8
+            runs-on: ubuntu-24.04
+          - name: ubuntu-26.04_armv8
+            runs-on: ubuntu-24.04
+          - name: raspberry-pi-os_armv8
+            runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}/examples
+    runs-on: ${{ matrix.platform.runs-on }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - name: Install deps
+        run: |
+          sudo apt-get update
+
+           # X11
+          sudo apt-get install -y libx11-dev libxext-dev
+
+          # OpenGL
+          sudo apt-get install -y libgl-dev
+
+      # ARM はクロスコンパイルのために追加のパッケージが必要なのでインストールする
+      - name: Install deps Ubuntu ARM
+        if: matrix.platform.name == 'ubuntu-24.04_armv8' || matrix.platform.name == 'ubuntu-26.04_armv8' || matrix.platform.name == 'raspberry-pi-os_armv8'
+        run: |
+          sudo apt-get install -y binutils-aarch64-linux-gnu debian-archive-keyring
+      # リリースされた SDK バイナリを使ってサンプルをビルドする
+      - name: Build Example
+        run: |
+          python3 ${{ matrix.example }}/run.py build ${{ matrix.platform.name }}
+      - name: Package Binary
+        run: |
+          # アップロード用のディレクトリを作成する
+          mkdir -p ${{ matrix.example }}_${{ matrix.platform.name }}
+          # バイナリをアップロード用のディレクトリにコピーする
+          cp _build/${{ matrix.platform.name }}/release/${{ matrix.example }}/${{ matrix.example }} ${{ matrix.example }}_${{ matrix.platform.name }}/${{ matrix.example }}
+
+          if [ "${{ matrix.platform.name }}" = "raspberry-pi-os_armv8" ]; then
+            # raspberry-pi-os は libcamerac.so も必要
+            cp _install/${{ matrix.platform.name }}/release/sora/lib/libcamerac.so ${{ matrix.example }}_${{ matrix.platform.name }}/
+          fi
+
+          # バイナリを圧縮する
+          # 例: sumomo_ubuntu-24.04_x86_64.tar.gz
+          tar -czf ${{ matrix.example }}_${{ matrix.platform.name }}.tar.gz ${{ matrix.example }}_${{ matrix.platform.name }}
+      - name: Upload Examples Artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: ${{ matrix.example }}_${{ matrix.platform.name }}.tar.gz
+          path: examples/${{ matrix.example }}_${{ matrix.platform.name }}.tar.gz
+
+  create-release-example:
+    name: Create Release Examples
+    needs:
+      - build-windows-examples
+      - build-macos-examples
+      - build-ubuntu-examples
+    strategy:
+      matrix:
+        example:
+          - sumomo
+        archive:
+          - windows_x86_64.zip
+          - macos_arm64.tar.gz
+          - ubuntu-22.04_x86_64.tar.gz
+          - ubuntu-24.04_x86_64.tar.gz
+          - ubuntu-26.04_x86_64.tar.gz
+          - ubuntu-24.04_armv8.tar.gz
+          - ubuntu-26.04_armv8.tar.gz
+          - raspberry-pi-os_armv8.tar.gz
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        with:
+          name: ${{ matrix.example }}_${{ matrix.archive }}
+      - name: Release Examples
+        run: |
+          gh release upload "${{ github.ref_name }}" \
+            "${{ matrix.example }}_${{ matrix.archive }}" \
+            --clobber
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  notification:
+    name: Slack Notification
+    runs-on: ubuntu-slim
+    permissions:
+      actions: read
+      contents: read
+    needs:
+      - build-windows
+      - build-macos
+      - build-ubuntu
+      - e2e-test
+      - create-release
+      - build-windows-examples
+      - build-macos-examples
+      - build-ubuntu-examples
+      - create-release-example
+    if: always()
+    steps:
+      - uses: shiguredo/github-actions/.github/actions/slack-notify@main
+        if: |
+          needs.build-windows.result == 'failure' ||
+          needs.build-macos.result == 'failure' ||
+          needs.build-ubuntu.result == 'failure' ||
+          needs.e2e-test.result == 'failure' ||
+          needs.create-release.result == 'failure' ||
+          needs.build-windows-examples.result == 'failure' ||
+          needs.build-macos-examples.result == 'failure' ||
+          needs.build-ubuntu-examples.result == 'failure' ||
+          needs.create-release-example.result == 'failure'
+        with:
+          status: ${{ job.status }}
+          slack_channel: sora-cpp-sdk
+          slack_webhook: ${{ secrets.SLACK_WEBHOOK }}
+        env:
+          GH_TOKEN: ${{ github.token }}

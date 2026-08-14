@@ -16,12 +16,6 @@ class SSLVerifier {
   static bool VerifyX509(X509* x509,
                          STACK_OF(X509) * chain,
                          const std::optional<std::string>& ca_cert);
-
- private:
-  // PEM 形式のルート証明書を追加する
-  static bool AddCert(const std::string& pem, X509_STORE* store);
-  // WebRTC の組み込みルート証明書を追加する
-  static bool LoadBuiltinSSLRootCertificates(X509_STORE* store);
 };
 
 }  // namespace sora

@@ -37,7 +37,10 @@ import subprocess
 import tarfile
 import urllib.parse
 import zipfile
+from pathlib import Path
 from typing import Dict, List, NamedTuple, Optional
+
+from sysroot_builder import build_sysroot, load_sysroot_config
 
 if platform.system() == "Windows":
     import winreg
@@ -175,7 +178,7 @@ def download(
     try:
         logging.info(f"Downloading {url} to {output_path}")
         if shutil.which("curl") is not None:
-            cmd(["curl", "-fLo", output_path, url])
+            cmd(["curl", "--http1.1", "-fLo", output_path, url])
         else:
             cmd(["wget", "-cO", output_path, url])
 
@@ -695,6 +698,38 @@ def install_boost(
     extract(archive, output_dir=install_dir, output_dirname="boost")
 
 
+# BOOST_ASIO_ENABLE_VERSION_NAMESPACE が有効になると
+# Boost.Asio が inline namespace (例: v103801_kmn) を使用するようになる。
+# これは異なるバージョンの Asio が同一プロセス内で共存できるようにするための機能で、
+# Unity Editor 6000.3 とのシンボル衝突回避のために有効化された。
+#
+# しかし Boost.Beast 1.92 の basic_stream.hpp には boost::asio::ssl::stream の
+# 前方宣言があり、inline namespace に対応していない。そのため version namespace が
+# 有効な環境では名前解決が曖昧になりビルドエラーが発生する。
+#
+# Boost.Asio 側でも「前方宣言を壊す可能性があるためデフォルト無効」としており、
+# デフォルト無効の設定と Beast 側の未対応の組み合わせで顕在化した問題。
+#
+# 対応: 前方宣言を BOOST_ASIO_INLINE_NAMESPACE_BEGIN / END でラップする。
+# 有効時は inline namespace 内に宣言が入り、無効時はマクロが空展開されるため、
+# どちらの設定でも正しく動作する。
+BOOST_PATCH_BEAST_INLINE_NAMESPACE = r"""
+diff --git a/boost/beast/core/basic_stream.hpp b/boost/beast/core/basic_stream.hpp
+--- a/boost/beast/core/basic_stream.hpp
++++ b/boost/beast/core/basic_stream.hpp
+@@ -33,7 +33,9 @@
+ namespace boost {
+ namespace asio {
++BOOST_ASIO_INLINE_NAMESPACE_BEGIN
+ namespace ssl {
+ template<typename> class stream;
+ } // ssl
++BOOST_ASIO_INLINE_NAMESPACE_END
+ } // asio
+ } // boost
+"""
+
+
 # 以下の問題を解決するためのパッチ
 #
 # No support for msvc-toolset 14.4x (VS 2022, 17.10.x): https://github.com/boostorg/boost/issues/914
@@ -756,7 +791,7 @@ index 54a6ced32..4bb3810b3 100644
              local req = "-requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64" ;
              local prop = "-property installationPath" ;
              local limit ;
- 
+
 -            if $(version) = 14.3
 +            if $(version) = 14.4
 +            {
@@ -768,12 +803,12 @@ index 54a6ced32..4bb3810b3 100644
              }
 @@ -2174,7 +2190,7 @@ for local arch in [ MATCH "^\\.cpus-on-(.*)" : [ VARNAMES $(__name__) ] ]
                       armv7 armv7s ;
- 
+
  # Known toolset versions, in order of preference.
 -.known-versions = 14.3 14.2 14.1 14.0 12.0 11.0 10.0 10.0express 9.0 9.0express 8.0 8.0express 7.1
 +.known-versions = 14.4 14.3 14.2 14.1 14.0 12.0 11.0 10.0 10.0express 9.0 9.0express 8.0 8.0express 7.1
      7.1toolkit 7.0 6.0 ;
- 
+
  # Version aliases.
 @@ -2226,6 +2242,11 @@ for local arch in [ MATCH "^\\.cpus-on-(.*)" : [ VARNAMES $(__name__) ] ]
      "Microsoft Visual Studio/2022/*/VC/Tools/MSVC/*/bin/Host*/*"
@@ -784,7 +819,7 @@ index 54a6ced32..4bb3810b3 100644
 +    "Microsoft Visual Studio/2022/*/VC/Tools/MSVC/*/bin/Host*/*"
 +    ;
 +.version-14.4-env = VS170COMNTOOLS ProgramFiles ProgramFiles(x86) ;
- 
+
  # Auto-detect all the available msvc installations on the system.
  auto-detect-toolset-versions ;
 """
@@ -814,6 +849,8 @@ def build_and_install_boost(
 ):
     version_underscore = version.replace(".", "_")
 
+    rm_rf(os.path.join(install_dir, "boost"))
+
     archive = download(
         # 公式サイトに負荷をかけないための時雨堂によるミラー
         f"https://oss-mirrors.shiguredo.jp/boost_{version_underscore}.tar.gz",
@@ -823,6 +860,10 @@ def build_and_install_boost(
         expected_sha256=expected_sha256,
     )
     extract(archive, output_dir=build_dir, output_dirname="boost")
+
+    # basic_stream.hpp の inline namespace 競合を修正するパッチ
+    apply_patch_text(BOOST_PATCH_BEAST_INLINE_NAMESPACE, os.path.join(build_dir, "boost"), 1)
+
     with cd(os.path.join(build_dir, "boost")):
         if target_os == "windows":
             bootstrap = ".\\bootstrap.bat"
@@ -891,7 +932,6 @@ def build_and_install_boost(
                 )
             arch, sdk = IOS_BUILD_TARGETS[0]
             installed_path = os.path.join(build_dir, "boost", f"install-{arch}-{sdk}")
-            rm_rf(os.path.join(install_dir, "boost"))
             cmd(["cp", "-r", installed_path, os.path.join(install_dir, "boost")])
 
             for lib in enum_all_files(
@@ -1071,51 +1111,30 @@ def get_sora_info(
     )
 
 
-@versioned
-def install_rootfs(version, install_dir, conf, arch="arm64"):
+def install_sysroot(config_path: str, install_dir: str, force: bool = False) -> None:
     rootfs_dir = os.path.join(install_dir, "rootfs")
-    rm_rf(rootfs_dir)
-    cmd(["multistrap", "--no-auth", "-a", arch, "-d", rootfs_dir, "-f", conf])
-    # 絶対パスのシンボリックリンクを相対パスに置き換えていく
-    for dir, _, filenames in os.walk(rootfs_dir):
-        for filename in filenames:
-            linkpath = os.path.join(dir, filename)
-            # symlink かどうか
-            if not os.path.islink(linkpath):
-                continue
-            target = os.readlink(linkpath)
-            # 絶対パスかどうか
-            if not os.path.isabs(target):
-                continue
-            # rootfs_dir を先頭に付けることで、
-            # rootfs の外から見て正しい絶対パスにする
-            targetpath = rootfs_dir + target
-            # 参照先の絶対パスが存在するかどうか
-            if not os.path.exists(targetpath):
-                continue
-            # 相対パスに置き換える
-            relpath = os.path.relpath(targetpath, dir)
-            logging.debug(f"{linkpath[len(rootfs_dir) :]} targets {target} to {relpath}")
-            os.remove(linkpath)
-            os.symlink(relpath, linkpath)
+    manifest_path = os.path.join(rootfs_dir, ".webrtc-build-sysroot.json")
+    rootfs_version_path = os.path.join(install_dir, "rootfs.version")
 
-    # なぜかシンボリックリンクが登録されていないので作っておく
-    link = os.path.join(rootfs_dir, "usr", "lib", "aarch64-linux-gnu", "tegra", "libnvbuf_fdmap.so")
-    file = os.path.join(
-        rootfs_dir, "usr", "lib", "aarch64-linux-gnu", "tegra", "libnvbuf_fdmap.so.1.0.0"
-    )
-    if os.path.exists(file) and not os.path.exists(link):
-        os.symlink(os.path.basename(file), link)
+    config = load_sysroot_config(Path(config_path))
+    expected_name = Path(config_path).stem
+    if config.name != expected_name:
+        raise RuntimeError(
+            f"Sysroot config name does not match: expected={expected_name}, actual={config.name}"
+        )
 
-    # JetPack 6 から tegra → nvidia になった
-    link = os.path.join(
-        rootfs_dir, "usr", "lib", "aarch64-linux-gnu", "nvidia", "libnvbuf_fdmap.so"
+    # multistrap で生成した既存 rootfs には manifest がないため、
+    # 旧方式の version ファイルも存在する場合だけ旧成果物と判定する。
+    legacy_rootfs = (
+        os.path.lexists(rootfs_dir)
+        and not os.path.isfile(manifest_path)
+        and os.path.isfile(rootfs_version_path)
     )
-    file = os.path.join(
-        rootfs_dir, "usr", "lib", "aarch64-linux-gnu", "nvidia", "libnvbuf_fdmap.so.1.0.0"
-    )
-    if os.path.exists(file) and not os.path.exists(link):
-        os.symlink(os.path.basename(file), link)
+
+    # 旧成果物も builder の原子的な置換経路へ渡し、生成失敗時は温存する。
+    build_sysroot(config, Path(rootfs_dir), force=force or legacy_rootfs)
+    if os.path.exists(rootfs_version_path):
+        os.remove(rootfs_version_path)
 
 
 @versioned
@@ -1433,6 +1452,7 @@ def install_sdl3(
                 "-DSDL_X11_XSCRNSAVER=OFF",
                 "-DSDL_X11_XSHAPE=OFF",
                 "-DSDL_X11_XSYNC=OFF",
+                "-DSDL_X11_XTEST=OFF",
                 "-DSDL_WAYLAND=OFF",
                 "-DSDL_VULKAN=OFF",
                 "-DSDL_KMSDRM=OFF",
@@ -1478,6 +1498,8 @@ def install_cuda_windows(version, source_dir, build_dir, install_dir):
         url = "https://developer.download.nvidia.com/compute/cuda/12.9.1/local_installers/cuda_12.9.1_576.57_windows.exe"  # noqa: E501
     elif version == "13.0.1-1":
         url = "https://developer.download.nvidia.com/compute/cuda/13.0.1/local_installers/cuda_13.0.1_windows.exe"  # noqa: E501
+    elif version == "13.3.1-1":
+        url = "https://developer.download.nvidia.com/compute/cuda/13.3.1/local_installers/cuda_13.3.1_windows.exe"  # noqa: E501
     else:
         raise Exception(f"Unknown CUDA version {version}")
     file = download(url, source_dir)
@@ -1492,6 +1514,19 @@ def install_cuda_windows(version, source_dir, build_dir, install_dir):
     copytree(
         os.path.join(build_dir, "cuda", "cuda_cudart", "cudart"), os.path.join(install_dir, "cuda")
     )
+    # CUDA 13 以降は crt/host_config.h 等が cuda_crt に分離されている
+    cuda_crt_src = os.path.join(build_dir, "cuda", "cuda_crt", "crt")
+    if os.path.exists(cuda_crt_src):
+        copytree(cuda_crt_src, os.path.join(install_dir, "cuda"))
+    elif version.startswith("13."):
+        raise Exception(f"cuda_crt not found for CUDA {version}: expected {cuda_crt_src}")
+    # CUDA 13 以降は cicc (nvvm) が libnvvm に分離されている
+    # インストーラー内は libnvvm/nvvm/nvvm/{bin,libdevice,...} と nvvm が二重になっている
+    libnvvm_src = os.path.join(build_dir, "cuda", "libnvvm", "nvvm", "nvvm")
+    if os.path.exists(libnvvm_src):
+        copytree(libnvvm_src, os.path.join(install_dir, "cuda", "nvvm"))
+    elif version.startswith("13."):
+        raise Exception(f"libnvvm not found for CUDA {version}: expected {libnvvm_src}")
 
 
 @versioned
@@ -1768,9 +1803,9 @@ index 6464e200f..c7bc417a1 100644
 --- a/third_party/boringssl-with-bazel/CMakeLists.txt
 +++ b/third_party/boringssl-with-bazel/CMakeLists.txt
 @@ -543,30 +543,6 @@ add_library(
- 
+
  target_link_libraries(ssl crypto)
- 
+
 -add_executable(
 -  bssl
 -
@@ -1805,12 +1840,12 @@ index 7f1b69f..bcf5577 100644
 @@ -147,10 +147,7 @@ if(MINGW)
      set(ZLIB_DLL_SRCS ${CMAKE_CURRENT_BINARY_DIR}/zlib1rc.obj)
  endif(MINGW)
- 
+
 -add_library(zlib SHARED ${ZLIB_SRCS} ${ZLIB_DLL_SRCS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
  add_library(zlibstatic STATIC ${ZLIB_SRCS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
 -set_target_properties(zlib PROPERTIES DEFINE_SYMBOL ZLIB_DLL)
 -set_target_properties(zlib PROPERTIES SOVERSION 1)
- 
+
  if(NOT CYGWIN)
      # This property causes shared libraries on Linux to have the full version
 @@ -160,22 +157,16 @@ if(NOT CYGWIN)
@@ -1819,7 +1854,7 @@ index 7f1b69f..bcf5577 100644
      # the DLL comes from the resource file win32/zlib1.rc
 -    set_target_properties(zlib PROPERTIES VERSION ${ZLIB_FULL_VERSION})
  endif()
- 
+
  if(UNIX)
      # On unix-like platforms the library is almost always called libz
 -   set_target_properties(zlib zlibstatic PROPERTIES OUTPUT_NAME z)
@@ -1830,7 +1865,7 @@ index 7f1b69f..bcf5577 100644
      # Creates zlib1.dll when building shared library version
 -    set_target_properties(zlib PROPERTIES SUFFIX "1.dll")
  endif()
- 
+
  if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL )
 -    install(TARGETS zlib zlibstatic
 +    install(TARGETS zlibstatic
@@ -1926,7 +1961,7 @@ index 38d63db..b97b175 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -795,7 +795,7 @@ endif()
- 
+
  if(INSTALL_ENABLED)
    install(TARGETS crypto ssl EXPORT OpenSSLTargets)
 -  install(TARGETS bssl)
@@ -2247,7 +2282,7 @@ def get_windows_osver():
 
 
 def get_macos_osver():
-    platform.mac_ver()[0]
+    return platform.mac_ver()[0]
 
 
 def get_build_platform() -> PlatformTarget:

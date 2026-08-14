@@ -28,16 +28,16 @@ jobs:
       TEST_SECRET_KEY: ${{ secrets.TEST_SECRET_KEY }}
       TEST_MATRIX_NAME: ${{ matrix.platform.name }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - name: Cache Dependencies
-        uses: actions/cache@v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: _install/${{ matrix.platform.name }}/release
           key: ${{ matrix.platform.name }}-${{ hashFiles('VERSION', 'DEPS') }}
           restore-keys: |
             ${{ matrix.platform.name }}-
       - name: Cache Dependencies
-        uses: actions/cache@v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: _build/${{ matrix.platform.name }}/release/clang-include-cleaner.json
           key: ${{ matrix.platform.name }}-${{ hashFiles('VERSION', 'DEPS') }}
@@ -112,20 +112,24 @@ jobs:
 
   notification:
     name: Slack Notification
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-slim
+    permissions:
+      actions: read
+      contents: read
     needs:
       - run-ubuntu
     if: always()
     steps:
-      - uses: rtCamp/action-slack-notify@v2
+      - uses: shiguredo/github-actions/.github/actions/slack-notify@main
         if: |
           needs.run-ubuntu.result == 'failure'
-        env:
-          SLACK_CHANNEL: sora-cpp-sdk
-          SLACK_COLOR: danger
-          SLACK_TITLE: フォーマット失敗
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-          SLACK_MESSAGE: |
+        with:
+          status: ${{ job.status }}
+          slack_channel: sora-cpp-sdk
+          slack_webhook: ${{ secrets.SLACK_WEBHOOK }}
+          slack_message: |
             ```
             ${{ needs.run-ubuntu.outputs.diff }}
             ```
+        env:
+          GH_TOKEN: ${{ github.token }}

@@ -25,3 +25,6 @@ CLAUDE.local.md
 .mypy_cache
 __pycache__
 .pytest_cache
+
+# container から漏れたファイル
+llvm.sh*
