@@ -703,7 +703,7 @@ def install_boost(
 # これは異なるバージョンの Asio が同一プロセス内で共存できるようにするための機能で、
 # Unity Editor 6000.3 とのシンボル衝突回避のために有効化された。
 #
-# しかし Boost.Beast 1.91 の basic_stream.hpp には boost::asio::ssl::stream の
+# しかし Boost.Beast 1.92 の basic_stream.hpp には boost::asio::ssl::stream の
 # 前方宣言があり、inline namespace に対応していない。そのため version namespace が
 # 有効な環境では名前解決が曖昧になりビルドエラーが発生する。
 #
@@ -791,7 +791,7 @@ index 54a6ced32..4bb3810b3 100644
              local req = "-requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64" ;
              local prop = "-property installationPath" ;
              local limit ;
- 
+
 -            if $(version) = 14.3
 +            if $(version) = 14.4
 +            {
@@ -803,12 +803,12 @@ index 54a6ced32..4bb3810b3 100644
              }
 @@ -2174,7 +2190,7 @@ for local arch in [ MATCH "^\\.cpus-on-(.*)" : [ VARNAMES $(__name__) ] ]
                       armv7 armv7s ;
- 
+
  # Known toolset versions, in order of preference.
 -.known-versions = 14.3 14.2 14.1 14.0 12.0 11.0 10.0 10.0express 9.0 9.0express 8.0 8.0express 7.1
 +.known-versions = 14.4 14.3 14.2 14.1 14.0 12.0 11.0 10.0 10.0express 9.0 9.0express 8.0 8.0express 7.1
      7.1toolkit 7.0 6.0 ;
- 
+
  # Version aliases.
 @@ -2226,6 +2242,11 @@ for local arch in [ MATCH "^\\.cpus-on-(.*)" : [ VARNAMES $(__name__) ] ]
      "Microsoft Visual Studio/2022/*/VC/Tools/MSVC/*/bin/Host*/*"
@@ -819,7 +819,7 @@ index 54a6ced32..4bb3810b3 100644
 +    "Microsoft Visual Studio/2022/*/VC/Tools/MSVC/*/bin/Host*/*"
 +    ;
 +.version-14.4-env = VS170COMNTOOLS ProgramFiles ProgramFiles(x86) ;
- 
+
  # Auto-detect all the available msvc installations on the system.
  auto-detect-toolset-versions ;
 """
@@ -862,9 +862,7 @@ def build_and_install_boost(
     extract(archive, output_dir=build_dir, output_dirname="boost")
 
     # basic_stream.hpp の inline namespace 競合を修正するパッチ
-    apply_patch_text(
-        BOOST_PATCH_BEAST_INLINE_NAMESPACE, os.path.join(build_dir, "boost"), 1
-    )
+    apply_patch_text(BOOST_PATCH_BEAST_INLINE_NAMESPACE, os.path.join(build_dir, "boost"), 1)
 
     with cd(os.path.join(build_dir, "boost")):
         if target_os == "windows":
@@ -1521,18 +1519,14 @@ def install_cuda_windows(version, source_dir, build_dir, install_dir):
     if os.path.exists(cuda_crt_src):
         copytree(cuda_crt_src, os.path.join(install_dir, "cuda"))
     elif version.startswith("13."):
-        raise Exception(
-            f"cuda_crt not found for CUDA {version}: expected {cuda_crt_src}"
-        )
+        raise Exception(f"cuda_crt not found for CUDA {version}: expected {cuda_crt_src}")
     # CUDA 13 以降は cicc (nvvm) が libnvvm に分離されている
     # インストーラー内は libnvvm/nvvm/nvvm/{bin,libdevice,...} と nvvm が二重になっている
     libnvvm_src = os.path.join(build_dir, "cuda", "libnvvm", "nvvm", "nvvm")
     if os.path.exists(libnvvm_src):
         copytree(libnvvm_src, os.path.join(install_dir, "cuda", "nvvm"))
     elif version.startswith("13."):
-        raise Exception(
-            f"libnvvm not found for CUDA {version}: expected {libnvvm_src}"
-        )
+        raise Exception(f"libnvvm not found for CUDA {version}: expected {libnvvm_src}")
 
 
 @versioned
@@ -1809,9 +1803,9 @@ index 6464e200f..c7bc417a1 100644
 --- a/third_party/boringssl-with-bazel/CMakeLists.txt
 +++ b/third_party/boringssl-with-bazel/CMakeLists.txt
 @@ -543,30 +543,6 @@ add_library(
- 
+
  target_link_libraries(ssl crypto)
- 
+
 -add_executable(
 -  bssl
 -
@@ -1846,12 +1840,12 @@ index 7f1b69f..bcf5577 100644
 @@ -147,10 +147,7 @@ if(MINGW)
      set(ZLIB_DLL_SRCS ${CMAKE_CURRENT_BINARY_DIR}/zlib1rc.obj)
  endif(MINGW)
- 
+
 -add_library(zlib SHARED ${ZLIB_SRCS} ${ZLIB_DLL_SRCS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
  add_library(zlibstatic STATIC ${ZLIB_SRCS} ${ZLIB_PUBLIC_HDRS} ${ZLIB_PRIVATE_HDRS})
 -set_target_properties(zlib PROPERTIES DEFINE_SYMBOL ZLIB_DLL)
 -set_target_properties(zlib PROPERTIES SOVERSION 1)
- 
+
  if(NOT CYGWIN)
      # This property causes shared libraries on Linux to have the full version
 @@ -160,22 +157,16 @@ if(NOT CYGWIN)
@@ -1860,7 +1854,7 @@ index 7f1b69f..bcf5577 100644
      # the DLL comes from the resource file win32/zlib1.rc
 -    set_target_properties(zlib PROPERTIES VERSION ${ZLIB_FULL_VERSION})
  endif()
- 
+
  if(UNIX)
      # On unix-like platforms the library is almost always called libz
 -   set_target_properties(zlib zlibstatic PROPERTIES OUTPUT_NAME z)
@@ -1871,7 +1865,7 @@ index 7f1b69f..bcf5577 100644
      # Creates zlib1.dll when building shared library version
 -    set_target_properties(zlib PROPERTIES SUFFIX "1.dll")
  endif()
- 
+
  if(NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL )
 -    install(TARGETS zlib zlibstatic
 +    install(TARGETS zlibstatic
@@ -1967,7 +1961,7 @@ index 38d63db..b97b175 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -795,7 +795,7 @@ endif()
- 
+
  if(INSTALL_ENABLED)
    install(TARGETS crypto ssl EXPORT OpenSSLTargets)
 -  install(TARGETS bssl)
