@@ -89,6 +89,8 @@
   - @voluntas
 - [UPDATE] Catch2 のバージョンを v3.15.3 に上げる
   - @voluntas
+- [UPDATE] AMD AMF のバージョンを v1.5.2 に上げる
+  - @voluntas
 - [UPDATE] Boost のバージョンを 1.91.0 に上げる
   - CMakeLists.txt の macOS ビルドと iOS ビルドの `target_compile_definitions` に PUBLIC で `BOOST_ASIO_DISABLE_STD_ATOMIC_WAIT` を追加する
     - boost 1.91.0 で asio の `kqueue_reactor` 内部 mutex が `atomic_slim_mutex` (`std::atomic::wait` / `notify_one` を利用) に切り替わったが、 webrtc-build 同梱の libc++ + macOS の組み合わせで kevent から完了通知が届かず async_connect がハングする現象を確認した
