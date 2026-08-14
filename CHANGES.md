@@ -89,6 +89,8 @@
     - 旧来の pthread ベース mutex 実装に戻すことで回避する
     - IPHONEOS_DEPLOYMENT_TARGET が iOS 17.4 以上の場合に発生する問題であり 14.0 でビルドしているため影響はないが、今後バージョンを上げた際の問題を回避するため macOS ビルドと同様に修正する
   - @voluntas @torikizi
+- [UPDATE] Boost のバージョンを 1.92.0 に上げる
+  - @voluntas
 - [UPDATE] Intel VPL を v2.17.0 にあげる
   - @torikizi
 - [UPDATE] CUDA のバージョンを `13.3.1-1` に上げる
@@ -240,6 +242,8 @@
   - @torikizi
 - [UPDATE] Examples の WEBRTC_BUILD_VERSION を m150.7871.3.1 にあげる
   - @torikizi @zztkm
+- [UPDATE] Examples の Boost のバージョンを 1.92.0 に上げる
+  - @voluntas
 - [UPDATE] GitHub Actions の `macos-14` を `macos-15` に上げる
   - macos-14 を利用しているときに SDL3 のビルドエラーが発生するようになったが `macos-15` に上げることでビルドエラーを解消できた
   - 発生したエラーは ` /Applications/Xcode_15.4.app/.../Foundation.framework/Headers/NSObjCRuntime.h:615:74: error: unknown type name 'NSUInteger'` のように Foundation 系ヘッダーが解決できない問題だった
