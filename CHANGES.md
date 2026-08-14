@@ -85,8 +85,10 @@
     - 対象ファイル: `src/sora_signaling.cpp`、`src/websocket.cpp`
     - 参考 : https://webrtc-review.googlesource.com/c/src/+/469260
   - @torikizi @zztkm
-- [UPDATE] cmake のバージョンを 4.3.2 にあげる
-  - @torikizi
+- [UPDATE] cmake のバージョンを 4.4.2 に上げる
+  - @voluntas
+- [UPDATE] Catch2 のバージョンを v3.15.3 に上げる
+  - @voluntas
 - [UPDATE] Boost のバージョンを 1.91.0 に上げる
   - CMakeLists.txt の macOS ビルドと iOS ビルドの `target_compile_definitions` に PUBLIC で `BOOST_ASIO_DISABLE_STD_ATOMIC_WAIT` を追加する
     - boost 1.91.0 で asio の `kqueue_reactor` 内部 mutex が `atomic_slim_mutex` (`std::atomic::wait` / `notify_one` を利用) に切り替わったが、 webrtc-build 同梱の libc++ + macOS の組み合わせで kevent から完了通知が届かず async_connect がハングする現象を確認した
@@ -252,15 +254,15 @@
   - macos-14 を利用しているときに SDL3 のビルドエラーが発生するようになったが `macos-15` に上げることでビルドエラーを解消できた
   - 発生したエラーは ` /Applications/Xcode_15.4.app/.../Foundation.framework/Headers/NSObjCRuntime.h:615:74: error: unknown type name 'NSUInteger'` のように Foundation 系ヘッダーが解決できない問題だった
   - @zztkm
-- [UPDATE] Examples の cli11 のバージョンを v2.6.2 にあげる
-  - @torikizi
+- [UPDATE] Examples の cli11 のバージョンを v2.7.2 に上げる
+  - @voluntas
 - [UPDATE] GitHub Actions の Homebrew/actions/setup-homebrew@master を Homebrew/actions/setup-homebrew@main に変更する
   - 2026 年 6 月 10 日以降のリリースで `Homebrew/actions/setup-homebrew` の master ブランチは無効化されるため、main ブランチを使用するように変更する
   - 参考: Homebrew/actions/setup-homebrew で、main ブランチへの移行を促す警告が表示されるようになったことを示すコミット
     - https://github.com/Homebrew/actions/commit/675fcd27b59e54d310c5484c8c27c01d03da660c
   - @torikizi
-- [UPDATE] Examples の cmake のバージョンを 4.3.2 にあげる
-  - @torikizi
+- [UPDATE] Examples の cmake のバージョンを 4.4.2 に上げる
+  - @voluntas
 - [UPDATE] E2E テストで `sumomo` の標準出力と標準エラー出力を表示するようにする
   - @zztkm
 - [UPDATE] test の iOS ビルドで C++ 20 を利用するようにアップデートする
