@@ -2,7 +2,7 @@
 
 - Priority: Medium
 - Created: 2026-06-25
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-08-14
 - Model: DeepSeek V4 Pro
 - Branch: feature/change-android-target-sdk-35
 - Polished: 2026-07-10
@@ -251,3 +251,24 @@ PR #336 の revert は正しい判断だった。理由は以下の 1 点に集�
     - Android 15 の Audio Focus 制限に対応し、requestAudioFocus() 失敗時のログレベルを Log.e から Log.w に下げる
     - @<担当者>
   ```
+
+## 解決方法
+
+選択肢 A (現状維持) を決定し、対応しない。コード変更は行わない。
+
+### 決定内容
+
+- compileSdk / targetSdk は 34 のまま維持する
+- Audio Focus 失敗時のログレベル変更は行わない
+- CHANGES.md へのエントリ追加は行わない (変更がないため)
+
+### 見送り理由
+
+- **targetSdk はライブラリ (AAR) に無意味**: targetSdk は APK にのみ適用される属性であり、ライブラリとして提供される sora-cpp-sdk には意味がない。実質の変更対象は compileSdk とサンプルアプリ (`test/android`) のみ
+- **compileSdk 35 の需要がない**: 依存する AndroidX (appcompat 1.6.1 / material 1.11.0) は compileSdk 34 で動作し、Android 15 の新 API を利用するコードも計画もない
+- **AGP 8.2.0 が compileSdk 35 非公式対応**: `android/Sora` の AGP 8.2.0 は compileSdk 35 を公式サポートしておらず (対応は AGP 8.6.0 以降)、suppress 指定による非標準運用か AGP 更新が必要になる
+- **CI 方針と矛盾する**: CI は 0054 / 0055 で runner のプリインストール SDK (platform android-34) への依存に切り替えたばかりであり、compileSdk 35 にすると AGP の自動ダウンロード依存が生じる
+- **API 35 は旧世代の要件**: Google Play の target API level 要件は 2026-08-31 から API 36 (Android 16) に移行するため、今から API 35 に合わせる値打ちが薄い。将来対応する場合は 36 を対象に検討する
+- **必須要件がない**: 優先度は Medium であり、対応を必須とする要件は存在しない
+
+なお closed 0054 / 0055 が記録した「0012 で compileSdk が変更される場合は runner のプリインストール SDK への依存を再確認する」は、compileSdk を変更しないため確認不要となる。
