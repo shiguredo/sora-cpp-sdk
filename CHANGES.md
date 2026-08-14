@@ -11,6 +11,10 @@
 
 ## develop
 
+## 2026.2.0
+
+**リリース日**: 2026-08-14
+
 - [CHANGE] multistrap を廃止し apt-get + dpkg-deb による sysroot 構築に置き換える
   - 本体およびサンプルの multistrap 設定を廃止し、JSON 形式の sysroot 設定に置き換える
   - リポジトリを HTTPS に統一し、GPG `signed_by` による認証済み取得に切り替える
