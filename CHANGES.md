@@ -11,6 +11,16 @@
 
 ## develop
 
+- [UPDATE] libwebrtc のバージョンを m151.7922.0.0 に上げる
+  - Android のテストで WebRTC の JNI Zero シンボルを保持する
+    - libwebrtc の JNI エクスポート形式が従来の `Java_org_webrtc_` から JNI Zero の `Java_J_N_` 形式へ変わったため、run.py のシンボル保持対象に `Java_J_N_` を追加する
+  - @torikizi
+
+### misc
+
+- [UPDATE] Examples の WEBRTC_BUILD_VERSION を m151.7922.0.0 にあげる
+  - @torikizi
+
 ## 2026.2.1
 
 **リリース日**: 2026-08-18
