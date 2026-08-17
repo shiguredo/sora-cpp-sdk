@@ -75,3 +75,22 @@ m152 でも存在が確認できたヘッダであり、変更不要。
 - `DEPS` と `examples/DEPS` の `WEBRTC_BUILD_VERSION` が `m152.7977.0.0` になっていること
 - 全プラットフォームでビルドとテストが成功していること
 - `CHANGES.md` に `[UPDATE] libwebrtc のバージョンを m152.7977.0.0 に上げる` のエントリが追加されていること
+
+### 変更履歴の書き方サンプル
+
+`CHANGES.md` には以下のように追記する。担当者ハンドル `@<担当者>` は PR 作成者のものに書き換える。
+
+```markdown
+## develop
+
+- [UPDATE] libwebrtc のバージョンを m152.7977.0.0 に上げる
+  - m152 で `rtc_media_base` ビルドターゲットが削除されたことに伴い、`media/base` から `api/video` へ移動したヘッダの include パスを更新する
+    - `include/sora/scalable_track_source.h` / `src/scalable_track_source.cpp` : `adapted_video_track_source.h`
+    - `src/v4l2/v4l2_device.cpp` / `src/v4l2/v4l2_video_capturer.cpp` : `video_common.h`
+  - @<担当者>
+
+### misc
+
+- [UPDATE] Examples の WEBRTC_BUILD_VERSION を m152.7977.0.0 にあげる
+  - @<担当者>
+```

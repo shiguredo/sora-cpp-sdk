@@ -36,3 +36,21 @@ iOS / Android で動作検証を実施したあと、PR を作成する。
 - develop の `DEPS` と `examples/DEPS` の `WEBRTC_BUILD_VERSION` が `m151.7922.0.0` になっていること
 - `run.py` の `install_deps` 関数の JNI シンボル保持対象に `Java_J_N_` が含まれていること
 - `CHANGES.md` の `## develop` に `[UPDATE] libwebrtc のバージョンを m151.7922.0.0 に上げる`、`### misc` に `[UPDATE] Examples の WEBRTC_BUILD_VERSION を m151.7922.0.0 にあげる` のエントリが追加されていること
+
+### 変更履歴の書き方サンプル
+
+`CHANGES.md` には以下のように追記する。担当者ハンドル `@<担当者>` は PR 作成者のものに書き換える。
+
+```markdown
+## develop
+
+- [UPDATE] libwebrtc のバージョンを m151.7922.0.0 に上げる
+  - Android のテストで WebRTC の JNI Zero シンボルを保持する
+    - libwebrtc の JNI エクスポート形式が従来の `Java_org_webrtc_` から JNI Zero の `Java_J_N_` 形式へ変わったため、run.py のシンボル保持対象に `Java_J_N_` を追加する
+  - @<担当者>
+
+### misc
+
+- [UPDATE] Examples の WEBRTC_BUILD_VERSION を m151.7922.0.0 にあげる
+  - @<担当者>
+```
