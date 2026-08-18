@@ -3,38 +3,40 @@
 - Created: 2026-08-18
 - Completed: {YYYY-MM-DD}
 - Branch: feature/fix-websocket-cancel-null-crash
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-08-18
 - Reporter: @voluntas
 
 ## 目的
 
 sora-python-sdk 経由の E2E テスト (DataChannel シグナリング有効 + パケロス環境で複数接続の確立・切断が重なる状況) で、I/O スレッドが `sora::Websocket::Cancel` の先頭で SIGSEGV になるクラッシュが発生した。
 
-原因は `SoraSignaling` の切断タイムアウト処理が `ws_` を無検査で `Cancel()` する経路と、`SendOnDisconnect` → `Clear()` による `ws_ = nullptr` の競合。null の `shared_ptr` に対する `ws_->Cancel()` は `operator->` では落ちず、`this == nullptr` のまま `Websocket::Cancel` に入って最初のメンバアクセス (インライン化された `IsSSL()` の `https_proxy_` 読み出し) で null 近傍アクセスになる。クラッシュフレームが `Websocket::Cancel` の先頭に出る実際のクラッシュと整合する。
+原因は `SoraSignaling` の切断処理のハンドラが実行時点の `ws_` を無検査で `Cancel()` することと、`SendOnDisconnect` → `Clear()` による `ws_ = nullptr` の競合。null の `shared_ptr` に対する `ws_->Cancel()` は `operator->` では落ちず、`this == nullptr` のまま `Websocket::Cancel` に入って最初のメンバアクセス (インライン化された `IsSSL()` の `https_proxy_` 読み出し) で null 近傍アクセスになる。クラッシュフレームが `Websocket::Cancel` の先頭に出る実際のクラッシュと整合する。
 
 ## 現状
-
-ソースコードで確認済みの欠陥は 2 つある。
 
 ### 1. DoInternalDisconnect のタイマー / DC close ハンドラが ws_ を無検査で Cancel() する
 
 `src/sora_signaling.cpp` の `SoraSignaling::DoInternalDisconnect` に、`self->ws_->Cancel()` を null チェックなしで呼ぶハンドラが 3 箇所ある。
 
-- `using_datachannel_ && ws_connected_` パス: DC close 成功後に張る `closing_timeout_timer_` のハンドラ
-- 同パス: `dc_->Close` のエラー (DC 切断タイムアウト) ハンドラ
+- `using_datachannel_ && ws_connected_` パス: `dc_->Close` の完了コールバックが成功分岐で張る `closing_timeout_timer_` のハンドラ
+- 同パス: `dc_->Close` の完了コールバックのエラー (DC 切断タイムアウト) 分岐
 - `!using_datachannel_ && ws_connected_` パス: `closing_timeout_timer_` のハンドラ
 
-いずれも `self` (`shared_from_this()` した `SoraSignaling`) だけをキャプチャし、`Websocket` の `shared_ptr` を持たない。
+いずれも `Websocket` の `shared_ptr` をキャプチャしておらず、実行時点の `self->ws_` を参照する。一方 `SoraSignaling::SendOnDisconnect` が `io_context` に post するラムダは `Clear()` を呼び、`Clear()` は `ws_ = nullptr` と `state_ = State::Closed` への遷移を行う。`Clear()` 後にこれらのハンドラが実行されると、null の `ws_` に対して `Cancel()` が呼ばれる。
 
-一方 `SoraSignaling::SendOnDisconnect` は `io_context` に post したラムダの中で `Clear()` を呼び、`Clear()` は `closing_timeout_timer_.cancel()` と `ws_ = nullptr` を行う。Asio の `steady_timer` は満了して成功 `error_code` の完了ハンドラがキューに積まれた後は `cancel()` で取り消せないため、post の順序次第で次のシーケンスが成立する。単一 I/O スレッドでも起きる。
+### 2. クラッシュに至る主経路 (単一 I/O スレッドで成立)
 
-1. `closing_timeout_timer_` が満了し、成功 `error_code` の完了ハンドラがキューに積まれる
-2. 別経路 (PeerConnection / DataChannel の状態変化など) から post されていた `SendOnDisconnect` のラムダが先に実行され、`Clear()` で `ws_ = nullptr` になる (タイマーの `cancel()` はもう効かない)
-3. 残っていたタイマーハンドラが実行され、`self->ws_->Cancel()` が null の `ws_` に対して呼ばれて SIGSEGV
+DC + WS パスでは、WebSocket 切断の完了が DataChannel の kClosed 通知より先に処理されると、次の順序で SIGSEGV に至る。post の順序が偶然入れ替わるといった特別なタイミング条件は不要で、通知の到着順だけで成立する。
 
-パケロスで WebSocket の close 完了が遅れるほどタイムアウト満了と切断完了通知が重なりやすく、競合の窓が広がる。
+1. `DoInternalDisconnect` の `using_datachannel_ && ws_connected_` パスが `dc_->Close` に完了コールバックを登録し、disconnect メッセージを送る
+2. WS 側の切断が先に完了し、`OnRead` のエラー分岐 → `on_ws_close_` → `SendOnDisconnect` → post されたラムダの `Clear()` で `ws_ = nullptr`・`state_ = State::Closed` になる。`Clear()` は `dc_ = nullptr` にするが、`DataChannel` オブジェクト自体が保持する `on_close_` (= 手順 1 の完了コールバック) は消さない
+3. `Clear()` の `pc_ = nullptr` で PeerConnection が解放されて DataChannel が閉じ、`DataChannel::OnStateChange` (`src/data_channel.cpp`) が全チャネルの kClosed を検出して `on_close_` を成功の `error_code` で呼ぶ
+4. 完了コールバックの成功分岐は `ws_close_called` を確認せず無条件に `closing_timeout_timer_` を張り直す。`Clear()` によるタイマーの cancel は張り直しより前に済んでいるため効かず、`state_` は既に `Closed` なので以後このタイマーを cancel する者はいない
+5. タイマーが満了し、ハンドラが `self->ws_->Cancel()` を null の `ws_` に対して実行して SIGSEGV になる
 
-### 2. Websocket::Cancel 自体に null ガードがない
+パケロスで close 完了の順序が揺れるほどこの経路に入りやすい。他の 2 箇所 (DC 切断タイムアウト分岐・`!using_datachannel_ && ws_connected_` パス) は現時点で具体的な null 到達順序を示せていないが、同型の無検査参照であり、同じ方針でまとめて防御する。
+
+### 3. Websocket::Cancel 自体に null ガードがない
 
 `src/websocket.cpp` の `Websocket::Cancel` は `IsSSL()` の結果だけで `wss_` / `ws_` を参照する。`IsSSL()` は `https_proxy_ || wss_ != nullptr` であり、HTTPS プロキシ構成では CONNECT 完了後の `OnReadProxy` で初めて `wss_` が生成されるため、それ以前に `Cancel()` が呼ばれると `IsSSL()` が true のまま null の `wss_` を参照して落ちる。
 
@@ -42,19 +44,25 @@ sora-python-sdk 経由の E2E テスト (DataChannel シグナリング有効 + 
 
 ## 設計方針
 
-null になり得る `self->ws_` をハンドラから参照するのをやめ、ハンドラ生成時点の `Websocket` を `shared_ptr` でキャプチャして、それに対して `Cancel()` を呼ぶ。これで null 参照は構造的に消え、`Clear()` 後にハンドラが実行されても生きたオブジェクトへの `Cancel()` (無害な no-op 相当) になる。
+null になり得る実行時点の `self->ws_` をハンドラから参照するのをやめ、`DoInternalDisconnect` 実行時点 (`ws_connected_` の確認により `ws_` が非 null であることが保証されている) の `Websocket` を `ws = ws_` として `shared_ptr` でキャプチャし、それに対して `Cancel()` を呼ぶ。
 
-あわせて `Websocket::Cancel` 側にも防御として null ガードを入れ、`wss_` / `ws_` が null なら何もしないようにする。
+DC + WS パスの 2 箇所は `dc_->Close` に渡す完了コールバックの内側にあるため、キャプチャは外側の完了コールバックのキャプチャリストで行い、内側の `closing_timeout_timer_` ハンドラとエラー分岐はその `ws` を引き継いで使う。DC close 完了時点で `self->ws_` を取り直してはならない (主経路では `Clear()` 済みで null になっているため)。
+
+これで null 参照は構造的に消える。`Clear()` 後にハンドラが実行された場合はキャプチャ済みの生きた `Websocket` への `Cancel()` になり、切断済みソケットへの `cancel(ec)` は無害な no-op 相当で済む。
+
+あわせて `Websocket::Cancel` 側にも防御として null ガードを入れ、`wss_` / `ws_` が null なら何もしないようにする。null の `this` で呼ばれた場合はガード自体がメンバアクセスになり防御にならないため、これはキャプチャ修正の補助であり単体では完了条件を満たさない。
 
 ## 完了条件
 
-- `Clear()` で `ws_ = nullptr` になった後に `closing_timeout_timer_` / DC close のハンドラが実行されても SIGSEGV が発生しない
+- `Clear()` で `ws_ = nullptr` になった後に `closing_timeout_timer_` / DC close のハンドラが実行されても SIGSEGV が発生しない (主経路の手順 1〜5 を含む)
 - HTTPS プロキシ構成で `wss_` 生成前に `Cancel()` が呼ばれても落ちない
 - 既存のビルドが通り、既存の E2E テストが通る
 
 ## 解決方法
 
-- `src/sora_signaling.cpp` の `SoraSignaling::DoInternalDisconnect`: 上記 3 箇所のハンドラで `ws = ws_` を明示的にキャプチャし、`self->ws_->Cancel()` の代わりに `ws->Cancel()` を呼ぶ
+- `src/sora_signaling.cpp` の `SoraSignaling::DoInternalDisconnect`:
+  - `using_datachannel_ && ws_connected_` パス: `dc_->Close` に渡す完了コールバックのキャプチャリストに `ws = ws_` を追加し、成功分岐で張る `closing_timeout_timer_` のハンドラとエラー分岐の `self->ws_->Cancel()` を `ws->Cancel()` に置き換える
+  - `!using_datachannel_ && ws_connected_` パス: `closing_timeout_timer_` のハンドラのキャプチャリストに `ws = ws_` を追加し、`self->ws_->Cancel()` を `ws->Cancel()` に置き換える
 - `src/websocket.cpp` の `Websocket::Cancel`: `IsSSL()` 分岐の前に `wss_` / `ws_` の null チェックを追加し、null なら何もしない
 
 タイミング依存の競合のため決定的な再現テストは書けない (モック禁止)。回帰確認は既存の E2E テストで行う。
