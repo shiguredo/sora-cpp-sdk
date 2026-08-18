@@ -717,18 +717,21 @@ void SoraSignaling::DoInternalDisconnect(
     webrtc::DataBuffer disconnect = ConvertToDataBuffer("signaling", text);
     dc_->Close(
         disconnect,
-        [self = shared_from_this(), on_close, ws_close_called,
+        // WS close 側の処理から SendOnDisconnect → Clear() が先に走ると
+        // self->ws_ は null になるため、実行時点の self->ws_ ではなく
+        // ここで捕捉した ws (ws_connected_ により非 null) を使う
+        [self = shared_from_this(), ws = ws_, on_close, ws_close_called,
          dc_close_called](boost::system::error_code ec) {
           // DC close 成功後も WS close を待つ必要があるため closing_timeout_timer_ で保護する
           if (!ec) {
             self->closing_timeout_timer_.expires_after(
                 std::chrono::seconds(self->config_.websocket_close_timeout));
             self->closing_timeout_timer_.async_wait(
-                [self](boost::system::error_code ec) {
+                [self, ws](boost::system::error_code ec) {
                   if (ec) {
                     return;
                   }
-                  self->ws_->Cancel();
+                  ws->Cancel();
                 });
             return;
           }
@@ -739,7 +742,7 @@ void SoraSignaling::DoInternalDisconnect(
           *dc_close_called = true;
 
           // DC 切断のタイムアウトかつ WebSocket の Close 処理が来てない状態なので何か問題が起きてる
-          self->ws_->Cancel();
+          ws->Cancel();
 
           // reason は自分で作る
           auto reason = boost::beast::websocket::close_reason(
@@ -779,11 +782,13 @@ void SoraSignaling::DoInternalDisconnect(
     closing_timeout_timer_.expires_after(
         std::chrono::seconds(config_.websocket_close_timeout));
     closing_timeout_timer_.async_wait(
-        [self = shared_from_this()](boost::system::error_code ec) {
+        // タイマー発火前に SendOnDisconnect → Clear() が走ると self->ws_ は
+        // null になるため、ここで捕捉した ws (ws_connected_ により非 null) を使う
+        [self = shared_from_this(), ws = ws_](boost::system::error_code ec) {
           if (ec) {
             return;
           }
-          self->ws_->Cancel();
+          ws->Cancel();
         });
     on_ws_close_ = [self = shared_from_this(),
                     on_close](boost::system::error_code ec) {
