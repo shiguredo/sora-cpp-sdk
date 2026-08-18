@@ -11,6 +11,10 @@
 
 ## develop
 
+## 2026.2.1
+
+**リリース日**: 2026-08-18
+
 - [FIX] 切断処理のタイマーが解放済みの WebSocket に対して Cancel() を呼び SIGSEGV でクラッシュするのを修正する
   - DataChannel シグナリング利用時の切断で、WebSocket close の完了が DataChannel の close 通知より先に処理されると、`Clear()` で `ws_` が null になった後に切断タイムアウトのタイマーが `ws_` へ `Cancel()` を呼んでクラッシュしていた
   - 切断開始時点の `Websocket` を各ハンドラに捕捉させて `Cancel()` を呼ぶようにする
