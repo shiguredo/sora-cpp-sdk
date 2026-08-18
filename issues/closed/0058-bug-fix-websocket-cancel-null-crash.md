@@ -1,7 +1,7 @@
 # 切断タイマーが null の ws_ に対して Cancel() を呼び SIGSEGV でクラッシュする
 
 - Created: 2026-08-18
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-08-18
 - Branch: feature/fix-websocket-cancel-null-crash
 - Polished: 2026-08-18
 - Reporter: @voluntas
@@ -66,3 +66,9 @@ DC + WS パスの 2 箇所は `dc_->Close` に渡す完了コールバックの�
 - `src/websocket.cpp` の `Websocket::Cancel`: `IsSSL()` 分岐の前に `wss_` / `ws_` の null チェックを追加し、null なら何もしない
 
 タイミング依存の競合のため決定的な再現テストは書けない (モック禁止)。回帰確認は既存の E2E テストで行う。
+
+### 実施内容
+
+上記の解決方法のとおり実装した。無検査の `self->ws_->Cancel()` とタイマーの張り直しを導入したのはコミット aabba857 (2026.2.0-canary.22 初出) である。
+
+検証は、DC の kClosed の post が Clear() の post より後ろに並ぶ順序を、`on_ws_close_` が Clear() を post した直後に I/O スレッドを一時的に塞ぐ再現ハーネスで決定的に再現して行った。修正前は null の `this` で `Websocket::Cancel` に突入すること、修正後は同一順序でも捕捉済みの生きた `Websocket` への `Cancel()` になりクラッシュしないこと、`Cancel()` 実行後に捕捉していた最後の参照の解放で `Websocket` が破棄されること (リークなし) をログで確認した。通常順序の切断も既存挙動どおり動作することを確認した。

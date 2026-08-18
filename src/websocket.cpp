@@ -629,6 +629,11 @@ void Websocket::OnClose(close_callback_t on_close,
 }
 
 void Websocket::Cancel() {
+  // HTTPS プロキシ構成では CONNECT 完了後の OnReadProxy で wss_ が生成される
+  // まで IsSSL() が真でも wss_ が null のため、ソケット未生成の間は何もしない
+  if (ws_ == nullptr && wss_ == nullptr) {
+    return;
+  }
   boost::system::error_code ec;
   if (IsSSL()) {
     wss_->next_layer().next_layer().cancel(ec);
