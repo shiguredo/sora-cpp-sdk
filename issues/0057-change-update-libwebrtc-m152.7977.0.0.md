@@ -10,6 +10,16 @@
 libwebrtc のバージョンを m151.7922.0.0 から m152.7977.0.0 に更新し、libwebrtc のアップデートに追従する。
 m152.7977.0.0 は webrtc-build 側で対応が完了しリリース済みのため、sora-cpp-sdk も追従する。
 
+## 実装状況 (2026-08-19)
+
+`feature/update-m152.7977.0.0` ブランチで実装済み。
+
+- `DEPS` と `examples/DEPS` の `WEBRTC_BUILD_VERSION` を `m152.7977.0.0` に更新した
+- webrtc-build の `feature/m152.7977` ブランチ（`WEBRTC_COMMIT=6f37672d...`）と m151（`WEBRTC_COMMIT=f20ebb8a...`）の `api/video/adapted_video_track_source.h` を比較し、API シグネチャが同一であることを確認した
+- 影響範囲に記載した 5 ファイルの include パスを `media/base/` → `api/video/` に更新した
+- `CHANGES.md` の `## develop` と `### misc` にエントリを追記した
+- ビルド確認: `python3 run.py build macos_arm64` が成功した（libwebrtc `m152.7977.0.0` でビルド可能なことを確認）
+
 ## 影響範囲
 
 ### libwebrtc 側の変更（m152）
