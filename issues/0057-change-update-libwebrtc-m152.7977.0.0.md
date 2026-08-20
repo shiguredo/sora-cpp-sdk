@@ -1,7 +1,7 @@
 # libwebrtc を m152.7977.0.0 にあげる
 
 - Created: 2026-08-17
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-08-19
 - Branch: feature/update-m152.7977.0.0
 - Polished: 2026-08-19
 
@@ -91,3 +91,12 @@ m152 でも存在が確認できたヘッダであり、変更不要。
 - develop の `DEPS` と `examples/DEPS` の `WEBRTC_BUILD_VERSION` が `m152.7977.0.0` になっていること
 - `CHANGES.md` の `## develop` に `[UPDATE] libwebrtc のバージョンを m152.7977.0.0 に上げる`、`### misc` に `[UPDATE] Examples の WEBRTC_BUILD_VERSION を m152.7977.0.0 にあげる` のエントリが追加されていること
 - Android の JNI エクスポート形式が m152 で変更されていないことを確認していること
+
+## 解決方法
+
+- `DEPS` と `examples/DEPS` の `WEBRTC_BUILD_VERSION` を `m152.7977.0.0` に更新した
+- m152 で `rtc_media_base` ビルドターゲットが削除され、`media/base` から `api/video` へ移動したヘッダの include パスを 5 ファイル分更新した
+- `CHANGES.md` に更新内容を追記した
+- PR #372 の CI が全プラットフォームで成功し、GitHub-hosted ランナーの E2E テストも成功した
+- iOS / Android の実機で hello を起動し、WSS 接続できることを確認した
+- Android の JNI エクスポート形式が m152 で変更されていないことを確認した
