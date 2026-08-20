@@ -1,7 +1,7 @@
 # libwebrtc を m152.7977.0.0 にあげる
 
 - Created: 2026-08-17
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-08-19
 - Branch: feature/update-m152.7977.0.0
 - Polished: 2026-08-19
 
@@ -9,6 +9,16 @@
 
 libwebrtc のバージョンを m151.7922.0.0 から m152.7977.0.0 に更新し、libwebrtc のアップデートに追従する。
 m152.7977.0.0 は webrtc-build 側で対応が完了しリリース済みのため、sora-cpp-sdk も追従する。
+
+## 実装状況 (2026-08-19)
+
+`feature/update-m152.7977.0.0` ブランチで実装済み。
+
+- `DEPS` と `examples/DEPS` の `WEBRTC_BUILD_VERSION` を `m152.7977.0.0` に更新した
+- webrtc-build の `feature/m152.7977` ブランチ（`WEBRTC_COMMIT=6f37672d...`）と m151（`WEBRTC_COMMIT=f20ebb8a...`）の `api/video/adapted_video_track_source.h` を比較し、API シグネチャが同一であることを確認した
+- 影響範囲に記載した 5 ファイルの include パスを `media/base/` → `api/video/` に更新した
+- `CHANGES.md` の `## develop` と `### misc` にエントリを追記した
+- ビルド確認: `python3 run.py build macos_arm64` が成功した（libwebrtc `m152.7977.0.0` でビルド可能なことを確認）
 
 ## 影響範囲
 
@@ -81,3 +91,12 @@ m152 でも存在が確認できたヘッダであり、変更不要。
 - develop の `DEPS` と `examples/DEPS` の `WEBRTC_BUILD_VERSION` が `m152.7977.0.0` になっていること
 - `CHANGES.md` の `## develop` に `[UPDATE] libwebrtc のバージョンを m152.7977.0.0 に上げる`、`### misc` に `[UPDATE] Examples の WEBRTC_BUILD_VERSION を m152.7977.0.0 にあげる` のエントリが追加されていること
 - Android の JNI エクスポート形式が m152 で変更されていないことを確認していること
+
+## 解決方法
+
+- `DEPS` と `examples/DEPS` の `WEBRTC_BUILD_VERSION` を `m152.7977.0.0` に更新した
+- m152 で `rtc_media_base` ビルドターゲットが削除され、`media/base` から `api/video` へ移動したヘッダの include パスを 5 ファイル分更新した
+- `CHANGES.md` に更新内容を追記した
+- PR #372 の CI が全プラットフォームで成功し、GitHub-hosted ランナーの E2E テストも成功した
+- iOS / Android の実機で hello を起動し、WSS 接続できることを確認した
+- Android の JNI エクスポート形式が m152 で変更されていないことを確認した
