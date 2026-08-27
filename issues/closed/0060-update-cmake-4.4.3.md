@@ -12,7 +12,7 @@ v4.4.3 は 2026-08-25 にリリース済み。
 
 ## 現状
 
-`DEPS` と `examples/DEPS` の `CMAKE_VERSION` で CMake のバージョンを管理している。実装前は `4.4.2` で、`feature/update-cmake-4.4.3` ブランチで `4.4.3` に更新済み（develop には未マージ）。
+`DEPS` と `examples/DEPS` の `CMAKE_VERSION` で CMake のバージョンを管理している。実装前は `4.4.2` で、`feature/update-cmake-4.4.3` ブランチで `4.4.3` に更新済み。
 この値は `run.py` のインストール処理、`test/android/app/build.gradle`、各 examples の `run.py` から参照されている。
 
 ## 設計方針
@@ -32,7 +32,6 @@ v4.4.3 は 2026-08-25 にリリース済み。
   - CI のビルドジョブが全プラットフォームで成功していること
   - Android / iOS 以外のプラットフォームでは sumomo の E2E テスト (pytest) が成功していること
   - Android の Gradle ビルド（`test/android` のテストアプリ）が成功していること
-- develop の `DEPS` と `examples/DEPS` の `CMAKE_VERSION` が `4.4.3` になっていること
 - `CHANGES.md` に更新エントリを追記していること
 
 ### 変更履歴の書き方サンプル
@@ -55,4 +54,4 @@ v4.4.3 は 2026-08-25 にリリース済み。
 
 - `DEPS` と `examples/DEPS` の `CMAKE_VERSION` を `4.4.3` に更新した
 - `CHANGES.md` に更新内容を追記した
-- `feature/update-cmake-4.4.3` ブランチの push で PR の CI が全プラットフォームで成功した（develop には未マージ）
+- `feature/update-cmake-4.4.3` ブランチの push で PR の CI が全プラットフォームで成功した
