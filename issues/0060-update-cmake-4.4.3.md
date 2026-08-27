@@ -1,7 +1,7 @@
 # CMake を 4.4.3 にあげる
 
 - Created: 2026-08-27
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-08-27
 - Branch: feature/update-cmake-4.4.3
 - Polished: 2026-08-27
 
@@ -55,3 +55,4 @@ v4.4.3 は 2026-08-25 にリリース済み。
 
 - `DEPS` と `examples/DEPS` の `CMAKE_VERSION` を `4.4.3` に更新した
 - `CHANGES.md` に更新内容を追記した
+- `feature/update-cmake-4.4.3` ブランチの push で PR の CI が全プラットフォームで成功した（develop には未マージ）
