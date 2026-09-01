@@ -18,7 +18,7 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-#include "media/base/video_common.h"  // webrtc::GetFourccName
+#include "api/video/video_common.h"  // webrtc::GetFourccName
 
 namespace sora {
 

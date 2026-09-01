@@ -33,12 +33,12 @@
 #include <api/scoped_refptr.h>
 #include <api/video/i420_buffer.h>
 #include <api/video/nv12_buffer.h>
+#include <api/video/video_common.h>
 #include <api/video/video_frame.h>
 #include <api/video/video_frame_buffer.h>
 #include <api/video/video_rotation.h>
 #include <bits/types/struct_timeval.h>
 #include <common_video/libyuv/include/webrtc_libyuv.h>
-#include <media/base/video_common.h>
 #include <rtc_base/logging.h>
 #include <rtc_base/platform_thread.h>
 #include <rtc_base/synchronization/mutex.h>

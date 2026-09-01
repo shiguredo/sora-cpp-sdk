@@ -16,11 +16,11 @@
 // WebRTC
 #include <api/media_stream_interface.h>
 #include <api/scoped_refptr.h>
+#include <api/video/adapted_video_track_source.h>
 #include <api/video/i420_buffer.h>
 #include <api/video/video_frame.h>
 #include <api/video/video_frame_buffer.h>
 #include <api/video/video_rotation.h>
-#include <media/base/adapted_video_track_source.h>
 #include <rtc_base/time_utils.h>
 
 // libyuv
