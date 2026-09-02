@@ -3,6 +3,23 @@ pluginManagement {
         gradlePluginPortal()
         google()
         mavenCentral()
+        // R8 の最新版を取得する
+        maven {
+            url = uri("https://storage.googleapis.com/r8-releases/raw")
+        }
+    }
+    buildscript {
+        repositories {
+            mavenCentral()
+            maven {
+                url = uri("https://storage.googleapis.com/r8-releases/raw")
+            }
+        }
+        dependencies {
+            // m153 の webrtc.jar が Java 25 (class file 69) でビルドされているため、
+            // AGP 8.10 同梱の D8/R8 では dex 化できない。Java 25 対応版の R8 を明示指定する。
+            classpath("com.android.tools:r8:9.2.26")
+        }
     }
 }
 dependencyResolutionManagement {
