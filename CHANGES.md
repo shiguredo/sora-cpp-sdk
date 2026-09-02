@@ -12,6 +12,7 @@
 ## develop
 
 - [UPDATE] libwebrtc のバージョンを m153.8010.0.0 に上げる
+  - m153 の webrtc.jar が Java 25 (class file 69) でビルドされているため、test/android の AGP を 8.13.2 に上げ、Java 25 対応の R8 9.2.26 を明示指定する
   - @voluntas
 - [UPDATE] libwebrtc のバージョンを m152.7977.0.2 に上げる
   - m152 で `rtc_media_base` ビルドターゲットが削除されたことに伴い、`media/base` から `api/video` へ移動したヘッダの include パスを更新する
