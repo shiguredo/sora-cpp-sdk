@@ -11,6 +11,8 @@
 
 ## develop
 
+- [UPDATE] libwebrtc のバージョンを m154.8037.1.1 に上げる
+  - @voluntas
 - [UPDATE] libwebrtc のバージョンを m154.8037.0.0 に上げる
   - @voluntas
 - [UPDATE] libwebrtc のバージョンを m153.8010.0.0 に上げる
@@ -28,6 +30,8 @@
 
 ### misc
 
+- [UPDATE] Examples の WEBRTC_BUILD_VERSION を m154.8037.1.1 にあげる
+  - @voluntas
 - [UPDATE] Examples の WEBRTC_BUILD_VERSION を m154.8037.0.0 にあげる
   - @voluntas
 - [UPDATE] Examples の WEBRTC_BUILD_VERSION を m153.8010.0.0 にあげる
