@@ -38,7 +38,7 @@ Sora C++ SDK が出力するログに UTC のタイムスタンプを追加す�
 ## Pending 理由
 
 - sora-oss-private の issue で「不急」ラベルが付いており優先度が低い
-- libwebrtc には経過時間を出力する `LogTimestamps` はあるが UTC タイムスタンプを出力する仕組みがなく、カスタム `LogSink` の実装と既定の出力先の切り替えが必要で、tnoho さんからも「かなりめんどくさい」と共有されている
+- libwebrtc には経過時間を出力する `LogTimestamps` はあるが UTC タイムスタンプを出力する仕組みがなく、カスタム `LogSink` の実装と既定の出力先の切り替えが必要である
 - SDK がログ出力をどこまで管理するか（`SoraClientContext` に含めるか、専用 API にするか、アプリに委ねるか）の設計判断が必要
 
 ## Pending 解除条件
