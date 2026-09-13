@@ -3,7 +3,7 @@
 - Created: 2026-09-10
 - Completed: YYYY-MM-DD
 - Branch: feature/fix-disconnect-on-datachannel-closed
-- Polished: YYYY-MM-DD
+- Polished: 2026-09-13
 - Reporter: @miosakuma
 
 ## 目的
@@ -26,7 +26,7 @@ Sora の DataChannel 仕様では signaling ラベルの DataChannel が閉じ�
 1. sumomo を DataChannel シグナリング有効で接続する
 
    ```bash
-   ./sumomo --signaling-url wss://<signaling-url>/signaling --role sendrecv --channel-id <channel-id> --multistream true --data-channel-signaling true
+   ./sumomo --signaling-url wss://<signaling-url>/signaling --role sendrecv --channel-id <channel-id> --data-channel-signaling true --ignore-disconnect-websocket true
    ```
 
 2. Sora のデバッグ API で `signaling` または `stats` ラベルの DataChannel を閉じる
@@ -44,7 +44,7 @@ Sora の DataChannel 仕様では signaling ラベルの DataChannel が閉じ�
 
 ## 完了条件
 
-- DataChannel シグナリング利用中に任意の DataChannel が閉じられた場合、`OnDisconnect` が 1 回呼ばれること
+- 接続中に offer の `data_channels` に含まれる任意の DataChannel（`signaling` や `stats` ラベル、`#` で始まるユーザー定義ラベルを含む。DataChannel シグナリングの利用中に限らない）が閉じられた場合、`OnDisconnect` が 1 回呼ばれること
 - `{"type":"close"}` によるサーバ起点のグレースフルシャットダウンでは、従来どおりすべての DataChannel の close を待って通知され、二重通知や close コード・reason の喪失がないこと
 - クライアント起点の `Disconnect()` で二重通知が発生しないこと
 - 回帰がないこと: `test/datachannel.cpp` の DataChannel 送受信テストと、E2E テスト (`test_sumomo_data_channel_signaling`) が通ること
