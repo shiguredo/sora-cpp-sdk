@@ -3,7 +3,7 @@
 - Created: 2026-09-11
 - Completed: YYYY-MM-DD
 - Branch: feature/fix-vpl-av1-h265-two-stream-simulcast
-- Polished: YYYY-MM-DD
+- Polished: 2026-09-13
 - Reporter: @torikizi
 
 ## 目的
@@ -64,11 +64,12 @@ sendonly = SoraClient(
 
 ## 設計方針
 
-原因は未特定であり、まず Intel VPL のエンコーダー実装を調査して、ストリーム数が 2 本以下の構成で何が起きているかを特定する。対象は `src/hwenc_vpl/vpl_video_encoder.cpp` の `VplVideoEncoderImpl` とし、`SimulcastEncoderAdapter` からレイヤーごとに渡される `VideoEncoder::Settings` / `VideoCodec` をもとに `mfxVideoParam` を組み立てる初期化処理を中心に確認する。
+原因は未特定であり、まず Intel VPL のエンコーダー実装を調査して、ストリーム数が 2 本以下の構成で何が起きているかを特定する。対象は `src/hwenc_vpl/vpl_video_encoder.cpp` の `VplVideoEncoderImpl` とし、`SimulcastEncoderAdapter` からレイヤーごとに渡される `webrtc::VideoCodec` をもとに `mfxVideoParam` を組み立てる初期化処理を中心に確認する。なお、`VplVideoEncoderImpl::InitEncode` は旧シグネチャ (`VideoCodec` のみを受け取る) を実装しており、`VideoEncoder::Settings` はこの初期化パスでは使われない。
 
 見るべき観点は次のとおりである。
 
 - 解像度 (640 x 360) とビットレート (700) から決まる `mfxVideoParam` の `mfx.FrameInfo` (Width / Height / CropW / CropH) とレート制御 (`mfx.RateControlMethod` など) が 2 本ストリーム時に不正または非対応の値になっていないか
+- 関連する issue である `issues/pending/0100-bug-fix-vpl-av1-small-resolution.md` では、Intel VPL が扱える最小解像度が 128 x 96 であることが調査で判明している。サイマルキャストで生成されるレイヤーの解像度がこの下限を下回っていないかも確認する
 - H.265 と AV1 で共通の原因か、AV1 の `svc_controller_` (`webrtc::ScalableVideoController`) に起因する個別の原因かを切り分ける
 - VPL が解像度・ビットレートの組み合わせを拒否した場合に `InitVpl()` がエラーをどう扱い、どこで送信が止まるか
 - 受信側で映像が出ないことから、エンコード自体が失敗しているのか、RTP 送出が止まっているのかを統計 (`outbound-rtp`) で切り分ける
