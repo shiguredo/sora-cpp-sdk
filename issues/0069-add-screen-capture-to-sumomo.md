@@ -3,7 +3,7 @@
 - Created: 2026-09-10
 - Completed: {YYYY-MM-DD}
 - Branch: feature/add-screen-capture-to-sumomo
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-09-14
 
 ## 目的
 
@@ -13,7 +13,7 @@ sumomo でカメラデバイスの代わりに画面をキャプチャして配�
 
 - sumomo の映像入力は `examples/sumomo/src/sumomo.cpp` の `Sumomo::Run()` で生成している。`config_.fake_capture_device` が true の場合は `sora::FakeVideoCapturer` を、false の場合は `sora::CreateCameraDeviceCapturer` を利用しており、画面キャプチャの経路はない
 - `examples/sumomo/src/sumomo.cpp` の `SumomoConfig` と `main()` の CLI11 定義に画面キャプチャ関連のオプションはない
-- `examples/sumomo/CMakeLists.txt` は `src/sumomo.cpp` と `src/sdl_renderer.cpp` のみをビルドしており、プラットフォーム固有のリンク設定は Windows / 非 Windows の 2 分岐しかない
+- `examples/sumomo/CMakeLists.txt` は `src/sumomo.cpp` と `src/sdl_renderer.cpp` のみをビルドしており、プラットフォーム別の設定はコンパイルオプション・定義の `if(WIN32)/else()` 分岐と `if(LINUX)` の `BUILD_RPATH` 設定のみで、リンク先は全プラットフォーム共通の `Sora::sora` と `SDL3::SDL3`
 - `examples/sumomo/run.py` はサンプル固有の cmake オプションを渡していない
 - momo には以下がある
   - `src/rtc/screen_video_capturer.{h,cpp}` の `ScreenVideoCapturer` : `webrtc::DesktopCapturer::CreateScreenCapturer` と `webrtc::DesktopAndCursorComposer` を使い、`GetSourceList` の先頭のソースをキャプチャする。`libyuv` の `ARGBScale` / `ARGBToI420` で指定解像度に収まるようスケーリングし、`sora::ScalableVideoTrackSource::OnFrame` へ I420 フレームを渡す
@@ -31,9 +31,10 @@ sumomo でカメラデバイスの代わりに画面をキャプチャして配�
   - キャプチャ対象は momo と同じく `GetSourceList` の先頭のソースとし、選択オプションは追加しない
   - フレームレートはカメラ / fake と同じ 30 fps とする
 - `SumomoConfig` に `bool screen_capture = false;` を追加し、CLI11 に `--screen-capture` フラグを登録する。momo と同様に未対応プラットフォームではバリデータでエラーにする
-- 対応プラットフォームは momo に合わせ、Windows x86_64 / macOS arm64 / Ubuntu x86_64 とする。armv8 / Raspberry Pi OS は prebuilt libwebrtc の desktop capture 対応状況が不明なため対象外とする
-  - Ubuntu 26.04 x86_64 は sumomo の対応ターゲットに含まれるため、prebuilt libwebrtc に desktop capture が含まれるかを実装時に確認し、問題なければ対象に含める
-- `examples/sumomo/CMakeLists.txt` に `USE_SCREEN_CAPTURER` オプションを追加し、有効時のみ `screen_video_capturer.cpp` を追加してプラットフォーム別のライブラリをリンクする
+- 対応プラットフォームは momo に合わせた Windows x86_64 / macOS arm64 / Ubuntu 22.04・24.04 x86_64 に加えて、Ubuntu 26.04 x86_64 も対応とする。armv8 / Raspberry Pi OS は prebuilt libwebrtc の desktop capture 対応状況が不明なため対象外とする
+  - Ubuntu 26.04 x86_64 は sumomo の対応ターゲットに含まれる。m154.8037.1.1 の prebuilt libwebrtc に desktop capture が含まれることを 2026-09-14 に確認済み (macOS arm64 / Ubuntu 26.04 x86_64 の libwebrtc.a に `webrtc::DesktopCapturer` のシンボルあり)。momo の ScreenVideoCapturer が使う API (`CreateScreenCapturer` / `SelectSource` / `CaptureFrame` 等) は m154 のヘッダにも存在するため、対象に含める
+- `examples/sumomo/CMakeLists.txt` に `USE_SCREEN_CAPTURER` オプションを追加し、有効時のみ `screen_video_capturer.cpp` を追加して、`target_compile_definitions` で `USE_SCREEN_CAPTURER` マクロを定義してからプラットフォーム別のライブラリをリンクする
+  - `USE_SCREEN_CAPTURER` マクロは momo と同様に `is_valid_screen_capture` バリデータとキャプチャ生成分岐で使用する
 - `examples/sumomo/run.py` で対応プラットフォームの場合に `-DUSE_SCREEN_CAPTURER=ON` を渡す
 - 起動時にキャプチャ対象のソース一覧をログ出力し、どの画面が配信されるか確認できるようにする
 - `examples/sumomo/README.md` の「映像と音声のデバイスに関するオプション」に `--screen-capture` を追記する
@@ -42,7 +43,7 @@ sumomo でカメラデバイスの代わりに画面をキャプチャして配�
 ## 懸念
 
 - macOS では画面収録の許可 (TCC) が必要で、許可されていない場合はフレームが取得できない。権限の状態によっては利用者に事前説明が必要になる
-- Ubuntu で Wayland 環境の場合は WebRTC の PipeWire 経路が必要になる。prebuilt libwebrtc の PipeWire 対応状況は実装時に確認する
+- Ubuntu で Wayland 環境の場合は WebRTC の PipeWire 経路が必要になる。m154.8037.1.1 の prebuilt libwebrtc には PipeWire が含まれていないことを 2026-09-14 に確認済み (Ubuntu 26.04 x86_64 の libwebrtc.a に pipewire のシンボル・文字列なし) のため、Wayland セッションでは画面キャプチャできない。X11 セッションで利用する必要がある
 
 ## 完了条件
 
