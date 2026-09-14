@@ -3,7 +3,7 @@
 - Created: 2026-09-10
 - Completed: YYYY-MM-DD
 - Branch: feature/add-ipad-external-camera
-- Polished: YYYY-MM-DD
+- Polished: 2026-09-15
 
 ## 目的
 
@@ -15,7 +15,7 @@ Sora Unity SDK の iOS ビルドは `sora::MacCapturer::EnumVideoDevice` と `so
 
 - `src/mac/mac_capturer.mm` の `captureDevices()` は `SORA_CPP_SDK_MACOS` のときだけ `AVCaptureDeviceTypeExternal` を含めている。 iOS ビルド (`SORA_CPP_SDK_IOS`) では `AVCaptureDeviceTypeBuiltInWideAngleCamera` のみを列挙し、 外部カメラが含まれない
 - `DeviceList::EnumVideoCapturer` (`src/device_list.cpp`) は iOS / macOS で `MacCapturer::EnumVideoDevice` を呼び、 `MacCapturer::FindVideoDevice` も同じ `captureDevices()` を利用する。 iOS では外部カメラの列挙も `device_name` / uniqueID による選択もできない
-- `CreateCameraDeviceCapturer` (`src/camera_device_capturer.cpp`) が受け取る `CameraDeviceCapturerConfig` には、 デバイス指定に `device_name` しかなく、 アプリから外部カメラの `AVCaptureDevice*` を直接渡す公開 API はない
+- `CreateCameraDeviceCapturer` (`src/camera_device_capturer.cpp`) が受け取る `CameraDeviceCapturerConfig` には、 デバイス指定に `device_name` しかない。 `MacCapturerConfig::device` (`include/sora/mac/mac_capturer.h`) で `MacCapturer::Create` に `AVCaptureDevice*` を直接渡すことはできるが、 `CreateCameraDeviceCapturer` の経路では利用できない
 - iOS の deployment target は 14.0 である。 `AVCaptureDevice.DeviceType.external` は iOS 17.0 以降でのみ利用できるため、 macOS の分岐と同じように無条件で追加することはできない
 - macOS ビルドは `AVCaptureDeviceTypeExternal` を含めており外部カメラに対応済みである
 - libwebrtc の `RTCCameraVideoCapturer.captureDevices()` は組み込み広角カメラのみを列挙する (M154 時点) ため、 SDK 側の `captureDevices()` で対応する必要がある
