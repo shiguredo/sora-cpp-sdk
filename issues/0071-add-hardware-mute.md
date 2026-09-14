@@ -3,7 +3,7 @@
 - Created: 2026-09-10
 - Completed: YYYY-MM-DD
 - Branch: feature/add-hardware-mute
-- Polished: YYYY-MM-DD
+- Polished: 2026-09-15
 
 ## 目的
 
@@ -32,7 +32,7 @@ Sora C++ SDK を利用するアプリで、接続を維持したままカメラ�
 - ADM は `SoraClientContext::Create` が内部で生成して `PeerConnectionFactory` に渡す。`SoraClientContextConfig::use_audio_device` で選べるのは接続時にデバイスを掴むかどうかだけ
 - 接続中に録音を停止してデバイスを解放し、再開する API を C++ SDK は提供していない。`SoraClientContextConfig::configure_dependencies` で ADM を取得すれば `StartRecording` / `StopRecording` を直接呼べるが、録音の停止/再開がデバイスの解放/再取得として機能する保証は無い
 - 現行の libwebrtc の C++ `webrtc::AudioDeviceModule` には `StartRecording` / `StopRecording` はあるが、pause / resume に相当する API は無い
-- Sora iOS SDK / Sora Android SDK のハードウェアミュートは、webrtc-build の `ios_audio_pause_resume.patch` / `android_audio_pause_resume.patch` で追加された `AudioDeviceModuleIOS::PauseRecording` / `ResumeRecording` (`RTCAudioDeviceModule`) と `org.webrtc.audio.JavaAudioDeviceModule.pauseRecording` / `resumeRecording` を利用している
+- Sora iOS SDK / Sora Android SDK のハードウェアミュートは、webrtc-build のパッチで追加された `RTCAudioDeviceModule` (`pauseRecording` / `resumeRecording`) と `org.webrtc.audio.JavaAudioDeviceModule` (`pauseRecording` / `resumeRecording`) を利用している。どちらも upstream の webrtc には存在せず、webrtc-build 側で追加されている
 - sora-cpp-sdk の Android ADM は `webrtc::CreateJavaAudioDeviceModule` を使うネイティブ実装のため、Java 側に追加された pause / resume をそのままは利用できない
 
 ## 設計方針
@@ -43,7 +43,7 @@ Sora C++ SDK を利用するアプリで、接続を維持したままカメラ�
   - `CreateCameraDeviceCapturer` の返り値が `webrtc::VideoTrackSourceInterface` であるため、具体型を保持する方法を整理する
 - 音声
   - `webrtc::AudioDeviceModule` を SDK から制御する API を設ける
-  - iOS は webrtc-build のパッチが追加する `AudioDeviceModuleIOS::PauseRecording` / `ResumeRecording` を、Android はネイティブ ADM の `StopRecording` / `StartRecording` でマイクを解放できるか、または Java ADM の pause / resume を利用する方法を調査する。webrtc-build への追加パッチが必要になる可能性も含めて整理する
+  - iOS は webrtc-build のパッチが追加する `RTCAudioDeviceModule` の `pauseRecording` / `resumeRecording` を、Android はネイティブ ADM の `StopRecording` / `StartRecording` でマイクを解放できるか、または `JavaAudioDeviceModule` の pause / resume を利用する方法を調査する。webrtc-build への追加パッチが必要になる可能性も含めて整理する
   - Windows / macOS / Ubuntu は、ADM の `StopRecording` / `StartRecording` でデバイスが解放され再開できるか確認する
 - ソフトミュートとデバイスオフの役割分担を整理する。デバイスオフ中に送信を止めるか、黒フレームや無音を送るか、ミュート解除時に黒いフレームが残らないようにする方法も含めて決める
 - 既存 API の互換性を壊さない
