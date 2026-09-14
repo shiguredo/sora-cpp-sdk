@@ -26,6 +26,7 @@ Phase 1 でプロキシを手動指定できるようになっているが、OS 
   - Windows: `WinHttpGetIEProxyConfigForCurrentUser` / `WinHttpGetProxyForUrl`
   - macOS: `CFNetworkCopySystemProxySettings` または `SCDynamicStoreCopyProxies`
   - Linux: 環境変数 `http_proxy` / `https_proxy` / `all_proxy` / `no_proxy`
+- 対象プラットフォームは Windows / macOS / Linux とする。iOS / Android では OS のプロキシ設定を参照せず従来どおり（プロキシなし）で接続し、対応が必要になった場合は別 issue で検討する
 - 読み取った OS 設定は `proxy_url`（認証情報があれば `proxy_username` / `proxy_password`）へ正規化し、明示設定と同じ適用経路（`SoraSignaling::DoConnect` / `Redirect` / `CreatePeerConnection`）に載せる。プロキシ接続の経路は新たに追加しない
 - OS 設定のバイパス指定（Linux の `no_proxy`、Windows のプロキシバイパス、macOS の ExceptionsList）を読み取り、一致するホストへの接続はプロキシなしとする
 - 明示設定（`proxy_url` 非空）を優先し、未指定時のみ OS 設定にフォールバックする
