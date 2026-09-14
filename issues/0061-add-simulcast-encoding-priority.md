@@ -3,7 +3,7 @@
 - Created: 2026-09-10
 - Completed: {YYYY-MM-DD}
 - Branch: feature/add-simulcast-encoding-priority
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-09-14
 
 ## 目的
 
@@ -11,7 +11,7 @@ Sora 2026.1.0 で、offer メッセージの `encodings`（サイマルキャス
 
 ## 現状
 
-- `src/sora_signaling.cpp` の `SoraSignaling::OnRead` の `type == "offer"` 分岐で、`encodings` 配列の各要素を `webrtc::RtpEncodingParameters` へ変換している。対応済みの項目は `rid` / `maxBitrate` / `minBitrate` / `scaleResolutionDownBy` / `maxFramerate` / `active` / `adaptivePtime` / `scalabilityMode` / `scaleResolutionDownTo` で、`priority` と `networkPriority` は変換していない
+- `src/sora_signaling.cpp` の `SoraSignaling::OnRead` の `type == "offer"` 分岐で、`offer_config_.simulcast` が true の場合のみ `encodings` 配列の各要素を `webrtc::RtpEncodingParameters` へ変換している。対応済みの項目は `rid` / `maxBitrate` / `minBitrate` / `scaleResolutionDownBy` / `maxFramerate` / `active` / `adaptivePtime` / `scalabilityMode` / `scaleResolutionDownTo` で、`priority` と `networkPriority` は変換していない
 - 変換した `RtpEncodingParameters` は `SoraSignaling::SetEncodingParameters` で映像トランシーバーの sender へ `RtpSenderInterface::SetParameters` により設定し、`encodings_` に保持する。`SoraSignaling::ResetEncodingParameters` は `encodings_` を使って sender へ再設定する
 - `webrtc::RtpEncodingParameters`（libwebrtc m154.8037.1.1）には以下のフィールドがある
   - `double bitrate_priority = kDefaultBitratePriority;`（ `kDefaultBitratePriority` は 1.0 ）
@@ -58,8 +58,8 @@ libwebrtc の `network_priority` は W3C の `RTCRtpEncodingParameters.networkPr
 
 ## 懸念
 
-- Sora ドキュメントでは `priority` と `networkPriority` はどちらも「この設定は Chrome でしか利用できません」と注記されている。また Sora iOS SDK では `priority` の反映が pending になっている。libwebrtc の `bitrate_priority` はサイマルキャストのビットレート配分で参照されるが、ネイティブ SDK での実効性は不透明なため、実装時にログと実機の動作で確認する
-- `network_priority` による DSCP マーキングを有効にするには `webrtc::PeerConnectionInterface::RTCConfiguration` の `enable_dscp`（ `set_dscp(true)` ）が必要だが、Sora C++ SDK では設定していない。DSCP マーキングの有効化は本 issue のスコープ外とする
+- Sora ドキュメントでは `priority` と `networkPriority` はどちらも「この設定は Chrome でしか利用できません」と注記されている。また Sora iOS SDK では `priority` の反映が pending になっている。libwebrtc の `bitrate_priority` は、現在はエンコーディングごとではなく RTP sender 全体に対して最初のエンコーディングの値を使って適用される（`api/rtp_parameters.h` のコメントに "Currently this is implemented for the entire rtp sender by using the value of the first encoding parameter." とあり、エンコーディングごとの適用は TODO）。ネイティブ SDK での実効性は不透明なため、実装時にログと実機の動作で確認する
+- W3C の `RTCRtpEncodingParameters.networkPriority` は生成パケットの DSCP マーキングのみに影響する。DSCP マーキングを有効にするには `webrtc::PeerConnectionInterface::RTCConfiguration` の `enable_dscp`（ `set_dscp(true)` ）が必要だが、Sora C++ SDK では設定していないため、現状のままだと `network_priority` を反映しても送信パケットの DSCP 値は変わらない。本 issue は Sora から受け取った値を `RtpEncodingParameters` へ反映するところまでをスコープとし、DSCP マーキングの有効化は本 issue のスコープ外とする
 
 ## 完了条件
 
