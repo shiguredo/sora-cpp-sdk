@@ -3,7 +3,7 @@
 - Created: 2026-08-02
 - Completed: {YYYY-MM-DD}
 - Branch: feature/refactor-unify-sdl-sample-renderer
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-09-14
 - Reporter: @voluntas
 
 ## 目的
@@ -13,7 +13,7 @@
 ## 現状
 
 - `examples/sdl_sample/src/sdl_renderer.h` の `SDLRenderer` は `class SDLRenderer {` として宣言されており、`sora::BaseRenderer` を継承していない
-- `examples/sdl_sample/src/sdl_renderer.cpp` の `SDLRenderer::SetOutlines()` は独自実装で、ウィンドウアスペクトと映像アスペクトを考慮しない旧方式の枠割りになっている
+- `examples/sdl_sample/src/sdl_renderer.cpp` の `SDLRenderer::SetOutlines()` は独自実装で、ウィンドウアスペクトは考慮するものの、映像アスペクトを `STD_ASPECT` / `WIDE_ASPECT` の 2 択で見積もり、ウィンドウを等分割した枠をそのまま各 Sink に割り当てる旧方式の枠割りになっており、実測アスペクト採用・共通縮小・中央寄せを備えない
 - `BaseRenderer` の枠割り修正 (実測アスペクト採用・共通縮小・中央寄せ) が `sdl_sample` に反映されず、sumomo と `sdl_sample` でマルチ映像表示の挙動が異なる
 
 ## 設計方針
