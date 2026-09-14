@@ -38,7 +38,7 @@ Sora C++ SDK を利用するアプリで、接続を維持したままカメラ�
 ## 設計方針
 
 - 映像と音声それぞれに、接続中にデバイスを解放/再取得する API を追加する。API 名、公開方法 (キャプチャラの共通インターフェース、`SoraClientContext` 経由など)、同期/非同期の扱いは実装時に決める
-- デバイスオフ状態から接続を始める方法も整理する。接続直後にアプリがオフ API を呼ぶ方式ではカメラのランプやマイクのインジケーターが一瞬点灯するため、初期状態からデバイスオフにできる設定 (初期ミュート) の要否を検討する
+- デバイスオフ状態から接続を始める方法も整理する。接続直後にアプリがオフ API を呼ぶ方式ではカメラのランプやマイクのインジケーターが一瞬点灯するため、初期状態からデバイスオフにできる設定 (初期ミュート) を提供する
 - 映像
   - キャプチャラを破棄せずに停止/再開できるようにする。macOS / iOS は `RTCCameraVideoCapturer` の stop と start、Android は `CameraVideoCapturer` の `stopCapture` と再度の `startCapture`、Windows は `VideoCaptureModule`、Linux は V4L2 の停止/再開を利用できるか確認する
   - `CreateCameraDeviceCapturer` の返り値が `webrtc::VideoTrackSourceInterface` であるため、具体型を保持する方法を整理する
