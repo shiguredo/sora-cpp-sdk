@@ -3,7 +3,7 @@
 - Created: 2026-09-10
 - Completed: {YYYY-MM-DD}
 - Branch: feature/add-framerate-to-sumomo
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-09-15
 
 ## 目的
 
