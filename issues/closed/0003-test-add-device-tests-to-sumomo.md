@@ -2,7 +2,7 @@
 
 - Priority: Medium
 - Created: 2026-06-08
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-09-14
 - Model: DeepSeek V4 Pro
 - Branch: feature/add-sumomo-device-tests
 - Polished: 2026-07-10
@@ -132,3 +132,27 @@ sumomo のデバイス関連機能（`--list-devices`、実機デバイス指定
   - sumomo の E2E テストで録音デバイス未指定時・無効指定時の挙動を検証するテストを追加する
   - sumomo の E2E テストヘルパーに `capture_stderr` オプションを追加する
   - sumomo の E2E テストで `--audio-playout-device` を複数の音声再生デバイスに対して個別に検証するテストを追加する
+
+## 解決方法
+
+2026-06-16 の `feature/add-sumomo-device-tests` ブランチのマージ（`d90c6483`）と、続く closed 済み issue 0010 / 0011（2026-06-23）の対応により、本 issue の完了条件はすべて満たされた。
+
+- 2026-06-16 のマージで以下が追加された:
+  - `e2e-test/test_sumomo_device.py`: `test_list_devices` / `test_capture_device` / `test_audio_recording_device`
+  - `e2e-test/sumomo.py`: `get_sumomo_executable_path`（モジュールレベル関数化）/ `DeviceLists` / `get_device_lists` / `Sumomo` の `capture_stderr` / `log_level`
+  - `.github/workflows/ci.yml`: device 用 matrix エントリ、GitHub-hosted runner での `test_sumomo_device.py` 除外、self-hosted Linux の `XDG_RUNTIME_DIR` 設定と `id` コマンド引数の修正
+- 2026-06-23 の issue 0010 / 0011（どちらも closed）で `test_default_audio_recording_device` / `test_invalid_audio_recording_device` / `test_audio_playout_device` が追加された
+- `CHANGES.md` の `[ADD]` エントリ 4 件は 2026.2.0 セクションに存在する（追記当時は `## develop` にあり、リリース後の整理で現セクションへ移った）
+
+現行ソースとの照合結果（2026-09-14）:
+
+- `e2e-test/test_sumomo_device.py` に全 6 テスト（`test_list_devices` / `test_capture_device` / `test_audio_recording_device` / `test_default_audio_recording_device` / `test_invalid_audio_recording_device` / `test_audio_playout_device`）が存在する
+- `e2e-test/sumomo.py` に `DeviceLists` / `get_device_lists` / `get_sumomo_executable_path` がモジュールレベルで存在し、`Sumomo` クラスに `capture_stderr` / `log_level` オプションがある
+- `.github/workflows/ci.yml` の device matrix エントリで `test_sumomo_device.py` が self-hosted runner で実行される
+- `e2e-test/.env.template` にデバイス名の環境変数は無く、完了条件どおり更新不要である
+
+設計からの逸脱（実装時に妥当な判断として反映済み）:
+
+- `DeviceLists.video` は `list[str]` ではなく `list[tuple[str, str]]`（デバイスパスとカード名）として実装された
+- `test_invalid_audio_recording_device` の検証は「警告ログ」ではなく `Succeeded SetRecordingDevice` ログからの実際の選択デバイス名抽出とデフォルトデバイス一致確認（issue 0010 の設計に統合）
+- `test_list_devices` は GitHub-hosted runner ではなく self-hosted の device matrix で実行される（`test_sumomo_device.py` 全体を device ランナーで実行する方針のため）
