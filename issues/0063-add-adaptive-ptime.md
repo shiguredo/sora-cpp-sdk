@@ -3,7 +3,7 @@
 - Created: 2026-09-10
 - Completed: {YYYY-MM-DD}
 - Branch: feature/add-adaptive-ptime
-- Polished: 2026-09-15
+- Polished: 2026-09-14
 
 ## 目的
 
