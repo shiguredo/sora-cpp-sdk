@@ -44,7 +44,7 @@ Sora C++ SDK を利用するアプリで、接続を維持したままカメラ�
   - `CreateCameraDeviceCapturer` の返り値が `webrtc::VideoTrackSourceInterface` であるため、具体型を保持する方法を整理する
 - 音声
   - `webrtc::AudioDeviceModule` を SDK から制御する API を設ける
-  - iOS は webrtc-build のパッチ (`ios_audio_pause_resume.patch`) が追加する `RTCAudioDeviceModule` の `pauseRecording` / `resumeRecording` と、同じパッチで C++ 側の `webrtc::ios_adm::AudioDeviceModuleIOS` に追加された `PauseRecording` / `ResumeRecording` のどちらを使うか調査する。C++ SDK の iOS ビルドは `webrtc::CreateAudioDeviceModule` で `AudioDeviceModuleIOS` を直接生成しているため後者の方が自然だが、当該ヘッダは webrtc の内部 (`sdk/objc/native/src/audio/audio_device_module_ios.h`) であり、公開方法も含めて整理する
+  - iOS は webrtc-build のパッチ (`ios_audio_pause_resume.patch`) が追加する `RTCAudioDeviceModule` の `pauseRecording` / `resumeRecording` と、同じパッチで C++ 側の `webrtc::ios_adm::AudioDeviceModuleIOS` に追加された `PauseRecording` / `ResumeRecording` のどちらを使うか調査する。C++ SDK の iOS ビルドは `api/audio/create_audio_device_module.h` の `webrtc::CreateAudioDeviceModule` を使い、`AudioDeviceModuleImpl` が内部で `ios_adm::AudioDeviceIOS` を生成する。パッチは `AudioDeviceIOS` にも `PauseRecording` / `ResumeRecording` を追加しているが `AudioDeviceModuleImpl` からは透過しないため、`AudioDeviceModuleIOS` を利用するには `sdk/objc/native/api/audio_device_module.h` の `CreateAudioDeviceModule(env, bypass_voice_processing)` への切り替えが必要になる。当該ヘッダは webrtc の内部 (`sdk/objc/native/src/audio/audio_device_module_ios.h`) であり、公開方法も含めて整理する
   - Android はネイティブ ADM の `StopRecording` / `StartRecording` でマイクを解放できるか、または `JavaAudioDeviceModule` の pause / resume を利用する方法を調査する。webrtc-build への追加パッチが必要になる可能性も含めて整理する
   - Windows / macOS / Ubuntu は、ADM の `StopRecording` / `StartRecording` でデバイスが解放され再開できるか確認する
 - ソフトミュートとデバイスオフの役割分担を整理する。デバイスオフ中に送信を止めるか、黒フレームや無音を送るか、ミュート解除時に黒いフレームが残らないようにする方法も含めて決める
