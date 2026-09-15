@@ -40,3 +40,18 @@ libwebrtc の issue 558821261「Deprecate and remove PeerConnectionFactoryDepend
 - ビルドとテストが通ること
 - `CHANGES.md` の `## develop` に `[CHANGE]` が記載されていること
 - sora-unity-sdk / sora-python-sdk / zakuro の追随が完了していること
+
+## Pending 理由
+
+- 前提条件の「webrtc-build が 558821261 の削除系 CL (499302 / 501640 / 501720 / 502000 / 502500 / 502860 / 502940 / 502960) を含むバージョンをリリースしていること」が未成立である
+  - 0103 (issue `refactor-unify-worker-thread.md`) の記載では削除系 CL はレビュー中のままである
+  - 現行 `DEPS` の `WEBRTC_BUILD_VERSION=m154.8037.1.1` に削除系 CL は含まれていない
+- 方針1 にあたる 0103 の実装が未完了である (`src/sora_client_context.cpp` の `SoraClientContext::Create` に専用 worker thread の生成が残っている)
+- sora-unity-sdk / sora-python-sdk / zakuro の追随完了が未確認である
+- 上記はいずれも本リポジトリの作業だけでは解消できず、現時点では着手できないため保留とする
+
+## Pending 解除条件
+
+- webrtc-build が削除系 CL を含むバージョンをリリースし、`DEPS` を更新する見込みが立ったこと
+- 0103 の実装が完了していること
+- sora-unity-sdk / sora-python-sdk / zakuro が公開ヘッダからの `worker_thread()` 削除に追随済みであること
