@@ -40,6 +40,10 @@
   - @torikizi
 - [UPDATE] Examples の WEBRTC_BUILD_VERSION を m151.7922.0.0 にあげる
   - @torikizi
+- [UPDATE] SoraClientContext の worker thread に network thread を使う
+  - 専用 worker thread の生成を削除し、`PeerConnectionFactoryDependencies::worker_thread` に network thread を渡す
+  - ADM の生成、MediaEngineReference の生成・破棄、オーディオデバイスの設定を network thread 上で実行する
+  - @melpon
 
 ## 2026.2.1
 
