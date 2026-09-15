@@ -3,7 +3,7 @@
 - Created: 2026-09-11
 - Completed: {YYYY-MM-DD}
 - Branch: feature/refactor-use-std-numbers-pi
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-09-15
 
 ## 目的
 
