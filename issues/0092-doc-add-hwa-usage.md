@@ -3,7 +3,7 @@
 - Created: 2026-09-11
 - Completed: {YYYY-MM-DD}
 - Branch: feature/update-hwa-documentation
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-09-15
 
 ## 目的
 
@@ -27,7 +27,7 @@ Sora C++ SDK は 2025.2.0 で `SoraClientContextConfig` から `use_hardware_enc
 
 ## 設計方針
 
-- `doc/` に HWA の使い方を説明するドキュメントを追加する
+- `doc/hwa.md` に HWA の使い方を説明するドキュメントを新規追加する（`doc/faq.md` は Q&A 形式のため、ここへの追記はしない）
 - 次の内容を記載する
   - デフォルト (libwebrtc 内蔵) の挙動
   - `VideoCodecPreference` に実装を直接指定する方法
@@ -39,6 +39,6 @@ Sora C++ SDK は 2025.2.0 で `SoraClientContextConfig` から `use_hardware_enc
 
 ## 完了条件
 
-- `doc/` に HWA の使い方を説明したドキュメントが追加されていること
+- `doc/hwa.md` に HWA の使い方を説明したドキュメントが追加されていること
 - libwebrtc 内蔵 / HWA を明示指定 / capability から組み立てる 3 パターンの設定方法が記載されていること
 - `VideoCodecImplementation` の一覧と、HWA に必要なコンテキストの設定が記載されていること
