@@ -1,7 +1,7 @@
 # SoraClientContext の worker thread を network thread に統一する
 
 - Created: 2026-09-15
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-09-15
 - Branch: feature/refactor-unify-worker-thread
 - Polished: {YYYY-MM-DD}
 
@@ -44,3 +44,16 @@ Sora C++ SDK は network thread とは別の worker thread を生成して `depe
 - 専用 worker thread を設定していることを知らせる DEPRECATION ログが出力されなくなること
 - 既存のテストが通ること
 - `CHANGES.md` の `## develop` に変更内容を追記していること (機能に直接影響しない変更のため `### misc`)
+
+## 解決方法
+
+SoraClientContext の worker thread として network thread を使うようにした。
+
+- `src/sora_client_context.cpp` から worker thread の生成、`Start()`、`Stop()` を削除し、`dependencies.worker_thread` に network thread を渡すようにした
+- ADM の生成、`ConnectionContext::MediaEngineReference` の生成と破棄、オーディオデバイスの列挙と設定の `BlockingCall` を network thread に移した
+- `include/sora/sora_client_context.h` の `worker_thread()` アクセサは公開 API として残し、network thread を返すようにした (`worker_thread_` メンバは削除)
+- `CHANGES.md` の `## develop` の `### misc` に追記した
+
+確認:
+
+- `python3 run.py build --package ubuntu-24.04_x86_64 --disable-cuda` が通ることを確認した (CUDA を有効にしたビルドは環境の CUDA 側の問題で通らないため `--disable-cuda` で確認した)
