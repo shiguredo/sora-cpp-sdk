@@ -53,22 +53,22 @@ int FindAudioDeviceIndex(
 SoraClientContext::~SoraClientContext() {
   config_ = SoraClientContextConfig();
   // ConnectionContext::MediaEngineReference は worker thread 上で作成・破棄する
-  // 必要があるため、worker thread 停止前に明示的に解放する。
-  // デストラクタが worker thread 上で呼ばれた場合は同じスレッドなので直接解放し、
-  // それ以外の場合は worker thread 上で解放する。
+  // 必要がある。worker thread には network thread を使っているため、
+  // network thread 停止前に明示的に解放する。
+  // デストラクタが network thread 上で呼ばれた場合は同じスレッドなので直接解放し、
+  // それ以外の場合は network thread 上で解放する。
   // Android / iOS やメディアエンジンが無効化されている場合は nullptr のため、
   // 解放が不要な場合は BlockingCall を呼ばない。
   if (media_engine_ref_) {
-    if (worker_thread_->IsCurrent()) {
+    if (network_thread_->IsCurrent()) {
       media_engine_ref_.reset();
     } else {
-      worker_thread_->BlockingCall([&] { media_engine_ref_.reset(); });
+      network_thread_->BlockingCall([&] { media_engine_ref_.reset(); });
     }
   }
   connection_context_ = nullptr;
   factory_ = nullptr;
   network_thread_->Stop();
-  worker_thread_->Stop();
   signaling_thread_->Stop();
 
   //webrtc::CleanupSSL();
@@ -89,20 +89,19 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
   c->config_ = config;
   c->network_thread_ = webrtc::Thread::CreateWithSocketServer();
   c->network_thread_->Start();
-  c->worker_thread_ = webrtc::Thread::Create();
-  c->worker_thread_->Start();
   c->signaling_thread_ = webrtc::Thread::Create();
   c->signaling_thread_->Start();
 
   webrtc::PeerConnectionFactoryDependencies dependencies;
   auto env = webrtc::CreateEnvironment();
   dependencies.network_thread = c->network_thread_.get();
-  dependencies.worker_thread = c->worker_thread_.get();
+  // worker thread には network thread を使う
+  dependencies.worker_thread = c->network_thread_.get();
   dependencies.signaling_thread = c->signaling_thread_.get();
   dependencies.event_log_factory =
       absl::make_unique<webrtc::RtcEventLogFactory>();
 
-  auto adm = c->worker_thread_->BlockingCall([&] {
+  auto adm = c->network_thread_->BlockingCall([&] {
     sora::AudioDeviceModuleConfig config;
     if (!c->config_.use_audio_device) {
       config.audio_layer = webrtc::AudioDeviceModule::kDummyAudio;
@@ -126,7 +125,7 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
       CreateVideoCodecFactory(c->config_.video_codec_factory_config);
   if (!codec_factory) {
     RTC_LOG(LS_ERROR) << "Failed to create VideoCodecFactory";
-    c->worker_thread_->BlockingCall([&] { adm = nullptr; });
+    c->network_thread_->BlockingCall([&] { adm = nullptr; });
     return nullptr;
   }
   dependencies.video_encoder_factory =
@@ -141,7 +140,7 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
   if (c->config_.configure_dependencies) {
     c->config_.configure_dependencies(dependencies);
     // ADM が差し替えられた可能性があるので再取得する
-    c->worker_thread_->BlockingCall([&] { adm = dependencies.adm; });
+    c->network_thread_->BlockingCall([&] { adm = dependencies.adm; });
     // configure_dependencies で ADM が外された場合、後続のデバイス設定が
     // 不可能なので Create() を失敗させる
     if (adm == nullptr) {
@@ -157,7 +156,7 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
       std::move(dependencies), c->connection_context_);
 
   if (c->factory_ == nullptr) {
-    c->worker_thread_->BlockingCall([&] { adm = nullptr; });
+    c->network_thread_->BlockingCall([&] { adm = nullptr; });
     RTC_LOG(LS_ERROR) << "Failed to create PeerConnectionFactory";
     return nullptr;
   }
@@ -242,7 +241,7 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
       };
 
   auto success =
-      c->worker_thread_->BlockingCall([&]() -> bool {
+      c->network_thread_->BlockingCall([&]() -> bool {
         // WebRtcVoiceEngine::Init() / adm_helpers::Init() は PeerConnectionFactory
         // 作成時ではなく、最初の PeerConnection 作成時まで遅延される。
         // ここで ConnectionContext::MediaEngineReference を作成して強制的に Init を
@@ -257,7 +256,9 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
         }
 
         // ConnectionContext::MediaEngineReference は worker thread 上で作成する
-        // 必要がある。ConnectionContext がメディアエンジン用に構成されていない
+        // 必要がある。worker thread には network thread を使っているため、
+        // ここでは network thread 上で作成する。
+        // ConnectionContext がメディアエンジン用に構成されていない
         // 場合は作成しないが、ADM 自体の設定は従来通り行う。
         if (c->connection_context_->is_configured_for_media()) {
           c->media_engine_ref_ =
@@ -344,7 +345,7 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
         return true;
       });
   if (!success) {
-    c->worker_thread_->BlockingCall([&] { adm = nullptr; });
+    c->network_thread_->BlockingCall([&] { adm = nullptr; });
     return nullptr;
   }
 #endif
