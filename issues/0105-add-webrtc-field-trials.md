@@ -1,7 +1,7 @@
 # SoraClientContext に libwebrtc のフィールドトライアルを指定できるようにする
 
 - Created: 2026-09-16
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-09-17
 - Branch: feature/add-webrtc-field-trials
 - Polished: 2026-09-16
 - Reporter: @voluntas
@@ -111,4 +111,19 @@ libwebrtc のソースコードで以下の経路を確認済み。
 
 ## 解決方法
 
-設計が固まった段階で記載する。
+`SoraClientContextConfig` に libwebrtc のフィールドトライアル文字列を指定できるようにした。
+
+- `include/sora/sora_client_context.h` の `SoraClientContextConfig` に `std::string field_trials` を追加した
+- `src/sora_client_context.cpp` の `SoraClientContext::Create` で、`field_trials` が空文字の場合は `webrtc::CreateEnvironment` で既定の `webrtc::Environment` を生成し、空文字以外の場合は `webrtc::FieldTrials::Create` でパースした上で `webrtc::EnvironmentFactory` でフィールドトライアル付きの `webrtc::Environment` を生成する。`webrtc::FieldTrials::Create` が nullptr を返した場合（不正な文字列）はエラーログを出力して `SoraClientContext::Create` が nullptr を返す
+- 生成した `webrtc::Environment` を `webrtc::PeerConnectionFactoryDependencies::env` に設定し、ADM にも同じ `webrtc::Environment` を渡すようにした
+- `src/sora_peer_connection_factory.cpp` の `PeerConnectionFactoryWithContext` が `webrtc::PeerConnectionFactoryDependencies::env` を尊重し、`webrtc::ConnectionContext::Create` と `webrtc::PeerConnectionFactory` のコンストラクタに同じ `webrtc::Environment` を渡すようにした
+- libwebrtc を m154.8037.1.2 に上げた。`webrtc::FieldTrials::Create` は m154.8037.1.1 の prebuilt libwebrtc に `api:field_trials` が含まれておらずリンクできないため、webrtc-build 側で `api:field_trials` がビルド対象に含まれるようになった m154.8037.1.2 を利用する
+- `test/sora_client_context.cpp` を追加し、`test/CMakeLists.txt` と `run.py` にテストのビルド・実行設定を追加した
+- `CHANGES.md` の `## develop` に追記した
+
+確認:
+
+- `python3 run.py build --test --disable-cuda ubuntu-24.04_x86_64` が通ることを確認した（CUDA を有効にしたビルドは環境の CUDA 側の問題で通らないため `--disable-cuda` で確認した）
+- `test/sora_client_context.cpp` の 4 ケース 14 アサーションが通過することを確認した
+- `base_renderer` / `video_factory_data_race` / `audio_device` の既存テストが通過することを確認した
+- `VideoSendStreamImpl` までフィールドトライアルが届くことの実配信での確認は未実施
