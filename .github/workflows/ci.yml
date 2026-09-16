@@ -557,15 +557,14 @@ jobs:
       - build-macos
       - build-ubuntu
       - e2e-test
-    if: always()
+    if: ${{ !cancelled() }}
     steps:
-      # このジョブ自身は成功するため job.status は依存ジョブの失敗を反映しない。
-      # 依存ジョブの失敗・キャンセルは needs の結果から判定する。
-      - uses: shiguredo/github-actions/.github/actions/slack-notify@main
-        if: contains(join(needs.*.result, ' '), 'failure') || contains(join(needs.*.result, ' '), 'cancelled')
+      - name: Slack Notification
+        uses: shiguredo/github-actions/.github/actions/slack-notify@main
         with:
-          status: ${{ contains(join(needs.*.result, ' '), 'failure') && 'failure' || contains(join(needs.*.result, ' '), 'cancelled') && 'cancelled' || 'success' }}
-          slack_channel: sora-cpp-sdk
+          status: ${{ job.status }}
           slack_webhook: ${{ secrets.SLACK_WEBHOOK }}
+          slack_channel: sora-cpp-sdk
+          notify_mode: failure_and_fixed
         env:
           GH_TOKEN: ${{ github.token }}
