@@ -8,6 +8,7 @@
 #include <vector>
 
 // WebRTC
+#include <api/environment/environment.h>
 #include <api/video/video_codec_type.h>  // IWYU pragma: keep
 #include <api/video_codecs/builtin_video_decoder_factory.h>
 #include <api/video_codecs/builtin_video_encoder_factory.h>
@@ -137,14 +138,16 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
         assert(config.capability_config.openh264_path);
         auto create_video_encoder =
             [openh264_path = *config.capability_config.openh264_path](
+                const webrtc::Environment& env,
                 const webrtc::SdpVideoFormat& format) {
-              return CreateOpenH264VideoEncoder(format, openh264_path);
+              return CreateOpenH264VideoEncoder(env, format, openh264_path);
             };
         encoder_factory_config.encoders.push_back(
             VideoEncoderConfig(codec.type, create_video_encoder, 16));
       } else if (*codec.encoder == VideoCodecImplementation::kIntelVpl) {
 #if defined(USE_VPL_ENCODER)
-        auto create_video_encoder = [](const webrtc::SdpVideoFormat& format) {
+        auto create_video_encoder = [](const webrtc::Environment&,
+                                       const webrtc::SdpVideoFormat& format) {
           return VplVideoEncoder::Create(
               VplSession::Create(),
               webrtc::PayloadStringToCodecType(format.name));
@@ -159,6 +162,7 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
         // assert(config.capability_config.cuda_context);
         auto create_video_encoder = [cuda_context =
                                          config.capability_config.cuda_context](
+                                        const webrtc::Environment&,
                                         const webrtc::SdpVideoFormat& format) {
           auto type = webrtc::PayloadStringToCodecType(format.name);
           auto cuda_type =
@@ -178,6 +182,7 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
         assert(config.capability_config.amf_context);
         auto create_video_encoder = [amf_context =
                                          config.capability_config.amf_context](
+                                        const webrtc::Environment&,
                                         const webrtc::SdpVideoFormat& format) {
           auto type = webrtc::PayloadStringToCodecType(format.name);
           return AMFVideoEncoder::Create(amf_context, type);
@@ -187,7 +192,8 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
 #endif
       } else if (*codec.encoder == VideoCodecImplementation::kRaspiV4L2M2M) {
 #if defined(USE_V4L2_ENCODER)
-        auto create_video_encoder = [](const webrtc::SdpVideoFormat& format) {
+        auto create_video_encoder = [](const webrtc::Environment&,
+                                       const webrtc::SdpVideoFormat& format) {
           auto type = webrtc::PayloadStringToCodecType(format.name);
           return V4L2H264Encoder::Create(type);
         };
@@ -195,15 +201,16 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
             VideoEncoderConfig(codec.type, create_video_encoder, 16));
 #endif
       } else if (IsCustomImplementation(*codec.encoder)) {
-        auto create_video_encoder = [create_video_encoder =
-                                         config.create_video_encoder,
-                                     implementation = *codec.encoder,
-                                     capability_config =
-                                         config.capability_config](
-                                        const webrtc::SdpVideoFormat& format) {
-          auto type = webrtc::PayloadStringToCodecType(format.name);
-          return create_video_encoder(implementation, capability_config, type);
-        };
+        auto create_video_encoder =
+            [create_video_encoder = config.create_video_encoder,
+             implementation = *codec.encoder,
+             capability_config = config.capability_config](
+                const webrtc::Environment& env,
+                const webrtc::SdpVideoFormat& format) {
+              auto type = webrtc::PayloadStringToCodecType(format.name);
+              return create_video_encoder(env, implementation,
+                                          capability_config, type);
+            };
         encoder_factory_config.encoders.push_back(
             VideoEncoderConfig(codec.type, create_video_encoder, 16));
       }
@@ -216,6 +223,7 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
         assert(config.capability_config.openh264_path);
         auto create_video_decoder =
             [openh264_path = *config.capability_config.openh264_path](
+                const webrtc::Environment&,
                 const webrtc::SdpVideoFormat& format) {
               return CreateOpenH264VideoDecoder(format, openh264_path);
             };
@@ -223,7 +231,8 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
             VideoDecoderConfig(codec.type, create_video_decoder));
       } else if (*codec.decoder == VideoCodecImplementation::kIntelVpl) {
 #if defined(USE_VPL_ENCODER)
-        auto create_video_decoder = [](const webrtc::SdpVideoFormat& format) {
+        auto create_video_decoder = [](const webrtc::Environment&,
+                                       const webrtc::SdpVideoFormat& format) {
           return VplVideoDecoder::Create(
               VplSession::Create(),
               webrtc::PayloadStringToCodecType(format.name));
@@ -238,6 +247,7 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
         // assert(config.capability_config.cuda_context);
         auto create_video_decoder = [cuda_context =
                                          config.capability_config.cuda_context](
+                                        const webrtc::Environment&,
                                         const webrtc::SdpVideoFormat& format) {
           auto type = webrtc::PayloadStringToCodecType(format.name);
           auto cuda_type =
@@ -257,6 +267,7 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
         assert(config.capability_config.amf_context);
         auto create_video_decoder = [amf_context =
                                          config.capability_config.amf_context](
+                                        const webrtc::Environment&,
                                         const webrtc::SdpVideoFormat& format) {
           auto type = webrtc::PayloadStringToCodecType(format.name);
           return AMFVideoDecoder::Create(amf_context, type);
@@ -266,7 +277,8 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
 #endif
       } else if (*codec.decoder == VideoCodecImplementation::kRaspiV4L2M2M) {
 #if defined(USE_V4L2_ENCODER)
-        auto create_video_decoder = [](const webrtc::SdpVideoFormat& format) {
+        auto create_video_decoder = [](const webrtc::Environment&,
+                                       const webrtc::SdpVideoFormat& format) {
           auto type = webrtc::PayloadStringToCodecType(format.name);
           return V4L2H264Decoder::Create(type);
         };
@@ -274,15 +286,16 @@ std::optional<SoraVideoCodecFactory> CreateVideoCodecFactory(
             VideoDecoderConfig(codec.type, create_video_decoder));
 #endif
       } else if (IsCustomImplementation(*codec.decoder)) {
-        auto create_video_decoder = [create_video_decoder =
-                                         config.create_video_decoder,
-                                     implementation = *codec.decoder,
-                                     capability_config =
-                                         config.capability_config](
-                                        const webrtc::SdpVideoFormat& format) {
-          auto type = webrtc::PayloadStringToCodecType(format.name);
-          return create_video_decoder(implementation, capability_config, type);
-        };
+        auto create_video_decoder =
+            [create_video_decoder = config.create_video_decoder,
+             implementation = *codec.decoder,
+             capability_config = config.capability_config](
+                const webrtc::Environment& env,
+                const webrtc::SdpVideoFormat& format) {
+              auto type = webrtc::PayloadStringToCodecType(format.name);
+              return create_video_decoder(env, implementation,
+                                          capability_config, type);
+            };
         decoder_factory_config.decoders.push_back(
             VideoDecoderConfig(codec.type, create_video_decoder));
       }

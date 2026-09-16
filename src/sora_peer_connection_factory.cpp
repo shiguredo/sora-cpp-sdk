@@ -3,6 +3,7 @@
 #include <utility>
 
 // WebRTC
+#include <api/environment/environment.h>
 #include <api/environment/environment_factory.h>
 #include <api/make_ref_counted.h>
 #include <api/peer_connection_interface.h>

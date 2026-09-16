@@ -1,7 +1,6 @@
 // SoraClientContextConfig::field_trials が libwebrtc の Environment に反映されることを検証する
 // SoraClientContext の生成には実際のオーディオデバイスが必要ないため、
 // use_audio_device を false にしてダミー ADM を利用する
-#include <memory>
 #include <string>
 #include <vector>
 
@@ -10,6 +9,7 @@
 #include <api/peer_connection_interface.h>
 
 // Catch2
+#include <catch2/catch_message.hpp>
 #include <catch2/catch_test_macros.hpp>
 
 // Sora C++ SDK
