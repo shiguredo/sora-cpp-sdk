@@ -559,14 +559,12 @@ jobs:
       - e2e-test
     if: always()
     steps:
+      # このジョブ自身は成功するため job.status は依存ジョブの失敗を反映しない。
+      # 依存ジョブの失敗・キャンセルは needs の結果から判定する。
       - uses: shiguredo/github-actions/.github/actions/slack-notify@main
-        if: |
-          needs.build-windows.result == 'failure' ||
-          needs.build-macos.result == 'failure' ||
-          needs.build-ubuntu.result == 'failure' ||
-          needs.e2e-test.result == 'failure'
+        if: contains(join(needs.*.result, ' '), 'failure') || contains(join(needs.*.result, ' '), 'cancelled')
         with:
-          status: ${{ job.status }}
+          status: ${{ contains(join(needs.*.result, ' '), 'failure') && 'failure' || contains(join(needs.*.result, ' '), 'cancelled') && 'cancelled' || 'success' }}
           slack_channel: sora-cpp-sdk
           slack_webhook: ${{ secrets.SLACK_WEBHOOK }}
         env:
