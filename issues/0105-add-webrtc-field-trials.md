@@ -3,7 +3,7 @@
 - Created: 2026-09-16
 - Completed: {YYYY-MM-DD}
 - Branch: feature/add-webrtc-field-trials
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-09-16
 - Reporter: @voluntas
 
 ## 目的
@@ -32,8 +32,14 @@ libwebrtc m154.8037.1.1 には `WebRTC-Video-PerSsrcKeyframes` フィールド�
 - `video/encoder_rtcp_feedback.cc` の `EncoderRtcpFeedback` が PLI/FIR を SSRC 単位で処理し、
   PLI を受けた SSRC に対応するレイヤーだけキーフレームを生成する。
   キーフレームの最小送出間隔も SSRC ごとに独立する
-- `media/engine/simulcast_encoder_adapter.cc` の SEA が `x-google-per-layer-pli` による
-  separate encoders の強制をしなくなる（`supports_simulcast` が true のエンコーダーを単一で使う）
+- `video/video_stream_encoder.cc` の `VideoStreamEncoder::SendKeyFrame` がレイヤー単位の
+  キーフレーム要求（`next_frame_types_` の更新）に対応しているため、単一エンコーダーで
+  サイマルキャストを構成している場合でも、PLI を受けた SSRC のレイヤーだけを
+  キーフレームにできる
+- `media/engine/simulcast_encoder_adapter.cc` には「`WebRTC-Video-PerSsrcKeyframes` が
+  有効な場合は `x-google-per-layer-pli` による separate encoders の強制をしない」旨の
+  コメントがあるが、m154.8037.1.1 の分岐（`separate_encoders_needed`）には
+  フィールドトライアルの参照がなく、SEA の挙動はフィールドトライアルでは変わらない
 
 Sora 本体ではサイマルキャストの PLI を rid 単位で制御する対応が進行中である。
 配信者側の SDK でこのフィールドトライアルを有効にすると、
@@ -64,10 +70,19 @@ libwebrtc のソースコードで以下の経路を確認済み。
 
 - `SoraClientContextConfig` に `std::string field_trials` を追加する。
   空文字の場合はフィールドトライアルを設定しない
-- `src/sora_client_context.cpp` の `SoraClientContext::Create` で
-  `webrtc::FieldTrials::Create` を使い `webrtc::Environment` を生成して
-  `webrtc::PeerConnectionFactoryDependencies::env` に設定する。
-  `webrtc::FieldTrials::Create` が nullptr を返した場合はエラーログを出力して nullptr を返す
+- `src/sora_client_context.cpp` の `SoraClientContext::Create` で `config.field_trials` が
+  空文字の場合と空文字以外の場合を分ける。
+  `webrtc::FieldTrials::Create` は空文字でも nullptr ではなく空の `FieldTrials` を返すため、
+  空文字の分岐は `Create` を呼ぶ前に行う
+  - 空文字の場合: `webrtc::CreateEnvironment()` で既定の `webrtc::Environment` を生成する。
+    `EnvironmentFactory::Set` には何も設定しない（`DeprecatedGlobalFieldTrials` による
+    libwebrtc の既定動作を維持する）
+  - 空文字以外の場合: `webrtc::FieldTrials::Create` で `FieldTrials` を生成し、
+    `webrtc::EnvironmentFactory` で field trials 付きの `webrtc::Environment` を生成する。
+    `Create` が nullptr を返した場合（空文字以外の不正な文字列）はエラーログを出力して
+    nullptr を返す
+  - 生成した `Environment` を `webrtc::PeerConnectionFactoryDependencies::env` に設定し、
+    `configure_dependencies` を呼び出す前に完了させる
 - `src/sora_peer_connection_factory.cpp` の `PeerConnectionFactoryWithContext` が
   `webrtc::PeerConnectionFactoryDependencies::env` を尊重するように修正する。
   `env` がある場合は `ConnectionContext::Create` と
