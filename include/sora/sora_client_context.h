@@ -26,6 +26,10 @@ struct SoraClientContextConfig {
   std::optional<std::string> audio_playout_device;
   // VideoEncoderFactory/VideoDecoderFactory に関する設定
   SoraVideoCodecFactoryConfig video_codec_factory_config;
+  // libwebrtc に渡すフィールドトライアル文字列
+  // 例: "WebRTC-Video-PerSsrcKeyframes/Enabled/"
+  // 空文字の場合は libwebrtc の既定動作になる
+  std::string field_trials;
 
   // PeerConnectionFactoryDependencies をカスタマイズするためのコールバック関数
   // デフォルトの値が設定された上で、PeerConnectionFactory を生成する直前に呼ばれる

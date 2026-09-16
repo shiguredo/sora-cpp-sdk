@@ -11,6 +11,10 @@
 
 ## develop
 
+- [ADD] `SoraClientContextConfig` に libwebrtc のフィールドトライアルを指定する `field_trials` を追加する
+  - 空文字の場合は libwebrtc の既定動作になり、不正な文字列の場合は `SoraClientContext::Create()` が `nullptr` を返す
+  - ADM と `ConnectionContext` と `PeerConnectionFactory` に同じ `webrtc::Environment` を渡すようにする
+  - @melpon
 - [UPDATE] libwebrtc のバージョンを m154.8037.1.2 に上げる
   - `api:field_trials` が含まれるようになり、`webrtc::FieldTrials::Create` を利用できるようになった
   - @melpon

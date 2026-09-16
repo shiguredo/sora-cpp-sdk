@@ -18,24 +18,25 @@ namespace sora {
 class PeerConnectionFactoryWithContext : public webrtc::PeerConnectionFactory {
  public:
   PeerConnectionFactoryWithContext(
+      webrtc::Environment env,
       webrtc::PeerConnectionFactoryDependencies dependencies)
       : PeerConnectionFactoryWithContext(
-            // SDK の外部から webrtc::Environment を設定したくなるまで、ここで初期化する
-            webrtc::ConnectionContext::Create(webrtc::CreateEnvironment(),
-                                              &dependencies),
+            env,
+            webrtc::ConnectionContext::Create(env, &dependencies),
             &dependencies) {}
   PeerConnectionFactoryWithContext(
+      webrtc::Environment env,
       webrtc::scoped_refptr<webrtc::ConnectionContext> context,
       webrtc::PeerConnectionFactoryDependencies* dependencies)
       : conn_context_(context),
-        webrtc::PeerConnectionFactory(webrtc::CreateEnvironment(),
-                                      context,
-                                      dependencies) {}
+        webrtc::PeerConnectionFactory(env, context, dependencies) {}
 
   static webrtc::scoped_refptr<PeerConnectionFactoryWithContext> Create(
       webrtc::PeerConnectionFactoryDependencies dependencies) {
+    webrtc::Environment env =
+        dependencies.env.value_or(webrtc::CreateEnvironment());
     return webrtc::make_ref_counted<PeerConnectionFactoryWithContext>(
-        std::move(dependencies));
+        env, std::move(dependencies));
   }
 
   webrtc::scoped_refptr<webrtc::ConnectionContext> GetContext() const {
