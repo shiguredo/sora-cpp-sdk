@@ -56,7 +56,7 @@ class BaseRenderer {
  private:
   class Sink : public webrtc::VideoSinkInterface<webrtc::VideoFrame> {
    public:
-    Sink(BaseRenderer* renderer, webrtc::VideoTrackInterface* track);
+    Sink(webrtc::VideoTrackInterface* track);
     ~Sink();
 
     void OnFrame(const webrtc::VideoFrame& frame) override;
@@ -78,7 +78,6 @@ class BaseRenderer {
     bool IsRotated90Or270();
 
    private:
-    BaseRenderer* renderer_;
     webrtc::scoped_refptr<webrtc::VideoTrackInterface> track_;
     webrtc::Mutex frame_params_lock_;
     int outline_offset_x_;
@@ -113,8 +112,6 @@ class BaseRenderer {
   int width_;
   int height_;
   int fps_;
-  int rows_;
-  int cols_;
 };
 
 }  // namespace sora
