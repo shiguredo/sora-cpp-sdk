@@ -3,7 +3,7 @@
 - Created: 2026-09-18
 - Completed: {YYYY-MM-DD}
 - Branch: feature/fix-e2e-port-allocation
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-09-18
 
 ## 目的
 
@@ -61,7 +61,7 @@ FAILED test_sumomo_basic.py::test_sumomo_sendrecv_pair[AV1] - RuntimeError: Proc
 
 ### スコープ外
 
-- sumomo が HTTP サーバーの bind 失敗時に exit code 0 で終了する挙動の変更 (0006 は `Sumomo._wait_for_startup` のメッセージ分岐のみを対象にしており、bind 失敗時の終了コードは扱っていない)
+- sumomo が HTTP サーバーの bind 失敗時に exit code 0 で終了する挙動の変更 (0006 は `Sumomo.get_stats()` 内の 2 箇所の crashed 判定メッセージ分岐のみを対象にしており、bind 失敗時の終了コードは扱っていない)
 - テストへのリトライ適用 (0005)
 - `shiguredo/momo` の `test/conftest.py` にある同一の `port_allocator` への横展開 (別リポジトリのため別 issue とする)
 
