@@ -1,7 +1,7 @@
 # offer の encodings の priority / networkPriority を RtpEncodingParameters に反映する
 
 - Created: 2026-09-10
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-09-18
 - Branch: feature/add-simulcast-encoding-priority
 - Polished: 2026-09-14
 
@@ -81,3 +81,24 @@ libwebrtc の `network_priority` は W3C の `RTCRtpEncodingParameters.networkPr
 - `encodings` の変換処理には現状ユニットテストがないため、新規ユニットテストは追加しない
 - Sora の認証ウェブフックまたは `sora.conf` の `simulcast_encodings_file` で `priority` / `networkPriority` を指定した状態の Sora へ接続し、追加したログで `bitrate_priority` / `network_priority` が反映されることを確認する
 - `priority` / `networkPriority` を指定しない場合に従来と同じ値になることを確認する
+
+## 解決方法
+
+`src/sora_signaling.cpp` の `SoraSignaling::OnRead` の `type == "offer"` 分岐で、`encodings` の各要素の `priority` と `networkPriority` を `webrtc::RtpEncodingParameters` へ反映するようにした。
+
+- `encodings` の変換ループの最後（`scaleResolutionDownTo` の処理の後）で、`priority` がある場合は `very-low` / `low` / `medium` / `high` を `bitrate_priority` の `0.5` / `1.0` / `2.0` / `4.0` に変換して設定する。この重み付けは libwebrtc の `api/rtp_parameters.h` のコメント（およびその元である W3C の `RTCRtpEncodingParameters.priority`）に合わせている
+- `networkPriority` がある場合は `very-low` / `low` / `medium` / `high` を `webrtc::Priority` の `kVeryLow` / `kLow` / `kMedium` / `kHigh` に変換して `network_priority` に設定する
+- キーがない場合はフィールドに触れず、libwebrtc のデフォルト値（`bitrate_priority` は `kDefaultBitratePriority`、`network_priority` は `Priority::kLow`）を維持する
+- 4 値のいずれでもない文字列（空文字列を含む）の場合は `RTC_LOG(LS_WARNING)` で警告を出力し、そのフィールドは変更しない
+- `SoraSignaling::SetEncodingParameters` と `SoraSignaling::ResetEncodingParameters` のエンコーディング情報ログに `bitrate_priority` と `network_priority` を追加した
+- `CHANGES.md` の `## develop` に `[ADD]` エントリを追記した
+
+DSCP マーキングの有効化（`webrtc::PeerConnectionInterface::RTCConfiguration` の `enable_dscp`）は本 issue のスコープ外のため実施していない。
+
+確認:
+
+- `python3 run.py build ubuntu-24.04_x86_64 --disable-cuda` が通ることを確認した（CUDA を有効にしたビルドは、この環境の `/usr/include/cuda.h` と `include/sora/dyn/cuda.h` の `cuCtxCreate` の引数が食い違うため通らない。本変更とは無関係の既存の問題）
+- `python3 run.py format`（`clang-format-23` が選択される）で差分が出ないことを確認した
+- 実 Sora（2026.1.2）へ sumomo をサイマルキャスト有効で接続し、追加したログで `bitrate_priority=1` / `network_priority=1`（どちらも未指定時のデフォルト値）が 3 層分反映されることを確認した
+- `test_sumomo_basic.py::test_sumomo_simulcast` が通ることを確認した
+- `priority` / `networkPriority` を実際に指定した offer での確認は、Sora 側に `simulcast_encodings_file` などの設定が必要なため未実施
