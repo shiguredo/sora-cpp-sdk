@@ -246,19 +246,22 @@ int V4L2H264EncodeConverter::Encode(
     bind_buffer = i420_buffer;
   }
 
-  runner_->Enqueue(
-      &v4l2_buf, [this, bind_buffer, on_complete](
-                     v4l2_buffer* v4l2_buf, std::function<void()> on_next) {
-        int64_t timestamp_us =
-            v4l2_buf->timestamp.tv_sec * webrtc::kNumMicrosecsPerSec +
-            v4l2_buf->timestamp.tv_usec;
-        bool is_key_frame = !!(v4l2_buf->flags & V4L2_BUF_FLAG_KEYFRAME);
-        V4L2Buffers::PlaneBuffer& plane =
-            dst_buffers_.at(v4l2_buf->index).planes[0];
-        on_complete((uint8_t*)plane.start, v4l2_buf->m.planes[0].bytesused,
-                    timestamp_us, is_key_frame);
-        on_next();
-      });
+  if (runner_->Enqueue(
+          &v4l2_buf, [this, bind_buffer, on_complete](
+                         v4l2_buffer* v4l2_buf, std::function<void()> on_next) {
+            int64_t timestamp_us =
+                v4l2_buf->timestamp.tv_sec * webrtc::kNumMicrosecsPerSec +
+                v4l2_buf->timestamp.tv_usec;
+            bool is_key_frame = !!(v4l2_buf->flags & V4L2_BUF_FLAG_KEYFRAME);
+            V4L2Buffers::PlaneBuffer& plane =
+                dst_buffers_.at(v4l2_buf->index).planes[0];
+            on_complete((uint8_t*)plane.start, v4l2_buf->m.planes[0].bytesused,
+                        timestamp_us, is_key_frame);
+            on_next();
+          }) != WEBRTC_VIDEO_CODEC_OK) {
+    RTC_LOG(LS_ERROR) << __func__ << "  Failed to enqueue output buffer";
+    return WEBRTC_VIDEO_CODEC_ERROR;
+  }
 
   return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -440,9 +443,9 @@ int V4L2ScaleConverter::Scale(
     bind_buffer = s_buffer;
   }
 
-  runner_->Enqueue(
-      &v4l2_buf, [this, bind_buffer, on_complete](
-                     v4l2_buffer* v4l2_buf, std::function<void()> on_next) {
+  if (runner_->Enqueue(&v4l2_buf, [this, bind_buffer, on_complete](
+                                      v4l2_buffer* v4l2_buf,
+                                      std::function<void()> on_next) {
         int64_t timestamp_us =
             v4l2_buf->timestamp.tv_sec * webrtc::kNumMicrosecsPerSec +
             v4l2_buf->timestamp.tv_usec;
@@ -472,7 +475,10 @@ int V4L2ScaleConverter::Scale(
           on_complete(d_buffer, timestamp_us);
           on_next();
         }
-      });
+      }) != WEBRTC_VIDEO_CODEC_OK) {
+    RTC_LOG(LS_ERROR) << __func__ << "  Failed to enqueue output buffer";
+    return WEBRTC_VIDEO_CODEC_ERROR;
+  }
 
   return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -696,9 +702,9 @@ int V4L2DecodeConverter::Decode(const uint8_t* data,
 
   v4l2_buf.m.planes[0].bytesused = buffer.planes[0].sizeimage;
 
-  runner_->Enqueue(
-      &v4l2_buf, [this, on_complete](v4l2_buffer* v4l2_buf,
-                                     std::function<void()> on_next) {
+  if (runner_->Enqueue(&v4l2_buf, [this, on_complete](
+                                      v4l2_buffer* v4l2_buf,
+                                      std::function<void()> on_next) {
         int64_t timestamp_rtp =
             v4l2_buf->timestamp.tv_sec * webrtc::kNumMicrosecsPerSec +
             v4l2_buf->timestamp.tv_usec;
@@ -730,7 +736,10 @@ int V4L2DecodeConverter::Decode(const uint8_t* data,
           on_complete(d_buffer, timestamp_rtp);
           on_next();
         }
-      });
+      }) != WEBRTC_VIDEO_CODEC_OK) {
+    RTC_LOG(LS_ERROR) << __func__ << "  Failed to enqueue output buffer";
+    return WEBRTC_VIDEO_CODEC_ERROR;
+  }
 
   return WEBRTC_VIDEO_CODEC_OK;
 }

@@ -66,6 +66,12 @@
   - 専用 worker thread の生成を削除し、`PeerConnectionFactoryDependencies::worker_thread` に network thread を渡す
   - ADM の生成、MediaEngineReference の生成・破棄、オーディオデバイスの設定を network thread 上で実行する
   - @melpon
+- [FIX] Raspberry Pi の V4L2 M2M エンコーダでフレームのペアリングがズレると復帰不能になるのを修正する
+  - `V4L2Runner::Enqueue` が `VIDIOC_QBUF` の後にコールバックを登録していたため、デバイスが先に capture バッファを出力すると、以降の全フレームが 1 つズレたままタイムスタンプ不一致で捨てられ続けていた
+  - `VIDIOC_QBUF` より先にコールバックを登録し、投入に失敗した場合は登録を取り消すようにする
+  - capture バッファのタイムスタンプと投入した output バッファのタイムスタンプを照合し、ズレを検知したら登録を破棄して復帰できるようにする
+  - 出力バッファの投入に失敗した場合は、確保済みのバッファを再利用可能に戻す
+  - @melpon
 
 ## 2026.2.1
 
