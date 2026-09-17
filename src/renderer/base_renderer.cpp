@@ -32,12 +32,7 @@ static constexpr float STD_ASPECT = 1.33f;   // 4:3
 static constexpr float WIDE_ASPECT = 1.78f;  // 16:9
 
 BaseRenderer::BaseRenderer(int width, int height, int fps)
-    : running_(false),
-      width_(width),
-      height_(height),
-      fps_(fps),
-      rows_(1),
-      cols_(1) {}
+    : running_(false), width_(width), height_(height), fps_(fps) {}
 
 BaseRenderer::~BaseRenderer() {
   Stop();
@@ -156,10 +151,8 @@ void BaseRenderer::RenderThread() {
   RenderThreadFinished();
 }
 
-BaseRenderer::Sink::Sink(BaseRenderer* renderer,
-                         webrtc::VideoTrackInterface* track)
-    : renderer_(renderer),
-      track_(track),
+BaseRenderer::Sink::Sink(webrtc::VideoTrackInterface* track)
+    : track_(track),
       outline_offset_x_(0),
       outline_offset_y_(0),
       outline_width_(0),
@@ -441,12 +434,10 @@ void BaseRenderer::SetOutlines() {
                         << " outline_width:" << outline_width
                         << " outline_height:" << outline_height;
   }
-  rows_ = rows;
-  cols_ = cols;
 }
 
 void BaseRenderer::AddTrack(webrtc::VideoTrackInterface* track) {
-  std::unique_ptr<Sink> sink(new Sink(this, track));
+  std::unique_ptr<Sink> sink(new Sink(track));
   webrtc::MutexLock lock(&sinks_lock_);
   sinks_.push_back(std::make_pair(track, std::move(sink)));
   SetOutlines();
