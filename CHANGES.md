@@ -19,6 +19,10 @@
   - 空文字の場合は libwebrtc の既定動作になり、不正な文字列の場合は `SoraClientContext::Create()` が `nullptr` を返す
   - ADM と `ConnectionContext` と `PeerConnectionFactory` に同じ `webrtc::Environment` を渡すようにする
   - @melpon
+- [ADD] offer の encodings の priority と networkPriority を `webrtc::RtpEncodingParameters` に反映する
+  - priority は `bitrate_priority`、networkPriority は `network_priority` に反映する
+  - 4 値 (`very-low` / `low` / `medium` / `high`) 以外の値の場合は警告ログを出力し、そのフィールドは変更しない
+  - @melpon
 - [UPDATE] libwebrtc のバージョンを m154.8037.1.2 に上げる
   - `api:field_trials` が含まれるようになり、`webrtc::FieldTrials::Create` を利用できるようになった
   - @melpon
