@@ -74,7 +74,7 @@ FAILED test_sumomo_basic.py::test_sumomo_sendrecv_pair[AV1] - RuntimeError: Proc
 - Windows runner で候補ポートを除外ポート範囲に登録した状態でも E2E テストが失敗しないことを確認する。確認は CI に一時的なステップ (`netsh int ipv4 add excludedportrange protocol=tcp startport=<候補の先頭> numberofports=1`) を追加して行い、確認後に削除する
 - `uv run --directory=e2e-test ruff check` と `uv run --directory=e2e-test ruff format --check` が緑
 - `windows_x86_64` の E2E ジョブが緑
-- `CHANGES.md` の `## develop` 配下 `### misc` の末尾 ([UPDATE] 群の後) に以下の形式の `[FIX]` エントリを追記する。担当者ハンドル `@<担当者>` は PR 作成者のものに書き換える:
+- `CHANGES.md` の `## develop` 配下 `### misc` の `[FIX]` 群の先頭（最新エントリ）の直前、すなわち既存の `[FIX]` エントリである Raspberry Pi の V4L2 M2M エンコーダのエントリより前に挿入する（`### misc` 内の各種別グループでは新しいエントリほど先頭に置く慣行に従う。現状 `### misc` に存在する `[FIX]` エントリは上記の 1 件のみ）。担当者ハンドル `@<担当者>` は PR 作成者のものに書き換える:
 
   ```
   - [FIX] E2E テストのポート割り当てが Windows の除外ポート範囲と衝突するのを修正する
