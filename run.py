@@ -1124,6 +1124,8 @@ def _build(
                     cmake_args.append("-DTEST_VIDEO_FACTORY_DATA_RACE=ON")
                     cmake_args.append("-DTEST_BASE_RENDERER=ON")
                     cmake_args.append("-DTEST_AUDIO_DEVICE=ON")
+                    cmake_args.append("-DTEST_SORA_CLIENT_CONTEXT=ON")
+                    cmake_args.append("-DTEST_VIDEO_FACTORY_ENV=ON")
 
                 cmd(["cmake", os.path.join(BASE_DIR, "test")] + cmake_args)
                 cmd(
@@ -1167,6 +1169,30 @@ def _build(
                             cmd([os.path.join(test_build_dir, configuration, "base_renderer.exe")])
                         else:
                             cmd([os.path.join(test_build_dir, "base_renderer")])
+                        if platform.target.os == "windows":
+                            cmd(
+                                [
+                                    os.path.join(
+                                        test_build_dir,
+                                        configuration,
+                                        "sora_client_context.exe",
+                                    )
+                                ]
+                            )
+                        else:
+                            cmd([os.path.join(test_build_dir, "sora_client_context")])
+                        if platform.target.os == "windows":
+                            cmd(
+                                [
+                                    os.path.join(
+                                        test_build_dir,
+                                        configuration,
+                                        "video_factory_env.exe",
+                                    )
+                                ]
+                            )
+                        else:
+                            cmd([os.path.join(test_build_dir, "video_factory_env")])
 
     if package:
         mkdir_p(package_dir)

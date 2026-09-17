@@ -16,6 +16,7 @@
 #include <api/audio_codecs/builtin_audio_encoder_factory.h>
 #include <api/enable_media.h>
 #include <api/environment/environment_factory.h>
+#include <api/field_trials.h>
 #include <api/peer_connection_interface.h>
 #include <api/rtc_event_log/rtc_event_log_factory.h>
 #include <pc/connection_context.h>
@@ -93,7 +94,23 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
   c->signaling_thread_->Start();
 
   webrtc::PeerConnectionFactoryDependencies dependencies;
-  auto env = webrtc::CreateEnvironment();
+  // フィールドトライアルを保持する Environment を生成する
+  if (c->config_.field_trials.empty()) {
+    // フィールドトライアルが指定されていない場合は、libwebrtc の既定動作
+    // （DeprecatedGlobalFieldTrials）を維持するために何も設定しない
+    dependencies.env = webrtc::CreateEnvironment();
+  } else {
+    // Create() が nullptr を返すのはフィールドトライアル文字列が不正な場合のみ
+    auto field_trials = webrtc::FieldTrials::Create(c->config_.field_trials);
+    if (field_trials == nullptr) {
+      RTC_LOG(LS_ERROR) << "Failed to parse field_trials: "
+                        << c->config_.field_trials;
+      return nullptr;
+    }
+    webrtc::EnvironmentFactory env_factory;
+    env_factory.Set(std::move(field_trials));
+    dependencies.env = env_factory.Create();
+  }
   dependencies.network_thread = c->network_thread_.get();
   // worker thread には network thread を使う
   dependencies.worker_thread = c->network_thread_.get();
@@ -106,7 +123,7 @@ std::shared_ptr<SoraClientContext> SoraClientContext::Create(
     if (!c->config_.use_audio_device) {
       config.audio_layer = webrtc::AudioDeviceModule::kDummyAudio;
     }
-    config.env = env;
+    config.env = *dependencies.env;
     config.jni_env = sora::GetJNIEnv();
     if (c->config_.get_android_application_context) {
       config.application_context =

@@ -11,6 +11,17 @@
 
 ## develop
 
+- [CHANGE] エンコーダ/デコーダを生成するコールバックで `webrtc::Environment` を受け取るようにする
+  - `VideoEncoderConfig` / `VideoDecoderConfig` / `SoraVideoCodecFactoryConfig` の `create_video_encoder` と `create_video_decoder`、および `CreateOpenH264VideoEncoder()` の引数に `const webrtc::Environment&` を追加する
+  - `SoraClientContextConfig::field_trials` で指定したフィールドトライアルがエンコーダ/デコーダにも伝わるようにする
+  - @melpon
+- [ADD] `SoraClientContextConfig` に libwebrtc のフィールドトライアルを指定する `field_trials` を追加する
+  - 空文字の場合は libwebrtc の既定動作になり、不正な文字列の場合は `SoraClientContext::Create()` が `nullptr` を返す
+  - ADM と `ConnectionContext` と `PeerConnectionFactory` に同じ `webrtc::Environment` を渡すようにする
+  - @melpon
+- [UPDATE] libwebrtc のバージョンを m154.8037.1.2 に上げる
+  - `api:field_trials` が含まれるようになり、`webrtc::FieldTrials::Create` を利用できるようになった
+  - @melpon
 - [UPDATE] libwebrtc のバージョンを m154.8037.1.1 に上げる
   - @voluntas
 - [UPDATE] libwebrtc のバージョンを m154.8037.0.0 に上げる
@@ -33,6 +44,8 @@
 - [ADD] BaseRenderer の枠割り計算 (複数 Sink のグリッド配置) のユニットテストを追加する
   - 16:9 / 4:3 / 2x2 グリッド / 縦長ウィンドウ / 極小ウィンドウの各ケースで、cols/rows の決定、セル座標の累積式、ウィンドウ中央寄せを検証する
   - @voluntas
+- [UPDATE] Examples の WEBRTC_BUILD_VERSION を m154.8037.1.2 にあげる
+  - @melpon
 - [UPDATE] Examples の WEBRTC_BUILD_VERSION を m154.8037.1.1 にあげる
   - @voluntas
 - [UPDATE] Examples の WEBRTC_BUILD_VERSION を m154.8037.0.0 にあげる

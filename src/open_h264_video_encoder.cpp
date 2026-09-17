@@ -37,7 +37,6 @@
 #include <absl/container/inlined_vector.h>
 #include <absl/memory/memory.h>
 #include <api/environment/environment.h>
-#include <api/environment/environment_factory.h>
 #include <api/scoped_refptr.h>
 #include <api/units/data_rate.h>
 #include <api/video/encoded_image.h>
@@ -954,6 +953,7 @@ void OpenH264VideoEncoder::LayerConfig::SetStreamState(bool send_stream) {
 namespace sora {
 
 std::unique_ptr<webrtc::VideoEncoder> CreateOpenH264VideoEncoder(
+    const webrtc::Environment& env,
     const webrtc::SdpVideoFormat& format,
     std::string openh264) {
   webrtc::H264EncoderSettings settings;
@@ -968,8 +968,8 @@ std::unique_ptr<webrtc::VideoEncoder> CreateOpenH264VideoEncoder(
     }
   }
 
-  return absl::make_unique<webrtc::OpenH264VideoEncoder>(
-      webrtc::CreateEnvironment(), settings, std::move(openh264));
+  return absl::make_unique<webrtc::OpenH264VideoEncoder>(env, settings,
+                                                         std::move(openh264));
 }
 
 }  // namespace sora

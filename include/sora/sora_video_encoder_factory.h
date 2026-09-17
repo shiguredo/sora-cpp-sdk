@@ -24,6 +24,7 @@ struct VideoEncoderConfig {
   // 指定したコーデックに対応するエンコーダを設定する
   VideoEncoderConfig(webrtc::VideoCodecType codec,
                      std::function<std::unique_ptr<webrtc::VideoEncoder>(
+                         const webrtc::Environment&,
                          const webrtc::SdpVideoFormat&)> create_video_encoder,
                      int alignment = 0)
       : codec(codec),
@@ -34,6 +35,7 @@ struct VideoEncoderConfig {
   VideoEncoderConfig(std::function<std::vector<webrtc::SdpVideoFormat>()>
                          get_supported_formats,
                      std::function<std::unique_ptr<webrtc::VideoEncoder>(
+                         const webrtc::Environment&,
                          const webrtc::SdpVideoFormat&)> create_video_encoder,
                      int alignment = 0)
       : get_supported_formats(std::move(get_supported_formats)),
@@ -50,6 +52,7 @@ struct VideoEncoderConfig {
   webrtc::VideoCodecType codec = webrtc::VideoCodecType::kVideoCodecGeneric;
   std::function<std::vector<webrtc::SdpVideoFormat>()> get_supported_formats;
   std::function<std::unique_ptr<webrtc::VideoEncoder>(
+      const webrtc::Environment&,
       const webrtc::SdpVideoFormat&)>
       create_video_encoder;
   std::shared_ptr<webrtc::VideoEncoderFactory> factory;

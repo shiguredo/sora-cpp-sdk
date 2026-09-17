@@ -9,7 +9,6 @@
 
 // WebRTC
 #include <api/environment/environment.h>
-#include <api/environment/environment_factory.h>
 #include <api/video/video_codec_type.h>
 #include <api/video_codecs/sdp_video_format.h>
 #include <api/video_codecs/video_codec.h>
@@ -122,7 +121,7 @@ SoraVideoEncoderFactory::CreateInternalVideoEncoder(
     } else if (enc.create_video_encoder != nullptr) {
       create_video_encoder = [&enc](const webrtc::Environment& env,
                                     const webrtc::SdpVideoFormat& format) {
-        return enc.create_video_encoder(format);
+        return enc.create_video_encoder(env, format);
       };
       alignment = enc.alignment;
     }
@@ -197,37 +196,43 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
 
 #if defined(USE_NVCODEC_ENCODER)
   if (NvCodecVideoEncoder::IsSupported(cuda_context, CudaVideoCodec::H264)) {
-    config.encoders.insert(config.encoders.begin(),
-                           VideoEncoderConfig(
-                               webrtc::kVideoCodecH264,
-                               [cuda_context](auto format)
-                                   -> std::unique_ptr<webrtc::VideoEncoder> {
-                                 return NvCodecVideoEncoder::Create(
-                                     cuda_context, CudaVideoCodec::H264);
-                               },
-                               16));
+    config.encoders.insert(
+        config.encoders.begin(),
+        VideoEncoderConfig(
+            webrtc::kVideoCodecH264,
+            [cuda_context](const webrtc::Environment&,
+                           const webrtc::SdpVideoFormat& format)
+                -> std::unique_ptr<webrtc::VideoEncoder> {
+              return NvCodecVideoEncoder::Create(cuda_context,
+                                                 CudaVideoCodec::H264);
+            },
+            16));
   }
   if (NvCodecVideoEncoder::IsSupported(cuda_context, CudaVideoCodec::H265)) {
-    config.encoders.insert(config.encoders.begin(),
-                           VideoEncoderConfig(
-                               webrtc::kVideoCodecH265,
-                               [cuda_context](auto format)
-                                   -> std::unique_ptr<webrtc::VideoEncoder> {
-                                 return NvCodecVideoEncoder::Create(
-                                     cuda_context, CudaVideoCodec::H265);
-                               },
-                               16));
+    config.encoders.insert(
+        config.encoders.begin(),
+        VideoEncoderConfig(
+            webrtc::kVideoCodecH265,
+            [cuda_context](const webrtc::Environment&,
+                           const webrtc::SdpVideoFormat& format)
+                -> std::unique_ptr<webrtc::VideoEncoder> {
+              return NvCodecVideoEncoder::Create(cuda_context,
+                                                 CudaVideoCodec::H265);
+            },
+            16));
   }
   if (NvCodecVideoEncoder::IsSupported(cuda_context, CudaVideoCodec::AV1)) {
-    config.encoders.insert(config.encoders.begin(),
-                           VideoEncoderConfig(
-                               webrtc::kVideoCodecAV1,
-                               [cuda_context](auto format)
-                                   -> std::unique_ptr<webrtc::VideoEncoder> {
-                                 return NvCodecVideoEncoder::Create(
-                                     cuda_context, CudaVideoCodec::AV1);
-                               },
-                               16));
+    config.encoders.insert(
+        config.encoders.begin(),
+        VideoEncoderConfig(
+            webrtc::kVideoCodecAV1,
+            [cuda_context](const webrtc::Environment&,
+                           const webrtc::SdpVideoFormat& format)
+                -> std::unique_ptr<webrtc::VideoEncoder> {
+              return NvCodecVideoEncoder::Create(cuda_context,
+                                                 CudaVideoCodec::AV1);
+            },
+            16));
   }
 #endif
 
@@ -238,7 +243,8 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
         config.encoders.begin(),
         VideoEncoderConfig(
             webrtc::kVideoCodecVP8,
-            [](auto format) -> std::unique_ptr<webrtc::VideoEncoder> {
+            [](const webrtc::Environment&, const webrtc::SdpVideoFormat& format)
+                -> std::unique_ptr<webrtc::VideoEncoder> {
               return VplVideoEncoder::Create(VplSession::Create(),
                                              webrtc::kVideoCodecVP8);
             },
@@ -249,7 +255,8 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
         config.encoders.begin(),
         VideoEncoderConfig(
             webrtc::kVideoCodecVP9,
-            [](auto format) -> std::unique_ptr<webrtc::VideoEncoder> {
+            [](const webrtc::Environment&, const webrtc::SdpVideoFormat& format)
+                -> std::unique_ptr<webrtc::VideoEncoder> {
               return VplVideoEncoder::Create(VplSession::Create(),
                                              webrtc::kVideoCodecVP9);
             },
@@ -260,7 +267,8 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
         config.encoders.begin(),
         VideoEncoderConfig(
             webrtc::kVideoCodecH264,
-            [](auto format) -> std::unique_ptr<webrtc::VideoEncoder> {
+            [](const webrtc::Environment&, const webrtc::SdpVideoFormat& format)
+                -> std::unique_ptr<webrtc::VideoEncoder> {
               return VplVideoEncoder::Create(VplSession::Create(),
                                              webrtc::kVideoCodecH264);
             },
@@ -271,7 +279,8 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
         config.encoders.begin(),
         VideoEncoderConfig(
             webrtc::kVideoCodecH265,
-            [](auto format) -> std::unique_ptr<webrtc::VideoEncoder> {
+            [](const webrtc::Environment&, const webrtc::SdpVideoFormat& format)
+                -> std::unique_ptr<webrtc::VideoEncoder> {
               return VplVideoEncoder::Create(VplSession::Create(),
                                              webrtc::kVideoCodecH265);
             },
@@ -282,7 +291,8 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
         config.encoders.begin(),
         VideoEncoderConfig(
             webrtc::kVideoCodecAV1,
-            [](auto format) -> std::unique_ptr<webrtc::VideoEncoder> {
+            [](const webrtc::Environment&, const webrtc::SdpVideoFormat& format)
+                -> std::unique_ptr<webrtc::VideoEncoder> {
               return VplVideoEncoder::Create(VplSession::Create(),
                                              webrtc::kVideoCodecAV1);
             },
@@ -296,24 +306,29 @@ SoraVideoEncoderFactoryConfig GetDefaultVideoEncoderFactoryConfig(
 SoraVideoEncoderFactoryConfig GetSoftwareOnlyVideoEncoderFactoryConfig(
     std::optional<std::string> openh264) {
   SoraVideoEncoderFactoryConfig config;
-  config.encoders.push_back(
-      VideoEncoderConfig(webrtc::kVideoCodecVP8, [](auto format) {
-        return webrtc::CreateVp8Encoder(webrtc::CreateEnvironment());
+  config.encoders.push_back(VideoEncoderConfig(
+      webrtc::kVideoCodecVP8,
+      [](const webrtc::Environment& env, const webrtc::SdpVideoFormat& format) {
+        return webrtc::CreateVp8Encoder(env);
       }));
-  config.encoders.push_back(
-      VideoEncoderConfig(webrtc::kVideoCodecVP9, [](auto format) {
-        return webrtc::CreateVp9Encoder(webrtc::CreateEnvironment());
+  config.encoders.push_back(VideoEncoderConfig(
+      webrtc::kVideoCodecVP9,
+      [](const webrtc::Environment& env, const webrtc::SdpVideoFormat& format) {
+        return webrtc::CreateVp9Encoder(env);
       }));
   if (openh264) {
     config.encoders.push_back(VideoEncoderConfig(
-        webrtc::kVideoCodecH264, [openh264 = *openh264](auto format) {
-          return CreateOpenH264VideoEncoder(format, openh264);
+        webrtc::kVideoCodecH264,
+        [openh264 = *openh264](const webrtc::Environment& env,
+                               const webrtc::SdpVideoFormat& format) {
+          return CreateOpenH264VideoEncoder(env, format, openh264);
         }));
   }
 #if !defined(__arm__) || defined(__aarch64__) || defined(__ARM_NEON__)
-  config.encoders.push_back(
-      VideoEncoderConfig(webrtc::kVideoCodecAV1, [](auto format) {
-        return webrtc::CreateLibaomAv1Encoder(webrtc::CreateEnvironment());
+  config.encoders.push_back(VideoEncoderConfig(
+      webrtc::kVideoCodecAV1,
+      [](const webrtc::Environment& env, const webrtc::SdpVideoFormat& format) {
+        return webrtc::CreateLibaomAv1Encoder(env);
       }));
 #endif
   return config;

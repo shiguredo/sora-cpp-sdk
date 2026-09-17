@@ -6,6 +6,7 @@
 #include <optional>
 
 // WebRTC
+#include <api/environment/environment.h>
 #include <api/video/video_codec_type.h>
 #include <api/video_codecs/video_decoder.h>
 #include <api/video_codecs/video_encoder.h>
@@ -31,11 +32,13 @@ struct SoraVideoCodecFactoryConfig {
   //
   // カスタムエンコーダ/デコーダを利用する場合には必ず設定する必要がある
   std::function<std::unique_ptr<webrtc::VideoEncoder>(
+      const webrtc::Environment&,
       VideoCodecImplementation,
       const VideoCodecCapabilityConfig&,
       webrtc::VideoCodecType)>
       create_video_encoder;
   std::function<std::unique_ptr<webrtc::VideoDecoder>(
+      const webrtc::Environment&,
       VideoCodecImplementation,
       const VideoCodecCapabilityConfig&,
       webrtc::VideoCodecType)>
