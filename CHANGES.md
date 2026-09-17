@@ -41,6 +41,9 @@
 
 ### misc
 
+- [UPDATE] sdl_sample の SDL レンダラーを BaseRenderer に統合する
+  - 独自の枠割りロジックを削除し、実測アスペクトの採用・共通縮小・中央寄せを sumomo と共通化する
+  - @melpon
 - [ADD] BaseRenderer の枠割り計算 (複数 Sink のグリッド配置) のユニットテストを追加する
   - 16:9 / 4:3 / 2x2 グリッド / 縦長ウィンドウ / 極小ウィンドウの各ケースで、cols/rows の決定、セル座標の累積式、ウィンドウ中央寄せを検証する
   - @voluntas
