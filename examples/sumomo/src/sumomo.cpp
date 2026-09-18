@@ -85,6 +85,10 @@
 // CLI11
 #include <CLI/CLI.hpp>
 
+#if defined(USE_SCREEN_CAPTURER)
+#include "screen_video_capturer.h"
+#endif
+
 #include "sdl_renderer.h"
 
 struct SumomoConfig {
@@ -144,6 +148,7 @@ struct SumomoConfig {
   std::vector<std::pair<std::string, std::string>> libcamera_controls;
 
   bool fake_capture_device = false;
+  bool screen_capture = false;
 
   struct Size {
     int width;
@@ -500,6 +505,31 @@ class Sumomo : public std::enable_shared_from_this<Sumomo>,
           fake_video_capturer->StartCapture();
         }
         video_source = fake_video_capturer;
+      } else if (config_.screen_capture && config_.video) {
+#if defined(USE_SCREEN_CAPTURER)
+        // 画面キャプチャからビデオソースを作成
+        RTC_LOG(LS_INFO) << "Screen capture source list:";
+        RTC_LOG(LS_INFO) << ScreenVideoCapturer::GetSourceListString();
+        webrtc::DesktopCapturer::SourceList sources;
+        if (!ScreenVideoCapturer::GetSourceList(&sources)) {
+          RTC_LOG(LS_ERROR) << "Failed to get the screen capture source list.";
+          return;
+        }
+        if (sources.empty()) {
+          RTC_LOG(LS_ERROR) << "The screen capture source is not found.";
+          return;
+        }
+        // キャプチャ対象は一覧の先頭のソースとする
+        auto screen_video_capturer = ScreenVideoCapturer::Create(
+            sources[0].id, size.width, size.height, 30);
+        if (screen_video_capturer == nullptr) {
+          RTC_LOG(LS_ERROR) << "Failed to create a screen capturer.";
+          return;
+        }
+        // オブジェクトの生成が完了してからキャプチャを開始する
+        screen_video_capturer->StartCapture();
+        video_source = screen_video_capturer;
+#endif
       } else if (config_.video) {
         // カメラデバイスからビデオソースを作成
         sora::CameraDeviceCapturerConfig cam_config;
@@ -883,6 +913,16 @@ int main(int argc, char* argv[]) {
       },
       "JSON Value");
 
+  auto is_valid_screen_capture = CLI::Validator(
+      [](std::string input) -> std::string {
+#if defined(USE_SCREEN_CAPTURER)
+        return std::string();
+#else
+        return "Not available because your device does not have this feature.";
+#endif
+      },
+      "");
+
   CLI::App app("Sumomo Sample for Sora C++ SDK");
 
   int log_level = (int)webrtc::LS_ERROR;
@@ -1014,6 +1054,10 @@ int main(int argc, char* argv[]) {
   app.add_flag("--fake-capture-device", config.fake_capture_device,
                "Use fake capture devices for audio and video (generates test "
                "pattern and silence)");
+
+  // 画面キャプチャに関するオプション
+  app.add_flag("--screen-capture", config.screen_capture, "Capture screen")
+      ->check(is_valid_screen_capture);
 
   // SoraClientContextConfig に関するオプション
   std::string audio_recording_device;
