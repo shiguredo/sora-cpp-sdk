@@ -57,7 +57,8 @@ jobs:
           sudo apt-get install -y software-properties-common
 
           # X11
-          sudo apt-get install libx11-dev libxext-dev
+          # libxtst-dev 以降は sumomo の --screen-capture で利用する
+          sudo apt-get install libx11-dev libxext-dev libxtst-dev libxdamage-dev libxfixes-dev libxcomposite-dev libxrandr-dev
 
           # OpenGL
           sudo apt-get install -y libgl-dev
