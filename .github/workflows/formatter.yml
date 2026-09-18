@@ -118,15 +118,14 @@ jobs:
       contents: read
     needs:
       - run-ubuntu
-    if: always()
+    if: ${{ !cancelled() }}
     steps:
       - uses: shiguredo/github-actions/.github/actions/slack-notify@main
-        if: |
-          needs.run-ubuntu.result == 'failure'
         with:
           status: ${{ job.status }}
           slack_channel: sora-cpp-sdk
           slack_webhook: ${{ secrets.SLACK_WEBHOOK }}
+          notify_mode: failure_and_fixed
           slack_message: |
             ```
             ${{ needs.run-ubuntu.outputs.diff }}
