@@ -25,6 +25,10 @@
   - priority は `bitrate_priority`、networkPriority は `network_priority` に反映する
   - 4 値 (`very-low` / `low` / `medium` / `high`) 以外の値の場合は警告ログを出力し、そのフィールドは変更しない
   - @melpon
+- [ADD] sumomo に `--screen-capture` オプションを追加する
+  - 一覧の先頭の画面をキャプチャし、マウスカーソルを合成して `--resolution` に収まるよう縮小した映像を配信する
+  - Windows x86_64 / macOS arm64 / Ubuntu 22.04・24.04・26.04 x86_64 で利用でき、それ以外のプラットフォームでは指定するとエラーになる
+  - @melpon
 - [UPDATE] libwebrtc のバージョンを m154.8037.1.2 に上げる
   - `api:field_trials` が含まれるようになり、`webrtc::FieldTrials::Create` を利用できるようになった
   - @melpon
