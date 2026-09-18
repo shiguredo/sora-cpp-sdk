@@ -1177,6 +1177,10 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
                         self->video_mid_,
                         *self->config_.degradation_preference);
                   }
+                  if (self->config_.audio_adaptive_ptime.has_value()) {
+                    self->SetAdaptivePtime(self->audio_mid_,
+                                           *self->config_.audio_adaptive_ptime);
+                  }
 
                   std::string sdp;
                   desc->ToString(&sdp);
@@ -1231,6 +1235,10 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
                     self->SetDegradationPreference(
                         self->video_mid_,
                         *self->config_.degradation_preference);
+                  }
+                  if (self->config_.audio_adaptive_ptime.has_value()) {
+                    self->SetAdaptivePtime(self->audio_mid_,
+                                           *self->config_.audio_adaptive_ptime);
                   }
 
                   std::string sdp;
@@ -1484,6 +1492,30 @@ void SoraSignaling::SetDegradationPreference(
   webrtc::RtpParameters parameters = sender->GetParameters();
   parameters.degradation_preference = degradation_preference;
   sender->SetParameters(parameters);
+}
+
+void SoraSignaling::SetAdaptivePtime(std::string mid, bool adaptive_ptime) {
+  auto audio_transceiver = FindTransceiver(pc_->GetTransceivers(), mid);
+  if (audio_transceiver == nullptr) {
+    RTC_LOG(LS_ERROR) << "audio transceiver not found";
+    return;
+  }
+
+  webrtc::scoped_refptr<webrtc::RtpSenderInterface> sender =
+      audio_transceiver->sender();
+  webrtc::RtpParameters parameters = sender->GetParameters();
+  for (auto& encoding : parameters.encodings) {
+    encoding.adaptive_ptime = adaptive_ptime;
+    RTC_LOG(LS_INFO) << "SetAdaptivePtime: ssrc="
+                     << (encoding.ssrc ? std::to_string(*encoding.ssrc)
+                                       : std::string("nullopt"))
+                     << " adaptive_ptime="
+                     << (adaptive_ptime ? "true" : "false");
+  }
+  // 設定に失敗した場合はエラーログを出して継続する
+  if (auto error = sender->SetParameters(parameters); !error.ok()) {
+    RTC_LOG(LS_WARNING) << "Failed to set adaptivePtime: " << error.message();
+  }
 }
 
 void SoraSignaling::WsWriteSignaling(std::string text,
@@ -1797,6 +1829,11 @@ void SoraSignaling::OnMessage(
                       self->SetDegradationPreference(
                           self->video_mid_,
                           *self->config_.degradation_preference);
+                    }
+                    if (self->config_.audio_adaptive_ptime.has_value()) {
+                      self->SetAdaptivePtime(
+                          self->audio_mid_,
+                          *self->config_.audio_adaptive_ptime);
                     }
                     std::string sdp;
                     desc->ToString(&sdp);

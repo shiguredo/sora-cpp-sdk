@@ -1126,6 +1126,7 @@ def _build(
                     cmake_args.append("-DTEST_AUDIO_DEVICE=ON")
                     cmake_args.append("-DTEST_SORA_CLIENT_CONTEXT=ON")
                     cmake_args.append("-DTEST_VIDEO_FACTORY_ENV=ON")
+                    cmake_args.append("-DTEST_AUDIO_ADAPTIVE_PTIME=ON")
 
                 cmd(["cmake", os.path.join(BASE_DIR, "test")] + cmake_args)
                 cmd(
@@ -1193,6 +1194,18 @@ def _build(
                             )
                         else:
                             cmd([os.path.join(test_build_dir, "video_factory_env")])
+                        if platform.target.os == "windows":
+                            cmd(
+                                [
+                                    os.path.join(
+                                        test_build_dir,
+                                        configuration,
+                                        "audio_adaptive_ptime.exe",
+                                    )
+                                ]
+                            )
+                        else:
+                            cmd([os.path.join(test_build_dir, "audio_adaptive_ptime")])
 
     if package:
         mkdir_p(package_dir)

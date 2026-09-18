@@ -179,6 +179,9 @@ struct SoraSignalingConfig {
 
   std::optional<webrtc::DegradationPreference> degradation_preference;
   std::optional<bool> cpu_adaptation;
+
+  // 音声トラックの adaptivePtime を有効にするかどうか
+  std::optional<bool> audio_adaptive_ptime;
 };
 
 class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
@@ -251,6 +254,7 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
   void SetDegradationPreference(
       std::string mid,
       webrtc::DegradationPreference degradation_preference);
+  void SetAdaptivePtime(std::string mid, bool adaptive_ptime);
   void ResetEncodingParameters();
 
   void WsWriteSignaling(std::string text, Websocket::write_callback_t on_write);
