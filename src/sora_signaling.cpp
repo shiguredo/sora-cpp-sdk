@@ -29,6 +29,7 @@
 #include <api/jsep.h>
 #include <api/media_types.h>
 #include <api/peer_connection_interface.h>
+#include <api/priority.h>
 #include <api/rtc_error.h>
 #include <api/rtp_parameters.h>
 #include <api/rtp_receiver_interface.h>
@@ -1120,6 +1121,47 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
                   v.width = obj.at("maxWidth").to_number<int>();
                   v.height = obj.at("maxHeight").to_number<int>();
                 }
+                // offer の priority は W3C の RTCRtpEncodingParameters.priority に
+                // 対応する。 libwebrtc の bitrate_priority へ変換する値は、
+                // api/rtp_parameters.h のコメントと同じ重み付けを利用する。
+                if (p.count("priority") != 0) {
+                  const std::string priority =
+                      p["priority"].as_string().c_str();
+                  if (priority == "very-low") {
+                    params.bitrate_priority = 0.5;
+                  } else if (priority == "low") {
+                    params.bitrate_priority = 1.0;
+                  } else if (priority == "medium") {
+                    params.bitrate_priority = 2.0;
+                  } else if (priority == "high") {
+                    params.bitrate_priority = 4.0;
+                  } else {
+                    RTC_LOG(LS_WARNING)
+                        << "Invalid priority in encodings: rid=" << params.rid
+                        << " priority=" << priority;
+                  }
+                }
+                // offer の networkPriority は W3C の
+                // RTCRtpEncodingParameters.networkPriority (DSCP マーキングの
+                // 優先度) に対応する
+                if (p.count("networkPriority") != 0) {
+                  const std::string network_priority =
+                      p["networkPriority"].as_string().c_str();
+                  if (network_priority == "very-low") {
+                    params.network_priority = webrtc::Priority::kVeryLow;
+                  } else if (network_priority == "low") {
+                    params.network_priority = webrtc::Priority::kLow;
+                  } else if (network_priority == "medium") {
+                    params.network_priority = webrtc::Priority::kMedium;
+                  } else if (network_priority == "high") {
+                    params.network_priority = webrtc::Priority::kHigh;
+                  } else {
+                    RTC_LOG(LS_WARNING)
+                        << "Invalid networkPriority in encodings: rid="
+                        << params.rid
+                        << " networkPriority=" << network_priority;
+                  }
+                }
                 encoding_parameters.push_back(params);
               }
 
@@ -1350,6 +1392,9 @@ void SoraSignaling::SetEncodingParameters(
   for (auto enc : encodings) {
     RTC_LOG(LS_INFO) << "SetEncodingParameters: rid=" << enc.rid
                      << " active=" << (enc.active ? "true" : "false")
+                     << " bitrate_priority=" << enc.bitrate_priority
+                     << " network_priority="
+                     << static_cast<int>(enc.network_priority)
                      << " max_framerate="
                      << (enc.max_framerate ? std::to_string(*enc.max_framerate)
                                            : std::string("nullopt"))
@@ -1382,6 +1427,9 @@ void SoraSignaling::ResetEncodingParameters() {
   for (auto enc : encodings_) {
     RTC_LOG(LS_INFO) << "ResetEncodingParameters: rid=" << enc.rid
                      << " active=" << (enc.active ? "true" : "false")
+                     << " bitrate_priority=" << enc.bitrate_priority
+                     << " network_priority="
+                     << static_cast<int>(enc.network_priority)
                      << " max_framerate="
                      << (enc.max_framerate ? std::to_string(*enc.max_framerate)
                                            : std::string("nullopt"))
