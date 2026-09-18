@@ -15,6 +15,8 @@
   - `VideoEncoderConfig` / `VideoDecoderConfig` / `SoraVideoCodecFactoryConfig` の `create_video_encoder` と `create_video_decoder`、および `CreateOpenH264VideoEncoder()` の引数に `const webrtc::Environment&` を追加する
   - `SoraClientContextConfig::field_trials` で指定したフィールドトライアルがエンコーダ/デコーダにも伝わるようにする
   - @melpon
+- [ADD] adaptivePtime を SDK オプションで音声トラックに適用できるようにする
+  - @melpon
 - [ADD] `SoraClientContextConfig` に libwebrtc のフィールドトライアルを指定する `field_trials` を追加する
   - 空文字の場合は libwebrtc の既定動作になり、不正な文字列の場合は `SoraClientContext::Create()` が `nullptr` を返す
   - ADM と `ConnectionContext` と `PeerConnectionFactory` に同じ `webrtc::Environment` を渡すようにする
