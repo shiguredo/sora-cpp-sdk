@@ -232,7 +232,8 @@ jobs:
       - name: Install X11 for ${{ matrix.platform.name }}
         if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
         run: |
-          sudo apt-get install -y libx11-dev libxext-dev
+          # libxtst-dev 以降は sumomo の --screen-capture で利用する
+          sudo apt-get install -y libx11-dev libxext-dev libxtst-dev libxdamage-dev libxfixes-dev libxcomposite-dev libxrandr-dev
       - name: Install OpenGL for ${{ matrix.platform.name }}
         if: matrix.platform.os == 'ubuntu' && matrix.platform.arch == 'x86_64'
         run: |
@@ -464,7 +465,8 @@ jobs:
         run: |
           sudo apt-get update
           # X11
-          sudo apt-get install -y libx11-dev libxext-dev
+          # libxtst-dev 以降は sumomo の --screen-capture で利用する
+          sudo apt-get install -y libx11-dev libxext-dev libxtst-dev libxdamage-dev libxfixes-dev libxcomposite-dev libxrandr-dev
           # OpenGL
           sudo apt-get install -y libgl-dev
 
