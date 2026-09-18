@@ -309,6 +309,10 @@ if (SORA_TARGET_OS STREQUAL "windows")
   target_compile_definitions(sora
     PUBLIC
       WEBRTC_WIN
+      # webrtc::DesktopCaptureOptions はこのマクロの有無でメンバのレイアウトが
+      # 変わるため、libwebrtc のビルド設定と揃える必要がある。
+      # 揃っていないと、この型を利用する画面キャプチャが動作しない
+      RTC_ENABLE_WIN_WGC
       RTC_ENABLE_H265
       _ITERATOR_DEBUG_LEVEL=0
   )
@@ -560,6 +564,10 @@ elseif (SORA_TARGET_OS STREQUAL "ubuntu")
     PUBLIC
       WEBRTC_POSIX
       WEBRTC_LINUX
+      # webrtc::DesktopCaptureOptions はこのマクロの有無でメンバのレイアウトが
+      # 変わるため、libwebrtc のビルド設定と揃える必要がある。
+      # 揃っていないと、この型を利用する画面キャプチャが動作しない
+      WEBRTC_USE_X11
       _LIBCPP_ABI_NAMESPACE=Cr
       _LIBCPP_ABI_VERSION=2
       _LIBCPP_DISABLE_AVAILABILITY

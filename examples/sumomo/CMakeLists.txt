@@ -78,6 +78,13 @@ endif()
 
 if (USE_SCREEN_CAPTURER)
   target_compile_definitions(sumomo PRIVATE USE_SCREEN_CAPTURER)
+  if (WIN32)
+    # libwebrtc の画面キャプチャが利用する Windows のライブラリ
+    # Shcore.lib は GetDpiForMonitor / GetScaleFactorForMonitor、
+    # Dwmapi.lib は DwmGetWindowAttribute、
+    # DXGI.lib / D3D11.lib は WGC のキャプチャで利用する
+    target_link_libraries(sumomo PRIVATE Shcore.lib Dwmapi.lib DXGI.lib D3D11.lib)
+  endif()
   if (LINUX)
     # libwebrtc の画面キャプチャが利用する X11 のライブラリ
     target_link_libraries(sumomo PRIVATE X11 Xtst Xext Xdamage Xfixes Xcomposite Xrandr)
