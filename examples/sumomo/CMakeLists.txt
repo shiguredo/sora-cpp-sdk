@@ -12,6 +12,7 @@ set(BOOST_ROOT "" CACHE PATH "Boost のルートディレクトリ")
 set(SORA_DIR "" CACHE PATH "Sora のルートディレクトリ")
 set(SDL3_DIR "" CACHE PATH "SDL3 のルートディレクトリ")
 set(CLI11_DIR "" CACHE PATH "CLI11 のルートディレクトリ")
+set(USE_SCREEN_CAPTURER OFF CACHE BOOL "スクリーンキャプチャを利用するかどうか")
 
 project(sora-sumomo C CXX)
 
@@ -39,6 +40,14 @@ target_sources(sumomo
     src/sumomo.cpp
     src/sdl_renderer.cpp)
 
+# 画面キャプチャは prebuilt の libwebrtc に desktop capture が含まれている
+# プラットフォームでのみ利用する
+if (USE_SCREEN_CAPTURER)
+  target_sources(sumomo
+    PRIVATE
+      src/screen_video_capturer.cpp)
+endif()
+
 if (WIN32)
   target_compile_options(sumomo PRIVATE /utf-8 /bigobj)
   set_target_properties(sumomo
@@ -65,6 +74,18 @@ if (WIN32)
       NOMINMAX
       WIN32_LEAN_AND_MEAN
   )
+endif()
+
+if (USE_SCREEN_CAPTURER)
+  target_compile_definitions(sumomo PRIVATE USE_SCREEN_CAPTURER)
+  if (LINUX)
+    # libwebrtc の画面キャプチャが利用する X11 のライブラリ
+    target_link_libraries(sumomo PRIVATE X11 Xtst Xext Xdamage Xfixes Xcomposite Xrandr)
+  endif()
+  if (APPLE)
+    # libwebrtc の画面キャプチャが利用するフレームワーク
+    target_link_libraries(sumomo PRIVATE "-framework IOSurface")
+  endif()
 endif()
 
 if (LINUX)
