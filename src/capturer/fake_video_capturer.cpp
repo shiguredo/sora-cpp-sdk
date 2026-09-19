@@ -1,12 +1,12 @@
 #include "sora/capturer/fake_video_capturer.h"
 
-#include <math.h>
 #include <atomic>
 #include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
 #include <memory>
+#include <numbers>
 #include <thread>
 #include <utility>
 
@@ -145,14 +145,15 @@ class FakeVideoCapturerImpl : public FakeVideoCapturer {
     int fps = config_.fps;
 
     ctx.translate(width * 0.5, height * 0.5);  // 画面中央に配置
-    ctx.rotate(-M_PI / 2);
+    ctx.rotate(-std::numbers::pi / 2);
     ctx.set_fill_style(BLRgba32(255, 255, 255));
-    ctx.fill_pie(0, 0, width * 0.3, 0, 2 * M_PI);  // 大きくする
+    ctx.fill_pie(0, 0, width * 0.3, 0, 2 * std::numbers::pi);  // 大きくする
 
     ctx.set_fill_style(BLRgba32(160, 160, 160));
     uint32_t current_frame = frame_counter_;
-    ctx.fill_pie(0, 0, width * 0.3, 0,
-                 (current_frame % fps) / static_cast<float>(fps) * 2 * M_PI);
+    ctx.fill_pie(
+        0, 0, width * 0.3, 0,
+        (current_frame % fps) / static_cast<float>(fps) * 2 * std::numbers::pi);
 
     // 円が一周したときにコールバックする
     if (config_.on_tick) {
@@ -176,7 +177,8 @@ class FakeVideoCapturerImpl : public FakeVideoCapturer {
       uint32_t current_frame = frame_counter_;
       double phase = (current_frame + i * 20) % 100 / 100.0;
       double x = phase * (width - box_size);
-      double y = height * 0.5 + sin(phase * M_PI * 2) * height * 0.2;
+      double y =
+          height * 0.5 + std::sin(phase * std::numbers::pi * 2) * height * 0.2;
 
       // 各ボックスに異なる色を設定
       uint32_t color = 0xFF000000;
