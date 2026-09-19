@@ -84,6 +84,12 @@ if (TEST_DATACHANNEL)
   init_target(datachannel)
 endif()
 
+if (TEST_DATACHANNEL_CLOSED)
+  add_executable(datachannel_closed)
+  target_sources(datachannel_closed PRIVATE datachannel_closed.cpp)
+  init_target(datachannel_closed)
+endif()
+
 if (TEST_DEVICE_LIST)
   add_executable(device_list)
   target_sources(device_list PRIVATE device_list.cpp)

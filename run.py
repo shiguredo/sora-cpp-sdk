@@ -1115,6 +1115,7 @@ def _build(
                 if platform.target.os in ("windows", "macos", "ubuntu"):
                     cmake_args.append("-DTEST_CONNECT_DISCONNECT=ON")
                     cmake_args.append("-DTEST_DATACHANNEL=ON")
+                    cmake_args.append("-DTEST_DATACHANNEL_CLOSED=ON")
                     cmake_args.append("-DTEST_DEVICE_LIST=ON")
                 if (
                     platform.build.os == platform.target.os
