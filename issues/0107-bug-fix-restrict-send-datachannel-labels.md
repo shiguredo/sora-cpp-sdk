@@ -3,7 +3,7 @@
 - Created: 2026-09-19
 - Completed: YYYY-MM-DD
 - Branch: feature/fix-restrict-send-datachannel-labels
-- Polished: YYYY-MM-DD
+- Polished: 2026-09-19
 - Reporter: @melpon
 
 ## 目的
@@ -29,10 +29,11 @@
 - 送信を許可するのは `#` で始まるラベルと `rpc`
 - SDK 内部の送信 (`DoSendUpdate()` / `DoSendPong()`) も `SendDataChannel()` を経由しているため、内部送信用の private メソッドへ切り出してそちらを使う
 - `SoraSignaling::SendDataChannel()` の戻り値に `DataChannel::Send()` の結果を反映する
+- `test/datachannel.cpp` の `OnDataChannel()` は、SDK が開いたことを通知するすべてのラベル (`signaling` / `stats` / `notify` / `push` / `rpc` / `#` で始まるラベル) にラベル文字列を送っている。修正後は管理ラベルへの送信が `false` を返してテストが `std::exit(1)` するため、ユーザー定義の `#` で始まるラベルにのみ送信するよう変更する
 
 ## 完了条件
 
 - `SendDataChannel("signaling" | "stats" | "notify" | "push", ...)` が `false` を返し、DataChannel へ送信されないこと
-- `SendDataChannel("#label", ...)` と `SendDataChannel("rpc", ...)` は従来どおり送信できること
-- 開いていないラベルへの送信が `false` を返すこと
-- 回帰がないこと: `test/datachannel.cpp` と E2E テスト (`test_sumomo_data_channel_signaling`) が通ること
+- `SendDataChannel("#label", ...)` と `SendDataChannel("rpc", ...)` は、対応するラベルが開いている場合従来どおり送信できること
+- `#` で始まるラベルと `rpc` 以外のラベル、および開いていないラベルへの送信が `false` を返すこと
+- 回帰がないこと: `#` で始まるラベルにのみ送信するよう変更した `test/datachannel.cpp` と E2E テスト (`test_sumomo_data_channel_signaling`) が通ること
