@@ -28,6 +28,8 @@
 #include <rtc_base/platform_thread.h>
 #include <rtc_base/thread.h>
 #include <rtc_base/time_utils.h>
+
+// Sora C++ SDK
 #include <sora/scalable_track_source.h>
 
 std::string ScreenVideoCapturer::GetSourceListString() {
