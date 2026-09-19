@@ -1,20 +1,34 @@
 #include "screen_video_capturer.h"
 
 #include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <exception>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <utility>
 
 // WebRTC
 #include <api/make_ref_counted.h>
+#include <api/scoped_refptr.h>
 #include <api/video/i420_buffer.h>
+#include <api/video/video_frame.h>
+#include <api/video/video_rotation.h>
+#include <libyuv/convert.h>
+#include <libyuv/scale.h>
+#include <libyuv/scale_argb.h>
 #include <modules/desktop_capture/cropped_desktop_frame.h>
 #include <modules/desktop_capture/desktop_and_cursor_composer.h>
 #include <modules/desktop_capture/desktop_capture_options.h>
+#include <modules/desktop_capture/desktop_capturer.h>
+#include <modules/desktop_capture/desktop_frame.h>
+#include <modules/desktop_capture/desktop_geometry.h>
 #include <rtc_base/logging.h>
+#include <rtc_base/platform_thread.h>
 #include <rtc_base/thread.h>
 #include <rtc_base/time_utils.h>
-#include <third_party/libyuv/include/libyuv.h>
+#include <sora/scalable_track_source.h>
 
 std::string ScreenVideoCapturer::GetSourceListString() {
   std::string result;

@@ -56,6 +56,7 @@
 #include <api/scoped_refptr.h>
 #include <api/stats/rtc_stats_report.h>
 #include <api/video/video_codec_type.h>
+#include <modules/desktop_capture/desktop_capturer.h>
 #include <rtc_base/crypto_random.h>
 #include <rtc_base/logging.h>
 #include <rtc_base/time_utils.h>

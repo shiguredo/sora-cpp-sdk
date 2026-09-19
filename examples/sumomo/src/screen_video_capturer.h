@@ -3,15 +3,14 @@
 
 #include <atomic>
 #include <cstddef>
-#include <cstdint>
 #include <memory>
 #include <string>
 
 // WebRTC
 #include <api/scoped_refptr.h>
-#include <api/video/video_frame.h>
 #include <modules/desktop_capture/desktop_capturer.h>
 #include <modules/desktop_capture/desktop_frame.h>
+#include <modules/desktop_capture/desktop_geometry.h>
 #include <rtc_base/platform_thread.h>
 
 // Sora C++ SDK
