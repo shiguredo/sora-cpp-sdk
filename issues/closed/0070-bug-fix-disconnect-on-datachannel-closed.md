@@ -1,7 +1,7 @@
 # DataChannel が閉じられた際にクライアントが切断されない問題を修正する
 
 - Created: 2026-09-10
-- Completed: YYYY-MM-DD
+- Completed: 2026-09-19
 - Branch: feature/fix-disconnect-on-datachannel-closed
 - Polished: 2026-09-13
 - Reporter: @miosakuma
@@ -48,5 +48,28 @@ Sora の DataChannel 仕様では signaling ラベルの DataChannel が閉じ�
 - `{"type":"close"}` によるサーバ起点のグレースフルシャットダウンでは、従来どおりすべての DataChannel の close を待って通知され、二重通知や close コード・reason の喪失がないこと
 - クライアント起点の `Disconnect()` で二重通知が発生しないこと
 - 回帰がないこと: `test/datachannel.cpp` の DataChannel 送受信テストと、E2E テスト (`test_sumomo_data_channel_signaling`) が通ること
-- DataChannel の一方的な close は Sora のデバッグ API が必要で E2E テストに組み込めないため、sumomo とデバッグ API による手動検証で `OnDisconnect` が呼ばれることを確認する
+- DataChannel が閉じられた場合に `OnDisconnect` が呼ばれることを自動テスト (`test/datachannel_closed.cpp`) で確認すること
+  - クライアントが切断処理を開始していない状態で Sora に DataChannel を閉じさせる必要があるが、そのための API は存在しないため、クライアントから signaling DataChannel へ `{"type":"disconnect"}` を送ることで同じ状況を作る
 - 変更履歴 (`CHANGES.md`) の `## develop` の `[FIX]` にエントリを追記する
+
+## 解決方法
+
+- `src/sora_signaling.cpp` の `SoraSignaling::OnStateChange()` で DataChannel の `kClosed` を検知したら、`SoraSignalingErrorCode::DATACHANNEL_CLOSED` で `DoInternalDisconnect()` を呼ぶようにした
+  - 対象は `signaling` ラベルに限定せず、offer の `data_channels` に含まれるすべての DataChannel とした
+  - クライアント起点の切断と競合しないように `state_ == State::Connected` のときだけ検知する
+  - サーバから `{"type":"close"}` を受信した後は `received_close_` で検知を抑止し、すべての DataChannel の close を待つ既存処理を優先する
+- `SoraSignalingErrorCode` に `DATACHANNEL_CLOSED` を追加した
+- `SoraSignaling::DoInternalDisconnect()` の切断方法の判定を `using_datachannel_` から `using_datachannel_ && dc_->IsOpen("signaling")` に変更した
+  - signaling DataChannel が閉じられている場合は DataChannel 経由で送信できないため、WebSocket 経由の切断に切り替わる
+- `test/datachannel_closed.cpp` を追加した
+  - signaling DataChannel へ `{"type":"disconnect"}` を送って Sora に DataChannel を閉じさせ、`DATACHANNEL_CLOSED` で `OnDisconnect` が 1 回だけ呼ばれることを確認する
+- `test/datachannel.cpp` が `OnDataChannel()` で開いたすべてのラベルにメッセージを送っていたため、ユーザー定義ラベルにのみ送るようにした
+  - Sora の管理するラベルへ送信すると Sora が接続を 4490 INTERNAL-ERROR で切断する。SDK 側で送信先を制限する対応は issue 0107 として起票した
+- `CHANGES.md` の `## develop` の `[FIX]` にエントリを追記した
+
+### 確認したこと
+
+- `test/datachannel.cpp` が通ること (10 回の接続がすべて成功)
+- `test/datachannel_closed.cpp` が通ること (`DATACHANNEL_CLOSED` で `OnDisconnect` が 1 回だけ呼ばれる)
+- 修正前のコードでは `test/datachannel_closed.cpp` が失敗すること (DataChannel の close では通知されず、15 秒後に `PeerConnectionState::kFailed` で通知される)
+- E2E テスト (`test_sumomo_data_channel_signaling` / `test_sumomo_sendonly_recvonly`) が通ること

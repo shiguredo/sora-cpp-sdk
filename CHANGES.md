@@ -48,6 +48,10 @@
   - Android のテストで WebRTC の JNI Zero シンボルを保持する
     - libwebrtc の JNI エクスポート形式が従来の `Java_org_webrtc_` から JNI Zero の `Java_J_N_` 形式へ変わったため、run.py のシンボル保持対象に `Java_J_N_` を追加する
   - @torikizi
+- [FIX] DataChannel が閉じられた際にクライアントが切断されない問題を修正する
+  - offer の `data_channels` に含まれる DataChannel が接続中に閉じられた場合、`SoraSignalingErrorCode::DATACHANNEL_CLOSED` で `OnDisconnect` を通知する
+  - サーバからの `{"type":"close"}` によるグレースフルシャットダウンと、クライアント起点の切断処理とは競合しない
+  - @melpon
 
 ### misc
 

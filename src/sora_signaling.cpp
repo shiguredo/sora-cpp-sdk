@@ -673,7 +673,11 @@ void SoraSignaling::DoInternalDisconnect(
     }
   };
 
-  if (using_datachannel_ && ws_connected_) {
+  // signaling ラベルの DataChannel が既に閉じられている場合は DataChannel 経由で
+  // disconnect を送信できないため、実際に開いているかどうかで切断方法を決める
+  bool dc_signaling_available =
+      using_datachannel_ && dc_ != nullptr && dc_->IsOpen("signaling");
+  if (dc_signaling_available && ws_connected_) {
     // DC の切断には disconnect_wait_timeout を、
     // DC 成功後の WS close には closing_timeout_timer_ をそれぞれ使う
     std::shared_ptr<bool> ws_close_called = std::make_shared<bool>(false);
@@ -761,7 +765,7 @@ void SoraSignaling::DoInternalDisconnect(
 
     SendOnSignalingMessage(SoraSignalingType::DATACHANNEL,
                            SoraSignalingDirection::SENT, std::move(text));
-  } else if (using_datachannel_ && !ws_connected_) {
+  } else if (dc_signaling_available && !ws_connected_) {
     std::string text = R"({"type":"disconnect","reason":"NO-ERROR"})";
     webrtc::DataBuffer disconnect = ConvertToDataBuffer("signaling", text);
     dc_->Close(
@@ -779,7 +783,7 @@ void SoraSignaling::DoInternalDisconnect(
 
     SendOnSignalingMessage(SoraSignalingType::DATACHANNEL,
                            SoraSignalingDirection::SENT, std::move(text));
-  } else if (!using_datachannel_ && ws_connected_) {
+  } else if (ws_connected_) {
     closing_timeout_timer_.expires_after(
         std::chrono::seconds(config_.websocket_close_timeout));
     closing_timeout_timer_.async_wait(
@@ -813,7 +817,7 @@ void SoraSignaling::DoInternalDisconnect(
         return;
       }
       on_close(true, SoraSignalingErrorCode::CLOSE_SUCCEEDED,
-               "Succeeded to close WebSocket (DC signaling is not enabled)");
+               "Succeeded to close WebSocket (DC signaling is not available)");
     };
     boost::json::value disconnect = {{"type", "disconnect"},
                                      {"reason", "NO-ERROR"}};
@@ -1602,6 +1606,7 @@ void SoraSignaling::Clear() {
   using_datachannel_ = false;
   dc_ = nullptr;
   dc_labels_.clear();
+  received_close_ = false;
   encodings_.clear();
   video_mid_.clear();
   on_ws_close_ = nullptr;
@@ -1737,6 +1742,23 @@ void SoraSignaling::OnRemoveTrack(
 
 void SoraSignaling::OnStateChange(
     webrtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) {
+  // DataChannel が閉じられた場合、その DataChannel を利用した通信は行えなくなる。
+  // 一部の DataChannel だけが閉じた接続は健全ではないため、接続全体の切断処理を
+  // 開始する。ただし以下の場合は既存の切断処理と競合するため検知しない。
+  // - クライアント起点の Disconnect() やエラーによる切断処理が進行中
+  //   (DoInternalDisconnect で state_ が Connected ではなくなっている)
+  // - サーバから {"type":"close"} を受信済みで、すべての DataChannel が
+  //   閉じるのを待っている
+  if (state_ == State::Connected && !received_close_ &&
+      data_channel->state() == webrtc::DataChannelInterface::kClosed) {
+    std::string label = data_channel->label();
+    RTC_LOG(LS_INFO) << "DataChannel closed: label=" << label;
+    DoInternalDisconnect(SoraSignalingErrorCode::DATACHANNEL_CLOSED,
+                         "DATACHANNEL-CLOSED",
+                         "DataChannel closed: label=" + label);
+    return;
+  }
+
   // まだ通知してないチャンネルが開いてた場合は通知を送る
   auto ob = config_.observer.lock();
   if (ob != nullptr) {
@@ -1854,6 +1876,9 @@ void SoraSignaling::OnMessage(
       // グレースフルシャットダウンする
       int code = json.at("code").to_number<int>();
       std::string reason = json.at("reason").as_string().c_str();
+      // これ以降の DataChannel の close はグレースフルシャットダウンの一部なので、
+      // DataChannel が閉じられたことを原因とする切断処理は行わない
+      received_close_ = true;
       // on_close を設定しておいて、あとは DataChannel が閉じるのを待つだけ
       dc_->SetOnClose([self = shared_from_this(), code,
                        reason](boost::system::error_code ec) {
