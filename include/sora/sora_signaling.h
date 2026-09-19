@@ -56,6 +56,8 @@ enum class SoraSignalingErrorCode {
   WEBSOCKET_ONERROR,
   PEER_CONNECTION_STATE_FAILED,
   ICE_FAILED,
+  // 接続中に DataChannel が閉じられたことによる切断
+  DATACHANNEL_CLOSED,
 };
 
 enum class SoraSignalingType {
@@ -338,6 +340,10 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
     bool notified = false;
   };
   std::map<std::string, DataChannelInfo> dc_labels_;
+  // サーバから {"type":"close"} を受け取ったかどうか。
+  // 受け取った後の DataChannel の close はグレースフルシャットダウンの一部であり、
+  // すべての DataChannel が閉じるのを待ってから通知する既存処理を優先する。
+  bool received_close_ = false;
 
   webrtc::scoped_refptr<webrtc::PeerConnectionInterface> pc_;
   std::vector<webrtc::RtpEncodingParameters> encodings_;
