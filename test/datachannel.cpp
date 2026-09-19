@@ -126,10 +126,15 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
       webrtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override {}
 
   void OnDataChannel(std::string label) override {
-    bool result = conn_->SendDataChannel(label, label);
-    if (!result) {
-      RTC_LOG(LS_ERROR) << "Failed to SendDataChannel: label=" << label;
-      std::exit(1);
+    // ユーザー定義ラベルにのみメッセージを送信する。
+    // signaling / stats / notify / push / rpc は Sora が管理するラベルであり、
+    // ここへ任意の文字列を送ると Sora が接続を INTERNAL-ERROR で切断する
+    if (!label.empty() && label[0] == '#') {
+      bool result = conn_->SendDataChannel(label, label);
+      if (!result) {
+        RTC_LOG(LS_ERROR) << "Failed to SendDataChannel: label=" << label;
+        std::exit(1);
+      }
     }
     auto it = opened_.find(label);
     if (it != opened_.end()) {
