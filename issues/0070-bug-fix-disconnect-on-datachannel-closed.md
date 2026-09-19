@@ -48,5 +48,6 @@ Sora の DataChannel 仕様では signaling ラベルの DataChannel が閉じ�
 - `{"type":"close"}` によるサーバ起点のグレースフルシャットダウンでは、従来どおりすべての DataChannel の close を待って通知され、二重通知や close コード・reason の喪失がないこと
 - クライアント起点の `Disconnect()` で二重通知が発生しないこと
 - 回帰がないこと: `test/datachannel.cpp` の DataChannel 送受信テストと、E2E テスト (`test_sumomo_data_channel_signaling`) が通ること
-- DataChannel の一方的な close は Sora のデバッグ API が必要で E2E テストに組み込めないため、sumomo とデバッグ API による手動検証で `OnDisconnect` が呼ばれることを確認する
+- DataChannel が閉じられた場合に `OnDisconnect` が呼ばれることを自動テスト (`test/datachannel_closed.cpp`) で確認すること
+  - クライアントが切断処理を開始していない状態で Sora に DataChannel を閉じさせる必要があるが、そのための API は存在しないため、クライアントから signaling DataChannel へ `{"type":"disconnect"}` を送ることで同じ状況を作る
 - 変更履歴 (`CHANGES.md`) の `## develop` の `[FIX]` にエントリを追記する
