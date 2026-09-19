@@ -337,6 +337,17 @@ def _build(args):
         cmake_args.append(f"-DCLI11_DIR={cmake_path(os.path.join(install_dir, 'cli11'))}")
         cmake_args.append(f"-DSDL3_DIR={cmake_path(os.path.join(install_dir, 'sdl3'))}")
 
+        # 画面キャプチャ
+        # prebuilt の libwebrtc に desktop capture が含まれているプラットフォームでのみ有効にする
+        if platform in (
+            "windows_x86_64",
+            "macos_arm64",
+            "ubuntu-22.04_x86_64",
+            "ubuntu-24.04_x86_64",
+            "ubuntu-26.04_x86_64",
+        ):
+            cmake_args.append("-DUSE_SCREEN_CAPTURER=ON")
+
         # クロスコンパイルの設定。
         # 本来は toolchain ファイルに書く内容
         if platform in ("macos_arm64",):
