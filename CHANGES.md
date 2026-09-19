@@ -55,6 +55,9 @@
 
 ### misc
 
+- [UPDATE] fake_video_capturer の `M_PI` を `std::numbers::pi` に置き換える
+  - `M_PI` は C の標準ではなく Windows では `_USE_MATH_DEFINES` の定義が必要なため、C++20 の `std::numbers::pi` を利用する
+  - @melpon
 - [UPDATE] sdl_sample の SDL レンダラーを BaseRenderer に統合する
   - 独自の枠割りロジックを削除し、実測アスペクトの採用・共通縮小・中央寄せを sumomo と共通化する
   - @melpon

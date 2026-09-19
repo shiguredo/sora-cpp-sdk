@@ -304,7 +304,6 @@ if (SORA_TARGET_OS STREQUAL "windows")
       WIN32_LEAN_AND_MEAN
       UNICODE
       _UNICODE
-      _USE_MATH_DEFINES
   )
   target_compile_definitions(sora
     PUBLIC
