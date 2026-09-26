@@ -234,9 +234,33 @@ config.role = "sendrecv";
 ```
 
 - 送信: `conn_->SendDataChannel(label, data)` (bool を返す。`OnDataChannel(label)` で利用可能になってから送る)
+  - 送信できるのは `#` で始まるユーザー定義ラベルだけ。Sora が管理するラベル (`signaling` / `stats` / `notify` / `push` / `rpc`) と offer に含まれないラベルへは送信せず `false` を返す
+  - `rpc` へ送る場合は後述の `SendRpc()` を使う
 - 受信: `OnMessage(label, data)` で通知される
 
 メッセージングのみの用途 (映像・音声なし) は `config.video = false; config.audio = false;` にする。実例は `examples/messaging_recvonly_sample/` を参照。
+
+## Sora の RPC
+
+DataChannel 経由のシグナリングを利用している場合、JSON-RPC 2.0 over DataChannel で Sora の一部の HTTP API を呼び出せる (Sora 2025.2.0 以降の実験的機能)。利用条件は次の 3 つ。
+
+- `sora.conf` で `data_channel_rpc` が `true` になっている
+- コネクションが DataChannel 経由のシグナリングを利用している
+- 認証成功時の払い出しで `rpc_methods` が指定されている (`"type":"offer"` のシグナリングメッセージの `rpc_methods` で確認できる)
+
+```cpp
+// method は "{RPC 経由での HTTP API の呼出が導入された Sora のバージョン}/{HTTP API 名}"
+// params には HTTP API に渡す JSON (Object か Array) を指定する
+conn_->SendRpc(1, "2025.2.0/RequestSimulcastRid",
+               boost::json::object{{"rid", "r1"}});
+```
+
+- `SendRpc(id, method, params)` が `{"jsonrpc":"2.0","id":<id>,"method":<method>,"params":<params>}` を組み立てて `rpc` ラベルで送信する (送信できた場合は true)
+- `id` に `std::nullopt` を指定すると `id` を含めない Notification になり、Sora はレスポンスを返さない
+- `params` に `std::nullopt` を指定すると `params` を含めない。Object でも Array でもない値は JSON-RPC 2.0 の要件を満たさないため送信せず `false` を返す
+- `rpc` ラベルが開いていない場合 (RPC が無効な Sora や未接続) は送信せず `false` を返す
+- レスポンスは `OnRpc(data)` に JSON 文字列で通知される。`id` との突き合わせ・タイムアウト・エラーの解釈はアプリケーションが行う
+- 利用できるメソッドの一覧は Sora のドキュメント (RPC 機能) を参照
 
 ## SoraSignalingConfig の主要フィールド
 
@@ -268,6 +292,7 @@ proxy 利用時の `network_manager` / `socket_factory` は `SoraClientContext` 
 | `OnDisconnect(ec, message)` | 切断時 (必ず 1 回呼ばれる)。`io_context` の停止はここで行う |
 | `OnNotify(text)`, `OnPush(text)` | Sora からの notify / push (JSON 文字列) |
 | `OnMessage(label, data)` | データチャネルメッセージの受信 |
+| `OnRpc(data)` | `rpc` ラベルで受信した JSON-RPC 2.0 のレスポンス |
 | `OnTrack(transceiver)`, `OnRemoveTrack(receiver)` | リモートトラックの追加・削除 |
 | `OnDataChannel(label)` | データチャネルが利用可能になった |
 | `OnSwitched(text)` | シグナリングが WebSocket からデータチャネルへ切り替わった |
