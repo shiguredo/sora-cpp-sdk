@@ -29,6 +29,10 @@
   - 一覧の先頭の画面をキャプチャし、マウスカーソルを合成して `--resolution` に収まるよう縮小した映像を配信する
   - Windows x86_64 / macOS arm64 / Ubuntu 22.04・24.04・26.04 x86_64 で利用でき、それ以外のプラットフォームでは指定するとエラーになる
   - @melpon
+- [ADD] `SoraSignaling::SendRpc()` を追加する
+  - JSON-RPC 2.0 のリクエストを `rpc` ラベルで送信する。`id` と `params` は省略でき、`params` に Object でも Array でもない値を指定した場合は送信しない
+  - レスポンスは `SoraSignalingObserver::OnRpc()` に通知される
+  - @melpon
 - [UPDATE] libwebrtc のバージョンを m154.8037.1.2 に上げる
   - `api:field_trials` が含まれるようになり、`webrtc::FieldTrials::Create` を利用できるようになった
   - @melpon
@@ -51,6 +55,10 @@
 - [FIX] DataChannel が閉じられた際にクライアントが切断されない問題を修正する
   - offer の `data_channels` に含まれる DataChannel が接続中に閉じられた場合、`SoraSignalingErrorCode::DATACHANNEL_CLOSED` で `OnDisconnect` を通知する
   - サーバからの `{"type":"close"}` によるグレースフルシャットダウンと、クライアント起点の切断処理とは競合しない
+  - @melpon
+- [FIX] `SendDataChannel()` で Sora が管理するラベルへ送信できてしまう問題を修正する
+  - 送信できるのは `#` で始まるユーザー定義ラベルだけにし、Sora が管理するラベル (`signaling` / `stats` / `notify` / `push` / `rpc`) と offer に含まれないラベルへの送信は `false` を返すようにする
+  - `DataChannel::Send()` の結果を戻り値に反映し、開いていないラベルへの送信も `false` を返すようにする
   - @melpon
 
 ### misc

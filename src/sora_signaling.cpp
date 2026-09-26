@@ -4,6 +4,7 @@
 #include <cassert>
 #include <chrono>
 #include <cstddef>
+#include <cstdint>
 #include <exception>
 #include <functional>
 #include <memory>
@@ -494,7 +495,7 @@ void SoraSignaling::DoSendPong(
   if (dc_ && using_datachannel_ && dc_->IsOpen("stats")) {
     // DataChannel が使える場合は type: stats で DataChannel に送る
     std::string str = R"({"type":"stats","reports":)" + stats + "}";
-    SendDataChannel("stats", str);
+    DoSendDataChannel("stats", str);
   } else if (ws_) {
     std::string str = R"({"type":"pong","stats":)" + stats + "}";
     ws_->WriteText(std::move(str), [self = shared_from_this(), ws = ws_](
@@ -507,7 +508,7 @@ void SoraSignaling::DoSendUpdate(const std::string& sdp, std::string type) {
   std::string text = boost::json::serialize(m);
   if (dc_ && using_datachannel_ && dc_->IsOpen("signaling")) {
     // DataChannel が使える場合は DataChannel に送る
-    SendDataChannel("signaling", text);
+    DoSendDataChannel("signaling", text);
     SendOnSignalingMessage(SoraSignalingType::DATACHANNEL,
                            SoraSignalingDirection::SENT, std::move(text));
   } else if (ws_) {
@@ -1585,13 +1586,57 @@ webrtc::DataBuffer SoraSignaling::ConvertToDataBuffer(
 
 bool SoraSignaling::SendDataChannel(const std::string& label,
                                     const std::string& input) {
+  // アプリケーションが送信できるのはユーザー定義ラベルだけにする。
+  if (label.empty() || label[0] != '#') {
+    RTC_LOG(LS_WARNING) << "Failed to SendDataChannel: label is not a user "
+                           "defined label: label="
+                        << label;
+    return false;
+  }
+  if (dc_labels_.find(label) == dc_labels_.end()) {
+    RTC_LOG(LS_WARNING)
+        << "Failed to SendDataChannel: label is not found in the offer: label="
+        << label;
+    return false;
+  }
+
+  return DoSendDataChannel(label, input);
+}
+
+bool SoraSignaling::SendRpc(std::optional<uint64_t> id,
+                            const std::string& method,
+                            const std::optional<boost::json::value>& params) {
+  // JSON-RPC 2.0 では params は Structured value (Object か Array) でなければ
+  // ならないため、それ以外の値は送信しない
+  if (params.has_value() && !params->is_object() && !params->is_array()) {
+    RTC_LOG(LS_WARNING)
+        << "Failed to SendRpc: params must be an object or an array";
+    return false;
+  }
+
+  boost::json::object m;
+  m["jsonrpc"] = "2.0";
+  if (id.has_value()) {
+    // id を省略した場合は JSON-RPC 2.0 の Notification になり、Sora は
+    // レスポンスを返さない
+    m["id"] = *id;
+  }
+  m["method"] = method;
+  if (params.has_value()) {
+    m["params"] = *params;
+  }
+
+  return DoSendDataChannel("rpc", boost::json::serialize(m));
+}
+
+bool SoraSignaling::DoSendDataChannel(const std::string& label,
+                                      const std::string& input) {
   if (dc_ == nullptr) {
     return false;
   }
 
   webrtc::DataBuffer data = ConvertToDataBuffer(label, input);
-  dc_->Send(label, data);
-  return true;
+  return dc_->Send(label, data);
 }
 
 void SoraSignaling::Clear() {

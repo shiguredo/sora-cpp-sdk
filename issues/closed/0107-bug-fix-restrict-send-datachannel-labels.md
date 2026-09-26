@@ -1,7 +1,7 @@
 # SendDataChannel() の送信先をユーザー定義ラベルに制限し、rpc へ送る SendRpc() を追加する
 
 - Created: 2026-09-19
-- Completed: YYYY-MM-DD
+- Completed: 2026-09-26
 - Branch: feature/fix-restrict-send-datachannel-labels
 - Polished: 2026-09-19
 - Reporter: @melpon
@@ -95,3 +95,37 @@ bool SendRpc(std::optional<uint64_t> id,
 - `test/datachannel.cpp` (`#` で始まるラベルにのみ送信するよう変更)
 - `skills/sora-cpp-sdk/SKILL.md` (送信できるラベルの説明、RPC の使い方)
 - `CHANGES.md`
+
+## 解決方法
+
+- `SoraSignaling::SendDataChannel()` でラベルを検証するようにした
+  - 送信できるのは `#` で始まるユーザー定義ラベルだけとし、Sora が管理するラベル (`signaling` / `stats` / `notify` / `push` / `rpc`) と offer の `data_channels` に含まれないラベルへの送信は `false` を返す
+  - `DataChannel::Send()` の結果を戻り値に反映するようにした
+- SDK 内部の送信経路 `DoSendDataChannel()` を追加し、`DoSendUpdate()` と `DoSendPong()` をこの経路に切り替えた
+  - ラベル検証はアプリケーション向けの `SendDataChannel()` にだけ適用され、SDK 内部の送信は影響を受けない
+- JSON-RPC 2.0 のリクエストを `rpc` ラベルで送信する `SendRpc()` を追加した
+  - `{"jsonrpc":"2.0","id":<id>,"method":<method>,"params":<params>}` を組み立てる。`id` と `params` は省略でき、`params` に Object でも Array でもない値を指定した場合は送信せず `false` を返す
+  - `rpc` ラベルが開いていない場合も送信せず `false` を返す
+- `test/datachannel.cpp` に次の検証を追加した
+  - Sora が管理するラベルへの `SendDataChannel()` が `false` を返すこと
+  - offer に含まれないラベルへの `SendDataChannel()` が `false` を返すこと
+  - 接続前の `SendRpc()` と、`params` が Object でも Array でもない `SendRpc()` が `false` を返すこと
+  - `SendRpc()` のレスポンスが `OnRpc()` に届くこと
+- `test/datachannel_closed.cpp` を削除した
+  - このテストはアプリケーションから signaling DataChannel へ `{"type":"disconnect"}` を送ることで Sora に DataChannel を閉じさせていたが、本対応でこの送信ができなくなった
+  - 代替として `PeerConnection::Close()` を試したが、libwebrtc はシャットダウン中に `DataChannelObserver` への通知を行わないため検知できず、Sora 側にも DataChannel だけを閉じる公開 API が無いため、この検知経路はアプリケーションから再現できない
+  - クライアント起点の `Disconnect()` は `test/connect_disconnect.cpp` と `test/datachannel.cpp` で確認済みのため、置き換えのテストは追加していない
+  - `test/CMakeLists.txt` と `run.py` の `TEST_DATACHANNEL_CLOSED` も削除した
+- `skills/sora-cpp-sdk/SKILL.md` に送信できるラベルの制限と Sora の RPC の使い方を追記した
+- `CHANGES.md` の `## develop` に追記した
+  - `SendDataChannel()` の送信先の制限はバグ修正のため `[FIX]`、`SendRpc()` の追加は `[ADD]` として記載した
+
+### 確認したこと
+
+- `python3 run.py build ubuntu-24.04_x86_64 --test --disable-cuda` が通ること
+- `test/datachannel` を実 Sora に対して実行し、10 回の接続がすべて成功すること
+- `SendRpc()` が `{"jsonrpc":"2.0","id":1,"method":"...","params":{...}}` を送信すること
+- `id` を省略した場合は `id` を含めず、`params` を省略した場合は `params` を含めないこと
+- `id` を省略した Notification には Sora がレスポンスを返さないこと
+- E2E テスト (`test_sumomo_data_channel_signaling`) が通ること
+- `python3 run.py iwyu ubuntu-24.04_x86_64` で差分が出ないこと

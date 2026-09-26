@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <set>
 #include <sstream>
 #include <string>
@@ -74,6 +75,19 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
     }
     conn_ = sora::SoraSignaling::Create(config);
 
+    // rpc ラベルが開いていない状態では SendRpc() は送信しない
+    if (conn_->SendRpc(1, "9999.0.0/not_exist", std::nullopt)) {
+      RTC_LOG(LS_ERROR)
+          << "Unexpectedly succeeded to SendRpc before connecting";
+      std::exit(1);
+    }
+    // params に Object でも Array でもない値を指定した場合は送信しない
+    if (conn_->SendRpc(1, "9999.0.0/not_exist", boost::json::value(1))) {
+      RTC_LOG(LS_ERROR)
+          << "Unexpectedly succeeded to SendRpc with invalid params";
+      std::exit(1);
+    }
+
     boost::asio::executor_work_guard<boost::asio::io_context::executor_type>
         work_guard(ioc_->get_executor());
 
@@ -94,6 +108,14 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
           std::exit(1);
         }
       }
+
+      // offer に含まれないラベルには送信できない
+      if (conn_->SendDataChannel("#not-in-offer", "test")) {
+        RTC_LOG(LS_ERROR) << "Unexpectedly succeeded to SendDataChannel: "
+                             "label=#not-in-offer";
+        std::exit(1);
+      }
+
       ok_ = true;
 
       conn_->Disconnect();
@@ -101,6 +123,12 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
 
     conn_->Connect();
     ioc_->run();
+
+    // RPC が有効な Sora に接続した場合は、SendRpc() のレスポンスが OnRpc() に届く
+    if (rpc_opened_ && !rpc_received_) {
+      RTC_LOG(LS_ERROR) << "RPC response was not received";
+      std::exit(1);
+    }
   }
 
   void OnSetOffer(std::string offer) override {}
@@ -116,6 +144,11 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
   void OnNotify(std::string text) override {}
   void OnPush(std::string text) override {}
   void OnMessage(std::string label, std::string data) override {}
+  void OnRpc(std::string data) override {
+    // SendRpc() で送った JSON-RPC 2.0 のリクエストに対するレスポンスが届く
+    RTC_LOG(LS_INFO) << "OnRpc: " << data;
+    rpc_received_ = true;
+  }
   void OnSwitched(std::string text) override {
     RTC_LOG(LS_INFO) << "OnSwitched: " << text;
   }
@@ -126,14 +159,32 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
       webrtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override {}
 
   void OnDataChannel(std::string label) override {
-    // ユーザー定義ラベルにのみメッセージを送信する。
-    // signaling / stats / notify / push / rpc は Sora が管理するラベルであり、
-    // ここへ任意の文字列を送ると Sora が接続を INTERNAL-ERROR で切断する
+    // # で始まるラベルはユーザー定義ラベル
     if (!label.empty() && label[0] == '#') {
+      // ユーザー定義ラベルには送信できる
       bool result = conn_->SendDataChannel(label, label);
       if (!result) {
         RTC_LOG(LS_ERROR) << "Failed to SendDataChannel: label=" << label;
         std::exit(1);
+      }
+    } else {
+      // 非ユーザー定義ラベルへの SendDataChannel() は失敗する
+      bool result = conn_->SendDataChannel(label, label);
+      if (result) {
+        RTC_LOG(LS_ERROR) << "Unexpectedly succeeded to SendDataChannel: label="
+                          << label;
+        std::exit(1);
+      }
+      // rpc ラベルが開いている場合は SendRpc() で JSON-RPC 2.0 のリクエストを
+      // 送信できる。存在しないメソッドを指定して、Sora からのエラーレスポンスが
+      // OnRpc() に届くことを確認する
+      if (label == "rpc") {
+        if (!conn_->SendRpc(1, "9999.0.0/not_exist",
+                            boost::json::object{{"key", "value"}})) {
+          RTC_LOG(LS_ERROR) << "Failed to SendRpc: label=" << label;
+          std::exit(1);
+        }
+        rpc_opened_ = true;
       }
     }
     auto it = opened_.find(label);
@@ -158,6 +209,10 @@ class SoraClient : public std::enable_shared_from_this<SoraClient>,
   std::unique_ptr<boost::asio::steady_timer> timer_;
   std::set<std::string> opened_;
   bool ok_ = false;
+  // rpc ラベルが開いて SendRpc() を送信したかどうか
+  bool rpc_opened_ = false;
+  // SendRpc() のレスポンスを OnRpc() で受信したかどうか
+  bool rpc_received_ = false;
 };
 
 int main(int argc, char* argv[]) {

@@ -202,7 +202,27 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
 
   void Connect();
   void Disconnect();
+
+  // 指定したラベルの DataChannel へデータを送信する
+  //
+  // ユーザー定義ラベル (# で始まるラベル) にのみ送信可能。
+  // 非ユーザー定義ラベル、data_channels に含まれないラベル、
+  // 開いていないラベルへは送信せず false を返す。
   bool SendDataChannel(const std::string& label, const std::string& data);
+
+  // JSON-RPC 2.0 のリクエストを rpc ラベルで送信する。
+  //
+  // 送信するのは {"jsonrpc":"2.0","id":<id>,"method":<method>,"params":<params>} であり、
+  // id が std::nullopt の場合は id を含めない (JSON-RPC 2.0 の Notification になり
+  // OnRpc() コールバックは発生しない)。
+  // params は JSON-RPC 2.0 の params にそのまま使い、std::nullopt の場合は含めない。
+  // params に Object でも Array でもない値を指定した場合は、JSON-RPC 2.0 の
+  // Structured value の要件を満たさないため送信せず false を返す。
+  // rpc ラベルが開いていない場合も送信せず false を返す。
+  // レスポンスは SoraSignalingObserver::OnRpc() に通知される。
+  bool SendRpc(std::optional<uint64_t> id,
+               const std::string& method,
+               const std::optional<boost::json::value>& params);
 
   std::string GetConnectionID() const;
   std::string GetSelectedSignalingURL() const;
@@ -269,6 +289,10 @@ class SoraSignaling : public std::enable_shared_from_this<SoraSignaling>,
 
   webrtc::DataBuffer ConvertToDataBuffer(const std::string& label,
                                          const std::string& input);
+
+  // ラベルの検証を行わずに DataChannel へ送信する SDK 内部用の送信経路。
+  // Sora のプロトコルを使う送信 (signaling / stats / rpc) はここに閉じ込める。
+  bool DoSendDataChannel(const std::string& label, const std::string& input);
 
   void Clear();
 
