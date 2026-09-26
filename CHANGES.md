@@ -91,6 +91,9 @@
   - 専用 worker thread の生成を削除し、`PeerConnectionFactoryDependencies::worker_thread` に network thread を渡す
   - ADM の生成、MediaEngineReference の生成・破棄、オーディオデバイスの設定を network thread 上で実行する
   - @melpon
+- [FIX] E2E テストのポート割り当てが Windows の除外ポート範囲と衝突するのを修正する
+  - 候補ポートが bind 可能かを確認してから払い出し、動的ポート範囲外から探すようにする
+  - @melpon
 - [FIX] Raspberry Pi の V4L2 M2M エンコーダでフレームのペアリングがズレると復帰不能になるのを修正する
   - `V4L2Runner::Enqueue` が `VIDIOC_QBUF` の後にコールバックを登録していたため、デバイスが先に capture バッファを出力すると、以降の全フレームが 1 つズレたままタイムスタンプ不一致で捨てられ続けていた
   - `VIDIOC_QBUF` より先にコールバックを登録し、投入に失敗した場合は登録を取り消すようにする
