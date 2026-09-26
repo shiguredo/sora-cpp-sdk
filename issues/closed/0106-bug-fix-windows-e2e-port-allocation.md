@@ -1,7 +1,7 @@
 # E2E テストのポート割り当てが Windows の除外ポート範囲と衝突するのを修正する
 
 - Created: 2026-09-18
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-09-26
 - Branch: feature/fix-e2e-port-allocation
 - Polished: 2026-09-18
 
@@ -81,3 +81,19 @@ FAILED test_sumomo_basic.py::test_sumomo_sendrecv_pair[AV1] - RuntimeError: Proc
     - 候補ポートが bind 可能かを確認してから払い出し、動的ポート範囲外から探すようにする
     - @<担当者>
   ```
+
+## 解決方法
+
+`e2e-test/conftest.py` の `port_allocator` を、候補ポートを実際に bind して確認する方式に変更する。
+
+- 候補の開始番号を 55000 から 20000 に変更する。Windows / macOS の既定の動的ポート範囲 (49152〜65535) と Linux の既定の ephemeral range (32768〜60999) の外側であり、OS が同じポートを送信元ポートとして使う競合も避けられる
+- `is_port_bindable()` を追加し、`127.0.0.1` への実ソケットでの bind を試す。SO_REUSEADDR は設定しない (Windows では他プロセスが使用中のポートにも bind できてしまい、確認の意味がなくなるため)
+- `iter_available_ports()` を追加し、bind できない候補 (除外ポート範囲、他プロセスが使用中、TIME_WAIT 中) を読み飛ばして昇順に払い出す
+- `free_port` / `free_port2` / `next(port_allocator)` という既存の使い方は変更しない
+
+完了条件のうち以下は満たしていない。
+
+- 使用中ポートの読み飛ばしを検証するテストの追加。テストハーネスが自前で持つ探索ロジックを検証する「テストのためのテスト」になるため、レビューの結果として追加しない判断をした。`.github/workflows/ci.yml` の `test-target` への追加も行っていない
+- Windows runner で候補ポートを除外ポート範囲に登録した状態での確認。除外ポート範囲の登録には管理者権限が必要で、CI を回さないと実施できないため未実施
+
+代わりにローカルで、`127.0.0.1:20000` を実ソケットで占有した状態で払い出しが 20001 を返すことと、そのポートで sumomo の HTTP サーバーが起動することを確認した。さらに `test_sumomo_basic.py::test_sumomo_sendonly_recvonly[VP8]` を実行し、2 つの sumomo が 20000 と 20001 で起動してテストが通ることを確認した。除外ポート範囲に起因する bind 失敗が再発しないかは、`windows_x86_64` の E2E ジョブをしばらく観測して判断する。

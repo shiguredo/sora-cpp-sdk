@@ -1,7 +1,9 @@
 import itertools
 import os
+import socket
 import time
 import uuid
+from collections.abc import Iterator
 from dataclasses import dataclass
 
 import jwt
@@ -10,6 +12,17 @@ from dotenv import load_dotenv
 
 # .env ファイルを読み込む
 load_dotenv()
+
+# ポート番号を探し始める番号。
+#
+# Windows / macOS の既定の動的ポート範囲は 49152〜65535、Linux の既定の
+# ephemeral range は 32768〜60999 である。この内側を候補にすると、OS が送信元
+# ポートとして割り当てたポートや、Hyper-V などが予約した除外ポート範囲
+# (excluded port range) と衝突する。Windows では除外ポート範囲への bind は
+# SO_REUSEADDR を設定していても WSAEACCES (10013) で失敗するため、sumomo の
+# HTTP サーバーが起動できなくなる (Microsoft KB3039044)。
+# どの動的ポート範囲にも含まれない 20000 から昇順に探す。
+PORT_ALLOCATOR_START = 20000
 
 
 @dataclass
@@ -59,18 +72,50 @@ def sora_settings():
     )
 
 
+def is_port_bindable(port: int) -> bool:
+    """127.0.0.1 の指定ポートに実際に bind できるかを確認する
+
+    sumomo は `--http-host 127.0.0.1` で HTTP サーバーを起動するため、確認先も
+    127.0.0.1 に合わせる。
+
+    SO_REUSEADDR は設定しない。設定すると Windows では他プロセスが使用中の
+    ポートにも bind できてしまい、ポートが空いているかを確認する意味がなくなる。
+    """
+    # 実際のソケットで確認する。bind できたら即座に閉じてポートを解放する
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        try:
+            sock.bind(("127.0.0.1", port))
+        except OSError:
+            # 他プロセスが使用中、TIME_WAIT 中、除外ポート範囲のいずれか
+            return False
+    return True
+
+
+def iter_available_ports(start_port: int = PORT_ALLOCATOR_START) -> Iterator[int]:
+    """bind 可能なポート番号を昇順に払い出すイテレーターを返す
+
+    bind できない候補を読み飛ばし、実際に bind できたポートだけを返す。
+    同じイテレーターからは同じポートが二度払い出されないため、1 つの
+    イテレーターをセッション内で共有すれば払い出しは一意になる。
+    """
+    for port in itertools.count(start_port):
+        if is_port_bindable(port):
+            yield port
+
+
 @pytest.fixture(scope="session")
-def port_allocator():
+def port_allocator() -> Iterator[int]:
     """セッション全体で共有されるポート番号アロケーター
 
-    エフェメラルポート開始の 55000 から始まるポート番号を順番に生成します。
+    bind 可能なポート番号を PORT_ALLOCATOR_START から昇順に生成します。
+    除外ポート範囲や他プロセスが使用中のポートは読み飛ばします。
     複数のテストが並列実行されても、各テストに一意のポート番号が割り当てられます。
     """
-    return itertools.count(55000)
+    return iter_available_ports()
 
 
 @pytest.fixture
-def free_port(port_allocator):
+def free_port(port_allocator: Iterator[int]) -> int:
     """利用可能なポート番号を提供するフィクスチャ
 
     各テスト関数で使用すると、自動的に一意のポート番号が割り当てられます。
@@ -79,7 +124,7 @@ def free_port(port_allocator):
 
 
 @pytest.fixture
-def free_port2(port_allocator):
+def free_port2(port_allocator: Iterator[int]) -> int:
     """2 つ目のポート番号を提供するフィクスチャ
 
     同一テスト内で複数の Sumomo プロセスを起動する際に使用する。
