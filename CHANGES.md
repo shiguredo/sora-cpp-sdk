@@ -11,6 +11,15 @@
 
 ## develop
 
+## 2026.2.2
+
+**リリース日**: 2026-09-29
+
+- [FIX] `RTC_LOG` に暗黙変換が必要な文字列を渡すと SIGABRT する問題を修正する
+  - `Websocket::OnClose` が `boost::beast::static_string` をそのまま渡していたため、`absl::string_view` への暗黙変換で作られた一時オブジェクトを libwebrtc のログが破棄後に参照していた
+  - AMF のエンコーダ/デコーダが `amf::amf_string` をそのまま渡していた箇所も同じ問題のため `c_str()` を経由するようにする
+  - @melpon
+
 ## 2026.2.1
 
 **リリース日**: 2026-08-18
