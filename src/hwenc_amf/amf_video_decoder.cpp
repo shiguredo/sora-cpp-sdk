@@ -40,19 +40,23 @@
 #include "../amf_context_impl.h"
 #include "sora/amf_context.h"
 
-#define RETURN_IF_FAILED(res, message)                  \
-  if (res != AMF_OK) {                                  \
-    RTC_LOG(LS_ERROR) << amf::amf_from_unicode_to_utf8( \
-                             amf::AMFFormatResult(res)) \
-                      << message;                       \
-    return res;                                         \
+// amf::amf_from_unicode_to_utf8() の戻り値は amf::amf_string (amf::amf_allocator を持つ
+// std::basic_string) であり、そのまま RTC_LOG に渡すと libwebrtc のログが
+// absl::string_view への暗黙変換で作られた一時オブジェクトを参照する。
+// 一時オブジェクトは operator<< を抜けた時点で破棄されるため、
+// 破棄後に参照してクラッシュする。c_str() で const char* に変換して渡す。
+#define AMF_FORMAT_RESULT_TO_UTF8(res) \
+  amf::amf_from_unicode_to_utf8(amf::AMFFormatResult(res)).c_str()
+
+#define RETURN_IF_FAILED(res, message)                              \
+  if (res != AMF_OK) {                                              \
+    RTC_LOG(LS_ERROR) << AMF_FORMAT_RESULT_TO_UTF8(res) << message; \
+    return res;                                                     \
   }
-#define WEBRTC_RETURN_IF_FAILED(res, message)           \
-  if (res != AMF_OK) {                                  \
-    RTC_LOG(LS_ERROR) << amf::amf_from_unicode_to_utf8( \
-                             amf::AMFFormatResult(res)) \
-                      << message;                       \
-    return WEBRTC_VIDEO_CODEC_ERROR;                    \
+#define WEBRTC_RETURN_IF_FAILED(res, message)                       \
+  if (res != AMF_OK) {                                              \
+    RTC_LOG(LS_ERROR) << AMF_FORMAT_RESULT_TO_UTF8(res) << message; \
+    return WEBRTC_VIDEO_CODEC_ERROR;                                \
   }
 #define TRACE() RTC_LOG(LS_ERROR) << "TRACE: " << __LINE__
 
