@@ -60,10 +60,6 @@
   - 送信できるのは `#` で始まるユーザー定義ラベルだけにし、Sora が管理するラベル (`signaling` / `stats` / `notify` / `push` / `rpc`) と offer に含まれないラベルへの送信は `false` を返すようにする
   - `DataChannel::Send()` の結果を戻り値に反映し、開いていないラベルへの送信も `false` を返すようにする
   - @melpon
-- [FIX] `RTC_LOG` に暗黙変換が必要な文字列を渡すと SIGABRT する問題を修正する
-  - `Websocket::OnClose` が `boost::beast::static_string` をそのまま渡していたため、`absl::string_view` への暗黙変換で作られた一時オブジェクトを libwebrtc のログが破棄後に参照していた
-  - AMF のエンコーダ/デコーダが `amf::amf_string` をそのまま渡していた箇所も同じ問題のため `c_str()` を経由するようにする
-  - @melpon
 
 ### misc
 
@@ -103,6 +99,15 @@
   - `VIDIOC_QBUF` より先にコールバックを登録し、投入に失敗した場合は登録を取り消すようにする
   - capture バッファのタイムスタンプと投入した output バッファのタイムスタンプを照合し、ズレを検知したら登録を破棄して復帰できるようにする
   - 出力バッファの投入に失敗した場合は、確保済みのバッファを再利用可能に戻す
+  - @melpon
+
+## 2026.2.2
+
+**リリース日**: 2026-09-29
+
+- [FIX] `RTC_LOG` に暗黙変換が必要な文字列を渡すと SIGABRT する問題を修正する
+  - `Websocket::OnClose` が `boost::beast::static_string` をそのまま渡していたため、`absl::string_view` への暗黙変換で作られた一時オブジェクトを libwebrtc のログが破棄後に参照していた
+  - AMF のエンコーダ/デコーダが `amf::amf_string` をそのまま渡していた箇所も同じ問題のため `c_str()` を経由するようにする
   - @melpon
 
 ## 2026.2.1
