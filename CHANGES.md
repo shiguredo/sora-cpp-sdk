@@ -34,6 +34,7 @@
   - レスポンスは `SoraSignalingObserver::OnRpc()` に通知される
   - @melpon
 - [UPDATE] libwebrtc のバージョンを m155.8059.1.1 に上げる
+  - Chromium の clang が Android 向けの compiler-rt builtins を同梱しなくなったため、NDK が持つ builtins を Chromium clang にコピーするようにする
   - @voluntas
 - [UPDATE] libwebrtc のバージョンを m154.8037.1.2 に上げる
   - `api:field_trials` が含まれるようになり、`webrtc::FieldTrials::Create` を利用できるようになった
