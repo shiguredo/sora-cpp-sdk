@@ -33,6 +33,9 @@
   - JSON-RPC 2.0 のリクエストを `rpc` ラベルで送信する。`id` と `params` は省略でき、`params` に Object でも Array でもない値を指定した場合は送信しない
   - レスポンスは `SoraSignalingObserver::OnRpc()` に通知される
   - @melpon
+- [UPDATE] libwebrtc のバージョンを m155.8059.1.1 に上げる
+  - Chromium の clang が Android 向けの compiler-rt builtins を同梱しなくなったため、NDK が持つ builtins を Chromium clang にコピーするようにする
+  - @voluntas
 - [UPDATE] libwebrtc のバージョンを m154.8037.1.2 に上げる
   - `api:field_trials` が含まれるようになり、`webrtc::FieldTrials::Create` を利用できるようになった
   - @melpon
@@ -63,6 +66,8 @@
 
 ### misc
 
+- [UPDATE] Examples の WEBRTC_BUILD_VERSION を m155.8059.1.1 にあげる
+  - @voluntas
 - [UPDATE] fake_video_capturer の `M_PI` を `std::numbers::pi` に置き換える
   - `M_PI` は C の標準ではなく Windows では `_USE_MATH_DEFINES` の定義が必要なため、C++20 の `std::numbers::pi` を利用する
   - @melpon

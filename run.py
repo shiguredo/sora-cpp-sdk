@@ -21,6 +21,7 @@ from buildbase import (
     cmake_path,
     cmd,
     cmdcap,
+    copyfile_if_different,
     enum_all_files,
     fix_clang_version,
     get_clang_version,
@@ -55,6 +56,33 @@ def read_version(version_path):
     """VERSION ファイルからバージョンを読み込む"""
     with open(version_path, "r") as f:
         return f.read().strip()
+
+
+def install_android_clang_builtins(webrtc_info: WebrtcInfo, install_dir: str):
+    """Chromium の clang に不足している Android 向け compiler-rt builtins を NDK から補う
+
+    Chromium の clang 24 は Android 向けの libclang_rt.builtins-*-android.a を同梱しなくなった。
+    このままでは Android 向けのリンク時に builtins が見つからず失敗するため、
+    NDK が持つ builtins を Chromium clang が探す lib/linux ディレクトリにコピーする。
+    """
+    ndk_dir = os.path.join(install_dir, "android-ndk")
+    ndk_clang_dir = os.path.join(ndk_dir, "toolchains", "llvm", "prebuilt", "linux-x86_64")
+    ndk_clang_version = fix_clang_version(
+        ndk_clang_dir, get_clang_version(os.path.join(ndk_clang_dir, "bin", "clang++"))
+    )
+    ndk_lib_dir = os.path.join(ndk_clang_dir, "lib", "clang", ndk_clang_version, "lib", "linux")
+
+    clang_version = fix_clang_version(
+        webrtc_info.clang_dir,
+        get_clang_version(os.path.join(webrtc_info.clang_dir, "bin", "clang++")),
+    )
+    clang_lib_dir = os.path.join(
+        webrtc_info.clang_dir, "lib", "clang", clang_version, "lib", "linux"
+    )
+    mkdir_p(clang_lib_dir)
+
+    for src in sorted(glob.glob(os.path.join(ndk_lib_dir, "libclang_rt.builtins-*-android.a"))):
+        copyfile_if_different(src, os.path.join(clang_lib_dir, os.path.basename(src)))
 
 
 def get_common_cmake_args(
@@ -315,6 +343,10 @@ def install_deps(
                 "buildtools_commit": buildtools_commit,
             }
             install_llvm(**install_llvm_args)
+
+        # Android の場合、Chromium の clang に不足している builtins を NDK から補う
+        if platform.target.os == "android":
+            install_android_clang_builtins(webrtc_info, install_dir)
 
         # Boost
         install_boost_args = {
