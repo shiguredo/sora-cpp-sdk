@@ -621,9 +621,14 @@ void Websocket::DoClose(close_callback_t on_close, int timeout_seconds) {
 
 void Websocket::OnClose(close_callback_t on_close,
                         boost::system::error_code ec) {
+  // reason().reason を operator<<() に渡してはいけない。代わりに reason().reason.c_str() を利用すること。
+  // close_reason::reason は boost::beast::static_string であり、そのまま RTC_LOG に渡すと
+  // operator<<() が absl::string_view への暗黙変換で作られた一時オブジェクトを参照する。
+  // 一時オブジェクトは operator<< を抜けた時点で破棄されるため、
+  // 破棄後に RTC_LOG() が参照してクラッシュする。
   RTC_LOG(LS_INFO) << "Websocket::OnClose this=" << (void*)this
                    << " ec=" << ec.message() << " code=" << reason().code
-                   << " reason=" << reason().reason;
+                   << " reason=" << reason().reason.c_str();
   close_timeout_timer_.cancel();
   on_close(ec);
 }
