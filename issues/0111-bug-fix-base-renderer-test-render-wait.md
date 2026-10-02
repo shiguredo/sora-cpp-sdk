@@ -3,7 +3,7 @@
 - Created: 2026-10-02
 - Completed: {YYYY-MM-DD}
 - Branch: feature/fix-base-renderer-test-render-wait
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-10-02
 
 ## 目的
 
