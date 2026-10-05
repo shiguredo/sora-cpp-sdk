@@ -3,7 +3,7 @@
 - Created: 2026-10-05
 - Completed: {YYYY-MM-DD}
 - Branch: feature/fix-intel-vpl-av1-e2e-startup-failure
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-10-05
 
 ## 目的
 
