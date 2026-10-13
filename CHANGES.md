@@ -65,6 +65,10 @@
   - 送信できるのは `#` で始まるユーザー定義ラベルだけにし、Sora が管理するラベル (`signaling` / `stats` / `notify` / `push` / `rpc`) と offer に含まれないラベルへの送信は `false` を返すようにする
   - `DataChannel::Send()` の結果を戻り値に反映し、開いていないラベルへの送信も `false` を返すようにする
   - @melpon
+- [FIX] 接続の終了処理の後に WebSocket の read が成功して完了すると null の `ws_` を参照してクラッシュする問題を修正する
+  - 接続の終了処理で `ws_` を解放した後も保留中の read は成功として完了しうるため、`SoraSignaling::OnRead` と `SoraSignaling::DoRead` で read を再開しないようにする
+  - `State::Closing` では切断の完了を read のエラーで検知するため read を続ける
+  - @voluntas
 
 ### misc
 

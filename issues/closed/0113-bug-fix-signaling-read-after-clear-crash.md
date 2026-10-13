@@ -1,7 +1,7 @@
 # Clear() 後の WebSocket read 完了で null の ws_ を参照してクラッシュする
 
 - Created: 2026-10-13
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-10-14
 - Branch: feature/fix-signaling-read-after-clear-crash
 - Polished: 2026-10-13
 
@@ -73,7 +73,7 @@ Websocket::OnRead
 - `State::Closing` で read が成功した場合は、メッセージを処理せず `DoRead()` を継続し、次の close またはエラーを待つ。既存のエラー分岐から `on_ws_close_` を呼ぶフローを維持する
 - `SoraSignaling::DoRead()` は `ws_` を参照する前に、`ws_ != nullptr` かつ `state_` が `Connected` または `Closing` であることを確認し、それ以外は戻す
 - `Clear()` により `Closed` になった接続では、成功 read の完了順序にかかわらず read を再開しないよう、`OnRead` と `DoRead` の両方で防御する
-- Python 経由の検証では、修正済み C++ SDK を組み込んだ `sora-python-sdk` の wheel をビルドし、その wheel を実際に使用する。既存の配布 wheel のままでは C++ SDK の修正を検証できない
+- この issue の検証は C++ 層で行う。`sora-python-sdk` は同じ `SoraSignaling` を組み込むため、修正の効果は同じ経路で確認できる。Python 経由 (修正済み C++ SDK を組み込んだ wheel。既存の配布 wheel では C++ SDK の修正を検証できない) の確認は、修正版 SDK のリリース後にクライアント側の関連 issue で行う
 
 ## 完了条件
 
@@ -89,4 +89,27 @@ Websocket::OnRead
 
 ## 解決方法
 
-（実装時に記入）
+`src/sora_signaling.cpp` の `SoraSignaling::OnRead` と `SoraSignaling::DoRead` で、接続の終了処理の後に read を再開しないようにした。
+
+- `SoraSignaling::OnRead` の成功分岐で、`state_ == State::Closed` または `ws_ == nullptr` なら `DoRead()` を呼ばずに戻す
+- `SoraSignaling::DoRead` は、`ws_ == nullptr` または `state_` が `State::Connected` / `State::Closing` 以外なら read を開始しない
+- `State::Closing` で read を続けるのは、切断の完了を read のエラーで検知して `on_ws_close_` を呼ぶため
+- `CHANGES.md` の `## develop` に [FIX] エントリを追加した
+
+### 検証
+
+検証には `SoraSignaling` を使う一時的なクライアント (使い捨て。`OnDisconnect` で `io_context` を止めない点だけが `test/hello.cpp` と異なる) を使った。`test/hello.cpp` などのサンプルは `OnDisconnect` で `io_context` を止めるため、`Clear()` の後に read が完了する順序を観測できない。
+
+環境は macOS arm64 (26.6.2) で、Sora は `sora` リポジトリ (f4c92425) の e2e テスト用リリース (2027.1.0-canary.3) を別ポート・別ノード名で起動した。sora-cpp-sdk は 206ffec3 にこの修正を適用した状態を使った。
+
+`Clear()` の後に保留中の read を成功として完了させる順序は、Sora のノードのプロセスを SIGSTOP してクライアントの `PeerConnectionState::kFailed` から `Clear()` を実行させ、SIGCONT で復帰させて次の `{"type":"ping"}` を受信させることで作った。SIGSTOP は「`kFailed` を発生させ、成功 read の完了を `Clear()` の後ろに遅らせる」ための手段である。
+
+- 修正前: 同じ手順で SIGSEGV (exit 139) になった。ログは `Failed to Disconnect: message=PeerConnectionState::kFailed` (この通知の post ラムダで `Clear()` が実行される) の後に `Websocket::OnRead this=... ec=Undefined error: 0` で終わっており、`Clear()` の後で read が成功として完了した時点で落ちている
+- 修正後: 同じ手順で落ちない。同じ 2 つのログに続いて `Websocket::~Websocket` が出ており、read の完了後に `Websocket` が破棄される (ソケットが閉じられる) ことまで確認できる
+- 修正後のコードは、`Clear()` の直後と `OnRead` の成功分岐に一時的なログを入れた状態と、それを削除した状態の両方で同じ手順を実行し、どちらも落ちないことを確認した
+- 通常の `Disconnect()` では `OnDisconnect` が `CLOSE_SUCCEEDED` で 1 回だけ通知されることを、実 Sora に対して sumomo を WebSocket シグナリングで接続し、SIGTERM で切断して確認した。`State::Closing` 中に成功 read が完了しても read が継続することも、Sora ノードを一時停止させて確認した
+- 既存のテスト (test/ の `base_renderer` / `sora_client_context` / `video_factory_env` / `video_factory_data_race` / `audio_adaptive_ptime` / `audio_device` / `e2e` と、e2e-test/ の `test_sumomo_sendonly_recvonly[VP8]` / `test_sumomo_data_channel_signaling`) が通ることを確認した。ローカル (macOS arm64) で実行した E2E はこの 2 本で、CI が実行する残りの E2E テストは CI で確認する
+
+タイミング依存のため決定的な再現テストは追加していない (モック・スタブ禁止)。回帰確認は既存の E2E テストで行う。`sora` リポジトリの `e2e-test/test_cluster_hung_node_recovery.py` はこのクラッシュのために skip されているので、この修正を取り込んだ SDK で skip を外して実行するのが本来の回帰確認になる。
+
+Python 経由の検証は行っていない。この issue の検証は C++ 層で行い、`sora-python-sdk` は同じ `SoraSignaling` を組み込むため修正の効果は同じ経路で確認できる。修正済み C++ SDK を組み込んだ wheel での確認は、修正版 SDK のリリース後にクライアント側の関連 issue で行う。
