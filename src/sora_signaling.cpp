@@ -332,6 +332,16 @@ void SoraSignaling::OnRedirect(boost::system::error_code ec,
 }
 
 void SoraSignaling::DoRead() {
+  // Clear() により ws_ が解放された後に read を再開すると、null の ws_ を参照してしまう。
+  // DoRead() で read を再開するのは、State::Connected と、切断の完了を read のエラーで
+  // 検知する State::Closing だけにする。ws_ の null 検査は、状態と ws_ の対応が
+  // 崩れたときの保険
+  if (ws_ == nullptr ||
+      (state_ != State::Connected && state_ != State::Closing)) {
+    return;
+  }
+  // ws を捕捉して、read が完了するまで Websocket を破棄しないようにする
+  // (Clear() で ws_ を解放した後も保留中の read は成功として完了しうる)
   ws_->Read([self = shared_from_this(), ws = ws_](boost::system::error_code ec,
                                                   std::size_t bytes_transferred,
                                                   std::string text) {
@@ -968,6 +978,12 @@ void SoraSignaling::OnRead(boost::system::error_code ec,
   }
 
   if (state_ != State::Connected) {
+    if (state_ == State::Closed || ws_ == nullptr) {
+      // 接続の終了処理で ws_ が解放されて state_ が Closed になっているため read を再開しない。
+      // ws_ の null 検査は、状態と ws_ の対応が崩れたときの保険 (DoRead() 側は Connected / Closing
+      // 以外を弾く条件でも防御する)
+      return;
+    }
     DoRead();
     return;
   }
