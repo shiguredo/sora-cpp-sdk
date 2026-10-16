@@ -69,6 +69,10 @@
   - 接続の終了処理で `ws_` を解放した後も保留中の read は成功として完了しうるため、`SoraSignaling::OnRead` と `SoraSignaling::DoRead` で read を再開しないようにする
   - `State::Closing` では切断の完了を read のエラーで検知するため read を続ける
   - @voluntas
+- [FIX] Raspberry Pi OS のビルドが libcamera の `std::span` で失敗するのを修正する
+  - libcamera 0.7.2+rpt20261009 で独自の C++11 版 `libcamera::Span` が削除され `std::span` を直接使うようになり、C++17 ではコンパイルできなくなっていた
+  - `camerac` ターゲットの C++ 標準を C++20 に上げる
+  - @melpon
 
 ### misc
 
