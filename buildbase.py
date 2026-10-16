@@ -30,11 +30,13 @@ import logging
 import multiprocessing
 import os
 import platform
+import re
 import shlex
 import shutil
 import stat
 import subprocess
 import tarfile
+import time
 import urllib.parse
 import zipfile
 from pathlib import Path
@@ -374,8 +376,7 @@ def extract(file: str, output_dir: str, output_dirname: str, filetype: Optional[
                 rm_rf(path2)
                 t.extractall(output_dir)
                 if path != path2:
-                    logging.debug(f"mv {path2} {path}")
-                    os.replace(path2, path)
+                    _replace_dir(path2, path)
     elif filetype == "zip" or file.endswith(".zip"):
         rm_rf(path)
         with zipfile.ZipFile(file) as z:
@@ -391,10 +392,26 @@ def extract(file: str, output_dir: str, output_dirname: str, filetype: Optional[
                 # z.extractall(output_dir)
                 _extractzip(z, output_dir)
                 if path != path2:
-                    logging.debug(f"mv {path2} {path}")
-                    os.replace(path2, path)
+                    _replace_dir(path2, path)
     else:
         raise Exception("file should end with .tar.gz or .zip")
+
+
+def _replace_dir(path2: str, path: str) -> None:
+    """展開直後のディレクトリを移動する
+
+    展開直後のファイルをウイルス対策ソフトなどが掴んでいることがあるためリトライする
+    """
+    logging.debug(f"mv {path2} {path}")
+    for i in range(30):
+        try:
+            os.replace(path2, path)
+            return
+        except PermissionError:
+            if i == 29:
+                raise
+            logging.warning(f"retry mv {path2} {path}")
+            time.sleep(5)
 
 
 def clone_and_checkout(url, version, dir, fetch, fetch_force):
@@ -552,15 +569,6 @@ def install_file_ifexists(src: str, dst: str):
     install_file(src, dst)
 
 
-def replace_vcproj_static_runtime(project_file: str):
-    # なぜか MSVC_STATIC_RUNTIME が効かずに DLL ランタイムを使ってしまうので
-    # 生成されたプロジェクトに対して静的ランタイムを使うように変更する
-    s = open(project_file, "r", encoding="utf-8").read()
-    s = s.replace("MultiThreadedDLL", "MultiThreaded")
-    s = s.replace("MultiThreadedDebugDLL", "MultiThreadedDebug")
-    open(project_file, "w", encoding="utf-8").write(s)
-
-
 @versioned
 def install_webrtc(version, source_dir, install_dir, platform: str):
     win = platform.startswith("windows_")
@@ -673,6 +681,121 @@ def get_webrtc_info(
                 webrtc_build_source_dir, "src", "third_party", "libc++abi", "src"
             ),
         )
+
+
+def get_vsdevcmd_arch(arch: str) -> str:
+    """VsDevCmd.bat に渡すアーキテクチャ名を返す
+
+    引数:
+        arch: x86_64 または arm64
+
+    戻り値:
+        VsDevCmd.bat の -arch / -host_arch に渡す値
+    """
+    if arch == "x86_64":
+        return "x64"
+    elif arch == "arm64":
+        return "arm64"
+    raise Exception(f"Unsupported architecture: {arch}")
+
+
+def setup_visual_studio_env(install_dir: str, target_arch: str, host_arch: str):
+    # clang-cl はコンパイラとしては Visual Studio を利用しないが、MSVC のヘッダ、Windows SDK、
+    # rc.exe / mt.exe / llvm-lib.exe は Visual Studio の環境から利用するため、
+    # VsDevCmd.bat が設定する環境変数を取り込む。
+    # VsDevCmd.bat に -arch と -host_arch を渡して対象とホストのアーキテクチャを明示する
+    vswhere = os.path.join(install_dir, "vswhere", "vswhere.exe")
+    vs_install_dir = cmdcap(
+        [
+            vswhere,
+            "-latest",
+            "-products",
+            "*",
+            "-requires",
+            "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+            "-property",
+            "installationPath",
+        ]
+    )
+    if len(vs_install_dir) == 0:
+        raise Exception("Visual Studio not found")
+
+    vs_dev_cmd = os.path.join(vs_install_dir, "Common7", "Tools", "VsDevCmd.bat")
+    stdout = cmdcap(
+        [
+            "cmd",
+            "/c",
+            vs_dev_cmd,
+            f"-arch={get_vsdevcmd_arch(target_arch)}",
+            f"-host_arch={get_vsdevcmd_arch(host_arch)}",
+            "&&",
+            "set",
+        ]
+    )
+    for m in re.finditer(r"^([^=]+)=(.+)$", stdout, re.MULTILINE):
+        os.environ[m.group(1)] = m.group(2)
+
+    if "INCLUDE" not in os.environ:
+        raise Exception(f"failed to setup Visual Studio environment: {vs_dev_cmd}")
+
+
+def get_windows_clang_cmake_args(webrtc_info: WebrtcInfo, install_dir: str) -> List[str]:
+    """Windows で libwebrtc と同じコンパイラとジェネレーターを指定する CMake 引数を返す
+
+    返す引数をそのまま CMake に渡すと、libwebrtc と同じ clang-cl と Ninja が使われる。
+    リンカは CMake が clang-cl に合わせて選択するため、引数には含まれない。
+
+    引数:
+        webrtc_info: libwebrtc が利用するのと同じリビジョンの clang-cl の場所を含む情報
+        install_dir: Ninja を配置したディレクトリ
+
+    戻り値:
+        CMake に渡す引数のリスト
+
+    環境変数:
+        Visual Studio の環境変数が設定されている必要がある。
+    """
+    clang_cl = os.path.join(webrtc_info.clang_dir, "bin", "clang-cl.exe")
+    ninja = os.path.join(install_dir, "ninja", "ninja.exe")
+    return [
+        f"-DCMAKE_C_COMPILER={cmake_path(clang_cl)}",
+        f"-DCMAKE_CXX_COMPILER={cmake_path(clang_cl)}",
+        f"-DCMAKE_MAKE_PROGRAM={cmake_path(ninja)}",
+        "-G",
+        "Ninja",
+    ]
+
+
+def install_windows_build_tools(
+    source_dir: str, install_dir: str, deps: Dict[str, str], target_arch: str, host_arch: str
+):
+    """Windows のビルドに必要な Ninja と vswhere をインストールし、Visual Studio の環境変数を取り込む
+
+    引数:
+        source_dir: ダウンロードしたファイルを置くディレクトリ
+        install_dir: インストール先のディレクトリ
+        deps: DEPS ファイルの内容
+        target_arch: ターゲットのアーキテクチャ (x86_64 または arm64)
+        host_arch: ビルドするマシンのアーキテクチャ (x86_64 または arm64)
+
+    環境変数:
+        Visual Studio の環境変数を os.environ に設定する
+    """
+    # ジェネレーターに Ninja を利用する
+    install_ninja(
+        version=deps["NINJA_VERSION"],
+        version_file=os.path.join(install_dir, "ninja.version"),
+        source_dir=source_dir,
+        install_dir=install_dir,
+        platform="win",
+    )
+    # Visual Studio を探すために vswhere を利用する
+    install_vswhere(
+        version=deps["VSWHERE_VERSION"],
+        version_file=os.path.join(install_dir, "vswhere.version"),
+        install_dir=install_dir,
+    )
+    setup_visual_studio_env(install_dir, target_arch, host_arch)
 
 
 @versioned
@@ -1407,6 +1530,8 @@ def install_sdl3(
         if platform == "windows":
             cmake_args += [
                 f"-DCMAKE_MSVC_RUNTIME_LIBRARY={'MultiThreaded' if not debug else 'MultiThreadedDebug'}",
+                # CMP0091 が NEW でないと CMAKE_MSVC_RUNTIME_LIBRARY が利用されない
+                "-DCMAKE_POLICY_DEFAULT_CMP0091=NEW",
                 "-DSDL_AUDIO=OFF",
                 "-DSDL_JOYSTICK=OFF",
                 "-DSDL_HAPTIC=OFF",
@@ -1552,15 +1677,14 @@ def install_vpl(version, configuration, source_dir, build_dir, install_dir, cmak
                 "-DBUILD_PREVIEW=OFF",
                 "-DINSTALL_EXAMPLE_CODE=OFF",
                 "-DBUILD_TOOLS_ONEVPL_EXPERIMENTAL=OFF",
-                "-DUSE_MSVC_STATIC_RUNTIME=ON",
+                # 静的 CRT を利用する (Debug ではデバッグ版を利用する)
+                "-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded$<$<CONFIG:Debug>:Debug>",
+                # CMP0091 が NEW でないと CMAKE_MSVC_RUNTIME_LIBRARY が利用されない
+                "-DCMAKE_POLICY_DEFAULT_CMP0091=NEW",
                 vpl_source_dir,
                 *cmake_args,
             ]
         )
-        # 生成されたプロジェクトに対して静的ランタイムを使うように変更する
-        vpl_path = os.path.join("libvpl", "VPL.vcxproj")
-        if os.path.exists(vpl_path):
-            replace_vcproj_static_runtime(vpl_path)
 
         cmd(
             ["cmake", "--build", ".", f"-j{multiprocessing.cpu_count()}", "--config", configuration]
@@ -1643,10 +1767,6 @@ def _build_blend2d(configuration, source_dir, build_dir, install_dir, cmake_args
                 *cmake_args,
             ]
         )
-        # 生成されたプロジェクトに対して静的ランタイムを使うように変更する
-        project_path = os.path.join(build_dir, "blend2d", "blend2d.vcxproj")
-        if os.path.exists(project_path):
-            replace_vcproj_static_runtime(project_path)
 
         cmd(
             [
@@ -1731,13 +1851,6 @@ def install_catch2(version, source_dir, build_dir, install_dir, configuration, c
                 *cmake_args,
             ]
         )
-        # 生成されたプロジェクトに対して静的ランタイムを使うように変更する
-        project_path = os.path.join("src", "Catch2.vcxproj")
-        if os.path.exists(project_path):
-            replace_vcproj_static_runtime(project_path)
-        project_path = os.path.join("src", "Catch2WithMain.vcxproj")
-        if os.path.exists(project_path):
-            replace_vcproj_static_runtime(project_path)
         cmd(
             ["cmake", "--build", ".", "--config", configuration, f"-j{multiprocessing.cpu_count()}"]
         )
@@ -2080,6 +2193,17 @@ def install_amf(version, install_dir):
     git_clone_shallow(
         "https://github.com/GPUOpen-LibrariesAndSDKs/AMF.git", version, amf_install_dir
     )
+    # AMFSTL.h は MSVC 以外では <memory> を、MSVC では MSVC STL の <xmemory> を取り込む。
+    # libc++ を利用する場合、MSVC STL のヘッダーを取り込むと std 名前空間の宣言が衝突するため <memory> に置き換える
+    amf_stl_h = os.path.join(amf_install_dir, "amf", "public", "common", "AMFSTL.h")
+    with open(amf_stl_h, encoding="utf-8") as f:
+        amf_stl_h_content = f.read()
+    amf_stl_h_content = amf_stl_h_content.replace(
+        "#include <xmemory>  //default stl allocator",
+        "#include <memory>  //default stl allocator",
+    )
+    with open(amf_stl_h, "w", encoding="utf-8", newline="") as f:
+        f.write(amf_stl_h_content)
 
 
 @versioned
