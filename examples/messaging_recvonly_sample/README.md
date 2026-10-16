@@ -38,8 +38,10 @@ cd sora-cpp-sdk/examples
 以下のツールを準備してください。
 
 - [Visual Studio 2022](https://visualstudio.microsoft.com/ja/downloads/)
-  - C++ をビルドするためのコンポーネントを入れてください。
+  - clang-cl が MSVC のヘッダー、Windows SDK、Visual Studio 同梱の LLVM のツールを使うため、C++ をビルドするためのコンポーネントを入れてください。
 - Python 3.10.5
+
+ビルドには libwebrtc が利用するのと同じリビジョンの clang-cl と libc++ を使います。Visual Studio のコンパイラ (cl.exe) は使いません。Ninja はビルド時に自動でダウンロードされるため、別途インストールする必要はありません。
 
 ##### ビルド
 
@@ -47,10 +49,10 @@ cd sora-cpp-sdk/examples
 > python3 run.py build windows_x86_64
 ```
 
-成功した場合、`_build\windows_x86_64\release\messaging_recvonly_sample\Release` に `messaging_recvonly_sample.exe` が作成されます。
+成功した場合、`_build\windows_x86_64\release\messaging_recvonly_sample` に `messaging_recvonly_sample.exe` が作成されます。
 
 ```
-\_BUILD\WINDOWS_X86_64\RELEASE\MESSAGING_RECVONLY_SAMPLE\RELEASE
+\_BUILD\WINDOWS_X86_64\RELEASE\MESSAGING_RECVONLY_SAMPLE
     messaging_recvonly_sample.exe
 ```
 
