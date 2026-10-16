@@ -154,7 +154,7 @@
             "name": "Windows Release",
             "includePath": [
                 "${workspaceFolder}/_install/windows_x86_64/release/boost/include",
-                "${workspaceFolder}/_install/windows_x86_64/release/cuda/nvcc/include",
+                "${workspaceFolder}/_install/windows_x86_64/release/cuda/include",
                 "${workspaceFolder}/_install/windows_x86_64/release/vpl/include",
                 "${workspaceFolder}/_install/windows_x86_64/release/amf/amf",
                 "${workspaceFolder}/_install/windows_x86_64/release/webrtc/include",
@@ -162,6 +162,7 @@
                 "${workspaceFolder}/_install/windows_x86_64/release/webrtc/include/third_party/boringssl/src/include",
                 "${workspaceFolder}/_install/windows_x86_64/release/webrtc/include/third_party/libyuv/include",
                 "${workspaceFolder}/_install/windows_x86_64/release/webrtc/include/third_party/zlib",
+                "${workspaceFolder}/_install/windows_x86_64/release/llvm/libcxx/include",
                 "${workspaceFolder}/_install/windows_x86_64/release/blend2d/include",
                 "${workspaceFolder}/_build/windows_x86_64/release/sora",
                 "${workspaceFolder}/third_party/NvCodec/include",
@@ -178,7 +179,7 @@
             ],
             "cStandard": "gnu17",
             "cppStandard": "gnu++17",
-            "intelliSenseMode": "msvc-x64"
+            "intelliSenseMode": "windows-clang-x64"
         },
         {
             "name": "Windows Debug with WebRTC Source",
@@ -204,7 +205,7 @@
             ],
             "cStandard": "gnu17",
             "cppStandard": "gnu++17",
-            "intelliSenseMode": "msvc-x64"
+            "intelliSenseMode": "windows-clang-x64"
         }
     ],
     "version": 4

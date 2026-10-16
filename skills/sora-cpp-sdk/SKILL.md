@@ -74,8 +74,15 @@ target_link_libraries(myapp PRIVATE Sora::sora)
 
 プラットフォーム別の必須設定:
 
-- **非 Windows**: libwebrtc 同梱の libc++ を使う。`-nostdinc++ -isystem${LIBCXX_INCLUDE_DIR}` を指定する
-- **Windows**: 静的ランタイム `MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"` と `/utf-8 /bigobj` を指定する
+- **非 Windows**: libwebrtc が利用するのと同じリビジョンの libc++ を使う。`-nostdinc++ -isystem${LIBCXX_INCLUDE_DIR}` を指定する
+- **Windows**: libwebrtc が利用するのと同じリビジョンの clang-cl と libc++ を使う。MSVC (cl.exe) は使わない
+  - Visual Studio のジェネレーターは `CMAKE_CXX_COMPILER` を無視するため、ジェネレーターに Ninja を指定する (`-G Ninja`)。`CMAKE_MAKE_PROGRAM` には Ninja の実行ファイル (`_install/<platform>/<config>/ninja/ninja.exe`) を明示する
+  - `CMAKE_C_COMPILER` と `CMAKE_CXX_COMPILER` に libwebrtc が利用するのと同じリビジョンの `clang-cl.exe` を指定する。リンカは CMake が clang-cl に合わせて選択するため指定しない。この clang 一式は libwebrtc のビルドツリーに含まれるものを使う。prebuilt の libwebrtc を使う場合は `_install/<platform>/<config>/llvm/clang/bin`、ローカルビルドの libwebrtc を使う場合は `<local-webrtc-build-dir>/_source/<platform>/webrtc/src/third_party/llvm-build/Release+Asserts/bin` にある
+  - Visual Studio の環境変数 (`INCLUDE` / `LIB`) を取り込んでおく。MSVC のヘッダと Windows SDK、`rc.exe` / `mt.exe` / `llvm-lib.exe` のために必要で、コンパイラとしては cl.exe を使わない
+  - ジェネレーターとコンパイラの指定の実例は `examples/sumomo/run.py` の Windows 分岐 (`get_windows_clang_cmake_args(webrtc_info, install_dir)`) で、実装は `buildbase.py` の `get_windows_clang_cmake_args()` にある
+  - clang ドライバ向けのオプションは `/clang:` を付けて渡すため、`/clang:-nostdinc++` と `/I${LIBCXX_INCLUDE_DIR}` を指定する
+  - 静的ランタイム `MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"` と `/utf-8 /bigobj /EHsc` を指定する
+  - libwebrtc と同じ値にして挙動を揃えるため、`_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE` と `_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS` (シンボルに `__declspec(dllimport)` を付けない指定) を指定する
 - **Linux**: `BUILD_RPATH "$ORIGIN"` を推奨
 
 依存の取得からビルドまでの流れは `examples/sumomo/run.py` を参考にする。サンプル自体は `python3 examples/sumomo/run.py build <target>` でビルドできる (target は `macos_arm64` / `ubuntu-24.04_x86_64` / `windows_x86_64` など)。ローカルビルドの SDK を使う場合は `--local-sora-cpp-sdk-dir` を指定する。

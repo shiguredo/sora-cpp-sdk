@@ -8,13 +8,12 @@
             "name": "[hello][debug] Windows",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}\\_build\\windows_x86_64\\debug\\test\\Debug\\hello.exe",
+            "program": "${workspaceFolder}\\_build\\windows_x86_64\\debug\\test\\hello.exe",
             "args": ["${workspaceFolder}\\test\\.testparam.json"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "console": "externalTerminal",
-            //"preLaunchTask": "C/C++: cl.exe アクティブなファイルのビルド"
             "sourceFileMap": {
                 ".\\..\\..\\..\\..\\_source\\windows_x86_64\\webrtc\\src": "D:\\dev\\webrtc-build\\_source\\windows_x86_64\\webrtc\\src",
                 "../../../../_source/windows_x86_64/webrtc/src": "D:\\dev\\webrtc-build\\_source\\windows_x86_64\\webrtc\\src",
@@ -24,7 +23,7 @@
             "name": "[sumomo][debug] Windows",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}\\examples\\_build\\windows_x86_64\\debug\\sumomo\\Debug\\sumomo.exe",
+            "program": "${workspaceFolder}\\examples\\_build\\windows_x86_64\\debug\\sumomo\\sumomo.exe",
             "args": [
                 "--signaling-url=wss://example.com/signaling",
                 "--channel-id=sora",
@@ -36,7 +35,6 @@
             "cwd": "${workspaceFolder}",
             "environment": [],
             "console": "externalTerminal",
-            //"preLaunchTask": "C/C++: cl.exe アクティブなファイルのビルド"
             "sourceFileMap": {
                 ".\\..\\..\\..\\..\\_source\\windows_x86_64\\webrtc\\src": "D:\\dev\\webrtc-build\\_source\\windows_x86_64\\webrtc\\src",
                 "../../../../_source/windows_x86_64/webrtc/src": "D:\\dev\\webrtc-build\\_source\\windows_x86_64\\webrtc\\src",
@@ -46,25 +44,23 @@
             "name": "[hello] Windows RelWithDebInfo ビルドのデバッグ",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}\\_build\\windows_x86_64\\release\\test\\RelWithDebInfo\\hello.exe",
+            "program": "${workspaceFolder}\\_build\\windows_x86_64\\release\\test\\hello.exe",
             "args": ["${workspaceFolder}\\test\\.testparam.json"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "console": "externalTerminal",
-            //"preLaunchTask": "C/C++: cl.exe アクティブなファイルのビルド"
         },
         {
             "name": "[connect_disconnect] Windows Debug ビルドのデバッグ",
             "type": "cppvsdbg",
             "request": "launch",
-            "program": "${workspaceFolder}\\_build\\windows_x86_64\\debug\\test\\Debug\\connect_disconnect.exe",
+            "program": "${workspaceFolder}\\_build\\windows_x86_64\\debug\\test\\connect_disconnect.exe",
             "args": ["${workspaceFolder}\\test\\.testparam.json"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "console": "externalTerminal",
-            //"preLaunchTask": "C/C++: cl.exe アクティブなファイルのビルド"
         },
     ]
 }
