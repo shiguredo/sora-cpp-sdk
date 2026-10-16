@@ -30,21 +30,20 @@ hooks = [
     language = "system",
     pass_filenames = false,
     types_or = ["c", "c++", "objective-c", "objective-c++"]
-  },
-  # Python の lint と自動修正 (ルートの ruff.toml を利用する)
-  {
-    id = "ruff-check",
-    name = "ruff check",
-    entry = "ruff check --fix",
-    language = "system",
-    types = ["python"]
-  },
-  # Python のフォーマット
-  {
-    id = "ruff-format",
-    name = "ruff format",
-    entry = "ruff format",
-    language = "system",
-    types = ["python"]
   }
+]
+
+# ruff: フォーマッタ・リンタ
+# ruff のバイナリはフックが自前で用意するため、PATH 上の ruff に依存しない
+# rev がそのまま ruff のバージョンになる。更新は prek auto-update で行う
+# e2e-test/pyproject.toml の ruff とバージョンを揃える
+# 設定はルートの ruff.toml を読む
+[[repos]]
+repo = "https://github.com/astral-sh/ruff-pre-commit"
+rev = "v0.16.0"
+hooks = [
+  # ruff format: フォーマッタ
+  { id = "ruff-format", priority = 0 },
+  # ruff check: リンタと自動修正
+  { id = "ruff-check", priority = 10 }
 ]
