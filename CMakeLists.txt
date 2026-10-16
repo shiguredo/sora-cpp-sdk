@@ -191,13 +191,22 @@ target_link_libraries(sora
 )
 
 if (USE_LIBCXX)
-  target_compile_options(sora
-    PRIVATE
-      "$<$<COMPILE_LANGUAGE:CXX>:-nostdinc++>"
-      "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<BOOL:LIBCXX_INCLUDE_DIR>>:-isystem${LIBCXX_INCLUDE_DIR}>"
-      "$<$<COMPILE_LANGUAGE:OBJCXX>:-nostdinc++>"
-      "$<$<AND:$<COMPILE_LANGUAGE:OBJCXX>,$<BOOL:LIBCXX_INCLUDE_DIR>>:-isystem${LIBCXX_INCLUDE_DIR}>"
-  )
+  if (SORA_TARGET_OS STREQUAL "windows")
+    # clang-cl は MSVC 互換ドライバなので、clang ドライバ向けのオプションは /clang: を付けて渡す
+    target_compile_options(sora
+      PRIVATE
+        "$<$<COMPILE_LANGUAGE:CXX>:/clang:-nostdinc++>"
+        "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<BOOL:LIBCXX_INCLUDE_DIR>>:/I${LIBCXX_INCLUDE_DIR}>"
+    )
+  else()
+    target_compile_options(sora
+      PRIVATE
+        "$<$<COMPILE_LANGUAGE:CXX>:-nostdinc++>"
+        "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<BOOL:LIBCXX_INCLUDE_DIR>>:-isystem${LIBCXX_INCLUDE_DIR}>"
+        "$<$<COMPILE_LANGUAGE:OBJCXX>:-nostdinc++>"
+        "$<$<AND:$<COMPILE_LANGUAGE:OBJCXX>,$<BOOL:LIBCXX_INCLUDE_DIR>>:-isystem${LIBCXX_INCLUDE_DIR}>"
+    )
+  endif()
 endif()
 
 target_include_directories(sora PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
@@ -263,7 +272,8 @@ endfunction()
 
 if (SORA_TARGET_OS STREQUAL "windows")
   # 文字コードを utf-8 として扱うのと、シンボルテーブル数を増やす
-  target_compile_options(sora PRIVATE /utf-8 /bigobj)
+  # clang-cl は /EHsc を指定しないと C++ の例外処理が無効になるため、C++ の例外処理を有効にする
+  target_compile_options(sora PRIVATE /utf-8 /bigobj "$<$<COMPILE_LANGUAGE:CXX>:/EHsc>")
   set_target_properties(sora
     PROPERTIES
       # CRTライブラリを静的リンクさせる
@@ -293,6 +303,10 @@ if (SORA_TARGET_OS STREQUAL "windows")
       msdmo.lib
       Secur32.lib
       wmcodecdspuuid.lib
+      # ntdll.dll と userenv.dll の API (Nt* と GetUserProfileDirectoryW) を参照する
+      # オブジェクトをリンクするため、これらのインポートライブラリをリンクする
+      ntdll.lib
+      userenv.lib
   )
 
   target_compile_definitions(sora
@@ -313,7 +327,11 @@ if (SORA_TARGET_OS STREQUAL "windows")
       # 揃っていないと、この型を利用する画面キャプチャが動作しない
       RTC_ENABLE_WIN_WGC
       RTC_ENABLE_H265
-      _ITERATOR_DEBUG_LEVEL=0
+      # libc++ の __config_site は _LIBCPP_HARDENING_MODE を定義しないため、
+      # libwebrtc をビルドしたときと同じ値を指定して挙動を揃える
+      _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE
+      # libc++ のシンボルを __declspec(dllimport) にしないために必要
+      _LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS
   )
 
   if (USE_NVCODEC_ENCODER)
@@ -323,7 +341,11 @@ if (SORA_TARGET_OS STREQUAL "windows")
         src/hwenc_nvcodec/nvcodec_video_encoder.cpp
         third_party/NvCodec/NvCodec/NvEncoder/NvEncoder.cpp
         third_party/NvCodec/NvCodec/NvEncoder/NvEncoderD3D11.cpp
-        src/hwenc_nvcodec/nvcodec_video_decoder.cpp)
+        src/hwenc_nvcodec/nvcodec_video_decoder.cpp
+        src/cuda_context_cuda.cpp
+        src/hwenc_nvcodec/nvcodec_video_codec_cuda.cpp
+        third_party/NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
+        src/hwenc_nvcodec/nvcodec_decoder_cuda.cpp)
     target_include_directories(sora
       PRIVATE
         third_party/NvCodec/include
@@ -334,56 +356,9 @@ if (SORA_TARGET_OS STREQUAL "windows")
         D3D11.lib
     )
 
-    # enable_language(CUDA) は CUDA 用 Visual Studio Integration を利用して CUDA を検出しているが、
-    # CUDA ドライバがインストールできない場所では VS Integration をインストールできないため、
-    # enable_language(CUDA) は利用できない。
-    # なので（deprecated だけど）FindCUDA を利用してコンパイルする。
-
+    # CUDA のソースはデバイスコードを含まないので、nvcc を利用せず clang-cl でコンパイルする
+    # CUDA のインクルードディレクトリと cudart_static.lib のパスを得るために FindCUDA を利用する
     find_package(CUDA REQUIRED)
-
-    set_source_files_properties(
-        src/cuda_context_cuda.cpp
-        src/hwenc_nvcodec/nvcodec_video_codec_cuda.cpp
-        third_party/NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
-        src/hwenc_nvcodec/nvcodec_decoder_cuda.cpp
-      PROPERTIES
-        CUDA_SOURCE_PROPERTY_FORMAT OBJ
-    )
-    cuda_compile(CUDA_FILES
-        src/cuda_context_cuda.cpp
-        src/hwenc_nvcodec/nvcodec_video_codec_cuda.cpp
-        third_party/NvCodec/NvCodec/NvDecoder/NvDecoder.cpp
-        src/hwenc_nvcodec/nvcodec_decoder_cuda.cpp
-      OPTIONS
-        # VS 2022 の 17.10.x 以上に上げると、ツールセットのバージョンが 14.40 以上になってしまい、以下のエラーが出るため -allow-unsupported-compiler を指定する
-        #
-        # G:\dev\sora-cpp-sdk\_install\windows_x86_64\release\cuda\include\crt/host_config.h(153): fatal error C1189: #error:  -- unsupported Microsoft Visual Studio version! Only the versions between 20 17 and 2022 (inclusive) are supported! The nvcc flag '-allow-unsupported-compiler' can be used to override this version check; however, using an unsupported host compiler may cause compilation  failure or incorrect run time execution. Use at your own risk. [G:\dev\sora-cpp-sdk\_build\windows_x86_64\release\sora\sora.vcxproj]
-        #
-        # host_config.h では以下のような記述になっている
-        #
-        # ```
-        # #if _MSC_VER < 1910 || _MSC_VER >= 1940
-        #
-        # #error -- unsupported Microsoft Visual Studio version! Only the versions between 2017 and 2022 (inclusive) are supported! (...snip...)
-        # ```
-        #
-        # 17.10 は _MSC_VER が 1940 になるため、このエラーが出る。
-        #
-        # VS のバージョンと _MSC_VER のリストは以下を参照:
-        #   https://devblogs.microsoft.com/cppblog/msvc-toolset-minor-version-number-14-40-in-vs-2022-v17-10/
-        -allow-unsupported-compiler
-        # 更に STL が CUDA 12.4 以上のバージョンを要求するため、STL のバージョンも無視する
-        # ref: https://stackoverflow.com/questions/78515942/cuda-compatibility-with-visual-studio-2022-version-17-10
-        -Xcompiler /D_ALLOW_COMPILER_AND_STL_VERSION_MISMATCH
-        -Xcompiler /utf-8
-        -Xcompiler /I${CMAKE_CURRENT_SOURCE_DIR}/third_party/NvCodec/include
-        -Xcompiler /I${CMAKE_CURRENT_SOURCE_DIR}/third_party/NvCodec/NvCodec
-        -Xcompiler /I${CMAKE_CURRENT_SOURCE_DIR}/include
-        -Xcompiler "/MT$<$<CONFIG:Debug>:d>"
-        -Xcompiler /D_HAS_ITERATOR_DEBUGGING=0
-        -Xcompiler /DUSE_NVCODEC_ENCODER=1
-    )
-    target_sources(sora PRIVATE ${CUDA_FILES})
     target_include_directories(sora PRIVATE ${CUDA_INCLUDE_DIRS})
     # CUDA を要求したくないので sora.lib に含める
     list(APPEND BUNDLE_STATIC_LIBS ${CUDA_TOOLKIT_ROOT_DIR}/lib/x64/cudart_static.lib)

@@ -28,6 +28,7 @@ from buildbase import (
     get_macos_osver,
     get_webrtc_info,
     get_webrtc_platform,
+    get_windows_clang_cmake_args,
     get_windows_osver,
     install_amf,
     install_android_ndk,
@@ -41,6 +42,7 @@ from buildbase import (
     install_sysroot,
     install_vpl,
     install_webrtc,
+    install_windows_build_tools,
     mkdir_p,
     read_version_file,
     rm_rf,
@@ -98,9 +100,20 @@ def get_common_cmake_args(
     webrtc_deps = read_version_file(webrtc_info.deps_file)
 
     if platform.target.os == "windows":
-        cxxflags = ["/EHsc", "/D_ITERATOR_DEBUG_LEVEL=0"]
-        cxxflags.append("/MTd" if debug else "/MT")
+        # Windows は libwebrtc と同じ clang-cl と libc++ を利用する
+        args.extend(get_windows_clang_cmake_args(webrtc_info, install_dir))
+        cxxflags = [
+            "/EHsc",
+            "/clang:-nostdinc++",
+            f"/I{cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}",
+            "/D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE",
+            "/D_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS",
+        ]
         args.append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
+        # 第三者ライブラリも sora と同じ静的 CRT を利用する
+        args.append("-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded$<$<CONFIG:Debug>:Debug>")
+        # CMP0091 が NEW でないと CMAKE_MSVC_RUNTIME_LIBRARY が利用されない
+        args.append("-DCMAKE_POLICY_DEFAULT_CMP0091=NEW")
     if platform.target.os == "macos":
         sysroot = cmdcap(["xcrun", "--sdk", "macosx", "--show-sdk-path"])
         target = (
@@ -320,9 +333,14 @@ def install_deps(
         webrtc_version = read_version_file(webrtc_info.version_file)
         webrtc_deps = read_version_file(webrtc_info.deps_file)
 
-        # Windows は MSVC を使うので不要
-        if platform.target.os not in ("windows",) and local_webrtc_build_dir is None:
-            # LLVM
+        if platform.target.os == "windows":
+            # clang-cl が利用する Ninja と Visual Studio の環境変数を用意する
+            install_windows_build_tools(
+                source_dir, install_dir, deps, platform.target.arch, platform.build.arch
+            )
+
+        # LLVM
+        if local_webrtc_build_dir is None:
             tools_url = webrtc_version["WEBRTC_SRC_TOOLS_URL"]
             tools_commit = webrtc_version["WEBRTC_SRC_TOOLS_COMMIT"]
             libcxx_url = webrtc_version["WEBRTC_SRC_THIRD_PARTY_LIBCXX_SRC_URL"]
@@ -369,9 +387,23 @@ def install_deps(
             "architecture": "x86",
         }
         if platform.target.os == "windows":
-            install_boost_args["cxxflags"] = ["-D_ITERATOR_DEBUG_LEVEL=0"]
-            install_boost_args["toolset"] = "msvc"
+            # libwebrtc と同じ clang-cl と libc++ を利用する
             install_boost_args["target_os"] = "windows"
+            install_boost_args["toolset"] = "clang-win"
+            install_boost_args["cxx"] = cmake_path(
+                os.path.join(webrtc_info.clang_dir, "bin", "clang-cl.exe")
+            )
+            install_boost_args["cflags"] = [
+                "/MTd" if debug else "/MT",
+            ]
+            install_boost_args["cxxflags"] = [
+                "/EHsc",
+                "/clang:-nostdinc++",
+                f"/I{cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}",
+                "/D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE",
+                "/D_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS",
+                "/MTd" if debug else "/MT",
+            ]
         elif platform.target.os == "macos":
             sysroot = cmdcap(["xcrun", "--sdk", "macosx", "--show-sdk-path"])
             install_boost_args["target_os"] = "darwin"
@@ -554,13 +586,20 @@ def install_deps(
                 "cmake_args": [],
             }
             if platform.target.os == "windows":
+                # libwebrtc と同じ clang-cl と libc++ を利用する
+                install_vpl_args["cmake_args"].extend(
+                    get_windows_clang_cmake_args(webrtc_info, install_dir)
+                )
                 cxxflags = [
                     "/DWIN32",
                     "/D_WINDOWS",
                     "/W3",
                     "/GR",
                     "/EHsc",
-                    "/D_ITERATOR_DEBUG_LEVEL=0",
+                    "/clang:-nostdinc++",
+                    f"/I{cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}",
+                    "/D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE",
+                    "/D_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS",
                 ]
                 install_vpl_args["cmake_args"].append(f"-DCMAKE_CXX_FLAGS={' '.join(cxxflags)}")
             if platform.target.os == "ubuntu":
@@ -814,6 +853,12 @@ def _build(
         cmake_args.append(f"-DBLEND2D_ROOT_DIR={cmake_path(os.path.join(install_dir, 'blend2d'))}")
         if platform.target.os == "windows":
             cmake_args.append(f"-DCMAKE_SYSTEM_VERSION={WINDOWS_SDK_VERSION}")
+            # libwebrtc と同じ clang-cl と libc++ を利用する
+            cmake_args.extend(get_windows_clang_cmake_args(webrtc_info, install_dir))
+            cmake_args.append("-DUSE_LIBCXX=ON")
+            cmake_args.append(
+                f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}"
+            )
         if platform.target.os == "ubuntu":
             if platform.target.package_name in (
                 "ubuntu-22.04_x86_64",
@@ -1066,6 +1111,13 @@ def _build(
                     f"-DWEBRTC_LIBRARY_DIR={cmake_path(webrtc_info.webrtc_library_dir)}"
                 )
                 cmake_args.append(f"-DSORA_DIR={cmake_path(os.path.join(install_dir, 'sora'))}")
+                if platform.target.os == "windows":
+                    # libwebrtc と同じ clang-cl と libc++ を利用する
+                    cmake_args.extend(get_windows_clang_cmake_args(webrtc_info, install_dir))
+                    cmake_args.append("-DUSE_LIBCXX=ON")
+                    cmake_args.append(
+                        f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}"
+                    )
                 if platform.target.os == "macos":
                     sysroot = cmdcap(["xcrun", "--sdk", "macosx", "--show-sdk-path"])
                     target = (
@@ -1185,57 +1237,27 @@ def _build(
                         and platform.build.arch == platform.target.arch
                     ):
                         if platform.target.os == "windows":
-                            cmd([os.path.join(test_build_dir, configuration, "e2e.exe")])
+                            cmd([os.path.join(test_build_dir, "e2e.exe")])
                         else:
                             cmd([os.path.join(test_build_dir, "e2e")])
                         if platform.target.os == "windows":
-                            cmd(
-                                [
-                                    os.path.join(
-                                        test_build_dir, configuration, "video_factory_data_race.exe"
-                                    )
-                                ]
-                            )
+                            cmd([os.path.join(test_build_dir, "video_factory_data_race.exe")])
                         else:
                             cmd([os.path.join(test_build_dir, "video_factory_data_race")])
                         if platform.target.os == "windows":
-                            cmd([os.path.join(test_build_dir, configuration, "base_renderer.exe")])
+                            cmd([os.path.join(test_build_dir, "base_renderer.exe")])
                         else:
                             cmd([os.path.join(test_build_dir, "base_renderer")])
                         if platform.target.os == "windows":
-                            cmd(
-                                [
-                                    os.path.join(
-                                        test_build_dir,
-                                        configuration,
-                                        "sora_client_context.exe",
-                                    )
-                                ]
-                            )
+                            cmd([os.path.join(test_build_dir, "sora_client_context.exe")])
                         else:
                             cmd([os.path.join(test_build_dir, "sora_client_context")])
                         if platform.target.os == "windows":
-                            cmd(
-                                [
-                                    os.path.join(
-                                        test_build_dir,
-                                        configuration,
-                                        "video_factory_env.exe",
-                                    )
-                                ]
-                            )
+                            cmd([os.path.join(test_build_dir, "video_factory_env.exe")])
                         else:
                             cmd([os.path.join(test_build_dir, "video_factory_env")])
                         if platform.target.os == "windows":
-                            cmd(
-                                [
-                                    os.path.join(
-                                        test_build_dir,
-                                        configuration,
-                                        "audio_adaptive_ptime.exe",
-                                    )
-                                ]
-                            )
+                            cmd([os.path.join(test_build_dir, "audio_adaptive_ptime.exe")])
                         else:
                             cmd([os.path.join(test_build_dir, "audio_adaptive_ptime")])
 

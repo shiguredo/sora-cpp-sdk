@@ -32,7 +32,6 @@ jobs:
       TEST_MATRIX_NAME: ${{ matrix.name }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      - uses: microsoft/setup-msbuild@30375c66a4eea26614e0d39710365f22f8b0af57  # v3
       - name: Env to output
         run: |
           echo "userprofile=${Env:USERPROFILE}" >> ${Env:GITHUB_OUTPUT}
@@ -93,7 +92,7 @@ jobs:
           mkdir examples_${{ matrix.name }}
           foreach ($app in @('sdl_sample', 'sumomo', 'messaging_recvonly_sample')) {
             python3 "$app\run.py" build ${{ matrix.name }} --local-sora-cpp-sdk-dir ..
-            cp "_build\${{ matrix.name }}\release\$app\Release\$app.exe" "examples_${{ matrix.name }}"
+            cp "_build\${{ matrix.name }}\release\$app\$app.exe" "examples_${{ matrix.name }}"
           }
       - name: Upload Examples Artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1

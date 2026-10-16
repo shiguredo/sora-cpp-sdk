@@ -8,6 +8,7 @@ cmake_policy(SET CMP0091 NEW)
 set(WEBRTC_INCLUDE_DIR "" CACHE PATH "WebRTC のインクルードディレクトリ")
 set(WEBRTC_LIBRARY_DIR "" CACHE PATH "WebRTC のライブラリディレクトリ")
 set(WEBRTC_LIBRARY_NAME "webrtc" CACHE STRING "WebRTC のライブラリ名")
+set(LIBCXX_INCLUDE_DIR "" CACHE PATH "libc++ を使う場合の libc++ のインクルードディレクトリ\n空文字だった場合はデフォルト検索パスの libc++ を利用する")
 set(BOOST_ROOT "" CACHE PATH "Boost のルートディレクトリ")
 set(SORA_DIR "" CACHE PATH "Sora のルートディレクトリ")
 set(SDL3_DIR "" CACHE PATH "SDL3 のルートディレクトリ")
@@ -44,11 +45,22 @@ if (NOT WIN32)
       "$<$<COMPILE_LANGUAGE:CXX>:-isystem${LIBCXX_INCLUDE_DIR}>"
   )
 else()
-  target_compile_options(sdl_sample PRIVATE /utf-8 /bigobj)
+  # 文字コードを utf-8 として扱うのと、シンボルテーブル数を増やす
+  # clang-cl は /EHsc を指定しないと C++ の例外処理が無効になるため、C++ の例外処理を有効にする
+  target_compile_options(sdl_sample PRIVATE /utf-8 /bigobj "$<$<COMPILE_LANGUAGE:CXX>:/EHsc>")
   set_target_properties(sdl_sample
     PROPERTIES
       MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
   )
+
+  if (USE_LIBCXX)
+    # clang-cl は MSVC 互換ドライバなので、clang ドライバ向けのオプションは /clang: を付けて渡す
+    target_compile_options(sdl_sample
+      PRIVATE
+        "$<$<COMPILE_LANGUAGE:CXX>:/clang:-nostdinc++>"
+        "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<BOOL:LIBCXX_INCLUDE_DIR>>:/I${LIBCXX_INCLUDE_DIR}>"
+    )
+  endif()
 endif()
 target_include_directories(sdl_sample PRIVATE ${CLI11_DIR}/include)
 target_link_libraries(sdl_sample PRIVATE Sora::sora SDL3::SDL3)
@@ -61,6 +73,11 @@ if (WIN32)
       _WIN32_WINNT=0x0A00
       NOMINMAX
       WIN32_LEAN_AND_MEAN
+      # libc++ の __config_site は _LIBCPP_HARDENING_MODE を定義しないため、
+      # libwebrtc をビルドしたときと同じ値を指定して挙動を揃える
+      _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE
+      # libc++ のシンボルを __declspec(dllimport) にしないために必要
+      _LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS
   )
 endif()
 

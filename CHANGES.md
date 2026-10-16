@@ -11,6 +11,17 @@
 
 ## develop
 
+- [CHANGE] Windows のビルドを MSVC から libwebrtc と同じ clang-cl + libc++ に変更する
+  - コンパイラは libwebrtc が利用するのと同じリビジョンの clang-cl (Clang 24)、標準ライブラリは libc++、CRT は静的 (`/MT`) になる
+  - ジェネレーターは Visual Studio から Ninja に変更し、Ninja は `_install/<platform>/<config>/ninja/ninja.exe` に自動でダウンロードされる
+  - ビルド生成物の `Release/` サブディレクトリが無くなる (`_build/windows_x86_64/release/sumomo/Release/sumomo.exe` から `_build/windows_x86_64/release/sumomo/sumomo.exe` になる)
+  - ジェネレーターが変わるため、既存の `_build/<platform>/<config>` は削除してからビルドする必要がある
+  - Visual Studio は MSVC のヘッダー、Windows SDK、`rc.exe` / `mt.exe`、`llvm-lib.exe` のために引き続き必要だが、コンパイラとしては使わない
+  - CUDA (NVCODEC) は維持し、nvcc の代わりに clang-cl で CUDA のソースを直接コンパイルする
+  - VPL / Blend2D / Boost / Catch2 も clang-cl + libc++ (静的 CRT) でビルドし、Boost は ABI を揃えるため libc++ 版を利用する
+  - SDL3 は C ライブラリのため libc++ は利用せず、clang-cl と静的 CRT でビルドする
+  - Windows 向けのアプリケーションも clang-cl + libc++ でビルドする必要がある
+  - @melpon
 - [CHANGE] エンコーダ/デコーダを生成するコールバックで `webrtc::Environment` を受け取るようにする
   - `VideoEncoderConfig` / `VideoDecoderConfig` / `SoraVideoCodecFactoryConfig` の `create_video_encoder` と `create_video_decoder`、および `CreateOpenH264VideoEncoder()` の引数に `const webrtc::Environment&` を追加する
   - `SoraClientContextConfig::field_trials` で指定したフィールドトライアルがエンコーダ/デコーダにも伝わるようにする

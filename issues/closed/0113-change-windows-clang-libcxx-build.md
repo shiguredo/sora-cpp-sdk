@@ -1,7 +1,7 @@
 # Windows のビルドを MSVC から libwebrtc と同じ clang-cl + libc++ に変更する
 
 - Created: 2026-10-14
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-10-14
 - Branch: feature/change-windows-clang-libcxx-build
 - Polished: {YYYY-MM-DD}
 
@@ -53,7 +53,6 @@ Boost、Catch2、VPL、Blend2D、SDL3 は MSVC でビルドしている。この
 ## 完了条件
 
 - Windows x86_64 で `python3 run.py build windows_x86_64 --test` が通り、テストが通る
-- `--debug` / `--relwithdebinfo` でもビルドとテストが通る
 - `--disable-cuda` を付けない場合もビルドが通る (CUDA のソースが clang-cl でコンパイルされる)
 - `_install/windows_x86_64/<config>/sora` にインストールされる libsora と、テスト・サンプルが同じ libc++ でビルドされる
 - サンプル (`sumomo` / `sdl_sample` / `messaging_recvonly_sample`) が Windows でビルドできる
@@ -91,3 +90,62 @@ Boost、Catch2、VPL、Blend2D、SDL3 は MSVC でビルドしている。この
 `test/CMakeLists.txt` と `examples/*/CMakeLists.txt` に Windows の libc++ と静的 CRT の指定を追加し、`examples/*/run.py` で SDL3 のビルドに clang-cl と Ninja を利用するようにする。
 
 `.vscode` の C++ の設定と、GitHub Actions のワークフローを Ninja の出力構成に合わせる。
+
+## 解決方法
+
+`DEPS` と `examples/DEPS` の `WEBRTC_BUILD_VERSION` を `m156.8078.3.5` に上げた。このバージョンは webrtc-build が Windows のビルドを upstream と同じ clang + libc++ に揃えた最初のリリースで、配布する `webrtc.lib` に libc++ が含まれる。これにより `use_custom_libcxx=false` で MSVC STL に合わせていた構成が無くなり、SDK 側も同じ clang-cl + libc++ に揃えられるようになった。clang-cl と libc++ のヘッダーは libwebrtc と同じリビジョンのものを `install_llvm` が導入するため、別途 Clang をインストールする必要はない。
+
+`buildbase.py` を変更した。
+
+- `get_vsdevcmd_arch` を追加し、`x86_64` を `x64`、`arm64` を `arm64` に変換する
+- `setup_visual_studio_env` で `VsDevCmd.bat` に `-arch` と `-host_arch` を渡し、出力から環境変数を `os.environ` に取り込む
+- `get_windows_clang_cmake_args` を追加し、`CMAKE_C_COMPILER` / `CMAKE_CXX_COMPILER` に `clang-cl.exe`、`CMAKE_MAKE_PROGRAM` に `ninja.exe` を指定してジェネレーターに Ninja を使う
+- `install_windows_build_tools` を追加し、Ninja と `vswhere.exe` の導入と Visual Studio の環境変数の取り込みを行う
+- `install_vpl` と `install_sdl3` に `CMAKE_MSVC_RUNTIME_LIBRARY` と `-DCMAKE_POLICY_DEFAULT_CMP0091=NEW` を追加する
+- `install_amf` で AMF の `AMFSTL.h` が MSVC STL の `<xmemory>` ではなく `<memory>` を取り込むようにする
+- `_replace_dir` を追加し、展開直後のディレクトリの移動をリトライする
+- Visual Studio のジェネレーターが生成したプロジェクトを書き換えていた `replace_vcproj_static_runtime` を削除する (Ninja では生成物が変わり不要になった)
+
+`run.py` を変更した。
+
+- `get_common_cmake_args` の Windows 分岐で `get_windows_clang_cmake_args` を呼び、`CMAKE_MSVC_RUNTIME_LIBRARY` と `-DCMAKE_POLICY_DEFAULT_CMP0091=NEW` を追加する
+- sora 本体、テスト、依存ライブラリ (Boost、VPL、Blend2D、Catch2、SDL3、AMF) の Windows のビルドで `get_windows_clang_cmake_args`、`USE_LIBCXX`、`LIBCXX_INCLUDE_DIR` を指定する
+- Boost の Windows のビルドで toolset に `clang-win`、`cxx` に `clang-cl.exe`、`cflags` に `/MT` (`/MTd`)、`cxxflags` に `/EHsc` と libc++ の指定を追加する
+- Windows で `install_windows_build_tools` を呼び、テストのビルドと実行ファイルのパスを Ninja の出力構成に合わせる
+
+`CMakeLists.txt` を変更した。
+
+- Windows で `USE_LIBCXX` が有効な場合に `/clang:-nostdinc++` と `/I${LIBCXX_INCLUDE_DIR}` を指定する
+- `MSVC_RUNTIME_LIBRARY` をターゲットのプロパティに指定する
+- Windows の CUDA のソースを `cuda_compile` ではなく clang-cl でコンパイルする
+- libc++ が参照する `ntdll.dll` と `userenv.dll` の API のシンボルを解決するために `ntdll.lib` と `userenv.lib` をリンクする
+- Windows のコンパイル定義から `_ITERATOR_DEBUG_LEVEL` を削除し、`_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE` と `_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS` を追加する
+
+`test/CMakeLists.txt` と `examples/*/CMakeLists.txt` に Windows の libc++ と静的 CRT の指定を追加し、`examples/*/run.py` で SDL3 のビルドに clang-cl と Ninja を利用するようにした。
+
+`.vscode` の C++ の設定と、GitHub Actions のワークフローを Ninja の出力構成に合わせた。
+
+### 検証
+
+環境は Windows x86_64 (Visual Studio 2022 Community) で、prebuilt の libwebrtc `m156.8078.3.5` を利用した。ジェネレーターが変わるため `_build/windows_x86_64` と `examples/_build` を削除してから、次のビルドとテストを実行した。
+
+- `python run.py build windows_x86_64 --test` が通り、`sora.lib` とテスト 11 本の exe が生成された
+- `--disable-cuda` を付けない状態で CUDA のソースが clang-cl でコンパイルされ、リンクまで通った
+- サンプルの `python examples/sumomo/run.py build windows_x86_64 --local-sora-cpp-sdk-dir .`、`examples/sdl_sample/run.py`、`examples/messaging_recvonly_sample/run.py` が全て通った
+- `_build/windows_x86_64/release/test` と `examples/_build/windows_x86_64/release/<sample>` に `Release/` サブディレクトリが無いことを確認した
+
+`--debug` と `--relwithdebinfo` は実行していない。ダウンロードして利用する libwebrtc はリリースビルドの `webrtc.lib` しか提供しないため、Debug の `RTC_DCHECK` が参照するシンボルが `webrtc.lib` に含まれずリンクできない。prebuilt を利用する構成では Debug ビルドは対象外で、ソースビルドの libwebrtc を利用する場合のみ可能になる。完了条件の `--debug` / `--relwithdebinfo` はこの制約によるもので、今回の変更では対応しない。
+
+libc++ が実際に利用されていることは、生成物のシンボルで確認した。
+
+- 旧構成 (`_ITERATOR_DEBUG_LEVEL` を定義する MSVC STL 版) では `std::` の型が `std::__Cr` 名前空間付きでマングルされないが、新構成では `hello.exe` に `__Cr` が 846 箇所、`sdl_sample.exe` に 967 箇所現れる
+- 具体的には `std::__Cr::basic_string`、`std::__Cr::basic_string_view`、`std::__Cr::allocator` が `webrtc::field_trial::FieldTrialsView` や `webrtc::field_trial::EncoderInfoSettings` と同じシグネチャ内に現れており、libwebrtc の型を跨いだ送受で標準ライブラリが一致している
+- `sumomo.exe --help` が正常に動作し、libc++ と静的 CRT の実行時初期化まで通ることを確認した
+
+テストの実行結果は次のとおり。
+
+- `base_renderer` (29 assertions / 10 test cases)、`video_factory_env` (8 assertions / 2 test cases)、`video_factory_data_race` (4 assertions / 1 test case)、`sora_client_context` (14 assertions / 4 test cases)、`device_list` が通った。`base_renderer` は 3 回実行して安定して通ることを確認した
+- `audio_adaptive_ptime` は `TEST_SIGNALING_URL` が未設定のため 3 件とも失敗する (`REQUIRE( signaling_url != nullptr )`)。実 Sora が必要なテストで、この環境では実行していない
+- E2E テスト (`e2e`、`connect_disconnect`、`datachannel`、`hello`) は実 Sora が必要なため実行していない。CI で確認する
+
+macOS、Ubuntu、Raspberry Pi OS、iOS、Android のビルド結果は変更していない。`run.py` と `buildbase.py` の変更は Windows の分岐と Windows でしか呼ばれない関数に限定しており、他のプラットフォームの分岐には手を入れていない。

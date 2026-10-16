@@ -22,6 +22,7 @@ from buildbase import (  # noqa: E402
     cmdcap,
     get_sora_info,
     get_webrtc_info,
+    get_windows_clang_cmake_args,
     install_cli11,
     install_cmake,
     install_llvm,
@@ -29,6 +30,7 @@ from buildbase import (  # noqa: E402
     install_sdl3,
     install_sora_and_deps,
     install_webrtc,
+    install_windows_build_tools,
     mkdir_p,
     read_version_file,
 )
@@ -84,7 +86,13 @@ def install_deps(
 
         webrtc_info = get_webrtc_info(platform, local_webrtc_build_dir, install_dir, debug)
 
+        if platform in ("windows_x86_64",):
+            # clang-cl は MSVC のヘッダや Windows SDK を利用するため、Ninja と vswhere を用意して
+            # Visual Studio の環境変数を取り込む
+            install_windows_build_tools(source_dir, install_dir, deps, "x86_64", "x86_64")
+
         if local_webrtc_build_dir is None and platform in (
+            "windows_x86_64",
             "macos_arm64",
             "ubuntu-22.04_x86_64",
             "ubuntu-24.04_x86_64",
@@ -170,6 +178,7 @@ def install_deps(
 
         # SDL3
         if platform in ("windows_x86_64",):
+            # libwebrtc と同じ clang-cl と Ninja を利用する
             install_sdl3_args = {
                 "version": deps["SDL3_VERSION"],
                 "version_file": os.path.join(install_dir, "sdl3.version"),
@@ -178,7 +187,7 @@ def install_deps(
                 "install_dir": install_dir,
                 "debug": debug,
                 "platform": "windows",
-                "cmake_args": [],
+                "cmake_args": get_windows_clang_cmake_args(webrtc_info, install_dir),
             }
         elif platform in ("macos_arm64",):
             sysroot = cmdcap(["xcrun", "--sdk", "macosx", "--show-sdk-path"])
@@ -336,6 +345,14 @@ def _build(args):
         cmake_args.append(f"-DSORA_DIR={cmake_path(sora_info.sora_install_dir)}")
         cmake_args.append(f"-DCLI11_DIR={cmake_path(os.path.join(install_dir, 'cli11'))}")
         cmake_args.append(f"-DSDL3_DIR={cmake_path(os.path.join(install_dir, 'sdl3'))}")
+
+        # libwebrtc と同じ clang-cl と libc++ を利用する
+        if platform in ("windows_x86_64",):
+            cmake_args += get_windows_clang_cmake_args(webrtc_info, install_dir)
+            cmake_args += [
+                "-DUSE_LIBCXX=ON",
+                f"-DLIBCXX_INCLUDE_DIR={cmake_path(os.path.join(webrtc_info.libcxx_dir, 'include'))}",
+            ]
 
         # クロスコンパイルの設定。
         # 本来は toolchain ファイルに書く内容
