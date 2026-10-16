@@ -34,16 +34,26 @@ function (init_target target)
   target_link_libraries(${target} PRIVATE Sora::sora)
 
   if (USE_LIBCXX)
-    target_compile_options(${target}
-      PRIVATE
-        "$<$<COMPILE_LANGUAGE:CXX>:-nostdinc++>"
-        "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<BOOL:LIBCXX_INCLUDE_DIR>>:-isystem${LIBCXX_INCLUDE_DIR}>"
-    )
+    if (WIN32)
+      # clang-cl は MSVC 互換ドライバなので、clang ドライバ向けのオプションは /clang: を付けて渡す
+      target_compile_options(${target}
+        PRIVATE
+          "$<$<COMPILE_LANGUAGE:CXX>:/clang:-nostdinc++>"
+          "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<BOOL:LIBCXX_INCLUDE_DIR>>:/I${LIBCXX_INCLUDE_DIR}>"
+      )
+    else()
+      target_compile_options(${target}
+        PRIVATE
+          "$<$<COMPILE_LANGUAGE:CXX>:-nostdinc++>"
+          "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<BOOL:LIBCXX_INCLUDE_DIR>>:-isystem${LIBCXX_INCLUDE_DIR}>"
+      )
+    endif()
   endif()
 
   if (WIN32)
     # 文字コードを utf-8 として扱うのと、シンボルテーブル数を増やす
-    target_compile_options(${target} PRIVATE /utf-8 /bigobj)
+    # clang-cl は /EHsc を指定しないと C++ の例外処理が無効になるため、C++ の例外処理を有効にする
+    target_compile_options(${target} PRIVATE /utf-8 /bigobj "$<$<COMPILE_LANGUAGE:CXX>:/EHsc>")
     set_target_properties(${target}
       PROPERTIES
         # CRTライブラリを静的リンクさせる
@@ -58,6 +68,11 @@ function (init_target target)
         WIN32_LEAN_AND_MEAN
         UNICODE
         _UNICODE
+        # libc++ の __config_site は _LIBCPP_HARDENING_MODE を定義しないため、
+        # libwebrtc をビルドしたときと同じ値を指定して挙動を揃える
+        _LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE
+        # libc++ のシンボルを __declspec(dllimport) にしないために必要
+        _LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS
     )
   elseif (APPLE)
     set_target_properties(${target} PROPERTIES CXX_VISIBILITY_PRESET hidden)
