@@ -26,6 +26,7 @@
 import filecmp
 import glob
 import hashlib
+import json
 import logging
 import multiprocessing
 import os
@@ -36,29 +37,36 @@ import shutil
 import stat
 import subprocess
 import tarfile
+import tempfile
 import time
 import urllib.parse
 import zipfile
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, NamedTuple, Optional
-
-from sysroot_builder import build_sysroot, load_sysroot_config
+from typing import NamedTuple, cast
+from urllib.parse import urlparse
 
 if platform.system() == "Windows":
     import winreg
 
+logger = logging.getLogger(__name__)
 
-class ChangeDirectory(object):
+
+class BuildbaseError(RuntimeError):
+    """buildbase のビルドスクリプトが継続できないときに送出するエラー。"""
+
+
+class ChangeDirectory:
     def __init__(self, cwd):
         self._cwd = cwd
 
     def __enter__(self):
         self._old_cwd = os.getcwd()
-        logging.debug(f"pushd {self._old_cwd} --> {self._cwd}")
+        logger.debug(f"pushd {self._old_cwd} --> {self._cwd}")
         os.chdir(self._cwd)
 
     def __exit__(self, exctype, excvalue, trace):
-        logging.debug(f"popd {self._old_cwd} <-- {self._cwd}")
+        logger.debug(f"popd {self._old_cwd} <-- {self._cwd}")
         os.chdir(self._old_cwd)
         return False
 
@@ -68,9 +76,8 @@ def cd(cwd):
 
 
 def cmd(args, **kwargs):
-    logging.debug(f"+{args} {kwargs}")
-    if "check" not in kwargs:
-        kwargs["check"] = True
+    logger.debug(f"+{args} {kwargs}")
+    check = kwargs.pop("check", True)
     if "resolve" in kwargs:
         resolve = kwargs["resolve"]
         del kwargs["resolve"]
@@ -78,7 +85,7 @@ def cmd(args, **kwargs):
         resolve = True
     if resolve:
         args = [shutil.which(args[0]), *args[1:]]
-    return subprocess.run(args, **kwargs)
+    return subprocess.run(args, check=check, **kwargs)
 
 
 # 標準出力をキャプチャするコマンド実行。シェルの `cmd ...` や $(cmd ...) と同じ
@@ -108,27 +115,29 @@ def onerror(func, path, exc_info):
         os.chmod(path, stat.S_IWUSR)
         func(path)
     else:
-        raise
+        # shutil.rmtree から呼ばれるコールバックであり、
+        # この時点では処理中の例外がアクティブなので bare raise で再送出する
+        raise  # noqa: PLE0704
 
 
 def rm_rf(path: str):
     if not os.path.exists(path):
-        logging.debug(f"rm -rf {path} => path not found")
+        logger.debug(f"rm -rf {path} => path not found")
         return
     if os.path.isfile(path) or os.path.islink(path):
         os.remove(path)
-        logging.debug(f"rm -rf {path} => file removed")
+        logger.debug(f"rm -rf {path} => file removed")
     if os.path.isdir(path):
         shutil.rmtree(path, onerror=onerror)
-        logging.debug(f"rm -rf {path} => directory removed")
+        logger.debug(f"rm -rf {path} => directory removed")
 
 
 def mkdir_p(path: str):
     if os.path.exists(path):
-        logging.debug(f"mkdir -p {path} => already exists")
+        logger.debug(f"mkdir -p {path} => already exists")
         return
     os.makedirs(path, exist_ok=True)
-    logging.debug(f"mkdir -p {path} => directory created")
+    logger.debug(f"mkdir -p {path} => directory created")
 
 
 if platform.system() == "Windows":
@@ -138,7 +147,7 @@ else:
 
 
 def add_path(path: str, is_after=False):
-    logging.debug(f"add_path: {path}")
+    logger.debug(f"add_path: {path}")
     if "PATH" not in os.environ:
         os.environ["PATH"] = path
         return
@@ -151,9 +160,9 @@ def add_path(path: str, is_after=False):
 
 def download(
     url: str,
-    output_dir: Optional[str] = None,
-    filename: Optional[str] = None,
-    expected_sha256: Optional[str] = None,
+    output_dir: str | None = None,
+    filename: str | None = None,
+    expected_sha256: str | None = None,
 ) -> str:
     if filename is None:
         output_path = urllib.parse.urlparse(url).path.split("/")[-1]
@@ -170,7 +179,7 @@ def download(
                 verify_sha256(output_path, expected_sha256)
             except ValueError:
                 # ハッシュ不一致の場合はファイルを削除して再ダウンロードを試みる
-                logging.warning(f"Existing file has invalid hash, removing: {output_path}")
+                logger.warning(f"Existing file has invalid hash, removing: {output_path}")
                 os.remove(output_path)
                 # 再ダウンロードを試みる
                 return download(url, output_dir, filename, expected_sha256)
@@ -178,7 +187,7 @@ def download(
             return output_path
 
     try:
-        logging.info(f"Downloading {url} to {output_path}")
+        logger.info(f"Downloading {url} to {output_path}")
         if shutil.which("curl") is not None:
             cmd(["curl", "--http1.1", "-fLo", output_path, url])
         else:
@@ -189,13 +198,13 @@ def download(
             try:
                 verify_sha256(output_path, expected_sha256)
             except ValueError as e:
-                logging.error(f"Hash verification failed. {e}")
+                logger.error(f"Hash verification failed. {e}")
                 raise
 
     except Exception:
         # ゴミを残さないようにする
         if os.path.exists(output_path):
-            logging.error(f"Removing incomplete/invalid file: {output_path}")
+            logger.error(f"Removing incomplete/invalid file: {output_path}")
             os.remove(output_path)
         raise
 
@@ -204,7 +213,7 @@ def download(
 
 def verify_sha256(file_path: str, expected_sha256: str):
     """ファイルの SHA256 ハッシュを検証する"""
-    logging.info(f"Verifying SHA256 hash for {file_path}")
+    logger.info(f"Verifying SHA256 hash for {file_path}")
     sha256_hash = hashlib.sha256()
     with open(file_path, "rb") as f:
         # メモリ効率のため、チャンクごとに読み込む
@@ -218,17 +227,18 @@ def verify_sha256(file_path: str, expected_sha256: str):
             f"  Expected: {expected_sha256.lower()}\n"
             f"  Actual:   {actual_sha256}"
         )
-        logging.error(error_msg)
-        logging.error("Aborting due to hash verification failure")
+        logger.error(error_msg)
+        logger.error("Aborting due to hash verification failure")
         raise ValueError(error_msg)
     else:
-        logging.info(f"SHA256 hash verified successfully for {file_path}")
+        logger.info(f"SHA256 hash verified successfully for {file_path}")
 
 
-def read_version_file(path: str) -> Dict[str, str]:
+def read_version_file(path: str) -> dict[str, str]:
     versions = {}
 
-    lines = open(path, encoding="utf-8").readlines()
+    with open(path, encoding="utf-8") as f:
+        lines = f.readlines()
     for line in lines:
         line = line.strip()
 
@@ -240,7 +250,7 @@ def read_version_file(path: str) -> Dict[str, str]:
         if len(line) == 0:
             continue
 
-        [a, b] = map(lambda x: x.strip(), line.split("=", 2))
+        [a, b] = (x.strip() for x in line.split("=", 2))
         versions[a] = b.strip('"')
 
     return versions
@@ -261,11 +271,12 @@ def versioned(func):
             del kwargs["ignore_version"]
 
         if os.path.exists(version_file):
-            ver = open(version_file, encoding="utf-8").read()
+            with open(version_file, encoding="utf-8") as f:
+                ver = f.read()
             if ver.strip() == version.strip():
                 return
 
-        r = func(version=version, *args, **kwargs)
+        r = func(*args, version=version, **kwargs)
 
         with open(version_file, "w", encoding="utf-8") as f:
             f.write(version)
@@ -279,7 +290,7 @@ def versioned(func):
 #
 # 単一のディレクトリに格納されている場合はそのディレクトリ名を返す。
 # そうでない場合は None を返す。
-def _is_single_dir(infos, get_name, is_dir) -> Optional[str]:
+def _is_single_dir(infos, get_name, is_dir) -> str | None:
     # tarfile: ['path', 'path/to', 'path/to/file.txt']
     # zipfile: ['path/', 'path/to/', 'path/to/file.txt']
     # どちらも / 区切りだが、ディレクトリの場合、後ろに / が付くかどうかが違う
@@ -302,11 +313,11 @@ def _is_single_dir(infos, get_name, is_dir) -> Optional[str]:
     return dirname
 
 
-def is_single_dir_tar(tar: tarfile.TarFile) -> Optional[str]:
+def is_single_dir_tar(tar: tarfile.TarFile) -> str | None:
     return _is_single_dir(tar.getmembers(), lambda t: t.name, lambda t: t.isdir())
 
 
-def is_single_dir_zip(zip: zipfile.ZipFile) -> Optional[str]:
+def is_single_dir_zip(zip: zipfile.ZipFile) -> str | None:
     return _is_single_dir(zip.infolist(), lambda z: z.filename, lambda z: z.is_dir())
 
 
@@ -355,15 +366,10 @@ def _extractzip(z: zipfile.ZipFile, path: str):
 # - out/libsora/libsora-1.23/file2
 # - out/libsora/LICENSE
 # が出力される。
-def extract(file: str, output_dir: str, output_dirname: str, filetype: Optional[str] = None):
+def extract(file: str, output_dir: str, output_dirname: str, filetype: str | None = None):
     path = os.path.join(output_dir, output_dirname)
-    logging.info(f"Extract {file} to {path}")
-    if (
-        filetype == "gzip"
-        or file.endswith(".tar.gz")
-        or filetype == "lzma"
-        or file.endswith(".tar.xz")
-    ):
+    logger.info(f"Extract {file} to {path}")
+    if filetype == "gzip" or file.endswith((".tar.gz", ".tar.xz")) or filetype == "lzma":
         rm_rf(path)
         with tarfile.open(file) as t:
             dir = is_single_dir_tar(t)
@@ -371,7 +377,7 @@ def extract(file: str, output_dir: str, output_dirname: str, filetype: Optional[
                 os.makedirs(path, exist_ok=True)
                 t.extractall(path)
             else:
-                logging.info(f"Directory {dir} is stripped")
+                logger.info(f"Directory {dir} is stripped")
                 path2 = os.path.join(output_dir, dir)
                 rm_rf(path2)
                 t.extractall(output_dir)
@@ -386,7 +392,7 @@ def extract(file: str, output_dir: str, output_dirname: str, filetype: Optional[
                 # z.extractall(path)
                 _extractzip(z, path)
             else:
-                logging.info(f"Directory {dir} is stripped")
+                logger.info(f"Directory {dir} is stripped")
                 path2 = os.path.join(output_dir, dir)
                 rm_rf(path2)
                 # z.extractall(output_dir)
@@ -394,7 +400,7 @@ def extract(file: str, output_dir: str, output_dirname: str, filetype: Optional[
                 if path != path2:
                     _replace_dir(path2, path)
     else:
-        raise Exception("file should end with .tar.gz or .zip")
+        raise BuildbaseError("file should end with .tar.gz or .zip")
 
 
 def _replace_dir(path2: str, path: str) -> None:
@@ -402,7 +408,7 @@ def _replace_dir(path2: str, path: str) -> None:
 
     展開直後のファイルをウイルス対策ソフトなどが掴んでいることがあるためリトライする
     """
-    logging.debug(f"mv {path2} {path}")
+    logger.debug(f"mv {path2} {path}")
     for i in range(30):
         try:
             os.replace(path2, path)
@@ -410,7 +416,7 @@ def _replace_dir(path2: str, path: str) -> None:
         except PermissionError:
             if i == 29:
                 raise
-            logging.warning(f"retry mv {path2} {path}")
+            logger.warning(f"retry mv {path2} {path}")
             time.sleep(5)
 
 
@@ -456,7 +462,7 @@ def git_clone_shallow(url, hash, dir, submodule=False):
 def apply_patch(patch, dir, depth):
     patch = os.path.abspath(patch)
     with cd(dir):
-        logging.info(f"patch -p{depth} < {patch}")
+        logger.info(f"patch -p{depth} < {patch}")
         if platform.system() == "Windows":
             cmd(
                 [
@@ -477,7 +483,7 @@ def apply_patch(patch, dir, depth):
 
 def apply_patch_text(patch_text, dir, depth):
     with cd(dir):
-        logging.info(f"echo '{patch_text[:100]}...' | patch -p{depth} -")
+        logger.info(f"echo '{patch_text[:100]}...' | patch -p{depth} -")
         directory = cmdcap(["git", "rev-parse", "--show-prefix"])
         if platform.system() == "Windows":
             cmd(
@@ -538,24 +544,24 @@ def install_file(src: str, dst: str):
     # 1. dst が存在していたら削除する
     if os.path.exists(dst):
         if os.path.isdir(dst):
-            logging.debug(f"Remove dir: {dst}")
+            logger.debug(f"Remove dir: {dst}")
             shutil.rmtree(dst)
         else:
-            logging.debug(f"Remove file: {dst}")
+            logger.debug(f"Remove file: {dst}")
             os.remove(dst)
 
     # 2. dst の親ディレクトリが存在しなかったら作成する
     dst_parent = os.path.dirname(dst)
     if dst_parent and not os.path.exists(dst_parent):
-        logging.debug(f"Make dir: {dst_parent}")
+        logger.debug(f"Make dir: {dst_parent}")
         os.makedirs(dst_parent)
 
     # 3. src を dst にコピーする
     if os.path.isdir(src):
-        logging.info(f"Copy dir: {src} -> {dst}")
+        logger.info(f"Copy dir: {src} -> {dst}")
         shutil.copytree(src, dst)
     else:
-        logging.info(f"Copy file: {src} -> {dst}")
+        logger.info(f"Copy file: {src} -> {dst}")
         shutil.copy2(src, dst)
 
 
@@ -564,7 +570,7 @@ def install_file_ifexists(src: str, dst: str):
     src ファイルが存在してたら install_file を呼び出す
     """
     if not os.path.exists(src):
-        logging.info(f"Source file does not exist: {src}")
+        logger.info(f"Source file does not exist: {src}")
         return
     install_file(src, dst)
 
@@ -628,7 +634,7 @@ class WebrtcInfo(NamedTuple):
     version_file: str
     deps_file: str
     webrtc_include_dir: str
-    webrtc_source_dir: Optional[str]
+    webrtc_source_dir: str | None
     webrtc_library_dir: str
     webrtc_jar_file: str
     clang_dir: str
@@ -637,7 +643,7 @@ class WebrtcInfo(NamedTuple):
 
 
 def get_webrtc_info(
-    platform: str, local_webrtc_build_dir: Optional[str], install_dir: str, debug: bool
+    platform: str, local_webrtc_build_dir: str | None, install_dir: str, debug: bool
 ) -> WebrtcInfo:
     webrtc_install_dir = os.path.join(install_dir, "webrtc")
 
@@ -696,7 +702,7 @@ def get_vsdevcmd_arch(arch: str) -> str:
         return "x64"
     elif arch == "arm64":
         return "arm64"
-    raise Exception(f"Unsupported architecture: {arch}")
+    raise BuildbaseError(f"Unsupported architecture: {arch}")
 
 
 def setup_visual_studio_env(install_dir: str, target_arch: str, host_arch: str):
@@ -718,7 +724,7 @@ def setup_visual_studio_env(install_dir: str, target_arch: str, host_arch: str):
         ]
     )
     if len(vs_install_dir) == 0:
-        raise Exception("Visual Studio not found")
+        raise BuildbaseError("Visual Studio not found")
 
     vs_dev_cmd = os.path.join(vs_install_dir, "Common7", "Tools", "VsDevCmd.bat")
     stdout = cmdcap(
@@ -736,10 +742,10 @@ def setup_visual_studio_env(install_dir: str, target_arch: str, host_arch: str):
         os.environ[m.group(1)] = m.group(2)
 
     if "INCLUDE" not in os.environ:
-        raise Exception(f"failed to setup Visual Studio environment: {vs_dev_cmd}")
+        raise BuildbaseError(f"failed to setup Visual Studio environment: {vs_dev_cmd}")
 
 
-def get_windows_clang_cmake_args(webrtc_info: WebrtcInfo, install_dir: str) -> List[str]:
+def get_windows_clang_cmake_args(webrtc_info: WebrtcInfo, install_dir: str) -> list[str]:
     """Windows で libwebrtc と同じコンパイラとジェネレーターを指定する CMake 引数を返す
 
     返す引数をそのまま CMake に渡すと、libwebrtc と同じ clang-cl と Ninja が使われる。
@@ -767,7 +773,7 @@ def get_windows_clang_cmake_args(webrtc_info: WebrtcInfo, install_dir: str) -> L
 
 
 def install_windows_build_tools(
-    source_dir: str, install_dir: str, deps: Dict[str, str], target_arch: str, host_arch: str
+    source_dir: str, install_dir: str, deps: dict[str, str], target_arch: str, host_arch: str
 ):
     """Windows のビルドに必要な Ninja と vswhere をインストールし、Visual Studio の環境変数を取り込む
 
@@ -805,7 +811,7 @@ def install_boost(
     install_dir,
     sora_version,
     platform: str,
-    expected_sha256: Optional[str] = None,
+    expected_sha256: str | None = None,
 ):
     win = platform.startswith("windows_")
     filename = (
@@ -956,9 +962,9 @@ def build_and_install_boost(
     install_dir,
     debug: bool,
     cxx: str,
-    cflags: List[str],
-    cxxflags: List[str],
-    linkflags: List[str],
+    cflags: list[str],
+    cxxflags: list[str],
+    linkflags: list[str],
     toolset,
     visibility,
     target_os,
@@ -968,7 +974,7 @@ def build_and_install_boost(
     address_model="64",
     runtime_link=None,
     android_build_platform="linux-x86_64",
-    expected_sha256: Optional[str] = None,
+    expected_sha256: str | None = None,
 ):
     version_underscore = version.replace(".", "_")
 
@@ -1199,9 +1205,9 @@ def install_sora_and_deps(
 def build_sora(
     platform: str,
     local_sora_cpp_sdk_dir: str,
-    local_sora_cpp_sdk_args: List[str],
+    local_sora_cpp_sdk_args: list[str],
     debug: bool,
-    local_webrtc_build_dir: Optional[str],
+    local_webrtc_build_dir: str | None,
 ):
     if debug and "--debug" not in local_sora_cpp_sdk_args:
         local_sora_cpp_sdk_args = ["--debug", *local_sora_cpp_sdk_args]
@@ -1222,7 +1228,7 @@ class SoraInfo(NamedTuple):
 
 
 def get_sora_info(
-    platform: str, local_sora_cpp_sdk_dir: Optional[str], install_dir: str, debug: bool
+    platform: str, local_sora_cpp_sdk_dir: str | None, install_dir: str, debug: bool
 ) -> SoraInfo:
     if local_sora_cpp_sdk_dir is not None:
         configuration = "debug" if debug else "release"
@@ -1234,10 +1240,495 @@ def get_sora_info(
     )
 
 
+# ここから sysroot 生成処理
+#
+# multistrap や debootstrap に依存せず、apt-get の --download-only と
+# dpkg-deb --extract だけでクロスコンパイル用の sysroot を組み立てる。
+# この構成には次の制約がある。
+#
+# - root 権限を要求しない（chroot もパッケージの maintainer script も実行しない）
+# - ホストの APT 状態（/var/lib/apt など）を一切読み書きしない
+# - 設定ファイル (*.json) と署名鍵だけから決定的に同じ sysroot を再現できる
+#
+# maintainer script を実行しないため、通常はスクリプトが行う後処理
+# （usrmerge のシンボリックリンク作成など）は後処理関数で自前で補う。
+
+# sysroot 直下に置く生成記録ファイル。設定のフィンガープリントを保存し、
+# 次回のビルドで同一設定なら再生成をスキップする判定に使う。
+SYSROOT_MANIFEST_NAME = ".webrtc-build-sysroot.json"
+
+# sysroot の生成形式（後処理の内容など）を変えたらインクリメントする。
+# 古い形式の sysroot は fingerprint が一致しても再利用しない。
+SYSROOT_MANIFEST_VERSION = 1
+
+# 設定値のうち APT の設定ファイルやコマンドラインへ埋め込むものに許可する文字。
+# sources.list の [] オプションや空白による区切りを壊す文字を弾き、
+# 設定ファイル経由のインジェクションを構文レベルで防ぐ。
+SYSROOT_CONFIG_TOKEN_PATTERN = re.compile(r"^[A-Za-z0-9._+:/-]+$")
+
+
+class SysrootConfigError(ValueError):
+    """設定ファイル (*.json) の内容が不正なときに送出するエラー。"""
+
+
+class SysrootBuildError(RuntimeError):
+    """設定は正しいが sysroot の生成処理が継続できないときに送出するエラー。"""
+
+
+@dataclass(frozen=True)
+class SysrootRepositoryConfig:
+    """APT リポジトリ 1 つ分の設定。sources.list の 1 行に対応する。"""
+
+    url: str
+    suite: str
+    components: tuple[str, ...]
+    # Release ファイルの署名検証に使う鍵。設定読み込み時に絶対パスへ解決済み。
+    signed_by: Path
+
+
+@dataclass(frozen=True)
+class SysrootConfig:
+    """sysroot 1 つ分の設定。JSON を検証済みの形で保持する。"""
+
+    name: str
+    # dpkg アーキテクチャ名 (arm64 など)
+    arch: str
+    # GNU トリプレット (aarch64-linux-gnu など)。ライブラリパスの解決に使う。
+    triplet: str
+    packages: tuple[str, ...]
+    repositories: tuple[SysrootRepositoryConfig, ...]
+
+
+# 以下の _sysroot_require_* は JSON から読んだ値の検証ヘルパー。
+# 不正な設定は APT 実行前の読み込み時点で SysrootConfigError として失敗させる。
+
+
+def _sysroot_require_object(value: object, label: str) -> dict[str, object]:
+    if not isinstance(value, dict):
+        raise SysrootConfigError(f"{label} must be a JSON object")
+    if not all(isinstance(key, str) for key in value):
+        raise SysrootConfigError(f"{label} must contain only string keys")
+    return cast(dict[str, object], value)
+
+
+def _sysroot_require_string(value: object, label: str) -> str:
+    if not isinstance(value, str) or not value:
+        raise SysrootConfigError(f"{label} must be a non-empty string")
+    return value
+
+
+def _sysroot_require_token(value: object, label: str) -> str:
+    token = _sysroot_require_string(value, label)
+    if SYSROOT_CONFIG_TOKEN_PATTERN.fullmatch(token) is None:
+        raise SysrootConfigError(f"{label} contains unsupported characters: {token}")
+    return token
+
+
+def _sysroot_require_string_array(value: object, label: str) -> tuple[str, ...]:
+    if not isinstance(value, list) or not value:
+        raise SysrootConfigError(f"{label} must be a non-empty array")
+    result = tuple(_sysroot_require_string(item, f"{label}[]") for item in value)
+    if len(set(result)) != len(result):
+        raise SysrootConfigError(f"{label} must not contain duplicate values")
+    return result
+
+
+def _sysroot_load_repository(
+    value: object, config_dir: Path, index: int
+) -> SysrootRepositoryConfig:
+    label = f"repositories[{index}]"
+    raw = _sysroot_require_object(value, label)
+    url = _sysroot_require_string(raw.get("url"), f"{label}.url")
+    # 署名検証だけでなく通信経路も保護するため、HTTP への後退をここで拒否する。
+    parsed_url = urlparse(url)
+    if parsed_url.scheme != "https" or not parsed_url.netloc:
+        raise SysrootConfigError(f"{label}.url must be an HTTPS URL: {url}")
+    # URL は sources.list の "deb [options] url suite components" 行へ埋め込むため、
+    # 行の構文を壊す空白と、オプション区切りの角括弧を含む URL は受け付けない。
+    if any(character.isspace() for character in url) or "[" in url or "]" in url:
+        raise SysrootConfigError(f"{label}.url contains unsupported characters: {url}")
+
+    suite = _sysroot_require_token(raw.get("suite"), f"{label}.suite")
+    components = tuple(
+        _sysroot_require_token(component, f"{label}.components[]")
+        for component in _sysroot_require_string_array(raw.get("components"), f"{label}.components")
+    )
+    # 署名鍵の相対パスは設定ファイルの配置場所を基準に解決し、
+    # 実行時のカレントディレクトリに依存させない。
+    signed_by_value = _sysroot_require_string(raw.get("signed_by"), f"{label}.signed_by")
+    signed_by = Path(signed_by_value)
+    if not signed_by.is_absolute():
+        signed_by = config_dir / signed_by
+    signed_by = signed_by.resolve()
+    if not signed_by.is_file():
+        raise SysrootConfigError(f"{label}.signed_by does not exist: {signed_by}")
+    # 解決後の絶対パスも sources.list の signed-by= オプションへ埋め込むため、
+    # checkout の置き場所に構文を壊す文字が含まれていないかまで確認する。
+    if SYSROOT_CONFIG_TOKEN_PATTERN.fullmatch(str(signed_by)) is None:
+        raise SysrootConfigError(f"{label}.signed_by contains unsupported characters: {signed_by}")
+
+    return SysrootRepositoryConfig(
+        url=url,
+        suite=suite,
+        components=components,
+        signed_by=signed_by,
+    )
+
+
+def load_sysroot_config(path: Path) -> SysrootConfig:
+    """sysroot 設定 JSON を読み込み、検証済みの SysrootConfig を返す。"""
+    try:
+        raw_value: object = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise SysrootConfigError(f"Failed to read sysroot config: {path}: {error}") from error
+
+    raw = _sysroot_require_object(raw_value, "config")
+    name = _sysroot_require_token(raw.get("name"), "name")
+    arch = _sysroot_require_token(raw.get("arch"), "arch")
+    triplet = _sysroot_require_token(raw.get("triplet"), "triplet")
+    packages = tuple(
+        _sysroot_require_token(package, "packages[]")
+        for package in _sysroot_require_string_array(raw.get("packages"), "packages")
+    )
+
+    repositories_value = raw.get("repositories")
+    if not isinstance(repositories_value, list) or not repositories_value:
+        raise SysrootConfigError("repositories must be a non-empty array")
+    repositories = tuple(
+        _sysroot_load_repository(repository, path.parent, index)
+        for index, repository in enumerate(repositories_value)
+    )
+
+    return SysrootConfig(
+        name=name,
+        arch=arch,
+        triplet=triplet,
+        packages=packages,
+        repositories=repositories,
+    )
+
+
+def _sysroot_file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as file:
+        while True:
+            chunk = file.read(1024 * 1024)
+            if not chunk:
+                break
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def sysroot_config_fingerprint(config: SysrootConfig) -> str:
+    """設定内容から sysroot の同一性を判定するためのハッシュを計算する。
+
+    manifest に保存したこの値と比較して、設定が変わっていなければ
+    既存 sysroot を再利用する。署名鍵は checkout の絶対パスではなく
+    ファイル内容のハッシュで表現し、checkout の場所が違っても
+    同一内容なら同じ fingerprint になるようにする。
+    """
+    payload = {
+        "name": config.name,
+        "arch": config.arch,
+        "triplet": config.triplet,
+        "packages": config.packages,
+        "repositories": [
+            {
+                "url": repository.url,
+                "suite": repository.suite,
+                "components": repository.components,
+                "signed_by_sha256": _sysroot_file_sha256(repository.signed_by),
+            }
+            for repository in config.repositories
+        ],
+    }
+    # キー順序と区切り文字を固定した正規化 JSON をハッシュ対象にする。
+    encoded = json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True)
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+
+def _sysroot_require_command(name: str) -> str:
+    path = shutil.which(name)
+    if path is None:
+        raise SysrootBuildError(f"Required command was not found: {name}")
+    return path
+
+
+def _sysroot_run_command(
+    args: list[str],
+    *,
+    environment: dict[str, str] | None = None,
+    log_command: bool = True,
+) -> None:
+    # log_command=False はパッケージごとの展開のようにログが冗長になる場合に使う。
+    if log_command:
+        logger.info("Running command: %s", shlex.join(args))
+    subprocess.run(args, check=True, env=environment)
+
+
+def _sysroot_apt_options(work_dir: Path) -> list[str]:
+    # APT の状態ディレクトリ・キャッシュ・ソース定義をすべて work_dir 配下へ隔離し、
+    # ホストの /var/lib/apt や /etc/apt を読み書きしないようにする。
+    # これにより root 権限なしで、ホスト環境を汚さずに apt-get を実行できる。
+    state_dir = work_dir / "state"
+    return [
+        "-o",
+        f"Dir::State={state_dir}",
+        "-o",
+        f"Dir::State::status={state_dir / 'status'}",
+        "-o",
+        f"Dir::Cache={state_dir / 'cache'}",
+        "-o",
+        f"Dir::Etc::sourcelist={work_dir / 'sources.list'}",
+        "-o",
+        "Dir::Etc::sourceparts=/dev/null",
+        "-o",
+        "Dir::Etc::preferences=/dev/null",
+        "-o",
+        "Dir::Etc::preferencesparts=/dev/null",
+        "-o",
+        # 隔離した状態ディレクトリではロックファイルの所有権チェックが
+        # 失敗することがあるため、ロックを無効化する。
+        "Debug::NoLocking=true",
+    ]
+
+
+def _sysroot_write_apt_files(config: SysrootConfig, work_dir: Path) -> None:
+    # apt-get が期待するディレクトリ構造を用意する。
+    # 空の status ファイルは「何もインストールされていないシステム」を意味し、
+    # install が依存パッケージを漏れなく解決・ダウンロードする前提になる。
+    state_dir = work_dir / "state"
+    (state_dir / "lists" / "partial").mkdir(parents=True)
+    (state_dir / "cache" / "archives" / "partial").mkdir(parents=True)
+    (state_dir / "status").touch()
+
+    # ホストの /etc/apt を読ませず、対象アーキテクチャだけを見る apt.conf を生成する。
+    # APT::Architecture を設定ファイル側で固定することで、
+    # x86_64 ホスト上でも arm64 などのパッケージを解決できる。
+    apt_config = "\n".join(
+        [
+            'Dir::Etc::main "/dev/null";',
+            'Dir::Etc::parts "/dev/null";',
+            f'APT::Architecture "{config.arch}";',
+            f'APT::Architectures {{ "{config.arch}"; }};',
+            'Acquire::Languages "none";',
+            'APT::Install-Recommends "false";',
+            'APT::Install-Suggests "false";',
+            "",
+        ]
+    )
+    (work_dir / "apt.conf").write_text(apt_config, encoding="utf-8")
+
+    source_lines = []
+    for repository in config.repositories:
+        components = " ".join(repository.components)
+        source_lines.append(
+            "deb "
+            f"[arch={config.arch} signed-by={repository.signed_by}] "
+            f"{repository.url} {repository.suite} {components}"
+        )
+    (work_dir / "sources.list").write_text("\n".join(source_lines) + "\n", encoding="utf-8")
+
+
+def _sysroot_ensure_usrmerge_symlinks(root: Path) -> None:
+    # dpkg-deb --extract は maintainer script を実行しないため、
+    # 通常は usrmerge パッケージが作成する /lib -> usr/lib などのリンクが存在しない。
+    # このリンクがないと、パッケージが /lib/... を参照するパスで配置したファイルと
+    # /usr/lib/... を参照するリンカがすれ違って解決に失敗するため、ここで補う。
+    for legacy, merged in (
+        ("bin", "usr/bin"),
+        ("sbin", "usr/sbin"),
+        ("lib", "usr/lib"),
+        ("lib64", "usr/lib64"),
+    ):
+        legacy_path = root / legacy
+        # パッケージが実体のディレクトリやリンクを配置済みの場合はそれを尊重する。
+        if legacy_path.is_symlink() or legacy_path.exists():
+            continue
+        if (root / merged).is_dir():
+            legacy_path.symlink_to(merged)
+
+
+def _sysroot_fix_absolute_symlinks(root: Path) -> None:
+    # パッケージ内の絶対パスリンク (例: libfoo.so -> /usr/lib/.../libfoo.so.1) は
+    # sysroot の外、つまりホスト側のファイルを指してしまう。
+    # クロスコンパイル時にリンカが正しいライブラリを解決できるよう、
+    # sysroot 内で完結する相対リンクへ張り替える。
+    for path in root.rglob("*"):
+        if not path.is_symlink():
+            continue
+        target = Path(os.readlink(path))
+        if not target.is_absolute():
+            continue
+        # /etc/alternatives 経由のリンクなど、展開だけでは実体が存在しない
+        # リンク先は張り替えの根拠がないためそのまま残す。
+        target_in_sysroot = root / target.relative_to("/")
+        if not target_in_sysroot.exists():
+            continue
+        relative_target = os.path.relpath(target_in_sysroot, start=path.parent)
+        path.unlink()
+        path.symlink_to(relative_target)
+
+
+def _sysroot_link_pkgconfig_files(root: Path, triplet: str) -> None:
+    # WebRTC のビルドは usr/share/pkgconfig から .pc ファイルを探すため、
+    # トリプレット固有ディレクトリにしかない定義へ互換リンクを張る。
+    source_dir = root / "usr" / "lib" / triplet / "pkgconfig"
+    if not source_dir.is_dir():
+        return
+    destination_dir = root / "usr" / "share" / "pkgconfig"
+    destination_dir.mkdir(parents=True, exist_ok=True)
+    for source in sorted(source_dir.iterdir()):
+        destination = destination_dir / source.name
+        # パッケージが usr/share/pkgconfig へ直接配置した定義を上書きしない。
+        if destination.exists() or destination.is_symlink():
+            continue
+        # sysroot を移動しても壊れないよう相対パスでリンクする。
+        destination.symlink_to(f"../../lib/{triplet}/pkgconfig/{source.name}")
+
+
+def _sysroot_postprocess(root: Path, triplet: str) -> None:
+    # maintainer script を実行しない展開方式の穴を埋める後処理をまとめて行う。
+    # 後処理の内容を変えたら SYSROOT_MANIFEST_VERSION をインクリメントすること。
+    _sysroot_ensure_usrmerge_symlinks(root)
+    _sysroot_fix_absolute_symlinks(root)
+    _sysroot_link_pkgconfig_files(root, triplet)
+
+
+def _sysroot_read_manifest(output_dir: Path) -> dict[str, object] | None:
+    # manifest が読めない・形式が不正な場合は None を返し、
+    # 呼び出し側で「由来不明の既存ディレクトリ」として扱う。
+    manifest_path = output_dir / SYSROOT_MANIFEST_NAME
+    try:
+        raw_value: object = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    if not isinstance(raw_value, dict) or not all(isinstance(key, str) for key in raw_value):
+        return None
+    return cast(dict[str, object], raw_value)
+
+
+def _sysroot_install_completed(new_root: Path, output_dir: Path) -> None:
+    # 完成した sysroot を出力先へ rename で切り替える。
+    # 展開途中の状態が output_dir に見える瞬間を作らないため、
+    # 既存の出力は退避 -> 新規を配置 -> 退避を削除、の順で入れ替える。
+    backup_dir = new_root.parent / "previous-sysroot"
+    had_previous = output_dir.exists() or output_dir.is_symlink()
+    if had_previous:
+        output_dir.rename(backup_dir)
+    try:
+        new_root.rename(output_dir)
+    except BaseException:
+        # 新規の配置に失敗した場合は退避した既存の出力を元へ戻す。
+        if had_previous:
+            backup_dir.rename(output_dir)
+        raise
+    if had_previous:
+        if backup_dir.is_dir() and not backup_dir.is_symlink():
+            shutil.rmtree(backup_dir)
+        else:
+            # 既存の出力が symlink や通常ファイルだった場合は unlink で消す。
+            backup_dir.unlink()
+
+
+def build_sysroot(config: SysrootConfig, output_dir: Path, *, force: bool = False) -> bool:
+    """設定に従って sysroot を output_dir へ生成する。
+
+    一致する manifest を持つ sysroot が既にあれば再生成せず False を返す。
+    実際に生成した場合は True を返す。設定と一致しない既存の出力は、
+    force が指定されない限り黙って削除も再利用もせずエラーにする。
+    """
+    fingerprint = sysroot_config_fingerprint(config)
+    manifest = _sysroot_read_manifest(output_dir)
+    if (
+        not force
+        and manifest is not None
+        and manifest.get("format_version") == SYSROOT_MANIFEST_VERSION
+        and manifest.get("fingerprint") == fingerprint
+    ):
+        logger.info("Reusing sysroot: %s", output_dir)
+        return False
+    if not force and (output_dir.exists() or output_dir.is_symlink()):
+        raise SysrootBuildError(
+            f"Existing sysroot does not match the current config: {output_dir}; use --force"
+        )
+
+    apt_get = _sysroot_require_command("apt-get")
+    dpkg_deb = _sysroot_require_command("dpkg-deb")
+    output_dir.parent.mkdir(parents=True, exist_ok=True)
+
+    # 作業ディレクトリは output_dir と同じ親に作り、
+    # 完成後の rename による入れ替えが同一ファイルシステム内で完結するようにする。
+    with tempfile.TemporaryDirectory(
+        prefix=f".{output_dir.name}-", dir=output_dir.parent
+    ) as temporary_dir_value:
+        temporary_dir = Path(temporary_dir_value)
+        # TemporaryDirectory は 0700 で作られるため、
+        # sysroot をそのまま参照しても支障がないよう権限を緩める。
+        temporary_dir.chmod(0o755)
+        work_dir = temporary_dir / "apt"
+        new_root = temporary_dir / "rootfs"
+        work_dir.mkdir()
+        new_root.mkdir()
+        _sysroot_write_apt_files(config, work_dir)
+
+        environment = os.environ.copy()
+        environment["APT_CONFIG"] = str(work_dir / "apt.conf")
+        apt_options = _sysroot_apt_options(work_dir)
+        _sysroot_run_command([apt_get, *apt_options, "update"], environment=environment)
+        # --download-only により、依存解決とダウンロードだけを apt-get に任せる。
+        # インストール（＝maintainer script の実行）はしないので root 権限が要らない。
+        _sysroot_run_command(
+            [
+                apt_get,
+                *apt_options,
+                "--download-only",
+                "--yes",
+                "--no-install-recommends",
+                "--no-install-suggests",
+                "install",
+                *config.packages,
+            ],
+            environment=environment,
+        )
+
+        # ダウンロード済みの deb をすべて sysroot へ展開する。
+        # dpkg-deb --extract はファイルを取り出すだけで maintainer script を実行しない。
+        archive_dir = work_dir / "state" / "cache" / "archives"
+        deb_files = sorted(archive_dir.glob("*.deb"))
+        if not deb_files:
+            raise SysrootBuildError(f"No deb packages were downloaded for: {config.name}")
+        logger.info("Extracting %d packages", len(deb_files))
+        for deb_file in deb_files:
+            _sysroot_run_command(
+                [dpkg_deb, "--extract", str(deb_file), str(new_root)], log_command=False
+            )
+
+        _sysroot_postprocess(new_root, config.triplet)
+        # 生成が最後まで完了した sysroot にだけ manifest を書き込む。
+        # 途中で失敗した出力には manifest がないため、誤って再利用されることはない。
+        manifest_value = {
+            "format_version": SYSROOT_MANIFEST_VERSION,
+            "fingerprint": fingerprint,
+            "name": config.name,
+            "arch": config.arch,
+            "triplet": config.triplet,
+            "deb_files": [deb_file.name for deb_file in deb_files],
+        }
+        (new_root / SYSROOT_MANIFEST_NAME).write_text(
+            json.dumps(manifest_value, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
+        _sysroot_install_completed(new_root, output_dir)
+
+    logger.info("Built sysroot: %s", output_dir)
+    return True
+
+
+# ここまで sysroot 生成処理
+
+
 def install_sysroot(config_path: str, install_dir: str, force: bool = False) -> None:
     rootfs_dir = os.path.join(install_dir, "rootfs")
-    manifest_path = os.path.join(rootfs_dir, ".webrtc-build-sysroot.json")
-    rootfs_version_path = os.path.join(install_dir, "rootfs.version")
 
     config = load_sysroot_config(Path(config_path))
     expected_name = Path(config_path).stem
@@ -1246,24 +1737,14 @@ def install_sysroot(config_path: str, install_dir: str, force: bool = False) -> 
             f"Sysroot config name does not match: expected={expected_name}, actual={config.name}"
         )
 
-    # multistrap で生成した既存 rootfs には manifest がないため、
-    # 旧方式の version ファイルも存在する場合だけ旧成果物と判定する。
-    legacy_rootfs = (
-        os.path.lexists(rootfs_dir)
-        and not os.path.isfile(manifest_path)
-        and os.path.isfile(rootfs_version_path)
-    )
-
-    # 旧成果物も builder の原子的な置換経路へ渡し、生成失敗時は温存する。
-    build_sysroot(config, Path(rootfs_dir), force=force or legacy_rootfs)
-    if os.path.exists(rootfs_version_path):
-        os.remove(rootfs_version_path)
+    # 同一設定の sysroot が既にあれば build_sysroot 側が再利用する。
+    build_sysroot(config, Path(rootfs_dir), force=force)
 
 
 @versioned
 def install_android_ndk(version, install_dir, source_dir, platform="linux"):
     if platform not in ("windows", "darwin", "linux"):
-        raise Exception(f"Not supported platform: {platform}")
+        raise BuildbaseError(f"Not supported platform: {platform}")
 
     if platform == "windows":
         url = f"https://dl.google.com/android/repository/android-ndk-{version}-{platform}.zip"
@@ -1313,9 +1794,9 @@ def install_android_sdk_cmdline_tools(version, install_dir, source_dir):
 @versioned
 def install_android_sdk_platform_tools(version, install_dir, source_dir, platform):
     if version not in ("latest",):
-        raise Exception(f"Supports only 'latest' version, but got: {version}")
+        raise BuildbaseError(f"Supports only 'latest' version, but got: {version}")
     if platform not in ("windows", "darwin", "linux"):
-        raise Exception(f"Not supported platform: {platform}")
+        raise BuildbaseError(f"Not supported platform: {platform}")
     archive = download(
         f"https://dl.google.com/android/repository/platform-tools-{version}-{platform}.zip",
         source_dir,
@@ -1393,7 +1874,7 @@ def install_cmake(version, source_dir, install_dir, platform: str, ext):
 
 @versioned
 def install_sdl2(
-    version, source_dir, build_dir, install_dir, debug: bool, platform: str, cmake_args: List[str]
+    version, source_dir, build_dir, install_dir, debug: bool, platform: str, cmake_args: list[str]
 ):
     url = (
         f"https://github.com/libsdl-org/SDL/releases/download/release-{version}/SDL2-{version}.zip"
@@ -1503,7 +1984,7 @@ def install_sdl2(
 
 @versioned
 def install_sdl3(
-    version, source_dir, build_dir, install_dir, debug: bool, platform: str, cmake_args: List[str]
+    version, source_dir, build_dir, install_dir, debug: bool, platform: str, cmake_args: list[str]
 ):
     url = f"https://github.com/libsdl-org/SDL/releases/download/release-{version}/SDL3-{version}.tar.gz"
     path = download(url, source_dir)
@@ -1614,19 +2095,19 @@ def install_cuda_windows(version, source_dir, build_dir, install_dir):
     rm_rf(os.path.join(build_dir, "cuda"))
     rm_rf(os.path.join(install_dir, "cuda"))
     if version == "10.2.89-1":
-        url = "http://developer.download.nvidia.com/compute/cuda/10.2/Prod/local_installers/cuda_10.2.89_441.22_win10.exe"  # noqa: E501
+        url = "http://developer.download.nvidia.com/compute/cuda/10.2/Prod/local_installers/cuda_10.2.89_441.22_win10.exe"
     elif version == "11.8.0-1":
-        url = "https://developer.download.nvidia.com/compute/cuda/11.8.0/local_installers/cuda_11.8.0_522.06_windows.exe"  # noqa: E501
+        url = "https://developer.download.nvidia.com/compute/cuda/11.8.0/local_installers/cuda_11.8.0_522.06_windows.exe"
     elif version == "12.6.3-1":
-        url = "https://developer.download.nvidia.com/compute/cuda/12.6.3/local_installers/cuda_12.6.3_561.17_windows.exe"  # noqa: E501
+        url = "https://developer.download.nvidia.com/compute/cuda/12.6.3/local_installers/cuda_12.6.3_561.17_windows.exe"
     elif version == "12.9.1-1":
-        url = "https://developer.download.nvidia.com/compute/cuda/12.9.1/local_installers/cuda_12.9.1_576.57_windows.exe"  # noqa: E501
+        url = "https://developer.download.nvidia.com/compute/cuda/12.9.1/local_installers/cuda_12.9.1_576.57_windows.exe"
     elif version == "13.0.1-1":
-        url = "https://developer.download.nvidia.com/compute/cuda/13.0.1/local_installers/cuda_13.0.1_windows.exe"  # noqa: E501
+        url = "https://developer.download.nvidia.com/compute/cuda/13.0.1/local_installers/cuda_13.0.1_windows.exe"
     elif version == "13.3.1-1":
-        url = "https://developer.download.nvidia.com/compute/cuda/13.3.1/local_installers/cuda_13.3.1_windows.exe"  # noqa: E501
+        url = "https://developer.download.nvidia.com/compute/cuda/13.3.1/local_installers/cuda_13.3.1_windows.exe"
     else:
-        raise Exception(f"Unknown CUDA version {version}")
+        raise BuildbaseError(f"Unknown CUDA version {version}")
     file = download(url, source_dir)
 
     mkdir_p(os.path.join(build_dir, "cuda"))
@@ -1644,14 +2125,14 @@ def install_cuda_windows(version, source_dir, build_dir, install_dir):
     if os.path.exists(cuda_crt_src):
         copytree(cuda_crt_src, os.path.join(install_dir, "cuda"))
     elif version.startswith("13."):
-        raise Exception(f"cuda_crt not found for CUDA {version}: expected {cuda_crt_src}")
+        raise BuildbaseError(f"cuda_crt not found for CUDA {version}: expected {cuda_crt_src}")
     # CUDA 13 以降は cicc (nvvm) が libnvvm に分離されている
     # インストーラー内は libnvvm/nvvm/nvvm/{bin,libdevice,...} と nvvm が二重になっている
     libnvvm_src = os.path.join(build_dir, "cuda", "libnvvm", "nvvm", "nvvm")
     if os.path.exists(libnvvm_src):
         copytree(libnvvm_src, os.path.join(install_dir, "cuda", "nvvm"))
     elif version.startswith("13."):
-        raise Exception(f"libnvvm not found for CUDA {version}: expected {libnvvm_src}")
+        raise BuildbaseError(f"libnvvm not found for CUDA {version}: expected {libnvvm_src}")
 
 
 @versioned
@@ -1700,7 +2181,7 @@ def install_blend2d_official(
     build_dir,
     install_dir,
     cmake_args,
-    expected_sha256: Optional[str] = None,
+    expected_sha256: str | None = None,
 ):
     rm_rf(os.path.join(source_dir, "blend2d"))
     rm_rf(os.path.join(build_dir, "blend2d"))
@@ -2017,9 +2498,11 @@ def install_grpc(
     build_dir,
     install_dir,
     debug: bool,
-    cmake_args: List[str],
-    cmake_build_args: List[str] = [],
+    cmake_args: list[str],
+    cmake_build_args: list[str] | None = None,
 ):
+    if cmake_build_args is None:
+        cmake_build_args = []
     grpc_source_dir = os.path.join(source_dir, "grpc")
     grpc_build_dir = os.path.join(build_dir, "grpc")
     grpc_install_dir = os.path.join(install_dir, "grpc")
@@ -2092,7 +2575,7 @@ def install_boringssl(
     build_dir: str,
     install_dir: str,
     configuration: str,
-    cmake_args: List[str],
+    cmake_args: list[str],
 ):
     boringssl_source_dir = os.path.join(source_dir, "boringssl")
     boringssl_build_dir = os.path.join(build_dir, "boringssl")
@@ -2122,7 +2605,7 @@ def install_boringssl(
 
 @versioned
 def install_opus(
-    version, source_dir, build_dir, install_dir, configuration: str, cmake_args: List[str]
+    version, source_dir, build_dir, install_dir, configuration: str, cmake_args: list[str]
 ):
     opus_source_dir = os.path.join(source_dir, "opus")
     opus_build_dir = os.path.join(build_dir, "opus")
@@ -2156,7 +2639,7 @@ def install_opus(
 @versioned
 def install_nasm(version, source_dir, install_dir, platform: str):
     if platform not in ("macosx", "win32", "win64"):
-        raise Exception(f"Unsupported platform: {platform}")
+        raise BuildbaseError(f"Unsupported platform: {platform}")
     url = f"https://www.nasm.us/pub/nasm/releasebuilds/{version}/{platform}/nasm-{version}-{platform}.zip"
     path = download(url, source_dir)
     nasm_install_dir = os.path.join(install_dir, "nasm")
@@ -2167,7 +2650,7 @@ def install_nasm(version, source_dir, install_dir, platform: str):
 @versioned
 def install_ninja(version, source_dir, install_dir, platform):
     if platform not in ("win", "winarm64", "linux-aarch64", "linux", "mac"):
-        raise Exception(f"Unsupported platform: {platform}")
+        raise BuildbaseError(f"Unsupported platform: {platform}")
     url = f"https://github.com/ninja-build/ninja/releases/download/{version}/ninja-{platform}.zip"
     path = download(url, source_dir)
     ninja_install_dir = os.path.join(install_dir, "ninja")
@@ -2363,7 +2846,7 @@ def install_aom(version, source_dir, build_dir, install_dir, configuration, cmak
         cmd(["cmake", "--install", aom_build_dir])
 
 
-class PlatformTarget(object):
+class PlatformTarget:
     def __init__(self, os, osver, arch, extra=None):
         self.os = os
         self.osver = osver
@@ -2392,7 +2875,7 @@ class PlatformTarget(object):
             if self.osver is None:
                 return f"{ubuntu_version}_armv8_jetson"
             return f"{ubuntu_version}_armv8_jetson_{self.osver}"
-        raise Exception("error")
+        raise BuildbaseError("error")
 
 
 def get_windows_osver():
@@ -2424,10 +2907,9 @@ def get_build_platform() -> PlatformTarget:
             os = "ubuntu"
             osver = release["VERSION_ID"]
         else:
-            raise Exception(f"OS {os} not supported")
-        pass
+            raise BuildbaseError(f"OS {os} not supported")
     else:
-        raise Exception(f"OS {os} not supported")
+        raise BuildbaseError(f"OS {os} not supported")
 
     arch = platform.machine()
     if arch in ("AMD64", "x86_64"):
@@ -2438,7 +2920,7 @@ def get_build_platform() -> PlatformTarget:
         else:
             arch = "arm64"
     else:
-        raise Exception(f"Arch {arch} not supported")
+        raise BuildbaseError(f"Arch {arch} not supported")
 
     return PlatformTarget(os, osver, arch)
 
@@ -2466,7 +2948,7 @@ def get_clang_version(clang):
         if xs[i - 2] == "clang" and xs[i - 1] == "version":
             return xs[i]
 
-    raise Exception("Failed to get clang version")
+    raise BuildbaseError("Failed to get clang version")
 
 
 def fix_clang_version(clang_dir, clang_version):
@@ -2477,26 +2959,24 @@ def fix_clang_version(clang_dir, clang_version):
     # <clang_dir>/lib/clang/16.0.0/include になっている場合と
     # <clang_dir>/lib/clang/16/include になっている場合があるため
     paths = [os.path.join(clang_dir, "lib", "clang"), os.path.join(clang_dir, "lib64", "clang")]
-    exists = any(map(lambda x: os.path.exists(os.path.join(x, clang_version, "include")), paths))
+    exists = any(os.path.exists(os.path.join(x, clang_version, "include")) for x in paths)
     if exists:
         return clang_version
 
     fixed_clang_version = clang_version.split(".")[0]
-    exists = any(
-        map(lambda x: os.path.exists(os.path.join(x, fixed_clang_version, "include")), paths)
-    )
+    exists = any(os.path.exists(os.path.join(x, fixed_clang_version, "include")) for x in paths)
     if exists:
         return fixed_clang_version
 
-    raise Exception(
+    raise BuildbaseError(
         f"Failed to fix clang version: clang_dir={clang_dir} clang_version={clang_version}"
     )
 
 
-class Platform(object):
+class Platform:
     def _check(self, flag, error_message):
         if not flag:
-            raise Exception(error_message)
+            raise BuildbaseError(error_message)
 
     def _check_platform_target(self, p: PlatformTarget):
         if p.os == "raspberry-pi-os":
@@ -2632,7 +3112,7 @@ def get_webrtc_platform(platform: Platform) -> str:
         else:
             return f"{platform.target.extra}_armv8"
     else:
-        raise Exception(f"Unknown platform {platform.target.os}")
+        raise BuildbaseError(f"Unknown platform {platform.target.os}")
 
 
 # 内部で os.path.abspath() を利用しており、 os.path.abspath() はカレントディレクトリに依存するため、
