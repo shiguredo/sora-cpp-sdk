@@ -26,6 +26,7 @@
 #include <api/video/i420_buffer.h>
 #include <api/video/video_frame.h>
 #include <api/video/video_rotation.h>
+#include <pc/media_stream_track_proxy.h>
 #include <pc/video_track.h>
 #include <rtc_base/thread.h>
 #include <rtc_base/time_utils.h>
@@ -261,42 +262,47 @@ class TestRenderer : public sora::BaseRenderer {
 webrtc::scoped_refptr<TestVideoSource> CreateTrackAndAddSink(
     TestRenderer& renderer,
     webrtc::Thread* worker,
-    webrtc::scoped_refptr<webrtc::VideoTrack>* track) {
+    webrtc::Thread* signaling,
+    webrtc::scoped_refptr<webrtc::VideoTrackInterface>* track) {
   webrtc::scoped_refptr<TestVideoSource> source =
       webrtc::make_ref_counted<TestVideoSource>();
-  worker->BlockingCall([&] {
-    *track = webrtc::VideoTrack::Create("test", source, worker);
-    renderer.AddTrack(track->get());
-  });
+  // VideoTrack::Create() は signaling スレッド上で呼ぶ必要がある
+  webrtc::scoped_refptr<webrtc::VideoTrack> raw = signaling->BlockingCall(
+      [&] { return webrtc::VideoTrack::Create("test", source, worker); });
+  // VideoTrackProxy を利用することで、操作を worker スレッドに寄せることができる
+  *track = webrtc::VideoTrackProxy::Create(signaling, worker, raw);
+  renderer.AddTrack(track->get());
   return source;
 }
 
-// ワーカースレッドを生成してトラックを追加し、テスト終了時に片付ける
-// track_count 本のトラックは同一のワーカースレッド上で作り、同じ寸法の
+// 各種スレッドを生成してトラックを追加し、テスト終了時に片付ける
+// track_count 本のトラックは同一のスレッド上で作り、同じ寸法の
 // フレームを注入して複数 Sink の枠割りを検証できるようにする
 struct TrackFixture {
   TestRenderer& renderer;
   std::unique_ptr<webrtc::Thread> worker = webrtc::Thread::Create();
-  std::vector<webrtc::scoped_refptr<webrtc::VideoTrack>> tracks;
+  std::unique_ptr<webrtc::Thread> signaling = webrtc::Thread::Create();
+  std::vector<webrtc::scoped_refptr<webrtc::VideoTrackInterface>> tracks;
   std::vector<webrtc::scoped_refptr<TestVideoSource>> sources;
 
   TrackFixture(TestRenderer& renderer, size_t track_count = 1)
       : renderer(renderer) {
     worker->Start();
+    signaling->Start();
     for (size_t i = 0; i < track_count; i++) {
-      webrtc::scoped_refptr<webrtc::VideoTrack> track;
-      sources.push_back(CreateTrackAndAddSink(renderer, worker.get(), &track));
+      webrtc::scoped_refptr<webrtc::VideoTrackInterface> track;
+      sources.push_back(CreateTrackAndAddSink(renderer, worker.get(),
+                                              signaling.get(), &track));
       tracks.push_back(track);
     }
   }
 
   ~TrackFixture() {
     StopInjection();
-    worker->BlockingCall([&] {
-      for (const webrtc::scoped_refptr<webrtc::VideoTrack>& track : tracks) {
-        renderer.RemoveTrack(track.get());
-      }
-    });
+    for (const webrtc::scoped_refptr<webrtc::VideoTrackInterface>& track :
+         tracks) {
+      renderer.RemoveTrack(track.get());
+    }
     tracks.clear();
   }
 
