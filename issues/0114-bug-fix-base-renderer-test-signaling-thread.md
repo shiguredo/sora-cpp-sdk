@@ -1,7 +1,7 @@
 # BaseRenderer テストが VideoTrack を signaling スレッド以外で作るため Debug ビルドで abort する
 
 - Created: 2026-10-16
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-10-17
 - Branch: feature/fix-base-renderer-test-signaling-thread
 - Polished: {YYYY-MM-DD}
 
@@ -71,4 +71,23 @@ _build\windows_x86_64\debug\test\base_renderer.exe
 
 ## 解決方法
 
-未対応。
+`test/base_renderer.cpp` の `TrackFixture` が生の `webrtc::VideoTrack` をそのまま `BaseRenderer` に渡していたのをやめ、`VideoTrackProxy` で包んだトラックを渡すようにした。生の `VideoTrack` は Sink の追加と削除を worker スレッドで、破棄を signaling スレッドで行う必要があるが、`VideoTrackProxy` はこれらの呼び出しをそれぞれのスレッドへ振り分けるため、テスト側でスレッドを選ぶ必要がなくなる。
+
+- `TrackFixture` に `webrtc::Thread::Create()` で作る `signaling` を追加し、`worker` とともに `Start()` する
+- `CreateTrackAndAddSink()` は `signaling->BlockingCall()` の中で `webrtc::VideoTrack::Create()` を呼ぶ。生の `VideoTrack` の生成は signaling スレッド上で行う必要があるため
+- 生成した生の `VideoTrack` を `webrtc::VideoTrackProxy::Create(signaling, worker, raw)` で包み、これを `BaseRenderer` に追加する。`AddOrUpdateSink` / `RemoveSink` は proxy が worker スレッドへ、proxy 自身の破棄は signaling スレッドへ振り分ける
+- トラックを保持する型を `webrtc::scoped_refptr<webrtc::VideoTrack>` から `webrtc::scoped_refptr<webrtc::VideoTrackInterface>` に変更した。`VideoTrackProxy::Create()` が返すのは `VideoTrackProxyWithInternal<VideoTrackInterface>` のため
+- デストラクタでは `renderer.RemoveTrack()` で Sink を破棄してから `tracks` を `clear()` する。`Sink` が行う `RemoveSink` も proxy が worker スレッドへ寄せるため、`worker->BlockingCall()` で囲む必要がなくなった
+
+モックやスタブは利用していない。変更対象は `test/base_renderer.cpp` のみで、`src/renderer/base_renderer.cpp` の `BaseRenderer` は変更していない。
+
+### 検証結果
+
+libwebrtc をソースビルドした Debug (`is_debug = true`) と Release を `--local-webrtc-build-dir` で指定して `python3 run.py build ubuntu-24.04_x86_64 --debug --test` および `python3 run.py build ubuntu-24.04_x86_64 --test` を実行し、`base_renderer` の挙動を確認した。
+
+- 修正前: Debug で最初の `TEST_CASE` が `pc/video_track.cc` の `Check failed: (&signaling_thread_)->IsCurrent()` を出して SIGABRT で終了する (issue の再現手順どおり)
+- 修正後: Debug / Release ともに `All tests passed (29 assertions in 10 test cases)` で 10 ケース全て成功する。それぞれ 3 回連続で実行しても同じ結果になる
+
+同じ Debug ビルドで `video_factory_env` / `video_factory_data_race` / `sora_client_context` も成功する。`device_list` はこの環境に V4L2 のキャプチャデバイスが無いため失敗するが、修正とは無関係である。
+
+なお `--local-webrtc-build-dir` を指定して libwebrtc をソースビルドした場合、NVCODEC の CUDA ソースがコンパイルエラーになる既存の問題があるため、検証では `--disable-cuda` を併用した。
