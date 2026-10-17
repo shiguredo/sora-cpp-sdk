@@ -11,6 +11,10 @@
 
 ## develop
 
+- [FIX] Intel VPL の AV1 デコーダーが非対応と誤判定されて起動に失敗するのを修正する
+  - AV1 の照会に `CodecProfile` を設定していなかったため、プロファイル未指定の照会を拒否する VPL 実装で AV1 デコーダーが利用できないと判定されていた
+  - sumomo は `SoraClientContext::Create()` が失敗した場合にエラーログと非ゼロの終了コードで終了するようにする
+  - @melpon
 - [CHANGE] Windows のビルドを MSVC から libwebrtc と同じ clang-cl + libc++ に変更する
   - コンパイラは libwebrtc が利用するのと同じリビジョンの clang-cl (Clang 24)、標準ライブラリは libc++、CRT は静的 (`/MT`) になる
   - ジェネレーターは Visual Studio から Ninja に変更し、Ninja は `_install/<platform>/<config>/ninja/ninja.exe` に自動でダウンロードされる
