@@ -138,9 +138,8 @@ std::unique_ptr<MFXVideoDECODE> VplVideoDecoderImpl::CreateDecoderInternal(
     // この設定がないと H.265 デコーダーの Init が sts=-15 で失敗する
     param.mfx.CodecProfile = MFX_PROFILE_HEVC_MAIN;
   } else if (codec == MFX_CODEC_AV1) {
-    // param.mfx.CodecProfile = MFX_PROFILE_AV1_MAIN;
     // この設定がないと Query しても sts=-3 で失敗する
-    // MFX_LEVEL_AV1_2 で妥当かどうかはよく分からない
+    param.mfx.CodecProfile = MFX_PROFILE_AV1_MAIN;
     param.mfx.CodecLevel = MFX_LEVEL_AV1_2;
   }
 

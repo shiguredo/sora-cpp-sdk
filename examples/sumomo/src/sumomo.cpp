@@ -1291,6 +1291,10 @@ int main(int argc, char* argv[]) {
   }
 
   auto context = sora::SoraClientContext::Create(context_config);
+  if (context == nullptr) {
+    RTC_LOG(LS_ERROR) << "Failed to create SoraClientContext";
+    return 1;
+  }
   auto sumomo = std::make_shared<Sumomo>(context, config);
   sumomo->Run();
 
