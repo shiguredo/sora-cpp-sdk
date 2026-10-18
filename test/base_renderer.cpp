@@ -145,6 +145,7 @@ class TestRenderer : public sora::BaseRenderer {
     canvas_height_ = height;
     canvas_.assign(image, image + static_cast<size_t>(width) * height * 4);
     sink_infos_ = sink_infos;
+    rendered_ = true;
     cv_.notify_all();
   }
 
@@ -154,8 +155,9 @@ class TestRenderer : public sora::BaseRenderer {
   template <typename Predicate>
   bool WaitUntil(Predicate predicate, int timeout_ms = 3000) {
     std::unique_lock<std::mutex> lock(mutex_);
-    return cv_.wait_for(lock, std::chrono::milliseconds(timeout_ms),
-                        [&]() { return predicate(GetActualRectsLocked()); });
+    return cv_.wait_for(lock, std::chrono::milliseconds(timeout_ms), [&]() {
+      return rendered_ && predicate(GetActualRectsLocked());
+    });
   }
 
   // 全 Sink のオフセットと枠寸法が期待値と一致するまで待つ
@@ -254,6 +256,8 @@ class TestRenderer : public sora::BaseRenderer {
   int canvas_height_ = 0;
   std::vector<uint8_t> canvas_;
   std::vector<sora::BaseRenderer::SinkInfo> sink_infos_;
+  // Render() が 1 回以上呼ばれたかどうか。描画前の初期状態で待機を成功させないために使う
+  bool rendered_ = false;
 };
 
 // トラックを作成してレンダラーに追加する
@@ -408,7 +412,6 @@ TEST_CASE("BaseRenderer が極小の枠でフィット寸法が 0 になって�
   // この状態でフレームを処理しても abort しないこと
   // (修正前は 0 寸法の I420Buffer を生成する際に RTC_CHECK で abort した)
   fixture.StartInjection(1920, 1080, webrtc::kVideoRotation_90);
-  std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
   // ウィンドウを戻すと正常に描画できること
   renderer.SetSize(2560, 1440);
@@ -534,4 +537,24 @@ TEST_CASE("BaseRenderer が極小ウィンドウで 0 寸法の枠になって�
   CAPTURE(RectToActualString(recovered_actual));
   REQUIRE(recovered);
   REQUIRE(!recovered_actual.empty());
+}
+
+TEST_CASE(
+    "BaseRenderer のテスト用レンダラーが描画前に空の矩形の待機を成功させない",
+    "[base_renderer]") {
+  // 描画スレッドを起動しないレンダラーを作る
+  // CanvasWidth() が 0 で SinkInfo も空のため、修正前の待機条件
+  // (空の矩形だけを要求する) では即座に成功してしまっていた状態と同じになる
+  TestRenderer renderer(1, 1);
+  renderer.Stop();
+  bool observed = renderer.WaitUntil(
+      [](const std::vector<ActualRect>& actual) { return actual.empty(); });
+  REQUIRE(!observed);
+  REQUIRE(renderer.CanvasWidth() == 0);
+
+  // 描画スレッドを起動すると、1x1 のキャンバスと空の矩形が観測できること
+  renderer.Start();
+  REQUIRE(renderer.WaitUntil(
+      [](const std::vector<ActualRect>& actual) { return actual.empty(); }));
+  REQUIRE(renderer.CanvasWidth() == 1);
 }

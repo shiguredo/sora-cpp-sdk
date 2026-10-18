@@ -91,6 +91,10 @@
 
 ### misc
 
+- [FIX] base_renderer テストが描画前の初期状態を成功と判定して間欠的に失敗するのを修正する
+  - 描画前に空の矩形を期待する待機が成功していたため、描画が 1 回行われるまで待機の条件を評価しないようにした
+  - 極小な枠のケースから固定時間の待機を削除した
+  - @melpon
 - [FIX] base_renderer テストが Debug ビルドで abort するのを修正する
   - `TrackFixture` が `webrtc::VideoTrack` を signaling スレッド以外で作成していたため、`RTC_DCHECK_RUN_ON(&signaling_thread_)` で失敗していた
   - `VideoTrackProxy` で包んだトラックを `BaseRenderer` に渡し、Sink の追加・削除とトラックの破棄を proxy に振り分けさせる
