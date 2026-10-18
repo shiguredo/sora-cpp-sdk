@@ -1155,9 +1155,11 @@ int main(int argc, char* argv[]) {
   }
 
   if (log_level != webrtc::LS_NONE) {
-    webrtc::LogMessage::LogToDebug((webrtc::LoggingSeverity)log_level);
-    webrtc::LogMessage::LogTimestamps();
-    webrtc::LogMessage::LogThreads();
+    webrtc::LoggingConfig log_config;
+    log_config.set_debug_severity((webrtc::LoggingSeverity)log_level);
+    log_config.set_log_timestamp(true);
+    log_config.set_log_thread(true);
+    webrtc::InitializeLogging(std::move(log_config));
   }
 
   // 表示して終了する系の処理はここに書く

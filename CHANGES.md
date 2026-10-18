@@ -91,6 +91,10 @@
 
 ### misc
 
+- [UPDATE] テストとサンプルのログ初期化を deprecated な `webrtc::LogMessage::LogThreads()` から `webrtc::InitializeLogging()` に移行する
+  - `webrtc::LoggingConfig` でログレベル・タイムスタンプ・スレッド名をまとめて設定し、ログの出力内容は変えない
+  - hello は設定ファイルの `log_level` を反映してから初期化するよう、初期化の位置を設定ファイルの読み込み後に移す
+  - @melpon
 - [FIX] base_renderer テストが描画前の初期状態を成功と判定して間欠的に失敗するのを修正する
   - 描画前に空の矩形を期待する待機が成功していたため、描画が 1 回行われるまで待機の条件を評価しないようにした
   - 極小な枠のケースから固定時間の待機を削除した

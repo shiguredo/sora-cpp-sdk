@@ -10,6 +10,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <utility>
 
 // Boost
 #include <boost/asio/executor_work_guard.hpp>
@@ -242,9 +243,11 @@ AdaptivePtimeResult CheckAdaptivePtime(
   REQUIRE(com_initializer.Succeeded());
 #endif
 
-  webrtc::LogMessage::LogToDebug(webrtc::LS_ERROR);
-  webrtc::LogMessage::LogTimestamps();
-  webrtc::LogMessage::LogThreads();
+  webrtc::LoggingConfig log_config;
+  log_config.set_debug_severity(webrtc::LS_ERROR);
+  log_config.set_log_timestamp(true);
+  log_config.set_log_thread(true);
+  webrtc::InitializeLogging(std::move(log_config));
 
   auto client = std::make_shared<SoraClient>(audio_adaptive_ptime);
   client->Run();
