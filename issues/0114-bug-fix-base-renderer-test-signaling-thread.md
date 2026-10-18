@@ -91,3 +91,5 @@ libwebrtc をソースビルドした Debug (`is_debug = true`) と Release を 
 同じ Debug ビルドで `video_factory_env` / `video_factory_data_race` / `sora_client_context` も成功する。`device_list` はこの環境に V4L2 のキャプチャデバイスが無いため失敗するが、修正とは無関係である。
 
 なお `--local-webrtc-build-dir` を指定して libwebrtc をソースビルドした場合、NVCODEC の CUDA ソースがコンパイルエラーになる既存の問題があるため、検証では `--disable-cuda` を併用した。
+
+Windows を含む各ターゲットのビルドと E2E テストは CI で確認し、全て成功した。
