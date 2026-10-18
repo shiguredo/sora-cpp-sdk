@@ -1,7 +1,7 @@
 # BaseRenderer テストが描画前の初期状態を成功と判定する問題を修正する
 
 - Created: 2026-10-02
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-10-18
 - Branch: feature/fix-base-renderer-test-render-wait
 - Polished: 2026-10-02
 
@@ -87,3 +87,37 @@ assertions: 26 | 25 passed | 1 failed
 - 描画未開始と描画停止後の回帰テストが追加され、待機条件から描画回数の確認を外すと失敗する。
 - Windows で該当ケースの 100 回実行が成功し、Windows と macOS または Ubuntu で `base_renderer` の全ケースが成功する。
 - 待機条件のコメントに、初期状態と描画済みの空の結果を区別する理由が記載されている。
+
+## 解決方法
+
+`test/base_renderer.cpp` の `TestRenderer` を修正し、待機条件が描画前の初期状態で成立しないようにした。`src/renderer/base_renderer.cpp` の `BaseRenderer` は変更していない。モックやスタブは利用していない。
+
+- `TestRenderer` に `rendered_` を追加し、`Render()` で描画結果を更新した後に同じ `mutex_` の保護下で `true` にする
+- `TestRenderer::WaitUntil()` の述語に `rendered_` を加え、描画が 1 回も行われていない間は条件を評価しないようにした。`cv_.wait_for()` は待機開始時にも述語を評価するため、これがないと描画前に空の矩形を期待する条件が即座に成立する。描画済みで結果が空の状態とは区別できる
+- 「BaseRenderer が極小の枠でフィット寸法が 0 になっても abort しない」の固定 200 ms 待機を削除した
+- 回帰テスト「BaseRenderer のテスト用レンダラーが描画前に空の矩形の待機を成功させない」を追加した。`TestRenderer` を作った直後に `Stop()` で描画スレッドを止め、空の矩形を期待する待機が失敗することと、`Start()` 後は 1x1 のキャンバスと空の矩形が観測できることを確認する
+
+### 再現の確認
+
+`TestRenderer::RenderThreadStarted()` は `BaseRenderer::RenderThread()` の先頭で、まだ `Render()` が一度も呼ばれていない時点で呼ばれる。ここに 500 ms の sleep を入れるだけで、修正前のコードは issue と同じ失敗を再現する。
+
+```text
+REQUIRE( renderer.CanvasWidth() == 1 )
+with expansion:
+  0 == 1
+with message:
+  RectToActualString(actual) := "[]"
+```
+
+極小ウィンドウのケースだけが失敗し、残り 9 ケースは通過する。同じ変異で修正後のコードは 11 ケースすべて成功する。注入スレッド側の sleep やテストスレッド側の sleep では、描画スレッドが注入とは独立に回るため、待機の最初の述語評価が描画前になる瞬間を作れず再現しなかった。
+
+### 検証結果
+
+Ubuntu 24.04 x86_64 の Release ビルド (`python3 run.py build ubuntu-24.04_x86_64 --test --disable-cuda`) で確認した。この環境では CUDA を含むビルドが sm_75 向けのコンパイルエラーになるため `--disable-cuda` を併用した。
+
+- 修正後は 11 ケースすべて成功する (`All tests passed (33 assertions in 11 test cases)`)。20 回繰り返しても成功する
+- `WaitUntil()` から `rendered_` の判定を外すと、追加した回帰テストが失敗する
+- 修正前のコードに上記の sleep を入れると、極小ウィンドウのケースが issue と同じ内容で失敗する
+- 修正後のコードに同じ sleep を入れても 11 ケースすべて成功する
+
+Windows での 100 回実行と、Windows / macOS での全ケースの確認は CI で行う。この環境では Ubuntu 24.04 x86_64 以外のターゲットをビルドできないため、未実施である。
