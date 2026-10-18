@@ -1,7 +1,7 @@
 # テストとサンプルのログ初期化を InitializeLogging に移行する
 
 - Created: 2026-09-29
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-10-18
 - Branch: feature/refactor-migrate-to-initializelogging
 - Polished: {YYYY-MM-DD}
 
@@ -40,3 +40,27 @@ libwebrtc の `webrtc::LogMessage::LogThreads()` は `[[deprecated("Use Initiali
 - テストとサンプルのビルドで `LogThreads` の deprecation 警告が出ないこと
 - テストとサンプルのログにタイムスタンプとスレッド名が従来どおり出力されること
 - `CHANGES.md` の `## develop` の `### misc` にエントリを追記していること
+
+## 解決方法
+
+テストとサンプルの計 8 ファイルで、`LogToDebug()` / `LogTimestamps()` / `LogThreads()` の 3 呼び出しを `webrtc::InitializeLogging()` の 1 呼び出しに置き換えた。
+
+### 行った変更
+
+- `webrtc::LoggingConfig` の `set_debug_severity()` に従来 `LogToDebug()` に渡していた重大度、`set_log_timestamp(true)`、`set_log_thread(true)` を設定してから `webrtc::InitializeLogging()` を呼ぶようにした
+  - 重大度は `LogToDebug()` が設定していたデバッグ出力の重大度に対応する `debug_severity` を設定する。`min_severity` は `InitializeLogging()` がログ sink の重大度として扱う値なので変更しない
+  - `log_thread` を有効にしないとログにスレッド ID が出力されない
+- `main` の先頭ではなく、従来ログを設定していた位置で 1 回だけ呼ぶようにした
+- `test/hello.cpp` は設定ファイルの `log_level` で重大度を後から設定していたため、初期化を設定ファイルの読み込み後に移し、指定された場合はその値を使うようにした
+  - `InitializeLogging()` は 1 プロセスにつき 1 回しか設定を反映しないため、初期化後に `LogToDebug()` を呼んでも重大度は変わらない
+- サンプル 3 種は従来どおり `--log-level` が `webrtc::LS_NONE` 以外のときだけ初期化する
+  - `LS_NONE` の場合は `InitializeLogging()` を呼ばないため、最初のログ出力時に既定の設定で暗黙に初期化される
+- 各ファイルに `std::move` を使うための `#include <utility>` を追加した
+
+### 確認結果
+
+- `test/` の 5 ファイルと、sumomo / sdl_sample をビルドし、`'LogThreads' is deprecated` の警告が出ないことを確認した
+- 変更前のビルドでは同じ 5 ファイルで同じ警告が出ることを確認済み
+- sumomo を `--log-level verbose` で実行し、ログが `[経過秒:ミリ秒][スレッド ID] (ファイル名:行): メッセージ` の形式で出力されることを確認した
+- sumomo を `--log-level none` で実行し、ログが出力されないことを確認した
+- messaging_recvonly_sample は CMake のビルドでリンク時に失敗するため、コンパイルのみ確認し、リンクは手動で行って確認した
