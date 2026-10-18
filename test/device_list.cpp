@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <string>
+#include <utility>
 
 // WebRTC
 #include <rtc_base/logging.h>
@@ -24,9 +25,11 @@ int main(int argc, char* argv[]) {
   }
 #endif
 
-  webrtc::LogMessage::LogToDebug(webrtc::LS_WARNING);
-  webrtc::LogMessage::LogTimestamps();
-  webrtc::LogMessage::LogThreads();
+  webrtc::LoggingConfig log_config;
+  log_config.set_debug_severity(webrtc::LS_WARNING);
+  log_config.set_log_timestamp(true);
+  log_config.set_log_thread(true);
+  webrtc::InitializeLogging(std::move(log_config));
 
   // デバイス一覧の取得
   std::string last_device_name;

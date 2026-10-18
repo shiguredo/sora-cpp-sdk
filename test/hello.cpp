@@ -7,6 +7,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 // Boost
@@ -199,9 +200,10 @@ int main(int argc, char* argv[]) {
   }
 #endif
 
-  webrtc::LogMessage::LogToDebug(webrtc::LS_WARNING);
-  webrtc::LogMessage::LogTimestamps();
-  webrtc::LogMessage::LogThreads();
+  webrtc::LoggingConfig log_config;
+  log_config.set_debug_severity(webrtc::LS_WARNING);
+  log_config.set_log_timestamp(true);
+  log_config.set_log_thread(true);
 
   boost::json::value v;
   {
@@ -326,8 +328,11 @@ int main(int argc, char* argv[]) {
     }
   }
   if (get(v, "log_level", x)) {
-    webrtc::LogMessage::LogToDebug((webrtc::LoggingSeverity)x.to_number<int>());
+    log_config.set_debug_severity((webrtc::LoggingSeverity)x.to_number<int>());
   }
+
+  webrtc::InitializeLogging(std::move(log_config));
+
   if (get(v, "degradation_preference", x)) {
     if (x.as_string() == "disabled") {
       config.degradation_preference = webrtc::DegradationPreference::DISABLED;

@@ -9,6 +9,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <utility>
 #include <vector>
 
 // Boost
@@ -230,9 +231,11 @@ int main(int argc, char* argv[]) {
   }
 #endif
 
-  webrtc::LogMessage::LogToDebug(webrtc::LS_ERROR);
-  webrtc::LogMessage::LogTimestamps();
-  webrtc::LogMessage::LogThreads();
+  webrtc::LoggingConfig log_config;
+  log_config.set_debug_severity(webrtc::LS_ERROR);
+  log_config.set_log_timestamp(true);
+  log_config.set_log_thread(true);
+  webrtc::InitializeLogging(std::move(log_config));
 
   sora::SoraClientContextConfig context_config;
   context_config.use_audio_device = false;
