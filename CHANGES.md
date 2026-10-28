@@ -48,6 +48,8 @@
   - JSON-RPC 2.0 のリクエストを `rpc` ラベルで送信する。`id` と `params` は省略でき、`params` に Object でも Array でもない値を指定した場合は送信しない
   - レスポンスは `SoraSignalingObserver::OnRpc()` に通知される
   - @melpon
+- [UPDATE] libwebrtc のバージョンを m157.8103.0.0 に上げる
+  - @voluntas
 - [UPDATE] libwebrtc のバージョンを m155.8059.4.1 に上げる
   - @voluntas
 - [UPDATE] libwebrtc のバージョンを m155.8059.1.1 に上げる
@@ -103,6 +105,8 @@
   - `TrackFixture` が `webrtc::VideoTrack` を signaling スレッド以外で作成していたため、`RTC_DCHECK_RUN_ON(&signaling_thread_)` で失敗していた
   - `VideoTrackProxy` で包んだトラックを `BaseRenderer` に渡し、Sink の追加・削除とトラックの破棄を proxy に振り分けさせる
   - @melpon
+- [UPDATE] Examples の WEBRTC_BUILD_VERSION を m157.8103.0.0 にあげる
+  - @voluntas
 - [UPDATE] Examples の WEBRTC_BUILD_VERSION を m155.8059.4.1 にあげる
   - @voluntas
 - [UPDATE] Examples の WEBRTC_BUILD_VERSION を m155.8059.1.1 にあげる
