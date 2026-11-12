@@ -3,7 +3,7 @@
 - Created: 2026-11-12
 - Completed: {YYYY-MM-DD}
 - Branch: feature/change-support-libcamera-0.8
-- Polished: {YYYY-MM-DD}
+- Polished: 2026-11-12
 
 ## 目的
 
@@ -47,32 +47,40 @@ Raspberry Pi の apt リポジトリに libcamera 0.8.0 が配布されたため
 
 ### 実行時の制約
 
-- `libcamerac.so` は libcamera の soname (`libcamera.so.0.8`) に依存するため、0.8.0 でビルドしたものは 0.7 系しか入っていない端末では読み込めない
+- `libcamerac.so` は libcamera の soname (`SONAME` は `libcamera.so.0.8`) に依存するため、0.8.0 でビルドしたものは 0.7 系しか入っていない端末では読み込めない
 - CI の E2E テストは self-hosted の Raspberry Pi 実機で実行される (`.github/workflows/ci.yml` の `raspberry_pi`)。この実機の libcamera も 0.8 系に更新されている必要がある
+- 配布物とドキュメントも soname の変化に追随する必要がある
+  - `.github/workflows/release.yml` はラズパイ向けの配布アーカイブに `_install/raspberry-pi-os_armv8/release/sora/lib/libcamerac.so` を同梱しており、この `libcamerac.so` が `libcamera.so.0.8` を要求するようになる
+  - `doc/faq.md` の「Raspberry Pi で libcamera や libcamera control を使用したい」は、実行ファイルと同じディレクトリに `libcamera.so` を置くよう案内しており、0.8 以降の soname (`libcamera.so.0.8`) とは名前が一致しない
+- CI のサンプルビルド (`.github/workflows/ci.yml` の「Build Examples (Raspberry Pi OS)」) とリリースビルドのサンプル生成は `examples/<sample>/run.py build raspberry-pi-os_armv8 --local-sora-cpp-sdk-dir ..` を実行しており、`--rootfs-fetch-force` を付けていない。サンプル側の sysroot は SDK 側と別ディレクトリ (`examples/_install/...`) に作られるため、既存のサンプル sysroot が残っていると fingerprint が一致して 0.7.2 のまま再利用される
 
 ## 設計方針
 
 - ソースコードの変更は原則不要と見込む。0.8.0 の API 差分 (上記 2 点) は本 SDK が利用していないため、まず sysroot を 0.8.0 で作り直してビルドが通ることを確認する
 - sysroot は設定を変えない限り再利用されるため、追従は「`--rootfs-fetch-force` で sysroot を作り直して 0.8.0 でビルドできることを確認する」作業として扱う。バージョン固定の仕組みの追加はこの issue では行わない
 - ビルドが通らない場合に限り、`third_party/libcamerac/` の実装と `CMakeLists.txt` の `camerac` ターゲットを 0.8.0 に合わせて修正する
-- ラズパイ実機の libcamera を 0.8 に更新できない場合は、0.8.0 でビルドした成果物を実機で動かせないため、その状態を記録して判断を仰ぐ
+- ラズパイ実機の libcamera を 0.8 に更新できない場合は、0.8.0 でビルドした成果物を実機で動かせない。この状態で閉じず、実機の更新を追う `pending` にするか、更新待ちの別 issue に分けるかを決めてから closed にする
+- `doc/faq.md` の `libcamera.so` の説明は、0.8 以降の soname に合わせて `libcamera.so.0.8` に修正する。`libcamerac.so` は libcamera 本体 (`libcamera0.8`) が入っていれば動くため、`libcamera.so` の同梱を要求する記述が実態と合っているかも併せて確認する
 - 追随した内容は `CHANGES.md` の `develop` に `[CHANGE]` または `[UPDATE]` で記載する (カテゴリの判定は `shiguredo-changelog` の規約に従う)
 
 ## 完了条件
 
 - `python3 run.py build raspberry-pi-os_armv8 --rootfs-fetch-force` で sysroot が `libcamera-dev` 0.8.0+rpt20261104-1 と `libcamera0.8` で生成され、`camerac` と `sora` のビルドが成功すること
 - 生成された `_install/raspberry-pi-os_armv8/<config>/rootfs/.webrtc-build-sysroot.json` の `deb_files` に `libcamera-dev_0.8.0+rpt20261104-1_arm64.deb` と `libcamera0.8_0.8.0+rpt20261104-1_arm64.deb` が含まれること
-- `libcamerac.so` が `libcamera.so.0.8` にリンクされていること
-- サンプル (`python3 examples/sumomo/run.py build raspberry-pi-os_armv8`) も同様にビルドできること。サンプル側の sysroot 設定 `examples/sysroot/raspberry-pi-os_armv8.json` は SDK 側と同一のため、同じ `--rootfs-fetch-force` が必要になる
-- libcamera を利用したキャプチャが動作すること (ラズパイ実機の libcamera が 0.8 に更新されている場合)
+- `_install/raspberry-pi-os_armv8/<config>/sora/lib/libcamerac.so` について、`readelf -d` の `NEEDED` に `libcamera.so.0.8` と `libcamera-base.so.0.8` が含まれること
+- サンプル (`python3 examples/sumomo/run.py build raspberry-pi-os_armv8 --rootfs-fetch-force`) もビルドできること。サンプル側の sysroot 設定 `examples/sysroot/raspberry-pi-os_armv8.json` は SDK 側と同一だが、sysroot は別ディレクトリ (`examples/_install/raspberry-pi-os_armv8/<config>/rootfs`) に生成されるため、`--rootfs-fetch-force` はサンプル側でも指定する
+- ラズパイ実機の `libcamera0.8` が確認できていること。実機を 0.8 に更新できず、かつ実機での確認が取れない場合は、closed にせず `pending` にするか、実機更新を追う別 issue に分けてから closed にすること
+- 実機を 0.8 に更新できた場合、`test_sumomo_raspberry_pi.py` の libcamera を使うケース (`use_libcamera=True`) で送受信が動作すること
+- `doc/faq.md` の libcamera 関連の記述が 0.8 以降の soname と一致していること
 - `CHANGES.md` に追従内容が記載されていること
 
 ## 解決方法
 
-1. ラズパイ実機 (CI の self-hosted runner) の `libcamera0.x` のバージョンを確認する。0.7 系のままなら、先に実機を更新するか、実機なしで進めるかを決める
+1. ラズパイ実機 (CI の self-hosted runner) の `libcamera0.x` のバージョンを確認する。0.7 系のままなら、実機を 0.8 に更新できるかを決める。更新できない場合は、手順 6 を実施できないため issue の扱いを決める
 2. `python3 run.py build raspberry-pi-os_armv8 --rootfs-fetch-force` を実行し、sysroot の生成とビルドを確認する
-3. `.webrtc-build-sysroot.json` の `deb_files`、`readelf -d` などで `libcamerac.so` の `NEEDED` が `libcamera.so.0.8` になっていることを確認する
+3. `.webrtc-build-sysroot.json` の `deb_files` と、`readelf -d _install/raspberry-pi-os_armv8/release/sora/lib/libcamerac.so` の `NEEDED` を確認する (0.8 追従後は Debug ビルドなら `debug` に読み替える)
 4. ビルドが失敗した場合は、エラー内容に応じて `third_party/libcamerac/libcamerac.cpp` と `third_party/libcamerac/libcamerac.h` (必要なら `CMakeLists.txt` の `camerac` ターゲット) を修正する
 5. `python3 examples/sumomo/run.py build raspberry-pi-os_armv8 --rootfs-fetch-force` でサンプルも確認する
 6. ラズパイ実機の E2E テスト (`e2e-test/test_sumomo_raspberry_pi.py`) を実行し、libcamera を利用した送受信が動くことを確認する
-7. `CHANGES.md` の `develop` に追従内容を記載する
+7. `doc/faq.md` の libcamera 関連の記述を 0.8 以降の soname に合わせて修正する
+8. `CHANGES.md` の `develop` に追従内容を記載する
