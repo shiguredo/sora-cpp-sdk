@@ -48,6 +48,10 @@
   - JSON-RPC 2.0 のリクエストを `rpc` ラベルで送信する。`id` と `params` は省略でき、`params` に Object でも Array でもない値を指定した場合は送信しない
   - レスポンスは `SoraSignalingObserver::OnRpc()` に通知される
   - @melpon
+- [UPDATE] Raspberry Pi OS 向けビルドを libcamera 0.8.0 に追従する
+  - libcamera の soname が `libcamera.so.0.7` から `libcamera.so.0.8` に変わるため、`libcamerac.so` を利用する Raspberry Pi のアプリケーションは libcamera 0.8 系 (`libcamera0.8`) が入った端末で動かす必要がある
+  - sysroot は設定を変えない限り再利用されるため、`python3 run.py build raspberry-pi-os_armv8 --rootfs-fetch-force` で sysroot を作り直す必要がある
+  - @Hexa
 - [UPDATE] libwebrtc のバージョンを m157.8103.0.0 に上げる
   - @voluntas
 - [UPDATE] libwebrtc のバージョンを m155.8059.4.1 に上げる
