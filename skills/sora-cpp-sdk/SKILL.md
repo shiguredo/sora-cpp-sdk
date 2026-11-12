@@ -208,7 +208,7 @@ void OnSetOffer(std::string offer) override {
 ```
 
 - カスタム映像ソースは `sora::ScalableVideoTrackSource` (`sora/scalable_track_source.h`) を継承して作る
-- Raspberry Pi Camera を使う場合は `cam_config.use_libcamera = true` にし、実行ファイルと同じディレクトリに `libcamera.so` を置く。`libcamera_controls` に `{"AfMode", "Continuous"}` のようなキーと値のペアを指定できる
+- Raspberry Pi Camera を使う場合は `cam_config.use_libcamera = true` にし、端末に libcamera のランタイムパッケージ (`libcamera0.8`) をインストールしておく。`libcamerac.so` は `libcamera.so.0.8` と `libcamera-base.so.0.8` に依存し、これらはシステムのライブラリディレクトリから読み込まれるため、実行ファイルと同じディレクトリへのコピーでは読み込まれない。`libcamera_controls` に `{"AfMode", "Continuous"}` のようなキーと値のペアを指定できる
 
 ## 映像の受信
 

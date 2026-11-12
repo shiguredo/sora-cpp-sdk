@@ -1,7 +1,7 @@
 # Raspberry Pi OS 向けビルドを libcamera 0.8.0 に追従させる
 
 - Created: 2026-11-12
-- Completed: {YYYY-MM-DD}
+- Completed: 2026-11-12
 - Branch: feature/change-support-libcamera-0.8
 - Polished: 2026-11-12
 
@@ -84,3 +84,17 @@ Raspberry Pi の apt リポジトリに libcamera 0.8.0 が配布されたため
 6. ラズパイ実機の E2E テスト (`e2e-test/test_sumomo_raspberry_pi.py`) を実行し、libcamera を利用した送受信が動くことを確認する
 7. `doc/faq.md` の libcamera 関連の記述を 0.8 以降の soname に合わせて修正する
 8. `CHANGES.md` の `develop` に追従内容を記載する
+
+### 実施内容
+
+- ソースコードの変更は不要だった。libcamera 0.8.0 のパブリック API 差分 (`orientationFromRotation()` / `transformFromRotation()` の `std::optional` 返却化、コントロール enum 名の接頭辞削除) はいずれも本 SDK が利用していない
+- `libcamera-dev` が 0.8.0+rpt20261104-1 に上がったことで、`libcamerac.so` の `NEEDED` は `libcamera.so.0.8` と `libcamera-base.so.0.8` になった
+- `CHANGES.md` に `[UPDATE]` で追従内容を記載した
+- `doc/faq.md` と `skills/sora-cpp-sdk/SKILL.md` の libcamera の記述を実態に合わせて修正した。libcamera の共有ライブラリはシステムのライブラリディレクトリから読み込まれるため、実行ファイルと同じディレクトリに置いても読み込まれない。端末に libcamera のランタイムパッケージが要ることを明記した
+
+### 確認結果
+
+- CI の `Build sora-cpp-sdk for raspberry-pi-os_armv8` が成功した。生成された `examples/_build/raspberry-pi-os_armv8/release/sumomo/libcamerac.so` の `NEEDED` は `libcamera.so.0.8` と `libcamera-base.so.0.8`
+- ラズパイ実機は `libcamera0.8` 0.8.0+rpt20261104-1 (`libcamera-dev` / `libcamera-ipa` / `libpisp1` を含む) がインストール済みで、`libcamera.so.0.8` は `ldconfig` のキャッシュから解決できる
+- CI の `E2E Test for raspberry_pi` は `test_sumomo_raspberry_pi.py` の libcamera を使うケースを含めて成功した
+- sysroot の生成は `buildbase.py` の `install_sysroot()` を Ubuntu 26.04 のコンテナで実行して確認し、`deb_files` に `libcamera-dev_0.8.0+rpt20261104-1_arm64.deb`、`libcamera0.8_0.8.0+rpt20261104-1_arm64.deb`、`libcamera-ipa`、`libpisp1` が含まれることを確認した

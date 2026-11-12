@@ -58,7 +58,9 @@ AMD AMF を使用して映像を受信する際に、映像の停止やデコー
 
 Raspberry Pi で USB カメラではなく Raspberry Pi Camera を使用する場合、libcamera を有効にする必要があります。
 libcamera を有効にするには `sora::CameraDeviceCapturerConfig` で `use_libcamera` フラグを true に指定します。
-また、実行ファイルと同じディレクトリに `libcamera.so` を置いておく必要があります。
+また、端末に libcamera のランタイムパッケージ (`libcamera0.8`) をインストールしておく必要があります。
+`libcamerac.so` は libcamera の共有ライブラリ (`libcamera.so.0.8` と `libcamera-base.so.0.8`) に依存しており、これらはシステムのライブラリディレクトリから読み込まれます。
+実行ファイルと同じディレクトリに `libcamera.so` を置いても読み込まれないため、`libcamera0.8` をインストールできない場合は、`libcamera.so.0.8` と `libcamera-base.so.0.8` をシステムのライブラリディレクトリに置くか、`LD_LIBRARY_PATH` でそのディレクトリを指定してください。
 
 libcamera を有効にすると sora::CameraDeviceCapturerConfig に libcamera に関する以下のオプションを指定できます
 
