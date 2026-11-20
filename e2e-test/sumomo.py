@@ -27,11 +27,13 @@ class DeviceLists:
 def get_device_lists() -> DeviceLists:
     """sumomo --list-devices を実行してデバイス一覧をパースして返す"""
     sumomo_path = get_sumomo_executable_path()
+    # 終了コードは下で確認して詳細なメッセージを出すため、subprocess 側では例外にしない
     result = subprocess.run(
         [sumomo_path, "--list-devices"],
         capture_output=True,
         text=True,
         timeout=10,
+        check=False,
     )
     if result.returncode != 0:
         raise RuntimeError(
@@ -167,13 +169,7 @@ def get_sumomo_executable_path() -> str:
     # sumomo のパスを構築
     assert target is not None
     sumomo_path = (
-        project_root
-        / "examples"
-        / "_build"
-        / target
-        / "release"
-        / "sumomo"
-        / f"sumomo{exe_suffix}"
+        project_root / "examples" / "_build" / target / "release" / "sumomo" / f"sumomo{exe_suffix}"
     )
 
     if not sumomo_path.exists():
@@ -510,7 +506,7 @@ class Sumomo:
                     f"Sumomo executable not found at {self.executable_path}. "
                     f"Please build with: python3 run.py build <target>"
                 )
-            except Exception as e:
+            except (OSError, ValueError) as e:
                 raise RuntimeError(f"Failed to start sumomo process: {e}")
 
             # プロセスが起動して HTTP サーバーが利用可能になるまで待機
@@ -788,7 +784,7 @@ class Sumomo:
                     pass
                 except httpx.ConnectTimeout:
                     pass
-                except Exception as e:
+                except httpx.HTTPError as e:
                     # その他の例外（ReadTimeout など）も無視して続行
                     elapsed = time.time() - start_time
                     if elapsed > 5:  # 5秒以上経過していたらログ出力
@@ -810,7 +806,7 @@ class Sumomo:
                             stdout_output = self.process.stdout.read()
                             if stdout_output:
                                 error_msg += f"\n\nStdout:\n{stdout_output}"
-                        except Exception:
+                        except OSError, ValueError:
                             pass
 
                     raise RuntimeError(error_msg)
@@ -843,8 +839,8 @@ class Sumomo:
                         stdout_output = self.process.stdout.read()
                         if stdout_output:
                             error_msg += f"\n\nStdout (last 2000 chars):\n{stdout_output[-2000:]}"
-                    except Exception:
-                        pass
+                    except (OSError, ValueError) as e:
+                        print(f"  Failed to read stdout: {e}")
 
                 self._cleanup()
                 raise RuntimeError(error_msg)
@@ -886,8 +882,8 @@ class Sumomo:
             if hasattr(self.process, "stderr") and self.process.stderr:
                 try:
                     self.process.stderr.close()
-                except:
-                    pass
+                except (OSError, ValueError) as e:
+                    print(f"  Failed to close stderr: {e}")
 
             self.process = None
 
@@ -915,9 +911,12 @@ class Sumomo:
             raise RuntimeError("HTTP port not configured")
 
         # Windows の場合、プロセスが生きているか確認
-        if self.process and platform.system().lower() == "windows":
-            if self.process.poll() is not None:
-                raise RuntimeError(f"sumomo.exe has crashed (exit code: {self.process.returncode})")
+        if (
+            self.process
+            and platform.system().lower() == "windows"
+            and self.process.poll() is not None
+        ):
+            raise RuntimeError(f"sumomo.exe has crashed (exit code: {self.process.returncode})")
 
         try:
             # http_host は 127.0.0.1 固定
@@ -926,10 +925,13 @@ class Sumomo:
             return response.json()
         except Exception as e:
             # Windows の場合、エラー時にプロセスの状態を確認
-            if self.process and platform.system().lower() == "windows":
-                if self.process.poll() is not None:
-                    raise RuntimeError(
-                        f"sumomo.exe crashed while getting stats (exit code: {self.process.returncode})\n"
-                        f"Original error: {e}"
-                    )
+            if (
+                self.process
+                and platform.system().lower() == "windows"
+                and self.process.poll() is not None
+            ):
+                raise RuntimeError(
+                    f"sumomo.exe crashed while getting stats (exit code: {self.process.returncode})\n"
+                    f"Original error: {e}"
+                )
             raise

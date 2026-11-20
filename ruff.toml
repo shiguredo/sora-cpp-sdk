@@ -1,1 +1,10 @@
 line-length = 100
+
+[lint]
+# ruff の既定ルールはプレビューを除いても 413 ルールあり、ruff の更新で既定が変わると
+# prek の ruff check が再び失敗する。適用するルールはここで明示する。
+# E4 / E7 / E9 / F は Python の構文と名前解決の誤りを検出する基本のルール。
+# I は import の並び、UP は旧来の記述、SIM は簡略化できる記述、
+# PLW は pylint の警告、LOG はロガーの使い方、BLE は例外の広すぎる捕捉を検出する。
+# E722 (except の書き方) は E7 に含まれるため、この select で検出できる。
+select = ["E4", "E7", "E9", "F", "I", "UP", "SIM", "PLW", "LOG", "BLE"]

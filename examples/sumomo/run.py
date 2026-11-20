@@ -2,7 +2,6 @@ import argparse
 import multiprocessing
 import os
 import sys
-from typing import List, Optional
 
 PROJECT_DIR = os.path.abspath(os.path.dirname(__file__))
 BASE_DIR = os.path.join(PROJECT_DIR, "..")
@@ -26,9 +25,9 @@ from buildbase import (  # noqa: E402
     install_cli11,
     install_cmake,
     install_llvm,
-    install_sysroot,
     install_sdl3,
     install_sora_and_deps,
+    install_sysroot,
     install_webrtc,
     install_windows_build_tools,
     mkdir_p,
@@ -42,10 +41,10 @@ def install_deps(
     build_dir,
     install_dir,
     debug,
-    local_webrtc_build_dir: Optional[str],
-    local_webrtc_build_args: List[str],
-    local_sora_cpp_sdk_dir: Optional[str],
-    local_sora_cpp_sdk_args: List[str],
+    local_webrtc_build_dir: str | None,
+    local_webrtc_build_args: list[str],
+    local_sora_cpp_sdk_dir: str | None,
+    local_sora_cpp_sdk_args: list[str],
     rootfs_fetch_force: bool,
 ):
     with cd(BASE_DIR):
@@ -227,32 +226,7 @@ def install_deps(
             "ubuntu-22.04_armv8",
             "ubuntu-24.04_armv8",
             "ubuntu-26.04_armv8",
-        ):
-            sysroot = os.path.join(install_dir, "rootfs")
-            install_sdl3_args = {
-                "version": deps["SDL3_VERSION"],
-                "version_file": os.path.join(install_dir, "sdl3.version"),
-                "source_dir": source_dir,
-                "build_dir": build_dir,
-                "install_dir": install_dir,
-                "debug": debug,
-                "platform": "linux",
-                "cmake_args": [
-                    f"-DCMAKE_C_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang')}",
-                    f"-DCMAKE_CXX_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang++')}",
-                    "-DCMAKE_SYSTEM_NAME=Linux",
-                    "-DCMAKE_SYSTEM_PROCESSOR=aarch64",
-                    f"-DCMAKE_SYSROOT={sysroot}",
-                    "-DCMAKE_C_COMPILER_TARGET=aarch64-linux-gnu",
-                    "-DCMAKE_CXX_COMPILER_TARGET=aarch64-linux-gnu",
-                    f"-DCMAKE_FIND_ROOT_PATH={sysroot}",
-                    "-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER",
-                    "-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY",
-                    "-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY",
-                    "-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY",
-                ],
-            }
-        elif platform in ("raspberry-pi-os_armv8",):
+        ) or platform in ("raspberry-pi-os_armv8",):
             sysroot = os.path.join(install_dir, "rootfs")
             install_sdl3_args = {
                 "version": deps["SDL3_VERSION"],
@@ -389,24 +363,7 @@ def _build(args):
             "ubuntu-22.04_armv8",
             "ubuntu-24.04_armv8",
             "ubuntu-26.04_armv8",
-        ):
-            sysroot = os.path.join(install_dir, "rootfs")
-            cmake_args += [
-                f"-DCMAKE_C_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang')}",
-                f"-DCMAKE_CXX_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang++')}",
-                f"-DLIBCXX_INCLUDE_DIR={os.path.join(webrtc_info.libcxx_dir, 'include')}",
-                "-DCMAKE_SYSTEM_NAME=Linux",
-                "-DCMAKE_SYSTEM_PROCESSOR=aarch64",
-                f"-DCMAKE_SYSROOT={sysroot}",
-                "-DCMAKE_C_COMPILER_TARGET=aarch64-linux-gnu",
-                "-DCMAKE_CXX_COMPILER_TARGET=aarch64-linux-gnu",
-                f"-DCMAKE_FIND_ROOT_PATH={sysroot}",
-                "-DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER",
-                "-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH",
-                "-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH",
-                "-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH",
-            ]
-        elif platform in ("raspberry-pi-os_armv8",):
+        ) or platform in ("raspberry-pi-os_armv8",):
             sysroot = os.path.join(install_dir, "rootfs")
             cmake_args += [
                 f"-DCMAKE_C_COMPILER={os.path.join(webrtc_info.clang_dir, 'bin', 'clang')}",

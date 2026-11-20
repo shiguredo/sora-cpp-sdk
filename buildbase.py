@@ -140,10 +140,7 @@ def mkdir_p(path: str):
     logger.debug(f"mkdir -p {path} => directory created")
 
 
-if platform.system() == "Windows":
-    PATH_SEPARATOR = ";"
-else:
-    PATH_SEPARATOR = ":"
+PATH_SEPARATOR = ";" if platform.system() == "Windows" else ":"
 
 
 def add_path(path: str, is_after=False):
@@ -164,10 +161,7 @@ def download(
     filename: str | None = None,
     expected_sha256: str | None = None,
 ) -> str:
-    if filename is None:
-        output_path = urllib.parse.urlparse(url).path.split("/")[-1]
-    else:
-        output_path = filename
+    output_path = urllib.parse.urlparse(url).path.split("/")[-1] if filename is None else filename
 
     if output_dir is not None:
         output_path = os.path.join(output_dir, output_path)
@@ -240,10 +234,10 @@ def read_version_file(path: str) -> dict[str, str]:
     with open(path, encoding="utf-8") as f:
         lines = f.readlines()
     for line in lines:
-        line = line.strip()
+        stripped_line = line.strip()
 
         # コメント行
-        if line[:1] == "#":
+        if stripped_line[:1] == "#":
             continue
 
         # 空行
@@ -333,7 +327,7 @@ def _extractzip(z: zipfile.ZipFile, path: str):
         mod = info.external_attr >> 16
         if (mod & 0o120000) == 0o120000:
             # シンボリックリンク
-            with open(filepath, "r", encoding="utf-8") as f:
+            with open(filepath, encoding="utf-8") as f:
                 src = f.read()
             os.remove(filepath)
             with cd(os.path.dirname(filepath)):
@@ -2868,10 +2862,7 @@ class PlatformTarget:
         if self.os == "raspberry-pi-os":
             return f"raspberry-pi-os_{self.arch}"
         if self.os == "jetson":
-            if self.extra is None:
-                ubuntu_version = "ubuntu-20.04"
-            else:
-                ubuntu_version = self.extra
+            ubuntu_version = "ubuntu-20.04" if self.extra is None else self.extra
             if self.osver is None:
                 return f"{ubuntu_version}_armv8_jetson"
             return f"{ubuntu_version}_armv8_jetson_{self.osver}"
@@ -2915,10 +2906,7 @@ def get_build_platform() -> PlatformTarget:
     if arch in ("AMD64", "x86_64"):
         arch = "x86_64"
     elif arch in ("aarch64", "arm64"):
-        if os == "ubuntu":
-            arch = "armv8"
-        else:
-            arch = "arm64"
+        arch = "armv8" if os == "ubuntu" else "arm64"
     else:
         raise BuildbaseError(f"Arch {arch} not supported")
 

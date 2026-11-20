@@ -65,62 +65,64 @@ def test_sendonly_recvonly(
         decoder_params["h265_decoder"] = "intel_vpl"
 
     # 送信専用クライアント
-    with Sumomo(
-        signaling_url=sora_settings.signaling_url,
-        channel_id=sora_settings.channel_id,
-        role="sendonly",
-        metadata=sora_settings.metadata,
-        http_port=next(port_allocator),
-        audio=False,
-        video=True,
-        video_codec_type=video_codec_type,
-        initial_wait=10,
-        **encoder_params,
-    ) as sender:
-        # 受信専用クライアント
-        with Sumomo(
+    with (
+        Sumomo(
+            signaling_url=sora_settings.signaling_url,
+            channel_id=sora_settings.channel_id,
+            role="sendonly",
+            metadata=sora_settings.metadata,
+            http_port=next(port_allocator),
+            audio=False,
+            video=True,
+            video_codec_type=video_codec_type,
+            initial_wait=10,
+            **encoder_params,
+        ) as sender,
+        Sumomo(
             signaling_url=sora_settings.signaling_url,
             channel_id=sora_settings.channel_id,
             role="recvonly",
             metadata=sora_settings.metadata,
             http_port=next(port_allocator),
             **decoder_params,
-        ) as receiver:
-            time.sleep(3)
+        ) as receiver,
+    ):
+        # 受信専用クライアント
+        time.sleep(3)
 
-            # 送信側の統計を確認
-            sender_stats = sender.get_stats()
-            assert sender_stats is not None
+        # 送信側の統計を確認
+        sender_stats = sender.get_stats()
+        assert sender_stats is not None
 
-            # video codec を確認
-            sender_video_codec = get_codec(sender_stats, expected_mime_type)
-            assert sender_video_codec is not None
-            assert sender_video_codec["mimeType"] == expected_mime_type
+        # video codec を確認
+        sender_video_codec = get_codec(sender_stats, expected_mime_type)
+        assert sender_video_codec is not None
+        assert sender_video_codec["mimeType"] == expected_mime_type
 
-            # video outbound-rtp を確認
-            sender_video_outbound = get_outbound_rtp(sender_stats, "video")
-            assert sender_video_outbound is not None
-            assert sender_video_outbound["packetsSent"] > 0
-            assert sender_video_outbound["bytesSent"] > 0
-            assert "encoderImplementation" in sender_video_outbound
-            assert sender_video_outbound["encoderImplementation"] == "libvpl"
+        # video outbound-rtp を確認
+        sender_video_outbound = get_outbound_rtp(sender_stats, "video")
+        assert sender_video_outbound is not None
+        assert sender_video_outbound["packetsSent"] > 0
+        assert sender_video_outbound["bytesSent"] > 0
+        assert "encoderImplementation" in sender_video_outbound
+        assert sender_video_outbound["encoderImplementation"] == "libvpl"
 
-            # 受信側の統計を確認
-            receiver_stats = receiver.get_stats()
-            assert receiver_stats is not None
+        # 受信側の統計を確認
+        receiver_stats = receiver.get_stats()
+        assert receiver_stats is not None
 
-            # video codec を確認
-            receiver_video_codec = get_codec(receiver_stats, expected_mime_type)
-            assert receiver_video_codec is not None
-            assert receiver_video_codec["mimeType"] == expected_mime_type
+        # video codec を確認
+        receiver_video_codec = get_codec(receiver_stats, expected_mime_type)
+        assert receiver_video_codec is not None
+        assert receiver_video_codec["mimeType"] == expected_mime_type
 
-            # video inbound-rtp を確認
-            receiver_video_inbound = get_inbound_rtp(receiver_stats, "video")
-            assert receiver_video_inbound is not None
-            assert receiver_video_inbound["packetsReceived"] > 0
-            assert receiver_video_inbound["bytesReceived"] > 0
-            assert "decoderImplementation" in receiver_video_inbound
-            assert receiver_video_inbound["decoderImplementation"] == "libvpl"
+        # video inbound-rtp を確認
+        receiver_video_inbound = get_inbound_rtp(receiver_stats, "video")
+        assert receiver_video_inbound is not None
+        assert receiver_video_inbound["packetsReceived"] > 0
+        assert receiver_video_inbound["bytesReceived"] > 0
+        assert "decoderImplementation" in receiver_video_inbound
+        assert receiver_video_inbound["decoderImplementation"] == "libvpl"
 
 
 @pytest.mark.parametrize(
@@ -167,20 +169,8 @@ def test_sendrecv(
     codec_params = {**encoder_params, **decoder_params}
 
     # sendrecv クライアント 1
-    with Sumomo(
-        signaling_url=sora_settings.signaling_url,
-        channel_id=sora_settings.channel_id,
-        role="sendrecv",
-        metadata=sora_settings.metadata,
-        http_port=next(port_allocator),
-        audio=False,
-        video=True,
-        video_codec_type=video_codec_type,
-        initial_wait=10,
-        **codec_params,
-    ) as client1:
-        # sendrecv クライアント 2
-        with Sumomo(
+    with (
+        Sumomo(
             signaling_url=sora_settings.signaling_url,
             channel_id=sora_settings.channel_id,
             role="sendrecv",
@@ -191,58 +181,72 @@ def test_sendrecv(
             video_codec_type=video_codec_type,
             initial_wait=10,
             **codec_params,
-        ) as client2:
-            time.sleep(3)
+        ) as client1,
+        Sumomo(
+            signaling_url=sora_settings.signaling_url,
+            channel_id=sora_settings.channel_id,
+            role="sendrecv",
+            metadata=sora_settings.metadata,
+            http_port=next(port_allocator),
+            audio=False,
+            video=True,
+            video_codec_type=video_codec_type,
+            initial_wait=10,
+            **codec_params,
+        ) as client2,
+    ):
+        # sendrecv クライアント 2
+        time.sleep(3)
 
-            # クライアント 1 の統計を確認
-            client1_stats = client1.get_stats()
-            assert client1_stats is not None
+        # クライアント 1 の統計を確認
+        client1_stats = client1.get_stats()
+        assert client1_stats is not None
 
-            # video codec を確認
-            client1_video_codec = get_codec(client1_stats, expected_mime_type)
-            assert client1_video_codec is not None
-            assert client1_video_codec["mimeType"] == expected_mime_type
+        # video codec を確認
+        client1_video_codec = get_codec(client1_stats, expected_mime_type)
+        assert client1_video_codec is not None
+        assert client1_video_codec["mimeType"] == expected_mime_type
 
-            # video outbound-rtp を確認
-            client1_video_outbound = get_outbound_rtp(client1_stats, "video")
-            assert client1_video_outbound is not None
-            assert client1_video_outbound["packetsSent"] > 0
-            assert client1_video_outbound["bytesSent"] > 0
-            assert "encoderImplementation" in client1_video_outbound
-            assert client1_video_outbound["encoderImplementation"] == "libvpl"
+        # video outbound-rtp を確認
+        client1_video_outbound = get_outbound_rtp(client1_stats, "video")
+        assert client1_video_outbound is not None
+        assert client1_video_outbound["packetsSent"] > 0
+        assert client1_video_outbound["bytesSent"] > 0
+        assert "encoderImplementation" in client1_video_outbound
+        assert client1_video_outbound["encoderImplementation"] == "libvpl"
 
-            # video inbound-rtp を確認
-            client1_video_inbound = get_inbound_rtp(client1_stats, "video")
-            assert client1_video_inbound is not None
-            assert client1_video_inbound["packetsReceived"] > 0
-            assert client1_video_inbound["bytesReceived"] > 0
-            assert "decoderImplementation" in client1_video_inbound
-            assert client1_video_inbound["decoderImplementation"] == "libvpl"
+        # video inbound-rtp を確認
+        client1_video_inbound = get_inbound_rtp(client1_stats, "video")
+        assert client1_video_inbound is not None
+        assert client1_video_inbound["packetsReceived"] > 0
+        assert client1_video_inbound["bytesReceived"] > 0
+        assert "decoderImplementation" in client1_video_inbound
+        assert client1_video_inbound["decoderImplementation"] == "libvpl"
 
-            # クライアント 2 の統計を確認
-            client2_stats = client2.get_stats()
-            assert client2_stats is not None
+        # クライアント 2 の統計を確認
+        client2_stats = client2.get_stats()
+        assert client2_stats is not None
 
-            # video codec を確認
-            client2_video_codec = get_codec(client2_stats, expected_mime_type)
-            assert client2_video_codec is not None
-            assert client2_video_codec["mimeType"] == expected_mime_type
+        # video codec を確認
+        client2_video_codec = get_codec(client2_stats, expected_mime_type)
+        assert client2_video_codec is not None
+        assert client2_video_codec["mimeType"] == expected_mime_type
 
-            # video outbound-rtp を確認
-            client2_video_outbound = get_outbound_rtp(client2_stats, "video")
-            assert client2_video_outbound is not None
-            assert client2_video_outbound["packetsSent"] > 0
-            assert client2_video_outbound["bytesSent"] > 0
-            assert "encoderImplementation" in client2_video_outbound
-            assert client2_video_outbound["encoderImplementation"] == "libvpl"
+        # video outbound-rtp を確認
+        client2_video_outbound = get_outbound_rtp(client2_stats, "video")
+        assert client2_video_outbound is not None
+        assert client2_video_outbound["packetsSent"] > 0
+        assert client2_video_outbound["bytesSent"] > 0
+        assert "encoderImplementation" in client2_video_outbound
+        assert client2_video_outbound["encoderImplementation"] == "libvpl"
 
-            # video inbound-rtp を確認
-            client2_video_inbound = get_inbound_rtp(client2_stats, "video")
-            assert client2_video_inbound is not None
-            assert client2_video_inbound["packetsReceived"] > 0
-            assert client2_video_inbound["bytesReceived"] > 0
-            assert "decoderImplementation" in client2_video_inbound
-            assert client2_video_inbound["decoderImplementation"] == "libvpl"
+        # video inbound-rtp を確認
+        client2_video_inbound = get_inbound_rtp(client2_stats, "video")
+        assert client2_video_inbound is not None
+        assert client2_video_inbound["packetsReceived"] > 0
+        assert client2_video_inbound["bytesReceived"] > 0
+        assert "decoderImplementation" in client2_video_inbound
+        assert client2_video_inbound["decoderImplementation"] == "libvpl"
 
 
 @pytest.mark.parametrize(
