@@ -8,7 +8,6 @@ import pytest
 from helper import wait_for_dtls_connected
 from sumomo import Sumomo
 
-
 # ISRG Root X1 PEM (Let's Encrypt のルート CA、有効期限 2035-06-04)
 # https://letsencrypt.org/certs/isrgrootx1.pem
 ISRG_ROOT_X1_PEM = """\

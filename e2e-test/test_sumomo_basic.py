@@ -1,6 +1,7 @@
 """Sumomo の基本的な E2E テスト"""
 
 import time
+from typing import Any
 
 import pytest
 
@@ -11,18 +12,19 @@ from sumomo import Sumomo
 @pytest.mark.parametrize("video_codec_type", ["VP8", "VP9", "AV1"])
 def test_sumomo_sendonly_recvonly(sora_settings, port_allocator, video_codec_type):
     """sendonly と recvonly のペアでの統合テスト"""
-    with Sumomo(
-        signaling_url=sora_settings.signaling_url,
-        channel_id=sora_settings.channel_id,
-        role="sendonly",
-        metadata=sora_settings.metadata,
-        http_port=next(port_allocator),
-        audio=True,
-        video=True,
-        audio_codec_type="OPUS",
-        video_codec_type=video_codec_type,
-    ) as s:
-        with Sumomo(
+    with (
+        Sumomo(
+            signaling_url=sora_settings.signaling_url,
+            channel_id=sora_settings.channel_id,
+            role="sendonly",
+            metadata=sora_settings.metadata,
+            http_port=next(port_allocator),
+            audio=True,
+            video=True,
+            audio_codec_type="OPUS",
+            video_codec_type=video_codec_type,
+        ) as s,
+        Sumomo(
             signaling_url=sora_settings.signaling_url,
             channel_id=sora_settings.channel_id,
             role="recvonly",
@@ -30,89 +32,80 @@ def test_sumomo_sendonly_recvonly(sora_settings, port_allocator, video_codec_typ
             http_port=next(port_allocator),
             audio=True,
             video=True,
-        ) as r:
-            time.sleep(3)
+        ) as r,
+    ):
+        time.sleep(3)
 
-            # Sender の統計情報を確認
-            sender_stats: list[dict[str, Any]] = s.get_stats()
-            assert sender_stats is not None
-            assert isinstance(sender_stats, list)
-            assert len(sender_stats) > 0
+        # Sender の統計情報を確認
+        sender_stats: list[dict[str, Any]] = s.get_stats()
+        assert sender_stats is not None
+        assert isinstance(sender_stats, list)
+        assert len(sender_stats) > 0
 
-            # outbound-rtp を確認
-            sender_audio_outbound = get_outbound_rtp(sender_stats, "audio")
-            assert sender_audio_outbound is not None
-            assert sender_audio_outbound["packetsSent"] > 0
-            assert sender_audio_outbound["bytesSent"] > 0
+        # outbound-rtp を確認
+        sender_audio_outbound = get_outbound_rtp(sender_stats, "audio")
+        assert sender_audio_outbound is not None
+        assert sender_audio_outbound["packetsSent"] > 0
+        assert sender_audio_outbound["bytesSent"] > 0
 
-            sender_video_outbound = get_outbound_rtp(sender_stats, "video")
-            assert sender_video_outbound is not None
-            assert sender_video_outbound["packetsSent"] > 0
-            assert sender_video_outbound["bytesSent"] > 0
+        sender_video_outbound = get_outbound_rtp(sender_stats, "video")
+        assert sender_video_outbound is not None
+        assert sender_video_outbound["packetsSent"] > 0
+        assert sender_video_outbound["bytesSent"] > 0
 
-            # audio codec を確認
-            sender_audio_codec = get_codec(sender_stats, "audio/opus")
-            assert sender_audio_codec is not None
-            assert sender_audio_codec["clockRate"] == 48000
-            assert sender_audio_outbound["codecId"] == sender_audio_codec["id"]
+        # audio codec を確認
+        sender_audio_codec = get_codec(sender_stats, "audio/opus")
+        assert sender_audio_codec is not None
+        assert sender_audio_codec["clockRate"] == 48000
+        assert sender_audio_outbound["codecId"] == sender_audio_codec["id"]
 
-            # video codec を確認
-            sender_video_codec = get_codec(sender_stats, f"video/{video_codec_type}")
-            assert sender_video_codec is not None
-            assert sender_video_codec["clockRate"] == 90000
-            assert sender_video_codec["mimeType"] == f"video/{video_codec_type}"
-            assert sender_video_outbound["codecId"] == sender_video_codec["id"]
+        # video codec を確認
+        sender_video_codec = get_codec(sender_stats, f"video/{video_codec_type}")
+        assert sender_video_codec is not None
+        assert sender_video_codec["clockRate"] == 90000
+        assert sender_video_codec["mimeType"] == f"video/{video_codec_type}"
+        assert sender_video_outbound["codecId"] == sender_video_codec["id"]
 
-            # Receiver の統計情報を確認
-            receiver_stats: list[dict[str, Any]] = r.get_stats()
-            assert receiver_stats is not None
-            assert isinstance(receiver_stats, list)
-            assert len(receiver_stats) > 0
+        # Receiver の統計情報を確認
+        receiver_stats: list[dict[str, Any]] = r.get_stats()
+        assert receiver_stats is not None
+        assert isinstance(receiver_stats, list)
+        assert len(receiver_stats) > 0
 
-            # inbound-rtp を確認
-            receiver_audio_inbound = get_inbound_rtp(receiver_stats, "audio")
-            assert receiver_audio_inbound is not None
-            assert receiver_audio_inbound["packetsReceived"] > 0
-            assert receiver_audio_inbound["bytesReceived"] > 0
+        # inbound-rtp を確認
+        receiver_audio_inbound = get_inbound_rtp(receiver_stats, "audio")
+        assert receiver_audio_inbound is not None
+        assert receiver_audio_inbound["packetsReceived"] > 0
+        assert receiver_audio_inbound["bytesReceived"] > 0
 
-            receiver_video_inbound = get_inbound_rtp(receiver_stats, "video")
-            assert receiver_video_inbound is not None
-            assert receiver_video_inbound["packetsReceived"] > 0
-            assert receiver_video_inbound["bytesReceived"] > 0
+        receiver_video_inbound = get_inbound_rtp(receiver_stats, "video")
+        assert receiver_video_inbound is not None
+        assert receiver_video_inbound["packetsReceived"] > 0
+        assert receiver_video_inbound["bytesReceived"] > 0
 
-            # audio codec を確認
-            receiver_audio_codec = get_codec(receiver_stats, "audio/opus")
-            assert receiver_audio_codec is not None
+        # audio codec を確認
+        receiver_audio_codec = get_codec(receiver_stats, "audio/opus")
+        assert receiver_audio_codec is not None
 
-            # video codec を確認
-            receiver_video_codec = get_codec(receiver_stats, f"video/{video_codec_type}")
-            assert receiver_video_codec is not None
-            assert receiver_video_codec["mimeType"] == f"video/{video_codec_type}"
+        # video codec を確認
+        receiver_video_codec = get_codec(receiver_stats, f"video/{video_codec_type}")
+        assert receiver_video_codec is not None
+        assert receiver_video_codec["mimeType"] == f"video/{video_codec_type}"
 
-            # transport を確認
-            sender_transport = get_transport(sender_stats)
-            receiver_transport = get_transport(receiver_stats)
-            assert sender_transport is not None
-            assert receiver_transport is not None
-            assert sender_transport["dtlsState"] == "connected"
-            assert receiver_transport["dtlsState"] == "connected"
+        # transport を確認
+        sender_transport = get_transport(sender_stats)
+        receiver_transport = get_transport(receiver_stats)
+        assert sender_transport is not None
+        assert receiver_transport is not None
+        assert sender_transport["dtlsState"] == "connected"
+        assert receiver_transport["dtlsState"] == "connected"
 
 
 @pytest.mark.parametrize("video_codec_type", ["VP8", "VP9", "AV1"])
 def test_sumomo_sendrecv_pair(sora_settings, port_allocator, video_codec_type):
     """sendrecv モードのペアテスト（送受信の双方向通信）"""
-    with Sumomo(
-        signaling_url=sora_settings.signaling_url,
-        channel_id=sora_settings.channel_id,
-        role="sendrecv",
-        metadata=sora_settings.metadata,
-        http_port=next(port_allocator),
-        audio=True,
-        video=True,
-        audio_codec_type="OPUS",
-        video_codec_type=video_codec_type,
-    ) as c1:
-        with Sumomo(
+    with (
+        Sumomo(
             signaling_url=sora_settings.signaling_url,
             channel_id=sora_settings.channel_id,
             role="sendrecv",
@@ -120,90 +113,102 @@ def test_sumomo_sendrecv_pair(sora_settings, port_allocator, video_codec_type):
             http_port=next(port_allocator),
             audio=True,
             video=True,
-        ) as c2:
-            time.sleep(3)
+            audio_codec_type="OPUS",
+            video_codec_type=video_codec_type,
+        ) as c1,
+        Sumomo(
+            signaling_url=sora_settings.signaling_url,
+            channel_id=sora_settings.channel_id,
+            role="sendrecv",
+            metadata=sora_settings.metadata,
+            http_port=next(port_allocator),
+            audio=True,
+            video=True,
+        ) as c2,
+    ):
+        time.sleep(3)
 
-            # Client1 の統計情報を確認
-            client1_stats = c1.get_stats()
-            assert client1_stats is not None
+        # Client1 の統計情報を確認
+        client1_stats = c1.get_stats()
+        assert client1_stats is not None
 
-            # outbound-rtp を確認
-            client1_audio_outbound = get_outbound_rtp(client1_stats, "audio")
-            assert client1_audio_outbound is not None
-            assert client1_audio_outbound["packetsSent"] > 0
-            assert client1_audio_outbound["bytesSent"] > 0
+        # outbound-rtp を確認
+        client1_audio_outbound = get_outbound_rtp(client1_stats, "audio")
+        assert client1_audio_outbound is not None
+        assert client1_audio_outbound["packetsSent"] > 0
+        assert client1_audio_outbound["bytesSent"] > 0
 
-            client1_video_outbound = get_outbound_rtp(client1_stats, "video")
-            assert client1_video_outbound is not None
-            assert client1_video_outbound["packetsSent"] > 0
-            assert client1_video_outbound["bytesSent"] > 0
+        client1_video_outbound = get_outbound_rtp(client1_stats, "video")
+        assert client1_video_outbound is not None
+        assert client1_video_outbound["packetsSent"] > 0
+        assert client1_video_outbound["bytesSent"] > 0
 
-            # inbound-rtp を確認
-            client1_audio_inbound = get_inbound_rtp(client1_stats, "audio")
-            assert client1_audio_inbound is not None
-            assert client1_audio_inbound["packetsReceived"] > 0
-            assert client1_audio_inbound["bytesReceived"] > 0
+        # inbound-rtp を確認
+        client1_audio_inbound = get_inbound_rtp(client1_stats, "audio")
+        assert client1_audio_inbound is not None
+        assert client1_audio_inbound["packetsReceived"] > 0
+        assert client1_audio_inbound["bytesReceived"] > 0
 
-            client1_video_inbound = get_inbound_rtp(client1_stats, "video")
-            assert client1_video_inbound is not None
-            assert client1_video_inbound["packetsReceived"] > 0
-            assert client1_video_inbound["bytesReceived"] > 0
+        client1_video_inbound = get_inbound_rtp(client1_stats, "video")
+        assert client1_video_inbound is not None
+        assert client1_video_inbound["packetsReceived"] > 0
+        assert client1_video_inbound["bytesReceived"] > 0
 
-            # audio codec を確認
-            client1_audio_codec = get_codec(client1_stats, "audio/opus")
-            assert client1_audio_codec is not None
-            assert client1_audio_codec["clockRate"] == 48000
+        # audio codec を確認
+        client1_audio_codec = get_codec(client1_stats, "audio/opus")
+        assert client1_audio_codec is not None
+        assert client1_audio_codec["clockRate"] == 48000
 
-            # video codec を確認
-            client1_video_codec = get_codec(client1_stats, f"video/{video_codec_type}")
-            assert client1_video_codec is not None
-            assert client1_video_codec["clockRate"] == 90000
-            assert client1_video_codec["mimeType"] == f"video/{video_codec_type}"
+        # video codec を確認
+        client1_video_codec = get_codec(client1_stats, f"video/{video_codec_type}")
+        assert client1_video_codec is not None
+        assert client1_video_codec["clockRate"] == 90000
+        assert client1_video_codec["mimeType"] == f"video/{video_codec_type}"
 
-            # transport を確認
-            client1_transport = get_transport(client1_stats)
-            assert client1_transport is not None
-            assert client1_transport["dtlsState"] == "connected"
+        # transport を確認
+        client1_transport = get_transport(client1_stats)
+        assert client1_transport is not None
+        assert client1_transport["dtlsState"] == "connected"
 
-            # Client2 の統計情報を確認
-            client2_stats = c2.get_stats()
-            assert client2_stats is not None
+        # Client2 の統計情報を確認
+        client2_stats = c2.get_stats()
+        assert client2_stats is not None
 
-            # outbound-rtp を確認
-            client2_audio_outbound = get_outbound_rtp(client2_stats, "audio")
-            assert client2_audio_outbound is not None
-            assert client2_audio_outbound["packetsSent"] > 0
-            assert client2_audio_outbound["bytesSent"] > 0
+        # outbound-rtp を確認
+        client2_audio_outbound = get_outbound_rtp(client2_stats, "audio")
+        assert client2_audio_outbound is not None
+        assert client2_audio_outbound["packetsSent"] > 0
+        assert client2_audio_outbound["bytesSent"] > 0
 
-            client2_video_outbound = get_outbound_rtp(client2_stats, "video")
-            assert client2_video_outbound is not None
-            assert client2_video_outbound["packetsSent"] > 0
-            assert client2_video_outbound["bytesSent"] > 0
+        client2_video_outbound = get_outbound_rtp(client2_stats, "video")
+        assert client2_video_outbound is not None
+        assert client2_video_outbound["packetsSent"] > 0
+        assert client2_video_outbound["bytesSent"] > 0
 
-            # inbound-rtp を確認
-            client2_audio_inbound = get_inbound_rtp(client2_stats, "audio")
-            assert client2_audio_inbound is not None
-            assert client2_audio_inbound["packetsReceived"] > 0
-            assert client2_audio_inbound["bytesReceived"] > 0
+        # inbound-rtp を確認
+        client2_audio_inbound = get_inbound_rtp(client2_stats, "audio")
+        assert client2_audio_inbound is not None
+        assert client2_audio_inbound["packetsReceived"] > 0
+        assert client2_audio_inbound["bytesReceived"] > 0
 
-            client2_video_inbound = get_inbound_rtp(client2_stats, "video")
-            assert client2_video_inbound is not None
-            assert client2_video_inbound["packetsReceived"] > 0
-            assert client2_video_inbound["bytesReceived"] > 0
+        client2_video_inbound = get_inbound_rtp(client2_stats, "video")
+        assert client2_video_inbound is not None
+        assert client2_video_inbound["packetsReceived"] > 0
+        assert client2_video_inbound["bytesReceived"] > 0
 
-            # audio codec を確認
-            client2_audio_codec = get_codec(client2_stats, "audio/opus")
-            assert client2_audio_codec is not None
+        # audio codec を確認
+        client2_audio_codec = get_codec(client2_stats, "audio/opus")
+        assert client2_audio_codec is not None
 
-            # video codec を確認
-            client2_video_codec = get_codec(client2_stats, f"video/{video_codec_type}")
-            assert client2_video_codec is not None
-            assert client2_video_codec["mimeType"] == f"video/{video_codec_type}"
+        # video codec を確認
+        client2_video_codec = get_codec(client2_stats, f"video/{video_codec_type}")
+        assert client2_video_codec is not None
+        assert client2_video_codec["mimeType"] == f"video/{video_codec_type}"
 
-            # transport を確認
-            client2_transport = get_transport(client2_stats)
-            assert client2_transport is not None
-            assert client2_transport["dtlsState"] == "connected"
+        # transport を確認
+        client2_transport = get_transport(client2_stats)
+        assert client2_transport is not None
+        assert client2_transport["dtlsState"] == "connected"
 
 
 @pytest.mark.parametrize(

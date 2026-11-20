@@ -32,4 +32,7 @@ testpaths = ["."]
 python_files = ["test_*.py"]
 
 [tool.ruff]
-line-length = 100
+# ルートの ruff.toml を継承する
+# prek の ruff check はリポジトリルートで実行され、e2e-test 配下もこの設定で検査される
+# uv run --directory=e2e-test ruff check との結論を揃えるため、適用ルールの定義はルートに一本化する
+extend = "../ruff.toml"

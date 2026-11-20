@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import json
 import platform
-import shlex
 import subprocess
 import threading
 import time
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Iterable, Literal
+from typing import Any, Literal
 
 import httpx
 
@@ -251,11 +251,11 @@ class SumomoDebugWindows:
         """バックグラウンドスレッドで stdout/stderr を読み取る"""
         try:
             for line in stream:
-                line = line.rstrip()
-                if line:
-                    lines_list.append(line)
-                    self._log(f"{stream_name}: {line}")
-        except Exception as e:
+                stripped_line = line.rstrip()
+                if stripped_line:
+                    lines_list.append(stripped_line)
+                    self._log(f"{stream_name}: {stripped_line}")
+        except (OSError, ValueError) as e:
             self._log(f"Error reading {stream_name}: {e!r}")
 
     def _is_sensitive(self, key_path: str) -> bool:
@@ -437,7 +437,7 @@ class SumomoDebugWindows:
 
         return args
 
-    def __enter__(self) -> "SumomoWindows":
+    def __enter__(self) -> SumomoDebugWindows:
         """コンテキストマネージャーの開始"""
         self._log("Entering SumomoWindows context")
         try:
@@ -509,7 +509,7 @@ class SumomoDebugWindows:
                     f"Sumomo executable not found at {self.executable_path}. "
                     f"Please build with: python3 run.py build <target>"
                 )
-            except Exception as e:
+            except (OSError, ValueError) as e:
                 self._log(f"ERROR: Failed to start process: {e!r}")
                 raise RuntimeError(f"Failed to start sumomo process: {e}")
 
@@ -532,7 +532,7 @@ class SumomoDebugWindows:
                         try:
                             stderr_output = self.process.stderr.read()
                             self._log(f"Stderr: {stderr_output}")
-                        except Exception as e:
+                        except (OSError, ValueError) as e:
                             self._log(f"WARNING: Failed to read stderr: {e!r}")
                     raise RuntimeError(
                         f"sumomo.exe exited unexpectedly with code {poll_result}\n"
@@ -600,7 +600,7 @@ class SumomoDebugWindows:
                             if stderr_output:
                                 self._log(f"Stderr: {stderr_output}")
                                 error_msg += f"\nStderr output:\n{stderr_output}"
-                        except Exception as e:
+                        except (OSError, ValueError) as e:
                             self._log(f"WARNING: Failed to read stderr: {e!r}")
                     raise RuntimeError(error_msg)
 
@@ -615,8 +615,13 @@ class SumomoDebugWindows:
                     try:
                         import subprocess as sp
 
+                        # netstat が失敗しても出力を走査するだけなので、例外にせず結果を使う
                         netstat_result = sp.run(
-                            ["netstat", "-an"], capture_output=True, text=True, timeout=2
+                            ["netstat", "-an"],
+                            capture_output=True,
+                            text=True,
+                            timeout=2,
+                            check=False,
                         )
                         # ポート番号を含む行を探す
                         port_lines = [
@@ -630,7 +635,7 @@ class SumomoDebugWindows:
                             )
                         else:
                             self._log(f"Attempt {attempt}: Port {http_port} is NOT listening")
-                    except Exception as e:
+                    except (OSError, subprocess.SubprocessError, ValueError) as e:
                         self._log(f"Attempt {attempt}: Failed to check netstat: {e!r}")
 
                 # HTTP エンドポイントをチェック
@@ -655,7 +660,7 @@ class SumomoDebugWindows:
                     )
                 except httpx.ConnectTimeout:
                     self._log(f"Attempt {attempt}: Connection timeout")
-                except Exception as e:
+                except httpx.HTTPError as e:
                     self._log(f"Attempt {attempt}: Unexpected error: {e!r}")
 
                 # 各試行後にもプロセスの状態を確認
@@ -679,7 +684,7 @@ class SumomoDebugWindows:
                             if stderr_output:
                                 self._log(f"Stderr output:\n{stderr_output}")
                                 error_msg += f"\n\nStderr:\n{stderr_output}"
-                        except Exception as e:
+                        except (OSError, ValueError) as e:
                             self._log(f"WARNING: Failed to read stderr: {e!r}")
 
                     if self.process.stdout:
@@ -688,7 +693,7 @@ class SumomoDebugWindows:
                             if stdout_output:
                                 self._log(f"Stdout output:\n{stdout_output}")
                                 error_msg += f"\n\nStdout:\n{stdout_output}"
-                        except Exception as e:
+                        except (OSError, ValueError) as e:
                             self._log(f"WARNING: Failed to read stdout: {e!r}")
 
                     raise RuntimeError(error_msg)
@@ -726,7 +731,7 @@ class SumomoDebugWindows:
                         if stderr_output:
                             self._log(f"Stderr output (last 2000 chars):\n{stderr_output[-2000:]}")
                             error_msg += f"\n\nStderr (last 2000 chars):\n{stderr_output[-2000:]}"
-                    except Exception as e:
+                    except (OSError, ValueError) as e:
                         self._log(f"WARNING: Failed to read stderr: {e!r}")
 
                 if self.process.stdout:
@@ -735,7 +740,7 @@ class SumomoDebugWindows:
                         if stdout_output:
                             self._log(f"Stdout output (last 2000 chars):\n{stdout_output[-2000:]}")
                             error_msg += f"\n\nStdout (last 2000 chars):\n{stdout_output[-2000:]}"
-                    except Exception as e:
+                    except (OSError, ValueError) as e:
                         self._log(f"WARNING: Failed to read stdout: {e!r}")
 
                 self._cleanup()
@@ -767,13 +772,13 @@ class SumomoDebugWindows:
             if self.process.stderr:
                 try:
                     self.process.stderr.close()
-                except Exception:
-                    pass
+                except (OSError, ValueError) as e:
+                    self._log(f"WARNING: Failed to close stderr: {e!r}")
             if self.process.stdout:
                 try:
                     self.process.stdout.close()
-                except Exception:
-                    pass
+                except (OSError, ValueError) as e:
+                    self._log(f"WARNING: Failed to close stdout: {e!r}")
 
             self.process = None
             self._log("Process cleanup completed")
@@ -804,8 +809,8 @@ class SumomoDebugWindows:
                     try:
                         stderr_output = self.process.stderr.read()
                         self._log(f"Stderr: {stderr_output}")
-                    except Exception:
-                        pass
+                    except (OSError, ValueError) as e:
+                        self._log(f"WARNING: Failed to read stderr: {e!r}")
                 raise RuntimeError(
                     f"sumomo.exe has crashed (exit code: {poll_result})\nStderr: {stderr_output}"
                 )
@@ -853,14 +858,14 @@ class SumomoDebugWindows:
                         try:
                             stderr_output = self.process.stderr.read()
                             self._log(f"Stderr (last 1000 chars): {stderr_output[-1000:]}")
-                        except Exception:
-                            pass
+                        except (OSError, ValueError) as e:
+                            self._log(f"WARNING: Failed to read stderr: {e!r}")
                     if self.process.stdout:
                         try:
                             stdout_output = self.process.stdout.read()
                             self._log(f"Stdout (last 1000 chars): {stdout_output[-1000:]}")
-                        except Exception:
-                            pass
+                        except (OSError, ValueError) as e:
+                            self._log(f"WARNING: Failed to read stdout: {e!r}")
                     raise RuntimeError(
                         f"sumomo.exe crashed while getting stats (exit code: {poll_result})\n"
                         f"Stderr: {stderr_output}\n"
@@ -880,7 +885,7 @@ class SumomoDebugWindows:
                     self._log(f"Stats retrieved on attempt {attempt}")
                     return stats
                 self._log(f"Attempt {attempt}: stats list is empty")
-            except Exception as exc:
+            except (RuntimeError, httpx.HTTPError) as exc:
                 last_error = exc
                 self._log(f"Attempt {attempt} failed with error: {exc!r}")
 

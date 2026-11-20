@@ -71,20 +71,8 @@ def test_sumomo_sendrecv_with_openh264_encoder(sora_settings, port_allocator):
 
     openh264_path = os.environ.get("OPENH264_PATH")
 
-    with Sumomo(
-        signaling_url=sora_settings.signaling_url,
-        channel_id=sora_settings.channel_id,
-        role="sendrecv",
-        metadata=sora_settings.metadata,
-        http_port=next(port_allocator),
-        audio=False,
-        video=True,
-        video_codec_type="H264",
-        h264_encoder="cisco_openh264",
-        h264_decoder="cisco_openh264",
-        openh264=openh264_path,
-    ) as s1:
-        with Sumomo(
+    with (
+        Sumomo(
             signaling_url=sora_settings.signaling_url,
             channel_id=sora_settings.channel_id,
             role="sendrecv",
@@ -96,29 +84,43 @@ def test_sumomo_sendrecv_with_openh264_encoder(sora_settings, port_allocator):
             h264_encoder="cisco_openh264",
             h264_decoder="cisco_openh264",
             openh264=openh264_path,
-        ) as s2:
-            time.sleep(3)
+        ) as s1,
+        Sumomo(
+            signaling_url=sora_settings.signaling_url,
+            channel_id=sora_settings.channel_id,
+            role="sendrecv",
+            metadata=sora_settings.metadata,
+            http_port=next(port_allocator),
+            audio=False,
+            video=True,
+            video_codec_type="H264",
+            h264_encoder="cisco_openh264",
+            h264_decoder="cisco_openh264",
+            openh264=openh264_path,
+        ) as s2,
+    ):
+        time.sleep(3)
 
-            # Client1 の統計情報を確認
-            stats1 = s1.get_stats()
-            assert stats1 is not None
+        # Client1 の統計情報を確認
+        stats1 = s1.get_stats()
+        assert stats1 is not None
 
-            # OpenH264 エンコーダーが使用されていることを確認
-            video_outbound1 = get_outbound_rtp(stats1, "video")
-            assert video_outbound1 is not None
-            assert "OpenH264" in video_outbound1["encoderImplementation"]
-            assert video_outbound1["packetsSent"] > 0
-            assert video_outbound1["bytesSent"] > 0
+        # OpenH264 エンコーダーが使用されていることを確認
+        video_outbound1 = get_outbound_rtp(stats1, "video")
+        assert video_outbound1 is not None
+        assert "OpenH264" in video_outbound1["encoderImplementation"]
+        assert video_outbound1["packetsSent"] > 0
+        assert video_outbound1["bytesSent"] > 0
 
-            # Client2 の統計情報を確認
-            stats2 = s2.get_stats()
-            assert stats2 is not None
+        # Client2 の統計情報を確認
+        stats2 = s2.get_stats()
+        assert stats2 is not None
 
-            # Client2 も正常に送受信できていることを確認
-            video_outbound2 = get_outbound_rtp(stats2, "video")
-            assert video_outbound2 is not None
-            assert video_outbound2["packetsSent"] > 0
-            assert video_outbound2["bytesSent"] > 0
+        # Client2 も正常に送受信できていることを確認
+        video_outbound2 = get_outbound_rtp(stats2, "video")
+        assert video_outbound2 is not None
+        assert video_outbound2["packetsSent"] > 0
+        assert video_outbound2["bytesSent"] > 0
 
 
 def test_sumomo_openh264_with_simulcast(sora_settings, free_port):
