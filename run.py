@@ -8,7 +8,6 @@ import os
 import shutil
 import tarfile
 import zipfile
-from typing import Dict, List, Optional
 
 from buildbase import (
     Platform,
@@ -50,13 +49,16 @@ from buildbase import (
 
 logging.basicConfig(level=logging.DEBUG)
 
+# ルートロガーではなくこのモジュール用のロガーに出力する
+logger = logging.getLogger(__name__)
+
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 def read_version(version_path):
     """VERSION ファイルからバージョンを読み込む"""
-    with open(version_path, "r") as f:
+    with open(version_path) as f:
         return f.read().strip()
 
 
@@ -89,7 +91,7 @@ def install_android_clang_builtins(webrtc_info: WebrtcInfo, install_dir: str):
 
 def get_common_cmake_args(
     platform: Platform,
-    deps: Dict[str, str],
+    deps: dict[str, str],
     webrtc_info: WebrtcInfo,
     base_dir: str,
     install_dir: str,
@@ -254,8 +256,8 @@ def install_deps(
     build_dir: str,
     install_dir: str,
     debug: bool,
-    local_webrtc_build_dir: Optional[str],
-    local_webrtc_build_args: List[str],
+    local_webrtc_build_dir: str | None,
+    local_webrtc_build_args: list[str],
     disable_cuda: bool,
     rootfs_fetch_force: bool,
 ):
@@ -715,18 +717,18 @@ def check_version_file():
     # VERSION ファイルに書いてる Sora C++ SDK のバージョンが、
     # examples/DEPS にある SORA_CPP_SDK_VERSION と一致しているか確認
     if sora_cpp_sdk_version != example_deps["SORA_CPP_SDK_VERSION"]:
-        logging.error(
+        logger.error(
             f"SORA_CPP_SDK_VERSION mismatch: VERSION={sora_cpp_sdk_version}, examples/DEPS={example_deps['SORA_CPP_SDK_VERSION']}"
         )
         has_error = True
     # その他のバージョンも確認
     if deps["WEBRTC_BUILD_VERSION"] != example_deps["WEBRTC_BUILD_VERSION"]:
-        logging.error(
+        logger.error(
             f"WEBRTC_BUILD_VERSION mismatch: DEPS={deps['WEBRTC_BUILD_VERSION']}, examples/DEPS={example_deps['WEBRTC_BUILD_VERSION']}"
         )
         has_error = True
     if deps["BOOST_VERSION"] != example_deps["BOOST_VERSION"]:
-        logging.error(
+        logger.error(
             f"BOOST_VERSION mismatch: DEPS={deps['BOOST_VERSION']}, examples/DEPS={example_deps['BOOST_VERSION']}"
         )
         has_error = True
@@ -782,8 +784,8 @@ def _build(
     target: str,
     debug: bool,
     relwithdebinfo: bool,
-    local_webrtc_build_dir: Optional[str],
-    local_webrtc_build_args: List[str],
+    local_webrtc_build_dir: str | None,
+    local_webrtc_build_args: list[str],
     disable_cuda: bool,
     test: bool,
     run_e2e_test: bool,
@@ -792,8 +794,8 @@ def _build(
 ):
     platform = _get_platform(target)
 
-    logging.info(f"Build platform: {platform.build.package_name}")
-    logging.info(f"Target platform: {platform.target.package_name}")
+    logger.info(f"Build platform: {platform.build.package_name}")
+    logger.info(f"Target platform: {platform.target.package_name}")
 
     configuration = "debug" if debug else "release"
     dir = platform.target.package_name
@@ -996,13 +998,16 @@ def _build(
             cmake_args.append(f"-DCMAKE_EXE_LINKER_FLAGS={' '.join(ldflags)}")
 
         # NvCodec
-        if not disable_cuda:
-            if platform.target.os in ("windows", "ubuntu") and platform.target.arch == "x86_64":
-                cmake_args.append("-DUSE_NVCODEC_ENCODER=ON")
-                if platform.target.os == "windows":
-                    cmake_args.append(
-                        f"-DCUDA_TOOLKIT_ROOT_DIR={cmake_path(os.path.join(install_dir, 'cuda'))}"
-                    )
+        if (
+            not disable_cuda
+            and platform.target.os in ("windows", "ubuntu")
+            and platform.target.arch == "x86_64"
+        ):
+            cmake_args.append("-DUSE_NVCODEC_ENCODER=ON")
+            if platform.target.os == "windows":
+                cmake_args.append(
+                    f"-DCUDA_TOOLKIT_ROOT_DIR={cmake_path(os.path.join(install_dir, 'cuda'))}"
+                )
 
         # VPL
         if platform.target.os in ("windows", "ubuntu") and platform.target.arch == "x86_64":
@@ -1231,35 +1236,35 @@ def _build(
                         os.path.join(test_build_dir, "libcamerac.so"),
                     )
 
-                if run_e2e_test:
-                    if (
-                        platform.build.os == platform.target.os
-                        and platform.build.arch == platform.target.arch
-                    ):
-                        if platform.target.os == "windows":
-                            cmd([os.path.join(test_build_dir, "e2e.exe")])
-                        else:
-                            cmd([os.path.join(test_build_dir, "e2e")])
-                        if platform.target.os == "windows":
-                            cmd([os.path.join(test_build_dir, "video_factory_data_race.exe")])
-                        else:
-                            cmd([os.path.join(test_build_dir, "video_factory_data_race")])
-                        if platform.target.os == "windows":
-                            cmd([os.path.join(test_build_dir, "base_renderer.exe")])
-                        else:
-                            cmd([os.path.join(test_build_dir, "base_renderer")])
-                        if platform.target.os == "windows":
-                            cmd([os.path.join(test_build_dir, "sora_client_context.exe")])
-                        else:
-                            cmd([os.path.join(test_build_dir, "sora_client_context")])
-                        if platform.target.os == "windows":
-                            cmd([os.path.join(test_build_dir, "video_factory_env.exe")])
-                        else:
-                            cmd([os.path.join(test_build_dir, "video_factory_env")])
-                        if platform.target.os == "windows":
-                            cmd([os.path.join(test_build_dir, "audio_adaptive_ptime.exe")])
-                        else:
-                            cmd([os.path.join(test_build_dir, "audio_adaptive_ptime")])
+                if (
+                    run_e2e_test
+                    and platform.build.os == platform.target.os
+                    and platform.build.arch == platform.target.arch
+                ):
+                    if platform.target.os == "windows":
+                        cmd([os.path.join(test_build_dir, "e2e.exe")])
+                    else:
+                        cmd([os.path.join(test_build_dir, "e2e")])
+                    if platform.target.os == "windows":
+                        cmd([os.path.join(test_build_dir, "video_factory_data_race.exe")])
+                    else:
+                        cmd([os.path.join(test_build_dir, "video_factory_data_race")])
+                    if platform.target.os == "windows":
+                        cmd([os.path.join(test_build_dir, "base_renderer.exe")])
+                    else:
+                        cmd([os.path.join(test_build_dir, "base_renderer")])
+                    if platform.target.os == "windows":
+                        cmd([os.path.join(test_build_dir, "sora_client_context.exe")])
+                    else:
+                        cmd([os.path.join(test_build_dir, "sora_client_context")])
+                    if platform.target.os == "windows":
+                        cmd([os.path.join(test_build_dir, "video_factory_env.exe")])
+                    else:
+                        cmd([os.path.join(test_build_dir, "video_factory_env")])
+                    if platform.target.os == "windows":
+                        cmd([os.path.join(test_build_dir, "audio_adaptive_ptime.exe")])
+                    else:
+                        cmd([os.path.join(test_build_dir, "audio_adaptive_ptime")])
 
     if package:
         mkdir_p(package_dir)
@@ -1302,26 +1307,25 @@ def _build(
                 f.write(f"BOOST_PACKAGE_NAME={boost_archive_name}\n")
 
 
-def _find_clang_binary(name: str) -> Optional[str]:
+def _find_clang_binary(name: str) -> str | None:
     for n in range(50, 14, -1):
         if shutil.which(f"{name}-{n}") is not None:
             return f"{name}-{n}"
-    else:
-        if shutil.which(name) is not None:
-            return name
+    if shutil.which(name) is not None:
+        return name
     return None
 
 
 def _do_iwyu(
     clang_scan_deps_path: str,
     clang_include_cleaner_path: str,
-    patterns: List[str],
+    patterns: list[str],
     compile_commands_path: str,
     include_cleaner_info_path: str,
 ):
     with cd(BASE_DIR):
         if not os.path.exists(compile_commands_path):
-            logging.warning(f"Compile commands file not found: {compile_commands_path}")
+            logger.warning(f"Compile commands file not found: {compile_commands_path}")
             return
 
         target_files = set()
@@ -1352,19 +1356,21 @@ def _do_iwyu(
                         scan_file_set.add(dep)
 
         if os.path.exists(include_cleaner_info_path):
-            include_cleaner_info = json.load(open(include_cleaner_info_path, "r", encoding="utf-8"))
+            with open(include_cleaner_info_path, encoding="utf-8") as f:
+                include_cleaner_info = json.load(f)
         else:
             include_cleaner_info = {}
 
         scan_files = sorted(scan_file_set)
         try:
             for file in scan_files:
-                digest = hashlib.sha256(open(file, "rb").read()).hexdigest()
+                with open(file, "rb") as f:
+                    digest = hashlib.sha256(f.read()).hexdigest()
                 if file in include_cleaner_info and include_cleaner_info[file] == digest:
-                    logging.info(f"Skipping {file} (already processed)")
+                    logger.info(f"Skipping {file} (already processed)")
                     continue
 
-                logging.info(f"Processing {file} with clang-include-cleaner")
+                logger.info(f"Processing {file} with clang-include-cleaner")
                 cmd(
                     [
                         clang_include_cleaner_path,
@@ -1384,8 +1390,8 @@ def _iwyu(
     target: str,
     debug: bool,
     relwithdebinfo: bool,
-    clang_scan_deps_path: Optional[str] = None,
-    clang_include_cleaner_path: Optional[str] = None,
+    clang_scan_deps_path: str | None = None,
+    clang_include_cleaner_path: str | None = None,
 ):
     platform = _get_platform(target)
     configuration = "debug" if debug else "release"
@@ -1465,7 +1471,7 @@ def _iwyu(
 
 
 def _format(
-    clang_format_path: Optional[str] = None,
+    clang_format_path: str | None = None,
 ):
     if clang_format_path is None:
         clang_format_path = _find_clang_binary("clang-format")
